@@ -52,11 +52,11 @@
   <h1>Source code for G2phase</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-03 13:11:47 -0500 (Thu, 03 Oct 2013) $</span>
+<span class="c"># $Date: 2013-10-25 14:24:22 -0500 (Fri, 25 Oct 2013) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1077 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/imports/G2phase.py $</span>
-<span class="c"># $Id: G2phase.py 1077 2013-10-03 18:11:47Z toby $</span>
+<span class="c"># $Revision: 1123 $</span>
+<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2phase.py $</span>
+<span class="c"># $Id: G2phase.py 1123 2013-10-25 19:24:22Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="c">#</span>
 <span class="sd">&#39;&#39;&#39;</span>
@@ -72,10 +72,10 @@
 <span class="kn">import</span> <span class="nn">traceback</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1077 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1123 $&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="PDB_ReaderClass"><a class="viewcode-back" href="../imports.html#G2phase.PDB_ReaderClass">[docs]</a><span class="k">class</span> <span class="nc">PDB_ReaderClass</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ImportPhase</span><span class="p">):</span>
-    <span class="s">&#39;Routines to import Phase information from a PDB file&#39;</span>
+    <span class="s">&#39;Routine to import Phase information from a PDB file&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to say ImportPhase.__init__</span>
             <span class="n">extensionlist</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;.pdb&#39;</span><span class="p">,</span><span class="s">&#39;.ent&#39;</span><span class="p">,</span><span class="s">&#39;.PDB&#39;</span><span class="p">,</span><span class="s">&#39;.ENT&#39;</span><span class="p">),</span>
@@ -98,7 +98,7 @@
             <span class="k">return</span> <span class="bp">False</span>
 </div>
 <div class="viewcode-block" id="EXP_ReaderClass"><a class="viewcode-back" href="../imports.html#G2phase.EXP_ReaderClass">[docs]</a><span class="k">class</span> <span class="nc">EXP_ReaderClass</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ImportPhase</span><span class="p">):</span>
-    <span class="s">&#39; Routines to import Phase information from GSAS .EXP files&#39;</span>
+    <span class="s">&#39; Routine to import Phase information from GSAS .EXP files&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to say ImportPhase.__init__</span>
             <span class="n">extensionlist</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;.EXP&#39;</span><span class="p">,</span><span class="s">&#39;.exp&#39;</span><span class="p">),</span>

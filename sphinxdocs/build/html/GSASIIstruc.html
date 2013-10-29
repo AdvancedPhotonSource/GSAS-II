@@ -73,7 +73,7 @@
 
 <dl class="function">
 <dt id="GSASIIstrMain.PrintDistAngle">
-<tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">PrintDistAngle</tt><big>(</big><em>DisAglCtls</em>, <em>DisAglData</em>, <em>out=&lt;open file '&lt;stdout&gt;'</em>, <em>mode 'w' at 0x240078&gt;</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#PrintDistAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.PrintDistAngle" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">PrintDistAngle</tt><big>(</big><em>DisAglCtls</em>, <em>DisAglData</em>, <em>out=&lt;open file '&lt;stdout&gt;'</em>, <em>mode 'w' at 0x01D95078&gt;</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#PrintDistAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.PrintDistAngle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print distances and angles</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -350,6 +350,32 @@ corrections needed for derivatives</p>
 <dl class="function">
 <dt id="GSASIIstrMath.StructureFactor">
 <tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">StructureFactor</tt><big>(</big><em>refDict</em>, <em>G</em>, <em>hfx</em>, <em>pfx</em>, <em>SGData</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#StructureFactor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.StructureFactor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute structure factors for all h,k,l for phase
+puts the result, F^2, in each ref[8] in refList
+input:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>refDict</strong> (<em>dict</em>) &#8211; where
+&#8216;RefList&#8217; list where each ref = h,k,l,m,d,...
+&#8216;FF&#8217; dict of form factors - filed in below</li>
+<li><strong>G</strong> (<em>np.array</em>) &#8211; reciprocal metric tensor</li>
+<li><strong>pfx</strong> (<em>str</em>) &#8211; phase id string</li>
+<li><strong>SGData</strong> (<em>dict</em>) &#8211; space group info. dictionary output from SpcGroup</li>
+<li><strong>calcControls</strong> (<em>dict</em>) &#8211; </li>
+<li><strong>ParmDict</strong> (<em>dict</em>) &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIstrMath.StructureFactor2">
+<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">StructureFactor2</tt><big>(</big><em>refDict</em>, <em>G</em>, <em>hfx</em>, <em>pfx</em>, <em>SGData</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#StructureFactor2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.StructureFactor2" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute structure factors for all h,k,l for phase
 puts the result, F^2, in each ref[8] in refList
 input:</p>

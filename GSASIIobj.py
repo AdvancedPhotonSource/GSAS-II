@@ -244,17 +244,65 @@ MCSA            \            Monte-Carlo simulated annealing parameters (dict)
 \           
 ==========  ===============  ====================================================
 
-Space Group Objects
+Rigid Body Objects
+------------------
+
+.. _RBData_table:
+
+.. index::
+   single: Rigid Body Data description
+   single: Data object descriptions; Rigid Body Data
+   
+Rigid body descriptions are available for two types of rigid bodies: 'Vector' 
+and 'Residue'. Vector rigid bodies are developed by a sequence of translations each
+with a refinable magnitude and Residue rigid bodies are described as Cartesian coordinates
+with defined refinable torsion angles.
+
+.. tabularcolumns:: |l|l|p{4in}|
+
+==========  ===============  ====================================================
+  key         sub-key        explanation
+==========  ===============  ====================================================
+Vector      RBId             vector rigid bodies (dict of dict)
+\           AtInfo           Drad, Color: atom drawing radius & color for each atom type (dict)
+\           RBname           Name assigned by user to rigid body (str)
+\           VectMag          vector magnitudes in A (list)
+\           rbXYZ            Cartesian coordinates for Vector rigid body (list of 3 float)
+\           rbRef            3 assigned reference atom nos. in rigid body for origin 
+                             definition, use center of atoms flag (list of 3 int & 1 bool)
+\           VectRef          refinement flags for VectMag values (list of bool)
+\           rbTypes          Atom types for each atom in rigid body (list of str)
+\           rbVect           Cartesian vectors for each translation used to build rigid body (list of lists)
+\           useCount         Number of times rigid body is used in any structure (int)
+Residue     RBId             residue rigid bodies (dict of dict)
+\           AtInfo           Drad, Color: atom drawing radius & color for each atom type(dict)
+\           RBname           Name assigned by user to rigid body (str)
+\           rbXYZ            Cartesian coordinates for Residue rigid body (list of 3 float)
+\           rbTypes          Atom types for each atom in rigid body (list of str)
+\           atNames          Names of each atom in rigid body (e.g. C1,N2...) (list of str)
+\           rbRef            3 assigned reference atom nos. in rigid body for origin 
+                             definition, use center of atoms flag (list of 3 int & 1 bool)
+\           rbSeq            Orig,Piv,angle,Riding (list): definition of internal rigid body
+                             torsion; origin atom (int), pivot atom (int), torsion angle (float),
+                             riding atoms (list of int)
+\           SelSeq           [int,int] used by SeqSizer to identify objects
+\           useCount         Number of times rigid body is used in any structure (int)
+RBIds           \            unique Ids generated upon creation of each rigid body (dict)
+\           Vector           Ids for each Vector rigid body (list)
+\           Residue          Ids for each Residue rigid body (list)
+==========  ===============  ====================================================
+
+Space Group Objects 
 -------------------
 
 .. _SGData_table:
 
 .. index::
-   single: SGData description
-   single: Data object descriptions; SGData
+   single: Space Group Data description
+   single: Data object descriptions; Space Group Data
 
 Space groups are interpreted by :func:`GSASIIspc.SpcGroup` 
-and the information is placed in a SGdata object,
+and the information is placed in a SGdata object 
 which is a dict with these keys:
 
 .. tabularcolumns:: |l|p{4.5in}|
@@ -306,7 +354,7 @@ Atom Records
 If ``phasedict`` points to the phase information in the data tree, then
 atoms are contained in a list of atom records (list) in
 ``phasedict['Atoms']``. Also needed to read atom information 
-are four pointers, ``cx,ct,cs,cia = phasedict['General']['AtomPtrs']``,
+are four pointers, ``cx,ct,cs,cia = phasedict['General']['atomPtrs']``,
 which define locations in the atom record, as shown below. Items shown are 
 always present; additional ones for macromolecular phases are marked 'mm'
 
@@ -315,19 +363,57 @@ always present; additional ones for macromolecular phases are marked 'mm'
 ==============   ====================================================
 location         explanation
 ==============   ====================================================
-cx,cx+1,cx+2      the x,y and z coordinates
-cx+3              fractional occupancy (also cs-1)
-ct-4              (mm) residue number (str)
-ct-3              (mm) residue name (e.g. ALA) (str)
-ct-2              (mm) chain label (str)
-ct-1              atom label
-ct                atom type
-ct+1              refinement flags
-cs                site symmetry string
-cs+1              site multiplicity
+ct-4              mm - residue number (str)
+ct-3              mm - residue name (e.g. ALA) (str)
+ct-2              mm - chain label (str)
+ct-1              atom label (str)
+ct                atom type (str)
+ct+1              refinement flags; combination of 'F', 'X', 'U' (str)
+cx,cx+1,cx+2      the x,y and z coordinates (3 floats)
+cs                site symmetry (str)
+cs+1              site multiplicity (int)
 cia               ADP flag: Isotropic ('I') or Anisotropic ('A')
-cia+1             Uiso
-cia+2...cia+6     U11, U22, U33, U12, U13, U23
+cia+1             Uiso (float)
+cia+2...cia+6     U11, U22, U33, U12, U13, U23 (6 floats)
+atom[-1]                unique atom identifier (int)
+==============   ====================================================
+
+Drawing Atom Records
+--------------------
+
+.. _Drawing_atoms_table:
+
+.. index::
+   single: Drawing atoms record description
+   single: Data object descriptions; Drawing atoms record
+
+
+If ``phasedict`` points to the phase information in the data tree, then
+drawing atoms are contained in a list of drawing atom records (list) in
+``phasedict['Drawing']['Atoms']``. Also needed to read atom information 
+are four pointers, ``cx,ct,cs,ci = phasedict['Drawing']['AtomPtrs']``,
+which define locations in the atom record, as shown below. Items shown are 
+always present; additional ones for macromolecular phases are marked 'mm'
+
+.. tabularcolumns:: |l|p{4.5in}|
+
+==============   ====================================================
+location         explanation
+==============   ====================================================
+ct-4              mm - residue number (str)
+ct-3              mm - residue name (e.g. ALA) (str)
+ct-2              mm - chain label (str)
+ct-1              atom label (str)
+ct                atom type (str)
+cx,cx+1,cx+2      the x,y and z coordinates (3 floats)
+cs-1              Sym Op symbol; sym. op number + unit cell id (e.g. '1,0,-1') (str)
+cs                atom drawing style; e.g. 'balls & sticks' (str)
+cs+1              atom label style (e.g. 'name') (str)
+cs+2              atom color (RBG triplet) (int)
+cs+3              ADP flag: Isotropic ('I') or Anisotropic ('A')
+cs+4              Uiso (float)
+cs+5...cs+11      U11, U22, U33, U12, U13, U23 (6 floats)
+ci                unique atom identifier; matches source atom Id in Atom Records (int)
 ==============   ====================================================
 
 Powder Diffraction Tree Items

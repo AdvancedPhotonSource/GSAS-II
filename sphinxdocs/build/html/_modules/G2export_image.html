@@ -53,19 +53,23 @@
 <span class="c">#!/usr/bin/env python</span>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-18 16:00:32 -0500 (Fri, 18 Oct 2013) $</span>
+<span class="c"># $Date: 2013-10-25 14:24:22 -0500 (Fri, 25 Oct 2013) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1115 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_image.py $</span>
-<span class="c"># $Id: G2export_image.py 1115 2013-10-18 21:00:32Z toby $</span>
+<span class="c"># $Revision: 1123 $</span>
+<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_image.py $</span>
+<span class="c"># $Id: G2export_image.py 1123 2013-10-25 19:24:22Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="sd">&#39;&#39;&#39;Code to demonstrate how export routines are created.</span>
-<span class="sd">This loads in an image and saves it in PNG format</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">*Module G2export_image: 2D Image data export*</span>
+<span class="sd">------------------------------------------------------</span>
+
+<span class="sd">Demonstrates how an image is retrieved and written. Uses</span>
+<span class="sd">a SciPy routine to write a PNG format file. </span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">scipy.misc</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1115 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1123 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 

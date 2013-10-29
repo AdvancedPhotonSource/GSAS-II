@@ -261,17 +261,18 @@ from the atom records (list)</td>
 </tr>
 <tr class="row-odd"><td></td>
 <td>MCSA controls</td>
-<td>?</td>
+<td>Monte Carlo-Simulated Annealing controls (dict)</td>
 </tr>
 <tr class="row-even"><td></td>
 <td>Cell</td>
-<td>List with 7 items: cell refinement flag (bool)
+<td>List with 8 items: cell refinement flag (bool)
 a, b, c, (Angstrom, float)
-alpha, beta &amp; gamma (degrees, float)</td>
+alpha, beta &amp; gamma (degrees, float)
+volume (A^3, float)</td>
 </tr>
 <tr class="row-odd"><td></td>
 <td>Type</td>
-<td>for now &#8216;nuclear&#8217; (str)</td>
+<td>&#8216;nuclear&#8217; or &#8216;macromolecular&#8217; for now (str)</td>
 </tr>
 <tr class="row-even"><td></td>
 <td>Map</td>
@@ -307,11 +308,12 @@ as defined in <a class="reference internal" href="GSASIIutil.html#GSASIIspc.SpcG
 </tr>
 <tr class="row-odd"><td></td>
 <td>Flip</td>
-<td>Charge flip controls dict?</td>
+<td>dict of Charge flip controls</td>
 </tr>
 <tr class="row-even"><td></td>
 <td>Data plot type</td>
-<td>?</td>
+<td>data plot type (&#8216;Mustrain&#8217;, &#8216;Size&#8217; or
+&#8216;Preferred orientation&#8217;) for powder data (str)</td>
 </tr>
 <tr class="row-odd"><td></td>
 <td>Mass</td>
@@ -323,11 +325,11 @@ as defined in <a class="reference internal" href="GSASIIutil.html#GSASIIspc.SpcG
 </tr>
 <tr class="row-odd"><td></td>
 <td>Z</td>
-<td>?</td>
+<td>dict of atomic numbers for each atom type</td>
 </tr>
 <tr class="row-even"><td></td>
 <td>vdWRadii</td>
-<td>?</td>
+<td>dict of van der Waals radii for each atom type</td>
 </tr>
 <tr class="row-odd"><td></td>
 <td>Color</td>
@@ -356,23 +358,33 @@ extraction (float)</td>
 </tr>
 <tr class="row-odd"><td></td>
 <td>BondRadii</td>
-<td>Radius for each atom used to compute
+<td>Default radius for each atom used to compute
 interatomic distances (list of floats)</td>
 </tr>
 <tr class="row-even"><td></td>
 <td>AngleRadii</td>
-<td>Radius for each atom used to compute
+<td>Default radius for each atom used to compute
 interatomic angles (list of floats)</td>
 </tr>
-<tr class="row-odd"><td>ranId</td>
+<tr class="row-odd"><td></td>
+<td>DisAglCtls</td>
+<td>Dict with distance/angle search controls,
+which has keys &#8216;Name&#8217;, &#8216;AtomTypes&#8217;,
+&#8216;BondRadii&#8217;, &#8216;AngleRadii&#8217; which are as above
+except are possibly edited. Also contains
+&#8216;Factors&#8217;, which is a 2 element list with
+a multiplier for bond and angle search range
+[typically (0.85,0.85)].</td>
+</tr>
+<tr class="row-even"><td>ranId</td>
 <td></td>
 <td>unique random number Id for phase (int)</td>
 </tr>
-<tr class="row-even"><td>pId</td>
+<tr class="row-odd"><td>pId</td>
 <td></td>
 <td>Phase Id number for current project (int).</td>
 </tr>
-<tr class="row-odd"><td>Atoms</td>
+<tr class="row-even"><td>Atoms</td>
 <td></td>
 <td>Atoms in phase as a list of lists. The outer list
 is for each atom, the inner list contains varying
@@ -380,126 +392,127 @@ items depending on the type of phase, see
 the <a class="reference internal" href="#atoms-table"><em>Atom Records</em></a> description.
 (list of lists)</td>
 </tr>
-<tr class="row-even"><td>Drawing</td>
+<tr class="row-odd"><td>Drawing</td>
 <td></td>
 <td>Display parameters (dict)</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>ballScale</td>
 <td>Size of spheres in ball-and-stick display (float)</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>bondList</td>
 <td>dict with bonds</td>
 </tr>
-<tr class="row-odd"><td></td>
-<td>contourLevel</td>
-<td>? (float)</td>
-</tr>
 <tr class="row-even"><td></td>
+<td>contourLevel</td>
+<td>map contour level in e/A^3 (float)</td>
+</tr>
+<tr class="row-odd"><td></td>
 <td>showABC</td>
 <td>Flag to show view point triplet (bool). True=show.</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>viewDir</td>
 <td>cartesian viewing direction (np.array with three
 elements)</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>Zclip</td>
 <td>clipping distance in A (float)</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>backColor</td>
 <td>background for plot as and R,G,B triplet
 (default = [0, 0, 0], black).
 (list with three atoms)</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>selectedAtoms</td>
 <td>List of selected atoms (list of int values)</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>showRigidBodies</td>
 <td>Flag to highlight rigid body placement</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>sizeH</td>
 <td>Size ratio for H atoms (float)</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>bondRadius</td>
 <td>Size of binds in A (float)</td>
 </tr>
-<tr class="row-even"><td></td>
-<td>atomPtrs</td>
-<td>? (list)</td>
-</tr>
 <tr class="row-odd"><td></td>
+<td>atomPtrs</td>
+<td>positions of x, type, site sym, ADP flag in Draw Atoms (list)</td>
+</tr>
+<tr class="row-even"><td></td>
 <td>viewPoint</td>
 <td>list of lists. First item in list is [x,y,z]
 in fractional coordinates for the center of
-the plot. Second item ?.</td>
+the plot. Second item list of previous &amp; current
+atom number viewed (may be [0,0])</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>showHydrogen</td>
 <td>Flag to control plotting of H atoms.</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>unitCellBox</td>
 <td>Flag to control display of the unit cell.</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>ellipseProb</td>
 <td>Probability limit for display of thermal
 ellipsoids in % (float).</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>vdwScale</td>
 <td>Multiplier of van der Waals radius for
 display of vdW spheres.</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>Atoms</td>
 <td>A list of lists with an entry for each atom
 that is plotted.</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>Zstep</td>
 <td>Step to de/increase Z-clip (float)</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>Quaternion</td>
 <td>Viewing quaternion (4 element np.array)</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>radiusFactor</td>
 <td>Distance ratio for searching for bonds. ? Bonds
 are located that are within r(Ra+Rb) and (Ra+Rb)/r
 where Ra and Rb are the atomic radii.</td>
 </tr>
-<tr class="row-even"><td></td>
-<td>oldxy</td>
-<td>? (list with two floats)</td>
-</tr>
 <tr class="row-odd"><td></td>
+<td>oldxy</td>
+<td>previous view point (list with two floats)</td>
+</tr>
+<tr class="row-even"><td></td>
 <td>cameraPos</td>
 <td>Viewing position in A for plot (float)</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>depthFog</td>
-<td>? (bool)</td>
+<td>True if use depthFog on plot - set currently as False (bool)</td>
 </tr>
-<tr class="row-odd"><td>RBModels</td>
+<tr class="row-even"><td>RBModels</td>
 <td></td>
 <td>Rigid body assignments (note Rigid body definitions
 are stored in their own main top-level tree entry.)</td>
 </tr>
-<tr class="row-even"><td>Pawley ref</td>
+<tr class="row-odd"><td>Pawley ref</td>
 <td></td>
 <td>Pawley reflections</td>
 </tr>
-<tr class="row-odd"><td>Histograms</td>
+<tr class="row-even"><td>Histograms</td>
 <td></td>
 <td>A dict of dicts. The key for the outer dict is
 the histograms tied to this phase. The inner
@@ -507,17 +520,139 @@ dict contains the combined phase/histogram
 parameters for items such as scale factors,
 size and strain parameters. (dict)</td>
 </tr>
-<tr class="row-even"><td>MCSA</td>
+<tr class="row-odd"><td>MCSA</td>
 <td></td>
-<td>Monte-Carlo simulated annealing parameters</td>
+<td>Monte-Carlo simulated annealing parameters (dict)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="rigid-body-objects">
+<h2>Rigid Body Objects<a class="headerlink" href="#rigid-body-objects" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="rbdata-table"></span><p id="index-4">Rigid body descriptions are available for two types of rigid bodies: &#8216;Vector&#8217; 
+and &#8216;Residue&#8217;. Vector rigid bodies are developed by a sequence of translations each
+with a refinable magnitude and Residue rigid bodies are described as Cartesian coordinates
+with defined refinable torsion angles.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="10%" />
+<col width="14%" />
+<col width="76%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">key</th>
+<th class="head">sub-key</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Vector</td>
+<td>RBId</td>
+<td>vector rigid bodies (dict of dict)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>AtInfo</td>
+<td>Drad, Color: atom drawing radius &amp; color for each atom type (dict)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>RBname</td>
+<td>Name assigned by user to rigid body (str)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>VectMag</td>
+<td>vector magnitudes in A (list)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>rbXYZ</td>
+<td>Cartesian coordinates for Vector rigid body (list of 3 float)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>rbRef</td>
+<td>3 assigned reference atom nos. in rigid body for origin
+definition, use center of atoms flag (list of 3 int &amp; 1 bool)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>VectRef</td>
+<td>refinement flags for VectMag values (list of bool)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>rbTypes</td>
+<td>Atom types for each atom in rigid body (list of str)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>rbVect</td>
+<td>Cartesian vectors for each translation used to build rigid body (list of lists)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>useCount</td>
+<td>Number of times rigid body is used in any structure (int)</td>
+</tr>
+<tr class="row-even"><td>Residue</td>
+<td>RBId</td>
+<td>residue rigid bodies (dict of dict)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>AtInfo</td>
+<td>Drad, Color: atom drawing radius &amp; color for each atom type(dict)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>RBname</td>
+<td>Name assigned by user to rigid body (str)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>rbXYZ</td>
+<td>Cartesian coordinates for Residue rigid body (list of 3 float)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>rbTypes</td>
+<td>Atom types for each atom in rigid body (list of str)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>atNames</td>
+<td>Names of each atom in rigid body (e.g. C1,N2...) (list of str)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>rbRef</td>
+<td>3 assigned reference atom nos. in rigid body for origin
+definition, use center of atoms flag (list of 3 int &amp; 1 bool)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>rbSeq</td>
+<td>Orig,Piv,angle,Riding (list): definition of internal rigid body
+torsion; origin atom (int), pivot atom (int), torsion angle (float),
+riding atoms (list of int)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>SelSeq</td>
+<td>[int,int] used by SeqSizer to identify objects</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>useCount</td>
+<td>Number of times rigid body is used in any structure (int)</td>
+</tr>
+<tr class="row-even"><td>RBIds</td>
+<td></td>
+<td>unique Ids generated upon creation of each rigid body (dict)</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Vector</td>
+<td>Ids for each Vector rigid body (list)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Residue</td>
+<td>Ids for each Residue rigid body (list)</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section" id="space-group-objects">
 <h2>Space Group Objects<a class="headerlink" href="#space-group-objects" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="sgdata-table"></span><p id="index-4">Space groups are interpreted by <a class="reference internal" href="GSASIIutil.html#GSASIIspc.SpcGroup" title="GSASIIspc.SpcGroup"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIspc.SpcGroup()</span></tt></a> 
-and the information is placed in a SGdata object,
+<span class="target" id="sgdata-table"></span><p id="index-5">Space groups are interpreted by <a class="reference internal" href="GSASIIutil.html#GSASIIspc.SpcGroup" title="GSASIIspc.SpcGroup"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIspc.SpcGroup()</span></tt></a> 
+and the information is placed in a SGdata object 
 which is a dict with these keys:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -582,11 +717,12 @@ are transformed using
 </div>
 <div class="section" id="atom-records">
 <h2>Atom Records<a class="headerlink" href="#atom-records" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="atoms-table"></span><p id="index-5">If <tt class="docutils literal"><span class="pre">phasedict</span></tt> points to the phase information in the data tree, then
+<span class="target" id="atoms-table"></span><p id="index-6">If <tt class="docutils literal"><span class="pre">phasedict</span></tt> points to the phase information in the data tree, then
 atoms are contained in a list of atom records (list) in
 <tt class="docutils literal"><span class="pre">phasedict['Atoms']</span></tt>. Also needed to read atom information 
-are four pointers, <tt class="docutils literal"><span class="pre">cx,ct,cs,cia</span> <span class="pre">=</span> <span class="pre">phasedict['General']['AtomPtrs']</span></tt>,
-which define locations in the atom record, as shown below.</p>
+are four pointers, <tt class="docutils literal"><span class="pre">cx,ct,cs,cia</span> <span class="pre">=</span> <span class="pre">phasedict['General']['atomPtrs']</span></tt>,
+which define locations in the atom record, as shown below. Items shown are 
+always present; additional ones for macromolecular phases are marked &#8216;mm&#8217;</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="21%" />
@@ -598,42 +734,115 @@ which define locations in the atom record, as shown below.</p>
 </tr>
 </thead>
 <tbody valign="top">
+<tr class="row-even"><td>ct-4</td>
+<td>mm - residue number (str)</td>
+</tr>
+<tr class="row-odd"><td>ct-3</td>
+<td>mm - residue name (e.g. ALA) (str)</td>
+</tr>
+<tr class="row-even"><td>ct-2</td>
+<td>mm - chain label (str)</td>
+</tr>
+<tr class="row-odd"><td>ct-1</td>
+<td>atom label (str)</td>
+</tr>
+<tr class="row-even"><td>ct</td>
+<td>atom type (str)</td>
+</tr>
+<tr class="row-odd"><td>ct+1</td>
+<td>refinement flags; combination of &#8216;F&#8217;, &#8216;X&#8217;, &#8216;U&#8217; (str)</td>
+</tr>
 <tr class="row-even"><td>cx,cx+1,cx+2</td>
-<td>the x,y and z coordinates</td>
-</tr>
-<tr class="row-odd"><td>cx+3</td>
-<td>fractional occupancy (also cs-1)</td>
-</tr>
-<tr class="row-even"><td>ct-1</td>
-<td>atom label</td>
-</tr>
-<tr class="row-odd"><td>ct</td>
-<td>atom type</td>
-</tr>
-<tr class="row-even"><td>ct+1</td>
-<td>refinement flags</td>
+<td>the x,y and z coordinates (3 floats)</td>
 </tr>
 <tr class="row-odd"><td>cs</td>
-<td>site symmetry string</td>
+<td>site symmetry (str)</td>
 </tr>
 <tr class="row-even"><td>cs+1</td>
-<td>site multiplicity</td>
+<td>site multiplicity (int)</td>
 </tr>
 <tr class="row-odd"><td>cia</td>
 <td>ADP flag: Isotropic (&#8216;I&#8217;) or Anisotropic (&#8216;A&#8217;)</td>
 </tr>
 <tr class="row-even"><td>cia+1</td>
-<td>Uiso</td>
+<td>Uiso (float)</td>
 </tr>
 <tr class="row-odd"><td>cia+2...cia+6</td>
-<td>U11, U22, U33, U12, U13, U23</td>
+<td>U11, U22, U33, U12, U13, U23 (6 floats)</td>
+</tr>
+<tr class="row-even"><td>atom[-1]</td>
+<td>unique atom identifier (int)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="drawing-atom-records">
+<h2>Drawing Atom Records<a class="headerlink" href="#drawing-atom-records" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="drawing-atoms-table"></span><p id="index-7">If <tt class="docutils literal"><span class="pre">phasedict</span></tt> points to the phase information in the data tree, then
+drawing atoms are contained in a list of drawing atom records (list) in
+<tt class="docutils literal"><span class="pre">phasedict['Drawing']['Atoms']</span></tt>. Also needed to read atom information 
+are four pointers, <tt class="docutils literal"><span class="pre">cx,ct,cs,ci</span> <span class="pre">=</span> <span class="pre">phasedict['Drawing']['AtomPtrs']</span></tt>,
+which define locations in the atom record, as shown below. Items shown are 
+always present; additional ones for macromolecular phases are marked &#8216;mm&#8217;</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="83%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">location</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>ct-4</td>
+<td>mm - residue number (str)</td>
+</tr>
+<tr class="row-odd"><td>ct-3</td>
+<td>mm - residue name (e.g. ALA) (str)</td>
+</tr>
+<tr class="row-even"><td>ct-2</td>
+<td>mm - chain label (str)</td>
+</tr>
+<tr class="row-odd"><td>ct-1</td>
+<td>atom label (str)</td>
+</tr>
+<tr class="row-even"><td>ct</td>
+<td>atom type (str)</td>
+</tr>
+<tr class="row-odd"><td>cx,cx+1,cx+2</td>
+<td>the x,y and z coordinates (3 floats)</td>
+</tr>
+<tr class="row-even"><td>cs-1</td>
+<td>Sym Op symbol; sym. op number + unit cell id (e.g. &#8216;1,0,-1&#8217;) (str)</td>
+</tr>
+<tr class="row-odd"><td>cs</td>
+<td>atom drawing style; e.g. &#8216;balls &amp; sticks&#8217; (str)</td>
+</tr>
+<tr class="row-even"><td>cs+1</td>
+<td>atom label style (e.g. &#8216;name&#8217;) (str)</td>
+</tr>
+<tr class="row-odd"><td>cs+2</td>
+<td>atom color (RBG triplet) (int)</td>
+</tr>
+<tr class="row-even"><td>cs+3</td>
+<td>ADP flag: Isotropic (&#8216;I&#8217;) or Anisotropic (&#8216;A&#8217;)</td>
+</tr>
+<tr class="row-odd"><td>cs+4</td>
+<td>Uiso (float)</td>
+</tr>
+<tr class="row-even"><td>cs+5...cs+11</td>
+<td>U11, U22, U33, U12, U13, U23 (6 floats)</td>
+</tr>
+<tr class="row-odd"><td>ci</td>
+<td>unique atom identifier; matches source atom Id in Atom Records (int)</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section" id="powder-diffraction-tree-items">
 <h2>Powder Diffraction Tree Items<a class="headerlink" href="#powder-diffraction-tree-items" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="powder-table"></span><p id="index-6">Every powder diffraction histogram is stored in the GSAS-II data tree
+<span class="target" id="powder-table"></span><p id="index-8">Every powder diffraction histogram is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string &#8220;PWDR &#8221;. The
 diffraction data for that information are directly associated with
 that tree item and there are a series of children to that item. The
@@ -666,8 +875,8 @@ two-theta value to be used.</td>
 <td></td>
 <td>A dict with an entry for each phase in the
 histogram. The contents of each dict item
-is a list of reflections as described in the
-<a class="reference internal" href="#powderrefl-table"><em>Powder Reflections</em></a>
+is a dict containing reflections, as described in
+the <a class="reference internal" href="#powderrefl-table"><em>Powder Reflections</em></a>
 description.</td>
 </tr>
 <tr class="row-even"><td>Instrument Parameters</td>
@@ -861,8 +1070,9 @@ containing in order:</p>
 </div>
 <div class="section" id="powder-reflection-data-structure">
 <h2>Powder Reflection Data Structure<a class="headerlink" href="#powder-reflection-data-structure" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="powderrefl-table"></span><p id="index-7">For every phase in a histogram, the <tt class="docutils literal"><span class="pre">Reflection</span> <span class="pre">Lists</span></tt> value is a list of
-reflections. The items in that list are documented below.</p>
+<span class="target" id="powderrefl-table"></span><p id="index-9">For every phase in a histogram, the <tt class="docutils literal"><span class="pre">Reflection</span> <span class="pre">Lists</span></tt> value is a dict
+one element of which is <cite>&#8216;RefList&#8217;</cite>, which is a np.array containing
+reflections. The columns in that array are documented below.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="14%" />
@@ -902,29 +1112,15 @@ reflections. The items in that list are documented below.</p>
 <td>reflection phase, in degrees</td>
 </tr>
 <tr class="row-odd"><td>11</td>
-<td>the equivalent reflections as a (m x 3)
-np.array, where m is 0.5 * multiplicity. Note
-that Freidel pairs, (-h,-k-,l), are not
-included.</td>
-</tr>
-<tr class="row-even"><td>12</td>
-<td>phase shift for each of the equivalent
-reflections as a length (m) array</td>
-</tr>
-<tr class="row-odd"><td>13</td>
 <td>intensity correction for reflection, this times
 <span class="math">\(F_{obs}^2\)</span> or <span class="math">\(F_{calc}^2\)</span> gives Iobs or Icalc</td>
-</tr>
-<tr class="row-even"><td>14</td>
-<td>dict with the form factor (f or b) by atom type
-symbol at the reflection position.</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section" id="single-crystal-tree-items">
 <h2>Single Crystal Tree Items<a class="headerlink" href="#single-crystal-tree-items" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="xtal-table"></span><p id="index-8">Every single crystal diffraction histogram is stored in the GSAS-II data tree
+<span class="target" id="xtal-table"></span><p id="index-10">Every single crystal diffraction histogram is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string &#8220;HKLF &#8221;. The
 diffraction data for that information are directly associated with
 that tree item and there are a series of children to that item. The
@@ -947,8 +1143,8 @@ a key of <tt class="docutils literal"><span class="pre">Data</span></tt>, as out
 <tbody valign="top">
 <tr class="row-even"><td>Data</td>
 <td>&nbsp;</td>
-<td>A list of lists, where each inner item
-is an individual reflection
+<td>A dict that contains the
+reflection table,
 as described in the
 <a class="reference internal" href="#xtalrefl-table"><em>Single Crystal Reflections</em></a>
 description.</td>
@@ -1003,8 +1199,9 @@ the project is loaded or edited (can change)</td>
 </div>
 <div class="section" id="single-crystal-reflection-data-structure">
 <h2>Single Crystal Reflection Data Structure<a class="headerlink" href="#single-crystal-reflection-data-structure" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="xtalrefl-table"></span><p id="index-9">For every phase in a histogram, the <tt class="docutils literal"><span class="pre">Reflection</span> <span class="pre">Lists</span></tt> value is a list of
-reflections. The items in that list are documented below.</p>
+<span class="target" id="xtalrefl-table"></span><p id="index-11">For every simgle crystal a histogram, the <tt class="docutils literal"><span class="pre">'Data'</span></tt> item contains
+the structure factors as an np.array in item <cite>&#8216;RefList&#8217;</cite>.
+The columns in that array are documented below.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="16%" />
@@ -1044,22 +1241,9 @@ reflections. The items in that list are documented below.</p>
 <td>reflection phase, in degrees</td>
 </tr>
 <tr class="row-odd"><td>11</td>
-<td>the equivalent reflections as a (m x 3)
-np.array.</td>
-</tr>
-<tr class="row-even"><td>12</td>
-<td>phase shift for each of the equivalent
-reflections as a length (m) array</td>
-</tr>
-<tr class="row-odd"><td>13</td>
 <td>intensity correction for reflection, this times
 <span class="math">\(F_{obs}^2\)</span> or <span class="math">\(F_{calc}^2\)</span>
-gives Iobs or Icalc
-(not used in single crystals?)</td>
-</tr>
-<tr class="row-even"><td>14</td>
-<td>dict with the form factor (f or b) by atom type
-symbol at the reflection position.</td>
+gives Iobs or Icalc</td>
 </tr>
 </tbody>
 </table>
@@ -1157,7 +1341,7 @@ before creating or later using the VarName object.</p>
 
 <dl class="attribute">
 <dt id="GSASIIobj.VarName.re">
-<tt class="descname">re</tt><em class="property"> = &lt;module 're' from '/Library/Frameworks/Python.framework/Versions/7.1/lib/python2.7/re.pyc'&gt;</em><a class="headerlink" href="#GSASIIobj.VarName.re" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">re</tt><em class="property"> = &lt;module 're' from 'D:\Python27\lib\re.pyc'&gt;</em><a class="headerlink" href="#GSASIIobj.VarName.re" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1180,8 +1364,10 @@ before creating or later using the VarName object.</p>
 <li><a class="reference internal" href="#constraints-tree-item">Constraints Tree Item</a></li>
 <li><a class="reference internal" href="#covariance-tree-item">Covariance Tree Item</a></li>
 <li><a class="reference internal" href="#phase-tree-items">Phase Tree Items</a></li>
+<li><a class="reference internal" href="#rigid-body-objects">Rigid Body Objects</a></li>
 <li><a class="reference internal" href="#space-group-objects">Space Group Objects</a></li>
 <li><a class="reference internal" href="#atom-records">Atom Records</a></li>
+<li><a class="reference internal" href="#drawing-atom-records">Drawing Atom Records</a></li>
 <li><a class="reference internal" href="#powder-diffraction-tree-items">Powder Diffraction Tree Items</a></li>
 <li><a class="reference internal" href="#powder-reflection-data-structure">Powder Reflection Data Structure</a></li>
 <li><a class="reference internal" href="#single-crystal-tree-items">Single Crystal Tree Items</a></li>

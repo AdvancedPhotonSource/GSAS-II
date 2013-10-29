@@ -142,7 +142,7 @@ file.</p>
 
 <dl class="function">
 <dt id="GSASIIpath.svnFindLocalChanges">
-<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnFindLocalChanges</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnFindLocalChanges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnFindLocalChanges" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnFindLocalChanges</tt><big>(</big><em>fpath='D:\\GSASII'</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnFindLocalChanges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnFindLocalChanges" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of files that were changed locally. If no files are changed,
 the list has length 0</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -161,7 +161,7 @@ not a repository or svn is not found)</td>
 
 <dl class="function">
 <dt id="GSASIIpath.svnGetLog">
-<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnGetLog</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em>, <em>version=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnGetLog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnGetLog" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnGetLog</tt><big>(</big><em>fpath='D:\\GSASII'</em>, <em>version=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnGetLog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnGetLog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the revision log information for a specific version of the</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -184,7 +184,7 @@ for the latest version.</li>
 
 <dl class="function">
 <dt id="GSASIIpath.svnGetRev">
-<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnGetRev</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em>, <em>local=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnGetRev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnGetRev" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnGetRev</tt><big>(</big><em>fpath='D:\\GSASII'</em>, <em>local=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnGetRev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnGetRev" title="Permalink to this definition">¶</a></dt>
 <dd><p>Obtain the version number for the either the last update of the local version
 or contacts the subversion server to get the latest update version (# of Head).</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -211,7 +211,7 @@ not a repository or svn is not found)</p>
 
 <dl class="function">
 <dt id="GSASIIpath.svnUpdateDir">
-<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnUpdateDir</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em>, <em>version=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnUpdateDir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnUpdateDir" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnUpdateDir</tt><big>(</big><em>fpath='D:\\GSASII'</em>, <em>version=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnUpdateDir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnUpdateDir" title="Permalink to this definition">¶</a></dt>
 <dd><p>This performs an update of the files in a local directory from a server.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -478,7 +478,7 @@ executable file.</td>
 
 <dl class="function">
 <dt id="GSASIIElem.getBLvalues">
-<tt class="descclassname">GSASIIElem.</tt><tt class="descname">getBLvalues</tt><big>(</big><em>BLtables</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#getBLvalues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.getBLvalues" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIElem.</tt><tt class="descname">getBLvalues</tt><big>(</big><em>BLtables</em>, <em>ifList=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#getBLvalues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.getBLvalues" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
@@ -1147,7 +1147,7 @@ unit cell constants</p>
 
 <dl class="data">
 <dt id="GSASIIlattice.selftestlist">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x209e930&gt;, &lt;function test1 at 0x209e970&gt;, &lt;function test2 at 0x209e9b0&gt;, &lt;function test3 at 0x209e9f0&gt;, &lt;function test4 at 0x209ea30&gt;, &lt;function test5 at 0x209ea70&gt;, &lt;function test6 at 0x209eab0&gt;, &lt;function test7 at 0x209eaf0&gt;, &lt;function test8 at 0x209eb30&gt;, &lt;function test9 at 0x209eb70&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x05F95E30&gt;, &lt;function test1 at 0x05F95E70&gt;, &lt;function test2 at 0x05F95EB0&gt;, &lt;function test3 at 0x05F95EF0&gt;, &lt;function test4 at 0x05F95F30&gt;, &lt;function test5 at 0x05F95F70&gt;, &lt;function test6 at 0x05F95FB0&gt;, &lt;function test7 at 0x05F96030&gt;, &lt;function test8 at 0x05F96070&gt;, &lt;function test9 at 0x05F960B0&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1595,7 +1595,7 @@ Should return resultant string - C. SGData - dictionary using entries:</p>
 
 <dl class="data">
 <dt id="GSASIIspc.selftestlist">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x5bda4f0&gt;, &lt;function test1 at 0x5bda530&gt;, &lt;function test2 at 0x5bda570&gt;, &lt;function test3 at 0x5bda5b0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x05FAE030&gt;, &lt;function test1 at 0x05FAE070&gt;, &lt;function test2 at 0x05FAE0B0&gt;, &lt;function test3 at 0x05FAE0F0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 

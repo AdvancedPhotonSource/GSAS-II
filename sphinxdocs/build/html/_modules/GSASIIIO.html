@@ -52,11 +52,11 @@
   <h1>Source code for GSASIIIO</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-16 11:52:06 -0500 (Wed, 16 Oct 2013) $</span>
+<span class="c"># $Date: 2013-10-15 12:25:24 -0500 (Tue, 15 Oct 2013) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1110 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $</span>
-<span class="c"># $Id: GSASIIIO.py 1110 2013-10-16 16:52:06Z vondreele $</span>
+<span class="c"># $Revision: 1106 $</span>
+<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $</span>
+<span class="c"># $Id: GSASIIIO.py 1106 2013-10-15 17:25:24Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIIO: Misc I/O routines*</span>
@@ -81,7 +81,7 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1110 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1106 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -1633,7 +1633,7 @@
         <span class="c"># define contents of Structure Factor entry</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">InitParameters</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">InitControls</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;Uniq&#39;</span><span class="p">:[],</span><span class="s">&#39;Phi&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
         
 <div class="viewcode-block" id="ImportStructFactor.InitControls"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportStructFactor.InitControls">[docs]</a>    <span class="k">def</span> <span class="nf">InitControls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="s">&#39;initialize the controls structure&#39;</span>
@@ -1979,7 +1979,7 @@
         <span class="k">if</span> <span class="n">covDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;covMatrix&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sigDict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">G2mv</span><span class="o">.</span><span class="n">ComputeDepESD</span><span class="p">(</span><span class="n">covDict</span><span class="p">[</span><span class="s">&#39;covMatrix&#39;</span><span class="p">],</span><span class="n">covDict</span><span class="p">[</span><span class="s">&#39;varyList&#39;</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="p">))</span>
 </div>
-<div class="viewcode-block" id="ExportBaseclass.loadTree"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ExportBaseclass.loadTree">[docs]</a>    <span class="k">def</span> <span class="nf">loadTree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">histType</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ExportBaseclass.loadTree"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ExportBaseclass.loadTree">[docs]</a>    <span class="k">def</span> <span class="nf">loadTree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Load the contents of the data tree into a set of dicts</span>
 <span class="sd">        (self.OverallParms, self.Phases and self.Histogram as well as self.powderDict</span>
 <span class="sd">        &amp; self.xtalDict)</span>
@@ -1991,27 +1991,8 @@
 <span class="sd">          begin with a keyword, such as PWDR, IMG, HKLF,... that identifies the data type.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">IsEmpty</span><span class="p">():</span> <span class="k">return</span> <span class="c"># nothing to do</span>
-        <span class="k">if</span> <span class="n">histType</span><span class="p">:</span>
-            <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
-            <span class="k">while</span> <span class="n">item</span><span class="p">:</span>
-                <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                <span class="k">print</span> <span class="s">&#39;base&#39;</span><span class="p">,</span><span class="n">name</span>
-                <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">histType</span><span class="p">):</span>
-                    <span class="k">print</span> <span class="s">&#39;follow down&#39;</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
-                    <span class="k">continue</span>
-                <span class="n">item2</span><span class="p">,</span> <span class="n">cookie2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                <span class="k">while</span> <span class="n">item2</span><span class="p">:</span> 
-                    <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
-                    <span class="n">item2</span><span class="p">,</span> <span class="n">cookie2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie2</span><span class="p">)</span>
-                    <span class="c">#self.OverallParms[name] = self.G2frame.PatternTree.GetItemPyData(item)</span>
-                <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
-            <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GetUsedHistogramsAndPhasesfromTree</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">IsEmpty</span><span class="p">():</span> <span class="k">return</span> <span class="c"># nothing to do</span>
         <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
         <span class="k">while</span> <span class="n">item</span><span class="p">:</span>
             <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
@@ -2020,6 +2001,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
             <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
         <span class="c"># index powder and single crystal histograms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">:</span>
             <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">][</span><span class="s">&#39;hId&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;PWDR&quot;</span><span class="p">):</span> 

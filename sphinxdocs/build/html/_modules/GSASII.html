@@ -57,7 +57,7 @@
 <span class="c"># $Date: 2013-10-15 12:25:24 -0500 (Tue, 15 Oct 2013) $</span>
 <span class="c"># $Author: vondreele $</span>
 <span class="c"># $Revision: 1106 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASII.py $</span>
+<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASII.py $</span>
 <span class="c"># $Id: GSASII.py 1106 2013-10-15 17:25:24Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
@@ -1265,16 +1265,16 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">ExportLookup</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">typ</span> <span class="c"># lookup table for submenu item</span>
         <span class="c">#code to debug an Exporter. much is hard-coded below, but code is reloaded before</span>
         <span class="c"># each use allowing faster development</span>
-        <span class="k">def</span> <span class="nf">DebugExport</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
-            <span class="nb">reload</span><span class="p">(</span><span class="n">G2IO</span><span class="p">)</span>
-            <span class="kn">import</span> <span class="nn">dev_export</span> <span class="kn">as</span> <span class="nn">dev</span>
-            <span class="nb">reload</span><span class="p">(</span><span class="n">dev</span><span class="p">)</span>
-            <span class="n">dev</span><span class="o">.</span><span class="n">ExportTest</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">Exporter</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-        <span class="n">item</span> <span class="o">=</span> <span class="n">menu</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
-            <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s">&quot;debug exporter&quot;</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&quot;test Export&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">DebugExport</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ExportLookup</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="s">&#39;image&#39;</span>
+        <span class="c"># def DebugText(event):</span>
+        <span class="c">#     reload(G2IO)</span>
+        <span class="c">#     import dev_export_example</span>
+        <span class="c">#     reload(dev_export_example)</span>
+        <span class="c">#     dev_export_example.ExportSingleText(self).Exporter(event)</span>
+        <span class="c"># item = menu.Append(</span>
+        <span class="c">#     wx.ID_ANY,kind=wx.ITEM_NORMAL,</span>
+        <span class="c">#     help=&quot;debug text&quot;,text=&quot;test Export&quot;)</span>
+        <span class="c"># self.Bind(wx.EVT_MENU, DebugText, id=item.GetId())</span>
+        <span class="c"># self.ExportLookup[item.GetId()] = &#39;single&#39;</span>
             
     <span class="k">def</span> <span class="nf">_Add_ExportMenuItems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">):</span>
         <span class="n">item</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>

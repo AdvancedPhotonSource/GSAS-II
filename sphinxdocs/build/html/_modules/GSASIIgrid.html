@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIgrid - data display routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-16 11:52:06 -0500 (Wed, 16 Oct 2013) $</span>
+<span class="c"># $Date: 2013-10-15 12:25:24 -0500 (Tue, 15 Oct 2013) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1110 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIgrid.py $</span>
-<span class="c"># $Id: GSASIIgrid.py 1110 2013-10-16 16:52:06Z vondreele $</span>
+<span class="c"># $Revision: 1106 $</span>
+<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIgrid.py $</span>
+<span class="c"># $Id: GSASIIgrid.py 1106 2013-10-15 17:25:24Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIgrid: Basic GUI routines*</span>
@@ -78,7 +78,7 @@
 <span class="kn">import</span> <span class="nn">wx.html</span>        <span class="c"># could postpone this for quicker startup</span>
 <span class="kn">import</span> <span class="nn">webbrowser</span>     <span class="c"># could postpone this for quicker startup</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1110 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1106 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -1092,7 +1092,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__default__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
                 
-    <span class="k">def</span> <span class="nf">Draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="DisAglDialog.Draw"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.DisAglDialog.Draw">[docs]</a>    <span class="k">def</span> <span class="nf">Draw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">data</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">panel</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">panel</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Panel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">mainSizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
@@ -1142,7 +1142,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">panel</span><span class="o">.</span><span class="n">SetSizer</span><span class="p">(</span><span class="n">mainSizer</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">panel</span><span class="o">.</span><span class="n">Fit</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Fit</span><span class="p">()</span>
-    
+    </div>
     <span class="k">def</span> <span class="nf">OnRadiiVal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
         <span class="n">Obj</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">GetEventObject</span><span class="p">()</span>
         <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objList</span><span class="p">[</span><span class="n">Obj</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span>
@@ -1152,19 +1152,19 @@
             <span class="k">pass</span>
         <span class="n">Obj</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%.3f</span><span class="s">&quot;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">]]))</span>          <span class="c">#reset in case of error</span>
         
-    <span class="k">def</span> <span class="nf">GetData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DisAglDialog.GetData"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.DisAglDialog.GetData">[docs]</a>    <span class="k">def</span> <span class="nf">GetData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
-        
-    <span class="k">def</span> <span class="nf">OnOk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        </div>
+<div class="viewcode-block" id="DisAglDialog.OnOk"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.DisAglDialog.OnOk">[docs]</a>    <span class="k">def</span> <span class="nf">OnOk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
         <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetParent</span><span class="p">()</span>
         <span class="n">parent</span><span class="o">.</span><span class="n">Raise</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EndModal</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">)</span>              
-        
-    <span class="k">def</span> <span class="nf">OnReset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        </div>
+<div class="viewcode-block" id="DisAglDialog.OnReset"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.DisAglDialog.OnReset">[docs]</a>    <span class="k">def</span> <span class="nf">OnReset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
         <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__default__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        </div>
+        </div></div>
 <div class="viewcode-block" id="PickTwoDialog"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.PickTwoDialog">[docs]</a><span class="k">class</span> <span class="nc">PickTwoDialog</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;This does not seem to be in use</span>
 <span class="sd">    &#39;&#39;&#39;</span>
@@ -3144,9 +3144,11 @@
     <span class="k">if</span> <span class="s">&#39;wtFactor&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
         <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;wtFactor&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">}</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">kind</span> <span class="o">==</span> <span class="s">&#39;HKLF&#39;</span><span class="p">:</span>
-        <span class="n">RefData</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+        <span class="n">RefData</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;Uniq&#39;</span><span class="p">:[],</span><span class="s">&#39;Phi&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
         <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
             <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[:</span><span class="mi">11</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="n">ref</span><span class="p">[</span><span class="mi">13</span><span class="p">],])</span>
+            <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;Uniq&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">11</span><span class="p">])</span>
+            <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;Phi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">12</span><span class="p">])</span>
             <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;FF&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span>
         <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">RefData</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">,</span><span class="n">data</span><span class="p">)</span>

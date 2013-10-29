@@ -199,7 +199,52 @@ tree menu, but adds an extra help command for the data item and a separator.</p>
 <dl class="class">
 <dt id="GSASIIgrid.DisAglDialog">
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">DisAglDialog</tt><big>(</big><em>parent</em>, <em>data</em>, <em>default</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DisAglDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DisAglDialog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Distance Angle Controls dialog</p>
+<dd><p>Distance/Angle Controls input dialog. After
+<tt class="xref py py-meth docutils literal"><span class="pre">ShowModal()</span></tt> returns, the results are found in
+dict <tt class="xref py py-attr docutils literal"><span class="pre">self.data</span></tt>, which is accessed using <a class="reference internal" href="#GSASIIgrid.DisAglDialog.GetData" title="GSASIIgrid.DisAglDialog.GetData"><tt class="xref py py-meth docutils literal"><span class="pre">GetData()</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parent</strong> (<em>wx.Frame</em>) &#8211; reference to parent frame (or None)</li>
+<li><strong>data</strong> (<em>dict</em>) &#8211; a dict containing the current
+search ranges or an empty dict, which causes default values
+to be used.
+Will be used to set element <cite>DisAglCtls</cite> in 
+<a class="reference internal" href="GSASIIobj.html#phase-table"><em>Phase Tree Item</em></a></li>
+<li><strong>default</strong> (<em>dict</em>) &#8211; A dict containing the default
+search ranges for each element.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="GSASIIgrid.DisAglDialog.Draw">
+<tt class="descname">Draw</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DisAglDialog.Draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DisAglDialog.Draw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the contents of the dialog. Normally called
+by <tt class="xref py py-meth docutils literal"><span class="pre">__init__()</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.DisAglDialog.GetData">
+<tt class="descname">GetData</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DisAglDialog.GetData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DisAglDialog.GetData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the values from the dialog</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.DisAglDialog.OnOk">
+<tt class="descname">OnOk</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DisAglDialog.OnOk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DisAglDialog.OnOk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when the OK button is pressed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.DisAglDialog.OnReset">
+<tt class="descname">OnReset</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DisAglDialog.OnReset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DisAglDialog.OnReset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when the Reset button is pressed</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">

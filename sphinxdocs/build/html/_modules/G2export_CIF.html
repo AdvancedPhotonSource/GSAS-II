@@ -53,19 +53,28 @@
 <span class="c">#!/usr/bin/env python</span>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-21 13:11:57 -0500 (Mon, 21 Oct 2013) $</span>
+<span class="c"># $Date: 2013-10-29 11:42:23 -0500 (Tue, 29 Oct 2013) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1117 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_CIF.py $</span>
-<span class="c"># $Id: G2export_CIF.py 1117 2013-10-21 18:11:57Z toby $</span>
+<span class="c"># $Revision: 1127 $</span>
+<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_CIF.py $</span>
+<span class="c"># $Id: G2export_CIF.py 1127 2013-10-29 16:42:23Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="sd">&#39;&#39;&#39;Code to export a GSAS-II project as a CIF. Variable `self.mode`</span>
-<span class="sd">determines the type of CIF that is created:</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">*Module G2export_CIF: CIF Exports*</span>
+<span class="sd">------------------------------------------------------</span>
+
+<span class="sd">This implements a complex exporter :class:`ExportCIF` that can implement an</span>
+<span class="sd">entire project in a complete CIF intended for submission as a</span>
+<span class="sd">publication. In addition, there are two subclasses of :class:`ExportCIF`:</span>
+<span class="sd">:class:`ExportPhaseCIF` and :class:`ExportDataCIF` that</span>
+<span class="sd">export a single phase or data set. Note that ``self.mode`` determines</span>
+<span class="sd">what is written:</span>
 
 <span class="sd"> * `self.mode=&quot;simple&quot;` creates a simple CIF with only coordinates</span>
-<span class="sd">   for at most a single phase (:class:`ExportSimpleCIF`), while </span>
+<span class="sd">   or data, while </span>
 
-<span class="sd"> * `self.mode=&quot;full&quot;` creates a complete CIF of project (:class:`ExportCIF`).</span>
+<span class="sd"> * `self.mode=&quot;full&quot;` creates a complete CIF of project.</span>
+<span class="sd"> </span>
 <span class="sd">&#39;&#39;&#39;</span>
 
 <span class="kn">import</span> <span class="nn">datetime</span> <span class="kn">as</span> <span class="nn">dt</span>
@@ -79,7 +88,7 @@
 <span class="kn">import</span> <span class="nn">wx.lib.scrolledpanel</span> <span class="kn">as</span> <span class="nn">wxscroll</span>
 <span class="kn">import</span> <span class="nn">wx.lib.resizewidget</span> <span class="kn">as</span> <span class="nn">rw</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1117 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1127 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIstrIO</span> <span class="kn">as</span> <span class="nn">G2stIO</span>
@@ -742,21 +751,21 @@
             <span class="n">fpfx</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;pId&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;::Afrac:&#39;</span>        
             <span class="n">cfrac</span> <span class="o">=</span> <span class="n">cx</span><span class="o">+</span><span class="mi">3</span>
             <span class="n">DisAglData</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="n">DisAglCtls</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="c"># create a list of atoms, but skip atoms with zero occupancy</span>
             <span class="n">xyz</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">fpfx</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;pId&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;::Afrac:&#39;</span>        
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">atom</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Atoms</span><span class="p">):</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">fpfx</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span><span class="n">atom</span><span class="p">[</span><span class="n">cfrac</span><span class="p">])</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span> <span class="k">continue</span>
                 <span class="n">xyz</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,]</span><span class="o">+</span><span class="n">atom</span><span class="p">[</span><span class="n">cn</span><span class="p">:</span><span class="n">cn</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">atom</span><span class="p">[</span><span class="n">cx</span><span class="p">:</span><span class="n">cx</span><span class="o">+</span><span class="mi">3</span><span class="p">])</span>
-            <span class="k">if</span> <span class="s">&#39;DisAglCtls&#39;</span> <span class="ow">in</span> <span class="n">generalData</span><span class="p">:</span>
-                <span class="n">DisAglCtls</span> <span class="o">=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;DisAglCtls&#39;</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span> <span class="c"># should not happen, since DisAglDialog should be called for all</span>
-                <span class="c"># phases before getting here</span>
-                <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">DisAglDialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span><span class="n">DisAglCtls</span><span class="p">,</span><span class="n">generalData</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s">&#39;DisAglCtls&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">generalData</span><span class="p">:</span>
+                <span class="c"># should not happen, since DisAglDialog should be called</span>
+                <span class="c"># for all phases before getting here</span>
+                <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">DisAglDialog</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span>
+                    <span class="p">{},</span>
+                    <span class="n">generalData</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
-                    <span class="n">DisAglCtls</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetData</span><span class="p">()</span>
-                    <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;DisAglCtls&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DisAglCtls</span>
+                    <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;DisAglCtls&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetData</span><span class="p">()</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
                     <span class="k">return</span>
@@ -778,7 +787,9 @@
                 <span class="n">DisAglData</span><span class="p">[</span><span class="s">&#39;pId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;pId&#39;</span><span class="p">]</span>
                 <span class="n">DisAglData</span><span class="p">[</span><span class="s">&#39;covData&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span><span class="p">[</span><span class="s">&#39;Covariance&#39;</span><span class="p">]</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">AtomLabels</span><span class="p">,</span><span class="n">DistArray</span><span class="p">,</span><span class="n">AngArray</span> <span class="o">=</span> <span class="n">G2stMn</span><span class="o">.</span><span class="n">RetDistAngle</span><span class="p">(</span><span class="n">DisAglCtls</span><span class="p">,</span><span class="n">DisAglData</span><span class="p">)</span>
+                <span class="n">AtomLabels</span><span class="p">,</span><span class="n">DistArray</span><span class="p">,</span><span class="n">AngArray</span> <span class="o">=</span> <span class="n">G2stMn</span><span class="o">.</span><span class="n">RetDistAngle</span><span class="p">(</span>
+                    <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;DisAglCtls&#39;</span><span class="p">],</span>
+                    <span class="n">DisAglData</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>        <span class="c"># inside DistAngle for missing atom types in DisAglCtls</span>
                 <span class="k">print</span><span class="p">(</span><span class="s">&#39;**** ERROR - try again but do &quot;Reset&quot; to fill in missing atom types ****&#39;</span><span class="p">)</span>
                     
@@ -1065,9 +1076,11 @@
             <span class="n">Imax</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">phasenam</span> <span class="ow">in</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">]:</span>
                 <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">][</span><span class="s">&#39;Histograms&#39;</span><span class="p">][</span><span class="n">histlbl</span><span class="p">][</span><span class="s">&#39;Scale&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">Icorr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">refl</span><span class="p">[</span><span class="mi">13</span><span class="p">]</span> <span class="k">for</span> <span class="n">refl</span> <span class="ow">in</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phasenam</span><span class="p">]])[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">FO2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">refl</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="k">for</span> <span class="n">refl</span> <span class="ow">in</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phasenam</span><span class="p">]])</span>
-                <span class="n">I100</span> <span class="o">=</span> <span class="n">scale</span><span class="o">*</span><span class="n">FO2</span><span class="o">*</span><span class="n">Icorr</span>
+                <span class="n">refList</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phasenam</span><span class="p">][</span><span class="s">&#39;RefList&#39;</span><span class="p">])</span>
+                <span class="n">I100</span> <span class="o">=</span> <span class="n">scale</span><span class="o">*</span><span class="n">refList</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">*</span><span class="n">refList</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span>
+                <span class="c">#Icorr = np.array([refl[13] for refl in histblk[&#39;Reflection Lists&#39;][phasenam]])[0]</span>
+                <span class="c">#FO2 = np.array([refl[8] for refl in histblk[&#39;Reflection Lists&#39;][phasenam]])</span>
+                <span class="c">#I100 = scale*FO2*Icorr</span>
                 <span class="n">Imax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">Imax</span><span class="p">,</span><span class="nb">max</span><span class="p">(</span><span class="n">I100</span><span class="p">))</span>
 
             <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&#39;loop_&#39;</span><span class="p">)</span>
@@ -1091,8 +1104,8 @@
             <span class="k">for</span> <span class="n">phasenam</span> <span class="ow">in</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">]:</span>
                 <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">][</span><span class="s">&#39;Histograms&#39;</span><span class="p">][</span><span class="n">histlbl</span><span class="p">][</span><span class="s">&#39;Scale&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">phaseid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">][</span><span class="s">&#39;pId&#39;</span><span class="p">]</span>
-                <span class="n">refcount</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phasenam</span><span class="p">])</span>
-                <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phasenam</span><span class="p">]:</span>
+                <span class="n">refcount</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phasenam</span><span class="p">][</span><span class="s">&#39;RefList&#39;</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">ref</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phasenam</span><span class="p">][</span><span class="s">&#39;RefList&#39;</span><span class="p">]):</span>
                     <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
                         <span class="k">print</span><span class="p">(</span><span class="s">&#39;DEBUG: skipping reflection list&#39;</span><span class="p">)</span>
                         <span class="k">break</span>
@@ -1115,8 +1128,7 @@
                     <span class="n">dmin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dmin</span><span class="p">,</span><span class="n">ref</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
                     <span class="n">s</span> <span class="o">+=</span> <span class="n">PutInCol</span><span class="p">(</span><span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="o">-</span><span class="mf">0.009</span><span class="p">),</span><span class="mi">8</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">Imax</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">I100</span> <span class="o">=</span> <span class="mf">100.</span><span class="o">*</span><span class="n">scale</span><span class="o">*</span><span class="n">ref</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">*</span><span class="n">ref</span><span class="p">[</span><span class="mi">13</span><span class="p">]</span><span class="o">/</span><span class="n">Imax</span>
-                        <span class="n">s</span> <span class="o">+=</span> <span class="n">PutInCol</span><span class="p">(</span><span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="n">I100</span><span class="p">,</span><span class="o">-</span><span class="mf">0.09</span><span class="p">),</span><span class="mi">6</span><span class="p">)</span>
+                        <span class="n">s</span> <span class="o">+=</span> <span class="n">PutInCol</span><span class="p">(</span><span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="mf">100.</span><span class="o">*</span><span class="n">I100</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">/</span><span class="n">Imax</span><span class="p">,</span><span class="o">-</span><span class="mf">0.09</span><span class="p">),</span><span class="mi">6</span><span class="p">)</span>
                     <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&quot;  &quot;</span><span class="o">+</span><span class="n">s</span><span class="p">)</span>
 
             <span class="n">WriteReflStat</span><span class="p">(</span><span class="n">refcount</span><span class="p">,</span><span class="n">hklmin</span><span class="p">,</span><span class="n">hklmax</span><span class="p">,</span><span class="n">dmin</span><span class="p">,</span><span class="n">dmax</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">]))</span>
@@ -1195,6 +1207,7 @@
         <span class="k">def</span> <span class="nf">WriteSingleXtalData</span><span class="p">(</span><span class="n">histlbl</span><span class="p">):</span>
             <span class="s">&#39;Write out the selected single crystal histogram info&#39;</span>
             <span class="n">histblk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">histlbl</span><span class="p">]</span>
+
             <span class="c">#refprx = &#39;_refln.&#39; # mm</span>
             <span class="n">refprx</span> <span class="o">=</span> <span class="s">&#39;_refln_&#39;</span> <span class="c"># normal</span>
 
@@ -1213,8 +1226,8 @@
             <span class="n">hklmax</span> <span class="o">=</span> <span class="bp">None</span>
             <span class="n">dmax</span> <span class="o">=</span> <span class="bp">None</span>
             <span class="n">dmin</span> <span class="o">=</span> <span class="bp">None</span>
-            <span class="n">refcount</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">])</span>
-            <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">]:</span>
+            <span class="n">refcount</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">][</span><span class="s">&#39;RefList&#39;</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">][</span><span class="s">&#39;RefList&#39;</span><span class="p">]:</span>
                 <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;  &quot;</span>
                 <span class="k">if</span> <span class="n">hklmin</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                     <span class="n">hklmin</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
@@ -1239,12 +1252,13 @@
                 <span class="n">dmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">dmax</span><span class="p">,</span><span class="n">ref</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
                 <span class="n">dmin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dmin</span><span class="p">,</span><span class="n">ref</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
                 <span class="n">WriteCIFitem</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
-            <span class="n">WriteReflStat</span><span class="p">(</span><span class="n">refcount</span><span class="p">,</span><span class="n">hklmin</span><span class="p">,</span><span class="n">hklmax</span><span class="p">,</span><span class="n">dmin</span><span class="p">,</span><span class="n">dmax</span><span class="p">)</span>
-            <span class="n">hId</span> <span class="o">=</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;hId&#39;</span><span class="p">]</span>
-            <span class="n">pfx</span> <span class="o">=</span> <span class="s">&#39;0:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">hId</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;:&#39;</span>
-            <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&#39;_reflns_wR_factor_obs    &#39;</span><span class="p">,</span><span class="s">&#39;</span><span class="si">%.4f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;wR&#39;</span><span class="p">]</span><span class="o">/</span><span class="mf">100.</span><span class="p">))</span>
-            <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&#39;_reflns_R_F_factor_obs   &#39;</span><span class="p">,</span><span class="s">&#39;</span><span class="si">%.4f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;Rf&#39;</span><span class="p">]</span><span class="o">/</span><span class="mf">100.</span><span class="p">))</span>
-            <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&#39;_reflns_R_Fsqd_factor_obs&#39;</span><span class="p">,</span><span class="s">&#39;</span><span class="si">%.4f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;Rf^2&#39;</span><span class="p">]</span><span class="o">/</span><span class="mf">100.</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">quickmode</span><span class="p">:</span> <span class="c"># statistics only in a full CIF</span>
+                <span class="n">WriteReflStat</span><span class="p">(</span><span class="n">refcount</span><span class="p">,</span><span class="n">hklmin</span><span class="p">,</span><span class="n">hklmax</span><span class="p">,</span><span class="n">dmin</span><span class="p">,</span><span class="n">dmax</span><span class="p">)</span>
+                <span class="n">hId</span> <span class="o">=</span> <span class="n">histblk</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;hId&#39;</span><span class="p">]</span>
+                <span class="n">pfx</span> <span class="o">=</span> <span class="s">&#39;0:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">hId</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;:&#39;</span>
+                <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&#39;_reflns_wR_factor_obs    &#39;</span><span class="p">,</span><span class="s">&#39;</span><span class="si">%.4f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;wR&#39;</span><span class="p">]</span><span class="o">/</span><span class="mf">100.</span><span class="p">))</span>
+                <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&#39;_reflns_R_F_factor_obs   &#39;</span><span class="p">,</span><span class="s">&#39;</span><span class="si">%.4f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;Rf&#39;</span><span class="p">]</span><span class="o">/</span><span class="mf">100.</span><span class="p">))</span>
+                <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&#39;_reflns_R_Fsqd_factor_obs&#39;</span><span class="p">,</span><span class="s">&#39;</span><span class="si">%.4f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;Rf^2&#39;</span><span class="p">]</span><span class="o">/</span><span class="mf">100.</span><span class="p">))</span>
         <span class="k">def</span> <span class="nf">EditAuthor</span><span class="p">(</span><span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
             <span class="s">&#39;dialog to edit the CIF author info&#39;</span>
             <span class="s">&#39;Edit the CIF author name&#39;</span>
@@ -1296,7 +1310,11 @@
 <span class="sd">            &#39;&#39;&#39;</span>
             <span class="n">but</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">GetEventObject</span><span class="p">()</span>
             <span class="n">phasedict</span> <span class="o">=</span> <span class="n">but</span><span class="o">.</span><span class="n">phasedict</span>
-            <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">DisAglDialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,{},</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">])</span>
+            <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">DisAglDialog</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span>
+                <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;DisAglCtls&#39;</span><span class="p">],</span> <span class="c"># edited </span>
+                <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">],</span> <span class="c"># defaults</span>
+                <span class="p">)</span>
             <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
                 <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;DisAglCtls&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetData</span><span class="p">()</span>
             <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
@@ -1421,21 +1439,21 @@
             <span class="n">cn</span> <span class="o">=</span> <span class="n">ct</span><span class="o">-</span><span class="mi">1</span>
             <span class="n">cfrac</span> <span class="o">=</span> <span class="n">cx</span><span class="o">+</span><span class="mi">3</span>
             <span class="n">DisAglData</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="n">DisAglCtls</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="c"># create a list of atoms, but skip atoms with zero occupancy</span>
             <span class="n">xyz</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">fpfx</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;pId&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;::Afrac:&#39;</span>        
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">atom</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;Atoms&#39;</span><span class="p">]):</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">fpfx</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span><span class="n">atom</span><span class="p">[</span><span class="n">cfrac</span><span class="p">])</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span> <span class="k">continue</span>
                 <span class="n">xyz</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,]</span><span class="o">+</span><span class="n">atom</span><span class="p">[</span><span class="n">cn</span><span class="p">:</span><span class="n">cn</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">atom</span><span class="p">[</span><span class="n">cx</span><span class="p">:</span><span class="n">cx</span><span class="o">+</span><span class="mi">3</span><span class="p">])</span>
-            <span class="k">if</span> <span class="s">&#39;DisAglCtls&#39;</span> <span class="ow">in</span> <span class="n">generalData</span><span class="p">:</span>
-                <span class="n">DisAglCtls</span> <span class="o">=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;DisAglCtls&#39;</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span> <span class="c"># should not happen, since DisAglDialog should be called for all</span>
-                <span class="c"># phases before getting here</span>
-                <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">DisAglDialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cifdefs</span><span class="p">,</span><span class="n">DisAglCtls</span><span class="p">,</span><span class="n">generalData</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s">&#39;DisAglCtls&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">generalData</span><span class="p">:</span>
+                <span class="c"># should not be used, since DisAglDialog should be called</span>
+                <span class="c"># for all phases before getting here</span>
+                <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">DisAglDialog</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cifdefs</span><span class="p">,</span>
+                    <span class="p">{},</span>
+                    <span class="n">generalData</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
-                    <span class="n">DisAglCtls</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetData</span><span class="p">()</span>
-                    <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;DisAglCtls&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DisAglCtls</span>
+                    <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;DisAglCtls&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetData</span><span class="p">()</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
                     <span class="k">return</span>
@@ -1469,7 +1487,9 @@
                 <span class="n">DisAglData</span><span class="p">[</span><span class="s">&#39;pId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;pId&#39;</span><span class="p">]</span>
                 <span class="n">DisAglData</span><span class="p">[</span><span class="s">&#39;covData&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span><span class="p">[</span><span class="s">&#39;Covariance&#39;</span><span class="p">]</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">AtomLabels</span><span class="p">,</span><span class="n">DistArray</span><span class="p">,</span><span class="n">AngArray</span> <span class="o">=</span> <span class="n">G2stMn</span><span class="o">.</span><span class="n">RetDistAngle</span><span class="p">(</span><span class="n">DisAglCtls</span><span class="p">,</span><span class="n">DisAglData</span><span class="p">)</span>
+                <span class="n">AtomLabels</span><span class="p">,</span><span class="n">DistArray</span><span class="p">,</span><span class="n">AngArray</span> <span class="o">=</span> <span class="n">G2stMn</span><span class="o">.</span><span class="n">RetDistAngle</span><span class="p">(</span>
+                    <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;DisAglCtls&#39;</span><span class="p">],</span>
+                    <span class="n">DisAglData</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>        <span class="c"># inside DistAngle for missing atom types in DisAglCtls</span>
                 <span class="k">print</span><span class="p">(</span><span class="s">&#39;**** ERROR - try again but do &quot;Reset&quot; to fill in missing atom types ****&#39;</span><span class="p">)</span>
             <span class="n">wx</span><span class="o">.</span><span class="n">EndBusyCursor</span><span class="p">()</span>
@@ -1598,17 +1618,20 @@
         <span class="c"># test for quick CIF mode or no data</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">quickmode</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="n">phasenam</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># include all phases</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s">&quot;full&quot;</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">quickmode</span> <span class="o">=</span> <span class="bp">True</span>
-            <span class="n">oneblock</span> <span class="o">=</span> <span class="bp">True</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s">&quot;simple&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;phase&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c"># this check is probably not needed</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ErrorDialog</span><span class="p">(</span>
                     <span class="s">&#39;No phase present&#39;</span><span class="p">,</span>
                     <span class="s">&#39;Cannot create a coordinates CIF with no phases&#39;</span><span class="p">)</span>
                 <span class="k">return</span>
-            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="c"># quick mode: get selected phase</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quickmode</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">oneblock</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="c"># quick mode: get selected phase</span>
                 <span class="n">phasenam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="c"># will this require a multiblock CIF?</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s">&quot;simple&quot;</span><span class="p">:</span> <span class="c"># powder/single xtal data export</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quickmode</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">oneblock</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c"># Project export: will this require a multiblock CIF?</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">oneblock</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -1616,7 +1639,7 @@
         <span class="k">else</span><span class="p">:</span> <span class="c"># one phase, one dataset, Full CIF</span>
             <span class="n">oneblock</span> <span class="o">=</span> <span class="bp">True</span>
 
-        <span class="c"># make sure needed infomation is present</span>
+        <span class="c"># make sure required information is present</span>
         <span class="c"># get CIF author name -- required for full CIFs</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">author</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span><span class="p">[</span><span class="s">&#39;Controls&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;Author&quot;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
@@ -1651,13 +1674,16 @@
                     <span class="s">&quot;File/Copy option to duplicate the name&quot;</span>
                     <span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">EditInstNames</span><span class="p">():</span> <span class="k">return</span>
-        <span class="c"># check for a distance-angle range search range for each phase</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">quickmode</span><span class="p">:</span>
+            <span class="c"># check for a distance-angle range search range for each phase</span>
             <span class="k">for</span> <span class="n">phasenam</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
                 <span class="c">#i = self.Phases[phasenam][&#39;pId&#39;]</span>
                 <span class="n">phasedict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">]</span> <span class="c"># pointer to current phase info            </span>
                 <span class="k">if</span> <span class="s">&#39;DisAglCtls&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">]:</span>
-                    <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">DisAglDialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,{},</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">])</span>
+                    <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">DisAglDialog</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span>
+                        <span class="p">{},</span>
+                        <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">])</span>
                     <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
                         <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;DisAglCtls&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetData</span><span class="p">()</span>
                     <span class="k">else</span><span class="p">:</span>

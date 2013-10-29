@@ -26,7 +26,6 @@ _pd_calibration_special_details           # description of the method used
 ; ?
 ;
 
-_diffrn_ambient_temperature       ?       
 _diffrn_source                    ?       
 _diffrn_source_target             ?
 _diffrn_source_type               ?

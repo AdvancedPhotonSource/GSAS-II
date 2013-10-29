@@ -361,7 +361,15 @@ class ExportCIF(G2IO.ExportBaseclass):
                 size = hapData['Size']
                 mustrain = hapData['Mustrain']
                 hstrain = hapData['HStrain']
-                s = '  Crystallite size model "%s" for %s (microns)\n  '%(size[0],phasenam)
+                if len(self.powderDict) > 1:
+                    if s:
+                        s += '\n'
+                    else:
+                        s += '  Crystallite size model "%s" for %s (microns)\n  '%(size[0],phasenam)
+                    s += '  Parameters for histogram #'+str(hId)+' '+str(histogram)+'\n'
+                else:
+                    s += '  Crystallite size model "%s" for %s (microns)\n  '%(size[0],phasenam)
+                
                 names = ['Size;i','Size;mx']
                 if 'uniax' in size[0]:
                     names = ['Size;i','Size;a','Size;mx']
@@ -425,16 +433,22 @@ class ExportCIF(G2IO.ExportBaseclass):
                         sig = self.sigDict.get(name,-0.009)
                         s += G2mth.ValEsd(mustrain[1][i],sig)+', '
                         i = 2    #skip the aniso value                
-                s += '\n  Macrostrain for %s\n'%(phasenam)
-                txt = '  parameters: '
+                s1 = '  \n  Macrostrain parameters: '
                 names = G2spc.HStrainNames(SGData)
                 for name in names:
-                    txt += name+', '
-                s += txt+'\n    '
+                    s1 += name+', '
+                s1 += '\n    '
+                macrostrain = False
                 for i in range(len(names)):
                     name = phfx+name[i]
                     sig = self.sigDict.get(name,-0.009)
-                    s += G2mth.ValEsd(hstrain[0][i],sig)+', '
+                    s1 += G2mth.ValEsd(hstrain[0][i],sig)+', '
+                    if hstrain[0][i]: macrostrain = True
+                if macrostrain:
+                    s += s1 + '\n'
+                    # show revised lattice parameters here someday
+                else:
+                    s += '\n'
             return s
         
         def FmtAtomType(sym):
@@ -1019,6 +1033,22 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             #refprx = '_refln.' # mm
             refprx = '_refln_' # normal
+            # data collection parameters for the powder dataset
+            
+            temperature = histblk['Sample Parameters'].get('Temperature') # G2 uses K
+            if not temperature:
+                T = '?'
+            else:
+                T = G2mth.ValEsd(temperature,-0.009,True) # CIF uses K
+            WriteCIFitem('_diffrn_ambient_temperature',T)
+
+            pressure = histblk['Sample Parameters'].get('Pressure') #G2 uses mega-Pascal
+            if not pressure:
+                P = '?'
+            else:
+                P = G2mth.ValEsd(pressure*1000,-0.09,True) # CIF uses kilopascal
+            WriteCIFitem('_diffrn_ambient_pressure',P)
+
             WriteCIFitem('\n# STRUCTURE FACTOR TABLE')            
             # compute maximum intensity reflection
             Imax = 0
@@ -1638,7 +1668,31 @@ class ExportCIF(G2IO.ExportBaseclass):
                         dlg.Destroy()
                         return
                     dlg.Destroy()
-
+        if not self.quickmode:
+            # check if temperature values & pressure are defaulted
+            default = 0
+            for hist in self.Histograms:
+                if hist.startswith("PWDR"): 
+                    key2 = "Sample Parameters"
+                    T = self.Histograms[hist][key2].get('Temperature')
+                    if not T:
+                        default += 1
+                    elif T == 300:
+                        default += 1
+                    P = self.Histograms[hist][key2].get('Pressure')
+                    if not P:
+                        default += 1
+                    elif P == 1:
+                        default += 1
+            if default > 0:
+                dlg = wx.MessageDialog(
+                    self.G2frame,
+                    'Temperature/Pressure values appear to be defaulted for some powder histograms (See Sample Parameters for each PWDR tree entry). Do you want to use those values?',
+                    'Check T and P values',
+                    wx.OK|wx.CANCEL)
+                ret = dlg.ShowModal()
+                dlg.Destroy()
+                if ret != wx.ID_OK: return
         if oneblock and not self.quickmode:
             # select a dataset to use (there should only be one set in one block,
             # but take whatever comes 1st)

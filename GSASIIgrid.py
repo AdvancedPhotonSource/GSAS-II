@@ -3252,7 +3252,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
                 name = data[0][pfx.split(':')[0]+'::Name']
                 mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' For phase '+name+':'))
                 mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
-                    ' Unweighted phase residuals RF^2: %.3f%%, RF: %.3f%% on %d reflections  '% \
+                    u' Unweighted phase residuals RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '% \
                     (data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value])))
     mainSizer.Add((5,5),)
     mainSizer.Layout()    

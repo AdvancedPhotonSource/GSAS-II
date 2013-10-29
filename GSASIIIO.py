@@ -2033,7 +2033,11 @@ class ExportBaseclass(object):
                         else:                            
                             name += '-1'
                     self.Histograms[name] = {}
+                    # the main info goes into Data, but the 0th
+                    # element contains refinement results, carry
+                    # that over too now. 
                     self.Histograms[name]['Data'] = self.G2frame.PatternTree.GetItemPyData(item)[1]
+                    self.Histograms[name][0] = self.G2frame.PatternTree.GetItemPyData(item)[0]
                     item2, cookie2 = self.G2frame.PatternTree.GetFirstChild(item)
                     while item2: 
                         child = self.G2frame.PatternTree.GetItemText(item2)

@@ -352,8 +352,8 @@ Limits                       \            A list of two two element lists, as [[
                                           two-theta value to be used.
 Reflection Lists              \           A dict with an entry for each phase in the
                                           histogram. The contents of each dict item
-                                          is a list of reflections as described in the
-                                          :ref:`Powder Reflections <PowderRefl_table>`
+                                          is a dict containing reflections, as described in
+                                          the :ref:`Powder Reflections <PowderRefl_table>`
                                           description.
 Instrument Parameters         \           A list containing two dicts where the possible
                                           keys in each dict are listed below. The value
@@ -456,8 +456,9 @@ Powder Reflection Data Structure
    single: Powder reflection object description
    single: Data object descriptions; Powder Reflections
    
-For every phase in a histogram, the ``Reflection Lists`` value is a list of
-reflections. The items in that list are documented below.
+For every phase in a histogram, the ``Reflection Lists`` value is a dict
+one element of which is `'RefList'`, which is a np.array containing
+reflections. The columns in that array are documented below.
 
 ==========  ====================================================
   index         explanation
@@ -471,16 +472,8 @@ reflections. The items in that list are documented below.
  8           :math:`F_{obs}^2`
  9           :math:`F_{calc}^2`
  10          reflection phase, in degrees
- 11          the equivalent reflections as a (m x 3) 
-             np.array, where m is 0.5 * multiplicity. Note
-             that Freidel pairs, (-h,-k-,l), are not
-             included. 
- 12          phase shift for each of the equivalent
-             reflections as a length (m) array
- 13          intensity correction for reflection, this times
+ 11          intensity correction for reflection, this times
              :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc 
- 14          dict with the form factor (f or b) by atom type
-             symbol at the reflection position.
 ==========  ====================================================
 
 Single Crystal Tree Items
@@ -489,7 +482,7 @@ Single Crystal Tree Items
 .. _Xtal_table:
 
 .. index::
-   single: Single Crytsal data object description
+   single: Single Crystal data object description
    single: Data object descriptions; Single crystal data
 
 Every single crystal diffraction histogram is stored in the GSAS-II data tree
@@ -507,8 +500,8 @@ a key of ``Data``, as outlined below.
   key                      sub-key        explanation
 ======================  ===============  ====================================================
 Data
-                                          A list of lists, where each inner item
-                                          is an individual reflection
+                                          A dict that contains the 
+                                          reflection table,
                                           as described in the
                                           :ref:`Single Crystal Reflections
                                           <XtalRefl_table>`
@@ -548,8 +541,9 @@ Single Crystal Reflection Data Structure
    single: Single Crystal reflection object description
    single: Data object descriptions; Single Crystal Reflections
    
-For every phase in a histogram, the ``Reflection Lists`` value is a list of
-reflections. The items in that list are documented below.
+For every simgle crystal a histogram, the ``'Data'`` item contains
+the structure factors as an np.array in item `'RefList'`.
+The columns in that array are documented below.
 
 ==========  ====================================================
   index         explanation
@@ -563,16 +557,9 @@ reflections. The items in that list are documented below.
  8           :math:`F_{obs}^2T`
  9           :math:`F_{calc}^2T`
  10          reflection phase, in degrees
- 11          the equivalent reflections as a (m x 3) 
-             np.array.
- 12          phase shift for each of the equivalent
-             reflections as a length (m) array
- 13          intensity correction for reflection, this times
+ 11          intensity correction for reflection, this times
              :math:`F_{obs}^2` or :math:`F_{calc}^2`
              gives Iobs or Icalc
-             (not used in single crystals?)
- 14          dict with the form factor (f or b) by atom type
-             symbol at the reflection position.
 ==========  ====================================================
 
 

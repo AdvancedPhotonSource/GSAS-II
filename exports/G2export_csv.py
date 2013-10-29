@@ -191,8 +191,8 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
         fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
         for i,phasenam in enumerate(sorted(histblk['Reflection Lists'])):
             for (
-                h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,eqlist,phaselist,Icorr,FFdict
-                ) in histblk['Reflection Lists'][phasenam]:
+                h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr
+                ) in histblk['Reflection Lists'][phasenam]['RefList']:
                 self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,i))
         self.CloseFile()
         print(str(hist)+'reflections written to file '+str(self.filename))
@@ -228,8 +228,8 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
         WriteList(self,("h","k","l","d-space","F_obs","sig(Fobs)","F_calc","phase","mult"))
         fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.2f},{:.4f},{:.2f},{:.2f},{:.0f}"
         for (
-            h,k,l,mult,dsp,Fobs,sigFobs,Fcalc,FobsT,FcalcT,phase,eqlist,phaselist,Icorr,FFdict
-            ) in histblk['Data']:
+            h,k,l,mult,dsp,Fobs,sigFobs,Fcalc,FobsT,FcalcT,phase,Icorr
+            ) in histblk['Data']['RefList']:
             self.Write(fmt.format(h,k,l,dsp,Fobs,sigFobs,Fcalc,phase,mult))
         self.CloseFile()
         print(str(hist)+' written to file '+str(self.filename))                        

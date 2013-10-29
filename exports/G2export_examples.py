@@ -194,8 +194,8 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
             self.Write(hfmt.format("h,k,l","2-theta","F_obs","F_calc","phase","mult"))
             self.Write(80*'=')
             for (
-                h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,eqlist,phaselist,Icorr,FFdict
-                ) in histblk['Reflection Lists'][phasenam]:
+                h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr
+                ) in histblk['Reflection Lists'][phasenam]['RefList']:
                 self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult))
         self.CloseFile()
         print(str(hist)+'reflections written to file '+str(self.filename))                        
@@ -236,8 +236,8 @@ class ExportSingleText(G2IO.ExportBaseclass):
         self.Write(hfmt.format("h,k,l","d-space","F_obs","sig(Fobs)","F_calc","phase","mult"))
         self.Write(80*'=')
         for (
-            h,k,l,mult,dsp,Fobs,sigFobs,Fcalc,FobsT,FcalcT,phase,eqlist,phaselist,Icorr,FFdict
-            ) in histblk['Data']:
+            h,k,l,mult,dsp,Fobs,sigFobs,Fcalc,FobsT,FcalcT,phase,Icorr
+            ) in histblk['Data']['RefList']:
             self.Write(fmt.format(hklfmt.format(h,k,l),dsp,Fobs,sigFobs,Fcalc,phase,mult))
         self.CloseFile()
         print(str(hist)+' written to file '+str(self.filename))                        

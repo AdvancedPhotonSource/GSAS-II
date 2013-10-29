@@ -1155,6 +1155,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         def WriteSingleXtalData(histlbl):
             'Write out the selected single crystal histogram info'
             histblk = self.Histograms[histlbl]
+
             #refprx = '_refln.' # mm
             refprx = '_refln_' # normal
 
@@ -1199,12 +1200,13 @@ class ExportCIF(G2IO.ExportBaseclass):
                 dmax = max(dmax,ref[4])
                 dmin = min(dmin,ref[4])
                 WriteCIFitem(s)
-            WriteReflStat(refcount,hklmin,hklmax,dmin,dmax)
-            hId = histblk['hId']
-            pfx = '0:'+str(hId)+':'
-            WriteCIFitem('_reflns_wR_factor_obs    ','%.4f'%(histblk['wR']/100.))
-            WriteCIFitem('_reflns_R_F_factor_obs   ','%.4f'%(histblk[pfx+'Rf']/100.))
-            WriteCIFitem('_reflns_R_Fsqd_factor_obs','%.4f'%(histblk[pfx+'Rf^2']/100.))
+            if not self.quickmode: # statistics only in a full CIF
+                WriteReflStat(refcount,hklmin,hklmax,dmin,dmax)
+                hId = histblk[0]['hId']
+                pfx = '0:'+str(hId)+':'
+                WriteCIFitem('_reflns_wR_factor_obs    ','%.4f'%(histblk[0]['wR']/100.))
+                WriteCIFitem('_reflns_R_F_factor_obs   ','%.4f'%(histblk[0][pfx+'Rf']/100.))
+                WriteCIFitem('_reflns_R_Fsqd_factor_obs','%.4f'%(histblk[0][pfx+'Rf^2']/100.))
         def EditAuthor(event=None):
             'dialog to edit the CIF author info'
             'Edit the CIF author name'
@@ -1564,17 +1566,20 @@ class ExportCIF(G2IO.ExportBaseclass):
         # test for quick CIF mode or no data
         self.quickmode = False
         phasenam = None # include all phases
-        if self.mode != "full" or len(self.powderDict) + len(self.xtalDict) == 0:
-            self.quickmode = True
-            oneblock = True
-            if len(self.Phases) == 0:
+        if self.mode == "simple" and self.currentExportType == 'phase':
+            if len(self.Phases) == 0: # this check is probably not needed
                 self.G2frame.ErrorDialog(
                     'No phase present',
                     'Cannot create a coordinates CIF with no phases')
                 return
-            elif len(self.Phases) > 1: # quick mode: get selected phase
+            self.quickmode = True
+            oneblock = True
+            if len(self.Phases) > 1: # quick mode: get selected phase
                 phasenam = self.phasenam[0]
-        # will this require a multiblock CIF?
+        elif self.mode == "simple": # powder/single xtal data export
+            self.quickmode = True
+            oneblock = True
+        # Project export: will this require a multiblock CIF?
         elif len(self.Phases) > 1:
             oneblock = False
         elif len(self.powderDict) + len(self.xtalDict) > 1:
@@ -1582,7 +1587,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         else: # one phase, one dataset, Full CIF
             oneblock = True
 
-        # make sure needed infomation is present
+        # make sure required information is present
         # get CIF author name -- required for full CIFs
         try:
             self.author = self.OverallParms['Controls'].get("Author",'').strip()

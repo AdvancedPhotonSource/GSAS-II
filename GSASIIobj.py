@@ -147,11 +147,12 @@ General         \            Overall information for the phase (dict)
   \         F000X            x-ray F(000) intensity (float)
   \         F000N            neutron F(000) intensity (float)
   \         Mydir            directory of current .gpx file (str)
-  \         MCSA controls    ?
-  \         Cell             List with 7 items: cell refinement flag (bool)
+  \         MCSA controls    Monte Carlo-Simulated Annealing controls (dict)
+  \         Cell             List with 8 items: cell refinement flag (bool)
                              a, b, c, (Angstrom, float)
                              alpha, beta & gamma (degrees, float)
-  \         Type             for now 'nuclear' (str)
+                             volume (A^3, float)
+  \         Type             'nuclear' or 'macromolecular' for now (str)
   \         Map              dict of map parameters
   \         SH Texture       dict of spherical harmonic preferred orientation 
                              parameters
@@ -163,12 +164,13 @@ General         \            Overall information for the phase (dict)
                              as defined in :func:`GSASIIspc.SpcGroup`.
   \         Pawley neg wt    Restraint value for negative Pawley intensities
                              (float)
-  \         Flip             Charge flip controls dict?
-  \         Data plot type   ?
+  \         Flip             dict of Charge flip controls 
+  \         Data plot type   data plot type ('Mustrain', 'Size' or 
+                             'Preferred orientation') for powder data (str)
   \         Mass             Mass of unit cell contents in g/mol
   \         POhkl            March-Dollase preferred orientation direction
-  \         Z                ?
-  \         vdWRadii         ?
+  \         Z                dict of atomic numbers for each atom type 
+  \         vdWRadii         dict of van der Waals radii for each atom type 
   \         Color            Colors for atoms (list of (r,b,g) triplets)
   \         AtomTypes        List of atom types
   \         AtomMass         List of masses for atoms
@@ -197,7 +199,7 @@ Atoms           \            Atoms in phase as a list of lists. The outer list
 Drawing         \            Display parameters (dict)
 \           ballScale        Size of spheres in ball-and-stick display (float)
 \           bondList         dict with bonds
-\           contourLevel     ? (float)
+\           contourLevel     map contour level in e/A^3 (float)
 \           showABC          Flag to show view point triplet (bool). True=show.
 \           viewDir          cartesian viewing direction (np.array with three
                              elements)
@@ -209,10 +211,11 @@ Drawing         \            Display parameters (dict)
 \           showRigidBodies  Flag to highlight rigid body placement
 \           sizeH            Size ratio for H atoms (float) 
 \           bondRadius       Size of binds in A (float)
-\           atomPtrs         ? (list)
+\           atomPtrs         positions of x, type, site sym, ADP flag in Draw Atoms (list)
 \           viewPoint        list of lists. First item in list is [x,y,z]
                              in fractional coordinates for the center of
-                             the plot. Second item ?.
+                             the plot. Second item list of previous & current 
+                             atom number viewed (may be [0,0])
 \           showHydrogen     Flag to control plotting of H atoms.
 \           unitCellBox      Flag to control display of the unit cell.
 \           ellipseProb      Probability limit for display of thermal
@@ -226,9 +229,9 @@ Drawing         \            Display parameters (dict)
 \           radiusFactor     Distance ratio for searching for bonds. ? Bonds
                              are located that are within r(Ra+Rb) and (Ra+Rb)/r
                              where Ra and Rb are the atomic radii.
-\           oldxy            ? (list with two floats)
+\           oldxy            previous view point (list with two floats)
 \           cameraPos        Viewing position in A for plot (float)
-\           depthFog         ? (bool)
+\           depthFog         True if use depthFog on plot - set currently as False (bool)
 RBModels        \            Rigid body assignments (note Rigid body definitions
                              are stored in their own main top-level tree entry.)
 Pawley ref      \            Pawley reflections
@@ -237,7 +240,8 @@ Histograms      \            A dict of dicts. The key for the outer dict is
                              dict contains the combined phase/histogram
                              parameters for items such as scale factors,
                              size and strain parameters. (dict)
-MCSA            \            Monte-Carlo simulated annealing parameters
+MCSA            \            Monte-Carlo simulated annealing parameters (dict)
+\           
 ==========  ===============  ====================================================
 
 Space Group Objects
@@ -303,7 +307,8 @@ If ``phasedict`` points to the phase information in the data tree, then
 atoms are contained in a list of atom records (list) in
 ``phasedict['Atoms']``. Also needed to read atom information 
 are four pointers, ``cx,ct,cs,cia = phasedict['General']['AtomPtrs']``,
-which define locations in the atom record, as shown below. 
+which define locations in the atom record, as shown below. Items shown are 
+always present; additional ones for macromolecular phases are marked 'mm'
 
 .. tabularcolumns:: |l|p{4.5in}|
 
@@ -312,6 +317,9 @@ location         explanation
 ==============   ====================================================
 cx,cx+1,cx+2      the x,y and z coordinates
 cx+3              fractional occupancy (also cs-1)
+ct-4              (mm) residue number (str)
+ct-3              (mm) residue name (e.g. ALA) (str)
+ct-2              (mm) chain label (str)
 ct-1              atom label
 ct                atom type
 ct+1              refinement flags

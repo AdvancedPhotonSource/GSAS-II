@@ -94,9 +94,9 @@ htmlFirstUse = True
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS,
 ] = [wx.NewId() for item in range(8)]
 
-[ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,
+[ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,wxID_NEWMASKSPOT,wxID_NEWMASKARC,wxID_NEWMASKRING,
   wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,
-] = [wx.NewId() for item in range(5)]
+] = [wx.NewId() for item in range(8)]
 
 
 [ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_APPENDDZERO,
@@ -2213,10 +2213,16 @@ class DataFrame(wx.Frame):
             id=wxID_MASKSAVE, kind=wx.ITEM_NORMAL,text='Save mask')
         self.MaskEdit.Append(help='Load mask from file', 
             id=wxID_MASKLOAD, kind=wx.ITEM_NORMAL,text='Load mask')
-        submenu.Append(help='Create a Frame mask with mouse input', 
+        submenu.Append(help='Create an arc mask with mouse input', 
+            id=wxID_NEWMASKARC, kind=wx.ITEM_NORMAL,text='Arc mask')
+        submenu.Append(help='Create a frame mask with mouse input', 
             id=wxID_NEWMASKFRAME, kind=wx.ITEM_NORMAL,text='Frame mask')
         submenu.Append(help='Create a polygon mask with mouse input', 
             id=wxID_NEWMASKPOLY, kind=wx.ITEM_NORMAL,text='Polygon mask')
+        submenu.Append(help='Create a ring mask with mouse input', 
+            id=wxID_NEWMASKRING, kind=wx.ITEM_NORMAL,text='Ring mask')
+        submenu.Append(help='Create a spot mask with mouse input', 
+            id=wxID_NEWMASKSPOT, kind=wx.ITEM_NORMAL,text='Spot mask')
         self.PostfillDataMenu()
             
         # IMG / Stress/Strain

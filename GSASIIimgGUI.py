@@ -989,27 +989,55 @@ def UpdateMasks(G2frame,data):
                 File.close()
         finally:
             dlg.Destroy()
-    def OnNewFrameMask(event):
-        'Start a new Frame mask'
-        G2plt.OnStartMask(G2frame,'f')
+            
+    def OnNewSpotMask(event):
+        'Start a new spot mask'
+        G2frame.MaskKey = 's'
+        G2plt.OnStartMask(G2frame)
+        
+    def OnNewArcMask(event):
+        'Start a new arc mask'
+        G2frame.MaskKey = 'a'
+        G2plt.OnStartMask(G2frame)
+        
+    def OnNewRingMask(event):
+        'Start a new ring mask'
+        G2frame.MaskKey = 'r'
+        G2plt.OnStartMask(G2frame)
+        
     def OnNewPolyMask(event):
         'Start a new polygon mask'
-        G2plt.OnStartMask(G2frame,'p')
+        G2frame.MaskKey = 'p'
+        G2plt.OnStartMask(G2frame)
         
+    def OnNewFrameMask(event):
+        'Start a new Frame mask'
+        G2frame.MaskKey = 'f'
+        G2plt.OnStartMask(G2frame)
+                
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MaskMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyMask, id=G2gd.wxID_MASKCOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadMask, id=G2gd.wxID_MASKLOAD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveMask, id=G2gd.wxID_MASKSAVE)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewFrameMask, id=G2gd.wxID_NEWMASKFRAME)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewSpotMask, id=G2gd.wxID_NEWMASKSPOT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewArcMask, id=G2gd.wxID_NEWMASKARC)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewRingMask, id=G2gd.wxID_NEWMASKRING)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewPolyMask, id=G2gd.wxID_NEWMASKPOLY)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewFrameMask, id=G2gd.wxID_NEWMASKFRAME)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
-    if G2frame.setFrame:
-        G2frame.dataFrame.GetStatusBar().SetStatusText("Adding frame mask")
-    elif G2frame.setPoly:
-        G2frame.dataFrame.GetStatusBar().SetStatusText("Adding polygon mask")
+    if G2frame.MaskKey == 'f':
+        G2frame.dataFrame.GetStatusBar().SetStatusText('Frame mask active - LB pick next point, RB close polygon')
+    elif G2frame.MaskKey == 'p':
+        G2frame.dataFrame.GetStatusBar().SetStatusText('Polygon mask active - LB pick next point, RB close polygon')
+    elif G2frame.MaskKey == 's':
+        G2frame.dataFrame.GetStatusBar().SetStatusText('Spot mask active - LB pick spot location')
+    elif G2frame.MaskKey == 'a':
+        G2frame.dataFrame.GetStatusBar().SetStatusText('Arc mask active - LB pick arc location')
+    elif G2frame.MaskKey == 'r':
+        G2frame.dataFrame.GetStatusBar().SetStatusText('Ring mask active - LB pick ring location')
     else:
         G2frame.dataFrame.GetStatusBar().SetStatusText("To add mask: On 2D Powder Image, key a:arc, r:ring, s:spot, p:polygon, f:frame")
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
@@ -1060,22 +1088,24 @@ def UpdateMasks(G2frame,data):
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' diameter, mm'),0,
             wx.ALIGN_CENTER_VERTICAL)
         littleSizer.Add((5,0),0)
-        for x,y,d in spots:
-            spotText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.2f,%.2f" % (x,y)),
-                style=wx.TE_READONLY)
-            spotText.SetBackgroundColour(VERY_LIGHT_GREY)
-            littleSizer.Add(spotText,0,wx.ALIGN_CENTER_VERTICAL)
-            spotText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
-            spotDiameter = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.2f" % (d)),
-                style=wx.TE_PROCESS_ENTER)
-            littleSizer.Add(spotDiameter,0,wx.ALIGN_CENTER_VERTICAL)
-            spotDiameter.Bind(wx.EVT_TEXT_ENTER,OnSpotDiameter)
-            spotDiameter.Bind(wx.EVT_KILL_FOCUS,OnSpotDiameter)
-            spotIds.append(spotDiameter.GetId())
-            spotDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
-            spotDelete.Bind(wx.EVT_CHECKBOX,OnDeleteSpot)
-            delSpotId.append(spotDelete)
-            littleSizer.Add(spotDelete,0,wx.ALIGN_CENTER_VERTICAL)
+        for spot in spots:
+            if spot:
+                x,y,d = spot
+                spotText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.2f,%.2f" % (x,y)),
+                    style=wx.TE_READONLY)
+                spotText.SetBackgroundColour(VERY_LIGHT_GREY)
+                littleSizer.Add(spotText,0,wx.ALIGN_CENTER_VERTICAL)
+                spotText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
+                spotDiameter = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.2f" % (d)),
+                    style=wx.TE_PROCESS_ENTER)
+                littleSizer.Add(spotDiameter,0,wx.ALIGN_CENTER_VERTICAL)
+                spotDiameter.Bind(wx.EVT_TEXT_ENTER,OnSpotDiameter)
+                spotDiameter.Bind(wx.EVT_KILL_FOCUS,OnSpotDiameter)
+                spotIds.append(spotDiameter.GetId())
+                spotDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
+                spotDelete.Bind(wx.EVT_CHECKBOX,OnDeleteSpot)
+                delSpotId.append(spotDelete)
+                littleSizer.Add(spotDelete,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(littleSizer,0,)
     ringIds = []
     delRingId = []
@@ -1090,22 +1120,24 @@ def UpdateMasks(G2frame,data):
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' thickness, deg'),0,
             wx.ALIGN_CENTER_VERTICAL)
         littleSizer.Add((5,0),0)
-        for tth,thick in rings:
-            ringText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (tth)),
-                style=wx.TE_READONLY)
-            ringText.SetBackgroundColour(VERY_LIGHT_GREY)
-            ringText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
-            littleSizer.Add(ringText,0,wx.ALIGN_CENTER_VERTICAL)
-            ringThick = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (thick)),
-                style=wx.TE_PROCESS_ENTER)
-            littleSizer.Add(ringThick,0,wx.ALIGN_CENTER_VERTICAL)
-            ringThick.Bind(wx.EVT_TEXT_ENTER,OnRingThickness)
-            ringThick.Bind(wx.EVT_KILL_FOCUS,OnRingThickness)
-            ringIds.append(ringThick.GetId())
-            ringDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
-            ringDelete.Bind(wx.EVT_CHECKBOX,OnDeleteRing)
-            delRingId.append(ringDelete)
-            littleSizer.Add(ringDelete,0,wx.ALIGN_CENTER_VERTICAL)
+        for ring in rings:
+            if ring:
+                tth,thick = ring
+                ringText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (tth)),
+                    style=wx.TE_READONLY)
+                ringText.SetBackgroundColour(VERY_LIGHT_GREY)
+                ringText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
+                littleSizer.Add(ringText,0,wx.ALIGN_CENTER_VERTICAL)
+                ringThick = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (thick)),
+                    style=wx.TE_PROCESS_ENTER)
+                littleSizer.Add(ringThick,0,wx.ALIGN_CENTER_VERTICAL)
+                ringThick.Bind(wx.EVT_TEXT_ENTER,OnRingThickness)
+                ringThick.Bind(wx.EVT_KILL_FOCUS,OnRingThickness)
+                ringIds.append(ringThick.GetId())
+                ringDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
+                ringDelete.Bind(wx.EVT_CHECKBOX,OnDeleteRing)
+                delRingId.append(ringDelete)
+                littleSizer.Add(ringDelete,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(littleSizer,0,)
     arcIds = []
     delArcId = []
@@ -1123,27 +1155,29 @@ def UpdateMasks(G2frame,data):
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' thickness, deg'),0,
             wx.ALIGN_CENTER_VERTICAL)
         littleSizer.Add((5,0),0)
-        for tth,azimuth,thick in arcs:
-            arcText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (tth)),
-                style=wx.TE_READONLY)
-            arcText.SetBackgroundColour(VERY_LIGHT_GREY)
-            arcText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
-            littleSizer.Add(arcText,0,wx.ALIGN_CENTER_VERTICAL)
-            azmText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%d,%d" % (azimuth[0],azimuth[1])),
-                style=wx.TE_READONLY)
-            azmText.SetBackgroundColour(VERY_LIGHT_GREY)
-            azmText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
-            littleSizer.Add(azmText,0,wx.ALIGN_CENTER_VERTICAL)
-            arcThick = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (thick)),
-                style=wx.TE_PROCESS_ENTER)
-            littleSizer.Add(arcThick,0,wx.ALIGN_CENTER_VERTICAL)
-            arcThick.Bind(wx.EVT_TEXT_ENTER,OnArcThickness)
-            arcThick.Bind(wx.EVT_KILL_FOCUS,OnArcThickness)
-            arcIds.append(arcThick.GetId())
-            arcDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
-            arcDelete.Bind(wx.EVT_CHECKBOX,OnDeleteArc)
-            delArcId.append(arcDelete)
-            littleSizer.Add(arcDelete,0,wx.ALIGN_CENTER_VERTICAL)
+        for arc in arcs:
+            if arc:
+                tth,azimuth,thick = arc
+                arcText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (tth)),
+                    style=wx.TE_READONLY)
+                arcText.SetBackgroundColour(VERY_LIGHT_GREY)
+                arcText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
+                littleSizer.Add(arcText,0,wx.ALIGN_CENTER_VERTICAL)
+                azmText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%d,%d" % (azimuth[0],azimuth[1])),
+                    style=wx.TE_READONLY)
+                azmText.SetBackgroundColour(VERY_LIGHT_GREY)
+                azmText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
+                littleSizer.Add(azmText,0,wx.ALIGN_CENTER_VERTICAL)
+                arcThick = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (thick)),
+                    style=wx.TE_PROCESS_ENTER)
+                littleSizer.Add(arcThick,0,wx.ALIGN_CENTER_VERTICAL)
+                arcThick.Bind(wx.EVT_TEXT_ENTER,OnArcThickness)
+                arcThick.Bind(wx.EVT_KILL_FOCUS,OnArcThickness)
+                arcIds.append(arcThick.GetId())
+                arcDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
+                arcDelete.Bind(wx.EVT_CHECKBOX,OnDeleteArc)
+                delArcId.append(arcDelete)
+                littleSizer.Add(arcDelete,0,wx.ALIGN_CENTER_VERTICAL)
         mainSizer.Add(littleSizer,0,)
     polyIds = []
     delPolyId = []

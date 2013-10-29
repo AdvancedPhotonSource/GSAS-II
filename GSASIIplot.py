@@ -2082,7 +2082,7 @@ def PlotExposedImage(G2frame,newPlot=False,event=None):
     elif G2frame.G2plotNB.nb.GetPageText(plotNo) == '2D Integration':
         PlotIntegration(G2frame,newPlot,event)
 
-def OnStartMask(G2frame,eventkey):
+def OnStartMask(G2frame):
     '''Initiate the start of a Frame or Polygon map
 
     :param wx.Frame G2frame: The main GSAS-II tree "window"
@@ -2091,14 +2091,16 @@ def OnStartMask(G2frame,eventkey):
     '''
     Masks = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
-    if eventkey == 'f':
-        G2frame.setFrame = True
+    if G2frame.MaskKey == 'f':
         Masks['Frames'] = []
-        G2frame.G2plotNB.status.SetFields(['','Frame mask active - LB pick next point, RB close polygon'])
-    elif eventkey == 'p':
-        G2frame.setPoly = True
+    elif G2frame.MaskKey == 'p':
         Masks['Polygons'].append([])
-        G2frame.G2plotNB.status.SetFields(['','Polygon mask active - LB pick next point, RB close polygon'])
+    elif G2frame.MaskKey == 's':
+        Masks['Points'].append([])
+    elif G2frame.MaskKey == 'a':
+        Masks['Arcs'].append([])
+    elif G2frame.MaskKey == 'r':
+        Masks['Rings'].append([])
     G2imG.UpdateMasks(G2frame,Masks)
     PlotImage(G2frame,newImage=True)
 
@@ -2152,7 +2154,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Int = G2frame.ImageZ[ypix][xpix]
                 tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
-                if G2frame.setPoly or G2frame.setFrame:
+                if G2frame.MaskKey in ['p','f']:
                     G2frame.G2plotNB.status.SetFields(['','Polygon/frame mask pick - LB next point, RB close polygon'])
                 else:
                     G2frame.G2plotNB.status.SetFields(\
@@ -2164,30 +2166,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         except TypeError:
             return
         if PickName == 'Masks':
-            Xpos = event.xdata
-            if not Xpos:            #got point out of frame
-                return
-            Ypos = event.ydata
-            if event.key == 's':
-                Masks['Points'].append([Xpos,Ypos,1.])
-            elif event.key == 'r':
-                tth = G2img.GetTth(Xpos,Ypos,Data)
-                Masks['Rings'].append([tth,0.1])
-            elif event.key == 'a':
-                tth,azm = G2img.GetTthAzm(Xpos,Ypos,Data)
-                azm = int(azm)                
-                Masks['Arcs'].append([tth,[azm-5,azm+5],0.1])
-            elif event.key == 'p':
-                OnStartMask(G2frame,event.key)
-                #G2frame.setPoly = True
-                #Masks['Polygons'].append([])
-                #G2frame.G2plotNB.status.SetFields(['','Polygon mask active - LB pick next point, RB close polygon'])
-            elif event.key == 'f':
-                OnStartMask(G2frame,event.key)
-                #G2frame.setFrame = True
-                #Masks['Frames'] = []
-                #G2frame.G2plotNB.status.SetFields(['','Frame mask active - LB pick next point, RB close polygon'])
-            G2imG.UpdateMasks(G2frame,Masks)
+            if event.key in ['p','f','s','a','r']:
+                G2frame.MaskKey = event.key
+                OnStartMask(G2frame)
+                
         elif PickName == 'Image Controls':
             if event.key == 'c':
                 Xpos = event.xdata
@@ -2221,36 +2203,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     def OnImPick(event):
         if G2frame.PatternTree.GetItemText(G2frame.PickId) not in ['Image Controls','Masks']:
             return
-        if G2frame.setPoly:
-            polygon = Masks['Polygons'][-1]
-            xpos,ypos = event.mouseevent.xdata,event.mouseevent.ydata
-            if xpos and ypos:                       #point inside image
-                if len(polygon) > 2 and event.mouseevent.button == 3:
-                    x0,y0 = polygon[0]
-                    polygon.append([x0,y0])
-                    G2frame.setPoly = False
-                    G2frame.G2plotNB.status.SetFields(['','Polygon closed - RB drag a vertex to change shape'])
-                else:
-                    G2frame.G2plotNB.status.SetFields(['','New polygon point: %.1f,%.1f'%(xpos,ypos)])
-                    polygon.append([xpos,ypos])
-                G2imG.UpdateMasks(G2frame,Masks)
-        elif G2frame.setFrame:
-            frame = Masks['Frames']
-            xpos,ypos = event.mouseevent.xdata,event.mouseevent.ydata
-            if xpos and ypos:                       #point inside image
-                if len(frame) > 2 and event.mouseevent.button == 3:
-                    x0,y0 = frame[0]
-                    frame.append([x0,y0])
-                    G2frame.setFrame = False
-                    G2frame.G2plotNB.status.SetFields(['','Frame closed - RB drag a vertex to change shape'])
-                else:
-                    G2frame.G2plotNB.status.SetFields(['','New frame point: %.1f,%.1f'%(xpos,ypos)])
-                    frame.append([xpos,ypos])
-                G2imG.UpdateMasks(G2frame,Masks)
-        else:
-            if G2frame.itemPicked is not None: return
-            G2frame.itemPicked = event.artist
-            G2frame.mousePicked = event.mouseevent
+        if G2frame.itemPicked is not None: return
+        G2frame.itemPicked = event.artist
+        G2frame.mousePicked = event.mouseevent
         
     def OnImRelease(event):
         try:
@@ -2264,7 +2219,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         scaley = 1000./pixelSize[1]
         pixLimit = Data['pixLimit']
         if G2frame.itemPicked is None and PickName == 'Image Controls' and len(G2frame.ImageZ):
-#            sizexy = Data['size']
             Xpos = event.xdata
             if not (Xpos and G2frame.ifGetRing):                   #got point out of frame
                 return
@@ -2293,95 +2247,133 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     return
                 PlotImage(G2frame,newImage=False)
             return
-        else:
-            xpos = event.xdata
-            if xpos:                                        #avoid out of frame mouse position
-                ypos = event.ydata
-                if G2frame.ifGetRing:                          #delete a calibration ring pick
-                    xypos = [xpos,ypos]
-                    rings = Data['ring']
-                    for ring in rings:
-                        if np.allclose(ring,xypos,.01,0):
-                            rings.remove(ring)                                                                       
+        elif G2frame.MaskKey and PickName == 'Masks':
+            Xpos,Ypos = [event.xdata,event.ydata]
+            if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
+                return
+            if G2frame.MaskKey == 's' and event.button == 1:
+                Masks['Points'][-1] = [Xpos,Ypos,1.]
+                G2frame.MaskKey = ''                
+            elif G2frame.MaskKey == 'r' and event.button == 1:
+                tth = G2img.GetTth(Xpos,Ypos,Data)
+                Masks['Rings'][-1] = [tth,0.1]
+                G2frame.MaskKey = ''                
+            elif G2frame.MaskKey == 'a' and event.button == 1:
+                tth,azm = G2img.GetTthAzm(Xpos,Ypos,Data)
+                azm = int(azm)                
+                Masks['Arcs'][-1] = [tth,[azm-5,azm+5],0.1]
+                G2frame.MaskKey = ''                
+            elif G2frame.MaskKey =='p':
+                polygon = Masks['Polygons'][-1]
+                if len(polygon) > 2 and event.mouseevent.button == 3:
+                    x0,y0 = polygon[0]
+                    polygon.append([x0,y0])
+                    G2frame.MaskKey = ''
+                    G2frame.G2plotNB.status.SetFields(['','Polygon closed - RB drag a vertex to change shape'])
                 else:
-                    tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
-                    itemPicked = str(G2frame.itemPicked)
-                    if 'Line2D' in itemPicked and PickName == 'Image Controls':
-                        if 'line1' in itemPicked:
-                            Data['IOtth'][0] = max(tth,0.001)
-                        elif 'line2' in itemPicked:
-                            Data['IOtth'][1] = tth
-                        elif 'line3' in itemPicked:
-                            Data['LRazimuth'][0] = int(azm)
-                            if Data['fullIntegrate']:
-                                Data['LRazimuth'][1] = Data['LRazimuth'][0]+360
-                        elif 'line4' in itemPicked and not Data['fullIntegrate']:
-                            Data['LRazimuth'][1] = int(azm)
-                            
-                        if Data['LRazimuth'][0] > Data['LRazimuth'][1]:
-                            Data['LRazimuth'][0] -= 360
-                            
-                        azLim = np.array(Data['LRazimuth'])    
-                        if np.any(azLim>360):
-                            azLim -= 360
-                            Data['LRazimuth'] = list(azLim)
-                            
-                        if  Data['IOtth'][0] > Data['IOtth'][1]:
-                            Data['IOtth'][0],Data['IOtth'][1] = Data['IOtth'][1],Data['IOtth'][0]
-                            
-                        G2frame.InnerTth.SetValue("%8.2f" % (Data['IOtth'][0]))
-                        G2frame.OuterTth.SetValue("%8.2f" % (Data['IOtth'][1]))
-                        G2frame.Lazim.SetValue("%6d" % (Data['LRazimuth'][0]))
-                        G2frame.Razim.SetValue("%6d" % (Data['LRazimuth'][1]))
-                    elif 'Circle' in itemPicked and PickName == 'Masks':
-                        spots = Masks['Points']
-                        newPos = itemPicked.split(')')[0].split('(')[2].split(',')
-                        newPos = np.array([float(newPos[0]),float(newPos[1])])
-                        for spot in spots:
-                            if np.allclose(np.array([spot[:2]]),newPos):
-                                spot[:2] = xpos,ypos
-                        G2imG.UpdateMasks(G2frame,Masks)
-                    elif 'Line2D' in itemPicked and PickName == 'Masks':
-                        Obj = G2frame.itemPicked.findobj()
-                        rings = Masks['Rings']
-                        arcs = Masks['Arcs']
-                        polygons = Masks['Polygons']
-                        frame = Masks['Frames']
-                        for ring in G2frame.ringList:
-                            if Obj == ring[0]:
-                                rN = ring[1]
-                                if ring[2] == 'o':
-                                    rings[rN][0] = G2img.GetTth(xpos,ypos,Data)-rings[rN][1]/2.
-                                else:
-                                    rings[rN][0] = G2img.GetTth(xpos,ypos,Data)+rings[rN][1]/2.
-                        for arc in G2frame.arcList:
-                            if Obj == arc[0]:
-                                aN = arc[1]
-                                if arc[2] == 'o':
-                                    arcs[aN][0] = G2img.GetTth(xpos,ypos,Data)-arcs[aN][2]/2
-                                elif arc[2] == 'i':
-                                    arcs[aN][0] = G2img.GetTth(xpos,ypos,Data)+arcs[aN][2]/2
-                                elif arc[2] == 'l':
-                                    arcs[aN][1][0] = int(G2img.GetAzm(xpos,ypos,Data))
-                                else:
-                                    arcs[aN][1][1] = int(G2img.GetAzm(xpos,ypos,Data))
-                        for poly in G2frame.polyList:
-                            if Obj == poly[0]:
-                                ind = G2frame.itemPicked.contains(G2frame.mousePicked)[1]['ind'][0]
-                                oldPos = np.array([G2frame.mousePicked.xdata,G2frame.mousePicked.ydata])
-                                pN = poly[1]
-                                for i,xy in enumerate(polygons[pN]):
-                                    if np.allclose(np.array([xy]),oldPos,atol=1.0):
-                                        polygons[pN][i] = xpos,ypos
-                        if frame:
+                    G2frame.G2plotNB.status.SetFields(['','New polygon point: %.1f,%.1f'%(Xpos,Ypos)])
+                    polygon.append([Xpos,Ypos])
+            elif G2frame.MaskKey =='f':
+                frame = Masks['Frames']
+                if len(frame) > 2 and event.mouseevent.button == 3:
+                    x0,y0 = frame[0]
+                    frame.append([x0,y0])
+                    G2frame.MaskKey = ''
+                    G2frame.G2plotNB.status.SetFields(['','Frame closed - RB drag a vertex to change shape'])
+                else:
+                    G2frame.G2plotNB.status.SetFields(['','New frame point: %.1f,%.1f'%(Xpos,Ypos)])
+                    frame.append([Xpos,Ypos])
+            G2imG.UpdateMasks(G2frame,Masks)
+            PlotImage(G2frame,newImage=False)
+        else:
+            Xpos,Ypos = [event.xdata,event.ydata]
+            if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
+                return
+            if G2frame.ifGetRing:                          #delete a calibration ring pick
+                xypos = [Xpos,Ypos]
+                rings = Data['ring']
+                for ring in rings:
+                    if np.allclose(ring,xypos,.01,0):
+                        rings.remove(ring)
+            else:
+                tth,azm,dsp = G2img.GetTthAzmDsp(Xpos,Ypos,Data)
+                itemPicked = str(G2frame.itemPicked)
+                if 'Line2D' in itemPicked and PickName == 'Image Controls':
+                    if 'line1' in itemPicked:
+                        Data['IOtth'][0] = max(tth,0.001)
+                    elif 'line2' in itemPicked:
+                        Data['IOtth'][1] = tth
+                    elif 'line3' in itemPicked:
+                        Data['LRazimuth'][0] = int(azm)
+                        if Data['fullIntegrate']:
+                            Data['LRazimuth'][1] = Data['LRazimuth'][0]+360
+                    elif 'line4' in itemPicked and not Data['fullIntegrate']:
+                        Data['LRazimuth'][1] = int(azm)
+                        
+                    if Data['LRazimuth'][0] > Data['LRazimuth'][1]:
+                        Data['LRazimuth'][0] -= 360
+                        
+                    azLim = np.array(Data['LRazimuth'])    
+                    if np.any(azLim>360):
+                        azLim -= 360
+                        Data['LRazimuth'] = list(azLim)
+                        
+                    if  Data['IOtth'][0] > Data['IOtth'][1]:
+                        Data['IOtth'][0],Data['IOtth'][1] = Data['IOtth'][1],Data['IOtth'][0]
+                        
+                    G2frame.InnerTth.SetValue("%8.2f" % (Data['IOtth'][0]))
+                    G2frame.OuterTth.SetValue("%8.2f" % (Data['IOtth'][1]))
+                    G2frame.Lazim.SetValue("%6d" % (Data['LRazimuth'][0]))
+                    G2frame.Razim.SetValue("%6d" % (Data['LRazimuth'][1]))
+                elif 'Circle' in itemPicked and PickName == 'Masks':
+                    spots = Masks['Points']
+                    newPos = itemPicked.split(')')[0].split('(')[2].split(',')
+                    newPos = np.array([float(newPos[0]),float(newPos[1])])
+                    for spot in spots:
+                        if np.allclose(np.array([spot[:2]]),newPos):
+                            spot[:2] = Xpos,Ypos
+                    G2imG.UpdateMasks(G2frame,Masks)
+                elif 'Line2D' in itemPicked and PickName == 'Masks':
+                    Obj = G2frame.itemPicked.findobj()
+                    rings = Masks['Rings']
+                    arcs = Masks['Arcs']
+                    polygons = Masks['Polygons']
+                    frame = Masks['Frames']
+                    for ring in G2frame.ringList:
+                        if Obj == ring[0]:
+                            rN = ring[1]
+                            if ring[2] == 'o':
+                                rings[rN][0] = G2img.GetTth(Xpos,Ypos,Data)-rings[rN][1]/2.
+                            else:
+                                rings[rN][0] = G2img.GetTth(Xpos,Ypos,Data)+rings[rN][1]/2.
+                    for arc in G2frame.arcList:
+                        if Obj == arc[0]:
+                            aN = arc[1]
+                            if arc[2] == 'o':
+                                arcs[aN][0] = G2img.GetTth(Xpos,Ypos,Data)-arcs[aN][2]/2
+                            elif arc[2] == 'i':
+                                arcs[aN][0] = G2img.GetTth(Xpos,Ypos,Data)+arcs[aN][2]/2
+                            elif arc[2] == 'l':
+                                arcs[aN][1][0] = int(G2img.GetAzm(Xpos,Ypos,Data))
+                            else:
+                                arcs[aN][1][1] = int(G2img.GetAzm(Xpos,Ypos,Data))
+                    for poly in G2frame.polyList:
+                        if Obj == poly[0]:
+                            ind = G2frame.itemPicked.contains(G2frame.mousePicked)[1]['ind'][0]
                             oldPos = np.array([G2frame.mousePicked.xdata,G2frame.mousePicked.ydata])
-                            for i,xy in enumerate(frame):
+                            pN = poly[1]
+                            for i,xy in enumerate(polygons[pN]):
                                 if np.allclose(np.array([xy]),oldPos,atol=1.0):
-                                    frame[i] = xpos,ypos
-                        G2imG.UpdateMasks(G2frame,Masks)
-#                    else:                  #keep for future debugging
-#                        print str(G2frame.itemPicked),event.xdata,event.ydata,event.button
-                PlotImage(G2frame,newImage=True)
+                                    polygons[pN][i] = Xpos,Ypos
+                    if frame:
+                        oldPos = np.array([G2frame.mousePicked.xdata,G2frame.mousePicked.ydata])
+                        for i,xy in enumerate(frame):
+                            if np.allclose(np.array([xy]),oldPos,atol=1.0):
+                                frame[i] = Xpos,Ypos
+                    G2imG.UpdateMasks(G2frame,Masks)
+#                else:                  #keep for future debugging
+#                    print str(G2frame.itemPicked),event.xdata,event.ydata,event.button
+            PlotImage(G2frame,newImage=True)
             G2frame.itemPicked = None
             
     try:
@@ -2415,6 +2407,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Page.Choice = (' key press','l: log(I) on',)
             if G2frame.logPlot:
                 Page.Choice[1] = 'l: log(I) off'
+            Page.keyPress = OnImPlotKeyPress
+        elif G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Masks',]:
+            Page.Choice = (' key press','s: spot mask','a: arc mask','r: ring mask',
+                'p: polygon mask','f: frame mask',)
             Page.keyPress = OnImPlotKeyPress
     except TypeError:
         pass
@@ -2462,8 +2458,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 interpolation='nearest',vmin=0,vmax=2,extent=[0,Xmax,Ymax,0])
             Img = Plot.imshow(A,aspect='equal',cmap=acolor,
                 interpolation='nearest',vmin=Imin,vmax=Imax,extent=[0,Xmax,Ymax,0])
-            if G2frame.setPoly or G2frame.setFrame:
-                Img.set_picker(True)
     
         Plot.plot(xcent,ycent,'x')
         #G2frame.PatternTree.GetItemText(item)
@@ -2533,29 +2527,36 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         if 'Frames' not in Masks:
             Masks['Frames'] = []
         frame = Masks['Frames']
-        for x,y,d in spots:
-            Plot.add_artist(Circle((x,y),radius=d/2,fc='none',ec='r',picker=3))
+        for spot in spots:
+            if spot:
+                x,y,d = spot
+                Plot.add_artist(Circle((x,y),radius=d/2,fc='none',ec='r',picker=3))
         G2frame.ringList = []
-        for iring,(tth,thick) in enumerate(rings):
-            wave = Data['wavelength']
-            x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data))),2)
-            x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth-thick/2.,wave),Data))),2)
-            G2frame.ringList.append([Plot.plot(x1,y1,'r',picker=3),iring,'o'])            
-            G2frame.ringList.append([Plot.plot(x2,y2,'r',picker=3),iring,'i'])
+        for iring,ring in enumerate(rings):
+            if ring:
+                tth,thick = ring
+                wave = Data['wavelength']
+                x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data))),2)
+                x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth-thick/2.,wave),Data))),2)
+                G2frame.ringList.append([Plot.plot(x1,y1,'r',picker=3),iring,'o'])            
+                G2frame.ringList.append([Plot.plot(x2,y2,'r',picker=3),iring,'i'])
         G2frame.arcList = []
-        for iarc,(tth,azm,thick) in enumerate(arcs):            
-            wave = Data['wavelength']
-            x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data),azm)),2)
-            x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(max(0.01,tth-thick/2.),wave),Data),azm)),2)
-            G2frame.arcList.append([Plot.plot(x1,y1,'r',picker=3),iarc,'o'])            
-            G2frame.arcList.append([Plot.plot(x2,y2,'r',picker=3),iarc,'i'])
-            G2frame.arcList.append([Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',picker=3),iarc,'l'])
-            G2frame.arcList.append([Plot.plot([x1[-1],x2[-1]],[y1[-1],y2[-1]],'r',picker=3),iarc,'u'])
+        for iarc,arc in enumerate(arcs):
+            if arc:
+                tth,azm,thick = arc           
+                wave = Data['wavelength']
+                x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data),azm)),2)
+                x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(max(0.01,tth-thick/2.),wave),Data),azm)),2)
+                G2frame.arcList.append([Plot.plot(x1,y1,'r',picker=3),iarc,'o'])            
+                G2frame.arcList.append([Plot.plot(x2,y2,'r',picker=3),iarc,'i'])
+                G2frame.arcList.append([Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',picker=3),iarc,'l'])
+                G2frame.arcList.append([Plot.plot([x1[-1],x2[-1]],[y1[-1],y2[-1]],'r',picker=3),iarc,'u'])
         G2frame.polyList = []
         for ipoly,polygon in enumerate(polygons):
-            x,y = np.hsplit(np.array(polygon),2)
-            G2frame.polyList.append([Plot.plot(x,y,'r+',picker=10),ipoly])
-            Plot.plot(x,y,'r')            
+            if polygon:
+                x,y = np.hsplit(np.array(polygon),2)
+                G2frame.polyList.append([Plot.plot(x,y,'r+',picker=10),ipoly])
+                Plot.plot(x,y,'r')            
         G2frame.frameList = []
         if frame:
             x,y = np.hsplit(np.array(frame),2)

@@ -1407,11 +1407,7 @@ class GSASII(wx.Frame):
         self.imageDefault = {}
         self.Sngl = 0
         self.ifGetRing = False
-        self.setPoly = False
-        self.setFrame = False
-        self.setSpot = False
-        self.setArc = False
-        self.setRing = False
+        self.MaskKey = ''           #trigger for making image masks
         arg = sys.argv
         if len(arg) > 1:
             self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'

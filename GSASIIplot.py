@@ -2265,7 +2265,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 G2frame.MaskKey = ''                
             elif G2frame.MaskKey =='p':
                 polygon = Masks['Polygons'][-1]
-                if len(polygon) > 2 and event.mouseevent.button == 3:
+                if len(polygon) > 2 and event.button == 3:
                     x0,y0 = polygon[0]
                     polygon.append([x0,y0])
                     G2frame.MaskKey = ''
@@ -2275,7 +2275,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     polygon.append([Xpos,Ypos])
             elif G2frame.MaskKey =='f':
                 frame = Masks['Frames']
-                if len(frame) > 2 and event.mouseevent.button == 3:
+                if len(frame) > 2 and event.button == 3:
                     x0,y0 = frame[0]
                     frame.append([x0,y0])
                     G2frame.MaskKey = ''

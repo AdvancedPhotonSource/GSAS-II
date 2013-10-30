@@ -252,6 +252,7 @@ def UpdateImageControls(G2frame,data,masks):
 
         def OnDataType(event):
             data['type'] = typeSel.GetValue()[:4]
+            wx.CallAfter(UpdateImageControls,G2frame,data,masks)
     
         def OnNewColorBar(event):
             data['color'] = colSel.GetValue()
@@ -264,6 +265,7 @@ def UpdateImageControls(G2frame,data,masks):
             except ValueError:
                 pass
             azmthOff.SetValue("%.2f"%(data['azmthOff']))          #reset in case of error  
+            G2plt.PlotExposedImage(G2frame,event=event)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Type of image data: '),0,
@@ -522,7 +524,24 @@ def UpdateImageControls(G2frame,data,masks):
                 data['centerAzm'] = True
             G2plt.PlotExposedImage(G2frame,event=event)
                 
-        dataSizer = wx.FlexGridSizer(5,2,5,5)
+        def OnApplyPola(event):
+            if data['PolaVal'][1]:
+                data['PolaVal'][1] = False
+            else:
+                data['PolaVal'][1] = True
+                
+        def OnPolaVal(event):
+            try:
+                value = float(polaVal.GetValue())
+                if 0.001 <= value <= 0.999:
+                    data['PolaVal'][0] = value
+                else:
+                    raise ValueError
+            except ValueError:
+                pass
+            polaVal.SetValue('%.3f'%(data['PolaVal'][0]))
+                           
+        dataSizer = wx.FlexGridSizer(5,2,5,3)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Integration coefficients'),0,
             wx.ALIGN_CENTER_VERTICAL)    
         dataSizer.Add((5,0),0)
@@ -585,6 +604,20 @@ def UpdateImageControls(G2frame,data,masks):
         obliqVal.Bind(wx.EVT_KILL_FOCUS,OnObliqVal)
         littleSizer.Add(obliqVal,0,wx.ALIGN_CENTER_VERTICAL)
         dataSizer.Add(littleSizer,0,)
+        if 'SASD' in data['type']:
+            littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+            setPolariz = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply polarization?')
+            dataSizer.Add(setPolariz,0,wx.ALIGN_CENTER_VERTICAL)
+            setPolariz.Bind(wx.EVT_CHECKBOX, OnApplyPola)
+            setPolariz.SetValue(data['PolaVal'][1])
+            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Value (0.001-0.999)  '),0,
+                wx.ALIGN_CENTER_VERTICAL)
+            polaVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['PolaVal'][0]),
+                style=wx.TE_PROCESS_ENTER)
+            polaVal.Bind(wx.EVT_TEXT_ENTER,OnPolaVal)
+            polaVal.Bind(wx.EVT_KILL_FOCUS,OnPolaVal)
+            littleSizer.Add(polaVal,0,wx.ALIGN_CENTER_VERTICAL)
+            dataSizer.Add(littleSizer,0,)
         
         showLines = wx.CheckBox(parent=G2frame.dataDisplay,label='Show integration limits?')
         dataSizer.Add(showLines,0,wx.ALIGN_CENTER_VERTICAL)
@@ -771,6 +804,8 @@ def UpdateImageControls(G2frame,data,masks):
         data['centerAzm'] = False
     if 'Oblique' not in data:
         data['Oblique'] = [0.5,False]
+    if 'PolaVal' not in data:
+        data['PolaVal'] = [0.99,False]
     #end fix
     
     colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]

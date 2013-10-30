@@ -476,6 +476,16 @@ def GetTifData(filename,imageOnly=False):
                 print 'Read Pilatus tiff file: ',filename
             image = ar.array('L',File.read(4*Npix))
             image = np.array(np.asarray(image),dtype=np.int32)
+        else:
+            if IFD[258][2][0] == 16:
+                print sizexy
+                tifType = 'GE'
+                pixy = (200,200)
+                File.seek(8)
+                if not imageOnly:
+                    print 'Read GE-detector tiff file: ',filename
+                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+            
     elif 262 in IFD and IFD[262][2][0] > 4:
         tifType = 'DND'
         pixy = (158,158)
@@ -502,6 +512,7 @@ def GetTifData(filename,imageOnly=False):
                     image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.float32)
                 else:
                     image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
+                
         elif IFD[273][2][0] == 4096:
             if sizexy[0] == 3072:
                 pixy =  (73,73)

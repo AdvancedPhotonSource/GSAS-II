@@ -162,7 +162,7 @@ def Polarization(Pola,Tth,Azm=0.0):
     return pola,dpdPola
     
 def Oblique(ObCoeff,Tth):
-    'needs a doc string'
+    'currently assumes detector is normal to beam'
     if ObCoeff:
         return (1.-ObCoeff)/(1.0-np.exp(np.log(ObCoeff)/npcosd(Tth)))
     else:

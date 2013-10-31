@@ -811,7 +811,7 @@ def ImageIntegrate(image,data,masks):
         if data['Oblique'][1]:
             H0 /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
         if 'SASD' in data['type'] and data['PolaVal'][1]:
-            H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm)[0] for azm in H1[:-1]+np.diff(H1)])
+            H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm)[0] for azm in H1[:-1]+np.diff(H1)/2.])
         Nup += 1
         dlg.Update(Nup)
         t1 = time.time()

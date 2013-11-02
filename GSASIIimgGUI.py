@@ -210,7 +210,7 @@ def UpdateImageControls(G2frame,data,masks):
             dlg.Destroy()
         
     def OnLoadControls(event):
-        cntlList = 'wavelength','distance','tilt','invert_x','invert_y',
+        cntlList = ['wavelength','distance','tilt','invert_x','invert_y',
             'fullIntegrate','outAzimuths','LRazimuth','IOtth','azmthOff']
         dlg = wx.FileDialog(G2frame, 'Choose image controls file', '.', '', 
             'image control files (*.imctrl)|*.imctrl',wx.OPEN|wx.CHANGE_DIR)

@@ -646,39 +646,43 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             refDict['FF']['FF'] = np.ones((len(refDict['RefList']),len(dat)))
         refDict['ifNew'] = True            
 #reflection processing begins here - big arrays!
-    refl = refDict['RefList']
-    H = refl.T[:3]
-    SQ = 1./(2.*refl.T[4])**2
-    SQfactor = 4.0*SQ*twopisq
-    Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT))
-    if refDict['ifNew']:                #no form factors - 1st time thru StructureFactor
-        for iref in range(len(refl)):
-            if 'X' in calcControls[hfx+'histType']:
-                dat = G2el.getFFvalues(FFtables,SQ[iref])
-                refDict['FF']['FF'][iref] *= dat.values()
-        refDict['ifNew'] = False
-    Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
-    FF = np.repeat(refDict['FF']['FF'].T[Tindx].T,len(SGT),axis=0)
-    Uniq = np.reshape(np.inner(H.T,SGMT),(-1,3))
-    Phi = np.inner(H.T,SGT).flatten()
-    phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T)+Phi[:,np.newaxis])
-    sinp = np.sin(phase)
-    cosp = np.cos(phase)
-    biso = -SQfactor*Uisodata[:,np.newaxis]
-    Tiso = np.repeat(np.where(biso<1.,np.exp(biso),1.0),len(SGT),axis=1).T
-    HbH = -np.sum(Uniq.T*np.inner(bij,Uniq),axis=1)
-    Tuij = np.where(HbH<1.,np.exp(HbH),1.0).T
-    Tcorr = Tiso*Tuij*Mdata*Fdata/len(SGMT)
-    fa = np.array([((FF+FP).T-Bab).T*cosp*Tcorr,-FPP*sinp*Tcorr])
-    fa = np.reshape(fa,(2,len(refl),len(SGT),len(Mdata)))
-    fas = np.sum(np.sum(fa,axis=2),axis=2)        #real
-    fbs = np.zeros_like(fas)
-    if not SGData['SGInv']:
-        fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,FPP*cosp*Tcorr])
-        fb = np.reshape(fb,(2,len(refl),len(SGT),len(Mdata)))
-        fbs = np.sum(np.sum(fb,axis=2),axis=2)
-    fasq = fas**2
-    fbsq = fbs**2        #imaginary
+    try:
+        refl = refDict['RefList']
+        H = refl.T[:3]
+        SQ = 1./(2.*refl.T[4])**2
+        SQfactor = 4.0*SQ*twopisq
+        Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT))
+        if refDict['ifNew']:                #no form factors - 1st time thru StructureFactor
+            for iref in range(len(refl)):
+                if 'X' in calcControls[hfx+'histType']:
+                    dat = G2el.getFFvalues(FFtables,SQ[iref])
+                    refDict['FF']['FF'][iref] *= dat.values()
+            refDict['ifNew'] = False
+        Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
+        FF = np.repeat(refDict['FF']['FF'].T[Tindx].T,len(SGT),axis=0)
+        Uniq = np.reshape(np.inner(H.T,SGMT),(-1,3))
+        Phi = np.inner(H.T,SGT).flatten()
+        phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T)+Phi[:,np.newaxis])
+        sinp = np.sin(phase)
+        cosp = np.cos(phase)
+        biso = -SQfactor*Uisodata[:,np.newaxis]
+        Tiso = np.repeat(np.where(biso<1.,np.exp(biso),1.0),len(SGT),axis=1).T
+        HbH = -np.sum(Uniq.T*np.inner(bij,Uniq),axis=1)
+        Tuij = np.where(HbH<1.,np.exp(HbH),1.0).T
+        Tcorr = Tiso*Tuij*Mdata*Fdata/len(SGMT)
+        fa = np.array([((FF+FP).T-Bab).T*cosp*Tcorr,-FPP*sinp*Tcorr])
+        fa = np.reshape(fa,(2,len(refl),len(SGT),len(Mdata)))
+        fas = np.sum(np.sum(fa,axis=2),axis=2)        #real
+        fbs = np.zeros_like(fas)
+        if not SGData['SGInv']:
+            fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,FPP*cosp*Tcorr])
+            fb = np.reshape(fb,(2,len(refl),len(SGT),len(Mdata)))
+            fbs = np.sum(np.sum(fb,axis=2),axis=2)
+        fasq = fas**2
+        fbsq = fbs**2        #imaginary
+    except MemoryError:
+        print '**** ERROR - insufficient memory for this size problem; try 64-bit version of GSAS-II****'
+        return
     refl.T[9] = np.sum(fasq,axis=0)+np.sum(fbsq,axis=0)
     refl.T[10] = atan2d(fbs[0],fas[0])
     

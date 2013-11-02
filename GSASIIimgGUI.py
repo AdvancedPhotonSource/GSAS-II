@@ -199,7 +199,7 @@ def UpdateImageControls(G2frame,data,masks):
                 save = {}
                 keys = ['type','wavelength','calibrant','distance','center',
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
-                    'IOtth','outAzimuths']
+                    'IOtth','outAzimuths','invert_x','invert_y']
                 for key in keys:
                     if key in ['rotation']:
                         File.write(key+':'+str(data[key]-90.)+'\n')                        
@@ -210,8 +210,8 @@ def UpdateImageControls(G2frame,data,masks):
             dlg.Destroy()
         
     def OnLoadControls(event):
-        cntlList = ['wavelength','distance','tilt','rotation',
-            'fullIntegrate','outAzimuths','LRazimuth','IOtth']
+        cntlList = 'wavelength','distance','tilt','invert_x','invert_y',
+            'fullIntegrate','outAzimuths','LRazimuth','IOtth','azmthOff']
         dlg = wx.FileDialog(G2frame, 'Choose image controls file', '.', '', 
             'image control files (*.imctrl)|*.imctrl',wx.OPEN|wx.CHANGE_DIR)
         try:

@@ -242,7 +242,7 @@ def PlotSngl(self,newPlot=False):
     '''Single crystal structure factor plotting package - displays zone of reflections as rings proportional
         to F, F**2, etc. as requested
     '''
-    from matplotlib.patches import Circle
+    from matplotlib.patches import Circle,CirclePolygon
     global HKL,HKLF
 
     def OnSCMotion(event):
@@ -315,6 +315,7 @@ def PlotSngl(self,newPlot=False):
     Plot.set_title(self.PatternTree.GetItemText(self.Sngl)[5:])
     HKL = []
     HKLF = []
+    time0 = time.time()
     for refl in HKLref:
         H = np.array(refl[:3])
         Fosq,sig,Fcsq = refl[5:8]
@@ -366,6 +367,7 @@ def PlotSngl(self,newPlot=False):
                             Plot.add_artist(Circle(xy,radius=radius,ec='g',fc='g'))
                         else:                    
                             Plot.add_artist(Circle(xy,radius=radius,ec='r',fc='r'))
+#    print 'plot time: %.3f'%(time.time()-time0)
     HKL = np.array(HKL,dtype=np.int)
     HKLF = np.array(HKLF)
     Plot.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=12)
@@ -2115,6 +2117,11 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     colors=['b','g','r','c','m','k']
     Data = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
+# patch
+    if 'invert_x' not in Data:
+        Data['invert_x'] = False
+        Data['invert_y'] = True
+# end patch
     Masks = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
     try:    #may be absent
@@ -2171,7 +2178,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 OnStartMask(G2frame)
                 
         elif PickName == 'Image Controls':
-            if event.key == 'c':
+            if event.key in ['c',]:
                 Xpos = event.xdata
                 if not Xpos:            #got point out of frame
                     return
@@ -2190,13 +2197,23 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     G2frame.logPlot = False
                 else:
                     G2frame.logPlot = True
-        PlotImage(G2frame,newImage=True)
+            elif event.key in ['x',]:
+                if Data['invert_x']:
+                    Data['invert_x'] = False
+                else:
+                    Data['invert_x'] = True
+            elif event.key in ['y',]:
+                if Data['invert_y']:
+                    Data['invert_y'] = False
+                else:
+                    Data['invert_y'] = True
+        PlotImage(G2frame,newPlot=True)
             
     def OnKeyBox(event):
         if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('2D Powder Image'):
             event.key = cb.GetValue()[0]
             cb.SetValue(' key press')
-            if event.key in 'l':
+            if event.key in ['l','s','a','r','p','x','y']:
                 wx.CallAfter(OnImPlotKeyPress,event)
         Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
                         
@@ -2404,7 +2421,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     Plot.set_title(Title)
     try:
         if G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Image Controls',]:
-            Page.Choice = (' key press','l: log(I) on',)
+            Page.Choice = (' key press','l: log(I) on','x: flip x','y: flip y',)
             if G2frame.logPlot:
                 Page.Choice[1] = 'l: log(I) off'
             Page.keyPress = OnImPlotKeyPress
@@ -2566,7 +2583,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             colorBar = Page.figure.colorbar(Img)
         Plot.set_xlim(xlim)
         Plot.set_ylim(ylim)
-        Plot.invert_yaxis()
+        if Data['invert_x']:
+            Plot.invert_xaxis()
+        if Data['invert_y']:
+            Plot.invert_yaxis()
         if not newPlot and xylim:
             Page.toolbar.push_current()
             Plot.set_xlim(xylim[0])

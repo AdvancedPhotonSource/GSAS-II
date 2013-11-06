@@ -114,3 +114,4 @@ class HKLF2_ReaderClass(G2IO.ImportStructFactor):
             import traceback
             traceback.print_exc(file=sys.stdout)
             return False
+

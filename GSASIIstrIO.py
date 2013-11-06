@@ -963,7 +963,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                                 for eqv in equiv[1:]:
                                     G2mv.StoreEquivalence(name,(eqv,))
                     if 'U' in at[ct+1]:
-                        if at[9] == 'I':
+                        if at[cia] == 'I':
                             phaseVary.append(pfx+'AUiso:'+str(i))
                         else:
                             uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]

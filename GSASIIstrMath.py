@@ -635,6 +635,8 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
+    blkSize = 100       #no. of reflections in a block
+    nRef = refDict['RefList'].shape[0]
     if not len(refDict['FF']):                #no form factors - 1st time thru StructureFactor
         if 'N' in calcControls[hfx+'histType']:
             dat = G2el.getBLvalues(BLtables)
@@ -644,22 +646,21 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dat = G2el.getFFvalues(FFtables,0.)
             refDict['FF']['El'] = dat.keys()
             refDict['FF']['FF'] = np.ones((len(refDict['RefList']),len(dat)))
-        refDict['ifNew'] = True            
+            for iref,ref in enumerate(refDict['RefList']):
+                SQ = 1./(2.*ref[4])**2
+                dat = G2el.getFFvalues(FFtables,SQ)
+                refDict['FF']['FF'][iref] *= dat.values()
 #reflection processing begins here - big arrays!
-    try:
-        refl = refDict['RefList']
+    iBeg = 0            
+    while iBeg < nRef:
+        iFin = min(iBeg+blkSize,nRef)
+        refl = refDict['RefList'][iBeg:iFin]
         H = refl.T[:3]
         SQ = 1./(2.*refl.T[4])**2
         SQfactor = 4.0*SQ*twopisq
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT))
-        if refDict['ifNew']:                #no form factors - 1st time thru StructureFactor
-            for iref in range(len(refl)):
-                if 'X' in calcControls[hfx+'histType']:
-                    dat = G2el.getFFvalues(FFtables,SQ[iref])
-                    refDict['FF']['FF'][iref] *= dat.values()
-            refDict['ifNew'] = False
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
-        FF = np.repeat(refDict['FF']['FF'].T[Tindx].T,len(SGT),axis=0)
+        FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT),axis=0)
         Uniq = np.reshape(np.inner(H.T,SGMT),(-1,3))
         Phi = np.inner(H.T,SGT).flatten()
         phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T)+Phi[:,np.newaxis])
@@ -680,11 +681,9 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             fbs = np.sum(np.sum(fb,axis=2),axis=2)
         fasq = fas**2
         fbsq = fbs**2        #imaginary
-    except MemoryError:
-        print '**** ERROR - insufficient memory for this size problem; try 64-bit version of GSAS-II****'
-        return
-    refl.T[9] = np.sum(fasq,axis=0)+np.sum(fbsq,axis=0)
-    refl.T[10] = atan2d(fbs[0],fas[0])
+        refl.T[9] = np.sum(fasq,axis=0)+np.sum(fbsq,axis=0)
+        refl.T[10] = atan2d(fbs[0],fas[0])
+        iBeg += blkSize
     
 def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     'Needs a doc string'
@@ -1892,6 +1891,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             for j in dependentVars:
                 depDerivDict[j] = np.zeros(shape=(len(refDict['RefList'])))
             wdf = np.zeros(len(refDict['RefList']))
+            time0 = time.time()
             if calcControls['F**2']:
                 for iref,ref in enumerate(refDict['RefList']):
                     if ref[6] > 0:
@@ -1950,6 +1950,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                                     depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
             # now process derivatives in constraints
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdvh)
+            print 'matrix build time: %.3f'%(time.time()-time0)
 
             if dlg:
                 dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]

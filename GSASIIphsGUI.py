@@ -545,7 +545,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             #patch
             if 'cutOff' not in Map:
                 Map['cutOff'] = 100.0
-            mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Omit','Patterson']
+            mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Omit','2Fo-Fc Omit','Patterson']
             refList = data['Histograms'].keys()
             if not generalData['AtomTypes']:
                  mapTypes = ['Patterson',]
@@ -4898,7 +4898,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif 'HKLF' in reflName:
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-        if mapData['MapType'] == 'Omit':
+        if 'Omit' in mapData['MapType']:
             pgbar = wx.ProgressDialog('Omit map','Blocks done',65, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
             mapData.update(G2mth.OmitMap(data,reflData,pgbar))

@@ -1376,7 +1376,11 @@ def OmitMap(data,reflDict,pgbar=None):
                 b = sind(ph+dp)
                 phasep = complex(a,b)
                 phasem = complex(a,-b)
-                F = np.sqrt(Fosq)
+                Fo = np.sqrt(Fosq)
+                if '2Fo-Fc' in mapData['MapType']:
+                    F = 2.*np.sqrt(Fosq)-np.sqrt(Fcsq)
+                else:
+                    F = np.sqrt(Fosq)
                 h,k,l = hkl+Hmax
                 Fhkl[h,k,l] = F*phasep
                 h,k,l = -hkl+Hmax

@@ -31,6 +31,7 @@ import GSASIImapvars as G2mv
 import GSASIImath as G2mth
 import GSASIIstrIO as G2stIO
 import GSASIIstrMath as G2stMth
+import GSASIIobj as G2obj
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)

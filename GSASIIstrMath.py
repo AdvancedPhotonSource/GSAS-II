@@ -641,11 +641,11 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         if 'N' in calcControls[hfx+'histType']:
             dat = G2el.getBLvalues(BLtables)
             refDict['FF']['El'] = dat.keys()
-            refDict['FF']['FF'] = np.ones((len(refl),len(dat)))*dat.values()            
+            refDict['FF']['FF'] = np.ones((nRef,len(dat)))*dat.values()            
         else:       #'X'
             dat = G2el.getFFvalues(FFtables,0.)
             refDict['FF']['El'] = dat.keys()
-            refDict['FF']['FF'] = np.ones((len(refDict['RefList']),len(dat)))
+            refDict['FF']['FF'] = np.ones((nRef,len(dat)))
             for iref,ref in enumerate(refDict['RefList']):
                 SQ = 1./(2.*ref[4])**2
                 dat = G2el.getFFvalues(FFtables,SQ)

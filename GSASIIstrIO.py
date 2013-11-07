@@ -28,6 +28,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2el
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
+import GSASIIobj as G2obj
 import GSASIImapvars as G2mv
 import GSASIImath as G2mth
 
@@ -78,35 +79,28 @@ def GetConstraints(GPXfile):
     fl.close()
     constDict,fixedList,ignored = ProcessConstraints(constList)
     if ignored:
-        print ignored,'old-style Constraints were rejected'
+        print ignored,'Constraints were rejected. Was a constrained phase, histogram or atom deleted?'
     return constDict,fixedList
     
 def ProcessConstraints(constList):
     """Interpret the constraints in the constList input into a dictionary, etc.
+    All :class:`GSASIIobj.G2VarObj` objects are mapped to the appropriate
+    phase/hist/atoms based on the object internals (random Ids). If this can't be
+    done (if a phase has been deleted, etc.), the variable is ignored.
+    If the constraint cannot be used due to too many dropped variables,
+    it is counted as ignored.
     
     :param list constList: a list of lists where each item in the outer list
-      specifies a constraint of some form. The last item in each inner list
-      determines which of the four constraints types has been input:
-
-        * h (hold): a single variable that will not be varied. It
-          will be removed from the varyList later.
-        * c (constraint): specifies a linear relationship that
-          can be varied as a new grouped variable
-          a fixed value.
-        * f (fixed): specifies a linear relationship that is assigned
-          a fixed value.
-        * e (equivalence): specifies a series of variables where the
-          first variable in the last can be used to generate the
-          values for all the remaining variables.
+      specifies a constraint of some form, as described in the :mod:`GSASIIobj`
+      :ref:`Constraint definition <Constraint_definitions_table>`.
 
     :returns:  a tuple of (constDict,fixedList,ignored) where:
       
-      * constDict (list) contains the constraint relationships
+      * constDict (list of dicts) contains the constraint relationships
       * fixedList (list) contains the fixed values for type
         of constraint.
       * ignored (int) counts the number of invalid constraint items
         (should always be zero!)
-
     """
     constDict = []
     fixedList = []
@@ -115,32 +109,59 @@ def ProcessConstraints(constList):
         if item[-1] == 'h':
             # process a hold
             fixedList.append('0')
-            constDict.append({item[0][1]:0.0})
+            var = str(item[0][1])
+            if '?' not in var:
+                constDict.append({var:0.0})
+            else:
+                ignored += 1
         elif item[-1] == 'f':
             # process a new variable
             fixedList.append(None)
-            constDict.append({})
+            D = {}
+            varyFlag = item[-2]
+            name = item[-3]
             for term in item[:-3]:
-                constDict[-1][term[1]] = term[0]
+                var = str(term[1])
+                if '?' not in var:
+                    D[var] = term[0]
+            if len(D) > 1:
+                # add extra dict terms for input variable name and vary flag
+                #if name is not None:
+                #    D['_name'] = name
+                #D['_vary'] = varyFlag == True # force to bool
+                constDict.append(D)
+            else:
+                ignored += 1
             #constFlag[-1] = ['Vary']
         elif item[-1] == 'c': 
             # process a contraint relationship
-            fixedList.append(str(item[-3]))
-            constDict.append({})
+            D = {}
             for term in item[:-3]:
-                constDict[-1][term[1]] = term[0]
-            #constFlag[-1] = ['VaryFree']
+                var = str(term[1])
+                if '?' not in var:
+                    D[var] = term[0]
+            if len(D) >= 1:
+                fixedList.append(str(item[-3]))
+                constDict.append(D)
+            else:
+                ignored += 1
         elif item[-1] == 'e':
             # process an equivalence
             firstmult = None
             eqlist = []
             for term in item[:-3]:
                 if term[0] == 0: term[0] = 1.0
+                var = str(term[1])
+                if '?' in var: continue
                 if firstmult is None:
-                    firstmult,firstvar = term
+                    firstmult = term[0]
+                    firstvar = var
                 else:
-                    eqlist.append([term[1],firstmult/term[0]])
-            G2mv.StoreEquivalence(firstvar,eqlist)
+                    eqlist.append([var,firstmult/term[0]])
+            if len(eqlist) > 0:
+                G2mv.StoreEquivalence(firstvar,eqlist)
+            else:
+                ignored += 1
         else:
             ignored += 1
     return constDict,fixedList,ignored
@@ -155,6 +176,7 @@ def CheckConstraints(GPXfile):
         return 'Error: No Phases!',''
     if not Histograms:
         return 'Error: no diffraction data',''
+    G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
     rigidbodyDict = GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
@@ -334,10 +356,12 @@ def GetHistogramNames(GPXfile,hType):
     
 def GetUsedHistogramsAndPhases(GPXfile):
     ''' Returns all histograms that are found in any phase
-    and any phase that uses a histogram
+    and any phase that uses a histogram. This also
+    assigns numbers to used phases and histograms by the
+    order they appear in the file. 
 
     :param str GPXfile: full .gpx file name
-    :return: (Histograms,Phases)
+    :returns: (Histograms,Phases)
 
      * Histograms = dictionary of histograms as {name:data,...}
      * Phases = dictionary of phases that use histograms
@@ -362,9 +386,14 @@ def GetUsedHistogramsAndPhases(GPXfile):
                 if 'Use' not in Phase['Histograms'][hist]:      #patch
                     Phase['Histograms'][hist]['Use'] = True         
                 if hist not in Histograms and Phase['Histograms'][hist]['Use']:
-                    Histograms[hist] = allHistograms[hist]
-                    hId = histoList.index(hist)
-                    Histograms[hist]['hId'] = hId
+                    try:
+                        Histograms[hist] = allHistograms[hist]
+                        hId = histoList.index(hist)
+                        Histograms[hist]['hId'] = hId
+                    except KeyError: # would happen if a referenced histogram were
+                        # renamed or deleted
+                        print('For phase "'+str(phase)+
+                              '" unresolved reference to histogram "'+str(hist)+'"')
     return Histograms,Phases
     
 def getBackupName(GPXfile,makeBack):

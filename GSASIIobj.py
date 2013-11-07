@@ -25,6 +25,8 @@ If a parameter does not depend on a histogram or phase or is unnumbered, that
 number is omitted.
 Note that the contents of each dict item is a List where each element in the
 list is a :ref:`constraint definition objects <Constraint_definitions_table>`.
+The constraints in this form are converted in
+:func:`GSASIIstrIO.ProcessConstraints` to the form used in :mod:`GSASIImapvars`
 
 The keys in the Constraints dict are:
 
@@ -53,32 +55,38 @@ Global      This specifies a list of constraints on parameters
    single: Constraint definition object description
    single: Data object descriptions; Constraint Definition
 
-Each constraint is defined as a list using a series of terms of form
+Each constraint is defined as an item in a list. Each constraint is of form::
 
-::
+[[<mult1>, <var1>], [<mult2>, <var2>],..., <fixedval>, <varyflag>, <constype>]
 
-[[<mult1>, <var1>], [<mult2>, <var2>],..., <fixed val>, <vary flag>, <cons type>]
-
-Where the variable pair list item containing two values [<mult>, <var>], 
+Where the variable pair list item containing two values [<mult>, <var>], where: 
 
   * <mult> is a multiplier for the constraint (float)
-  * <var> is the name of the variable (str) (or to be implemented a :class:`VarName` object.)
+  * <var> a :class:`G2VarObj` object (previously a str variable name of form
+      'p:h:name[:at]')
 
 Note that the last three items in the list play a special role:
 
- * <fixed val> is the fixed value for a constraint equation or is None
- * <vary flag> is True, False or None and is intended to use to indicate if new variables
+ * <fixedval> is the fixed value for a `constant equation` (``constype=c``)
+   constraint or is None. For a `New variable` (``constype=f``) constraint,
+   a variable name can be specified as a str (but this is not yet used). 
+ * <varyflag> is True or False for `New variable` (``constype=f``) constraints
+   or is None. This will be implemented in the future to indicate if these variables
    should be refined.
- * <cons type> is one of four letters, 'e', 'c', 'h', 'f' that determines the type of constraint.
+ * <constype> is one of four letters, 'e', 'c', 'h', 'f' that determines the type of constraint:
 
     * 'e' defines a set of equivalent variables. Only the first variable is refined (if the
       appropriate refine flag is set) and and all other equivalent variables in the list
-      are generated from that variable. The vary flag for those variables is ignored.
-    * 'c' defines a constraint equation of form, :math:`m_1 \\times var_1 + m_2 \\times var_2 + ... = c`
-    * 'h' defines a variable to hold (not vary). Any variable on this list is not varied, even if its refinement
-      flag is set. This is of particular value when needing to hold one or more variables in a set such as
+      are generated from that variable, using the appropriate multipliers. 
+    * 'c' defines a constraint equation of form,
+      :math:`m_1 \\times var_1 + m_2 \\times var_2 + ... = c`
+    * 'h' defines a variable to hold (not vary). Any variable on this list is not varied,
+      even if its refinement flag is set. Only one [mult,var] pair is allowed in a hold
+      constraint and the mult value is ignored.
+      This is of particular value when needing to hold one or more variables where a
+      single flag controls a set of variables such as, coordinates, 
       the reciprocal metric tensor or anisotropic displacement parameter. 
-    * 'f' defines a relationship to define a new variable according to relationship 
+    * 'f' defines a new variable (function) according to relationship 
       :math:`newvar = m_1 \\times var_1 + m_2 \\times var_2 + ...`
 
 Covariance Tree Item
@@ -593,8 +601,7 @@ a key of ``Data``, as outlined below.
 ======================  ===============  ====================================================
   key                      sub-key        explanation
 ======================  ===============  ====================================================
-Data
-                                          A dict that contains the 
+Data                          \           A dict that contains the 
                                           reflection table,
                                           as described in the
                                           :ref:`Single Crystal Reflections
@@ -624,6 +631,8 @@ wtFactor                      \           A weighting factor to increase or decr
 
 hId                           \           The number assigned to the histogram when
                                           the project is loaded or edited (can change)
+ranId                         \           A random number id for the histogram
+                                          that does not change
 ======================  ===============  ====================================================
 
 Single Crystal Reflection Data Structure
@@ -661,63 +670,332 @@ The columns in that array are documented below.
 ----------------------
 
 '''
+import random as ran
+import sys
 import GSASIIpath
+import GSASIImath as G2mth
+
 GSASIIpath.SetVersionNumber("$Revision$")
+PhaseIdLookup = {}
+'''dict listing phase name and random Id keyed by sequential phase index as a str;
+best to access this using :func:`LookupPhaseName`
+'''
+PhaseRanIdLookup = {}
+'''dict listing phase sequential index keyed by phase random Id;
+best to access this using :func:`LookupPhaseId`
+'''
+HistIdLookup = {}
+'''dict listing histogram name and random Id, keyed by sequential histogram index as a str;
+best to access this using :func:`LookupHistName`
+'''
+HistRanIdLookup = {}
+'''dict listing histogram sequential index keyed by histogram random Id;
+best to access this using :func:`LookupHistId`
+'''
+AtomIdLookup = {}
+'''dict listing for each phase index as a str, the atom label and atom random Id,
+keyed by atom sequential index as a str;
+best to access this using :func:`LookupAtomLabel`
+'''
+AtomRanIdLookup = {}
+'''dict listing for each phase the atom sequential index keyed by atom random Id;
+best to access this using :func:`LookupAtomId`
+'''
+ShortPhaseNames = {}
+'''a dict containing a possibly shortened and when non-unique numbered
+version of the phase name. Keyed by the phase sequential index.
+'''
+ShortHistNames = {}
+'''a dict containing a possibly shortened and when non-unique numbered
+version of the histogram name. Keyed by the histogram sequential index.
+'''
 
-def LoadHistogramIDs(histList,idList):
-    '''Save the Id values for a series of histograms'''
-    VarName.IDdict['hists'] = {}
-    for h,i in zip(histList,idList):
-        VarName.IDdict['hists'][i] = h
+VarDesc = {}
+''' This dictionary lists descriptions for GSAS-II variables,
+as set in :func:`CompileVarDesc`. See that function for a description
+for how keys and values are written.
+'''
 
-def LoadPhaseIDs(self):
-    pass
+reVarDesc = {}
+''' This dictionary lists descriptions for GSAS-II variables with
+the same values as :attr:`VarDesc` except that keys have been compiled as
+regular expressions. Initialized in :func:`CompileVarDesc`.
+'''
 
-class VarName(object):
-    '''Defines a GSAS-II variable either using the phase/atom/histogram
-    unique Id numbers or using a character string that specifies
-    variables by phase/atom/histogram number (which can change).
-    Note that :func:`LoadID` should be used to (re)load the current Ids
-    before creating or later using the VarName object.
+def IndexAllIds(G2frame=None,Histograms=None,Phases=None):
+    '''Scan through the used phases & histograms and create an index
+    to the random numbers of phases, histograms and atoms. While doing this,
+    confirm that assigned random numbers are unique -- just in case lightning
+    strikes twice in the same place.
 
-    A :class:`VarName` object can be created with a single parameter:
+    Note: this code assumes that the atom random Id (ranId) is the last 
+    element each atom record.
+
+    TODO: do we need a lookup for rigid body variables?
+    '''
+    if G2frame:
+        Histograms,phaseDict = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    else:
+        Histograms,phaseDict = Histograms,Phases
+    # process phases and atoms
+    PhaseIdLookup.clear()
+    PhaseRanIdLookup.clear()    
+    AtomIdLookup.clear()
+    AtomRanIdLookup.clear()
+    ShortPhaseNames.clear()
+    for Phase in phaseDict:
+        cx,ct,cs,cia = phaseDict[Phase]['General']['AtomPtrs']
+        ranId = phaseDict[Phase]['ranId'] 
+        while ranId in PhaseRanIdLookup:
+            # Found duplicate random Id! note and reassign
+            print ("\n\n*** Phase "+str(Phase)+" has repeated ranId. Fixing.\n")
+            phaseDict[Phase]['ranId'] = ranId = ran.randint(0,sys.maxint)
+        pId = str(phaseDict[Phase]['pId'])
+        PhaseIdLookup[pId] = (Phase,ranId)
+        PhaseRanIdLookup[ranId] = pId
+        shortname = Phase[:10]
+        while shortname in ShortPhaseNames.values():
+            shortname = Phase[:8] + ' ('+ pId + ')'
+        ShortPhaseNames[pId] = shortname
+        AtomIdLookup[pId] = {}
+        AtomRanIdLookup[pId] = {}
+        for iatm,at in enumerate(phaseDict[Phase]['Atoms']):
+            ranId = at[-1]
+            while ranId in AtomRanIdLookup[pId]: # check for dups
+                print ("\n\n*** Phase "+str(Phase)+" atom "+str(iatm)+" has repeated ranId. Fixing.\n")
+                at[-1] = ranId = ran.randint(0,sys.maxint)
+            AtomRanIdLookup[pId][ranId] = str(iatm)
+            if phaseDict[Phase]['General']['Type'] == 'macromolecular':
+                label = '%s_%s_%s_%s'%(at[ct-1],at[ct-3],at[ct-4],at[ct-2])
+            else:
+                label = at[ct-1]
+            AtomIdLookup[pId][str(iatm)] = (label,ranId)
+    # process histograms
+    HistIdLookup.clear()
+    HistRanIdLookup.clear()
+    ShortHistNames.clear()
+    for hist in Histograms:
+        ranId = Histograms[hist]['ranId']
+        while ranId in HistRanIdLookup:
+            # Found duplicate random Id! note and reassign
+            print ("\n\n*** Histogram "+str(hist)+" has repeated ranId. Fixing.\n")
+            Histograms[hist]['ranId'] = ranId = ran.randint(0,sys.maxint)
+        hId = str(Histograms[hist]['hId'])
+        HistIdLookup[hId] = (hist,ranId)
+        HistRanIdLookup[ranId] = hId
+        shortname = hist[:15]
+        while shortname in ShortHistNames.values():
+            shortname = hist[:11] + ' ('+ hId + ')'
+        ShortHistNames[hId] = shortname
+
+    return Histograms,phaseDict
+
+def LookupAtomId(pId,ranId):
+    '''Get the atom number from a phase and atom random Id
+
+    :param int/str pId: the sequential number of the phase
+    :param int ranId: the random Id assigned to an atom
+
+    :returns: the index number of the atom (str)
+    '''
+    if not AtomRanIdLookup:
+        raise Exception,'Error: LookupAtomId called before IndexAllIds was run'
+    if pId is None or pId == '':
+        raise KeyError,'Error: phase is invalid (None or blank)'
+    pId = str(pId)
+    if pId not in AtomRanIdLookup:
+        raise KeyError,'Error: LookupAtomId does not have phase '+pId
+    if ranId not in AtomRanIdLookup[pId]:
+        raise KeyError,'Error: LookupAtomId, ranId '+str(ranId)+' not in AtomRanIdLookup['+pId+']'
+    return AtomRanIdLookup[pId][ranId]
+
+def LookupAtomLabel(pId,index):
+    '''Get the atom label from a phase and atom index number
+
+    :param int/str pId: the sequential number of the phase
+    :param int index: the index of the atom in the list of atoms
+
+    :returns: the label for the atom (str) and the random Id of the atom (int)
+    '''
+    if not AtomIdLookup:
+        raise Exception,'Error: LookupAtomLabel called before IndexAllIds was run'
+    if pId is None or pId == '':
+        raise KeyError,'Error: phase is invalid (None or blank)'
+    pId = str(pId)
+    if pId not in AtomIdLookup:
+        raise KeyError,'Error: LookupAtomLabel does not have phase '+pId
+    if index not in AtomIdLookup[pId]:
+        raise KeyError,'Error: LookupAtomLabel, ranId '+str(index)+' not in AtomRanIdLookup['+pId+']'
+    return AtomIdLookup[pId][index]
+
+def LookupPhaseId(ranId):
+    '''Get the phase number and name from a phase random Id
+
+    :param int ranId: the random Id assigned to a phase
+    :returns: the sequential Id (pId) number for the phase (str)
+    '''
+    if not PhaseRanIdLookup:
+        raise Exception,'Error: LookupPhaseId called before IndexAllIds was run'
+    if ranId not in PhaseRanIdLookup:
+        raise KeyError,'Error: LookupPhaseId does not have ranId '+str(ranId)
+    return PhaseRanIdLookup[ranId]
+
+def LookupPhaseName(pId):
+    '''Get the phase number and name from a phase Id
+
+    :param int/str pId: the sequential assigned to a phase
+    :returns:  (phase,ranId) where phase is the name of the phase (str)
+      and ranId is the random # id for the phase (int)
+    '''
+    if not PhaseIdLookup:
+        raise Exception,'Error: LookupPhaseName called before IndexAllIds was run'
+    if pId is None or pId == '':
+        raise KeyError,'Error: phase is invalid (None or blank)'
+    pId = str(pId)
+    if pId not in PhaseIdLookup:
+        raise KeyError,'Error: LookupPhaseName does not have index '+pId
+    return PhaseIdLookup[pId]
+
+def LookupHistId(ranId):
+    '''Get the histogram number and name from a histogram random Id
+
+    :param int ranId: the random Id assigned to a histogram
+    :returns: the sequential Id (hId) number for the histogram (str)
+    '''
+    if not HistRanIdLookup:
+        raise Exception,'Error: LookupHistId called before IndexAllIds was run'
+    if ranId not in HistRanIdLookup:
+        raise KeyError,'Error: LookupHistId does not have ranId '+str(ranId)
+    return HistRanIdLookup[ranId]
+
+def LookupHistName(hId):
+    '''Get the histogram number and name from a histogram Id
+
+    :param int/str hId: the sequential assigned to a histogram
+    :returns:  (hist,ranId) where hist is the name of the histogram (str)
+      and ranId is the random # id for the histogram (int)
+    '''
+    if not HistIdLookup:
+        raise Exception,'Error: LookupHistName called before IndexAllIds was run'
+    if hId is None or hId == '':
+        raise KeyError,'Error: histogram is invalid (None or blank)'
+    hId = str(hId)
+    if hId not in HistIdLookup:
+        raise KeyError,'Error: LookupHistName does not have index '+hId
+    return HistIdLookup[hId]
+
+def fmtVarDescr(varname):
+    '''Return a string with a more complete description for a GSAS-II variable 
+
+    TODO: This will not handle rigid body parameters yet
+
+    :param str name: A full G2 variable name with 2 or 3
+       colons (<p>:<h>:name[:<a>])
+       
+    :returns: a string with the description
+    '''
     
-    :param str varname: a single value can be used to create a :class:`VarName`
-      object. The string must be of form "p:h:var" or "p:h:var:a", where
+    l = getVarDescr(varname)
+    if not l:
+        return "invalid variable name ("+str(varname)+")!"
 
-     * p is the phase number (which may be left blank); 
-     * h is the histogram number (which may be left blank); 
-     * a is the atom number (which may be left blank in which case the third colon is omitted).
+    if not l[4]:
+        l[4] = "(variable needs a definition!)"
 
-    Alternately, a :class:`VarName` object can be created with exactly four positional parameters:
+    s = ""
+    if l[0] is not None and l[1] is not None: # HAP: keep short
+        lbl = ShortPhaseNames.get(l[0],'? #'+str(l[0]))
+        hlbl = ShortHistNames.get(l[1],'? #'+str(l[1]))
+        if hlbl[:4] == 'HKLF':
+            hlbl = 'Xtl='+hlbl[5:]
+        elif hlbl[:4] == 'PWDR':
+            hlbl = 'Pwd='+hlbl[5:]
+        else:
+            hlbl = 'Hist='+hlbl
+        s = "Ph="+str(lbl)+" * "+str(hlbl)+": "
+    elif l[3] is not None: # atom parameter, 
+        lbl = ShortPhaseNames.get(l[0],'phase?')
+        try:
+            albl = LookupAtomLabel(l[0],l[3])[0]
+        except KeyError:
+            albl = 'Atom?'
+        s = "Atom "+str(albl)+" in "+str(lbl)+": "
+    elif l[0] is not None:
+        lbl = ShortPhaseNames.get(l[0],'phase?')
+        s = "Phase "+str(lbl)+": "
+    elif l[1] is not None:
+        hlbl = ShortHistNames.get(l[1],'? #'+str(l[1]))
+        if hlbl[:4] == 'HKLF':
+            hlbl = 'Xtl='+hlbl[5:]
+        elif hlbl[:4] == 'PWDR':
+            hlbl = 'Pwd='+hlbl[5:]
+        else:
+            hlbl = 'Hist='+hlbl
+        s = str(hlbl)+": "    
+    if not s:
+        s = 'Global: '
+    s += l[4]
+    return s
 
-    :param int phasenum: The number for the phase
-    :param int histnum: The number for the histogram
-    :param str varname: a single value can be used to create a :class:`VarName`
-    :param int atomnum: The number for the atom
+def getVarDescr(varname):
+    '''Return a short description for a GSAS-II variable 
+
+    :param str name: A full G2 variable name with 2 or 3
+       colons (<p>:<h>:name[:<a>])
+      
+    :returns: a five element list as [`p`,`h`,`name`,`a`,`description`],
+      where `p`, `h`, `a` are str values or `None`, for the phase number,
+      the histogram number and the atom number; `name` will always be
+      an str; and `description` is str or `None`.
+      If the variable name is incorrectly formed (for example, wrong
+      number of colons), `None` is returned instead of a list.
+    '''
+    l = varname.split(':')
+    if len(l) == 3:
+        l += [None]
+    if len(l) != 4:
+        return None
+    for i in (0,1,3):
+        if l[i] == "":
+            l[i] = None
+    l += [getDescr(l[2])]
+    return l
+    
+def CompileVarDesc():
+    '''Set the values in the variable description lookup table (:attr:`VarDesc`)
+    into :attr:`reVarDesc`. This is called in :func:`getDescr` so the initialization
+    is always done before use.
+
+    Note that keys may contain regular expressions, where '[xyz]'
+    matches 'x' 'y' or 'z' (equivalently '[x-z]' describes this as range of values).
+    '.*' matches any string. For example::
+
+    'AUiso':'Atomic isotropic displacement parameter',
+
+    will match variable ``'p::AUiso:a'``.
+    If parentheses are used in the key, the contents of those parentheses can be
+    used in the value, such as::
+
+    'AU([123][123])':'Atomic anisotropic displacement parameter U\\1',
+
+    will match ``AU11``, ``AU23``,.. and `U11`, `U23` etc will be displayed
+    in the value when used.
     
     '''
     import re
-    IDdict = {}
-    IDdict['phases'] = {}
-    IDdict['hists'] = {}
-    IDdict['atoms'] = {}
-    # This dictionary lists descriptions for GSAS-II variables.
-    # Note that keys may contain regular expressions, where '[xyz]'
-    # matches 'x' 'y' or 'z' (equivalently '[x-z]' describes this as range of values).
-    # '.*' matches any string
-    VarDesc = {
+    if reVarDesc: return # already done
+    for key,value in {
         # Phase vars (p::<var>)
-        'A[0-5]' : 'Reciprocal metric tensor component',
+        'A([0-5])' : 'Reciprocal metric tensor component \\1',
         'Vol' : 'Unit cell volume????',
         # Atom vars (p::<var>:a)
-        'dA[xyz]' : 'change to atomic position',
+        'dA([xyz])' : 'change to atomic position \\1',
         'AUiso':'Atomic isotropic displacement parameter',
-        'AU[123][123]':'Atomic anisotropic displacement parameter',
-        'AFrac': 'Atomic occupancy parameter',
+        'AU([123][123])':'Atomic anisotropic displacement parameter U\\1',
+        'Afrac': 'Atomic occupancy parameter',
         # Hist & Phase (HAP) vars (p:h:<var>)
-        'Bab[AU]': 'Babinet solvent scattering coef.',
-        'D[123][123]' : 'Anisotropic strain coef.',
+        'Bab([AU])': 'Babinet solvent scattering coef. \\1',
+        'D([123][123])' : 'Anisotropic strain coef. \\1',
         'Extinction' : 'Extinction coef.',
         'MD' : 'March-Dollase coef.',
         'Mustrain;.*' : 'Microstrain coef.',
@@ -726,18 +1004,73 @@ class VarName(object):
         'eA' : '?',
         #Histogram vars (:h:<var>)
         'Absorption' : 'Absorption coef.',
-        'Displace[XY]' : 'Debye-Scherrer sample displacement',
+        'Displace([XY])' : 'Debye-Scherrer sample displacement \\1',
         'Lam' : 'Wavelength',
-        'Polariz' : 'Polarization correction',
+        'Polariz\.' : 'Polarization correction',
         'SH/L' : 'FCJ peak asymmetry correction',
         'Scale' : 'Histogram scale factor',
-        '[UVW]' : 'Gaussian instrument broadening',
-        '[XY]' : 'Cauchy instrument broadening',
+        '([UVW])' : 'Gaussian instrument broadening \\1',
+        '([XY])' : 'Cauchy instrument broadening \\1',
         'Zero' : 'Debye-Scherrer zero correction',
         'nDebye' : 'Debye model background corr. terms',
-        'nPeaks' : 'Fixed peak  background corr. terms',
+        'nPeaks' : 'Fixed peak background corr. terms',
         # Global vars (::<var>)
-        }
+        }.items():
+        VarDesc[key] = value
+        reVarDesc[re.compile(key)] = value
+
+def getDescr(name):
+    '''Return a short description for a GSAS-II variable 
+
+    :param str name: The descriptive part of the variable name without colons (:)
+      
+    :returns: a short description or None if not found
+    '''
+
+    CompileVarDesc() # compile the regular expressions, if needed
+    for key in reVarDesc:
+        m = key.match(name)
+        if m:
+            return m.expand(reVarDesc[key])
+    return None
+
+def _lookup(dic,key):
+    '''Lookup a key in a dictionary, where None returns an empty string
+    but an unmatched key returns a question mark. Used in :class:`G2VarObj`
+    '''
+    if key is None:
+        return ""
+    else:
+        return dic.get(key,'?')
+
+class G2VarObj(object):
+    '''Defines a GSAS-II variable either using the phase/atom/histogram
+    unique Id numbers or using a character string that specifies
+    variables by phase/atom/histogram number (which can change).
+    Note that :func:`LoadID` should be used to (re)load the current Ids
+    before creating or later using the G2VarObj object.
+
+    A :class:`G2VarObj` object can be created with a single parameter:
+    
+    :param str varname: a single value can be used to create a :class:`G2VarObj`
+      object. The string must be of form "p:h:var" or "p:h:var:a", where
+
+     * p is the phase number (which may be left blank); 
+     * h is the histogram number (which may be left blank); 
+     * a is the atom number (which may be left blank in which case the third colon is omitted).
+
+    Alternately, a :class:`G2VarObj` object can be created with exactly four positional parameters:
+
+    :param str/int phasenum: The number for the phase
+    :param str/int histnum: The number for the histogram
+    :param str varname: a single value can be used to create a :class:`G2VarObj`
+    :param str/int atomnum: The number for the atom
+    
+    '''
+    IDdict = {}
+    IDdict['phases'] = {}
+    IDdict['hists'] = {}
+    IDdict['atoms'] = {}
     def __init__(self,*args):
         self.phase = None
         self.histogram = None
@@ -745,90 +1078,67 @@ class VarName(object):
         self.atom = None
         if len(args) == 1:
             lst = args[0].split(':')
-            raise Exception, "Need to look up IDs"
-            self.phase = lst[0]
-            self.histogram = lst[1]
+            self.phase = PhaseIdLookup.get(lst[0],[None,None])[1]
+            self.histogram = HistIdLookup.get(lst[1],[None,None])[1]
             self.name = lst[2]
             if len(lst) > 3:
-                self.atom = lst[3]
+                self.atom = AtomIdLookup[lst[0]].get(lst[3],[None,None])[1]
         elif len(args) == 4:
-            self.phase = args[0]
-            self.histogram = args[1]
+            self.phase = PhaseIdLookup.get(str(args[0]),[None,None])[1]
+            self.histogram = HistIdLookup.get(str(args[1]),[None,None])[1]
             self.name = args[2]
-            self.atom = args[3]
+            self.atom = AtomIdLookup[args[0]].get(str(args[3]),[None,None])[1]
         else:
             raise Exception,"Incorrectly called GSAS-II parameter name"
 
-    def __str__(self):
-        return self.name()
+        #print "DEBUG: created ",self.phase,self.histogram,self.name,self.atom
 
-    def name(self):
-        '''Formats the GSAS-II variable name as a "traditional" string (p:h:<var>:a)
+    def __str__(self):
+        return self.varname()
+
+    def varname(self):
+        '''Formats the GSAS-II variable name as a "traditional" GSAS-II variable 
+        string (p:h:<var>:a) or (p:h:<var>)
 
         :returns: the variable name as a str
         '''
-        def _fmt(val):
-            if val is None:
-                return ""
-            return str(val)
-        return _fmt(self.phase) + ":" + _fmt(self.histogram) + _fmt(self.name) + _fmt(self.atom)
-
+        ph = _lookup(PhaseRanIdLookup,self.phase)
+        hist = _lookup(HistRanIdLookup,self.histogram)
+        s = (ph + ":" + hist + ":" + 
+             str(self.name))
+        if self.atom:
+            if ph in AtomRanIdLookup:
+                s += ":" + AtomRanIdLookup[ph].get(self.atom,'?')
+            else:
+                s += ":?"
+        return s
+    
     def __repr__(self):
         '''Return the detailed contents of the object
         '''
-        s = ""
-        if self.phase:
-            s += "Phase: " + str(self.phase) + "; "
+        s = "<"
+        if self.phase is not None:
+            ph =  _lookup(PhaseRanIdLookup,self.phase)
+            s += "Phase: rId=" + str(self.phase) + " (#"+ ph + "); "
+        if self.histogram is not None:
+            hist = _lookup(HistRanIdLookup,self.histogram)
+            s += "Histogram: rId=" + str(self.histogram) + " (#"+ hist + "); "
+        if self.atom is not None:
+            s += "Atom rId=" + str(self.atom)
+            if ph in AtomRanIdLookup:
+                s += " (#" + AtomRanIdLookup[ph].get(self.atom,'?') + "); "
+            else:
+                s += " (#? -- no such phase!); "
+        s += 'Variable name="' + str(self.name) + '">'
+        return s+"("+self.varname()+")"
 
-        if self.histogram:
-            s += "Histogram: " + str(self.histogram) + "; "
-            
-        if self.name:
-            s += "Variable name: " + str(self.name) + "; "
-
-        if self.atom:
-            s += "Atom number: " + str(self.atom) + "; "
-
-        return s+"("+self.name()+")"
-
-    def getDescr(self):
-        '''Return a short description for a GSAS-II variable 
-
-        :returns: a short description or 'no definition' if not found
-        '''
-        # iterating over uncompiled regular expressions is not terribly fast,
-        # but this routine should not need to be all that speedy
-        for key in self.VarDesc:
-            if re.match(key, self.name):
-                return self.VarDesc[key]
-        return 'no definition'
-
-    def getDescr(self):
-        '''Return a short description for a GSAS-II variable 
-
-        :returns: a short description or 'no definition' if not found
-        '''
-        # iterating over uncompiled regular expressions is not terribly fast,
-        # but this routine should not need to be all that speedy
-        for key in self.VarDesc:
-            if re.match(key, self.name):
-                return self.VarDesc[key]
-        return 'no definition'
-
-    def fullDescr(self):
-        '''Return a longer description for a GSAS-II variable 
-
-        :returns: a short description or 'no definition' if not found
-        '''
-        # iterating over uncompiled regular expressions is not terribly fast,
-        # but this routine should not need to be all that speedy
-        str = self.name()
-        
-        for key in self.VarDesc:
-            if re.match(key, self.name):
-                return self.VarDesc[key]
-        return 'no definition'
-
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return (self.phase == other.phase and
+                    self.histogram == other.histogram and
+                    self.name == other.name and
+                    self.atom == other.atom)
+        return False
 
     def _show(self):
         'For testing, shows the current lookup table'

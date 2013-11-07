@@ -220,7 +220,7 @@ fixedDict = {} # a dictionary containing the fixed values corresponding to defin
 fixedVarList = [] # List of variables that should not be refined
 
 # prefix for parameter names
-paramPrefix = "::constr:"
+paramPrefix = "::constr;"
 consNum = 0 # number of the next constraint to be created
 
 def InitVars():
@@ -247,7 +247,8 @@ def GroupConstraints(constrDict):
 
     :returns: two lists of lists:
     
-      * a list of grouped contraints where each constraint grouped containts a list of indices for constraint constrDict entries
+      * a list of grouped contraints where each constraint grouped containts a list
+        of indices for constraint constrDict entries
       * a list containing lists of parameter names contained in each group
       
       """
@@ -283,10 +284,13 @@ def CheckConstraints(varyList,constrDict,fixedList):
 
     :param list varyList: a list of parameters names that will be varied
 
-    :param dict constrDict: a list of dicts defining relationships/constraints (as defined in :func:`GroupConstraints`)
+    :param dict constrDict: a list of dicts defining relationships/constraints
+      (as created in :func:`GSASIIstrIO.ProcessConstraints` and
+      documented in :func:`GroupConstraints`)
 
-    :param list fixedList: a list of values specifying a fixed value for each dict in constrDict. Values are
-      either strings that can be converted to floats or None if the constraint defines a new parameter rather
+    :param list fixedList: a list of values specifying a fixed value for each
+      dict in constrDict. Values are either strings that can be converted to
+      floats or ``None`` if the constraint defines a new parameter rather
       than a constant.
 
     :returns: two strings: 
@@ -490,21 +494,25 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
     and stores them in global variables Also checks for internal
     conflicts or inconsistencies in parameter/variable definitions.
 
-    :param list groups: a list of grouped contraints where each constraint grouped containts a list of
-      indices for constraint constrDict entries, created in :func:`GroupConstraints` (returned as 1st value)
-
-    :param list parmlist: a list containing lists of parameter names contained in each group,
+    :param list groups: a list of grouped contraints where each constraint
+      grouped containts a list of indices for constraint constrDict entries,
       created in :func:`GroupConstraints` (returned as 1st value)
 
-    :param list varyList: a list of parameters names (strings of form ``<ph>:<hst>:<nam>``) that will be varied
-    
-    :param dict constrDict: a list of dicts defining relationships/constraints (as defined in :func:`GroupConstraints`)
+    :param list parmlist: a list containing lists of parameter names
+      contained in each group, created in :func:`GroupConstraints`
+      (returned as 2nd value)
 
-    :param list fixedList: a list of values specifying a fixed value for each dict in constrDict. Values are
-      either strings that can be converted to floats, float values or None if the constraint defines a new
-      parameter
-      
+    :param list varyList: a list of parameters names (strings of form
+      ``<ph>:<hst>:<nam>``) that will be varied
+    
     :param dict constrDict: a list of dicts defining relationships/constraints
+      (as defined in :func:`GroupConstraints`)
+
+    :param list fixedList: a list of values specifying a fixed value for each
+      dict in constrDict. Values are either strings that can be converted to
+      floats, float values or None if the constraint defines a new parameter.
+      
+    :param dict constrDict: a list of dicts defining relationships/constraints.
 
     '''
     global dependentParmList,arrayList,invarrayList,indParmList,consNum
@@ -536,10 +544,6 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
                     notvaried += mv
                 if mv not in indepVarList: indepVarList.append(mv)
                 for v,m in zip(varlist,invmultarr):
-                    #if len(s): s += '  & '
-                    #s += str(v)
-                    #if m != 1:
-                    #    s += " / " + str(m[0])                        
                     if m == 0: zeromult = True
                     if v in varyList:
                         varied += 1
@@ -550,7 +554,6 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
                         multdepVarList.append(v)
                     else:
                         depVarList.append(v)
-                #print str(mv) + ' is equivalent to parameter(s): '+s
             if varied > 0 and varied != len(varlist)+1:
                 msg += "\nNot all variables refined in equivalence:\n\t"
                 s = ""
@@ -586,16 +589,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
             s += str(var)            
         msg += '\t'+ s + '\n'
     equivVarList = list(set(indepVarList).union(set(depVarList)))
-    #print 'equivVarList',equivVarList
-#    inboth = set(fixedVarList).intersection(set(equivVarList))
-#    if len(inboth) > 0:
-#        msg += "\nError! The following variables are used in both Equivalence and Fixed constraints:\n"
-#        s = ''
-#        for var in sorted(inboth):
-#            if s != "": s+= ", "
-#            s += str(var)
-#        msg += '\t'+ s + '\n'
-#
+
     # scan through parameters in each relationship. Are all varied? If only some are
     # varied, create an error message. 
     # If all are varied and this is a constraint equation, then set VaryFree flag
@@ -615,9 +609,6 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
                 if var in fixedVarList:
                     msg += '\nError: parameter '+var+" is Fixed and used in a constraint:\n\t"
                     msg += _FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
-#                if var in equivVarList:
-#                    msg += '\nError: parameter '+var+" is Equivalenced and used in a constraint:\n\t"
-#                    msg += _FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
             if varied > 0 and varied != len(constrDict[rel]):
                 msg += "\nNot all variables refined in constraint:\n\t"
                 msg += _FormatConstraint(constrDict[rel],fixedList[rel])
@@ -655,8 +646,12 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
         for i in range(len(varlist)):
             varied = 0
             notvaried = ''
-            if len(group) > 0:
+            if len(group) > 0: # get the original equation reference
                 rel = group.pop(0)
+                if debug:
+                    print rel
+                    print fixedList[rel]
+                    print constrDict[rel]
                 fixedval = fixedList[rel]
                 for var in constrDict[rel]:
                     if var in varyList:
@@ -695,17 +690,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
 
     if debug: # on debug, show what is parsed & generated, semi-readable
         print 50*'-'
-        for group,varlist,multarr,inv,mapvar in zip(groups,parmlist,arrayList,invarrayList,indParmList):
-            print '\n*** relation(s) in group:',group,'\tvars in group:',varlist
-            print 'new parameters:', mapvar
-            print 'Input relationship matrix'
-            print multarr[:len(group)]
-            added = len(group) - len(varlist)
-            if added < 0:
-                print 'added relationship rows'
-                print multarr[added:]
-            print 'Inverse relationship matrix'
-            print inv
+        print VarRemapShow(varyList)
 
 def StoreEquivalence(independentVar,dependentList):
     '''Takes a list of dependent parameter(s) and stores their

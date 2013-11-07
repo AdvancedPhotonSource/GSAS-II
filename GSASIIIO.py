@@ -714,7 +714,7 @@ def GetTifData(filename,imageOnly=False):
 #        return head,data,Npix,image
 #    
 def ProjFileOpen(G2frame):
-    'Read a GSAS-II project file'
+    'Read a GSAS-II project file and load into the G2 data tree'
     file = open(G2frame.GSASprojectfile,'rb')
     print 'load from file: ',G2frame.GSASprojectfile
     G2frame.SetTitle("GSAS-II data tree: "+
@@ -730,7 +730,13 @@ def ProjFileOpen(G2frame):
             
             Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=datum[0])
             if 'PWDR' in datum[0]:                
-                G2frame.PatternTree.SetItemPyData(Id,datum[1][:3])     #temp. trim off junk
+                if 'ranId' not in datum[1][0]: # patch: add random Id if not present
+                    datum[1][0]['ranId'] = ran.randint(0,sys.maxint)
+                G2frame.PatternTree.SetItemPyData(Id,datum[1][:3])  #temp. trim off junk (patch?)
+            elif datum[0].startswith('HKLF'): 
+                if 'ranId' not in datum[1][0]: # patch: add random Id if not present
+                    datum[1][0]['ranId'] = ran.randint(0,sys.maxint)
+                G2frame.PatternTree.SetItemPyData(Id,datum[1])
             else:
                 G2frame.PatternTree.SetItemPyData(Id,datum[1])
             for datus in data[1:]:
@@ -750,7 +756,7 @@ def ProjFileOpen(G2frame):
                 if Data['setDefault']:
                     G2frame.imageDefault = Data                
         file.close()
-        print 'project load successful'
+        print('project load successful')
         G2frame.NewPlot = True
     except:
         msg = wx.MessageDialog(G2frame,message="Error reading file "+
@@ -782,7 +788,7 @@ def ProjFileSave(G2frame):
             file.close()
         finally:
             wx.EndBusyCursor()
-        print 'project save successful'
+        print('project save successful')
 
 def SaveIntegration(G2frame,PickId,data):
     'Save image integration results as powder pattern(s)'
@@ -846,8 +852,15 @@ def SaveIntegration(G2frame,PickId,data):
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Peak List'),[])
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Index Peak List'),[])
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Unit Cells List'),[])
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Reflection Lists'),{})             
-        G2frame.PatternTree.SetItemPyData(Id,[[''],[np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
+            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Reflection Lists'),{})
+            valuesdict = {
+                'wtFactor':1.0,
+                'Dummy':False,
+                'ranId':ran.randint(0,sys.maxint),
+                }
+        G2frame.PatternTree.SetItemPyData(
+            Id,[valuesdict,
+                [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
     G2frame.PatternTree.SelectItem(Id)
     G2frame.PatternTree.Expand(Id)
     G2frame.PatternId = Id
@@ -1977,7 +1990,7 @@ class ExportBaseclass(object):
         elif varyList is None:
             # old GPX file from before pre-constraint varyList is saved
             print ' *** Old refinement: Please use Calculate/Refine to redo  ***'
-            raise Exception(' *** CIF creation aborted ***')
+            raise Exception(' *** Export aborted ***')
         else:
             varyList = list(varyList)
         try:

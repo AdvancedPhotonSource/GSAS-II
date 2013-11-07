@@ -117,7 +117,8 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(5)]
 
 [ wxID_CONSTRAINTADD,wxID_EQUIVADD,wxID_HOLDADD,wxID_FUNCTADD,
-] = [wx.NewId() for item in range(4)]
+  wxID_CONSPHASE, wxID_CONSHIST, wxID_CONSHAP, wxID_CONSGLOBAL,
+] = [wx.NewId() for item in range(8)]
 
 [ wxID_RESTRAINTADD, wxID_RESTSELPHASE,wxID_RESTDELETE, wxID_RESRCHANGEVAL, 
     wxID_RESTCHANGEESD,wxID_AARESTRAINTADD,wxID_AARESTRAINTPLOT,
@@ -278,6 +279,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self.ShowStringValidity() # test if valid input
             else:
                 self.invalid = False
+                self.Bind(wx.EVT_CHAR,self._GetStringValue)
         elif val is None:
             raise Exception,("ValidatedTxtCtrl error: value of "+str(key)+
                              " element is None and typeHint not defined as int or float")
@@ -359,6 +361,20 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self.OKcontrol(False)
         elif self.OKcontrol and previousInvalid:
             self.OKcontrol(True)
+        # always store the result
+        if self.CIFinput: # for CIF make results ASCII
+            self.result[self.key] = val.encode('ascii','replace') 
+        else:
+            self.result[self.key] = val
+
+    def _GetStringValue(self,event):
+        '''Get string input and store.
+        '''
+        event.Skip() # process keystroke
+        wx.CallAfter(self._SaveStringValue)
+        
+    def _SaveStringValue(self):
+        val = self.GetValue().strip()
         # always store the result
         if self.CIFinput: # for CIF make results ASCII
             self.result[self.key] = val.encode('ascii','replace') 
@@ -1320,15 +1336,17 @@ class G2MultiChoiceDialog(wx.Dialog):
     :param str title: heading above list of choices
     :param str header: Title to place on window frame 
     :param list ChoiceList: a list of choices where one will be selected
+    :param bool toggle: If True (default) the toggle and select all buttons
+      are displayed
 
     :param kw: optional keyword parameters for the wx.Dialog may
-      be included such as Size [which defaults to `(320,310)`] and
-      Style (which defaults to `wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL`);
+      be included such as size [which defaults to `(320,310)`] and
+      style (which defaults to `wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL`);
       note that `wx.OK` and `wx.CANCEL` controls
       the presence of the eponymous buttons in the dialog.
     :returns: the name of the created dialog  
     '''
-    def __init__(self,parent, title, header, ChoiceList, **kw):
+    def __init__(self,parent, title, header, ChoiceList, toggle=True, **kw):
         # process keyword parameters, notably Style
         options = {'size':(320,310), # default Frame keywords
                    'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
@@ -1354,15 +1372,16 @@ class G2MultiChoiceDialog(wx.Dialog):
         Sizer.Add(self.clb,1,wx.LEFT|wx.RIGHT|wx.EXPAND,10)
         Sizer.Add((-1,10))
         # set/toggle buttons
-        bSizer = wx.BoxSizer(wx.VERTICAL)
-        setBut = wx.Button(self,wx.ID_ANY,'Set All')
-        setBut.Bind(wx.EVT_BUTTON,self._SetAll)
-        bSizer.Add(setBut,0,wx.ALIGN_CENTER)
-        bSizer.Add((-1,5))
-        togBut = wx.Button(self,wx.ID_ANY,'Toggle All')
-        togBut.Bind(wx.EVT_BUTTON,self._ToggleAll)
-        bSizer.Add(togBut,0,wx.ALIGN_CENTER)
-        Sizer.Add(bSizer,0,wx.LEFT,12)
+        if toggle:
+            bSizer = wx.BoxSizer(wx.VERTICAL)
+            setBut = wx.Button(self,wx.ID_ANY,'Set All')
+            setBut.Bind(wx.EVT_BUTTON,self._SetAll)
+            bSizer.Add(setBut,0,wx.ALIGN_CENTER)
+            bSizer.Add((-1,5))
+            togBut = wx.Button(self,wx.ID_ANY,'Toggle All')
+            togBut.Bind(wx.EVT_BUTTON,self._ToggleAll)
+            bSizer.Add(togBut,0,wx.ALIGN_CENTER)
+            Sizer.Add(bSizer,0,wx.LEFT,12)
         # OK/Cancel buttons
         btnsizer = wx.StdDialogButtonSizer()
         if useOK:
@@ -1851,6 +1870,31 @@ class AddHelp(wx.Menu):
         ShowHelp(self.HelpById,self.frame)
 
 ################################################################################
+class HelpButton(wx.Button):
+    '''Create a help button that displays help information.
+    The text is displayed in a modal message window.
+
+    TODO: it might be nice if it were non-modal: e.g. it stays around until
+    the parent is deleted or the user closes it, but this did not work for
+    me. 
+
+    :param parent: the panel which will be the parent of the button
+    :param str msg: the help text to be displayed
+    '''
+    def __init__(self,parent,msg):
+        if sys.platform == "darwin": 
+            wx.Button.__init__(self,parent,wx.ID_HELP)
+        else:
+            wx.Button.__init__(self,parent,wx.ID_ANY,'?',style=wx.BU_EXACTFIT)
+        self.Bind(wx.EVT_BUTTON,self._onPress)
+        self.msg=msg
+        self.parent = parent
+    def _onPress(self,event):
+        'Respond to a button press by displaying the requested text'
+        dlg = wx.MessageDialog(self.parent,self.msg,'Help info',wx.OK)
+        dlg.ShowModal()
+        dlg.Destroy()
+################################################################################
 class MyHtmlPanel(wx.Panel):
     '''Defines a panel to display HTML help information, as an alternative to
     displaying help information in a web browser.
@@ -1987,6 +2031,16 @@ class DataFrame(wx.Frame):
         # Constraints
         self.ConstraintMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ConstraintMenu,helpType='Constraints')
+        self.ConstraintTab = wx.Menu(title='')
+        self.ConstraintMenu.Append(menu=self.ConstraintTab, title='Select tab')
+        for id,txt in (
+            (wxID_CONSPHASE,'Phase'),
+            (wxID_CONSHAP,'Histogram/Phase'),
+            (wxID_CONSHIST,'Histogram'),
+            (wxID_CONSGLOBAL,'Global')):
+            self.ConstraintTab.Append(
+                id=id, kind=wx.ITEM_NORMAL,text=txt,
+                help='Select '+txt+' constraint editing tab')
         self.ConstraintEdit = wx.Menu(title='')
         self.ConstraintMenu.Append(menu=self.ConstraintEdit, title='Edit')
         self.ConstraintEdit.Append(id=wxID_HOLDADD, kind=wx.ITEM_NORMAL,text='Add hold',
@@ -1997,6 +2051,15 @@ class DataFrame(wx.Frame):
             help='Add constraint on parameter values')
         self.ConstraintEdit.Append(id=wxID_FUNCTADD, kind=wx.ITEM_NORMAL,text='Add New Var',
             help='Add variable composed of existing parameter')
+
+        # item = self.ConstraintEdit.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Update GUI')
+        # def UpdateGSASIIconstrGUI(event):
+        #     import GSASIIconstrGUI
+        #     reload(GSASIIconstrGUI)
+        #     import GSASIIobj
+        #     reload(GSASIIobj)
+        # self.Bind(wx.EVT_MENU,UpdateGSASIIconstrGUI,id=item.GetId())
+
         self.PostfillDataMenu()
         
         # Rigid bodies

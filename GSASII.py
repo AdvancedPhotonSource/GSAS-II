@@ -555,7 +555,12 @@ class GSASII(wx.Frame):
             print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
             Id = self.PatternTree.AppendItem(parent=self.root,
                                              text='HKLF '+HistName)
-            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':False},rd.RefDict])
+            valuesdict = {
+                'wtFactor':1.0,
+                'Dummy':False,
+                'ranId':ran.randint(0,sys.maxint),
+                }
+            self.PatternTree.SetItemPyData(Id,[valuesdict,rd.RefDict])
             Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
             self.PatternTree.SetItemPyData(Sub,rd.Parameters)
             self.PatternTree.SetItemPyData(
@@ -979,7 +984,13 @@ class GSASII(wx.Frame):
                 rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        
             Tmin = min(rd.powderdata[0])
             Tmax = max(rd.powderdata[0])
-            self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':False},rd.powderdata])
+            valuesdict = {
+                'wtFactor':1.0,
+                'Dummy':False,
+                'ranId':ran.randint(0,sys.maxint),
+                }
+            rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
+            self.PatternTree.SetItemPyData(Id,[valuesdict,rd.powderdata])
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Comments'),
                 rd.comments)
@@ -1092,7 +1103,12 @@ class GSASII(wx.Frame):
         # data are read, now store them in the tree
         Id = self.PatternTree.AppendItem(parent=self.root,
                                          text='PWDR '+inp[0])
-        self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':True},rd.powderdata])
+        valuesdict = {
+            'wtFactor':1.0,
+            'Dummy':True,
+            'ranId':ran.randint(0,sys.maxint),
+            }
+        self.PatternTree.SetItemPyData(Id,[valuesdict,rd.powderdata])
         self.PatternTree.SetItemPyData(
             self.PatternTree.AppendItem(Id,text='Comments'),
             rd.comments)
@@ -1736,76 +1752,7 @@ class GSASII(wx.Frame):
             
         def GetData(self):
             return self.data
-            
-    class ConstraintDialog(wx.Dialog):
-        '''Window to edit Constraint values
-        '''
-        def __init__(self,parent,title,text,data,separator='*'):
-            wx.Dialog.__init__(self,parent,-1,title, 
-                pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-            self.data = data
-            panel = wx.Panel(self)
-            mainSizer = wx.BoxSizer(wx.VERTICAL)
-            topLabl = wx.StaticText(panel,-1,text)
-            mainSizer.Add((10,10),1)
-            mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
-            mainSizer.Add((10,10),1)
-            dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=2,hgap=2,vgap=2)
-            for id,item in enumerate(self.data[:-1]):
-                lbl = item[1]
-                if lbl[-1] != '=': lbl += ' ' + separator + ' '
-                name = wx.StaticText(panel,-1,lbl,size=wx.Size(200,20),
-                                     style=wx.ALIGN_RIGHT)
-                scale = wx.TextCtrl(panel,id,'%.3f'%(item[0]),style=wx.TE_PROCESS_ENTER)
-                scale.Bind(wx.EVT_TEXT_ENTER,self.OnScaleChange)
-                scale.Bind(wx.EVT_KILL_FOCUS,self.OnScaleChange)
-                dataGridSizer.Add(name,0,wx.LEFT,10)
-                dataGridSizer.Add(scale,0,wx.RIGHT,10)
-            mainSizer.Add(dataGridSizer,0,wx.EXPAND)
-            OkBtn = wx.Button(panel,-1,"Ok")
-            OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
-            cancelBtn = wx.Button(panel,-1,"Cancel")
-            cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
-            btnSizer = wx.BoxSizer(wx.HORIZONTAL)
-            btnSizer.Add((20,20),1)
-            btnSizer.Add(OkBtn)
-            btnSizer.Add((20,20),1)
-            btnSizer.Add(cancelBtn)
-            btnSizer.Add((20,20),1)
-            
-            mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-            panel.SetSizer(mainSizer)
-            panel.Fit()
-            self.Fit()
-            self.CenterOnParent()
-            
-        def OnNameChange(self,event):
-            self.data[-1] = self.name.GetValue() 
-            
-        def OnScaleChange(self,event):
-            id = event.GetId()
-            value = self.FindWindowById(id).GetValue()
-            try:
-                self.data[id][0] = float(value)
-                self.FindWindowById(id).SetValue('%.3f'%(self.data[id][0]))
-            except ValueError:
-                if value and '-' not in value[0]:
-                    print 'bad input - numbers only'
-                    self.FindWindowById(id).SetValue('0.000')
-            
-        def OnOk(self,event):
-            parent = self.GetParent()
-            parent.Raise()
-            self.EndModal(wx.ID_OK)              
-            
-        def OnCancel(self,event):
-            parent = self.GetParent()
-            parent.Raise()
-            self.EndModal(wx.ID_CANCEL)              
-            
-        def GetData(self):
-            return self.data
-            
+                        
     def OnPwdrSum(self,event):
         'Sum together powder data(?)'
         TextList = []
@@ -1885,7 +1832,12 @@ class GSASII(wx.Frame):
                     Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
                         Sample = G2pdG.SetDefaultSample()
-                        self.PatternTree.SetItemPyData(Id,[{'wtFactor':1.0,'Dummy':False},[np.array(Xsum),np.array(Ysum),np.array(Wsum),
+                        valuesdict = {
+                            'wtFactor':1.0,
+                            'Dummy':False,
+                            'ranId':ran.randint(0,sys.maxint),
+                            }
+                        self.PatternTree.SetItemPyData(Id,[valuesdict,[np.array(Xsum),np.array(Ysum),np.array(Wsum),
                             np.array(YCsum),np.array(YBsum),np.array(YDsum)]])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
@@ -2456,9 +2408,10 @@ class GSASII(wx.Frame):
         PWDRdata['Instrument Parameters'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Instrument Parameters'))
         PWDRdata['Sample Parameters'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Sample Parameters'))
         PWDRdata['Reflection Lists'] = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,PWDRname,'Reflection Lists'))
-        if 'ranId' not in PWDRdata['Sample Parameters']:
-            PWDRdata['Sample Parameters']['ranId'] = ran.randint(0,sys.maxint)
-        PWDRdata['ranId'] = PWDRdata['Sample Parameters']['ranId']
+        if 'ranId' not in PWDRdata:  # patch, add a random Id
+            PWDRdata['ranId'] = ran.randint(0,sys.maxint)
+        if 'ranId' not in PWDRdata['Sample Parameters']:  # I hope this becomes obsolete at some point
+            PWDRdata['Sample Parameters']['ranId'] = PWDRdata['ranId']
         return PWDRdata
 
     def GetHKLFdatafromTree(self,HKLFname):
@@ -2482,15 +2435,16 @@ class GSASII(wx.Frame):
         return HKLFdata
         
     def GetPhaseData(self):
-        '''Returns a list of defined phases. Used only in GSASIIgrid
-        Note routine :meth:`GSASIIstruct.GetPhaseData` also exists.
+        '''Returns a dict with defined phases. 
+        Note routine :func:`GSASIIstrIO.GetPhaseData` also exists to
+        get same info from GPX file.
         '''
         phaseData = {}
         if G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
             sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
         else:
-            print 'no phases to be refined'
-            return
+            print 'no phases found in GetPhaseData'
+            sub = None
         if sub:
             item, cookie = self.PatternTree.GetFirstChild(sub)
             while item:
@@ -2499,34 +2453,89 @@ class GSASII(wx.Frame):
                 if 'ranId' not in phaseData[phaseName]:
                     phaseData[phaseName]['ranId'] = ran.randint(0,sys.maxint)          
                 item, cookie = self.PatternTree.GetNextChild(sub, cookie)
-        return phaseData                
+        return phaseData
+
+    def GetPhaseNames(self):
+        '''Returns a list of defined phases. 
+        Note routine :func:`GSASIIstrIO.GetPhaseNames` also exists to
+        get same info from GPX file.
+        '''
+        phaseNames = []
+        if G2gd.GetPatternTreeItemId(self,self.root,'Phases'):
+            sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+        else:
+            print 'no phases found in GetPhaseNames'
+            sub = None
+        if sub:
+            item, cookie = self.PatternTree.GetFirstChild(sub)
+            while item:
+                phase = self.PatternTree.GetItemText(item)
+                phaseNames.append(phase)
+                item, cookie = self.PatternTree.GetNextChild(sub, cookie)
+        return phaseNames
+    
+    def GetHistogramNames(self,hType):
+        """ Returns a list of histogram names found in the GSASII data tree
+        Note routine :func:`GSASIIstrIO.GetHistogramNames` also exists to
+        get same info from GPX file.
+        
+        :param str hType: list of histogram types
+        :return: list of histogram names
+        
+        """
+        HistogramNames = []
+        if self.PatternTree.GetCount():
+            item, cookie = self.PatternTree.GetFirstChild(self.root)
+            while item:
+                name = self.PatternTree.GetItemText(item)
+                if name[:4] in hType:
+                    HistogramNames.append(name)        
+                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
+
+        return HistogramNames
+
                     
     def GetUsedHistogramsAndPhasesfromTree(self):
         ''' Returns all histograms that are found in any phase
-        and any phase that uses a histogram
-        :returns: two dicts:
+        and any phase that uses a histogram.
+        This also assigns numbers to used phases and histograms by the
+        order they appear in the file. 
+        Note routine :func:`GSASIIstrIO.GetUsedHistogramsAndPhasesfromTree` also exists to
+        get same info from GPX file.
+
+        :returns: (Histograms,Phases)
 
             * Histograms = dictionary of histograms as {name:data,...}
             * Phases = dictionary of phases that use histograms
         '''
-        phaseData = self.GetPhaseData()
-        if not phaseData:
-            return {},{}
         Histograms = {}
         Phases = {}
+        phaseNames = self.GetPhaseNames()
+        phaseData = self.GetPhaseData()
+        histoList = self.GetHistogramNames(['PWDR','HKLF'])
+
         for phase in phaseData:
             Phase = phaseData[phase]
             if Phase['Histograms']:
                 if phase not in Phases:
+                    pId = phaseNames.index(phase)
+                    Phase['pId'] = pId
                     Phases[phase] = Phase
                 for hist in Phase['Histograms']:
-                    if hist not in Histograms:
+                    if 'Use' not in Phase['Histograms'][hist]:      #patch: add Use flag as True
+                        Phase['Histograms'][hist]['Use'] = True         
+                    if hist not in Histograms and Phase['Histograms'][hist]['Use']:
                         item = G2gd.GetPatternTreeItemId(self,self.root,hist)
-                        if 'PWDR' in hist[:4]: 
-                            Histograms[hist] = self.GetPWDRdatafromTree(item)
-                        elif 'HKLF' in hist[:4]:
-                            Histograms[hist] = self.GetHKLFdatafromTree(item)
-                        #future restraint, etc. histograms here 
+                        if item:
+                            if 'PWDR' in hist[:4]: 
+                                Histograms[hist] = self.GetPWDRdatafromTree(item)
+                            elif 'HKLF' in hist[:4]:
+                                Histograms[hist] = self.GetHKLFdatafromTree(item)
+                            hId = histoList.index(hist)
+                            Histograms[hist]['hId'] = hId
+                        else: # would happen if a referenced histogram were renamed or deleted
+                            print('For phase "'+str(phase)+
+                                  '" unresolved reference to histogram "'+str(hist)+'"')
         return Histograms,Phases
         
     class ViewParmDialog(wx.Dialog):

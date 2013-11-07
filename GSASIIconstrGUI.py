@@ -17,6 +17,7 @@ Used to define constraints and rigid bodies.
 import sys
 import wx
 import wx.grid as wg
+import wx.lib.scrolledpanel as wxscroll
 import time
 import random as ran
 import numpy as np
@@ -30,6 +31,7 @@ import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
 import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
+import GSASIIobj as G2obj
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
 class MultiIntegerDialog(wx.Dialog):
@@ -94,6 +96,90 @@ class MultiIntegerDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
+
+class ConstraintDialog(wx.Dialog):
+    '''Window to edit Constraint values
+    '''
+    def __init__(self,parent,title,text,data,separator='*',varname="",varyflag=False):
+        wx.Dialog.__init__(self,parent,-1,'Edit '+title, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.data = data[:]
+        self.newvar = [varname,varyflag]
+        panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        topLabl = wx.StaticText(panel,-1,text)
+        mainSizer.Add((10,10),1)
+        mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
+        mainSizer.Add((10,10),1)
+        dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=3,hgap=2,vgap=2)
+        self.OkBtn = wx.Button(panel,wx.ID_OK)
+        for id in range(len(self.data)):
+            lbl1 = lbl = str(self.data[id][1])
+            if lbl[-1] != '=': lbl1 = lbl + ' ' + separator + ' '
+            name = wx.StaticText(panel,wx.ID_ANY,lbl1,
+                                 style=wx.ALIGN_RIGHT)
+            scale = G2gd.ValidatedTxtCtrl(panel,self.data[id],0,
+                                          typeHint=float,
+                                          OKcontrol=self.DisableOK)
+            dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,5)
+            dataGridSizer.Add(scale,0,wx.RIGHT,3)
+            if ':' in lbl:
+                dataGridSizer.Add(
+                    wx.StaticText(panel,-1,G2obj.fmtVarDescr(lbl)),
+                    0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,3)
+            else:
+                dataGridSizer.Add((-1,-1))
+        if title == 'New Variable':
+            name = wx.StaticText(panel,wx.ID_ANY,"New variable's\nname (optional)",
+                                 style=wx.ALIGN_CENTER)
+            scale = G2gd.ValidatedTxtCtrl(panel,self.newvar,0,
+                                          typeHint=str,notBlank=False)
+            dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,5)
+            dataGridSizer.Add(scale,0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,3)
+            self.refine = wx.CheckBox(panel,label='Refine?')
+            self.refine.SetValue(self.newvar[1]==True)
+            self.refine.Bind(wx.EVT_CHECKBOX, self.OnCheckBox)
+            dataGridSizer.Add(self.refine,0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,3)
+            
+        mainSizer.Add(dataGridSizer,0,wx.EXPAND)
+        self.OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        self.OkBtn.SetDefault()
+        cancelBtn = wx.Button(panel,wx.ID_CANCEL)
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(self.OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        panel.SetSizer(mainSizer)
+        panel.Fit()
+        self.Fit()
+        self.CenterOnParent()
+        
+    def DisableOK(self,setting):
+        if setting:
+            self.OkBtn.Enable()
+        else:
+            self.OkBtn.Disable()
+
+    def OnCheckBox(self,event):
+        self.newvar[1] = self.refine.GetValue()
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)              
+
+    def GetData(self):
+        return self.data
         
 ################################################################################
 #####  Constraints
@@ -107,8 +193,31 @@ def UpdateConstraints(G2frame,data):
         data.update({'Hist':[],'HAP':[],'Phase':[],'Global':[]})       #empty dict - fill it
     if 'Global' not in data:                                            #patch
         data['Global'] = []
-    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    rigidbodyDict = G2frame.PatternTree.GetItemPyData(   
+    # DEBUG code ########################################
+    #import GSASIIconstrGUI
+    #reload(GSASIIconstrGUI)
+    #reload(G2obj)
+    #reload(G2stIO)
+    #import GSASIIstrMain
+    #reload(GSASIIstrMain)    
+    #reload(G2mv)
+    #reload(G2gd)
+    ###################################################
+    Histograms,Phases = G2obj.IndexAllIds(G2frame)
+    ##################################################################################
+    # patch: convert old-style (str) variables in constraints to G2VarObj objects
+    for key,value in data.items():
+        j = 0
+        for cons in value:
+            #print cons             # DEBUG
+            for i in range(len(cons[:-3])):
+                if type(cons[i][1]) is str:
+                    cons[i][1] = G2obj.G2VarObj(cons[i][1])
+                    j += 1
+        if j:
+            print str(key) + ': '+str(j)+' variable(s) strings converted to objects'
+    ##################################################################################
+    rigidbodyDict = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
@@ -151,35 +260,10 @@ def UpdateConstraints(G2frame,data):
             histList.append(item)
     histList.sort()
     Indx = {}
-    scope = {}                          #filled out later
     G2frame.Page = [0,'phs']
-    
-    def GetPHlegends(Phases,Histograms):
-        plegend = '\n In p::name'
-        hlegend = '\n In :h:name'
-        phlegend = '\n In p:h:name'
-        glegend = '\n In ::name'
-        for phase in Phases:
-            plegend += '\n p:: = '+str(Phases[phase]['pId'])+':: for '+phase
-            count = 0
-            for histogram in Phases[phase]['Histograms']:
-                if count < 3:
-                    phlegend += '\n p:h: = '+str(Phases[phase]['pId'])+':'+str(Histograms[histogram]['hId'])+': for '+phase+' in '+histogram
-                else:
-                    phlegend += '\n ... etc.'
-                    break
-                count += 1
-        count = 0
-        for histogram in Histograms:
-            if count < 3:
-                hlegend += '\n :h: = :'+str(Histograms[histogram]['hId'])+': for '+histogram
-            else:
-                hlegend += '\n ... etc.'
-                break
-            count += 1
-        return plegend,hlegend,phlegend,glegend
         
     def FindEquivVarb(name,nameList):
+        'Creates a list of variables appropriate to constrain with name'
         outList = []
         phlist = []
         items = name.split(':')
@@ -204,69 +288,214 @@ def UpdateConstraints(G2frame,data):
                 phlist.append(keys[0])
             if keys[2] in namelist and item != name:
                 outList.append(item)
-        if items[1]:
-            for key in phlist:
-                outList.append(key+':all:'+items[2])
         return outList
         
     def SelectVarbs(page,FrstVarb,varList,legend,constType):
-        '''Select variables used in Constraints after one variable has
-        been selected which determines the appropriate variables to be
-        used here. Then creates the constraint and adds it to the
-        constraints list.
-        Called from OnAddEquivalence, OnAddFunction & OnAddConstraint
+        '''Select variables used in constraints after one variable has
+        been selected. This routine determines the appropriate variables to be
+        used based on the one that has been selected and asks for more to be added.
+
+        It then creates the constraint and adds it to the constraints list.
+        
+        Called from OnAddEquivalence, OnAddFunction & OnAddConstraint (all but
+        OnAddHold)
+
+        :param list page: defines calling page -- type of variables to be used
+        :parm GSASIIobj.G2VarObj FrstVarb: reference to first selected variable
+        :param list varList: list of other appropriate variables to select from
+        :param str legend: header for selection dialog
+        :param str constType: type of constraint to be generated
+        :returns: a constraint, as defined in
+          :ref:`GSASIIobj <Constraint_definitions_table>`
         '''
-        #future -  add 'all:all:name', '0:all:name', etc. to the varList
-        if page[1] == 'phs':
-            atchoice = [item+' for '+phaseAtNames[item] for item in varList]
-            if 'RB' not in FrstVarb:
-                atchoice += [FrstVarb+' for all']
-                atchoice += [FrstVarb+' for all '+atype for atype in TypeList]
-            dlg = wx.MultiChoiceDialog(G2frame,'Select more variables:'+legend,
-                'Constrain '+FrstVarb+' and...',atchoice)
+        atchoice = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
+        meaning = G2obj.getDescr(FrstVarb.name)
+        if not meaning:
+            meaning = "(no definition found!)"
+        l = str(FrstVarb).split(':')
+        # make lists of phases & histograms to iterate over
+        phaselist = [l[0]]
+        if l[0]:
+            phaselbl = ['phase #'+l[0]]
+            if len(Phases) > 1:
+                phaselist += ['all'] 
+                phaselbl += ['all phases']
         else:
-            dlg = wx.MultiChoiceDialog(G2frame,'Select more variables:'+legend,
-                'Constrain '+FrstVarb+' and...',varList)
-        varbs = [FrstVarb,]
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelections()
-            try:
-                for x in sel:
-                    if ':all:' in varList[x]:       #a histogram 'all' - supercedes any individual selection
-                        varbs = [FrstVarb,]
-                        items = varList[x].split(':')
-                        for item in varList:
-                            if items[0] == item.split(':')[0] and ':all:' not in item:
-                                varbs.append(item)
-                        break
-                    else:
-                        varbs.append(varList[x])
-            except IndexError:      # one of the 'all' chosen - supercedes any individual selection
-                varbs = [FrstVarb,]
-                Atypes = []
-                for x in sel:
-                    item = atchoice[x]
-                    if 'all' in item:
-                        Atypes.append(item.split('all')[1].strip())
-                if '' in Atypes:
-                    varbs += varList
+            phaselbl = ['']
+        histlist = [l[1]]
+        if l[1]:
+            histlbl = ['histogram #'+l[1]]
+            if len(Histograms) > 1:
+                histlist += ['all']
+                histlbl += ['all histograms']
+                typ = Histograms[G2obj.LookupHistName(l[1])[0]]['Instrument Parameters'][0]['Type'][1]
+                i = 0
+                for hist in Histograms:
+                    if Histograms[hist]['Instrument Parameters'][0]['Type'][1] == typ: i += 1
+                if i > 1:
+                    histlist += ['all='+typ]
+                    histlbl += ['all '+typ+' histograms']
+        else:
+            histlbl = ['']
+        # make a list of equivalent parameter names
+        nameList = [FrstVarb.name]
+        for var in varList:
+            nam = var.split(":")[2]
+            if nam not in nameList: nameList += [nam]
+        # add "wild-card" names to the list of variables
+        if page[1] == 'phs':
+            if 'RB' in FrstVarb.name:
+                pass
+            elif FrstVarb.atom is None:
+                for nam in nameList:
+                    for ph,plbl in zip(phaselist,phaselbl):
+                        if plbl: plbl = 'For ' + plbl
+                        var = ph+"::"+nam
+                        if var == str(FrstVarb) or var in varList: continue
+                        varList += [var]
+                        atchoice += ['('+var+') '+plbl+": "+meaning]
+            else:
+                for nam in nameList:
+                    for ph,plbl in zip(phaselist,phaselbl):
+                        if plbl: plbl = ' in ' + plbl
+                        for atype in ['']+TypeList:
+                            if atype:
+                                albl = "For "+atype+" atoms"
+                                akey = "all="+atype                        
+                            else:
+                                albl = "For all atoms"
+                                akey = "all"
+                            var = ph+"::"+nam+":"+akey
+                            if var == str(FrstVarb) or var in varList: continue
+                            varList += [var]
+                            atchoice += ['('+var+') '+albl+plbl+": "+meaning]
+        elif page[1] == 'hap':
+            for nam in nameList:
+                for ph,plbl in zip(phaselist,phaselbl):
+                    if plbl: plbl = 'For ' + plbl
+                    for hst,hlbl in zip(histlist,histlbl):
+                        if hlbl:
+                            if plbl:
+                                hlbl = ' in ' + hlbl
+                            else:
+                                hlbl = 'For ' + hlbl                                
+                            var = ph+":"+hst+":"+nam
+                            if var == str(FrstVarb) or var in varList: continue
+                            varList += [var]
+                            atchoice += ['('+var+') '+plbl+hlbl+": "+meaning]
+        elif page[1] == 'hst':
+            for nam in nameList:
+                for hst,hlbl in zip(histlist,histlbl):
+                    if hlbl:
+                        hlbl = 'For ' + hlbl                                
+                        var = ":"+hst+":"+nam
+                        if var == str(FrstVarb) or var in varList: continue
+                        varList += [var]
+                        atchoice += ['('+var+') '+hlbl+": "+meaning]
+        elif page[1] == 'glb':
+            pass
+        else:
+            raise Exception, 'Unknown constraint page '+ page[1]                    
+        if len(atchoice):
+            dlg = wx.MultiChoiceDialog(
+                G2frame.dataFrame,legend,
+                'Constrain '+str(FrstVarb)+' with...',atchoice)
+            dlg.SetSize((625,250))
+            dlg.CenterOnParent()
+            res = dlg.ShowModal()
+            Selections = dlg.GetSelections()[:]
+            dlg.Destroy()
+            if res != wx.ID_OK: return []
+            if len(Selections) == 0:
+                dlg = wx.MessageDialog(
+                    G2frame.dataFrame,
+                    'No variables were selected to include with '+str(FrstVarb),
+                    'No variables')
+                dlg.CenterOnParent()
+                dlg.ShowModal()
+                dlg.Destroy()
+                return []
+        else:
+            dlg = wx.MessageDialog(
+                G2frame.dataFrame,
+                'There are no appropriate variables to include with '+str(FrstVarb),
+                'No variables')
+            dlg.CenterOnParent()
+            dlg.ShowModal()
+            dlg.Destroy()
+            return []
+        # now process the variables provided by the user
+        varbs = [str(FrstVarb),] # list of selected variables
+        for sel in Selections:
+            var = varList[sel]
+            # phase(s) included
+            l = var.split(':')
+            if l[0] == "all":
+                phlist = [str(Phases[phase]['pId']) for phase in Phases]
+            else:
+                phlist = [l[0]]
+            # histogram(s) included
+            if l[1] == "all":
+                hstlist = [str(Histograms[hist]['hId']) for hist in Histograms]
+            elif '=' in l[1]:
+                htyp = l[1].split('=')[1]
+                hstlist = [str(Histograms[hist]['hId']) for hist in Histograms if 
+                           Histograms[hist]['Instrument Parameters'][0]['Type'][1] == htyp]
+            else:
+                hstlist = [l[1]]
+            if len(l) == 3:
+                for ph in phlist:
+                    for hst in hstlist:
+                        var = ph + ":" + hst + ":" + l[2]
+                        if var in varbs: continue
+                        varbs.append(var)
+            else: # constraints with atoms
+                if l[3] == "all":
+                    for ph in phlist:
+                        key = G2obj.LookupPhaseName(l[0])[0]
+                        for hst in hstlist: # should be blank
+                            for iatm,at in enumerate(Phases[key]['Atoms']):
+                                var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
+                                if var in varbs: continue
+                                varbs.append(var)
+                elif '=' in l[3]:
+                    for ph in phlist:
+                        key = G2obj.LookupPhaseName(l[0])[0]
+                        cx,ct,cs,cia = Phases[key]['General']['AtomPtrs']
+                        for hst in hstlist: # should be blank
+                            atyp = l[3].split('=')[1]
+                            for iatm,at in enumerate(Phases[key]['Atoms']):
+                                if at[ct] != atyp: continue
+                                var = ph + ":" + hst + ":" + l[2] + ":" + str(iatm)
+                                if var in varbs: continue
+                                varbs.append(var)
                 else:
-                    for item in varList:
-                        if phaseAtTypes[item] in Atypes:
-                            varbs.append(item)  
-        dlg.Destroy()
-        if len(varbs) > 1:
+                    for ph in phlist:
+                        key = G2obj.LookupPhaseName(l[0])[0]
+                        for hst in hstlist: # should be blank
+                            var = ph + ":" + hst + ":" + l[2] + ":" + l[3]
+                            if var in varbs: continue
+                            varbs.append(var)
+        if len(varbs) >= 1 or 'constraint' in constType:
+            constr = [[1.0,FrstVarb]]
+            for item in varbs[1:]:
+                constr += [[1.0,G2obj.G2VarObj(item)]]
             if 'equivalence' in constType:
-                constr = [[1.0,FrstVarb]]
-                for item in varbs[1:]:
-                    constr += [[1.0,item]]
-                return [constr+[None,None,'e']]      # list of equivalent variables & mults
+                return [constr+[None,None,'e']]
             elif 'function' in constType:
-                constr = map(list,zip([1.0 for i in range(len(varbs))],varbs))
-                return [constr+[None,False,'f']]         #just one constraint
-            else:       #'constraint'
-                constr = map(list,zip([1.0 for i in range(len(varbs))],varbs))
-                return [constr+[1.0,None,'c']]          #just one constraint - default sum to one
+                return [constr+[None,False,'f']]
+            elif 'constraint' in constType:
+                return [constr+[1.0,None,'c']]
+            else:
+                raise Exception,'Unknown constraint type: '+str(constType)
+        else:
+            dlg = wx.MessageDialog(
+                G2frame.dataFrame,
+                'There are no selected variables to include with '+str(FrstVarb),
+                'No variables')
+            dlg.CenterOnParent()
+            dlg.ShowModal()
+            dlg.Destroy()
         return []
 
     def CheckAddedConstraint(newcons):
@@ -276,7 +505,8 @@ def UpdateConstraints(G2frame,data):
         may want to delete something else or edit multipliers).
         Since the varylist is not available, no warning messages
         should be generated.
-        Returns True if constraint should be added
+
+        :returns: True if constraint should be added
         '''
         allcons = []
         for key in ['Hist','HAP','Phase','Global']:
@@ -302,7 +532,8 @@ def UpdateConstraints(G2frame,data):
         choice to keep or discard the last edit.
         Since the varylist is not available, no warning messages
         should be generated.
-        Returns True if the edit should be retained
+        
+        :returns: True if the edit should be retained
         '''
         allcons = []
         for key in 'Hist','HAP','Phase':
@@ -321,109 +552,148 @@ def UpdateConstraints(G2frame,data):
             print 'Unexpected contraint warning:\n',warnmsg
         return True
              
+    def PageSelection(page):
+        'Decode page reference'
+        if page[1] == "phs":
+            vartype = "phase"
+            varList = phaseList
+            constrDictEnt = 'Phase'
+        elif page[1] == "hap":
+            vartype = "Histogram*Phase"
+            varList = hapList
+            constrDictEnt = 'HAP'
+        elif page[1] == "hst":
+            vartype = "Histogram"
+            varList = histList
+            constrDictEnt = 'Hist'
+        elif page[1] == "glb":
+            vartype = "Global"
+            varList = globalList
+            constrDictEnt = 'Global'
+        else:
+            raise Exception,'Should not happen!'
+        return vartype,varList,constrDictEnt
+
     def OnAddHold(event):
-        '''add a Hold constraint'''
-        for phase in Phases:
-            Phase = Phases[phase]
-            Atoms = Phase['Atoms']
-        constr = []
+        '''Create a new Hold constraint
+
+        Hold constraints allows the user to select one variable (the list of available
+        variables depends on which tab is currently active). 
+        '''
         page = G2frame.Page
-        choice = scope[page[1]]
-        if page[1] == 'phs':
-            atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
-            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],atchoice)
-        else:    
-            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],choice[2])
+        vartype,varList,constrDictEnt = PageSelection(page)
+        title1 = "Hold "+vartype+" variable"
+        if not varList:
+            G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
+                                parent=G2frame.dataFrame)
+            return
+        varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
+        legend = "Select variables to hold (Will not be varied, even if vary flag is set)"
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame,
+            legend,title1,varListlbl,toggle=False,size=(625,250))
+        dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelection()
-            FrstVarb = choice[2][sel]
-            newcons = [[[0.0,FrstVarb],None,None,'h']]
-            if CheckAddedConstraint(newcons):
-                data[choice[3]] += newcons
+            for sel in dlg.GetSelections():
+                Varb = varList[sel]
+                VarObj = G2obj.G2VarObj(Varb)
+                newcons = [[[0.0,VarObj],None,None,'h']]
+                if CheckAddedConstraint(newcons):
+                    data[constrDictEnt] += newcons
         dlg.Destroy()
-        choice[4]()
+        OnPageChanged(None)
         
     def OnAddEquivalence(event):
         '''add an Equivalence constraint'''
-        constr = []
         page = G2frame.Page
-        choice = scope[page[1]]
-        if page[1] == 'phs':
-            atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
-            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],atchoice)
-        else:    
-            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],choice[2])
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelection()
-            FrstVarb = choice[2][sel]
-            moreVarb = FindEquivVarb(FrstVarb,choice[2])
-            newcons = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'equivalence')
-            if len(newcons) > 0:
-                if CheckAddedConstraint(newcons):
-                    data[choice[3]] += newcons
-        dlg.Destroy()
-        choice[4]()
+        vartype,varList,constrDictEnt = PageSelection(page)
+        title1 = "Setup equivalent "+vartype+" variables"
+        title2 = "Select additional "+vartype+" variable(s) to be equivalent with "
+        if not varList:
+            G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
+                                parent=G2frame.dataFrame)
+            return
+        varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
+        legend = "Select variables to make equivalent (only one of the variables will be varied when all are set to be varied)"
+        GetAddVars(page,title1,title2,varList,varListlbl,constrDictEnt,'equivalence')
    
     def OnAddFunction(event):
         '''add a Function (new variable) constraint'''
-        constr = []
         page = G2frame.Page
-        choice = scope[page[1]]
-        if page[1] == 'phs':
-            atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
-            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],atchoice)
-        else:    
-            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],choice[2])
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelection()
-            FrstVarb = choice[2][sel]
-            moreVarb = FindEquivVarb(FrstVarb,choice[2])
-            newcons = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'function')
-            if len(newcons) > 0:
-                if CheckAddedConstraint(newcons):
-                    data[choice[3]] += newcons
-        dlg.Destroy()
-        choice[4]()
+        vartype,varList,constrDictEnt = PageSelection(page)
+        title1 = "Setup new variable based on "+vartype+" variables"
+        title2 = "Include additional "+vartype+" variable(s) to be included with "
+        if not varList:
+            G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
+                                parent=G2frame.dataFrame)
+            return
+        varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
+        legend = "Select variables to include in a new variable (the new variable will be varied when all included variables are varied)"
+        GetAddVars(page,title1,title2,varList,varListlbl,constrDictEnt,'function')
                         
     def OnAddConstraint(event):
         '''add a constraint equation to the constraints list'''
-        constr = []
         page = G2frame.Page
-        choice = scope[page[1]]
-        if page[1] == 'phs':
-            atchoice = [item+' for '+phaseAtNames[item] for item in choice[2]]
-            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],atchoice)
-        else:    
-            dlg = wx.SingleChoiceDialog(G2frame,'Select 1st variable:'+choice[1],choice[0],choice[2])
+        vartype,varList,constrDictEnt = PageSelection(page)
+        title1 = "Setup constraint on "+vartype+" variables"
+        title2 = "Select additional "+vartype+" variable(s) to include in constraint with "
+        if not varList:
+            G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
+                                parent=G2frame.dataFrame)
+            return
+        varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
+        legend = "Select variables to include in a constraint equation (the values will be constrainted to equal a specified constant)"
+        GetAddVars(page,title1,title2,varList,varListlbl,constrDictEnt,'constraint')
+
+    def GetAddVars(page,title1,title2,varList,varListlbl,constrDictEnt,constType):
+        '''Get the variables to be added for OnAddEquivalence, OnAddFunction,
+        and OnAddConstraint. Then create and check the constraint.
+        '''
+        dlg = wx.SingleChoiceDialog(G2frame.dataFrame,'Select 1st variable:',title1,varListlbl)
+        dlg.SetSize((625,250))
+        dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
-            FrstVarb = choice[2][sel]
-            moreVarb = FindEquivVarb(FrstVarb,choice[2])
-            newcons = SelectVarbs(page,FrstVarb,moreVarb,choice[1],'constraint')
+            FrstVarb = varList[sel]
+            VarObj = G2obj.G2VarObj(FrstVarb)
+            moreVarb = FindEquivVarb(FrstVarb,varList)
+            newcons = SelectVarbs(page,VarObj,moreVarb,title2+FrstVarb,constType)
             if len(newcons) > 0:
                 if CheckAddedConstraint(newcons):
-                    data[choice[3]] += newcons
+                    data[constrDictEnt] += newcons
         dlg.Destroy()
-        choice[4]()
+        OnPageChanged(None)
                         
-    def ConstSizer(name,pageDisplay):
-        '''This creates a sizer displaying all of the constraints entered
+    def MakeConstraintsSizer(name,pageDisplay):
+        '''Creates a sizer displaying all of the constraints entered of
+        the specified type.
+
+        :param str name: the type of constraints to be displayed ('HAP',
+          'Hist', 'Phase', or 'Global')
+        :param wx.Panel pageDisplay: parent panel for sizer
+        :returns: wx.Sizer created by method
         '''
-        constSizer = wx.FlexGridSizer(1,4,0,0)
+        constSizer = wx.FlexGridSizer(1,5,0,0)
         maxlen = 70 # characters before wrapping a constraint
         for Id,item in enumerate(data[name]):
+            helptext = ""
             eqString = ['',]
-            if item[-1] == 'h':
-                constSizer.Add((5,5),0)              # blank space for edit button
-                typeString = ' FIXED   '
-                eqString[-1] = item[0][1]+'   '
-            elif isinstance(item[-1],str):
+            if item[-1] == 'h': # Hold on variable
+                constSizer.Add((-1,-1),0)              # blank space for edit button
+                typeString = 'FIXED'
+                var = str(item[0][1])
+                varMean = G2obj.fmtVarDescr(var)
+                eqString[-1] =  var +'   '
+                helptext = "Prevents variable:\n"+ var + " ("+ varMean + ")\nfrom being changed"
+            elif isinstance(item[-1],str): # not true on original-style (2011?) constraints
                 constEdit = wx.Button(pageDisplay,-1,'Edit',style=wx.BU_EXACTFIT)
                 constEdit.Bind(wx.EVT_BUTTON,OnConstEdit)
-                constSizer.Add(constEdit)            # edit button
+                constSizer.Add(constEdit,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)            # edit button
                 Indx[constEdit.GetId()] = [Id,name]
                 if item[-1] == 'f':
+                    helptext = "A new variable is created from a linear combination of the following variables:"
                     for term in item[:-3]:
+                        var = str(term[1])
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
                         m = term[0]
@@ -433,11 +703,15 @@ def UpdateConstraints(G2frame,data):
                             else:
                                 eqString[-1] += ' - '
                                 m = abs(m)
-                        eqString[-1] += '%.3f*%s '%(m,term[1])
-                    typeString = ' NEWVAR  '
+                        eqString[-1] += '%.3f*%s '%(m,var)
+                        varMean = G2obj.fmtVarDescr(var)
+                        helptext += "\n" + var + " ("+ varMean + ")"
+                    typeString = 'NEWVAR'
                     eqString[-1] += ' = New Variable   '
                 elif item[-1] == 'c':
+                    helptext = "The following variables constrained to equal a constant:"
                     for term in item[:-3]:
+                        var = str(term[1])
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
                         if eqString[-1] != '':
@@ -445,22 +719,29 @@ def UpdateConstraints(G2frame,data):
                                 eqString[-1] += ' + '
                             else:
                                 eqString[-1] += ' - '
-                        eqString[-1] += '%.3f*%s '%(abs(term[0]),term[1])
-                    typeString = ' CONSTR  '
+                        eqString[-1] += '%.3f*%s '%(abs(term[0]),var)
+                        varMean = G2obj.fmtVarDescr(var)
+                        helptext += "\n" + var + " ("+ varMean + ")"
+                    typeString = 'CONST'
                     eqString[-1] += ' = %.3f'%(item[-3])+'  '
                 elif item[-1] == 'e':
+                    helptext = "The following variables are set to be equivalent, noting multipliers:"
                     for term in item[:-3]:
+                        var = str(term[1])
                         if term[0] == 0: term[0] = 1.0
                         if len(eqString[-1]) > maxlen:
                             eqString.append(' ')
                         if eqString[-1] == '':
-                            eqString[-1] += '%s '%(term[1])
+                            eqString[-1] += var+' '
                             first = term[0]
                         else:
-                            eqString[-1] += ' = %.3f*%s '%(first/term[0],term[1])
-                    typeString = ' EQUIV   '
+                            eqString[-1] += ' = %.3f*%s '%(first/term[0],var)
+                        varMean = G2obj.fmtVarDescr(var)
+                        helptext += "\n" + var + " ("+ varMean + ")"
+                    typeString = 'EQUIV'
                 else:
                     print 'Unexpected constraint',item
+                
             else:
                 print 'Removing old-style constraints'
                 data[name] = []
@@ -468,63 +749,77 @@ def UpdateConstraints(G2frame,data):
             constDel = wx.Button(pageDisplay,-1,'Delete',style=wx.BU_EXACTFIT)
             constDel.Bind(wx.EVT_BUTTON,OnConstDel)
             Indx[constDel.GetId()] = [Id,name]
-            constSizer.Add(constDel)             # delete button
-            constSizer.Add(wx.StaticText(pageDisplay,-1,typeString),0,wx.ALIGN_CENTER_VERTICAL)
-            EqSizer = wx.BoxSizer(wx.VERTICAL)
-            for s in eqString:
-                EqSizer.Add(wx.StaticText(pageDisplay,-1,s),0,wx.ALIGN_CENTER_VERTICAL)
-            constSizer.Add(EqSizer,0,wx.ALIGN_CENTER_VERTICAL)
-            # if item[-1] == 'f':
-            #     constRef = wx.CheckBox(pageDisplay,-1,label=' Refine?') 
-            #     constRef.SetValue(item[-2])
-            #     constRef.Bind(wx.EVT_CHECKBOX,OnConstRef)
-            #     Indx[constRef.GetId()] = item
-            #     constSizer.Add(constRef)
-            # else:
-            #     constSizer.Add((5,5),0)
+            constSizer.Add(constDel,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)             # delete button
+            if helptext:
+                ch = G2gd.HelpButton(pageDisplay,helptext)
+                constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+            else:
+                constSizer.Add((-1,-1))                
+            constSizer.Add(wx.StaticText(pageDisplay,-1,typeString),0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
+            if len(eqString) > 1:
+                Eq = wx.BoxSizer(wx.VERTICAL)
+                for s in eqString:
+                    Eq.Add(wx.StaticText(pageDisplay,-1,s),0,wx.ALIGN_CENTER_VERTICAL)
+            else:
+                Eq = wx.StaticText(pageDisplay,-1,eqString[0])
+            constSizer.Add(Eq,1,wx.ALIGN_CENTER_VERTICAL)
         return constSizer
                 
-    # def OnConstRef(event):
-    #     Obj = event.GetEventObject()
-    #     Indx[Obj.GetId()][-2] = Obj.GetValue()
-        
     def OnConstDel(event):
+        'Delete a constraint'
         Obj = event.GetEventObject()
         Id,name = Indx[Obj.GetId()]
         del(data[name][Id])
         OnPageChanged(None)        
         
     def OnConstEdit(event):
-        '''Called to edit an individual contraint by the Edit button'''
+        '''Called to edit an individual contraint in response to a
+        click on its Edit button
+        '''
         Obj = event.GetEventObject()
         Id,name = Indx[Obj.GetId()]
-        sep = '*'
         if data[name][Id][-1] == 'f':
-            items = data[name][Id][:-3]+[[],]
+            items = data[name][Id][:-3]
             constType = 'New Variable'
+            if data[name][Id][-3]:
+                varname = data[name][Id][-3]
+            else:
+                varname = ""
             lbl = 'Enter value for each term in constraint; sum = new variable'
+            dlg = ConstraintDialog(G2frame.dataFrame,constType,lbl,items,
+                                   varname=varname,varyflag=data[name][Id][-2])
         elif data[name][Id][-1] == 'c':
             items = data[name][Id][:-3]+[
-                [data[name][Id][-3],'fixed value ='],[]]
+                [data[name][Id][-3],'fixed value =']]
             constType = 'Constraint'
             lbl = 'Edit value for each term in constant constraint sum'
+            dlg = ConstraintDialog(G2frame.dataFrame,constType,lbl,items)
         elif data[name][Id][-1] == 'e':
-            items = data[name][Id][:-3]+[[],]
+            items = data[name][Id][:-3]
             constType = 'Equivalence'
             lbl = 'The following terms are set to be equal:'
-            sep = '/'
+            dlg = ConstraintDialog(G2frame.dataFrame,constType,lbl,items,'/')
         else:
             return
-        dlg = G2frame.ConstraintDialog(G2frame.dataFrame,constType,lbl,items,sep)
         try:
+            prev = data[name][Id][:]
             if dlg.ShowModal() == wx.ID_OK:
-                prev = data[name][Id]
                 result = dlg.GetData()
+                for i in range(len(data[name][Id][:-3])):
+                    data[name][Id][i][0] = result[i][0]
                 if data[name][Id][-1] == 'c':
-                    data[name][Id][:-3] = result[:-2]
-                    data[name][Id][-3] = result[-2][0]
-                else:
-                    data[name][Id][:-3] = result[:-1]
+                    data[name][Id][-3] = str(result[-1][0])
+                elif data[name][Id][-1] == 'f':
+                    # process the variable name to put in global form (::var)
+                    varname = str(dlg.newvar[0]).strip().replace(' ','_')
+                    if varname.startswith('::'):
+                        varname = varname[2:]
+                    varname = varname.replace(':',';')
+                    if varname:
+                        data[name][Id][-3] = '::' + varname
+                    else:
+                        data[name][Id][-3] = ''
+                    data[name][Id][-2] = dlg.newvar[1]
                 if not CheckChangedConstraint():
                     data[name][Id] = prev
         except:
@@ -533,105 +828,59 @@ def UpdateConstraints(G2frame,data):
         finally:
             dlg.Destroy()            
         OnPageChanged(None)                     
-    
-    def UpdateHAPConstr():
-        '''Responds to press on Histogram/Phase Constraints tab,
-        shows constraints in data window'''
-        HAPConstr.DestroyChildren()
-        HAPDisplay = wx.Panel(HAPConstr)
-        HAPSizer = wx.BoxSizer(wx.VERTICAL)
-        HAPSizer.Add((5,5),0)
-        HAPSizer.Add(ConstSizer('HAP',HAPDisplay))
-        HAPDisplay.SetSizer(HAPSizer,True)
-        Size = HAPSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],250) + 20
-        HAPDisplay.SetSize(Size)
-        # scroll bar not working, at least not on Mac
-        HAPConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(Size[1],250)
-        G2frame.dataFrame.setSizePosLeft(Size)
-        
-    def UpdateHistConstr():
-        '''Responds to press on Histogram Constraints tab,
-        shows constraints in data window'''
-        HistConstr.DestroyChildren()
-        HistDisplay = wx.Panel(HistConstr)
-        HistSizer = wx.BoxSizer(wx.VERTICAL)
-        HistSizer.Add((5,5),0)        
-        HistSizer.Add(ConstSizer('Hist',HistDisplay))
-        HistDisplay.SetSizer(HistSizer,True)
-        Size = HistSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],250) + 20
-        HistDisplay.SetSize(Size)
-        HistConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(Size[1],250)
-        G2frame.dataFrame.setSizePosLeft(Size)
-        
-    def UpdatePhaseConstr():
-        '''Responds to press on Phase Constraint tab,
-        shows constraints in data window'''
-        PhaseConstr.DestroyChildren()
-        PhaseDisplay = wx.Panel(PhaseConstr)
-        PhaseSizer = wx.BoxSizer(wx.VERTICAL)
-        PhaseSizer.Add((5,5),0)        
-        PhaseSizer.Add(ConstSizer('Phase',PhaseDisplay))
-        PhaseDisplay.SetSizer(PhaseSizer,True)
-        Size = PhaseSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],250) + 20
-        PhaseDisplay.SetSize(Size)
-        PhaseConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(Size[1],250)
-        G2frame.dataFrame.setSizePosLeft(Size)
+   
+    def UpdateConstraintPanel(panel,typ):
+        '''Update the contents of the selected Constraint
+        notebook tab. Called in :func:`OnPageChanged`
+        '''
+        if panel.GetSizer(): panel.GetSizer().Clear(True) # N.B. don't use panel.DestroyChildren()
+        # because it deletes scrollbars on Mac
+        Siz = wx.BoxSizer(wx.VERTICAL)
+        Siz.Add((5,5),0)
+        Siz.Add(MakeConstraintsSizer(typ,panel))
+        panel.SetSizer(Siz,True)
+        G2frame.dataFrame.SetSize((500,250)) # set frame size here
+        panel.SetAutoLayout(1)
+        panel.SetupScrolling()
 
-    def UpdateGlobalConstr():
-        '''Responds to press on Global Constraint tab,
-        shows constraints in data window'''
-        GlobalConstr.DestroyChildren()
-        GlobalDisplay = wx.Panel(GlobalConstr)
-        GlobalSizer = wx.BoxSizer(wx.VERTICAL)
-        GlobalSizer.Add((5,5),0)        
-        GlobalSizer.Add(ConstSizer('Global',GlobalDisplay))
-        GlobalDisplay.SetSizer(GlobalSizer,True)
-        Size = GlobalSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],250) + 20
-        GlobalDisplay.SetSize(Size)
-        GlobalConstr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        Size[1] = min(Size[1],250)
-        G2frame.dataFrame.setSizePosLeft(Size)
-    
     def OnPageChanged(event):
+        '''Called when a tab is pressed or when a "select tab" menu button is
+        used (see RaisePage), or to refresh the current tab contents (event=None)
+        '''
         if event:       #page change event!
             page = event.GetSelection()
-        else:
+        else: # called directly, get current page
             page = G2frame.dataDisplay.GetSelection()
         oldPage = G2frame.dataDisplay.ChangeSelection(page)
         text = G2frame.dataDisplay.GetPageText(page)
         if text == 'Histogram/Phase constraints':
             G2frame.Page = [page,'hap']
-            UpdateHAPConstr()
+            UpdateConstraintPanel(HAPConstr,'HAP')
         elif text == 'Histogram constraints':
             G2frame.Page = [page,'hst']
-            UpdateHistConstr()
+            UpdateConstraintPanel(HistConstr,'Hist')
         elif text == 'Phase constraints':
             G2frame.Page = [page,'phs']
-            UpdatePhaseConstr()
+            UpdateConstraintPanel(PhaseConstr,'Phase')
         elif text == 'Global constraints':
             G2frame.Page = [page,'glb']
-            UpdateGlobalConstr()
-            
+            UpdateConstraintPanel(GlobalConstr,'Global')
+
+    def RaisePage(event):
+        'Respond to a "select tab" menu button'
+        try:
+            i = (G2gd.wxID_CONSPHASE,
+                 G2gd.wxID_CONSHAP,
+                 G2gd.wxID_CONSHIST,
+                 G2gd.wxID_CONSGLOBAL).index(event.GetId())
+            G2frame.dataDisplay.SetSelection(i)
+            OnPageChanged(None)
+        except ValueError:
+            print('Unexpected event in RaisePage')
 
     def SetStatusLine(text):
         Status.SetStatusText(text)                                      
         
-    plegend,hlegend,phlegend,glegend = GetPHlegends(Phases,Histograms)
-    scope = {'hst':['Histogram contraints:',hlegend,histList,'Hist',UpdateHistConstr],
-        'hap':['Histogram * Phase contraints:',phlegend,hapList,'HAP',UpdateHAPConstr],
-        'phs':['Phase contraints:',plegend,phaseList,'Phase',UpdatePhaseConstr],
-        'glb':['Global constraints:',glegend,globalList,'Global',UpdateGlobalConstr]}
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ConstraintMenu)
@@ -645,18 +894,25 @@ def UpdateConstraints(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddFunction, id=G2gd.wxID_FUNCTADD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddEquivalence, id=G2gd.wxID_EQUIVADD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddHold, id=G2gd.wxID_HOLDADD)
-    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
-    
-    PhaseConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(PhaseConstr,'Phase constraints')
-    HAPConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(HAPConstr,'Histogram/Phase constraints')
-    HistConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(HistConstr,'Histogram constraints')
-    GlobalConstr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(GlobalConstr,'Global constraints')    
-    UpdatePhaseConstr()
+    # tab commands
+    for id in (G2gd.wxID_CONSPHASE,
+               G2gd.wxID_CONSHAP,
+               G2gd.wxID_CONSHIST,
+               G2gd.wxID_CONSGLOBAL):
+        G2frame.dataFrame.Bind(wx.EVT_MENU, RaisePage,id=id)
 
+    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame)
+    # note that order of pages is hard-coded in RaisePage
+    wxstyle = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER
+    PhaseConstr = wxscroll.ScrolledPanel(G2frame.dataDisplay, wx.ID_ANY,style=wxstyle)
+    G2frame.dataDisplay.AddPage(PhaseConstr,'Phase constraints')
+    HAPConstr = wxscroll.ScrolledPanel(G2frame.dataDisplay, wx.ID_ANY,style=wxstyle)
+    G2frame.dataDisplay.AddPage(HAPConstr,'Histogram/Phase constraints')
+    HistConstr = wxscroll.ScrolledPanel(G2frame.dataDisplay, wx.ID_ANY,style=wxstyle)
+    G2frame.dataDisplay.AddPage(HistConstr,'Histogram constraints')
+    GlobalConstr = wxscroll.ScrolledPanel(G2frame.dataDisplay, wx.ID_ANY,style=wxstyle)
+    G2frame.dataDisplay.AddPage(GlobalConstr,'Global constraints')
+    OnPageChanged(None) # show initial page
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     # validate all the constrants -- should not see any errors here normally
     allcons = []
@@ -855,7 +1111,7 @@ def UpdateRigidBodies(G2frame,data):
         elif 'pdb' in ext:
             while 'ATOM' not in txtStr[:6] and 'HETATM' not in txtStr[:6]:
                 txtStr = text.readline()
-                print txtStr
+                #print txtStr
         items = txtStr.split()
         while len(items):
             if 'txt' in ext:

@@ -57,9 +57,10 @@ def Refine(GPXfile,dlg):
     G2stIO.ShowControls(Controls,printFile)
     calcControls = {}
     calcControls.update(Controls)            
-    constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
+    constrDict,fixedList = G2stIO.GetConstraints(GPXfile) # better to pass in Histograms,Phases
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
+    G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
     if not Phases:
         print ' *** ERROR - you have no phases! ***'
         print ' *** Refine aborted ***'
@@ -90,13 +91,16 @@ def Refine(GPXfile,dlg):
     varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
     try:
         groups,parmlist = G2mv.GroupConstraints(constrDict)
+        #G2mv.debug = True # DEBUG
         G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
+        #G2mv.debug = False # DEBUG
     except:
         print ' *** ERROR - your constraints are internally inconsistent ***'
         errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
         print 'Errors',errmsg
         if warnmsg: print 'Warnings',warnmsg
         raise Exception(' *** Refine aborted ***')
+    #raise Exception(' *** Refine DEBUG ***') # DEBUG
     # # check to see which generated parameters are fully varied
     # msg = G2mv.SetVaryFlags(varyList)
     # if msg:

@@ -58,10 +58,9 @@ def Refine(GPXfile,dlg):
     G2stIO.ShowControls(Controls,printFile)
     calcControls = {}
     calcControls.update(Controls)            
-    constrDict,fixedList = G2stIO.GetConstraints(GPXfile) # better to pass in Histograms,Phases
+    constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
-    G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
     if not Phases:
         print ' *** ERROR - you have no phases! ***'
         print ' *** Refine aborted ***'

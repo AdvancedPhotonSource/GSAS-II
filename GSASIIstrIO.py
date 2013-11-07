@@ -63,6 +63,9 @@ def GetControls(GPXfile):
     
 def GetConstraints(GPXfile):
     '''Read the constraints from the GPX file and interpret them
+
+    called in :func:`CheckConstraints`, :func:`GSASIIstrMain.Refine`
+    and :func:`GSASIIstrMain.SeqRefine`. 
     '''
     constList = []
     fl = open(GPXfile,'rb')
@@ -176,7 +179,6 @@ def CheckConstraints(GPXfile):
         return 'Error: No Phases!',''
     if not Histograms:
         return 'Error: no diffraction data',''
-    G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
     rigidbodyDict = GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
@@ -394,6 +396,7 @@ def GetUsedHistogramsAndPhases(GPXfile):
                         # renamed or deleted
                         print('For phase "'+str(phase)+
                               '" unresolved reference to histogram "'+str(hist)+'"')
+    G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
     return Histograms,Phases
     
 def getBackupName(GPXfile,makeBack):

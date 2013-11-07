@@ -437,7 +437,8 @@ Every powder diffraction histogram is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "PWDR ". The
 diffraction data for that information are directly associated with
 that tree item and there are a series of children to that item. The
-routine :func:`~GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree` will
+routines :func:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`
+and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will
 load this information into a dictionary where the child tree name is
 used as a key, and the information in the main entry is assigned
 a key of ``Data``, as outlined below.
@@ -591,7 +592,8 @@ Every single crystal diffraction histogram is stored in the GSAS-II data tree
 with a top-level entry named beginning with the string "HKLF ". The
 diffraction data for that information are directly associated with
 that tree item and there are a series of children to that item. The
-routine :func:`~GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree` will
+routines :func:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`
+and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will
 load this information into a dictionary where the child tree name is
 used as a key, and the information in the main entry is assigned
 a key of ``Data``, as outlined below.
@@ -722,7 +724,7 @@ the same values as :attr:`VarDesc` except that keys have been compiled as
 regular expressions. Initialized in :func:`CompileVarDesc`.
 '''
 
-def IndexAllIds(G2frame=None,Histograms=None,Phases=None):
+def IndexAllIds(Histograms,Phases):
     '''Scan through the used phases & histograms and create an index
     to the random numbers of phases, histograms and atoms. While doing this,
     confirm that assigned random numbers are unique -- just in case lightning
@@ -731,41 +733,42 @@ def IndexAllIds(G2frame=None,Histograms=None,Phases=None):
     Note: this code assumes that the atom random Id (ranId) is the last 
     element each atom record.
 
+    This is called in two places (only) :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`
+    (which loads the histograms and phases from a GPX file) and
+    :meth:`GSASII.GSASII.GetUsedHistogramsAndPhases`
+    (which loads the histograms and phases from the data tree.)
+
     TODO: do we need a lookup for rigid body variables?
     '''
-    if G2frame:
-        Histograms,phaseDict = G2frame.GetUsedHistogramsAndPhasesfromTree()
-    else:
-        Histograms,phaseDict = Histograms,Phases
     # process phases and atoms
     PhaseIdLookup.clear()
     PhaseRanIdLookup.clear()    
     AtomIdLookup.clear()
     AtomRanIdLookup.clear()
     ShortPhaseNames.clear()
-    for Phase in phaseDict:
-        cx,ct,cs,cia = phaseDict[Phase]['General']['AtomPtrs']
-        ranId = phaseDict[Phase]['ranId'] 
+    for ph in Phases:
+        cx,ct,cs,cia = Phases[ph]['General']['AtomPtrs']
+        ranId = Phases[ph]['ranId'] 
         while ranId in PhaseRanIdLookup:
             # Found duplicate random Id! note and reassign
-            print ("\n\n*** Phase "+str(Phase)+" has repeated ranId. Fixing.\n")
-            phaseDict[Phase]['ranId'] = ranId = ran.randint(0,sys.maxint)
-        pId = str(phaseDict[Phase]['pId'])
-        PhaseIdLookup[pId] = (Phase,ranId)
+            print ("\n\n*** Phase "+str(ph)+" has repeated ranId. Fixing.\n")
+            Phases[ph]['ranId'] = ranId = ran.randint(0,sys.maxint)
+        pId = str(Phases[ph]['pId'])
+        PhaseIdLookup[pId] = (ph,ranId)
         PhaseRanIdLookup[ranId] = pId
-        shortname = Phase[:10]
+        shortname = ph[:10]
         while shortname in ShortPhaseNames.values():
-            shortname = Phase[:8] + ' ('+ pId + ')'
+            shortname = ph[:8] + ' ('+ pId + ')'
         ShortPhaseNames[pId] = shortname
         AtomIdLookup[pId] = {}
         AtomRanIdLookup[pId] = {}
-        for iatm,at in enumerate(phaseDict[Phase]['Atoms']):
+        for iatm,at in enumerate(Phases[ph]['Atoms']):
             ranId = at[-1]
             while ranId in AtomRanIdLookup[pId]: # check for dups
-                print ("\n\n*** Phase "+str(Phase)+" atom "+str(iatm)+" has repeated ranId. Fixing.\n")
+                print ("\n\n*** Phase "+str(ph)+" atom "+str(iatm)+" has repeated ranId. Fixing.\n")
                 at[-1] = ranId = ran.randint(0,sys.maxint)
             AtomRanIdLookup[pId][ranId] = str(iatm)
-            if phaseDict[Phase]['General']['Type'] == 'macromolecular':
+            if Phases[ph]['General']['Type'] == 'macromolecular':
                 label = '%s_%s_%s_%s'%(at[ct-1],at[ct-3],at[ct-4],at[ct-2])
             else:
                 label = at[ct-1]
@@ -787,8 +790,6 @@ def IndexAllIds(G2frame=None,Histograms=None,Phases=None):
         while shortname in ShortHistNames.values():
             shortname = hist[:11] + ' ('+ hId + ')'
         ShortHistNames[hId] = shortname
-
-    return Histograms,phaseDict
 
 def LookupAtomId(pId,ranId):
     '''Get the atom number from a phase and atom random Id

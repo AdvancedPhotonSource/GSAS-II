@@ -203,7 +203,7 @@ def UpdateConstraints(G2frame,data):
     #reload(G2mv)
     #reload(G2gd)
     ###################################################
-    Histograms,Phases = G2obj.IndexAllIds(G2frame)
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     ##################################################################################
     # patch: convert old-style (str) variables in constraints to G2VarObj objects
     for key,value in data.items():
@@ -215,7 +215,7 @@ def UpdateConstraints(G2frame,data):
                     cons[i][1] = G2obj.G2VarObj(cons[i][1])
                     j += 1
         if j:
-            print str(key) + ': '+str(j)+' variable(s) strings converted to objects'
+            print str(key) + ': '+str(j)+' variable(s) as strings converted to objects'
     ##################################################################################
     rigidbodyDict = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
@@ -251,7 +251,7 @@ def UpdateConstraints(G2frame,data):
             phaseAtTypes[item] = ''
             
     hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False)
-    hapList = hapDict.keys()
+    hapList = [i for i in hapDict.keys() if i.split(':')[2] not in ('Type',)]
     hapList.sort()
     histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
     histList = []

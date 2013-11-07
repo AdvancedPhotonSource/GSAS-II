@@ -71,6 +71,7 @@ import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
+import GSASIIobj as G2obj
 
 #wx inspector - use as needed
 wxInspector = False
@@ -2536,6 +2537,7 @@ class GSASII(wx.Frame):
                         else: # would happen if a referenced histogram were renamed or deleted
                             print('For phase "'+str(phase)+
                                   '" unresolved reference to histogram "'+str(hist)+'"')
+        G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
         return Histograms,Phases
         
     class ViewParmDialog(wx.Dialog):

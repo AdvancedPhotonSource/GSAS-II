@@ -26,6 +26,7 @@ import scipy.optimize as so
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIElem as G2el
+import GSASIIgrid as G2gd
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIobj as G2obj
@@ -47,7 +48,7 @@ def GetControls(GPXfile):
     :param str GPXfile: full .gpx file name
     :return: dictionary of control items
     '''
-    Controls = copy.copy(G2.DefaultControls)
+    Controls = copy.copy(G2gd.DefaultControls)
     fl = open(GPXfile,'rb')
     while True:
         try:

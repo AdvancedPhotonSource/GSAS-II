@@ -62,12 +62,15 @@ def IsHistogramInAnyPhase(G2frame,histoName):
 
 def SetDefaultSample():
     'Needs a doc string'
-    return {'ranId':ran.randint(0,sys.maxint),
+    return {
+        'ranId':ran.randint(0,sys.maxint),
         'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
         'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
-        'Temperature':300.,'Pressure':1.0,'Humidity':0.0,
-        'Voltage':0.0,'Force':0.0,'Gonio. radius':200.0,
-        'Omega':0.0,'Chi':0.0,'Phi':0.0}
+        'Temperature':300.,'Pressure':1.0,
+        'FreePrm1':0.,'FreePrm2':0.,'FreePrm3':0.,
+        'Gonio. radius':200.0,
+        'Omega':0.0,'Chi':0.0,'Phi':0.0
+        }
                          
 ################################################################################
 #####  Powder Peaks
@@ -1238,45 +1241,6 @@ def UpdateSampleGrid(G2frame,data):
         finally:
             dlg.Destroy()
 
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.Clear()
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.SampleMenu)
-    G2frame.dataFrame.SetLabel('Sample Parameters')
-    G2frame.Bind(wx.EVT_MENU, OnSampleCopy, id=G2gd.wxID_SAMPLECOPY)
-    G2frame.Bind(wx.EVT_MENU, OnSampleFlagCopy, id=G2gd.wxID_SAMPLEFLAGCOPY)
-    G2frame.Bind(wx.EVT_MENU, OnSampleSave, id=G2gd.wxID_SAMPLESAVE)
-    G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2gd.wxID_SAMPLELOAD)
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()    
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-
-#patch
-    if 'ranId' not in data:
-        data['ranId'] = ran.randint(0,sys.maxint)
-    if not 'Gonio. radius' in data:
-        data['Gonio. radius'] = 200.0
-    if not 'Omega' in data:
-        data.update({'Omega':0.0,'Chi':0.0,'Phi':0.0})
-#patch end
-    
-    parms = [['Gonio. radius',' Goniometer radius(mm): ','%.2f',]]
-    if data['Type'] == 'Debye-Scherrer':
-        parms += [['DisplaceX',u' Sample X displ. perp. to beam (\xb5m): ','%.2f',],
-            ['DisplaceY',u' Sample Y displ. || to beam (\xb5m): ','%.2f',],
-            ['Absorption',u' Sample absorption(\xb5r): ','%.4f',],]
-    elif data['Type'] == 'Bragg-Brentano':
-        parms += [['Shift',u' Sample displacement(\xb5m): ','%.2f',],
-            ['Transparency',u' Sample transparency(1/\xb5eff,cm): ','%.4f'],]
-    parms.append(['Omega','Goniometer omega:','%.2f'])
-    parms.append(['Chi','Goniometer chi:','%.2f'])
-    parms.append(['Phi','Goniometer phi:','%.2f'])
-    parms.append(['Temperature',' Sample temperature(K): ','%.2f'])
-    parms.append(['Pressure',' Sample pressure(MPa): ','%.3f'])
-    parms.append(['Humidity',' Sample humidity(%): ','%.1f'])
-    parms.append(['Voltage',' Sample voltage(V): ','%.3f'])
-    parms.append(['Force',' Applied load(MN): ','%.3f'])
-    objList = {}
-
     def OnScaleRef(event):
         Obj = event.GetEventObject()
         data['Scale'][1] = Obj.GetValue()
@@ -1299,26 +1263,6 @@ def UpdateSampleGrid(G2frame,data):
             data['Transparency'] = [0.0,False]
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
         
-    def OnParmRef(event):
-        Obj = event.GetEventObject()
-        parm = objList[Obj.GetId()]
-        data[parm][1] = Obj.GetValue()
-        
-    def OnParmVal(event):
-        Obj = event.GetEventObject()
-        parm = objList[Obj.GetId()]
-        try:
-            if 'list' in str(type(data[parm[0]])): 
-                data[parm[0]][0] = float(Obj.GetValue())
-            else:
-                data[parm[0]] = float(Obj.GetValue())
-        except ValueError:
-            pass
-        if 'list' in str(type(data[parm[0]])): 
-            Obj.SetValue(parm[2]%(data[parm[0]][0]))          #reset in case of error
-        else:
-            Obj.SetValue(parm[2]%(data[parm[0]]))          #reset in case of error
-
     def SetNameVal():
         inst = instNameVal.GetValue()
         data['InstrName'] = inst.strip()
@@ -1326,15 +1270,72 @@ def UpdateSampleGrid(G2frame,data):
     def OnNameVal(event):
         event.Skip()
         wx.CallAfter(SetNameVal)       
+
+    ######## DEBUG #######################################################
+    #import GSASIIpwdGUI
+    #reload(GSASIIpwdGUI)
+    #reload(G2gd)
+    ######################################################################
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.Clear()
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.SampleMenu)
+    G2frame.dataFrame.SetLabel('Sample Parameters')
+    G2frame.Bind(wx.EVT_MENU, OnSampleCopy, id=G2gd.wxID_SAMPLECOPY)
+    G2frame.Bind(wx.EVT_MENU, OnSampleFlagCopy, id=G2gd.wxID_SAMPLEFLAGCOPY)
+    G2frame.Bind(wx.EVT_MENU, OnSampleSave, id=G2gd.wxID_SAMPLESAVE)
+    G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2gd.wxID_SAMPLELOAD)
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()    
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    Controls = G2frame.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+#patch
+    if 'ranId' not in data:
+        data['ranId'] = ran.randint(0,sys.maxint)
+    if not 'Gonio. radius' in data:
+        data['Gonio. radius'] = 200.0
+    if not 'Omega' in data:
+        data.update({'Omega':0.0,'Chi':0.0,'Phi':0.0})
+    if type(data['Temperature']) is int:
+        data['Temperature'] = float(data['Temperature'])
+    if 'FreePrm1' not in Controls:
+        Controls['FreePrm1'] = 'Sample humidity (%)'
+    if 'FreePrm2' not in Controls:
+        Controls['FreePrm2'] = 'Sample voltage (V)'
+    if 'FreePrm3' not in Controls:
+        Controls['FreePrm3'] = 'Applied load (MN)'
+    if 'FreePrm1' not in data:
+        data['FreePrm1'] = 0.
+    if 'FreePrm2' not in data:
+        data['FreePrm2'] = 0.
+    if 'FreePrm3' not in data:
+        data['FreePrm3'] = 0.
+#patch end
+    
+    parms = []
+    parms.append(['Scale','Histogram scale factor: '])
+    parms.append(['Gonio. radius','Goniometer radius (mm): '])
+    if data['Type'] == 'Debye-Scherrer':
+        parms += [['DisplaceX',u'Sample X displ. perp. to beam (\xb5m): '],
+            ['DisplaceY',u'Sample Y displ. || to beam (\xb5m): '],
+            ['Absorption',u'Sample absorption (\xb5\xb7r): '],]
+    elif data['Type'] == 'Bragg-Brentano':
+        parms += [['Shift',u'Sample displacement(\xb5m): '],
+            ['Transparency',u'Sample transparency(1/\xb5eff, cm): '],]
+    parms.append(['Omega','Goniometer omega:',])
+    parms.append(['Chi','Goniometer chi:',])
+    parms.append(['Phi','Goniometer phi:',])
+    parms.append(['Temperature','Sample temperature (K): ',])
+    parms.append(['Pressure','Sample pressure (MPa): ',])
                 
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add((-1,-1),1,wx.EXPAND,1)
-    topSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sample and Experimental Parameters'))
+    topSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Sample and Experimental Parameters'))
     topSizer.Add((-1,-1),1,wx.EXPAND,1)
     mainSizer.Add(topSizer,0,wx.EXPAND,1)
     nameSizer = wx.BoxSizer(wx.HORIZONTAL)
-    nameSizer.Add(wx.StaticText(G2frame.dataDisplay,wx.ID_ANY,'Instrument Name'),
+    nameSizer.Add(wx.StaticText(G2frame.dataDisplay,wx.ID_ANY,' Instrument Name'),
                 0,wx.ALIGN_CENTER_VERTICAL)
     nameSizer.Add((-1,-1),1,wx.EXPAND,1)
     instNameVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,data.get('InstrName',''),
@@ -1342,46 +1343,37 @@ def UpdateSampleGrid(G2frame,data):
     nameSizer.Add(instNameVal)
     instNameVal.Bind(wx.EVT_CHAR,OnNameVal)
     mainSizer.Add(nameSizer,0,wx.EXPAND,1)
-    mainSizer.Add((0,5),0)
-
     mainSizer.Add((5,5),0)
-    parmSizer = wx.FlexGridSizer(10,2,5,0)
-    scaleRef = wx.CheckBox(G2frame.dataDisplay,label=' Histogram scale factor: ')
-    scaleRef.SetValue(data['Scale'][1])
-    scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
-    parmSizer.Add(scaleRef,0,wx.ALIGN_CENTER_VERTICAL)
-    scaleVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,
-        '%.4f'%(data['Scale'][0]),style=wx.TE_PROCESS_ENTER)
-    scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
-    scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
-    parmSizer.Add(scaleVal,0,wx.ALIGN_CENTER_VERTICAL)
-    typeSizer = wx.BoxSizer(wx.HORIZONTAL)
+
+    nameSizer = wx.BoxSizer(wx.HORIZONTAL)
+    nameSizer.Add(wx.StaticText(G2frame.dataDisplay,wx.ID_ANY,' Diffractometer type: '),
+                0,wx.ALIGN_CENTER_VERTICAL)
     choices = ['Debye-Scherrer','Bragg-Brentano',]
     histoType = wx.ComboBox(G2frame.dataDisplay,wx.ID_ANY,value=data['Type'],choices=choices,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     histoType.Bind(wx.EVT_COMBOBOX, OnHistoType)
-    parmSizer.Add(histoType)
-    parmSizer.Add((5,5),0)
-    
-    for parm in parms:
-        if 'list' in str(type(data[parm[0]])):
-            parmRef = wx.CheckBox(G2frame.dataDisplay,label=parm[1])
-            objList[parmRef.GetId()] = parm[0]
-            parmRef.SetValue(data[parm[0]][1])
-            parmRef.Bind(wx.EVT_CHECKBOX, OnParmRef)
-            parmSizer.Add(parmRef,0,wx.ALIGN_CENTER_VERTICAL)
-            parmVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,
-                parm[2]%(data[parm[0]][0]),style=wx.TE_PROCESS_ENTER)
+    nameSizer.Add(histoType)
+    mainSizer.Add(nameSizer,0,wx.EXPAND,1)
+    mainSizer.Add((5,5),0)
+
+    parmSizer = wx.FlexGridSizer(10,2,5,0)
+    for key,lbl in parms:
+        if 'list' in str(type(data[key])):
+            parmRef = G2gd.G2CheckBox(G2frame.dataDisplay,' '+lbl,data[key],1)
+            parmSizer.Add(parmRef,0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+            parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data[key],0,typeHint=float)
         else:
-            parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=parm[1]),
-                0,wx.ALIGN_CENTER_VERTICAL)
-            parmVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,
-                parm[2]%(data[parm[0]]),style=wx.TE_PROCESS_ENTER)        
-        objList[parmVal.GetId()] = parm
-        parmVal.Bind(wx.EVT_TEXT_ENTER,OnParmVal)
-        parmVal.Bind(wx.EVT_KILL_FOCUS,OnParmVal)
+            parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' '+lbl),
+                0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+            parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,typeHint=float)
         parmSizer.Add(parmVal,1,wx.EXPAND)
-    mainSizer.Add(parmSizer)
+    for key in ('FreePrm1','FreePrm2','FreePrm3'):
+        parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,Controls,key,typeHint=str,
+                                        notBlank=False)
+        parmSizer.Add(parmVal,1,wx.EXPAND)
+        parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,typeHint=float)
+        parmSizer.Add(parmVal,1,wx.EXPAND)
+    mainSizer.Add(parmSizer,1,wx.EXPAND)
     mainSizer.Add((0,5),0)    
     
     mainSizer.Layout()    

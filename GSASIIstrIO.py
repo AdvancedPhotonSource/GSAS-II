@@ -47,8 +47,7 @@ def GetControls(GPXfile):
     :param str GPXfile: full .gpx file name
     :return: dictionary of control items
     '''
-    Controls = {'deriv type':'analytic Hessian','max cyc':3,'max Hprocess':1,
-        'max Rprocess':1,'min dM/M':0.0001,'shift factor':1.}
+    Controls = copy.copy(G2.DefaultControls)
     fl = open(GPXfile,'rb')
     while True:
         try:
@@ -122,16 +121,16 @@ def ProcessConstraints(constList):
             fixedList.append(None)
             D = {}
             varyFlag = item[-2]
-            name = item[-3]
+            varname = item[-3]
             for term in item[:-3]:
                 var = str(term[1])
                 if '?' not in var:
                     D[var] = term[0]
             if len(D) > 1:
                 # add extra dict terms for input variable name and vary flag
-                #if name is not None:
-                #    D['_name'] = name
-                #D['_vary'] = varyFlag == True # force to bool
+                if varname is not None:
+                    D['_name'] = varname
+                D['_vary'] = varyFlag == True # force to bool
                 constDict.append(D)
             else:
                 ignored += 1

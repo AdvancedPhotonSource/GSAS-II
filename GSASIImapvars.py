@@ -82,14 +82,16 @@ global variables. Each generated parameter is named sequentially using paramPref
 
 A list of parameters that will be varied is specified as input to GenerateConstraints
 (varyList). A fixed parameter will simply be removed from this list preventing that
-parameter from being varied. Note that all parameters in a relationship must specified as
-varied (appear in varyList) or none can be varied. This is checked in GenerateConstraints
-(as well as for generated relationships in SetVaryFlags).
+parameter from being varied. Note that all parameters in a constraint relationship
+must specified as varied (appear in varyList) or none can be varied. This is
+checked in GenerateConstraints (as well as for generated relationships in SetVaryFlags).
 
-* If all parameters in a parameter redefinition (new var) relationship are varied, the
-  parameter assigned to this expression (::constr:n, see paramPrefix) newly generated
-  parameter is varied. Note that any generated "missing" relations are not varied. Only
-  the input relations are varied.
+* When a new variable is created, the variable is assigned the name associated
+  in the constraint definition or it is assigned a default name of form
+  ``::constr<n>`` (see paramPrefix). The vary setting for variables used in the
+  constraint are ignored.
+  Note that any generated "missing" relations are not varied. Only
+  the input relations can be are varied.
   
 * If all parameters in a fixed constraint equation are varied, the generated "missing"
   relations in the group are all varied. This provides the N-C degrees of freedom. 
@@ -220,7 +222,7 @@ fixedDict = {} # a dictionary containing the fixed values corresponding to defin
 fixedVarList = [] # List of variables that should not be refined
 
 # prefix for parameter names
-paramPrefix = "::constr;"
+paramPrefix = "::constr"
 consNum = 0 # number of the next constraint to be created
 
 def InitVars():
@@ -234,6 +236,21 @@ def InitVars():
     consNum = 0 # number of the next constraint to be created
     fixedVarList = []
 
+def VarKeys(constr):
+    """Finds the keys in a constraint that represent variables
+    e.g. eliminates any that start with '_'
+
+    :param dict constr: a single constraint entry of form::
+
+        {'var1': mult1, 'var2': mult2,... '_notVar': val,...}
+
+        (see :func:`GroupConstraints`)
+    :returns: a list of keys where any keys beginning with '_' are
+      removed.
+    """
+    return [i for i in constr.keys() if not i.startswith('_')]
+
+
 def GroupConstraints(constrDict):
     """divide the constraints into groups that share no parameters.
 
@@ -243,7 +260,7 @@ def GroupConstraints(constrDict):
     
        constrDict = [{<constr1>}, {<constr2>}, ...]
 
-    where {<constr1>} is {'param1': mult1, 'param2': mult2,...}
+    where {<constr1>} is {'var1': mult1, 'var2': mult2,... }
 
     :returns: two lists of lists:
     
@@ -260,17 +277,17 @@ def GroupConstraints(constrDict):
         # starting a new group
         grouplist = [i,]
         assignedlist.append(i)
-        groupset = set(consi.keys())
+        groupset = set(VarKeys(consi))
         changes = True # always loop at least once
         while(changes): # loop until we can't find anything to add to the current group
             changes = False # but don't loop again unless we find something
             for j,consj in enumerate(constrDict):
                 if j in assignedlist: continue # already in a group, skip
-                if len(set(consj.keys()) & groupset) > 0: # true if this needs to be added
+                if len(set(VarKeys(consj)) & groupset) > 0: # true if this needs to be added
                     changes = True
                     grouplist.append(j)
                     assignedlist.append(j)
-                    groupset = groupset | set(consj.keys())
+                    groupset = groupset | set(VarKeys(consj))
         group = sorted(grouplist)
         varlist = sorted(list(groupset))
         groups.append(group)
@@ -301,12 +318,14 @@ def CheckConstraints(varyList,constrDict,fixedList):
         
       If there are no errors, both strings will be empty
     '''
+    import re
     global dependentParmList,arrayList,invarrayList,indParmList,consNum
     errmsg = ''
     warnmsg = ''
     fixVlist = []
-    # process fixed (held) variables
+    # process fixed variables (holds)
     for cdict in constrDict:
+        # N.B. No "_" names in holds
         if len(cdict) == 1:
             fixVlist.append(cdict.keys()[0])
     
@@ -388,11 +407,13 @@ def CheckConstraints(varyList,constrDict,fixedList):
     # varied, create a warning message.
     for group,varlist in zip(groups,parmlist):
         if len(varlist) == 1: continue
-        VaryFree = False
         for rel in group:
             varied = 0
             notvaried = ''
             for var in constrDict[rel]:
+                if var.startswith('_'): continue
+                if not re.match('[0-9]*:[0-9]*:',var):
+                    warnmsg += "\nVariable "+str(var)+" does not begin with a ':'"
                 if var in varyList:
                     varied += 1
                 else:
@@ -401,7 +422,7 @@ def CheckConstraints(varyList,constrDict,fixedList):
                 if var in fixVlist:
                     errmsg += '\nParameter '+var+" is Fixed and used in a constraint:\n\t"
                     errmsg += _FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
-            if varied > 0 and varied != len(constrDict[rel]):
+            if varied > 0 and varied != len(VarKeys(constrDict[rel])):
                 warnmsg += "\nNot all variables refined in constraint:\n\t"
                 warnmsg += _FormatConstraint(constrDict[rel],fixedList[rel])
                 warnmsg += '\nNot refined: ' + notvaried + '\n'
@@ -452,7 +473,7 @@ def CheckConstraints(varyList,constrDict,fixedList):
             if len(group) > 0:
                 rel = group.pop(0)
                 fixedval = fixedList[rel]
-                for var in constrDict[rel]:
+                for var in VarKeys(constrDict[rel]):
                     if var in varyList:
                         varied += 1
                     else:
@@ -461,11 +482,9 @@ def CheckConstraints(varyList,constrDict,fixedList):
             else:
                 fixedval = None
             if fixedval is None:
-                varname = paramPrefix + str(consNum)
+                varname = paramPrefix + str(consNum) # assign a name to a variable
                 mapvar.append(varname)
                 consNum += 1
-                if VaryFree or varied > 0:
-                    varyList.append(varname)
             else:
                 mapvar.append(fixedval)
             if varied > 0 and notvaried != '':
@@ -592,15 +611,13 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
 
     # scan through parameters in each relationship. Are all varied? If only some are
     # varied, create an error message. 
-    # If all are varied and this is a constraint equation, then set VaryFree flag
-    # so that newly created relationships will be varied
     for group,varlist in zip(groups,parmlist):
         if len(varlist) == 1: continue
-        VaryFree = False
         for rel in group:
             varied = 0
             notvaried = ''
             for var in constrDict[rel]:
+                if var.startswith('_'): continue
                 if var in varyList:
                     varied += 1
                 else:
@@ -609,12 +626,10 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
                 if var in fixedVarList:
                     msg += '\nError: parameter '+var+" is Fixed and used in a constraint:\n\t"
                     msg += _FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
-            if varied > 0 and varied != len(constrDict[rel]):
+            if varied > 0 and varied != len(VarKeys(constrDict[rel])):
                 msg += "\nNot all variables refined in constraint:\n\t"
                 msg += _FormatConstraint(constrDict[rel],fixedList[rel])
                 msg += '\nNot refined: ' + notvaried + '\n'
-            if fixedList[rel] is not None and varied > 0:
-                VaryFree = True
     # if there were errors found, go no farther
     if msg:
         print ' *** ERROR in constraint definitions! ***'
@@ -623,10 +638,27 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
                 
     # now process each group and create the relations that are needed to form
     # non-singular square matrix
+    # If all are varied and this is a constraint equation, then set VaryFree flag
+    # so that the newly created relationships will be varied
     for group,varlist in zip(groups,parmlist):
         if len(varlist) == 1: continue
+        # for constraints, if all included variables are refined,
+        # set the VaryFree flag, and remaining degrees of freedom will be
+        # varied (since consistency was checked, if any one variable is
+        # refined, then assume that all are)
+        varsList = [] # make a list of all the referenced variables as well
+        VaryFree = False
+        for rel in group:
+            varied = 0
+            for var in VarKeys(constrDict[rel]):
+                if var not in varsList: varsList.append(var)
+                if var in varyList: varied += 1
+            if fixedList[rel] is not None and varied > 0:
+                VaryFree = True
         if len(varlist) < len(group): # too many relationships -- no can do
             msg = 'too many relationships'
+            break
+        # fill in additional degrees of freedom
         try:
             arr = _FillArray(group,constrDict,varlist)
             _RowEchelon(len(group),arr,varlist)
@@ -634,44 +666,39 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
             GramSchmidtOrtho(constrArr,len(group))
         except:
             msg = 'Singular relationships'
-
+            break
         mapvar = []
         group = group[:]
-        # scan through all generated and input variables, add to the varied list
+        # scan through all generated and input relationships, we need to add to the varied list
         # all the new parameters where VaryFree has been set or where all the
         # dependent parameters are varied. Check again for inconsistent variable use
         # for new variables -- where varied and unvaried parameters get grouped
         # together. I don't think this can happen when not flagged before, but
         # it does not hurt to check again. 
         for i in range(len(varlist)):
-            varied = 0
-            notvaried = ''
             if len(group) > 0: # get the original equation reference
                 rel = group.pop(0)
-                if debug:
-                    print rel
-                    print fixedList[rel]
-                    print constrDict[rel]
                 fixedval = fixedList[rel]
-                for var in constrDict[rel]:
-                    if var in varyList:
-                        varied += 1
-                    else:
-                        if notvaried: notvaried += ', '
-                        notvaried += var
-            else:
+                varyflag = constrDict[rel].get('_vary',False)
+                varname = constrDict[rel].get('_name','')
+            else: # relationship has been generated
+                varyflag = False
+                varname = ''
                 fixedval = None
-            if fixedval is None:
-                varname = paramPrefix + str(consNum)
+            if fixedval is None: # this is a new variable, not a constraint
+                if not varname:
+                    varname = paramPrefix + str(consNum) # no assigned name, create one
+                    consNum += 1
                 mapvar.append(varname)
-                consNum += 1
-                if VaryFree or varied > 0:
+                # vary the new relationship if it is a degree of freedom in
+                # a set of contraint equations or if a new variable is flagged to be varied.
+                if VaryFree or varyflag: 
                     varyList.append(varname)
+                    # fix (prevent varying) of all the variables inside the constraint group
+                    for var in varsList:
+                        if var in varyList: varyList.remove(var)
             else:
                 mapvar.append(fixedval)
-            if varied > 0 and notvaried != '':
-                msg += "\nNot all variables refined in generated constraint\n\t"
-                msg += '\nNot refined: ' + notvaried + '\n'
         dependentParmList.append(varlist)
         arrayList.append(constrArr)
         invarrayList.append(np.linalg.inv(constrArr))
@@ -691,6 +718,8 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
     if debug: # on debug, show what is parsed & generated, semi-readable
         print 50*'-'
         print VarRemapShow(varyList)
+        print 'Varied: ',varyList
+        print 'Not Varied: ',fixedVarList
 
 def StoreEquivalence(independentVar,dependentList):
     '''Takes a list of dependent parameter(s) and stores their
@@ -814,6 +843,7 @@ def _FormatConstraint(RelDict,RelVal):
     linelen = 45
     s = [""]
     for var,val in RelDict.items():
+        if var.startswith('_'): continue
         if len(s[-1]) > linelen: s.append(' ')
         m = val
         if s[-1] != "" and m >= 0:

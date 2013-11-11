@@ -140,7 +140,15 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(7)]
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
-
+DefaultControls = {
+    'deriv type':'analytic Hessian',    #default controls
+    'min dM/M':0.0001,'shift factor':1.,'max cyc':3,'F**2':True,
+    'minF/sig':0,
+    'Author':'no name',
+    'FreeVar1':'Sample humidity (%)',
+    'FreeVar2':'Sample voltage (V)',
+    'FreeVar3':'Applied load (MN)',
+    }
 ################################################################################
 #### GSAS-II class definitions
 ################################################################################
@@ -313,7 +321,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                     pass
                 else:
                     self.invalid = True
-            wx.TextCtrl.SetValue(self,str(val))
+            wx.TextCtrl.SetValue(self,str(G2py3.FormatValue(val)))
         else:
             wx.TextCtrl.SetValue(self,str(val))
             self.ShowStringValidity() # test if valid input
@@ -396,8 +404,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         if self.invalid: return # don't substitute for an invalid expression
         if not self.evaluated: return # true when an expression is evaluated
         if self.result is not None: # retrieve the stored result
-            val = self.result[self.key]
-            self.SetValue(G2py3.FormatValue(val))
+            self.SetValue(self.result[self.key])
         self.evaluated = False # expression has been recast as value, reset flag
         
 class NumberValidator(wx.PyValidator):
@@ -715,6 +722,30 @@ class EnumSelector(wx.ComboBox):
         else:
             self.dct[self.item] = self.values[0] # unknown
 
+################################################################################
+class G2CheckBox(wx.CheckBox):
+    '''A customized version of a CheckBox that automatically initializes
+    the control to match a supplied 
+
+    :param wx.Panel parent: name of panel or frame that will be
+      the parent to the TextCtrl. Can be None.
+    :param str label: text to put on check button
+    :param dict/list loc: the dict or list with the initial value to be
+      placed in the CheckBox. 
+    :param int/str key: the dict key or the list index for the value to be
+      edited by the CheckBox. The ``loc[key]`` element must exist.
+      The CheckBox will be initialized from this value.
+      If the value is anything other that True (or 1), it will be taken as
+      False. 
+    '''
+    def __init__(self,parent,label,loc,key):
+        wx.CheckBox.__init__(self,parent,id=wx.ID_ANY,label=label)
+        self.loc = loc
+        self.key = key
+        self.SetValue(self.loc[self.key]==True)
+        self.Bind(wx.EVT_CHECKBOX, self._OnCheckBox)
+    def _OnCheckBox(self,event):
+        self.loc[self.key] = self.GetValue()
 ################################################################################    
 def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250),
@@ -2880,6 +2911,12 @@ def UpdateControls(G2frame,data):
         data['minF/sig'] = 0
     if 'Author' not in data:
         data['Author'] = 'no name'
+    if 'FreePrm1' not in data:
+        data['FreePrm1'] = 'Sample humidity (%)'
+    if 'FreePrm2' not in data:
+        data['FreePrm2'] = 'Sample voltage (V)'
+    if 'FreePrm3' not in data:
+        data['FreePrm3'] = 'Applied load (MN)'
     #end patch
 
     def SeqSizer():
@@ -3084,7 +3121,8 @@ def UpdateSeqResults(G2frame,data):
     histNames = data['histNames']
        
     def GetSampleParms():
-        sampleParmDict = {'Temperature':[],'Pressure':[],'Humidity':[],'Voltage':[],'Force':[],}
+        sampleParmDict = {'Temperature':300.,'Pressure':1.,
+                          'FreePrm1':0.,'FreePrm2':0.,'FreePrm3':0.,}
         sampleParm = {}
         for name in histNames:
             Id = GetPatternTreeItemId(G2frame,G2frame.root,name)
@@ -3512,9 +3550,7 @@ def MovePatternTreeToGrid(G2frame,item):
             for i in G2frame.ExportPattern: i.Enable(False)
             data = G2frame.PatternTree.GetItemPyData(item)
             if not data:           #fill in defaults
-                data = {
-                    #least squares controls
-                    'deriv type':'analytic Hessian','min dM/M':0.0001,'shift factor':1.0,'max cyc':3}
+                data = copy.copy(DefaultControls)    #least squares controls
                 G2frame.PatternTree.SetItemPyData(item,data)                             
             for i in G2frame.Refine: i.Enable(True)
             for i in G2frame.SeqRefine: i.Enable(True)
@@ -3667,8 +3703,9 @@ def MovePatternTreeToGrid(G2frame,item):
 
         if 'Temperature' not in data:           #temp fix for old gpx files
             data = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
-                'DisplaceY':[0.0,False],'Diffuse':[],'Temperature':300.,'Pressure':1.0,'Humidity':0.0,'Voltage':0.0,
-                'Force':0.0,'Gonio. radius':200.0}
+                'DisplaceY':[0.0,False],'Diffuse':[],'Temperature':300.,'Pressure':1.0,
+                    'FreePrm1':0.,'FreePrm2':0.,'FreePrm3':0.,
+                    'Gonio. radius':200.0}
             G2frame.PatternTree.SetItemPyData(item,data)
     
         G2pdG.UpdateSampleGrid(G2frame,data)

@@ -40,6 +40,7 @@ import GSASIImapvars as G2mv
 import GSASIIconstrGUI as G2cnstG
 import GSASIIrestrGUI as G2restG
 import GSASIIpy3 as G2py3
+import GSASIIobj as G2obj
 
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -140,15 +141,6 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(7)]
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
-DefaultControls = {
-    'deriv type':'analytic Hessian',    #default controls
-    'min dM/M':0.0001,'shift factor':1.,'max cyc':3,'F**2':True,
-    'minF/sig':0,
-    'Author':'no name',
-    'FreeVar1':'Sample humidity (%)',
-    'FreeVar2':'Sample voltage (V)',
-    'FreeVar3':'Applied load (MN)',
-    }
 ################################################################################
 #### GSAS-II class definitions
 ################################################################################
@@ -3550,7 +3542,7 @@ def MovePatternTreeToGrid(G2frame,item):
             for i in G2frame.ExportPattern: i.Enable(False)
             data = G2frame.PatternTree.GetItemPyData(item)
             if not data:           #fill in defaults
-                data = copy.copy(DefaultControls)    #least squares controls
+                data = copy.copy(G2obj.DefaultControls)    #least squares controls
                 G2frame.PatternTree.SetItemPyData(item,data)                             
             for i in G2frame.Refine: i.Enable(True)
             for i in G2frame.SeqRefine: i.Enable(True)

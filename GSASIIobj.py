@@ -1,5 +1,12 @@
-# TODO: change this to assemble the look-up tables of atoms, phases and hists from the tree
-# and then save/unsave those values in __init__ & __str__, etc. 
+# -*- coding: utf-8 -*-
+#GSASIIobj - data objects for GSAS-II
+########### SVN repository information ###################
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
+########### SVN repository information ###################
 
 '''
 *GSASIIobj: Data objects*
@@ -678,6 +685,21 @@ import GSASIIpath
 import GSASIImath as G2mth
 
 GSASIIpath.SetVersionNumber("$Revision$")
+
+DefaultControls = {
+    'deriv type':'analytic Hessian',    #default controls
+    'min dM/M':0.0001,'shift factor':1.,'max cyc':3,'F**2':True,
+    'minF/sig':0,
+    'Author':'no name',
+    'FreeVar1':'Sample humidity (%)',
+    'FreeVar2':'Sample voltage (V)',
+    'FreeVar3':'Applied load (MN)',
+    }
+'''Values to be used as defaults for the initial contents of the ``Controls``
+data tree item.
+'''
+
+
 PhaseIdLookup = {}
 '''dict listing phase name and random Id keyed by sequential phase index as a str;
 best to access this using :func:`LookupPhaseName`

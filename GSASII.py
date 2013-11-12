@@ -1612,7 +1612,7 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(sub,[''])
         if not G2gd.GetPatternTreeItemId(self,self.root,'Controls'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Controls')
-            self.PatternTree.SetItemPyData(sub,copy.copy(G2gd.DefaultControls))
+            self.PatternTree.SetItemPyData(sub,copy.copy(G2obj.DefaultControls))
         if not G2gd.GetPatternTreeItemId(self,self.root,'Covariance'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Covariance')
             self.PatternTree.SetItemPyData(sub,{})

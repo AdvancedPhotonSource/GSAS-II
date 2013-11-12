@@ -48,7 +48,7 @@ def GetControls(GPXfile):
     :param str GPXfile: full .gpx file name
     :return: dictionary of control items
     '''
-    Controls = copy.copy(G2gd.DefaultControls)
+    Controls = copy.copy(G2obj.DefaultControls)
     fl = open(GPXfile,'rb')
     while True:
         try:

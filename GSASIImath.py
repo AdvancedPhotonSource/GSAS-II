@@ -1552,7 +1552,7 @@ def findOffset(SGData,A,Fhkl):
             ang = (np.angle(Fhkl[H[0],H[1],H[2]],deg=True)/360.-phi)
             dH = H-hkl
             dang = ang-ang0
-            if np.any(np.abs(dH)-Hmax > 0):    #keep low order DHs
+            if np.any(np.abs(dH)- Hmax > 0):    #keep low order DHs
                 continue
             DH.append(dH)
             Dphi.append((dang+.5) % 1.0)
@@ -1642,7 +1642,7 @@ def ChargeFlip(data,reflDict,pgbar):
         CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))*(1.+0j)
         CEsig = np.std(CErho)
         CFrho = np.where(np.real(CErho) >= flipData['k-factor']*CEsig,CErho,-CErho)
-        CFrho = np.where(np.real(CErho) <= flipData['k-Max']*CEsig,CFrho,-CFrho)      #solves U atom problem! make 20. adjustible
+        CFrho = np.where(np.real(CErho) <= flipData['k-Max']*CEsig,CFrho,-CFrho)      #solves U atom problem!
         CFhkl = fft.ifftshift(fft.ifftn(CFrho))
         CFhkl = np.where(CFhkl,CFhkl,1.0)           #avoid divide by zero
         phase = CFhkl/np.absolute(CFhkl)
@@ -1660,7 +1660,7 @@ def ChargeFlip(data,reflDict,pgbar):
     print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))
     print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
-    roll = findOffset(SGData,A,CEhkl)
+    roll = findOffset(SGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
         
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
@@ -1689,13 +1689,13 @@ def SearchMap(data):
     
     norm = 1./(np.sqrt(3.)*np.sqrt(2.*np.pi)**3)
     
-    def noDuplicate(xyz,peaks,Amat):
-        XYZ = np.inner(Amat,xyz)
-        if True in [np.allclose(XYZ,np.inner(Amat,peak),atol=0.5) for peak in peaks]:
-            print ' Peak',xyz,' <0.5A from another peak'
-            return False
-        return True
-                            
+#    def noDuplicate(xyz,peaks,Amat):
+#        XYZ = np.inner(Amat,xyz)
+#        if True in [np.allclose(XYZ,np.inner(Amat,peak),atol=0.5) for peak in peaks]:
+#            print ' Peak',xyz,' <0.5A from another peak'
+#            return False
+#        return True
+#                            
     def fixSpecialPos(xyz,SGData,Amat):
         equivs = G2spc.GenAtom(xyz,SGData,Move=True)
         X = []
@@ -1847,7 +1847,7 @@ def PeaksUnique(data,Ind):
 #    XYZE = np.array([[equiv[0] for equiv in G2spc.GenAtom(xyz[1:4],SGData,Move=True)] for xyz in mapPeaks]) #keep this!!
 
     def noDuplicate(xyz,peaks,Amat):
-        if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=0.5) for peak in peaks]:
+        if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=1.0) for peak in peaks]:
             return False
         return True
                             

@@ -1791,7 +1791,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 E,SGData = G2spc.SpcGroup(controls[13])
                 G2frame.PatternTree.SetItemPyData(sub, \
                     G2IO.SetNewPhase(Name=PhaseName,SGData=SGData,cell=cell[1:]))
-                Status.SetStatusText('Change space group if needed')
+                Status.SetStatusText('Change space group from '+str(controls[13])+' if needed')
         finally:
             dlg.Destroy()
             

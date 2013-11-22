@@ -25,6 +25,7 @@ import wx
 import wx.grid as wg
 import wx.lib.gridmovers as wgmove
 import wx.wizard as wz
+import wx.lib.scrolledpanel as wxscroll
 import matplotlib as mpl
 import math
 import copy
@@ -45,6 +46,7 @@ import GSASIIIO as G2IO
 import GSASIIstrMain as G2stMn
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
+import GSASIIpy3 as G2py3
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
@@ -62,17 +64,17 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 
 def SetPhaseWindow(mainFrame,phasePage,mainSizer):
-        phasePage.SetSizer(mainSizer)
-        Size = mainSizer.GetMinSize()
-        Size[0] += 40
-        Size[1] = max(Size[1],430) + 35
-        phasePage.SetSize(Size)
-        phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        mainFrame.setSizePosLeft(Size)
+    phasePage.SetSizer(mainSizer)
+    Size = mainSizer.GetMinSize()
+    Size[0] += 40
+    Size[1] = max(Size[1],430) + 35
+    phasePage.SetSize(Size)
+    phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+    mainFrame.setSizePosLeft(Size)
 
 def UpdatePhaseData(G2frame,Item,data,oldPage):
     '''Create the data display window contents when a phase is clicked on
-    in the man (data tree) window.
+    in the main (data tree) window.
     Called only from :meth:`GSASIIgrid.MovePatternTreeToGrid`,
     which in turn is called from :meth:`GSASII.GSASII.OnPatternTreeSelChanged`
     when a tree item is selected.
@@ -107,6 +109,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataFrame.CreateStatusBar()
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     G2frame.dataDisplay.gridList = [] # list of all grids in notebook
+    # UpdatePhaseData execution continues below
     
     def SetupGeneral():
         generalData = data['General']
@@ -136,7 +139,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['MCSA controls'] = {'Data source':'','Annealing':[50.,0.001,50],
             'dmin':2.0,'Algorithm':'fast','Jump coeff':[0.95,0.5],'boltzmann':1.0,
             'fast parms':[1.0,1.0,1.0],'log slope':0.9,'Cycles':1,'Results':[]}
+        if 'AtomPtrs' not in generalData:
+            generalData['AtomPtrs'] = [3,1,7,9]
+            if generalData['Type'] =='macromolecular':
+                generalData['AtomPtrs'] = [6,4,10,12]
 # end of patches
+        cx,ct,cs,cia = generalData['AtomPtrs']
         generalData['NoAtoms'] = {}
         generalData['BondRadii'] = []
         generalData['AngleRadii'] = []
@@ -144,10 +152,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData['AtomMass'] = []
         generalData['Color'] = []
         generalData['Mydir'] = G2frame.dirname
-        cx,ct,cs,cia = [3,1,7,9]
-        if generalData['Type'] =='macromolecular':
-            cx,ct,cs,cia = [6,4,10,12]
-        generalData['AtomPtrs'] = [cx,ct,cs,cia]
         for atom in atomData:
             atom[ct] = atom[ct].lower().capitalize()              #force to standard form
             if generalData['AtomTypes'].count(atom[ct]):
@@ -1573,12 +1577,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Atoms.ForceRefresh()
 
     def OnDistAnglePrt(event):
+        'save distances and angles to a file'    
         fp = file(os.path.abspath(os.path.splitext(G2frame.GSASprojectfile
                                                    )[0]+'.disagl'),'w')
         OnDistAngle(event,fp=fp)
         fp.close()
     
     def OnDistAngle(event,fp=None):
+        'Compute distances and angles'    
         indx = Atoms.GetSelectedRows()
         Oxyz = []
         xyz = []
@@ -1621,9 +1627,97 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             except KeyError:        # inside DistAngle for missing atom types in DisAglCtls
                 G2frame.ErrorDialog('Distance/Angle calculation','try again but do "Reset" to fill in missing atom types')
         else:
-                print "select one or more rows of atoms"
-                G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
+            print "select one or more rows of atoms"
+            G2frame.ErrorDialog('Select atom',"select one or more rows of atoms then redo")
                         
+    def OnIsoDistortCalc(event):
+        '''Compute the ISODISTORT mode values from the current coordinates.
+        Called in response to the (Phase/Atoms tab) AtomCompute
+        "Compute ISODISPLACE mode values" menu item, which should be enabled
+        only when Phase['ISODISTORT'] is defined. 
+        '''
+        if 'ISODISTORT' not in data:
+            raise Exception,"Should not happen: 'ISODISTORT' not in data"
+        def _onClose(event):
+            dlg.EndModal(wx.ID_CANCEL)
+
+        Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree() # init for constraint
+        ISO = data['ISODISTORT']
+        parmDict,varyList = G2frame.MakeLSParmDict()
+        deltaList = []
+        for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
+            dvar = gv.varname()
+            var = dvar.replace('::dA','::A')
+            albl = Ilbl[:Ilbl.rfind('_')]
+            v = Ilbl[Ilbl.rfind('_')+1:]
+            pval = ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
+            cval = parmDict.get(var)[0]
+            deltaList.append(cval-pval)
+        modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
+        dlg = wx.Dialog(G2frame,wx.ID_ANY,'ISODISPLACE mode values',#size=(630,400),
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                                    'ISODISTORT mode computation for cordinates in phase '+
+                                    str(data['General'].get('Name'))))
+        aSizer = wx.BoxSizer(wx.HORIZONTAL)
+        panel1 = wxscroll.ScrolledPanel(
+            dlg, wx.ID_ANY,#size=(100,200),
+            style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+        subSizer1 = wx.FlexGridSizer(rows=1,cols=2,hgap=5,vgap=2)
+        panel2 = wxscroll.ScrolledPanel(
+            dlg, wx.ID_ANY,#size=(100,200),
+            style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+        subSizer2 = wx.FlexGridSizer(rows=1,cols=2,hgap=5,vgap=2)
+        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'Parameter name'))
+        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'value '),0,wx.ALIGN_RIGHT)
+        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,' Mode name  '))
+        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'value '),0,wx.ALIGN_RIGHT)
+        
+        for lbl,xyz,var,val in zip(ISO['IsoVarList'],deltaList,ISO['IsoModeList'],modeVals):
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
+            try:
+                value = G2py3.FormatValue(xyz)
+            except TypeError:
+                value = str(xyz)            
+            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+            #subSizer.Add((10,-1))
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
+            try:
+                value = G2py3.FormatValue(val)
+            except TypeError:
+                value = str(val)            
+            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+        # finish up ScrolledPanel
+        panel1.SetSizer(subSizer1)
+        panel2.SetSizer(subSizer2)
+        panel1.SetAutoLayout(1)
+        panel1.SetupScrolling()
+        panel2.SetAutoLayout(1)
+        panel2.SetupScrolling()
+        # Allow window to be enlarged but not made smaller
+        dlg.SetSizer(mainSizer)
+        w1,l1 = subSizer1.GetSize()
+        w2,l2 = subSizer2.GetSize()
+        panel1.SetMinSize((w1+10,200))
+        panel2.SetMinSize((w2+20,200))
+        aSizer.Add(panel1,1, wx.ALL|wx.EXPAND,1)
+        aSizer.Add(panel2,2, wx.ALL|wx.EXPAND,1)
+        mainSizer.Add(aSizer,1, wx.ALL|wx.EXPAND,1)
+
+        # make OK button 
+        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn = wx.Button(dlg, wx.ID_CLOSE) 
+        btn.Bind(wx.EVT_BUTTON,_onClose)
+        btnsizer.Add(btn)
+        mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+
+        mainSizer.Fit(dlg)
+        dlg.SetMinSize(dlg.GetSize())
+        dlg.ShowModal()
+        dlg.Destroy()
+        
+        
     def OnReImport(event):
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -2967,7 +3061,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             textureData.update({'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
-        if generalData['doPawley'] and G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequental results'):
+        if generalData['doPawley'] and G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results'):
             G2frame.dataFrame.RefineTexture.Enable(True)
         shAngles = ['omega','chi','phi']
         if Texture.GetSizer():
@@ -5092,6 +5186,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2gd.wxID_ATOMSPDISAGL)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2gd.wxID_ISODISP)
             for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
                 G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)                
             FillAtomsGrid(Atoms)
@@ -5173,6 +5268,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             FillPawleyReflectionsGrid()
         else:
             G2gd.SetDataMenuBar(G2frame)
+
+    # UpdatePhaseData execution continues here
     Pages = []    
     wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
     G2frame.dataDisplay.gridList = []
@@ -5210,7 +5307,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.gridList.append(G2frame.PawleyRefl)
     G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
     Pages.append('Pawley reflections')
-    
+    G2frame.dataFrame.AtomCompute.ISOcalc.Enable('ISODISTORT' in data)
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     SetupGeneral()    
     GeneralData = data['General']

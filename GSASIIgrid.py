@@ -70,8 +70,8 @@ htmlFirstUse = True
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
     wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,
-    wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL
-] = [wx.NewId() for item in range(13)]
+    wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL, wxID_ISODISP,
+] = [wx.NewId() for item in range(14)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -1563,6 +1563,67 @@ class GridFractionEditor(wg.PyGridCellEditor):
             evt.Skip()
 
 ################################################################################
+class ShowLSParms(wx.Dialog):
+    '''Create frame to show least-squares parameters
+    '''
+    def __init__(self,parent,title,parmDict,varyList=None,
+                 size=(300,430)):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,size=size,
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+
+        panel = wxscroll.ScrolledPanel(
+            self, wx.ID_ANY,
+            #size=size,
+            style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
+        if varyList:
+            num = len(varyList)
+            mainSizer.Add(wx.StaticText(self,wx.ID_ANY,'Number of refined variables: '+str(num)))
+
+        subSizer = wx.FlexGridSizer(rows=len(parmDict)+1,cols=4,hgap=2,vgap=2)
+        parmNames = parmDict.keys()
+        parmNames.sort()
+        #parmText = ' p:h:Parameter       refine?              value\n'
+        subSizer.Add((-1,-1))
+        subSizer.Add(wx.StaticText(panel,wx.ID_ANY,'Parameter name  '))
+        subSizer.Add(wx.StaticText(panel,wx.ID_ANY,'refine?'))
+        subSizer.Add(wx.StaticText(panel,wx.ID_ANY,'value'),0,wx.ALIGN_RIGHT)
+        for name in parmNames:
+            v = G2obj.getVarDescr(name)
+            if v is None or v[-1] is None:
+                subSizer.Add((-1,-1))
+            else:                
+                ch = HelpButton(panel,G2obj.fmtVarDescr(name))
+                subSizer.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+            subSizer.Add(wx.StaticText(panel,wx.ID_ANY,str(name)))
+            subSizer.Add(wx.StaticText(panel,wx.ID_ANY,str(parmDict[name][1])))
+            try:
+                value = G2py3.FormatValue(parmDict[name][0])
+            except TypeError:
+                value = str(parmDict[name][0])
+            subSizer.Add(wx.StaticText(panel,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+
+        # finish up ScrolledPanel
+        panel.SetSizer(subSizer)
+        panel.SetAutoLayout(1)
+        panel.SetupScrolling()
+        mainSizer.Add(panel,1, wx.ALL|wx.EXPAND,1)
+
+        # make OK button 
+        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn = wx.Button(self, wx.ID_CLOSE,"Close") 
+        btn.Bind(wx.EVT_BUTTON,self._onClose)
+        btnsizer.Add(btn)
+        mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        # Allow window to be enlarged but not made smaller
+        self.SetSizer(mainSizer)
+        #mainSizer.Fit(self)
+        self.SetMinSize(self.GetSize())
+
+    def _onClose(self,event):
+        self.EndModal(wx.ID_CANCEL)
+ 
+################################################################################
 class downdate(wx.Dialog):
     '''Dialog to allow a user to select a version of GSAS-II to install
     '''
@@ -2432,6 +2493,10 @@ class DataFrame(wx.Frame):
             help='Compute distances & angles for selected atoms')
         self.AtomCompute.Append(id=wxID_ATOMSPDISAGL, kind=wx.ITEM_NORMAL,text='Save Distances && Angles',
             help='Compute distances & angles for selected atoms')
+        self.AtomCompute.ISOcalc = self.AtomCompute.Append(
+            id=wxID_ISODISP, kind=wx.ITEM_NORMAL,
+            text='Compute ISODISPLACE mode values',
+            help='Compute values of ISODISPLACE modes from atom parameters')
         self.PostfillDataMenu()
                  
         # Phase / Draw Options tab

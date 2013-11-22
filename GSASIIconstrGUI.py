@@ -207,6 +207,7 @@ def UpdateConstraints(G2frame,data):
     ##################################################################################
     # patch: convert old-style (str) variables in constraints to G2VarObj objects
     for key,value in data.items():
+        if key.startswith('_'): continue
         j = 0
         for cons in value:
             #print cons             # DEBUG
@@ -706,8 +707,15 @@ def UpdateConstraints(G2frame,data):
                         eqString[-1] += '%.3f*%s '%(m,var)
                         varMean = G2obj.fmtVarDescr(var)
                         helptext += "\n" + var + " ("+ varMean + ")"
+                    if '_Explain' in data:
+                        if data['_Explain'].get(item[-3]):
+                            helptext += '\n\n'
+                            helptext += data['_Explain'][item[-3]]
                     typeString = 'NEWVAR'
-                    eqString[-1] += ' = New Variable   '
+                    if item[-3]:
+                        eqString[-1] += ' = '+item[-3]
+                    else:
+                        eqString[-1] += ' = New Variable'
                 elif item[-1] == 'c':
                     helptext = "The following variables constrained to equal a constant:"
                     for term in item[:-3]:

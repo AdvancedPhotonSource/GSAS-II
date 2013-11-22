@@ -181,7 +181,7 @@ class GSASII(wx.Frame):
         
         item = parent.Append(help='View least squares parameters', 
             id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text='&View LS parms')
-        self.Bind(wx.EVT_MENU, self.OnViewLSParms, id=item.GetId())
+        self.Bind(wx.EVT_MENU, self.ShowLSParms, id=item.GetId())
         
         item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
             text='&Refine')
@@ -194,7 +194,7 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnRefine, id=item.GetId())
         
         item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
-            text='Sequental refine')
+            text='Sequential refine')
         if len(self.SeqRefine): # extend state for new menus to match main (on mac)
             state = self.SeqRefine[0].IsEnabled()
         else:
@@ -261,11 +261,11 @@ class GSASII(wx.Frame):
                 pass
             if fp: fp.close()
 
-    def OnImportGeneric(self,reader,readerlist,label,multiple=False):
+    def OnImportGeneric(self,reader,readerlist,label,multiple=False,usedRanIdList=[]):
         '''Used to import Phases, powder dataset or single
         crystal datasets (structure factor tables) using reader objects
-        subclassed from GSASIIIO.ImportPhase, GSASIIIO.ImportStructFactor
-        or GSASIIIO.ImportPowderData. If a reader is specified, only
+        subclassed from :class:`GSASIIIO.ImportPhase`, :class:`GSASIIIO.ImportStructFactor`
+        or :class:`GSASIIIO.ImportPowderData`. If a reader is specified, only
         that will be attempted, but if no reader is specified, every one
         that is potentially compatible (by file extension) will
         be tried on the selected file(s). 
@@ -286,8 +286,11 @@ class GSASII(wx.Frame):
 
         :param bool multiple: True if multiple files can be selected
           in the file dialog. False is default. At present True is used
-          only for reading of powder data. 
-          
+          only for reading of powder data.
+
+        :param list usedRanIdList: an optional list of random Ids that 
+          have been used and should not be reused
+
         :returns: a list of reader objects (rd_list) that were able
           to read the specified file(s). This list may be empty. 
         '''
@@ -424,7 +427,9 @@ class GSASII(wx.Frame):
                             rd.objname = os.path.basename(filename)
                             flag = rd.Reader(filename,fp,self,
                                              buffer=rdbuffer,
-                                             blocknum=block)
+                                             blocknum=block,
+                                             usedRanIdList=usedRanIdList,
+                                             )
                             if flag:
                                 rd_list.append(copy.deepcopy(rd)) # success
                                 if rd.repeat: repeat = True
@@ -482,9 +487,19 @@ class GSASII(wx.Frame):
         '''
         # look up which format was requested
         reqrdr = self.ImportMenuId.get(event.GetId())
+        # make a list of used phase ranId's
+        phaseRIdList = []
+        sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+        if sub:
+            item, cookie = self.PatternTree.GetFirstChild(sub)
+            while item:
+                phaseName = self.PatternTree.GetItemText(item)
+                ranId = self.PatternTree.GetItemPyData(item).get('ranId')
+                if ranId: phaseRIdList.append(ranId)
+                item, cookie = self.PatternTree.GetNextChild(sub, cookie)
         rdlist = self.OnImportGeneric(reqrdr,
                                   self.ImportPhaseReaderlist,
-                                  'phase')
+                                  'phase',usedRanIdList=phaseRIdList)
         if len(rdlist) == 0: return
         # for now rdlist is only expected to have one element
         # but this will allow multiple phases to be imported
@@ -508,7 +523,18 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(psub,rd.Phase)
             self.PatternTree.Expand(self.root) # make sure phases are seen
             self.PatternTree.Expand(sub) 
-            self.PatternTree.Expand(psub) 
+            self.PatternTree.Expand(psub)
+            if rd.Constraints:
+                sub = G2gd.GetPatternTreeItemId(self,self.root,'Constraints') # was created in CheckNotebook if needed
+                Constraints = self.PatternTree.GetItemPyData(sub)                
+                # TODO: make sure that NEWVAR names are unique here?
+                for i in rd.Constraints:
+                    if type(i) is dict:
+                        #for j in i: print j,' --> ',i[j]
+                        if '_Explain' not in Constraints: Constraints['_Explain'] = {}
+                        Constraints['_Explain'].update(i)
+                        continue
+                    Constraints['Phase'].append(i)
         return # success
         
     def _Add_ImportMenu_Sfact(self,parent):
@@ -1314,6 +1340,41 @@ class GSASII(wx.Frame):
         self._Add_ImportMenu_Phase(Import)
         self._Add_ImportMenu_powder(Import)
         self._Add_ImportMenu_Sfact(Import)
+        #======================================================================
+        # Code to help develop/debug an importer, much is hard-coded below
+        # but module is reloaded before each use, allowing faster testing
+        # def DebugImport(event):
+        #     print 'start reload'
+        #     import G2phase_ISO as dev
+        #     reload(dev)
+        #     rd = dev.ISODISTORTPhaseReader()
+        #     self.ImportMenuId[event.GetId()] = rd
+        #     self.OnImportPhase(event)
+            # or ----------------------------------------------------------------------
+            #self.OnImportGeneric(rd,[],'test of ISODISTORTPhaseReader')
+            # special debug code
+            # or ----------------------------------------------------------------------
+            # filename = '/Users/toby/projects/branton/subgroup_cif.txt'
+            # fp = open(filename,'Ur')
+            # if not rd.ContentsValidator(fp):
+            #     print 'not validated'
+            #     # make a list of used phase ranId's
+            # phaseRIdList = []
+            # sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+            # if sub:
+            #     item, cookie = self.PatternTree.GetFirstChild(sub)
+            #     while item:
+            #         phaseName = self.PatternTree.GetItemText(item)
+            #         ranId = self.PatternTree.GetItemPyData(item).get('ranId')
+            #         if ranId: phaseRIdList.append(ranId)
+            #         item, cookie = self.PatternTree.GetNextChild(sub, cookie)
+            # if rd.Reader(filename,fp,usedRanIdList=phaseRIdList):
+            #     print 'read OK'
+        # item = Import.Append(
+        #     wx.ID_ANY,kind=wx.ITEM_NORMAL,
+        #     help="debug importer",text="test importer")
+        # self.Bind(wx.EVT_MENU, DebugImport, id=item.GetId())
+        #======================================================================
         self.ExportMenu = wx.Menu(title='')
         menubar.Append(menu=self.ExportMenu, title='Export')
         self._init_Exports(self.ExportMenu)
@@ -2515,10 +2576,10 @@ class GSASII(wx.Frame):
 
         for phase in phaseData:
             Phase = phaseData[phase]
+            pId = phaseNames.index(phase)
+            Phase['pId'] = pId
             if Phase['Histograms']:
                 if phase not in Phases:
-                    pId = phaseNames.index(phase)
-                    Phase['pId'] = pId
                     Phases[phase] = Phase
                 for hist in Phase['Histograms']:
                     if 'Use' not in Phase['Histograms'][hist]:      #patch: add Use flag as True
@@ -2535,42 +2596,26 @@ class GSASII(wx.Frame):
                         else: # would happen if a referenced histogram were renamed or deleted
                             print('For phase "'+str(phase)+
                                   '" unresolved reference to histogram "'+str(hist)+'"')
-        G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
+        #G2obj.IndexAllIds(Histograms=Histograms,Phases=Phases)
+        G2obj.IndexAllIds(Histograms=Histograms,Phases=phaseData)
         return Histograms,Phases
         
-    class ViewParmDialog(wx.Dialog):
-        '''Window to show all parameters in the refinement.
-        Called from :meth:`OnViewLSParms`
-        '''
-        def __init__(self,parent,title,parmDict):
-            wx.Dialog.__init__(self,parent,-1,title,size=(300,430),
-                pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
-            panel = wx.Panel(self,size=(300,430))
-            parmNames = parmDict.keys()
-            parmNames.sort()
-            parmText = ' p:h:Parameter       refine?              value\n'
-            for name in parmNames:
-                parmData = parmDict[name]
-                try:
-                    parmText += ' %s \t%12.4g \n'%(name.ljust(19)+'\t'+parmData[1],parmData[0])
-                except TypeError:
-                    pass
-            parmTable = wx.TextCtrl(panel,-1,parmText,
-                style=wx.TE_MULTILINE|wx.TE_READONLY,size=(290,400))
-            mainSizer = wx.BoxSizer(wx.VERTICAL)
-            mainSizer.Add(parmTable)
-            panel.SetSizer(mainSizer)
-                            
-    def OnViewLSParms(self,event):
-        '''Displays a window showing all parameters in the refinement.
-        Called from the Calculate/View LS Parms menu.
+    def MakeLSParmDict(self):
+        '''Load all parameters used for computation from the tree into a
+        dict
+
+        :returns: (parmDict,varyList) where:
+
+         * parmDict is a dict with values and refinement flags
+           for each parameter and
+         * varyList is a list of variables (refined parameters).
         '''
         parmDict = {}
         Histograms,Phases = self.GetUsedHistogramsAndPhasesfromTree()
         for phase in Phases:
             if 'pId' not in Phases[phase]:
                 self.ErrorDialog('View parameter error','You must run least squares at least once')
-                return
+                raise Exception,'No pId for phase '+str(phase)
         rigidbodyDict = self.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(self,self.root,'Rigid bodies'))
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
@@ -2586,21 +2631,24 @@ class GSASII(wx.Frame):
         for parm in parmDict:
             if parm.split(':')[-1] in ['Azimuth','Gonio. radius','Lam1','Lam2',
                 'Omega','Chi','Phi','nDebye','nPeaks']:
-                parmDict[parm] = [parmDict[parm],' ']
+                parmDict[parm] = [parmDict[parm],'-']
             elif parm.split(':')[-2] in ['Ax','Ay','Az','SHmodel','SHord']:
-                parmDict[parm] = [parmDict[parm],' ']
+                parmDict[parm] = [parmDict[parm],'-']
             elif parm in varyList:
-                parmDict[parm] = [parmDict[parm],'True']
+                parmDict[parm] = [parmDict[parm],'T']
             else:
-                parmDict[parm] = [parmDict[parm],'False']
-        parmDict[' Num refined'] = [len(varyList),'']
-        dlg = self.ViewParmDialog(self,'Parameters for least squares',parmDict)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                print 'do something with changes?? - No!'
-        finally:
-            dlg.Destroy()
-       
+                parmDict[parm] = [parmDict[parm],'F']
+        return parmDict,varyList
+
+    def ShowLSParms(self,event):
+        '''Displays a window showing all parameters in the refinement.
+        Called from the Calculate/View LS Parms menu.
+        '''
+        parmDict,varyList = self.MakeLSParmDict()
+        dlg = G2gd.ShowLSParms(self,'Least Squares Parameters',parmDict,varyList)
+        dlg.ShowModal()
+        dlg.Destroy()
+        
     def OnRefine(self,event):
         '''Perform a refinement.
         Called from the Calculate/Refine menu.
@@ -2673,9 +2721,9 @@ class GSASII(wx.Frame):
         '''Perform a sequential refinement.
         Called from the Calculate/Sequential refine menu.
         '''        
-        Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequental results')
+        Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
         if not Id:
-            Id = self.PatternTree.AppendItem(self.root,text='Sequental results')
+            Id = self.PatternTree.AppendItem(self.root,text='Sequential results')
             self.PatternTree.SetItemPyData(Id,{})            
         self.OnFileSave(event)
         # check that constraints are OK here

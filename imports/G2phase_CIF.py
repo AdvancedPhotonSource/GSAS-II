@@ -52,6 +52,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
                 return False # found something else
         return True
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        self.Phase = G2IO.SetNewPhase(Name='new phase',SGData=G2IO.P1SGData) # create a new empty phase dict
         returnstat = False
         cellitems = (
             '_cell_length_a','_cell_length_b','_cell_length_c',

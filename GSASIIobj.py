@@ -12,8 +12,8 @@
 *GSASIIobj: Data objects*
 =========================
 
-This module defines and/or documents the data structures used in GSAS-II.
-
+This module defines and/or documents the data structures used in GSAS-II, as well
+as provides misc. support routines. 
 
 Constraints Tree Item
 ----------------------
@@ -76,7 +76,8 @@ Note that the last three items in the list play a special role:
 
  * <fixedval> is the fixed value for a `constant equation` (``constype=c``)
    constraint or is None. For a `New variable` (``constype=f``) constraint,
-   a variable name can be specified as a str (but this is not yet used). 
+   a variable name can be specified as a str (used for externally
+   generated constraints)
  * <varyflag> is True or False for `New variable` (``constype=f``) constraints
    or is None. This will be implemented in the future to indicate if these variables
    should be refined.
@@ -699,6 +700,37 @@ DefaultControls = {
 data tree item.
 '''
 
+def MakeUniqueLabel(lbl,labellist):
+    '''Make sure that every a label is unique against a list by adding
+    digits at the end until it is not found in list.
+
+    :param str lbl: the input label
+    :param list labellist: the labels that have already been encountered
+    :returns: lbl if not found in labellist or lbl with ``_1-9` (or
+      ``_10-99``, etc.) appended at the end
+    '''
+    lbl = lbl.strip()
+    if not lbl: # deal with a blank label
+        lbl = '_1'
+    if lbl not in labellist:
+        labellist.append(lbl)
+        return lbl
+    i = 1
+    prefix = lbl
+    if '_' in lbl:
+        prefix = lbl[:lbl.rfind('_')]
+        suffix = lbl[lbl.rfind('_')+1:]
+        try:
+            i = int(suffix)+1
+        except: # suffix could not be parsed
+            i = 1
+            prefix = lbl
+    while prefix+'_'+str(i) in labellist:
+        i += 1
+    else:
+        lbl = prefix+'_'+str(i)
+        labellist.append(lbl)
+    return lbl
 
 PhaseIdLookup = {}
 '''dict listing phase name and random Id keyed by sequential phase index as a str;
@@ -1075,14 +1107,17 @@ class G2VarObj(object):
 
     A :class:`G2VarObj` object can be created with a single parameter:
     
-    :param str varname: a single value can be used to create a :class:`G2VarObj`
-      object. The string must be of form "p:h:var" or "p:h:var:a", where
+    :param str/tuple varname: a single value can be used to create a :class:`G2VarObj`
+      object. If a string, it must be of form "p:h:var" or "p:h:var:a", where
 
      * p is the phase number (which may be left blank); 
      * h is the histogram number (which may be left blank); 
      * a is the atom number (which may be left blank in which case the third colon is omitted).
 
-    Alternately, a :class:`G2VarObj` object can be created with exactly four positional parameters:
+      Alternately a single tuple of form (Phase,Histogram,VarName,AtomID) can be used, where
+      Phase, Histogram, and AtomID are None or are ranId values and VarName is a string.     
+
+    If four positional arguments are supplied, they are:
 
     :param str/int phasenum: The number for the phase
     :param str/int histnum: The number for the histogram
@@ -1099,7 +1134,9 @@ class G2VarObj(object):
         self.histogram = None
         self.name = ''
         self.atom = None
-        if len(args) == 1:
+        if len(args) == 1 and (type(args[0]) is list or type(args[0]) is tuple) and len(args[0]) == 4:
+            self.phase,self.histogram,self.name,self.atom = args[0]
+        elif len(args) == 1 and ':' in args[0]:            
             lst = args[0].split(':')
             self.phase = PhaseIdLookup.get(lst[0],[None,None])[1]
             self.histogram = HistIdLookup.get(lst[1],[None,None])[1]
@@ -1151,7 +1188,7 @@ class G2VarObj(object):
             if ph in AtomRanIdLookup:
                 s += " (#" + AtomRanIdLookup[ph].get(self.atom,'?') + "); "
             else:
-                s += " (#? -- no such phase!); "
+                s += " (#? -- not found!); "
         s += 'Variable name="' + str(self.name) + '">'
         return s+"("+self.varname()+")"
 

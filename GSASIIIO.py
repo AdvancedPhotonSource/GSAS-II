@@ -984,7 +984,7 @@ def IndexPeakListSave(G2frame,peaks):
     print 'index peak list saved'
     
 def SetNewPhase(Name='New Phase',SGData=None,cell=None):
-    '''Create a new phase with default values for various parameters
+    '''Create a new phase dict with default values for various parameters
 
     :param str Name: Name for new Phase
 
@@ -1002,6 +1002,7 @@ def SetNewPhase(Name='New Phase',SGData=None,cell=None):
         'General':{
             'Name':Name,
             'Type':'nuclear',
+            'AtomPtrs':[3,1,7,9],
             'SGData':SGData,
             'Cell':[False,]+cell,
             'Pawley dmin':1.0,
@@ -1148,6 +1149,10 @@ def ReadEXPPhase(G2frame,filename):
     Phase = SetNewPhase(Name=PhaseName,SGData=SGData,cell=abc+angles+[Volume,])
     general = Phase['General']
     general['Type'] = Ptype
+    if general['Type'] =='macromolecular':
+        general['AtomPtrs'] = [6,4,10,12]
+    else:
+        general['AtomPtrs'] = [3,1,7,9]    
     general['SH Texture'] = textureData
     Phase['Atoms'] = Atoms
     return Phase
@@ -1237,8 +1242,8 @@ def ReadPDBPhase(filename):
         PhaseName = 'None'
     Phase = SetNewPhase(Name=PhaseName,SGData=SGData,cell=cell+[Volume,])
     Phase['General']['Type'] = 'macromolecular'
+    Phase['General']['AtomPtrs'] = [6,4,10,12]
     Phase['Atoms'] = Atoms
-    
     return Phase
 
 class MultipleChoicesDialog(wx.Dialog):
@@ -1430,6 +1435,7 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
 #   not used directly, only by subclassing
 ######################################################################
 E,SGData = G2spc.SpcGroup('P 1') # data structure for default space group
+P1SGData = SGData
 class ImportBaseclass(object):
     '''Defines a base class for the reading of input files (diffraction
     data, coordinates,...
@@ -1567,14 +1573,17 @@ class ImportBaseclass(object):
 
 class ImportPhase(ImportBaseclass):
     '''Defines a base class for the reading of files with coordinates
+
+    Objects constructed that subclass this (in import/G2phase_*.py) will be used
+    in :meth:`GSASII.GSASII.OnImportPhase`
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
         strictExtension=False,):
         # call parent __init__
         ImportBaseclass.__init__(self,formatName,longFormatName,
             extensionlist,strictExtension)
-        # define a default Phase structure
-        self.Phase = SetNewPhase(Name='new phase',SGData=SGData)
+        self.Phase = None # a phase must be created with G2IO.SetNewPhase in the Reader
+        self.Constraints = None
 
     def PhaseSelector(self, ChoiceList, ParentFrame=None,
         title='Select a phase', size=None,header='Phase Selector'):

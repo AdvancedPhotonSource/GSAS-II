@@ -409,6 +409,9 @@ def GetTifData(filename,imageOnly=False):
     import ReadMarCCDFrame as rmf
     File = open(filename,'rb')
     dataType = 5
+    center = [None,None]
+    wavelength = None
+    distance = None
     try:
         Meta = open(filename+'.metadata','Ur')
         head = Meta.readlines()
@@ -463,6 +466,18 @@ def GetTifData(filename,imageOnly=False):
         tifType = marFrame.filetitle
         pixy = (marFrame.pixelsizeX/1000.0,marFrame.pixelsizeY/1000.0)
         head = marFrame.outputHead()
+# extract resonable wavelength from header
+        wavelength = marFrame.sourceWavelength*1e-5
+        wavelength = (marFrame.opticsWavelength > 0) and marFrame.opticsWavelength*1e-5 or wavelength
+        wavelength = (wavelength <= 0) and None or wavelength
+# extract resonable distance from header
+        distance = (marFrame.startXtalToDetector+marFrame.endXtalToDetector)*5e-4
+        distance = (distance <= 0) and marFrame.xtalToDetector*1e-3 or distance
+        distance = (distance <= 0) and None or distance
+# extract resonable center from header
+        center = [marFrame.beamX*marFrame.pixelsizeX*1e-9,marFrame.beamY*marFrame.pixelsizeY*1e-9]
+        center = (center[0] != 0 and center[1] != 0) and center or [None,None]
+#print head,tifType,pixy
     elif 272 in IFD:
         ifd = IFD[272]
         File.seek(ifd[2][0])
@@ -560,8 +575,10 @@ def GetTifData(filename,imageOnly=False):
         return lines,0,0,0
         
     image = np.reshape(image,(sizexy[1],sizexy[0]))
-    center = [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000]
-    data = {'pixelSize':pixy,'wavelength':0.10,'distance':100.0,'center':center,'size':sizexy}
+    center = (not center[0]) and [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000] or center
+    wavelength = (not wavelength) and 0.10 or wavelength
+    distance = (not distance) and 100.0 or distance
+    data = {'pixelSize':pixy,'wavelength':wavelength,'distance':distance,'center':center,'size':sizexy}
     File.close()    
     if imageOnly:
         return image

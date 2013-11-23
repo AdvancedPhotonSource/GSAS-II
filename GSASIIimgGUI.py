@@ -86,7 +86,7 @@ def UpdateImageControls(G2frame,data,masks):
             G2frame.Integrate = G2img.ImageIntegrate(sumImage,data,maskCopy)
         else:
             G2frame.Integrate = G2img.ImageIntegrate(G2frame.ImageZ,data,masks)
-        G2plt.PlotIntegration(G2frame,newPlot=True)
+#        G2plt.PlotIntegration(G2frame,newPlot=True)
         G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
         for item in G2frame.MakePDF: item.Enable(True)
         
@@ -202,7 +202,7 @@ def UpdateImageControls(G2frame,data,masks):
                     'IOtth','outAzimuths','invert_x','invert_y']
                 for key in keys:
                     if key in ['rotation']:
-                        File.write(key+':'+str(data[key]-90.)+'\n')                        
+                        File.write(key+':'+str(data[key])+'\n')                        
                     else:
                         File.write(key+':'+str(data[key])+'\n')
                 File.close()
@@ -228,7 +228,7 @@ def UpdateImageControls(G2frame,data,masks):
                     if key in ['type','calibrant',]:
                         save[key] = val
                     elif key in ['rotation']:
-                        save[key] = float(val)+90.
+                        save[key] = float(val)
                     elif key in ['center',]:
                         if ',' in val:
                             save[key] = eval(val)
@@ -415,7 +415,7 @@ def UpdateImageControls(G2frame,data,masks):
         calibSizer.Add(tiltSel,0,wx.ALIGN_CENTER_VERTICAL)
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Tilt rotation'),0,
             wx.ALIGN_CENTER_VERTICAL)
-        rotSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%9.3f"%(data['rotation']-90.)),style=wx.TE_READONLY) #kluge to get rotation from vertical - see GSASIIimage
+        rotSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%9.3f"%(data['rotation'])),style=wx.TE_READONLY)
         rotSel.SetBackgroundColour(VERY_LIGHT_GREY)
         calibSizer.Add(rotSel,0,wx.ALIGN_CENTER_VERTICAL)
         penSel = wx.CheckBox(parent=G2frame.dataDisplay,label='Penetration?')

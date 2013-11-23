@@ -2493,14 +2493,14 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellI:
                 xyI = []
                 for azm in Azm:
-                    xyI.append(G2img.GetDetectorXY(dspI,azm-90.,Data))
+                    xyI.append(G2img.GetDetectorXY(dspI,azm,Data))
                 xyI = np.array(xyI)
                 arcxI,arcyI = xyI.T
                 Plot.plot(arcxI,arcyI,picker=3)
             if ellO:
                 xyO = []
                 for azm in Azm:
-                    xyO.append(G2img.GetDetectorXY(dspO,azm-90.,Data))
+                    xyO.append(G2img.GetDetectorXY(dspO,azm,Data))
                 xyO = np.array(xyO)
                 arcxO,arcyO = xyO.T
                 Plot.plot(arcxO,arcyO,picker=3)
@@ -2525,6 +2525,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.plot(xring,yring,'+',color=colors[N%6])
                     N += 1            
             for ellipse in Data['ellipses']:
+#                print 'plot:',ellipse
                 cent,phi,[width,height],col = ellipse
                 Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
                 Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
@@ -2649,13 +2650,12 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
     Img = Plot.imshow(image,cmap=acolor,vmin=Imin,vmax=Imax,interpolation='nearest', \
         extent=[ysc[0],ysc[-1],xsc[-1],xsc[0]],aspect='auto')
     colorBar = Page.figure.colorbar(Img)
-    if Data['ellipses']:            
-        for ellipse in Data['ellipses']:
-            ring = np.array(G2img.makeIdealRing(ellipse[:3])) #skip color
-            x,y = np.hsplit(ring,2)
-            tth,azm = G2img.GetTthAzm(x,y,Data)
-#            azm = np.where(azm < 0.,azm+360,azm)
-            Plot.plot(tth,azm,'b,')
+#    if Data['ellipses']:            
+#        for ellipse in Data['ellipses']:
+#            x,y = np.array(G2img.makeIdealRing(ellipse[:3])) #skip color
+#            tth,azm = G2img.GetTthAzm(x,y,Data)
+##            azm = np.where(azm < 0.,azm+360,azm)
+#            Plot.plot(tth,azm,'b,')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

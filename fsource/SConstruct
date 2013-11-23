@@ -61,6 +61,7 @@ if sys.platform == "win32":
       FCompiler='g77'
     elif GFORTpath != "":
       FCompiler='gfortran'
+#      LDFLAGS = '-static-libgfortran -static-libgcc'
     else:
       print 'No Fortran compiler in path'
       sys.exit()

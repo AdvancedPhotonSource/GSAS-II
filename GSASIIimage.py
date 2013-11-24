@@ -13,13 +13,9 @@
 
 Ellipse fitting & image integration
 
-needs some minor refactoring to remove wx code
-actually not easy in this case wx.ProgressDialog needs #of blocks to process when started
-not known in G2imageGUI.
 '''
 
 import math
-import wx
 import time
 import numpy as np
 import numpy.linalg as nl
@@ -509,8 +505,13 @@ def ImageRecalibrate(self,data):
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     Found = False
+    wave = data['wavelength']
     for H in HKL: 
         dsp = H[3]
+        tth = 2.0*asind(wave/(2.*dsp))
+        if tth+abs(data['tilt']) > 90.:
+            print 'next line is a hyperbola - search stopped'
+            break
         ellipse = GetEllipse(dsp,data)
         Ring,delt,sumI = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
         if Ring:
@@ -584,7 +585,7 @@ def ImageCalibrate(self,data):
     #setup for calibration
     data['rings'] = []
     data['ellipses'] = []
-    if not data['calibrant']  or 'None' in data['calibrant']:
+    if not data['calibrant']:
         print 'no calibration material selected'
         return True
     
@@ -608,6 +609,9 @@ def ImageCalibrate(self,data):
     ctth = npcosd(tth)
 #1st estimate of tilt; assume ellipse - don't know sign though
     tilt = npasind(np.sqrt(max(0.,1.-(radii[0]/radii[1])**2))*ctth)
+    if not tilt:
+        print 'WARNING - selected ring was fitted as a circle'
+        print ' - if detector was tilted we suggest you skip this ring - WARNING'
 #1st estimate of dist: sample to detector normal to plane
     data['distance'] = dist = radii[0]**2/(ttth*radii[1])
 #ellipse to cone axis (x-ray beam); 2 choices depending on sign of tilt
@@ -622,12 +626,18 @@ def ImageCalibrate(self,data):
     tth = 2.0*asind(wave/(2.*dsp))
     ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
     Ringp,delt,sumIp = makeRing(dsp,ellipsep,2,cutoff,scalex,scaley,self.ImageZ)
-    outEp,errp = FitRing(Ringp,True)
-    print '+',ellipsep,errp
+    if len(Ringp) > 10:
+        outEp,errp = FitRing(Ringp,True)
+    else:
+        errp = 1e6
+#    print '+',ellipsep,errp
     ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
     Ringm,delt,sumIm = makeRing(dsp,ellipsem,2,cutoff,scalex,scaley,self.ImageZ)
-    outEm,errm = FitRing(Ringm,True)
-    print '-',ellipsem,errm
+    if len(Ringm) > 10:
+        outEm,errm = FitRing(Ringm,True)
+    else:
+        errm = 1e6
+#    print '-',ellipsem,errm
     if errp < errm:
         data['tilt'] = tilt
         data['center'] = centp
@@ -645,6 +655,9 @@ def ImageCalibrate(self,data):
     for i,H in enumerate(HKL):
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
+        if tth+abs(data['tilt']) > 90.:
+            print 'next line is a hyperbola - search stopped'
+            break
         print 'HKLD:',H[:4],'2-theta: %.4f'%(tth)
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
         data['ellipses'].append(copy.deepcopy(ellipse+('g',)))
@@ -745,7 +758,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     del(tam)
     return tax,tay,taz
     
-def ImageIntegrate(image,data,masks):
+def ImageIntegrate(image,data,masks,dlg=None):
     'Needs a doc string'
     import histogram2d as h2d
     print 'Begin image integration'
@@ -765,58 +778,58 @@ def ImageIntegrate(image,data,masks):
     nXBlks = (Nx-1)/blkSize+1
     nYBlks = (Ny-1)/blkSize+1
     Nup = nXBlks*nYBlks*3+3
-    dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
-        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-    try:
-        t0 = time.time()
-        Nup = 0
+    t0 = time.time()
+    Nup = 0
+    if dlg:
         dlg.Update(Nup)
-        for iBlk in range(nYBlks):
-            iBeg = iBlk*blkSize
-            iFin = min(iBeg+blkSize,Ny)
-            for jBlk in range(nXBlks):
-                jBeg = jBlk*blkSize
-                jFin = min(jBeg+blkSize,Nx)                
-#                print 'Process map block:',iBlk,jBlk,' limits:',iBeg,iFin,jBeg,jFin
-                TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
-                
-                Nup += 1
+    for iBlk in range(nYBlks):
+        iBeg = iBlk*blkSize
+        iFin = min(iBeg+blkSize,Ny)
+        for jBlk in range(nXBlks):
+            jBeg = jBlk*blkSize
+            jFin = min(jBeg+blkSize,Nx)                
+#            print 'Process map block:',iBlk,jBlk,' limits:',iBeg,iFin,jBeg,jFin
+            TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
+            
+            Nup += 1
+            if dlg:
                 dlg.Update(Nup)
-                Block = image[iBeg:iFin,jBeg:jFin]
-                tax,tay,taz = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
-                del TA,tam
-                Nup += 1
+            Block = image[iBeg:iFin,jBeg:jFin]
+            tax,tay,taz = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
+            del TA,tam
+            Nup += 1
+            if dlg:
                 dlg.Update(Nup)
-                tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
-                tax = np.where(tax < LRazm[0],tax+360.,tax)
-                if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
-                    NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
-#                print 'block done'
-                del tax,tay,taz
-                Nup += 1
+            tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
+            tax = np.where(tax < LRazm[0],tax+360.,tax)
+            if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
+                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
+#            print 'block done'
+            del tax,tay,taz
+            Nup += 1
+            if dlg:
                 dlg.Update(Nup)
-        NST = np.array(NST)
-        H0 = np.divide(H0,NST)
-        H0 = np.nan_to_num(H0)
-        del NST
-        if Dtth:
-            H2 = np.array([tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)])
-        else:
-            H2 = np.array(LUtth)
-        if Dazm:        
-            H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
-        else:
-            H1 = LRazm
-        H0 /= npcosd(H2[:-1])**2
-        if data['Oblique'][1]:
-            H0 /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
-        if 'SASD' in data['type'] and data['PolaVal'][1]:
-            H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm)[0] for azm in H1[:-1]+np.diff(H1)/2.])
-        Nup += 1
+    NST = np.array(NST)
+    H0 = np.divide(H0,NST)
+    H0 = np.nan_to_num(H0)
+    del NST
+    if Dtth:
+        H2 = np.array([tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)])
+    else:
+        H2 = np.array(LUtth)
+    if Dazm:        
+        H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
+    else:
+        H1 = LRazm
+    H0 /= npcosd(H2[:-1])**2
+    if data['Oblique'][1]:
+        H0 /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
+    if 'SASD' in data['type'] and data['PolaVal'][1]:
+        H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm)[0] for azm in H1[:-1]+np.diff(H1)/2.])
+    Nup += 1
+    if dlg:
         dlg.Update(Nup)
-        t1 = time.time()
-    finally:
-        dlg.Destroy()
+    t1 = time.time()
     print 'Integration complete'
     print "Elapsed time:","%8.3f"%(t1-t0), "s"
     return H0,H1,H2

@@ -72,22 +72,27 @@ def UpdateImageControls(G2frame,data,masks):
         G2plt.PlotExposedImage(G2frame,event=event)
             
     def OnIntegrate(event):
-        if data['background image'][0]:
-            maskCopy = copy.deepcopy(masks)
-            backImg = data['background image'][0]
-            backScale = data['background image'][1]
-            id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
-            Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
-            backImage = G2IO.GetImageData(G2frame,imagefile,True)*backScale
-            sumImage = G2frame.ImageZ+backImage
-            sumMin = np.min(sumImage)
-            sumMax = np.max(sumImage)
-            maskCopy['Thresholds'] = [(sumMin,sumMax),[sumMin,sumMax]]
-            G2frame.Integrate = G2img.ImageIntegrate(sumImage,data,maskCopy)
-        else:
-            G2frame.Integrate = G2img.ImageIntegrate(G2frame.ImageZ,data,masks)
-#        G2plt.PlotIntegration(G2frame,newPlot=True)
-        G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
+        dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        try:
+            if data['background image'][0]:
+                maskCopy = copy.deepcopy(masks)
+                backImg = data['background image'][0]
+                backScale = data['background image'][1]
+                id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
+                Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
+                backImage = G2IO.GetImageData(G2frame,imagefile,True)*backScale
+                sumImage = G2frame.ImageZ+backImage
+                sumMin = np.min(sumImage)
+                sumMax = np.max(sumImage)
+                maskCopy['Thresholds'] = [(sumMin,sumMax),[sumMin,sumMax]]
+                G2frame.Integrate = G2img.ImageIntegrate(sumImage,data,maskCopy,dlg)
+            else:
+                G2frame.Integrate = G2img.ImageIntegrate(G2frame.ImageZ,data,masks,dlg)
+    #        G2plt.PlotIntegration(G2frame,newPlot=True)
+            G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
+        finally:
+            dlg.Destroy()
         for item in G2frame.MakePDF: item.Enable(True)
         
     def OnIntegrateAll(event):
@@ -115,32 +120,37 @@ def UpdateImageControls(G2frame,data,masks):
                     for item in result:
                         ifintegrate,name,id = item
                         if ifintegrate:
-                            id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
-                            Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
-                            image = G2IO.GetImageData(G2frame,imagefile,True)
-                            Id = G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')
-                            Data = G2frame.PatternTree.GetItemPyData(Id)
-                            backImage = []
-                            if Data['background image'][0]:
-                                backImg = Data['background image'][0]
-                                backScale = Data['background image'][1]
-                                id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
-                                Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
-                                backImage = G2IO.GetImageData(G2frame,imagefile,True)*backScale
+                            dlgp = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
+                                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
                             try:
-                                Masks = G2frame.PatternTree.GetItemPyData(
-                                    G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
-                            except TypeError:       #missing Masks
-                                Imin,Imax = Data['Range']
-                                Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
-                                G2frame.PatternTree.SetItemPyData(
-                                    G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'),Masks)
-                            if len(backImage):                                
-                                G2frame.Integrate = G2img.ImageIntegrate(image+backImage,Data,Masks)
-                            else:
-                                G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks)
-#                            G2plt.PlotIntegration(G2frame,newPlot=True,event=event)
-                            G2IO.SaveIntegration(G2frame,Id,Data)
+                                id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
+                                Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
+                                image = G2IO.GetImageData(G2frame,imagefile,True)
+                                Id = G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')
+                                Data = G2frame.PatternTree.GetItemPyData(Id)
+                                backImage = []
+                                if Data['background image'][0]:
+                                    backImg = Data['background image'][0]
+                                    backScale = Data['background image'][1]
+                                    id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
+                                    Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
+                                    backImage = G2IO.GetImageData(G2frame,imagefile,True)*backScale
+                                try:
+                                    Masks = G2frame.PatternTree.GetItemPyData(
+                                        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
+                                except TypeError:       #missing Masks
+                                    Imin,Imax = Data['Range']
+                                    Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
+                                    G2frame.PatternTree.SetItemPyData(
+                                        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'),Masks)
+                                if len(backImage):                                
+                                    G2frame.Integrate = G2img.ImageIntegrate(image+backImage,Data,Masks,dlgp)
+                                else:
+                                    G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,dlgp)
+#                               G2plt.PlotIntegration(G2frame,newPlot=True,event=event)
+                                G2IO.SaveIntegration(G2frame,Id,Data)
+                            finally:
+                                dlgp.Destroy()
             finally:
                 dlg.Destroy()
         

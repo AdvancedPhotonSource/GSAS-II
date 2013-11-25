@@ -72,6 +72,11 @@ def UpdateImageControls(G2frame,data,masks):
         G2plt.PlotExposedImage(G2frame,event=event)
             
     def OnIntegrate(event):
+        blkSize = 128   #this seems to be optimal; will break in polymask if >1024
+        Nx,Ny = data['size']
+        nXBlks = (Nx-1)/blkSize+1
+        nYBlks = (Ny-1)/blkSize+1
+        Nup = nXBlks*nYBlks*3+3
         dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         try:
@@ -86,9 +91,9 @@ def UpdateImageControls(G2frame,data,masks):
                 sumMin = np.min(sumImage)
                 sumMax = np.max(sumImage)
                 maskCopy['Thresholds'] = [(sumMin,sumMax),[sumMin,sumMax]]
-                G2frame.Integrate = G2img.ImageIntegrate(sumImage,data,maskCopy,dlg)
+                G2frame.Integrate = G2img.ImageIntegrate(sumImage,data,maskCopy,blkSize,dlg)
             else:
-                G2frame.Integrate = G2img.ImageIntegrate(G2frame.ImageZ,data,masks,dlg)
+                G2frame.Integrate = G2img.ImageIntegrate(G2frame.ImageZ,data,masks,blkSize,dlg)
     #        G2plt.PlotIntegration(G2frame,newPlot=True)
             G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
         finally:

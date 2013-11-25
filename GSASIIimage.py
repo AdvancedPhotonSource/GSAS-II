@@ -717,11 +717,10 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     del(tam)
     return tax,tay,taz
     
-def ImageIntegrate(image,data,masks,dlg=None):
+def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     'Needs a doc string'
     import histogram2d as h2d
     print 'Begin image integration'
-    blkSize = 128   #this seems to be optimal; will break in polymask if >1024
     LUtth = data['IOtth']
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
     numAzms = data['outAzimuths']

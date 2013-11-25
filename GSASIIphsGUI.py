@@ -1638,6 +1638,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         '''
         if 'ISODISTORT' not in data:
             raise Exception,"Should not happen: 'ISODISTORT' not in data"
+        if len(data.get('Histograms',[])) == 0:
+            G2frame.ErrorDialog(
+                'No data',
+                'Sorry, this computation requires that a histogram first be added to the phase'
+                )
+            return
         def _onClose(event):
             dlg.EndModal(wx.ID_CANCEL)
 
@@ -1651,7 +1657,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             albl = Ilbl[:Ilbl.rfind('_')]
             v = Ilbl[Ilbl.rfind('_')+1:]
             pval = ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
-            cval = parmDict.get(var)[0]
+            if var in parmDict:
+                cval = parmDict[var][0]
+            else:
+                G2frame.ErrorDialog('Atom not found',"No value found for parameter "+str(var))
+                return
             deltaList.append(cval-pval)
         modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
         dlg = wx.Dialog(G2frame,wx.ID_ANY,'ISODISPLACE mode values',#size=(630,400),

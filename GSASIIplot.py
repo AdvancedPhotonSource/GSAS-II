@@ -2112,7 +2112,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     '''
     from matplotlib.patches import Ellipse,Arc,Circle,Polygon
     import numpy.ma as ma
-    Dsp = lambda tth,wave: wave/(2.*sind(tth/2.))
+    Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
     global Data,Masks
     colors=['b','g','r','c','m','k']
     Data = G2frame.PatternTree.GetItemPyData(
@@ -2493,14 +2493,14 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellI:
                 xyI = []
                 for azm in Azm:
-                    xyI.append(G2img.GetDetectorXY(dspI,azm,Data))
+                    xyI.append(G2img.GetDetectorXY(dspI,azm,Data))      #what about hyperbola?
                 xyI = np.array(xyI)
                 arcxI,arcyI = xyI.T
                 Plot.plot(arcxI,arcyI,picker=3)
             if ellO:
                 xyO = []
                 for azm in Azm:
-                    xyO.append(G2img.GetDetectorXY(dspO,azm,Data))
+                    xyO.append(G2img.GetDetectorXY(dspO,azm,Data))      #what about hyperbola?
                 xyO = np.array(xyO)
                 arcxO,arcyO = xyO.T
                 Plot.plot(arcxO,arcyO,picker=3)
@@ -2518,17 +2518,16 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             for xring,yring in Data['ring']:
                 Plot.plot(xring,yring,'r+',picker=3)
             if Data['setRings']:
-    #            rings = np.concatenate((Data['rings']),axis=0)
                 N = 0
                 for ring in Data['rings']:
                     xring,yring = np.array(ring).T[:2]
                     Plot.plot(xring,yring,'+',color=colors[N%6])
                     N += 1            
-            for ellipse in Data['ellipses']:
-#                print 'plot:',ellipse
+            for ellipse in Data['ellipses']:      #what about hyperbola?
                 cent,phi,[width,height],col = ellipse
-                Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
-                Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
+                if width > 0:       #ellipses
+                    Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
+                    Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
         if G2frame.PatternTree.GetItemText(G2frame.PickId) in 'Stress/Strain':
             print 'plot stress/strain stuff'
             for ring in StrSta['d-zero']:
@@ -2554,8 +2553,14 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ring:
                 tth,thick = ring
                 wave = Data['wavelength']
-                x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data))),2)
-                x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth-thick/2.,wave),Data))),2)
+                xy1 = []
+                xy2 = []
+                Azm = np.linspace(0,362,181)
+                for azm in Azm:
+                    xy1.append(G2img.GetDetectorXY(Dsp(tth+thick/2.,wave),azm,Data))      #what about hyperbola
+                    xy2.append(G2img.GetDetectorXY(Dsp(tth-thick/2.,wave),azm,Data))      #what about hyperbola
+                x1,y1 = np.array(xy1).T
+                x2,y2 = np.array(xy2).T
                 G2frame.ringList.append([Plot.plot(x1,y1,'r',picker=3),iring,'o'])            
                 G2frame.ringList.append([Plot.plot(x2,y2,'r',picker=3),iring,'i'])
         G2frame.arcList = []
@@ -2563,8 +2568,17 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if arc:
                 tth,azm,thick = arc           
                 wave = Data['wavelength']
-                x1,y1 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(tth+thick/2.,wave),Data),azm)),2)
-                x2,y2 = np.hsplit(np.array(G2img.makeIdealRing(G2img.GetEllipse(Dsp(max(0.01,tth-thick/2.),wave),Data),azm)),2)
+                xy1 = []
+                xy2 = []
+                aR = azm[0],azm[1],azm[1]-azm[0]
+                if azm[1]-azm[0] > 180:
+                    aR[2] /= 2
+                Azm = np.linspace(aR[0],aR[1],aR[2])
+                for azm in Azm:
+                    xy1.append(G2img.GetDetectorXY(Dsp(tth+thick/2.,wave),azm,Data))      #what about hyperbola
+                    xy2.append(G2img.GetDetectorXY(Dsp(tth-thick/2.,wave),azm,Data))      #what about hyperbola
+                x1,y1 = np.array(xy1).T
+                x2,y2 = np.array(xy2).T
                 G2frame.arcList.append([Plot.plot(x1,y1,'r',picker=3),iarc,'o'])            
                 G2frame.arcList.append([Plot.plot(x2,y2,'r',picker=3),iarc,'i'])
                 G2frame.arcList.append([Plot.plot([x1[0],x2[0]],[y1[0],y2[0]],'r',picker=3),iarc,'l'])

@@ -278,47 +278,6 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
         return [],(delt > 90),0
     return ring,(delt > 90),sumI/len(ring)
     
-def makeIdealRing(ellipse,azm=None):
-    'Needs a doc string'
-    cent,phi,radii = ellipse
-    cphi = cosd(phi)
-    sphi = sind(phi)
-    if azm:
-        aR = azm[0]-90,azm[1]-90,azm[1]-azm[0]
-        if azm[1]-azm[0] > 180:
-            aR[2] /= 2
-    else:
-        aR = 0,362,181
-        
-    a = np.linspace(aR[0],aR[1],aR[2])
-    slr = radii[0]**2/radii[1]
-    rat2 = (radii[0]/radii[1])**2
-    if radii[0] > 0.:       #ellipse
-        ecc = np.sqrt(max(1.-rat2,0.))
-    else:                   #hyperbola
-        ecc = np.sqrt(1.+rat2)
-    rad = slr/(1.+ecc*npcosd(a))
-    xy = np.array([rad*npsind(a)+cent[0],rad*npcosd(a)+cent[1]])
-    return xy
-                    
-def calcDist(radii,tth):
-    'Needs a doc string'
-    stth = sind(tth)
-    ctth = cosd(tth)
-    ttth = tand(tth)
-    return math.sqrt(radii[0]**4/(ttth**2*((radii[0]*ctth)**2+(radii[1]*stth)**2)))
-    
-def calcZdisCosB(radius,tth,radii):
-    'Needs a doc string'
-    cosB = sinb = radii[0]**2/(radius*radii[1])
-    if cosB > 1.:
-        return 0.,1.
-    else:
-        cosb = math.sqrt(1.-sinb**2)
-        ttth = tand(tth)
-        zdis = radii[1]*ttth*cosb/sinb
-        return zdis,cosB
-        
 def GetEllipse2(tth,dxy,dist,cent,tilt,phi):
     '''uses Dandelin spheres to find ellipse or hyperbola parameters from detector geometry
     on output

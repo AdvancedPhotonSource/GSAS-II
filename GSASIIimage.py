@@ -257,7 +257,9 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     sumI = 0
     amin = 0
     amax = 360
-    for a in range(0,int(ellipseC()),1):
+    C = int(ellipseC())
+    for i in range(0,C,1):
+        a = 360.*i/C
         x = radii[0]*cosd(a)
         y = radii[1]*sind(a)
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
@@ -330,15 +332,24 @@ def GetDetectorXY(dsp,azm,data):
     'Needs a doc string'
     
     from scipy.optimize import fsolve
-    def func(xy,*args):
-       azm,phi,R0,R1,A,B = args
-       cp = cosd(phi)
-       sp = sind(phi)
-       x,y = xy
-       out = []
-       out.append(y-x*tand(azm))
-       out.append(R0**2*((x+A)*sp-(y+B)*cp)**2+R1**2*((x+A)*cp+(y+B)*sp)**2-(R0*R1)**2)
-       return out
+    def ellip(xy,*args):
+        azm,phi,R0,R1,A,B = args
+        cp = cosd(phi)
+        sp = sind(phi)
+        x,y = xy
+        out = []
+        out.append(y-x*tand(azm))
+        out.append(R0**2*((x+A)*sp-(y+B)*cp)**2+R1**2*((x+A)*cp+(y+B)*sp)**2-(R0*R1)**2)
+        return out
+    def hyperb(xy,*args):
+        azm,phi,R0,R1,A,B = args
+        cp = cosd(phi)
+        sp = sind(phi)
+        x,y = xy
+        out = []
+        out.append(y+x*tand(azm))
+        out.append(R0**2*((x+A)*sp-(y+B)*cp)**2-R1**2*((x+A)*cp+(y+B)*sp)**2-(R0*R1)**2)
+        return out                
     elcent,phi,radii = GetEllipse(dsp,data)
     cent = data['center']
     phi = data['rotation']
@@ -352,13 +363,22 @@ def GetDetectorXY(dsp,azm,data):
     radius = (dist+dxy)*ttth
     stth = sind(tth)
     cosb = cosd(tilt)
-    R1 = (dist+dxy)*stth*cosd(tth)*cosb/(cosb**2-stth**2)
-    R0 = math.sqrt(R1*radius*cosb)
-    zdis = R1*ttth*tand(tilt)
-    A = zdis*sind(phi)
-    B = -zdis*cosd(phi)
-    xy0 = [radius*cosd(azm),radius*sind(azm)]
-    xy = fsolve(func,xy0,args=(azm,phi,R0,R1,A,B))+cent
+    if tth+abs(tilt) < 90.:
+        R1 = (dist+dxy)*stth*cosd(tth)*cosb/(cosb**2-stth**2)
+        R0 = math.sqrt(R1*radius*cosb)
+        zdis = R1*ttth*tand(tilt)
+        A = zdis*sind(phi)
+        B = -zdis*cosd(phi)
+        xy0 = [radius*cosd(azm),radius*sind(azm)]
+        xy = fsolve(ellip,xy0,args=(azm,phi,R0,R1,A,B))+cent
+    else:
+        R1 = (dist+dxy)*stth*cosd(tth)*cosb/(cosb**2+stth**2)
+        R0 = math.sqrt(R1*radius*cosb)
+        zdis = R1*ttth*tand(tilt)
+        A = zdis*sind(phi)
+        B = -zdis*cosd(phi)
+        xy0 = [radius*cosd(azm),radius*sind(azm)]
+        xy = fsolve(hyperb,xy0,args=(azm,phi,R0,R1,A,B))+cent
     return xy
     
 def GetDetXYfromThAzm(Th,Azm,data):
@@ -383,25 +403,34 @@ def GetTthAzmDsp(x,y,data):
     Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
     dxy = peneCorr(tth,dep)
-    tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z+dxy)) #depth corr not correct for tilted detector
+    DX = dist-Z+dxy
+    DY = np.sqrt(dx**2+dy**2-Z**2)
+    D = (DX**2+DY**2)/dist**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+    tth = npatand(DY/DX) #depth corr not correct for tilted detector
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dy,dx)+azmthoff+720.)%360.
-    return tth,azm,dsp
+    return tth,azm,D,dsp
     
 def GetTth(x,y,data):
-    'Needs a doc string'
+    'Give 2-theta value for detector x,y position; calibration info in data'
     return GetTthAzmDsp(x,y,data)[0]
     
 def GetTthAzm(x,y,data):
-    'Needs a doc string'
+    'Give 2-theta, azimuth values for detector x,y position; calibration info in data'
     return GetTthAzmDsp(x,y,data)[0:2]
     
+def GetTthAzmD(x,y,data):
+    '''Give 2-theta, azimuth & geometric correction values for detector x,y position;
+     calibration info in data
+    '''
+    return GetTthAzmDsp(x,y,data)[0:3]
+
 def GetDsp(x,y,data):
-    'Needs a doc string'
-    return GetTthAzmDsp(x,y,data)[2]
+    'Give d-spacing value for detector x,y position; calibration info in data'
+    return GetTthAzmDsp(x,y,data)[3]
        
 def GetAzm(x,y,data):
-    'Needs a doc string'
+    'Give azimuth value for detector x,y position; calibration info in data'
     return GetTthAzmDsp(x,y,data)[1]
        
 def ImageCompress(image,scale):
@@ -691,9 +720,9 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     for X,Y,diam in spots:
         tamp = ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2))
         tam = ma.mask_or(tam,tamp)
-    TA = np.array(GetTthAzm(tax,tay,data))
+    TA = np.array(GetTthAzmD(tax,tay,data))     #includes geom. corr.
     TA[1] = np.where(TA[1]<0,TA[1]+360,TA[1])
-    return np.array(TA),tam           #2-theta & azimuth arrays & position mask
+    return np.array(TA),tam           #2-theta, azimuth & geom. corr. arrays & position mask
 
 def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     'Needs a doc string'
@@ -701,8 +730,8 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     Zlim = masks['Thresholds'][1]
     rings = masks['Rings']
     arcs = masks['Arcs']
-    TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0])))    #azimuth, 2-theta
-    tax,tay = np.dsplit(TA,2)    #azimuth, 2-theta
+    TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2])))    #azimuth, 2-theta, dist
+    tax,tay,tad = np.dsplit(TA,3)    #azimuth, 2-theta, dist
     for tth,thick in rings:
         tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.)))
     for tth,azm,thick in arcs:
@@ -714,8 +743,8 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     taz = ma.compressed(ma.array(taz.flatten(),mask=tam))
-    del(tam)
-    return tax,tay,taz
+    tad = ma.compressed(ma.array(tad.flatten(),mask=tam))
+    return tax,tay,taz*tad**2
     
 def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     'Needs a doc string'
@@ -746,7 +775,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
         for jBlk in range(nXBlks):
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)                
-#            print 'Process map block:',iBlk,jBlk,' limits:',iBeg,iFin,jBeg,jFin
             TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
             
             Nup += 1
@@ -754,7 +782,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
                 dlg.Update(Nup)
             Block = image[iBeg:iFin,jBeg:jFin]
             tax,tay,taz = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
-            del TA,tam
             Nup += 1
             if dlg:
                 dlg.Update(Nup)
@@ -762,8 +789,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
-#            print 'block done'
-            del tax,tay,taz
             Nup += 1
             if dlg:
                 dlg.Update(Nup)
@@ -779,7 +804,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
     else:
         H1 = LRazm
-    H0 /= npcosd(H2[:-1])**2
+#    H0 /= npcosd(H2[:-1])**2
     if data['Oblique'][1]:
         H0 /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
     if 'SASD' in data['type'] and data['PolaVal'][1]:

@@ -125,14 +125,19 @@ def UpdateImageControls(G2frame,data,masks):
                     for item in result:
                         ifintegrate,name,id = item
                         if ifintegrate:
+                            Id = G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')
+                            Data = G2frame.PatternTree.GetItemPyData(Id)
+                            blkSize = 128   #this seems to be optimal; will break in polymask if >1024
+                            Nx,Ny = Data['size']
+                            nXBlks = (Nx-1)/blkSize+1
+                            nYBlks = (Ny-1)/blkSize+1
+                            Nup = nXBlks*nYBlks*3+3
                             dlgp = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
                                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
                             try:
                                 id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
                                 Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
                                 image = G2IO.GetImageData(G2frame,imagefile,True)
-                                Id = G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')
-                                Data = G2frame.PatternTree.GetItemPyData(Id)
                                 backImage = []
                                 if Data['background image'][0]:
                                     backImg = Data['background image'][0]
@@ -149,9 +154,9 @@ def UpdateImageControls(G2frame,data,masks):
                                     G2frame.PatternTree.SetItemPyData(
                                         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'),Masks)
                                 if len(backImage):                                
-                                    G2frame.Integrate = G2img.ImageIntegrate(image+backImage,Data,Masks,dlgp)
+                                    G2frame.Integrate = G2img.ImageIntegrate(image+backImage,Data,Masks,blkSize,dlgp)
                                 else:
-                                    G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,dlgp)
+                                    G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
 #                               G2plt.PlotIntegration(G2frame,newPlot=True,event=event)
                                 G2IO.SaveIntegration(G2frame,Id,Data)
                             finally:

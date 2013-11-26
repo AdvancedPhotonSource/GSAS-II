@@ -2159,7 +2159,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Int = 0
                 if (0 <= xpix <= sizexy[0]) and (0 <= ypix <= sizexy[1]):
                     Int = G2frame.ImageZ[ypix][xpix]
-                tth,azm,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
+                tth,azm,D,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
                 if G2frame.MaskKey in ['p','f']:
                     G2frame.G2plotNB.status.SetFields(['','Polygon/frame mask pick - LB next point, RB close polygon'])
@@ -2313,7 +2313,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     if np.allclose(ring,xypos,.01,0):
                         rings.remove(ring)
             else:
-                tth,azm,dsp = G2img.GetTthAzmDsp(Xpos,Ypos,Data)
+                tth,azm,dsp = G2img.GetTthAzmDsp(Xpos,Ypos,Data)[:3]
                 itemPicked = str(G2frame.itemPicked)
                 if 'Line2D' in itemPicked and PickName == 'Image Controls':
                     if 'line1' in itemPicked:

@@ -494,7 +494,7 @@ def ImageRecalibrate(self,data):
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     Found = False
     wave = data['wavelength']
-    for H in HKL: 
+    for iH,H in enumerate(HKL): 
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
         if tth+abs(data['tilt']) > 90.:
@@ -503,7 +503,8 @@ def ImageRecalibrate(self,data):
         ellipse = GetEllipse(dsp,data)
         Ring,delt,sumI = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
         if Ring:
-            data['rings'].append(np.array(Ring))
+            if iH >= skip:
+                data['rings'].append(np.array(Ring))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
             Found = True
         elif not Found:         #skipping inner rings, keep looking until ring found 

@@ -744,7 +744,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     taz = ma.compressed(ma.array(taz.flatten(),mask=tam))
     tad = ma.compressed(ma.array(tad.flatten(),mask=tam))
-    return tax,tay,taz*tad**2
+    return tax,tay,taz      #*tad**2 wrong - why?
     
 def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     'Needs a doc string'
@@ -804,7 +804,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
     else:
         H1 = LRazm
-#    H0 /= npcosd(H2[:-1])**2
+    H0 /= npcosd(H2[:-1])**2
     if data['Oblique'][1]:
         H0 /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
     if 'SASD' in data['type'] and data['PolaVal'][1]:

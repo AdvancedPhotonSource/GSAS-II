@@ -243,6 +243,8 @@ def GetEdfData(filename,imageOnly=False):
     File.seek(fileSize-imSize)
     if dType == 'UnsignedShort':        
         image = np.array(ar.array('H',File.read(imSize)),dtype=np.int32)
+    elif dType == 'UnsignedInt':
+        image = np.array(ar.array('L',File.read(imSize)),dtype=np.int32)        
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
     Npix = sizexy[0]*sizexy[1]
@@ -454,7 +456,7 @@ def GetTifData(filename,imageOnly=False):
         elif Type == 11:
             Value = st.unpack(byteOrd+nVal*'f',File.read(nVal*4))
         IFD[Tag] = [Type,nVal,Value]
-        #print Tag,IFD[Tag]
+        print Tag,IFD[Tag]
     sizexy = [IFD[256][2][0],IFD[257][2][0]]
     [nx,ny] = sizexy
     Npix = nx*ny
@@ -500,6 +502,14 @@ def GetTifData(filename,imageOnly=False):
                 if not imageOnly:
                     print 'Read GE-detector tiff file: ',filename
                 image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+            elif IFD[258][2][0] == 32:
+                print sizexy
+                tifType = 'CHESS'
+                pixy = (200,200)
+                File.seek(8)
+                if not imageOnly:
+                    print 'Read CHESS-detector tiff file: ',filename
+                image = np.array(ar.array('L',File.read(4*Npix)),dtype=np.int32)
             
     elif 262 in IFD and IFD[262][2][0] > 4:
         tifType = 'DND'

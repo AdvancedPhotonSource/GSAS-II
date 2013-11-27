@@ -492,6 +492,8 @@ def MakeFrameMask(data,frame):
             if tamp.shape:
                 tamp = np.reshape(tamp[:nI*nJ],(nI,nJ))
                 tam[iBeg:iFin,jBeg:jFin] = ma.mask_or(tamp[0:nI,0:nJ],tam[iBeg:iFin,jBeg:jFin])
+            else:
+                tam[iBeg:iFin,jBeg:jFin] = True
     return tam.T
     
 def ImageRecalibrate(self,data,masks):

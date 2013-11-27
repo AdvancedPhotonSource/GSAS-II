@@ -40,6 +40,8 @@ import GSASIImapvars as G2mv
 import os
 import os.path as ospath
 
+DEBUG = False       #=True for various prints
+
 def sfloat(S):
     'Convert a string to float. An empty field is treated as zero'
     if S.strip():
@@ -456,7 +458,7 @@ def GetTifData(filename,imageOnly=False):
         elif Type == 11:
             Value = st.unpack(byteOrd+nVal*'f',File.read(nVal*4))
         IFD[Tag] = [Type,nVal,Value]
-        print Tag,IFD[Tag]
+        if DEBUG: print Tag,IFD[Tag]
     sizexy = [IFD[256][2][0],IFD[257][2][0]]
     [nx,ny] = sizexy
     Npix = nx*ny

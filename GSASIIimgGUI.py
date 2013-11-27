@@ -61,7 +61,7 @@ def UpdateImageControls(G2frame,data,masks):
         G2frame.ifGetRing = True
         
     def OnRecalibrate(event):
-        G2img.ImageRecalibrate(G2frame,data)
+        G2img.ImageRecalibrate(G2frame,data,masks)
         UpdateImageControls(G2frame,data,masks)
         
     def OnClearCalib(event):

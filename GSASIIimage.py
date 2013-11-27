@@ -19,6 +19,8 @@ import math
 import time
 import numpy as np
 import numpy.linalg as nl
+import numpy.ma as ma
+import polymask as pm
 from scipy.optimize import leastsq
 import copy
 import GSASIIpath
@@ -464,7 +466,35 @@ def EdgeFinder(image,data):
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     return zip(tax,tay)
     
-def ImageRecalibrate(self,data):
+def MakeFrameMask(data,frame):
+    pixelSize = data['pixelSize']
+    scalex = pixelSize[0]/1000.
+    scaley = pixelSize[1]/1000.
+    blkSize = 512
+    Nx,Ny = data['size']
+    nXBlks = (Nx-1)/blkSize+1
+    nYBlks = (Ny-1)/blkSize+1
+    tam = ma.make_mask_none(data['size'])
+    for iBlk in range(nXBlks):
+        iBeg = iBlk*blkSize
+        iFin = min(iBeg+blkSize,Nx)
+        for jBlk in range(nYBlks):
+            jBeg = jBlk*blkSize
+            jFin = min(jBeg+blkSize,Ny)                
+            nI = iFin-iBeg
+            nJ = jFin-jBeg
+            tax,tay = np.mgrid[iBeg+0.5:iFin+.5,jBeg+.5:jFin+.5]         #bin centers not corners
+            tax = np.asfarray(tax*scalex,dtype=np.float32)
+            tay = np.asfarray(tay*scaley,dtype=np.float32)
+            tamp = ma.make_mask_none((1024*1024))
+            tamp = ma.make_mask(pm.polymask(nI*nJ,tax.flatten(),
+                tay.flatten(),len(frame),frame,tamp)[:nI*nJ])-True  #switch to exclude around frame
+            if tamp.shape:
+                tamp = np.reshape(tamp[:nI*nJ],(nI,nJ))
+                tam[iBeg:iFin,jBeg:jFin] = ma.mask_or(tamp[0:nI,0:nJ],tam[iBeg:iFin,jBeg:jFin])
+    return tam.T
+    
+def ImageRecalibrate(self,data,masks):
     'Needs a doc string'
     import ImageCalibrants as calFile
     print 'Image recalibration:'
@@ -478,8 +508,7 @@ def ImageRecalibrate(self,data):
     data['ellipses'] = []
     if not data['calibrant']:
         print 'no calibration material selected'
-        return True
-    
+        return True    
     skip = data['calibskip']
     dmin = data['calibdmin']
     Bravais,Cells = calFile.Calibrants[data['calibrant']][:2]
@@ -494,6 +523,10 @@ def ImageRecalibrate(self,data):
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     Found = False
     wave = data['wavelength']
+    frame = masks['Frames']
+    tam = ma.make_mask_none(self.ImageZ.shape)
+    if frame:
+        tam = ma.mask_or(tam,MakeFrameMask(data,frame))
     for iH,H in enumerate(HKL): 
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
@@ -501,7 +534,7 @@ def ImageRecalibrate(self,data):
             print 'next line is a hyperbola - search stopped'
             break
         ellipse = GetEllipse(dsp,data)
-        Ring,delt,sumI = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
+        Ring,delt,sumI = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(self.ImageZ,mask=tam))
         if Ring:
             if iH >= skip:
                 data['rings'].append(np.array(Ring))
@@ -689,8 +722,6 @@ def ImageCalibrate(self,data):
     
 def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     'Needs a doc string'
-    import numpy.ma as ma
-    import polymask as pm
     #transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
     pixelSize = data['pixelSize']
     scalex = pixelSize[0]/1000.
@@ -727,7 +758,6 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
 
 def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     'Needs a doc string'
-    import numpy.ma as ma
     Zlim = masks['Thresholds'][1]
     rings = masks['Rings']
     arcs = masks['Arcs']

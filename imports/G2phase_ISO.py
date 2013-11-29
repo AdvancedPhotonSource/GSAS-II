@@ -21,7 +21,7 @@ class ISODISTORTPhaseReader(G2IO.ImportPhase):
     varLookup = {'dx':'dAx','dy':'dAy','dz':'dAz'}
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
-            extensionlist=('.CIF','.cif'),
+            extensionlist=('.CIF','.cif','.txt'),
             strictExtension=False,
             formatName = 'ISODISTORT CIF',
             longFormatName = 'CIF from ISODISTORT import'
@@ -198,7 +198,7 @@ class ISODISTORTPhaseReader(G2IO.ImportPhase):
                     name = blknm
                 self.Phase['General']['Name'] = name.strip()[:20]
                 #----------------------------------------------------------------------
-                # now read in the ISODISPLACE modes
+                # now read in the ISODISTORT modes
                 #----------------------------------------------------------------------
                 modelist = []
                 shortmodelist = []
@@ -297,7 +297,7 @@ class ISODISTORTPhaseReader(G2IO.ImportPhase):
                     constraint = []
                     for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
                         if k == 0: continue
-                        constraint.append((k,G2varObj[j]))
+                        constraint.append([k,G2varObj[j]])
                     constraint += [shortmodelist[i],False,'f']
                     self.Constraints.append(constraint)
                 # save the ISODISTORT info for "mode analysis"
@@ -313,7 +313,7 @@ class ISODISTORTPhaseReader(G2IO.ImportPhase):
                 # make explaination dictionary
                 explaination = {}
                 for mode,shortmode in zip(modelist,shortmodelist):
-                    explaination[shortmode] = "IsoDisplace full name "+str(mode)
+                    explaination[shortmode] = "ISODISTORT full name "+str(mode)
                 self.Constraints.append(explaination)
 
                 # # debug: show the mode var to mode relations
@@ -327,7 +327,7 @@ class ISODISTORTPhaseReader(G2IO.ImportPhase):
                 #     print str(i) + ': '+shortmodelist[i]+' = '+l
                 # print 70*'='
 
-                # # debug: Get the ISODISPLACE offset values
+                # # debug: Get the ISODISTORT offset values
                 # coordVarDelta = {}
                 # for lbl,val in zip(
                 #     blk.get('_iso_deltacoordinate_label'),

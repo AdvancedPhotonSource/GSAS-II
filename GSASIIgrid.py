@@ -1566,7 +1566,7 @@ class GridFractionEditor(wg.PyGridCellEditor):
 class ShowLSParms(wx.Dialog):
     '''Create frame to show least-squares parameters
     '''
-    def __init__(self,parent,title,parmDict,varyList=None,
+    def __init__(self,parent,title,parmDict,varyList,fullVaryList,
                  size=(300,430)):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,size=size,
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -1576,19 +1576,27 @@ class ShowLSParms(wx.Dialog):
             self, wx.ID_ANY,
             #size=size,
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-        if varyList:
-            num = len(varyList)
-            mainSizer.Add(wx.StaticText(self,wx.ID_ANY,'Number of refined variables: '+str(num)))
+        num = len(varyList)
+        mainSizer.Add(wx.StaticText(self,wx.ID_ANY,'Number of refined variables: '+str(num)))
+        num = len(fullVaryList)
+        mainSizer.Add(wx.StaticText(self,wx.ID_ANY,'Number dependent and refined variables: '+str(num)))
 
         subSizer = wx.FlexGridSizer(rows=len(parmDict)+1,cols=4,hgap=2,vgap=2)
         parmNames = parmDict.keys()
         parmNames.sort()
-        #parmText = ' p:h:Parameter       refine?              value\n'
         subSizer.Add((-1,-1))
         subSizer.Add(wx.StaticText(panel,wx.ID_ANY,'Parameter name  '))
         subSizer.Add(wx.StaticText(panel,wx.ID_ANY,'refine?'))
         subSizer.Add(wx.StaticText(panel,wx.ID_ANY,'value'),0,wx.ALIGN_RIGHT)
+        explainRefine = False
         for name in parmNames:
+            # skip entries without numerical values
+            if isinstance(parmDict[name],basestring): continue
+            try:
+                value = G2py3.FormatValue(parmDict[name])
+            except TypeError:
+                value = str(parmDict[name])+' -?' # unexpected
+                #continue
             v = G2obj.getVarDescr(name)
             if v is None or v[-1] is None:
                 subSizer.Add((-1,-1))
@@ -1596,11 +1604,13 @@ class ShowLSParms(wx.Dialog):
                 ch = HelpButton(panel,G2obj.fmtVarDescr(name))
                 subSizer.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
             subSizer.Add(wx.StaticText(panel,wx.ID_ANY,str(name)))
-            subSizer.Add(wx.StaticText(panel,wx.ID_ANY,str(parmDict[name][1])))
-            try:
-                value = G2py3.FormatValue(parmDict[name][0])
-            except TypeError:
-                value = str(parmDict[name][0])
+            if name in varyList:
+                subSizer.Add(wx.StaticText(panel,wx.ID_ANY,'R'))
+            elif name in fullVaryList:
+                subSizer.Add(wx.StaticText(panel,wx.ID_ANY,'C'))
+                explainRefine = True
+            else:
+                subSizer.Add((-1,-1))
             subSizer.Add(wx.StaticText(panel,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
 
         # finish up ScrolledPanel
@@ -1609,6 +1619,13 @@ class ShowLSParms(wx.Dialog):
         panel.SetupScrolling()
         mainSizer.Add(panel,1, wx.ALL|wx.EXPAND,1)
 
+        if explainRefine:
+            mainSizer.Add(
+                wx.StaticText(self,wx.ID_ANY,
+                          '"R" indicates a refined variable\n'+
+                          '"C" is generated from a constraint'
+                          ),
+                0, wx.ALL,0)
         # make OK button 
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         btn = wx.Button(self, wx.ID_CLOSE,"Close") 
@@ -1617,7 +1634,6 @@ class ShowLSParms(wx.Dialog):
         mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         # Allow window to be enlarged but not made smaller
         self.SetSizer(mainSizer)
-        #mainSizer.Fit(self)
         self.SetMinSize(self.GetSize())
 
     def _onClose(self,event):
@@ -1973,11 +1989,28 @@ class HelpButton(wx.Button):
         self.Bind(wx.EVT_BUTTON,self._onPress)
         self.msg=msg
         self.parent = parent
+    def _onClose(self,event):
+        self.dlg.EndModal(wx.ID_CANCEL)
     def _onPress(self,event):
         'Respond to a button press by displaying the requested text'
-        dlg = wx.MessageDialog(self.parent,self.msg,'Help info',wx.OK)
-        dlg.ShowModal()
-        dlg.Destroy()
+        #dlg = wx.MessageDialog(self.parent,self.msg,'Help info',wx.OK)
+        self.dlg = wx.Dialog(self.parent,wx.ID_ANY,'Help information', 
+                        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        #self.dlg.SetBackgroundColour(wx.WHITE)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        txt = wx.StaticText(self.dlg,wx.ID_ANY,self.msg)
+        mainSizer.Add(txt,1,wx.ALL|wx.EXPAND,10)
+        txt.SetBackgroundColour(wx.WHITE)
+
+        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn = wx.Button(self.dlg, wx.ID_CLOSE) 
+        btn.Bind(wx.EVT_BUTTON,self._onClose)
+        btnsizer.Add(btn)
+        mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        self.dlg.SetSizer(mainSizer)
+        mainSizer.Fit(self.dlg)
+        self.dlg.ShowModal()
+        self.dlg.Destroy()
 ################################################################################
 class MyHtmlPanel(wx.Panel):
     '''Defines a panel to display HTML help information, as an alternative to
@@ -2495,8 +2528,8 @@ class DataFrame(wx.Frame):
             help='Compute distances & angles for selected atoms')
         self.AtomCompute.ISOcalc = self.AtomCompute.Append(
             id=wxID_ISODISP, kind=wx.ITEM_NORMAL,
-            text='Compute ISODISPLACE mode values',
-            help='Compute values of ISODISPLACE modes from atom parameters')
+            text='Compute ISODISTORT mode values',
+            help='Compute values of ISODISTORT modes from atom parameters')
         self.PostfillDataMenu()
                  
         # Phase / Draw Options tab

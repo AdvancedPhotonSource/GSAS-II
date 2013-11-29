@@ -550,7 +550,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
     multdepVarList = []
     for varlist,mapvars,multarr,invmultarr in zip(
         dependentParmList,indParmList,arrayList,invarrayList):
-        if multarr is None:
+        if multarr is None: # do only if an equivalence
             zeromult = False
             for mv in mapvars:
                 #s = ''
@@ -637,7 +637,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
         raise Exception
                 
     # now process each group and create the relations that are needed to form
-    # non-singular square matrix
+    # a non-singular square matrix
     # If all are varied and this is a constraint equation, then set VaryFree flag
     # so that the newly created relationships will be varied
     for group,varlist in zip(groups,parmlist):
@@ -670,18 +670,19 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
         mapvar = []
         group = group[:]
         # scan through all generated and input relationships, we need to add to the varied list
-        # all the new parameters where VaryFree has been set or where all the
-        # dependent parameters are varied. Check again for inconsistent variable use
-        # for new variables -- where varied and unvaried parameters get grouped
-        # together. I don't think this can happen when not flagged before, but
-        # it does not hurt to check again. 
+        # all the new parameters where VaryFree has been set or where a New Var is varied.
+        #
+        # If a group does not contain any fixed values (constraint equations)
+        # and nothing in the group is varied, drop this group, so that the 
+        # dependent parameters can be refined individually.
+        unused = True
         for i in range(len(varlist)):
             if len(group) > 0: # get the original equation reference
                 rel = group.pop(0)
                 fixedval = fixedList[rel]
                 varyflag = constrDict[rel].get('_vary',False)
                 varname = constrDict[rel].get('_name','')
-            else: # relationship has been generated
+            else: # this relationship has been generated
                 varyflag = False
                 varname = ''
                 fixedval = None
@@ -691,14 +692,18 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
                     consNum += 1
                 mapvar.append(varname)
                 # vary the new relationship if it is a degree of freedom in
-                # a set of contraint equations or if a new variable is flagged to be varied.
+                # a set of contraint equations or if a New Var is flagged to be varied.
                 if VaryFree or varyflag: 
+                    unused = False
                     varyList.append(varname)
                     # fix (prevent varying) of all the variables inside the constraint group
+                    # (dependent vars)
                     for var in varsList:
                         if var in varyList: varyList.remove(var)
             else:
+                unused = False
                 mapvar.append(fixedval)
+        if unused: continue # skip over constraints that do not have a fixed value or a refined variable
         dependentParmList.append(varlist)
         arrayList.append(constrArr)
         invarrayList.append(np.linalg.inv(constrArr))

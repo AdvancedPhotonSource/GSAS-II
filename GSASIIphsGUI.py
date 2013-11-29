@@ -1633,7 +1633,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def OnIsoDistortCalc(event):
         '''Compute the ISODISTORT mode values from the current coordinates.
         Called in response to the (Phase/Atoms tab) AtomCompute
-        "Compute ISODISPLACE mode values" menu item, which should be enabled
+        "Compute ISODISTORT mode values" menu item, which should be enabled
         only when Phase['ISODISTORT'] is defined. 
         '''
         if 'ISODISTORT' not in data:
@@ -1664,7 +1664,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 return
             deltaList.append(cval-pval)
         modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
-        dlg = wx.Dialog(G2frame,wx.ID_ANY,'ISODISPLACE mode values',#size=(630,400),
+        dlg = wx.Dialog(G2frame,wx.ID_ANY,'ISODISTORT mode values',#size=(630,400),
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(dlg,wx.ID_ANY,

@@ -510,7 +510,8 @@ def UpdateConstraints(G2frame,data):
         :returns: True if constraint should be added
         '''
         allcons = []
-        for key in ['Hist','HAP','Phase','Global']:
+        for key in data:
+            if key.startswith('_'): continue
             allcons += data[key]
         allcons += newcons
         if not len(allcons): return True
@@ -537,7 +538,8 @@ def UpdateConstraints(G2frame,data):
         :returns: True if the edit should be retained
         '''
         allcons = []
-        for key in 'Hist','HAP','Phase':
+        for key in data:
+            if key.startswith('_'): continue
             allcons += data[key]
         if not len(allcons): return True
         G2mv.InitVars()    
@@ -674,9 +676,10 @@ def UpdateConstraints(G2frame,data):
         :param wx.Panel pageDisplay: parent panel for sizer
         :returns: wx.Sizer created by method
         '''
-        constSizer = wx.FlexGridSizer(1,5,0,0)
+        constSizer = wx.FlexGridSizer(1,6,0,0)
         maxlen = 70 # characters before wrapping a constraint
         for Id,item in enumerate(data[name]):
+            refineflag = False
             helptext = ""
             eqString = ['',]
             if item[-1] == 'h': # Hold on variable
@@ -692,7 +695,10 @@ def UpdateConstraints(G2frame,data):
                 constSizer.Add(constEdit,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)            # edit button
                 Indx[constEdit.GetId()] = [Id,name]
                 if item[-1] == 'f':
-                    helptext = "A new variable is created from a linear combination of the following variables:"
+                    helptext = "A new variable"
+                    if item[-3]:
+                        helptext += " named "+str(item[-3])
+                    helptext += " is created from a linear combination of the following variables:\n"
                     for term in item[:-3]:
                         var = str(term[1])
                         if len(eqString[-1]) > maxlen:
@@ -711,11 +717,17 @@ def UpdateConstraints(G2frame,data):
                         if data['_Explain'].get(item[-3]):
                             helptext += '\n\n'
                             helptext += data['_Explain'][item[-3]]
-                    typeString = 'NEWVAR'
+                    # typeString = 'NEWVAR'
+                    # if item[-3]:
+                    #     eqString[-1] += ' = '+item[-3]
+                    # else:
+                    #     eqString[-1] += ' = New Variable'
                     if item[-3]:
-                        eqString[-1] += ' = '+item[-3]
+                        typeString = item[-3] + ' = '
                     else:
-                        eqString[-1] += ' = New Variable'
+                        typeString = 'New Variable = '
+                    #print 'refine',item[-2]
+                    refineflag = True
                 elif item[-1] == 'c':
                     helptext = "The following variables constrained to equal a constant:"
                     for term in item[:-3]:
@@ -731,7 +743,7 @@ def UpdateConstraints(G2frame,data):
                         varMean = G2obj.fmtVarDescr(var)
                         helptext += "\n" + var + " ("+ varMean + ")"
                     typeString = 'CONST'
-                    eqString[-1] += ' = %.3f'%(item[-3])+'  '
+                    eqString[-1] += ' = '+str(item[-3])
                 elif item[-1] == 'e':
                     helptext = "The following variables are set to be equivalent, noting multipliers:"
                     for term in item[:-3]:
@@ -762,8 +774,14 @@ def UpdateConstraints(G2frame,data):
                 ch = G2gd.HelpButton(pageDisplay,helptext)
                 constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
             else:
+                constSizer.Add((-1,-1))
+            if refineflag:
+                ch = G2gd.G2CheckBox(pageDisplay,'',item,-2)
+                constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+            else:
                 constSizer.Add((-1,-1))                
-            constSizer.Add(wx.StaticText(pageDisplay,-1,typeString),0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
+            constSizer.Add(wx.StaticText(pageDisplay,-1,typeString),
+                           0,wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER|wx.RIGHT|wx.LEFT,3)
             if len(eqString) > 1:
                 Eq = wx.BoxSizer(wx.VERTICAL)
                 for s in eqString:
@@ -814,6 +832,8 @@ def UpdateConstraints(G2frame,data):
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetData()
                 for i in range(len(data[name][Id][:-3])):
+                    if type(data[name][Id][i]) is tuple: # fix non-mutable construct
+                        data[name][Id][i] = list(data[name][Id][i])
                     data[name][Id][i][0] = result[i][0]
                 if data[name][Id][-1] == 'c':
                     data[name][Id][-3] = str(result[-1][0])
@@ -824,7 +844,7 @@ def UpdateConstraints(G2frame,data):
                         varname = varname[2:]
                     varname = varname.replace(':',';')
                     if varname:
-                        data[name][Id][-3] = '::' + varname
+                        data[name][Id][-3] = varname
                     else:
                         data[name][Id][-3] = ''
                     data[name][Id][-2] = dlg.newvar[1]
@@ -924,7 +944,8 @@ def UpdateConstraints(G2frame,data):
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     # validate all the constrants -- should not see any errors here normally
     allcons = []
-    for key in 'Hist','HAP','Phase':
+    for key in data:
+        if key.startswith('_'): continue
         allcons += data[key]
     if not len(allcons): return
     G2mv.InitVars()    

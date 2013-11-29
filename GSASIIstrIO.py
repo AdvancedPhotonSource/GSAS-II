@@ -67,7 +67,6 @@ def GetConstraints(GPXfile):
     called in :func:`CheckConstraints`, :func:`GSASIIstrMain.Refine`
     and :func:`GSASIIstrMain.SeqRefine`. 
     '''
-    constList = []
     fl = open(GPXfile,'rb')
     while True:
         try:
@@ -76,14 +75,17 @@ def GetConstraints(GPXfile):
             break
         datum = data[0]
         if datum[0] == 'Constraints':
-            constDict = datum[1]
-            for item in constDict:
-                constList += constDict[item]
+            constList = []
+            for item in datum[1]:
+                if item.startswith('_'): continue
+                constList += datum[1][item]
+            fl.close()
+            constDict,fixedList,ignored = ProcessConstraints(constList)
+            if ignored:
+                print ignored,'Constraints were rejected. Was a constrained phase, histogram or atom deleted?'
+            return constDict,fixedList
     fl.close()
-    constDict,fixedList,ignored = ProcessConstraints(constList)
-    if ignored:
-        print ignored,'Constraints were rejected. Was a constrained phase, histogram or atom deleted?'
-    return constDict,fixedList
+    raise Exception,"No constraints in GPX file"
     
 def ProcessConstraints(constList):
     """Interpret the constraints in the constList input into a dictionary, etc.
@@ -100,7 +102,7 @@ def ProcessConstraints(constList):
     :returns:  a tuple of (constDict,fixedList,ignored) where:
       
       * constDict (list of dicts) contains the constraint relationships
-      * fixedList (list) contains the fixed values for type
+      * fixedList (list) contains the fixed values for each type
         of constraint.
       * ignored (int) counts the number of invalid constraint items
         (should always be zero!)
@@ -129,8 +131,12 @@ def ProcessConstraints(constList):
                     D[var] = term[0]
             if len(D) > 1:
                 # add extra dict terms for input variable name and vary flag
-                if varname is not None:
-                    D['_name'] = varname
+                if varname is not None:                    
+                    if varname.startswith('::'):
+                        varname = varname[2:].replace(':',';')
+                    else:
+                        varname = varname.replace(':',';')
+                    D['_name'] = '::' + varname
                 D['_vary'] = varyFlag == True # force to bool
                 constDict.append(D)
             else:

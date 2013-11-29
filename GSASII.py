@@ -2602,7 +2602,9 @@ class GSASII(wx.Frame):
         
     def MakeLSParmDict(self):
         '''Load all parameters used for computation from the tree into a
-        dict
+        dict of paired values [value, refine flag]. Note that this is
+        different than the parmDict used in the refinement, which only has
+        values.
 
         :returns: (parmDict,varyList) where:
 
@@ -2645,7 +2647,27 @@ class GSASII(wx.Frame):
         Called from the Calculate/View LS Parms menu.
         '''
         parmDict,varyList = self.MakeLSParmDict()
-        dlg = G2gd.ShowLSParms(self,'Least Squares Parameters',parmDict,varyList)
+        parmValDict = {}
+        for i in parmDict:
+            parmValDict[i] = parmDict[i][0]
+            
+        reqVaryList = tuple(varyList) # save requested variables
+        try:
+            # process constraints
+            sub = G2gd.GetPatternTreeItemId(self,self.root,'Constraints') 
+            Constraints = self.PatternTree.GetItemPyData(sub)
+            constList = []
+            for item in Constraints:
+                if item.startswith('_'): continue
+                constList += Constraints[item]
+            G2mv.InitVars()
+            constrDict,fixedList,ignored = G2stIO.ProcessConstraints(constList)
+            groups,parmlist = G2mv.GroupConstraints(constrDict)
+            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
+            G2mv.Map2Dict(parmValDict,varyList)
+        except:
+            pass
+        dlg = G2gd.ShowLSParms(self,'Least Squares Parameters',parmValDict,varyList,reqVaryList)
         dlg.ShowModal()
         dlg.Destroy()
         

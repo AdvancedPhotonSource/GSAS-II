@@ -2017,6 +2017,7 @@ class ExportBaseclass(object):
         # expand to include constraints: first compile a list of constraints
         constList = []
         for item in consDict:
+            if item.startswith('_'): continue
             constList += consDict[item]
         # now process the constraints
         G2mv.InitVars()

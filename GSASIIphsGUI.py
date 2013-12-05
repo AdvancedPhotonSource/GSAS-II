@@ -47,6 +47,7 @@ import GSASIIstrMain as G2stMn
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIpy3 as G2py3
+import GSASIIobj as G2obj
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
@@ -1636,6 +1637,33 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         "Compute ISODISTORT mode values" menu item, which should be enabled
         only when Phase['ISODISTORT'] is defined. 
         '''
+        def _onClose(event):
+            dlg.EndModal(wx.ID_CANCEL)
+        def fmtHelp(item,fullname):
+            helptext = "A new variable"
+            if item[-3]:
+                helptext += " named "+str(item[-3])
+            helptext += " is a linear combination of the following parameters:\n"
+            first = True
+            for term in item[:-3]:
+                line = ''
+                var = str(term[1])
+                m = term[0]
+                if first:
+                    first = False
+                    line += ' = '
+                else:
+                    if m >= 0:
+                        line += ' + '
+                    else:
+                        line += ' - '
+                    m = abs(m)
+                line += '%.3f*%s '%(m,var)
+                varMean = G2obj.fmtVarDescr(var)
+                helptext += "\n" + line + " ("+ varMean + ")"
+            helptext += '\n\nISODISTORT full name: '+str(fullname)
+            return helptext
+
         if 'ISODISTORT' not in data:
             raise Exception,"Should not happen: 'ISODISTORT' not in data"
         if len(data.get('Histograms',[])) == 0:
@@ -1644,26 +1672,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 'Sorry, this computation requires that a histogram first be added to the phase'
                 )
             return
-        def _onClose(event):
-            dlg.EndModal(wx.ID_CANCEL)
-
         Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree() # init for constraint
+        # make a lookup table for constraints
+        sub = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Constraints') 
+        Constraints = G2frame.PatternTree.GetItemPyData(sub)
+        constDict = {}
+        for item in Constraints:
+            if item.startswith('_'): continue
+            for c in Constraints[item]:
+                if c[-1] != 'f' or not c[-3]: continue
+                constDict[c[-3]] = c
+
         ISO = data['ISODISTORT']
         parmDict,varyList = G2frame.MakeLSParmDict()
-        deltaList = []
-        for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
-            dvar = gv.varname()
-            var = dvar.replace('::dA','::A')
-            albl = Ilbl[:Ilbl.rfind('_')]
-            v = Ilbl[Ilbl.rfind('_')+1:]
-            pval = ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
-            if var in parmDict:
-                cval = parmDict[var][0]
-            else:
-                G2frame.ErrorDialog('Atom not found',"No value found for parameter "+str(var))
-                return
-            deltaList.append(cval-pval)
-        modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
+            
         dlg = wx.Dialog(G2frame,wx.ID_ANY,'ISODISTORT mode values',#size=(630,400),
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1678,26 +1700,84 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         panel2 = wxscroll.ScrolledPanel(
             dlg, wx.ID_ANY,#size=(100,200),
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-        subSizer2 = wx.FlexGridSizer(rows=1,cols=2,hgap=5,vgap=2)
-        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'Parameter name'))
-        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'value '),0,wx.ALIGN_RIGHT)
-        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,' Mode name  '))
-        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'value '),0,wx.ALIGN_RIGHT)
+        subSizer2 = wx.FlexGridSizer(rows=1,cols=3,hgap=5,vgap=2)
+        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'Parameter name  '))
+        subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,' value'),0,wx.ALIGN_RIGHT)
+        subSizer2.Add((-1,-1))
+        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,'Mode name  '))
+        subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,' value'),0,wx.ALIGN_RIGHT)
         
-        for lbl,xyz,var,val in zip(ISO['IsoVarList'],deltaList,ISO['IsoModeList'],modeVals):
-            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
-            try:
-                value = G2py3.FormatValue(xyz)
-            except TypeError:
-                value = str(xyz)            
-            subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
-            #subSizer.Add((10,-1))
-            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
-            try:
-                value = G2py3.FormatValue(val)
-            except TypeError:
-                value = str(val)            
-            subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+        if 'G2VarList' in ISO:
+            deltaList = []
+            for gv,Ilbl in zip(ISO['G2VarList'],ISO['IsoVarList']):
+                dvar = gv.varname()
+                var = dvar.replace('::dA','::A')
+                albl = Ilbl[:Ilbl.rfind('_')]
+                v = Ilbl[Ilbl.rfind('_')+1:]
+                pval = ISO['ParentStructure'][albl][['dx','dy','dz'].index(v)]
+                if var in parmDict:
+                    cval = parmDict[var][0]
+                else:
+                    dlg.EndModal(wx.ID_CANCEL)
+                    G2frame.ErrorDialog('Atom not found',"No value found for parameter "+str(var))
+                    return
+                deltaList.append(cval-pval)
+            modeVals = np.inner(ISO['Var2ModeMatrix'],deltaList)
+            for lbl,xyz,var,val,G2var in zip(ISO['IsoVarList'],deltaList,
+                                             ISO['IsoModeList'],modeVals,ISO['G2ModeList']):
+                if G2var in constDict:
+                    ch = G2gd.HelpButton(panel2,fmtHelp(constDict[G2var],var))
+                    subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+                else:
+                    subSizer2.Add((-1,-1))
+                subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
+                try:
+                    value = G2py3.FormatValue(xyz)
+                except TypeError:
+                    value = str(xyz)            
+                subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+                subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
+                try:
+                    value = G2py3.FormatValue(val)
+                except TypeError:
+                    value = str(val)            
+                subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+        if 'G2OccVarList' in ISO:
+            deltaList = []
+            for gv,Ilbl in zip(ISO['G2OccVarList'],ISO['OccVarList']):
+                var = gv.varname()
+                albl = Ilbl[:Ilbl.rfind('_')]
+                #v = Ilbl[Ilbl.rfind('_')+1:]
+                pval = ISO['BaseOcc'][albl]
+                if var in parmDict:
+                    cval = parmDict[var][0]
+                else:
+                    dlg.EndModal(wx.ID_CANCEL)
+                    G2frame.ErrorDialog('Atom not found',"No value found for parameter "+str(var))
+                    return
+                deltaList.append(cval-pval)
+            modeVals = np.inner(ISO['Var2OccMatrix'],deltaList)
+            for lbl,xyz,var,val,G2var in zip(ISO['OccVarList'],deltaList,
+                                             ISO['OccModeList'],modeVals,ISO['G2OccModeList']):
+                if G2var in constDict:
+                    ch = G2gd.HelpButton(panel2,fmtHelp(constDict[G2var],var))
+                    subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+                else:
+                    subSizer2.Add((-1,-1))
+                subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
+                try:
+                    value = G2py3.FormatValue(xyz)
+                except TypeError:
+                    value = str(xyz)            
+                subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+                #subSizer.Add((10,-1))
+                subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
+                try:
+                    value = G2py3.FormatValue(val)
+                except TypeError:
+                    value = str(val)            
+                subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
+
         # finish up ScrolledPanel
         panel1.SetSizer(subSizer1)
         panel2.SetSizer(subSizer2)
@@ -1726,7 +1806,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         dlg.SetMinSize(dlg.GetSize())
         dlg.ShowModal()
         dlg.Destroy()
-        
         
     def OnReImport(event):
         generalData = data['General']

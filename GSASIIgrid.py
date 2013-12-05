@@ -1578,9 +1578,9 @@ class ShowLSParms(wx.Dialog):
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
         num = len(varyList)
         mainSizer.Add(wx.StaticText(self,wx.ID_ANY,'Number of refined variables: '+str(num)))
-        num = len(fullVaryList)
-        mainSizer.Add(wx.StaticText(self,wx.ID_ANY,'Number dependent and refined variables: '+str(num)))
-
+        if len(varyList) != len(fullVaryList):
+            num = len(fullVaryList) - len(varyList)
+            mainSizer.Add(wx.StaticText(self,wx.ID_ANY,' + '+str(num)+' parameters are varied via constraints'))
         subSizer = wx.FlexGridSizer(rows=len(parmDict)+1,cols=4,hgap=2,vgap=2)
         parmNames = parmDict.keys()
         parmNames.sort()
@@ -1623,7 +1623,7 @@ class ShowLSParms(wx.Dialog):
             mainSizer.Add(
                 wx.StaticText(self,wx.ID_ANY,
                           '"R" indicates a refined variable\n'+
-                          '"C" is generated from a constraint'
+                          '"C" indicates generated from a constraint'
                           ),
                 0, wx.ALL,0)
         # make OK button 

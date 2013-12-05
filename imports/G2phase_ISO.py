@@ -18,7 +18,7 @@ import GSASIIpy3 as G2p3
 import CifFile as cif # PyCifRW from James Hester
 
 class ISODISTORTPhaseReader(G2IO.ImportPhase):
-    varLookup = {'dx':'dAx','dy':'dAy','dz':'dAz'}
+    varLookup = {'dx':'dAx','dy':'dAy','dz':'dAz','do':'Afrac'}
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
             extensionlist=('.CIF','.cif','.txt'),
@@ -198,123 +198,236 @@ class ISODISTORTPhaseReader(G2IO.ImportPhase):
                     name = blknm
                 self.Phase['General']['Name'] = name.strip()[:20]
                 #----------------------------------------------------------------------
-                # now read in the ISODISTORT modes
+                # now read in the ISODISTORT displacement modes
                 #----------------------------------------------------------------------
-                modelist = []
-                shortmodelist = []
-                for lbl in blk.get('_iso_displacivemode_label'):
-                    modelist.append(lbl)
-                    # assume lbl is of form SSSSS[x,y,z]AAAA(a,b,...)BBBBB
-                    # where SSSSS is the parent spacegroup, [x,y,z] is a location 
-                    regexp = re.match(r'.*?\[.*?\](.*?)\(.*?\)(.*)',lbl)
-                    # this extracts the AAAAA and BBBBB parts of the string
-                    if regexp:
-                        lbl = regexp.expand(r'\1\2') # parse succeeded, make a short version
-                    G2obj.MakeUniqueLabel(lbl,shortmodelist) # make unique and add to list
-                    
-                # read in the coordinate offset variables names and map them to G2 names/objects
-                coordVarLbl = []
-                G2varLbl = []
-                G2varObj = []
-                error = False
-                for lbl in blk.get('_iso_deltacoordinate_label'):
-                    coordVarLbl.append(lbl)
-                    if '_' in lbl:
-                        albl = lbl[:lbl.rfind('_')]
-                        vlbl = lbl[lbl.rfind('_')+1:]
-                    else:
-                        self.warnings += ' ERROR: _iso_deltacoordinate_label not parsed: '+lbl
-                        error = True
-                        continue
-                    if albl not in atomlbllist:
-                        self.warnings += ' ERROR: _iso_deltacoordinate_label atom not found: '+lbl
-                        error = True
-                        continue
-                    else:
-                        anum = atomlbllist.index(albl)
-                    var = self.varLookup.get(vlbl)
-                    if not var:
-                        self.warnings += ' ERROR: _iso_deltacoordinate_label variable not found: '+lbl
-                        error = True
-                        continue
-                    G2varLbl.append('::'+var+':'+str(anum)) # variable name, less phase ID
-                    G2varObj.append(G2obj.G2VarObj(
-                        (self.Phase['ranId'],None,var,ranIdlookup[albl])
-                        ))
-                if error:
-                    raise Exception,"Error decoding variable labels"
-                    
-                if len(G2varObj) != len(modelist):
-                    print "non-square input"
-                    raise Exception,"Rank of _iso_displacivemode != _iso_deltacoordinate"
-                
-                error = False
-                ParentCoordinates = {}
-                for lbl,exp in zip(
-                    blk.get('_iso_coordinate_label'),
-                    blk.get('_iso_coordinate_formula'),
-                    ):
-                    if '_' in lbl:
-                        albl = lbl[:lbl.rfind('_')]
-                        vlbl = lbl[lbl.rfind('_')+1:]
-                    else:
-                        self.warnings += ' ERROR: _iso_coordinate_label not parsed: '+lbl
-                        error = True
-                        continue
-                    if vlbl not in 'xyz' or len(vlbl) != 1:
-                        self.warnings += ' ERROR: _iso_coordinate_label coordinate not parsed: '+lbl
-                        error = True
-                        continue
-                    i = 'xyz'.index(vlbl)
-                    if not ParentCoordinates.get(albl):
-                        ParentCoordinates[albl] = [None,None,None]
-                    if '+' in exp:
-                        val = exp.split('+')[0].strip()
-                    else:
-                        self.warnings += ' ERROR: _iso_coordinate_formula not parsed: '+lbl
-                        error = True
-                        continue
-                    val = G2p3.FormulaEval(val)
-                    if val is None:
-                        self.warnings += ' ERROR: _iso_coordinate_formula coordinate not interpreted: '+lbl
-                        error = True
-                        continue
-                    ParentCoordinates[albl][i] = val
-                if error:
-                    raise Exception,"Error decoding variable labels"
-                # get mapping of modes to atomic coordinate displacements
-                displacivemodematrix = np.zeros((len(G2varObj),len(G2varObj)))
-                for row,col,val in zip(
-                    blk.get('_iso_displacivemodematrix_row'),
-                    blk.get('_iso_displacivemodematrix_col'),
-                    blk.get('_iso_displacivemodematrix_value'),):
-                    displacivemodematrix[int(row)-1,int(col)-1] = float(val)
-                # Invert to get mapping of atom displacements to modes
-                displacivemodeInvmatrix = np.linalg.inv(displacivemodematrix)
-                # create the constraints
                 self.Constraints = []
-                for i,row in enumerate(displacivemodeInvmatrix):
-                    constraint = []
-                    for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
-                        if k == 0: continue
-                        constraint.append([k,G2varObj[j]])
-                    constraint += [shortmodelist[i],False,'f']
-                    self.Constraints.append(constraint)
-                # save the ISODISTORT info for "mode analysis"
-                self.Phase['ISODISTORT'] = {
-                    'IsoModeList' : modelist,
-                    'G2ModeList' : shortmodelist,
-                    'IsoVarList' : coordVarLbl,
-                    'G2VarList' : G2varObj,
-                    'ParentStructure' : ParentCoordinates,
-                    'Var2ModeMatrix' : displacivemodeInvmatrix,
-                    'Mode2VarMatrix' : displacivemodematrix,
-                    }
-                # make explaination dictionary
                 explaination = {}
-                for mode,shortmode in zip(modelist,shortmodelist):
-                    explaination[shortmode] = "ISODISTORT full name "+str(mode)
-                self.Constraints.append(explaination)
+                if blk.get('_iso_displacivemode_label'):
+                    modelist = []
+                    shortmodelist = []
+                    for lbl in blk.get('_iso_displacivemode_label'):
+                        modelist.append(lbl)
+                        # assume lbl is of form SSSSS[x,y,z]AAAA(a,b,...)BBBBB
+                        # where SSSSS is the parent spacegroup, [x,y,z] is a location 
+                        regexp = re.match(r'.*?\[.*?\](.*?)\(.*?\)(.*)',lbl)
+                        # this extracts the AAAAA and BBBBB parts of the string
+                        if regexp:
+                            lbl = regexp.expand(r'\1\2') # parse succeeded, make a short version
+                        G2obj.MakeUniqueLabel(lbl,shortmodelist) # make unique and add to list
+                    # read in the coordinate offset variables names and map them to G2 names/objects
+                    coordVarLbl = []
+                    G2varLbl = []
+                    G2varObj = []
+                    error = False
+                    for lbl in blk.get('_iso_deltacoordinate_label'):
+                        coordVarLbl.append(lbl)
+                        if '_' in lbl:
+                            albl = lbl[:lbl.rfind('_')]
+                            vlbl = lbl[lbl.rfind('_')+1:]
+                        else:
+                            self.warnings += ' ERROR: _iso_deltacoordinate_label not parsed: '+lbl
+                            error = True
+                            continue
+                        if albl not in atomlbllist:
+                            self.warnings += ' ERROR: _iso_deltacoordinate_label atom not found: '+lbl
+                            error = True
+                            continue
+                        else:
+                            anum = atomlbllist.index(albl)
+                        var = self.varLookup.get(vlbl)
+                        if not var:
+                            self.warnings += ' ERROR: _iso_deltacoordinate_label variable not found: '+lbl
+                            error = True
+                            continue
+                        G2varLbl.append('::'+var+':'+str(anum)) # variable name, less phase ID
+                        G2varObj.append(G2obj.G2VarObj(
+                            (self.Phase['ranId'],None,var,ranIdlookup[albl])
+                            ))
+                    if error:
+                        raise Exception,"Error decoding variable labels"
+
+                    if len(G2varObj) != len(modelist):
+                        print "non-square input"
+                        raise Exception,"Rank of _iso_displacivemode != _iso_deltacoordinate"
+
+                    error = False
+                    ParentCoordinates = {}
+                    for lbl,exp in zip(
+                        blk.get('_iso_coordinate_label'),
+                        blk.get('_iso_coordinate_formula'),
+                        ):
+                        if '_' in lbl:
+                            albl = lbl[:lbl.rfind('_')]
+                            vlbl = lbl[lbl.rfind('_')+1:]
+                        else:
+                            self.warnings += ' ERROR: _iso_coordinate_label not parsed: '+lbl
+                            error = True
+                            continue
+                        if vlbl not in 'xyz' or len(vlbl) != 1:
+                            self.warnings += ' ERROR: _iso_coordinate_label coordinate not parsed: '+lbl
+                            error = True
+                            continue
+                        i = 'xyz'.index(vlbl)
+                        if not ParentCoordinates.get(albl):
+                            ParentCoordinates[albl] = [None,None,None]
+                        if '+' in exp:
+                            val = exp.split('+')[0].strip()
+                            val = G2p3.FormulaEval(val)
+                            if val is None:
+                                self.warnings += ' ERROR: _iso_coordinate_formula coordinate not interpreted: '+lbl
+                                error = True
+                                continue
+                        ParentCoordinates[albl][i] = val
+                    if error:
+                        print self.warnings
+                        raise Exception,"Error decoding variable labels"
+                    # get mapping of modes to atomic coordinate displacements
+                    displacivemodematrix = np.zeros((len(G2varObj),len(G2varObj)))
+                    for row,col,val in zip(
+                        blk.get('_iso_displacivemodematrix_row'),
+                        blk.get('_iso_displacivemodematrix_col'),
+                        blk.get('_iso_displacivemodematrix_value'),):
+                        displacivemodematrix[int(row)-1,int(col)-1] = float(val)
+                    # Invert to get mapping of atom displacements to modes
+                    displacivemodeInvmatrix = np.linalg.inv(displacivemodematrix)
+                    # create the constraints
+                    for i,row in enumerate(displacivemodeInvmatrix):
+                        constraint = []
+                        for j,(lbl,k) in enumerate(zip(coordVarLbl,row)):
+                            if k == 0: continue
+                            constraint.append([k,G2varObj[j]])
+                        constraint += [shortmodelist[i],False,'f']
+                        self.Constraints.append(constraint)
+                    #----------------------------------------------------------------------
+                    # save the ISODISTORT info for "mode analysis"
+                    if 'ISODISTORT' not in self.Phase: self.Phase['ISODISTORT'] = {}
+                    self.Phase['ISODISTORT'].update({
+                        'IsoModeList' : modelist,
+                        'G2ModeList' : shortmodelist,
+                        'IsoVarList' : coordVarLbl,
+                        'G2VarList' : G2varObj,
+                        'ParentStructure' : ParentCoordinates,
+                        'Var2ModeMatrix' : displacivemodeInvmatrix,
+                        'Mode2VarMatrix' : displacivemodematrix,
+                        })
+                    # make explaination dictionary
+                    for mode,shortmode in zip(modelist,shortmodelist):
+                        explaination[shortmode] = "ISODISTORT full name "+str(mode)
+                #----------------------------------------------------------------------
+                # now read in the ISODISTORT occupancy modes
+                #----------------------------------------------------------------------
+                if blk.get('_iso_occupancymode_label'):
+                    modelist = []
+                    shortmodelist = []
+                    for lbl in blk.get('_iso_occupancymode_label'):
+                        modelist.append(lbl)
+                        # assume lbl is of form SSSSS[x,y,z]AAAA(a,b,...)BBBBB
+                        # where SSSSS is the parent spacegroup, [x,y,z] is a location 
+                        regexp = re.match(r'.*?\[.*?\](.*?)\(.*?\)(.*)',lbl)
+                        # this extracts the AAAAA and BBBBB parts of the string
+                        if regexp:
+                            lbl = regexp.expand(r'\1\2') # parse succeeded, make a short version
+                        lbl = lbl.replace('order','o')
+                        G2obj.MakeUniqueLabel(lbl,shortmodelist) # make unique and add to list
+                    # read in the coordinate offset variables names and map them to G2 names/objects
+                    occVarLbl = []
+                    G2varLbl = []
+                    G2varObj = []
+                    error = False
+                    for lbl in blk.get('_iso_deltaoccupancy_label'):
+                        occVarLbl.append(lbl)
+                        if '_' in lbl:
+                            albl = lbl[:lbl.rfind('_')]
+                            vlbl = lbl[lbl.rfind('_')+1:]
+                        else:
+                            self.warnings += ' ERROR: _iso_deltaoccupancy_label not parsed: '+lbl
+                            error = True
+                            continue
+                        if albl not in atomlbllist:
+                            self.warnings += ' ERROR: _iso_deltaoccupancy_label atom not found: '+lbl
+                            error = True
+                            continue
+                        else:
+                            anum = atomlbllist.index(albl)
+                        var = self.varLookup.get(vlbl)
+                        if not var:
+                            self.warnings += ' ERROR: _iso_deltaoccupancy_label variable not found: '+lbl
+                            error = True
+                            continue
+                        G2varLbl.append('::'+var+':'+str(anum)) # variable name, less phase ID
+                        G2varObj.append(G2obj.G2VarObj(
+                            (self.Phase['ranId'],None,var,ranIdlookup[albl])
+                            ))
+                    if error:
+                        raise Exception,"Error decoding variable labels"
+
+                    if len(G2varObj) != len(modelist):
+                        print "non-square input"
+                        raise Exception,"Rank of _iso_occupancymode != _iso_deltaoccupancy"
+
+                    error = False
+                    ParentCoordinates = {}
+                    for lbl,exp in zip(
+                        blk.get('_iso_occupancy_label'),
+                        blk.get('_iso_occupancy_formula'),
+                        ):
+                        if '_' in lbl:
+                            albl = lbl[:lbl.rfind('_')]
+                            vlbl = lbl[lbl.rfind('_')+1:]
+                        else:
+                            self.warnings += ' ERROR: _iso_occupancy_label not parsed: '+lbl
+                            error = True
+                            continue
+                        if vlbl != 'occ':
+                            self.warnings += ' ERROR: _iso_occupancy_label coordinate not parsed: '+lbl
+                            error = True
+                            continue
+                        if '+' in exp:
+                            val = exp.split('+')[0].strip()
+                            val = G2p3.FormulaEval(val)
+                            if val is None:
+                                self.warnings += ' ERROR: _iso_occupancy_formula coordinate not interpreted: '+lbl
+                                error = True
+                                continue
+                            ParentCoordinates[albl] = val
+                    if error:
+                        raise Exception,"Error decoding occupancy labels"
+                    # get mapping of modes to atomic coordinate displacements
+                    occupancymodematrix = np.zeros((len(G2varObj),len(G2varObj)))
+                    for row,col,val in zip(
+                        blk.get('_iso_occupancymodematrix_row'),
+                        blk.get('_iso_occupancymodematrix_col'),
+                        blk.get('_iso_occupancymodematrix_value'),):
+                        occupancymodematrix[int(row)-1,int(col)-1] = float(val)
+                    # Invert to get mapping of atom displacements to modes
+                    occupancymodeInvmatrix = np.linalg.inv(occupancymodematrix)
+                    # create the constraints
+                    for i,row in enumerate(occupancymodeInvmatrix):
+                        constraint = []
+                        for j,(lbl,k) in enumerate(zip(occVarLbl,row)):
+                            if k == 0: continue
+                            constraint.append([k,G2varObj[j]])
+                        constraint += [shortmodelist[i],False,'f']
+                        self.Constraints.append(constraint)
+                    #----------------------------------------------------------------------
+                    # save the ISODISTORT info for "mode analysis"
+                    if 'ISODISTORT' not in self.Phase: self.Phase['ISODISTORT'] = {}
+                    self.Phase['ISODISTORT'].update({
+                        'OccModeList' : modelist,
+                        'G2OccModeList' : shortmodelist,
+                        'OccVarList' : occVarLbl,
+                        'G2OccVarList' : G2varObj,
+                        'BaseOcc' : ParentCoordinates,
+                        'Var2OccMatrix' : occupancymodeInvmatrix,
+                        'Occ2VarMatrix' : occupancymodematrix,
+                        })
+                    # make explaination dictionary
+                    for mode,shortmode in zip(modelist,shortmodelist):
+                        explaination[shortmode] = "ISODISTORT full name "+str(mode)
+                #----------------------------------------------------------------------
+                # done with read
+                #----------------------------------------------------------------------
+                if explaination: self.Constraints.append(explaination)
 
                 # # debug: show the mode var to mode relations
                 # for i,row in enumerate(displacivemodeInvmatrix):

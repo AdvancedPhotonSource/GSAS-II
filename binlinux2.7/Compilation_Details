@@ -1,0 +1,3 @@
+Created with Ubuntu 12.04 - 32bin (in parallels)
+gfortran/gcc version 4.6.3 (Ubuntu/Linaro 4.6.3-1ubuntu5)
+will need to install libgfortran3 

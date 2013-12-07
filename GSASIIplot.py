@@ -2322,18 +2322,15 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         Data['IOtth'][1] = tth
                     elif 'line3' in itemPicked:
                         Data['LRazimuth'][0] = int(azm)
-                        if Data['fullIntegrate']:
-                            Data['LRazimuth'][1] = Data['LRazimuth'][0]+360
                     elif 'line4' in itemPicked and not Data['fullIntegrate']:
                         Data['LRazimuth'][1] = int(azm)
-                        
+                    
+                    Data['LRazimuth'][0] %= 360
+                    Data['LRazimuth'][1] %= 360
                     if Data['LRazimuth'][0] > Data['LRazimuth'][1]:
-                        Data['LRazimuth'][0] -= 360
-                        
-                    azLim = np.array(Data['LRazimuth'])    
-                    if np.any(azLim>360):
-                        azLim -= 360
-                        Data['LRazimuth'] = list(azLim)
+                        Data['LRazimuth'][1] += 360                        
+                    if Data['fullIntegrate']:
+                        Data['LRazimuth'][1] = Data['LRazimuth'][0]+360
                         
                     if  Data['IOtth'][0] > Data['IOtth'][1]:
                         Data['IOtth'][0],Data['IOtth'][1] = Data['IOtth'][1],Data['IOtth'][0]
@@ -2493,17 +2490,23 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if ellI:
                 xyI = []
                 for azm in Azm:
-                    xyI.append(G2img.GetDetectorXY(dspI,azm,Data))      #what about hyperbola?
-                xyI = np.array(xyI)
-                arcxI,arcyI = xyI.T
-                Plot.plot(arcxI,arcyI,picker=3)
+                    xy = G2img.GetDetectorXY(dspI,azm,Data)
+                    if np.any(xy):
+                        xyI.append(xy)
+                if len(xyI):
+                    xyI = np.array(xyI)
+                    arcxI,arcyI = xyI.T
+                    Plot.plot(arcxI,arcyI,picker=3)
             if ellO:
                 xyO = []
                 for azm in Azm:
-                    xyO.append(G2img.GetDetectorXY(dspO,azm,Data))      #what about hyperbola?
-                xyO = np.array(xyO)
-                arcxO,arcyO = xyO.T
-                Plot.plot(arcxO,arcyO,picker=3)
+                    xy = G2img.GetDetectorXY(dspO,azm,Data)
+                    if np.any(xy):
+                        xyO.append(xy)
+                if len(xyO):
+                    xyO = np.array(xyO)
+                    arcxO,arcyO = xyO.T                
+                    Plot.plot(arcxO,arcyO,picker=3)
             if ellO and ellI:
                 Plot.plot([arcxI[0],arcxO[0]],[arcyI[0],arcyO[0]],picker=3)
                 Plot.plot([arcxI[-1],arcxO[-1]],[arcyI[-1],arcyO[-1]],picker=3)

@@ -463,12 +463,14 @@ def UpdateImageControls(G2frame,data,masks):
             G2plt.PlotExposedImage(G2frame,event=event)
         
         def OnLRazim(event):
-            Lazm =int(G2frame.Lazim.GetValue())
-            if data['fullIntegrate']:
-               G2frame.Razim.SetValue("%6d" % (Lazm+360))
-            Razm = int(G2frame.Razim.GetValue())
+            Lazm = int(G2frame.Lazim.GetValue())%360
+            Razm = int(G2frame.Razim.GetValue())%360
             if Lazm > Razm:
-                Lazm -= 360
+                Razm += 360
+            if data['fullIntegrate']:
+                Razm = Lazm+360
+            G2frame.Lazim.SetValue("%6d" % (Lazm))
+            G2frame.Razim.SetValue("%6d" % (Razm))
             data['LRazimuth'] = [Lazm,Razm]
             G2plt.PlotExposedImage(G2frame,event=event)
         

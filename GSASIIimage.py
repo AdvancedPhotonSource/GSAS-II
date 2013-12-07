@@ -201,11 +201,12 @@ def FitDetector(rings,varyList,parmDict,Print=True):
         R0 = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
         R1 = (vplus+vminus)/2.                                    #major axis
         zdis = (fplus-fminus)/2.
-        X = x-x0-zdis*npsind(phi)
+        X = x-x0-zdis*npsind(phi)       #shift obsd. ellipses to ellipse center= 0,0
         Y = y-y0-zdis*npcosd(phi)
-        XR = X*npcosd(phi)+Y*npsind(phi)
-        YR = X*npsind(phi)+Y*npcosd(phi)
-        return (XR/R0)**2+(YR/R1)**2-1
+        XR = X*npcosd(phi)+Y*npsind(phi)    #rotate by phi to put major axis along x 
+        YR = -X*npsind(phi)+Y*npcosd(phi)
+        M = (XR/R0)**2+(YR/R1)**2-1         #=0 for all points exactly on ellipse
+        return M
         
     names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
     fmt = ['%12.2f','%12.2f','%12.2f','%12.2f','%12.2f','%12.3f','%12.5f']
@@ -298,7 +299,7 @@ def GetEllipse2(tth,dxy,dist,cent,tilt,phi):
     tbp = tand((tth+tilt)/2.)
     sinb = sind(tilt)
     d = dist+dxy
-    if tth+tilt < 90.:      #ellipse
+    if tth+abs(tilt) < 90.:      #ellipse
         fplus = d*tanb*stth/(cosb+stth)
         fminus = d*tanb*stth/(cosb-stth)
         vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
@@ -333,54 +334,41 @@ def GetEllipse(dsp,data):
 def GetDetectorXY(dsp,azm,data):
     'Needs a doc string'
     
-    from scipy.optimize import fsolve
-    def ellip(xy,*args):
-        azm,phi,R0,R1,A,B = args
-        cp = cosd(phi)
-        sp = sind(phi)
-        x,y = xy
-        out = []
-        out.append(y-x*tand(azm))
-        out.append(R0**2*((x+A)*sp-(y+B)*cp)**2+R1**2*((x+A)*cp+(y+B)*sp)**2-(R0*R1)**2)
-        return out
-    def hyperb(xy,*args):
-        azm,phi,R0,R1,A,B = args
-        cp = cosd(phi)
-        sp = sind(phi)
-        x,y = xy
-        out = []
-        out.append(y+x*tand(azm))
-        out.append(R0**2*((x+A)*sp-(y+B)*cp)**2-R1**2*((x+A)*cp+(y+B)*sp)**2-(R0*R1)**2)
-        return out                
     elcent,phi,radii = GetEllipse(dsp,data)
-    cent = data['center']
-    phi = data['rotation']
-    wave = data['wavelength']
+    phi = data['rotation']-90.          #to give rotation of major axis
     tilt = data['tilt']
-    dist = data['distance']/cosd(tilt)
-    dep = data['DetDepth']
-    tth = 2.0*asind(wave/(2.*dsp))
-    dxy = peneCorr(tth,dep)
+    dist = data['distance']
+    cent = data['center']
+    tth = 2.0*asind(data['wavelength']/(2.*dsp))
     ttth = tand(tth)
-    radius = (dist+dxy)*ttth
     stth = sind(tth)
+    ctth = cosd(tth)
+    sinb = sind(tilt)
     cosb = cosd(tilt)
-    if tth+abs(tilt) < 90.:
-        R1 = (dist+dxy)*stth*cosd(tth)*cosb/(cosb**2-stth**2)
-        R0 = math.sqrt(R1*radius*cosb)
-        zdis = R1*ttth*tand(tilt)
-        A = zdis*sind(phi)
-        B = -zdis*cosd(phi)
-        xy0 = [radius*cosd(azm),radius*sind(azm)]
-        xy = fsolve(ellip,xy0,args=(azm,phi,R0,R1,A,B))+cent
-    else:
-        R1 = (dist+dxy)*stth*cosd(tth)*cosb/(cosb**2+stth**2)
-        R0 = math.sqrt(R1*radius*cosb)
-        zdis = R1*ttth*tand(tilt)
-        A = zdis*sind(phi)
-        B = -zdis*cosd(phi)
-        xy0 = [radius*cosd(azm),radius*sind(azm)]
-        xy = fsolve(hyperb,xy0,args=(azm,phi,R0,R1,A,B))+cent
+    tanb = tand(tilt)
+    if radii[0] > 0.:
+        fplus = dist*tanb*stth/(cosb+stth)
+        fminus = dist*tanb*stth/(cosb-stth)
+        zdis = 0.
+        if tilt:
+            zdis = tilt*(fplus-fminus)/(2.*abs(tilt))
+        rsqplus = radii[0]**2+radii[1]**2
+        rsqminus = radii[0]**2-radii[1]**2
+        R = rsqminus*cosd(2.*azm-2.*phi)+rsqplus
+        Q = np.sqrt(2.)*radii[0]*radii[1]*np.sqrt(R-2.*zdis**2*sind(azm)**2)
+        P = zdis*(rsqminus*cosd(azm-2.*phi)+rsqplus*cosd(azm))
+        radius = (P+Q)/R
+        xy = np.array([radius*cosd(azm),radius*sind(azm)])
+        xy += cent
+    else:   #hyperbola - both branches (one is way off screen!)
+        f = dist*tanb*stth/(cosb+stth)
+        v = dist*(tanb+tand(tth-tilt))
+        delt = dist*stth*(1+stth*cosb)/(sinb*cosb*(stth+cosb))
+        ecc = (v-f)/(delt-v)
+        R = radii[1]*(ecc**2-1)/(1-ecc*cosd(azm))
+        xy = [R*cosd(azm)-f,R*sind(azm)]
+        xy = -np.array([xy[0]*cosd(phi)-xy[1]*sind(phi),xy[0]*sind(phi)+xy[1]*cosd(phi)])
+        xy += cent
     return xy
     
 def GetDetXYfromThAzm(Th,Azm,data):
@@ -408,7 +396,7 @@ def GetTthAzmDsp(x,y,data):
     DX = dist-Z+dxy
     DY = np.sqrt(dx**2+dy**2-Z**2)
     D = (DX**2+DY**2)/dist**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    tth = npatand(DY/DX) #depth corr not correct for tilted detector
+    tth = npatan2d(DY,DX) #depth corr not correct for tilted detector
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dy,dx)+azmthoff+720.)%360.
     return tth,azm,D,dsp
@@ -636,33 +624,39 @@ def ImageCalibrate(self,data):
     if not tilt:
         print 'WARNING - selected ring was fitted as a circle'
         print ' - if detector was tilted we suggest you skip this ring - WARNING'
+        tilt = 0.01
 #1st estimate of dist: sample to detector normal to plane
     data['distance'] = dist = radii[0]**2/(ttth*radii[1])
 #ellipse to cone axis (x-ray beam); 2 choices depending on sign of tilt
     zdisp = radii[1]*ttth*tand(tilt)
     zdism = radii[1]*ttth*tand(-tilt)
+    print 'zdis',zdisp,zdism
 #cone axis position; 2 choices. Which is right?
     centp = [elcent[0]+zdisp*sind(phi),elcent[1]+zdisp*cosd(phi)]
     centm = [elcent[0]+zdism*sind(phi),elcent[1]+zdism*cosd(phi)]
+    print 'cent',centp,centm
 #check get same ellipse parms either way
 #now do next ring; estimate either way & check sum of Imax/Imin in 3x3 block around each point
     dsp = HKL[1][3]
     tth = 2.0*asind(wave/(2.*dsp))
     ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
-    Ringp,delt,sumIp = makeRing(dsp,ellipsep,2,cutoff,scalex,scaley,self.ImageZ)
+#    data['ellipses'].append(copy.deepcopy(ellipsep+('g',)))
+    Ringp,delt,sumIp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,self.ImageZ)
     if len(Ringp) > 10:
         outEp,errp = FitRing(Ringp,True)
     else:
         errp = 1e6
-#    print '+',ellipsep,errp
+    print '+',sumIp,errp
     ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
-    Ringm,delt,sumIm = makeRing(dsp,ellipsem,2,cutoff,scalex,scaley,self.ImageZ)
+#    data['ellipses'].append(copy.deepcopy(ellipsem+('r',)))
+    Ringm,delt,sumIm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,self.ImageZ)
     if len(Ringm) > 10:
         outEm,errm = FitRing(Ringm,True)
     else:
         errm = 1e6
-#    print '-',ellipsem,errm
-    if errp < errm:
+    print '-',sumIm,errm
+#    if errp < errm:
+    if sumIp > sumIm:
         data['tilt'] = tilt
         data['center'] = centp
         negTilt = 1

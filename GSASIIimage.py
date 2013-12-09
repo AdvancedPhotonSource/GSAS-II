@@ -280,8 +280,8 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
                 ring.append([X,Y,dsp])
     delt = amax-amin
     if len(ring) < 10:             #want more than 10 deg
-        return [],(delt > 90),0
-    return ring,(delt > 90),sumI/len(ring)
+        return [],(delt > 90)
+    return ring,(delt > 90)
     
 def GetEllipse2(tth,dxy,dist,cent,tilt,phi):
     '''uses Dandelin spheres to find ellipse or hyperbola parameters from detector geometry
@@ -524,7 +524,7 @@ def ImageRecalibrate(self,data,masks):
             print 'next line is a hyperbola - search stopped'
             break
         ellipse = GetEllipse(dsp,data)
-        Ring,delt,sumI = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(self.ImageZ,mask=tam))
+        Ring,delt = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(self.ImageZ,mask=tam))
         if Ring:
             if iH >= skip:
                 data['rings'].append(np.array(Ring))
@@ -581,10 +581,10 @@ def ImageCalibrate(self,data):
         return False
         
     #setup 360 points on that ring for "good" fit
-    Ring,delt,sumI = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
+    Ring,delt = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
     if Ring:
         ellipse,err = FitRing(Ring,delt)
-        Ring,delt,sumI = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)    #do again
+        Ring,delt = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)    #do again
         ellipse,err = FitRing(Ring,delt)
     else:
         print '1st ring not sufficiently complete to proceed'
@@ -616,6 +616,7 @@ def ImageCalibrate(self,data):
     elcent,phi,radii = ellipse              #from fit of 1st ring
     dsp = HKL[0][3]
     tth = 2.0*asind(wave/(2.*dsp))
+    Ring0 = makeRing(dsp,ellipse,3,cutoff,scalex,scaley,self.ImageZ)[0]
     ttth = nptand(tth)
     stth = npsind(tth)
     ctth = npcosd(tth)
@@ -630,46 +631,42 @@ def ImageCalibrate(self,data):
 #ellipse to cone axis (x-ray beam); 2 choices depending on sign of tilt
     zdisp = radii[1]*ttth*tand(tilt)
     zdism = radii[1]*ttth*tand(-tilt)
-    print 'zdis',zdisp,zdism
 #cone axis position; 2 choices. Which is right?
     centp = [elcent[0]+zdisp*sind(phi),elcent[1]+zdisp*cosd(phi)]
     centm = [elcent[0]+zdism*sind(phi),elcent[1]+zdism*cosd(phi)]
-    print 'cent',centp,centm
 #check get same ellipse parms either way
-#now do next ring; estimate either way & check sum of Imax/Imin in 3x3 block around each point
+#now do next ring; estimate either way & do a FitDetector each way; best fit is correct one
     dsp = HKL[1][3]
     tth = 2.0*asind(wave/(2.*dsp))
     ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
-#    data['ellipses'].append(copy.deepcopy(ellipsep+('g',)))
-    Ringp,delt,sumIp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,self.ImageZ)
-    if len(Ringp) > 10:
-        outEp,errp = FitRing(Ringp,True)
-    else:
-        errp = 1e6
-    print '+',sumIp,errp
     ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
-#    data['ellipses'].append(copy.deepcopy(ellipsem+('r',)))
-    Ringm,delt,sumIm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,self.ImageZ)
-    if len(Ringm) > 10:
-        outEm,errm = FitRing(Ringm,True)
+    Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,self.ImageZ)[0]
+    Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,self.ImageZ)[0]
+    parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
+        'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}
+    varyList = ['dist','det-X','det-Y','tilt','phi']
+    if len(Ringp) > 10:
+        chip,chisqp = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,False)
     else:
-        errm = 1e6
-    print '-',sumIm,errm
-#    if errp < errm:
-    if sumIp > sumIm:
+        chip = 1e6
+    if len(Ringm) > 10:
+        parmDict['tilt'] *= -1
+        chim,chisqm = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,False)
+    else:
+        chim = 1e6
+    if chip < chim:
         data['tilt'] = tilt
         data['center'] = centp
-        negTilt = 1
     else:
         data['tilt'] = -tilt
         data['center'] = centm
-        negTilt = -1
     data['rotation'] = phi
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     varyList = ['dist','det-X','det-Y','tilt','phi']
     if data['DetDepthRef']:
         varyList.append('dep')
+    data['rings'] = []
     for i,H in enumerate(HKL):
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
@@ -680,7 +677,7 @@ def ImageCalibrate(self,data):
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
         data['ellipses'].append(copy.deepcopy(ellipse+('g',)))
         print fmt%('predicted ellipse:',elcent[0],elcent[1],phi,radii[0],radii[1])
-        Ring,delt,sumI = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
+        Ring,delt = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
         if Ring:
             data['rings'].append(np.array(Ring))
             rings = np.concatenate((data['rings']),axis=0)
@@ -688,8 +685,11 @@ def ImageCalibrate(self,data):
                 chi,chisq = FitDetector(rings,varyList,parmDict,False)
                 data['distance'] = parmDict['dist']
                 data['center'] = [parmDict['det-X'],parmDict['det-Y']]
-                data['rotation'] = np.mod(parmDict['phi'],360.0)
+                data['rotation'] = np.mod(parmDict['phi']+720.,360.0)
                 data['tilt'] = parmDict['tilt']
+                if data['rotation'] >180.:
+                    data['rotation'] -= 180.
+                    data['tilt'] *= -1.
                 data['DetDepth'] = parmDict['dep']
                 elcent,phi,radii = ellipse = GetEllipse(dsp,data)
                 print fmt2%('fitted ellipse:   ',elcent[0],elcent[1],phi,radii[0],radii[1],chisq,len(rings))
@@ -706,8 +706,11 @@ def ImageCalibrate(self,data):
         FitDetector(rings,varyList,parmDict)
         data['distance'] = parmDict['dist']
         data['center'] = [parmDict['det-X'],parmDict['det-Y']]
-        data['rotation'] = np.mod(parmDict['phi'],360.0)
+        data['rotation'] = np.mod(parmDict['phi']+720.,360.0)
         data['tilt'] = parmDict['tilt']
+        if data['rotation'] >180.:
+            data['rotation'] -= 180.
+            data['tilt'] *= -1.
         data['DetDepth'] = parmDict['dep']
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
@@ -859,7 +862,7 @@ def FitStrSta(Image,StrSta,Controls,Masks):
 
     for ring in StrSta['d-zero']:       #get observed x,y,d points for the d-zeros
         ellipse = GetEllipse(ring['Dset'],StaControls)
-        Ring,delt,sumI = makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)
+        Ring,delt = makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)
         Ring = np.array(Ring).T
         ring['ImxyObs'] = np.array(Ring[:2])      #need to apply masks to this to eliminate bad points
         Ring[:2] = GetTthAzm(Ring[0],Ring[1],StaControls)       #convert x,y to tth,azm

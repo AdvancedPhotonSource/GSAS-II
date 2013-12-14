@@ -41,6 +41,7 @@ import os
 import os.path as ospath
 
 DEBUG = False       #=True for various prints
+TRANSP = False      #=true to transpose images for testing
 
 def sfloat(S):
     'Convert a string to float. An empty field is treated as zero'
@@ -184,9 +185,15 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
     elif ext == '.G2img':
         Comments,Data,Npix,Image = GetG2Image(imagefile)
     if imageOnly:
-        return Image
+        if TRANSP:
+            return Image.T
+        else:
+            return Image
     else:
-        return Comments,Data,Npix,Image
+        if TRANSP:
+            return Comments,Data,Npix,Image.T
+        else:
+            return Comments,Data,Npix,Image
         
 def PutG2Image(filename,Comments,Data,Npix,image):
     'Write an image as a python pickle'

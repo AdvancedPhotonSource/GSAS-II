@@ -246,8 +246,8 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
         a = 360.*i/C
         x = radii[0]*cosd(a)
         y = radii[1]*sind(a)
-        X = (cphi*x+sphi*y+cent[0])*scalex      #convert mm to pixels
-        Y = (-sphi*x+cphi*y+cent[1])*scaley
+        X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
+        Y = (sphi*x+cphi*y+cent[1])*scaley
         X,Y,I,J = ImageLocalMax(image,pix,X,Y)
         if I and J and I/J > reject:
             sumI += I/J
@@ -288,13 +288,16 @@ def GetEllipse2(tth,dxy,dist,cent,tilt,phi):
         radii[1] = (vplus+vminus)/2.                                    #major axis
         zdis = (fplus-fminus)/2.
     else:   #hyperbola!
-        f = d*tanb*stth/(cosb+stth)
-        v = d*(tanb+tand(tth-tilt))
-        delt = d*stth*(1+stth*cosb)/(sinb*cosb*(stth+cosb))
+        f = d*abs(tanb)*stth/(cosb+stth)
+        v = d*(abs(tanb)+tand(tth-abs(tilt)))
+        delt = d*stth*(1.+stth*cosb)/(abs(sinb)*cosb*(stth+cosb))
         eps = (v-f)/(delt-v)
         radii[0] = -eps*(delt-f)/np.sqrt(eps**2-1.)                     #-minor axis
         radii[1] = eps*(delt-f)/(eps**2-1.)                             #major axis
-        zdis = f+radii[1]*eps
+        if tilt > 0:
+            zdis = f+radii[1]*eps
+        else:
+            zdis = -f
 #NB: zdis is || to major axis & phi is rotation of minor axis
 #thus shift from beam to ellipse center is [Z*sin(phi),-Z*cos(phi)]
     elcent = [cent[0]+zdis*sind(phi),cent[1]-zdis*cosd(phi)]

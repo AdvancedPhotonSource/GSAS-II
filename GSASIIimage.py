@@ -328,10 +328,10 @@ def GetDetectorXY(dsp,azm,data):
     ttth = tand(tth)
     stth = sind(tth)
     ctth = cosd(tth)
-    sinb = sind(tilt)
     cosb = cosd(tilt)
-    tanb = tand(tilt)
     if radii[0] > 0.:
+        sinb = sind(tilt)
+        tanb = tand(tilt)
         fplus = dist*tanb*stth/(cosb+stth)
         fminus = dist*tanb*stth/(cosb-stth)
         zdis = (fplus-fminus)/2.
@@ -344,6 +344,8 @@ def GetDetectorXY(dsp,azm,data):
         xy = np.array([radius*cosd(azm),radius*sind(azm)])
         xy += cent
     else:   #hyperbola - both branches (one is way off screen!)
+        sinb = abs(sind(tilt))
+        tanb = abs(tand(tilt))
         f = dist*tanb*stth/(cosb+stth)
         v = dist*(tanb+tand(tth-abs(tilt)))
         delt = dist*stth*(1+stth*cosb)/(sinb*cosb*(stth+cosb))
@@ -355,7 +357,7 @@ def GetDetectorXY(dsp,azm,data):
         else:
             offset = -f
             xy = [-R*cosd(azm)-offset,-R*sind(azm)]
-        xy = -np.array([xy[0]*cosd(phi)-xy[1]*sind(phi),xy[0]*sind(phi)+xy[1]*cosd(phi)])
+        xy = -np.array([xy[0]*cosd(phi)+xy[1]*sind(phi),xy[0]*sind(phi)-xy[1]*cosd(phi)])
         xy += cent
     return xy
     

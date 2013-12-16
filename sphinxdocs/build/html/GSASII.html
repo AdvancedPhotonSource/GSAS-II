@@ -70,14 +70,8 @@
 </dd></dl>
 
 <dl class="class">
-<dt id="GSASII.GSASII.ConstraintDialog">
-<em class="property">class </em><tt class="descname">ConstraintDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>text</em>, <em>data</em>, <em>separator='*'</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ConstraintDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ConstraintDialog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Window to edit Constraint values</p>
-</dd></dl>
-
-<dl class="class">
 <dt id="GSASII.GSASII.CopyDialog">
-<em class="property">class </em><tt class="descclassname">GSASII.</tt><tt class="descname">CopyDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>text</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.CopyDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.CopyDialog" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descname">CopyDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>text</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.CopyDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.CopyDialog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a dialog for copying control settings between
 data tree items</p>
 </dd></dl>
@@ -126,6 +120,24 @@ from
 </dd></dl>
 
 <dl class="method">
+<dt id="GSASII.GSASII.GetHistogramNames">
+<tt class="descclassname">GSASII.</tt><tt class="descname">GetHistogramNames</tt><big>(</big><em>hType</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetHistogramNames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetHistogramNames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of histogram names found in the GSASII data tree
+Note routine <a class="reference internal" href="GSASIIstruc.html#GSASIIstrIO.GetHistogramNames" title="GSASIIstrIO.GetHistogramNames"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrIO.GetHistogramNames()</span></tt></a> also exists to
+get same info from GPX file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hType</strong> (<em>str</em>) &#8211; list of histogram types</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list of histogram names</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASII.GSASII.GetPWDRdatafromTree">
 <tt class="descclassname">GSASII.</tt><tt class="descname">GetPWDRdatafromTree</tt><big>(</big><em>PWDRname</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetPWDRdatafromTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetPWDRdatafromTree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns powder data from GSASII tree</p>
@@ -147,8 +159,17 @@ Sample Parameters</td>
 <dl class="method">
 <dt id="GSASII.GSASII.GetPhaseData">
 <tt class="descclassname">GSASII.</tt><tt class="descname">GetPhaseData</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetPhaseData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetPhaseData" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of defined phases. Used only in GSASIIgrid
-Note routine <tt class="xref py py-meth docutils literal"><span class="pre">GSASIIstruct.GetPhaseData()</span></tt> also exists.</p>
+<dd><p>Returns a dict with defined phases. 
+Note routine <a class="reference internal" href="GSASIIstruc.html#GSASIIstrIO.GetPhaseData" title="GSASIIstrIO.GetPhaseData"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrIO.GetPhaseData()</span></tt></a> also exists to
+get same info from GPX file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.GetPhaseNames">
+<tt class="descclassname">GSASII.</tt><tt class="descname">GetPhaseNames</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetPhaseNames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetPhaseNames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of defined phases. 
+Note routine <a class="reference internal" href="GSASIIstruc.html#GSASIIstrIO.GetPhaseNames" title="GSASIIstrIO.GetPhaseNames"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrIO.GetPhaseNames()</span></tt></a> also exists to
+get same info from GPX file.</p>
 </dd></dl>
 
 <dl class="method">
@@ -181,14 +202,45 @@ and the second used for future TOF datasets (timemaps?)</p>
 <dt id="GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree">
 <tt class="descclassname">GSASII.</tt><tt class="descname">GetUsedHistogramsAndPhasesfromTree</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetUsedHistogramsAndPhasesfromTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns all histograms that are found in any phase
-and any phase that uses a histogram
-:returns: two dicts:</p>
-<blockquote>
-<div><ul class="simple">
+and any phase that uses a histogram.
+This also assigns numbers to used phases and histograms by the
+order they appear in the file. 
+Note routine <tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrIO.GetUsedHistogramsAndPhasesfromTree()</span></tt> also exists to
+get same info from GPX file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">(Histograms,Phases)<ul class="simple">
 <li>Histograms = dictionary of histograms as {name:data,...}</li>
 <li>Phases = dictionary of phases that use histograms</li>
 </ul>
-</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.MakeLSParmDict">
+<tt class="descclassname">GSASII.</tt><tt class="descname">MakeLSParmDict</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.MakeLSParmDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.MakeLSParmDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load all parameters used for computation from the tree into a
+dict of paired values [value, refine flag]. Note that this is
+different than the parmDict used in the refinement, which only has
+values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">(parmDict,varyList) where:<ul class="simple">
+<li>parmDict is a dict with values and refinement flags
+for each parameter and</li>
+<li>varyList is a list of variables (refined parameters).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -267,11 +319,11 @@ File/Save as menu button</p>
 
 <dl class="method">
 <dt id="GSASII.GSASII.OnImportGeneric">
-<tt class="descclassname">GSASII.</tt><tt class="descname">OnImportGeneric</tt><big>(</big><em>reader</em>, <em>readerlist</em>, <em>label</em>, <em>multiple=False</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnImportGeneric"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnImportGeneric" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnImportGeneric</tt><big>(</big><em>reader</em>, <em>readerlist</em>, <em>label</em>, <em>multiple=False</em>, <em>usedRanIdList=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnImportGeneric"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnImportGeneric" title="Permalink to this definition">¶</a></dt>
 <dd><p>Used to import Phases, powder dataset or single
 crystal datasets (structure factor tables) using reader objects
-subclassed from GSASIIIO.ImportPhase, GSASIIIO.ImportStructFactor
-or GSASIIIO.ImportPowderData. If a reader is specified, only
+subclassed from <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPhase" title="GSASIIIO.ImportPhase"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPhase</span></tt></a>, <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportStructFactor" title="GSASIIIO.ImportStructFactor"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportStructFactor</span></tt></a>
+or <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPowderData" title="GSASIIIO.ImportPowderData"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPowderData</span></tt></a>. If a reader is specified, only
 that will be attempted, but if no reader is specified, every one
 that is potentially compatible (by file extension) will
 be tried on the selected file(s).</p>
@@ -294,6 +346,8 @@ Open <cite>label</cite> input file</li>
 <li><strong>multiple</strong> (<em>bool</em>) &#8211; True if multiple files can be selected
 in the file dialog. False is default. At present True is used
 only for reading of powder data.</li>
+<li><strong>usedRanIdList</strong> (<em>list</em>) &#8211; an optional list of random Ids that 
+have been used and should not be reused</li>
 </ul>
 </td>
 </tr>
@@ -420,13 +474,6 @@ Called from the Calculate/Sequential refine menu.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="GSASII.GSASII.OnViewLSParms">
-<tt class="descclassname">GSASII.</tt><tt class="descname">OnViewLSParms</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnViewLSParms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnViewLSParms" title="Permalink to this definition">¶</a></dt>
-<dd><p>Displays a window showing all parameters in the refinement.
-Called from the Calculate/View LS Parms menu.</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="GSASII.GSASII.ReadPowderInstprm">
 <tt class="descclassname">GSASII.</tt><tt class="descname">ReadPowderInstprm</tt><big>(</big><em>instfile</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ReadPowderInstprm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ReadPowderInstprm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a GSAS-II (new) instrument parameter file</p>
@@ -465,17 +512,17 @@ sets rd.instbank.</li>
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="GSASII.GSASII.ShowLSParms">
+<tt class="descclassname">GSASII.</tt><tt class="descname">ShowLSParms</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ShowLSParms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ShowLSParms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays a window showing all parameters in the refinement.
+Called from the Calculate/View LS Parms menu.</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="GSASII.GSASII.SumDialog">
 <em class="property">class </em><tt class="descclassname">GSASII.</tt><tt class="descname">SumDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>text</em>, <em>dataType</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.SumDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.SumDialog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Allows user to supply scale factor(s) when summing data</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="GSASII.GSASII.ViewParmDialog">
-<em class="property">class </em><tt class="descclassname">GSASII.</tt><tt class="descname">ViewParmDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ViewParmDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ViewParmDialog" title="Permalink to this definition">¶</a></dt>
-<dd><p>Window to show all parameters in the refinement.
-Called from <tt class="xref py py-meth docutils literal"><span class="pre">OnViewLSParms()</span></tt></p>
 </dd></dl>
 
 </dd></dl>

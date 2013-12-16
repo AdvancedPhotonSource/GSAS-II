@@ -12,6 +12,7 @@
 Routine to import powder data from GSAS-II .gpx files
 
 '''
+import sys
 import cPickle
 import numpy as np
 import GSASIIIO as G2IO
@@ -30,14 +31,20 @@ class GSAS2_ReaderClass(G2IO.ImportPowderData):
             formatName = 'GSAS-II gpx',
             longFormatName = 'GSAS-II project (.gpx file) import'
             )
+        
     def ContentsValidator(self, filepointer):
-        # if the 1st section can't be read as a cPickle file, it can't be a GPX!
+        "Test if the 1st section can be read as a cPickle block, if not it can't be .GPX!"
         try: 
             cPickle.load(filepointer)
         except:
+            self.errors = 'This is not a valid .GPX file. Not recognized by cPickle'
             return False
         return True
+
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+        '''Read a dataset from a .GPX file.
+        If multiple datasets are requested, use self.repeat and buffer caching.
+        '''
         histnames = []
         poslist = []
         rdbuffer = kwarg.get('buffer')
@@ -59,13 +66,13 @@ class GSAS2_ReaderClass(G2IO.ImportPowderData):
                         histnames.append(data[0][0])
                         poslist.append(pos)
             except:
-                print 'error scanning GPX file',filename
+                self.errors = 'Reading of histogram names failed'
                 return False
             finally:
                 fl.close()
         if not histnames:
-            return False            # no blocks with coordinates
-        elif len(histnames) == 1: # no choices
+            return False            # no blocks with powder data
+        elif len(histnames) == 1: # one block, no choices
             selblk = 0
         elif self.repeat and selections is not None:
             # we were called to repeat the read
@@ -74,19 +81,15 @@ class GSAS2_ReaderClass(G2IO.ImportPowderData):
             self.repeatcount += 1
             if self.repeatcount >= len(selections): self.repeat = False
         else:                       # choose from options                
-#            selblk = self.BlockSelector(
-#                histnames,
-#                ParentFrame=ParentFrame,
-#                title= 'Select a block from the list below',
-#                )
-#            if selblk is None: return False # User pressed cancel
             selections = self.MultipleBlockSelector(
                 histnames,
                 ParentFrame=ParentFrame,
                 title='Select histogram(s) to read from the list below',
                 size=(600,100),
                 header='Dataset Selector')
-            if len(selections) == 0: return False
+            if len(selections) == 0:
+                self.errors = 'No histogram selected'
+                return False
             selblk = selections[0] # select first in list
             if len(selections) > 1: # prepare to loop through again
                 self.repeat = True
@@ -127,17 +130,19 @@ class GSAS2_ReaderClass(G2IO.ImportPowderData):
                     pos = data[4][1][3].index('Lam')
                     self.instdict['wave'] = [data[4][1][1][pos],]
             except:
-                pass
+                self.warnings += "Failed to read wavelength"
+                self.warnings += '\n  '+str(detail)
             # pull out temperature
             try:
                 if data[5][1].get('Temperature'):
                     self.Sample['Temperature'] = data[5][1]['Temperature']
             except:
-                pass
+                self.warnings += "Failed to read temperature"
+                self.warnings += '\n  '+str(detail)
             self.repeat_instparm = False # prevent reuse of iparm when several hists are read
             return True
         except Exception as detail:
-            import sys
+            self.errors = 'Error reading selected histogram\n  '+str(detail)
             print self.formatName+' error:',detail # for testing
             print sys.exc_info()[0] # for testing
             import traceback

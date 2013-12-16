@@ -50,15 +50,22 @@
           <div class="body">
             
   <h1>Source code for GSASIIobj</h1><div class="highlight"><pre>
-<span class="c"># TODO: change this to assemble the look-up tables of atoms, phases and hists from the tree</span>
-<span class="c"># and then save/unsave those values in __init__ &amp; __str__, etc. </span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c">#GSASIIobj - data objects for GSAS-II</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="c"># $Date: 2013-11-22 16:24:29 -0600 (Fri, 22 Nov 2013) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 1147 $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIobj.py $</span>
+<span class="c"># $Id: GSASIIobj.py 1147 2013-11-22 22:24:29Z toby $</span>
+<span class="c">########### SVN repository information ###################</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIobj: Data objects*</span>
 <span class="sd">=========================</span>
 
-<span class="sd">This module defines and/or documents the data structures used in GSAS-II.</span>
-
+<span class="sd">This module defines and/or documents the data structures used in GSAS-II, as well</span>
+<span class="sd">as provides misc. support routines. </span>
 
 <span class="sd">Constraints Tree Item</span>
 <span class="sd">----------------------</span>
@@ -77,6 +84,8 @@
 <span class="sd">number is omitted.</span>
 <span class="sd">Note that the contents of each dict item is a List where each element in the</span>
 <span class="sd">list is a :ref:`constraint definition objects &lt;Constraint_definitions_table&gt;`.</span>
+<span class="sd">The constraints in this form are converted in</span>
+<span class="sd">:func:`GSASIIstrIO.ProcessConstraints` to the form used in :mod:`GSASIImapvars`</span>
 
 <span class="sd">The keys in the Constraints dict are:</span>
 
@@ -105,32 +114,39 @@
 <span class="sd">   single: Constraint definition object description</span>
 <span class="sd">   single: Data object descriptions; Constraint Definition</span>
 
-<span class="sd">Each constraint is defined as a list using a series of terms of form</span>
+<span class="sd">Each constraint is defined as an item in a list. Each constraint is of form::</span>
 
-<span class="sd">::</span>
+<span class="sd">[[&lt;mult1&gt;, &lt;var1&gt;], [&lt;mult2&gt;, &lt;var2&gt;],..., &lt;fixedval&gt;, &lt;varyflag&gt;, &lt;constype&gt;]</span>
 
-<span class="sd">[[&lt;mult1&gt;, &lt;var1&gt;], [&lt;mult2&gt;, &lt;var2&gt;],..., &lt;fixed val&gt;, &lt;vary flag&gt;, &lt;cons type&gt;]</span>
-
-<span class="sd">Where the variable pair list item containing two values [&lt;mult&gt;, &lt;var&gt;], </span>
+<span class="sd">Where the variable pair list item containing two values [&lt;mult&gt;, &lt;var&gt;], where: </span>
 
 <span class="sd">  * &lt;mult&gt; is a multiplier for the constraint (float)</span>
-<span class="sd">  * &lt;var&gt; is the name of the variable (str) (or to be implemented a :class:`VarName` object.)</span>
+<span class="sd">  * &lt;var&gt; a :class:`G2VarObj` object (previously a str variable name of form</span>
+<span class="sd">      &#39;p:h:name[:at]&#39;)</span>
 
 <span class="sd">Note that the last three items in the list play a special role:</span>
 
-<span class="sd"> * &lt;fixed val&gt; is the fixed value for a constraint equation or is None</span>
-<span class="sd"> * &lt;vary flag&gt; is True, False or None and is intended to use to indicate if new variables</span>
+<span class="sd"> * &lt;fixedval&gt; is the fixed value for a `constant equation` (``constype=c``)</span>
+<span class="sd">   constraint or is None. For a `New variable` (``constype=f``) constraint,</span>
+<span class="sd">   a variable name can be specified as a str (used for externally</span>
+<span class="sd">   generated constraints)</span>
+<span class="sd"> * &lt;varyflag&gt; is True or False for `New variable` (``constype=f``) constraints</span>
+<span class="sd">   or is None. This will be implemented in the future to indicate if these variables</span>
 <span class="sd">   should be refined.</span>
-<span class="sd"> * &lt;cons type&gt; is one of four letters, &#39;e&#39;, &#39;c&#39;, &#39;h&#39;, &#39;f&#39; that determines the type of constraint.</span>
+<span class="sd"> * &lt;constype&gt; is one of four letters, &#39;e&#39;, &#39;c&#39;, &#39;h&#39;, &#39;f&#39; that determines the type of constraint:</span>
 
 <span class="sd">    * &#39;e&#39; defines a set of equivalent variables. Only the first variable is refined (if the</span>
 <span class="sd">      appropriate refine flag is set) and and all other equivalent variables in the list</span>
-<span class="sd">      are generated from that variable. The vary flag for those variables is ignored.</span>
-<span class="sd">    * &#39;c&#39; defines a constraint equation of form, :math:`m_1 \\times var_1 + m_2 \\times var_2 + ... = c`</span>
-<span class="sd">    * &#39;h&#39; defines a variable to hold (not vary). Any variable on this list is not varied, even if its refinement</span>
-<span class="sd">      flag is set. This is of particular value when needing to hold one or more variables in a set such as</span>
+<span class="sd">      are generated from that variable, using the appropriate multipliers. </span>
+<span class="sd">    * &#39;c&#39; defines a constraint equation of form,</span>
+<span class="sd">      :math:`m_1 \\times var_1 + m_2 \\times var_2 + ... = c`</span>
+<span class="sd">    * &#39;h&#39; defines a variable to hold (not vary). Any variable on this list is not varied,</span>
+<span class="sd">      even if its refinement flag is set. Only one [mult,var] pair is allowed in a hold</span>
+<span class="sd">      constraint and the mult value is ignored.</span>
+<span class="sd">      This is of particular value when needing to hold one or more variables where a</span>
+<span class="sd">      single flag controls a set of variables such as, coordinates, </span>
 <span class="sd">      the reciprocal metric tensor or anisotropic displacement parameter. </span>
-<span class="sd">    * &#39;f&#39; defines a relationship to define a new variable according to relationship </span>
+<span class="sd">    * &#39;f&#39; defines a new variable (function) according to relationship </span>
 <span class="sd">      :math:`newvar = m_1 \\times var_1 + m_2 \\times var_2 + ...`</span>
 
 <span class="sd">Covariance Tree Item</span>
@@ -199,11 +215,12 @@
 <span class="sd">  \         F000X            x-ray F(000) intensity (float)</span>
 <span class="sd">  \         F000N            neutron F(000) intensity (float)</span>
 <span class="sd">  \         Mydir            directory of current .gpx file (str)</span>
-<span class="sd">  \         MCSA controls    ?</span>
-<span class="sd">  \         Cell             List with 7 items: cell refinement flag (bool)</span>
+<span class="sd">  \         MCSA controls    Monte Carlo-Simulated Annealing controls (dict)</span>
+<span class="sd">  \         Cell             List with 8 items: cell refinement flag (bool)</span>
 <span class="sd">                             a, b, c, (Angstrom, float)</span>
 <span class="sd">                             alpha, beta &amp; gamma (degrees, float)</span>
-<span class="sd">  \         Type             for now &#39;nuclear&#39; (str)</span>
+<span class="sd">                             volume (A^3, float)</span>
+<span class="sd">  \         Type             &#39;nuclear&#39; or &#39;macromolecular&#39; for now (str)</span>
 <span class="sd">  \         Map              dict of map parameters</span>
 <span class="sd">  \         SH Texture       dict of spherical harmonic preferred orientation </span>
 <span class="sd">                             parameters</span>
@@ -215,12 +232,13 @@
 <span class="sd">                             as defined in :func:`GSASIIspc.SpcGroup`.</span>
 <span class="sd">  \         Pawley neg wt    Restraint value for negative Pawley intensities</span>
 <span class="sd">                             (float)</span>
-<span class="sd">  \         Flip             Charge flip controls dict?</span>
-<span class="sd">  \         Data plot type   ?</span>
+<span class="sd">  \         Flip             dict of Charge flip controls </span>
+<span class="sd">  \         Data plot type   data plot type (&#39;Mustrain&#39;, &#39;Size&#39; or </span>
+<span class="sd">                             &#39;Preferred orientation&#39;) for powder data (str)</span>
 <span class="sd">  \         Mass             Mass of unit cell contents in g/mol</span>
 <span class="sd">  \         POhkl            March-Dollase preferred orientation direction</span>
-<span class="sd">  \         Z                ?</span>
-<span class="sd">  \         vdWRadii         ?</span>
+<span class="sd">  \         Z                dict of atomic numbers for each atom type </span>
+<span class="sd">  \         vdWRadii         dict of van der Waals radii for each atom type </span>
 <span class="sd">  \         Color            Colors for atoms (list of (r,b,g) triplets)</span>
 <span class="sd">  \         AtomTypes        List of atom types</span>
 <span class="sd">  \         AtomMass         List of masses for atoms</span>
@@ -228,10 +246,17 @@
 <span class="sd">  \         NoAtoms          Number of atoms per unit cell of each type (dict)</span>
 <span class="sd">  \         Pawley dmin      maximum Q (as d-space) to use for Pawley </span>
 <span class="sd">                             extraction (float)</span>
-<span class="sd">  \         BondRadii        Radius for each atom used to compute </span>
+<span class="sd">  \         BondRadii        Default radius for each atom used to compute </span>
 <span class="sd">                             interatomic distances (list of floats)</span>
-<span class="sd">  \         AngleRadii       Radius for each atom used to compute </span>
+<span class="sd">  \         AngleRadii       Default radius for each atom used to compute </span>
 <span class="sd">                             interatomic angles (list of floats)</span>
+<span class="sd">  \         DisAglCtls       Dict with distance/angle search controls,</span>
+<span class="sd">                             which has keys &#39;Name&#39;, &#39;AtomTypes&#39;,</span>
+<span class="sd">                             &#39;BondRadii&#39;, &#39;AngleRadii&#39; which are as above</span>
+<span class="sd">                             except are possibly edited. Also contains</span>
+<span class="sd">                             &#39;Factors&#39;, which is a 2 element list with</span>
+<span class="sd">                             a multiplier for bond and angle search range</span>
+<span class="sd">                             [typically (0.85,0.85)].</span>
 <span class="sd">ranId           \            unique random number Id for phase (int)</span>
 <span class="sd">pId             \            Phase Id number for current project (int).</span>
 <span class="sd">Atoms           \            Atoms in phase as a list of lists. The outer list</span>
@@ -242,7 +267,7 @@
 <span class="sd">Drawing         \            Display parameters (dict)</span>
 <span class="sd">\           ballScale        Size of spheres in ball-and-stick display (float)</span>
 <span class="sd">\           bondList         dict with bonds</span>
-<span class="sd">\           contourLevel     ? (float)</span>
+<span class="sd">\           contourLevel     map contour level in e/A^3 (float)</span>
 <span class="sd">\           showABC          Flag to show view point triplet (bool). True=show.</span>
 <span class="sd">\           viewDir          cartesian viewing direction (np.array with three</span>
 <span class="sd">                             elements)</span>
@@ -254,10 +279,11 @@
 <span class="sd">\           showRigidBodies  Flag to highlight rigid body placement</span>
 <span class="sd">\           sizeH            Size ratio for H atoms (float) </span>
 <span class="sd">\           bondRadius       Size of binds in A (float)</span>
-<span class="sd">\           atomPtrs         ? (list)</span>
+<span class="sd">\           atomPtrs         positions of x, type, site sym, ADP flag in Draw Atoms (list)</span>
 <span class="sd">\           viewPoint        list of lists. First item in list is [x,y,z]</span>
 <span class="sd">                             in fractional coordinates for the center of</span>
-<span class="sd">                             the plot. Second item ?.</span>
+<span class="sd">                             the plot. Second item list of previous &amp; current </span>
+<span class="sd">                             atom number viewed (may be [0,0])</span>
 <span class="sd">\           showHydrogen     Flag to control plotting of H atoms.</span>
 <span class="sd">\           unitCellBox      Flag to control display of the unit cell.</span>
 <span class="sd">\           ellipseProb      Probability limit for display of thermal</span>
@@ -271,9 +297,9 @@
 <span class="sd">\           radiusFactor     Distance ratio for searching for bonds. ? Bonds</span>
 <span class="sd">                             are located that are within r(Ra+Rb) and (Ra+Rb)/r</span>
 <span class="sd">                             where Ra and Rb are the atomic radii.</span>
-<span class="sd">\           oldxy            ? (list with two floats)</span>
+<span class="sd">\           oldxy            previous view point (list with two floats)</span>
 <span class="sd">\           cameraPos        Viewing position in A for plot (float)</span>
-<span class="sd">\           depthFog         ? (bool)</span>
+<span class="sd">\           depthFog         True if use depthFog on plot - set currently as False (bool)</span>
 <span class="sd">RBModels        \            Rigid body assignments (note Rigid body definitions</span>
 <span class="sd">                             are stored in their own main top-level tree entry.)</span>
 <span class="sd">Pawley ref      \            Pawley reflections</span>
@@ -282,20 +308,69 @@
 <span class="sd">                             dict contains the combined phase/histogram</span>
 <span class="sd">                             parameters for items such as scale factors,</span>
 <span class="sd">                             size and strain parameters. (dict)</span>
-<span class="sd">MCSA            \            Monte-Carlo simulated annealing parameters</span>
+<span class="sd">MCSA            \            Monte-Carlo simulated annealing parameters (dict)</span>
+<span class="sd">\           </span>
 <span class="sd">==========  ===============  ====================================================</span>
 
-<span class="sd">Space Group Objects</span>
+<span class="sd">Rigid Body Objects</span>
+<span class="sd">------------------</span>
+
+<span class="sd">.. _RBData_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Rigid Body Data description</span>
+<span class="sd">   single: Data object descriptions; Rigid Body Data</span>
+<span class="sd">   </span>
+<span class="sd">Rigid body descriptions are available for two types of rigid bodies: &#39;Vector&#39; </span>
+<span class="sd">and &#39;Residue&#39;. Vector rigid bodies are developed by a sequence of translations each</span>
+<span class="sd">with a refinable magnitude and Residue rigid bodies are described as Cartesian coordinates</span>
+<span class="sd">with defined refinable torsion angles.</span>
+
+<span class="sd">.. tabularcolumns:: |l|l|p{4in}|</span>
+
+<span class="sd">==========  ===============  ====================================================</span>
+<span class="sd">  key         sub-key        explanation</span>
+<span class="sd">==========  ===============  ====================================================</span>
+<span class="sd">Vector      RBId             vector rigid bodies (dict of dict)</span>
+<span class="sd">\           AtInfo           Drad, Color: atom drawing radius &amp; color for each atom type (dict)</span>
+<span class="sd">\           RBname           Name assigned by user to rigid body (str)</span>
+<span class="sd">\           VectMag          vector magnitudes in A (list)</span>
+<span class="sd">\           rbXYZ            Cartesian coordinates for Vector rigid body (list of 3 float)</span>
+<span class="sd">\           rbRef            3 assigned reference atom nos. in rigid body for origin </span>
+<span class="sd">                             definition, use center of atoms flag (list of 3 int &amp; 1 bool)</span>
+<span class="sd">\           VectRef          refinement flags for VectMag values (list of bool)</span>
+<span class="sd">\           rbTypes          Atom types for each atom in rigid body (list of str)</span>
+<span class="sd">\           rbVect           Cartesian vectors for each translation used to build rigid body (list of lists)</span>
+<span class="sd">\           useCount         Number of times rigid body is used in any structure (int)</span>
+<span class="sd">Residue     RBId             residue rigid bodies (dict of dict)</span>
+<span class="sd">\           AtInfo           Drad, Color: atom drawing radius &amp; color for each atom type(dict)</span>
+<span class="sd">\           RBname           Name assigned by user to rigid body (str)</span>
+<span class="sd">\           rbXYZ            Cartesian coordinates for Residue rigid body (list of 3 float)</span>
+<span class="sd">\           rbTypes          Atom types for each atom in rigid body (list of str)</span>
+<span class="sd">\           atNames          Names of each atom in rigid body (e.g. C1,N2...) (list of str)</span>
+<span class="sd">\           rbRef            3 assigned reference atom nos. in rigid body for origin </span>
+<span class="sd">                             definition, use center of atoms flag (list of 3 int &amp; 1 bool)</span>
+<span class="sd">\           rbSeq            Orig,Piv,angle,Riding (list): definition of internal rigid body</span>
+<span class="sd">                             torsion; origin atom (int), pivot atom (int), torsion angle (float),</span>
+<span class="sd">                             riding atoms (list of int)</span>
+<span class="sd">\           SelSeq           [int,int] used by SeqSizer to identify objects</span>
+<span class="sd">\           useCount         Number of times rigid body is used in any structure (int)</span>
+<span class="sd">RBIds           \            unique Ids generated upon creation of each rigid body (dict)</span>
+<span class="sd">\           Vector           Ids for each Vector rigid body (list)</span>
+<span class="sd">\           Residue          Ids for each Residue rigid body (list)</span>
+<span class="sd">==========  ===============  ====================================================</span>
+
+<span class="sd">Space Group Objects </span>
 <span class="sd">-------------------</span>
 
 <span class="sd">.. _SGData_table:</span>
 
 <span class="sd">.. index::</span>
-<span class="sd">   single: SGData description</span>
-<span class="sd">   single: Data object descriptions; SGData</span>
+<span class="sd">   single: Space Group Data description</span>
+<span class="sd">   single: Data object descriptions; Space Group Data</span>
 
 <span class="sd">Space groups are interpreted by :func:`GSASIIspc.SpcGroup` </span>
-<span class="sd">and the information is placed in a SGdata object,</span>
+<span class="sd">and the information is placed in a SGdata object </span>
 <span class="sd">which is a dict with these keys:</span>
 
 <span class="sd">.. tabularcolumns:: |l|p{4.5in}|</span>
@@ -347,24 +422,66 @@
 <span class="sd">If ``phasedict`` points to the phase information in the data tree, then</span>
 <span class="sd">atoms are contained in a list of atom records (list) in</span>
 <span class="sd">``phasedict[&#39;Atoms&#39;]``. Also needed to read atom information </span>
-<span class="sd">are four pointers, ``cx,ct,cs,cia = phasedict[&#39;General&#39;][&#39;AtomPtrs&#39;]``,</span>
-<span class="sd">which define locations in the atom record, as shown below. </span>
+<span class="sd">are four pointers, ``cx,ct,cs,cia = phasedict[&#39;General&#39;][&#39;atomPtrs&#39;]``,</span>
+<span class="sd">which define locations in the atom record, as shown below. Items shown are </span>
+<span class="sd">always present; additional ones for macromolecular phases are marked &#39;mm&#39;</span>
 
 <span class="sd">.. tabularcolumns:: |l|p{4.5in}|</span>
 
 <span class="sd">==============   ====================================================</span>
 <span class="sd">location         explanation</span>
 <span class="sd">==============   ====================================================</span>
-<span class="sd">cx,cx+1,cx+2      the x,y and z coordinates</span>
-<span class="sd">cx+3              fractional occupancy (also cs-1)</span>
-<span class="sd">ct-1              atom label</span>
-<span class="sd">ct                atom type</span>
-<span class="sd">ct+1              refinement flags</span>
-<span class="sd">cs                site symmetry string</span>
-<span class="sd">cs+1              site multiplicity</span>
+<span class="sd">ct-4              mm - residue number (str)</span>
+<span class="sd">ct-3              mm - residue name (e.g. ALA) (str)</span>
+<span class="sd">ct-2              mm - chain label (str)</span>
+<span class="sd">ct-1              atom label (str)</span>
+<span class="sd">ct                atom type (str)</span>
+<span class="sd">ct+1              refinement flags; combination of &#39;F&#39;, &#39;X&#39;, &#39;U&#39; (str)</span>
+<span class="sd">cx,cx+1,cx+2      the x,y and z coordinates (3 floats)</span>
+<span class="sd">cs                site symmetry (str)</span>
+<span class="sd">cs+1              site multiplicity (int)</span>
 <span class="sd">cia               ADP flag: Isotropic (&#39;I&#39;) or Anisotropic (&#39;A&#39;)</span>
-<span class="sd">cia+1             Uiso</span>
-<span class="sd">cia+2...cia+6     U11, U22, U33, U12, U13, U23</span>
+<span class="sd">cia+1             Uiso (float)</span>
+<span class="sd">cia+2...cia+6     U11, U22, U33, U12, U13, U23 (6 floats)</span>
+<span class="sd">atom[-1]                unique atom identifier (int)</span>
+<span class="sd">==============   ====================================================</span>
+
+<span class="sd">Drawing Atom Records</span>
+<span class="sd">--------------------</span>
+
+<span class="sd">.. _Drawing_atoms_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Drawing atoms record description</span>
+<span class="sd">   single: Data object descriptions; Drawing atoms record</span>
+
+
+<span class="sd">If ``phasedict`` points to the phase information in the data tree, then</span>
+<span class="sd">drawing atoms are contained in a list of drawing atom records (list) in</span>
+<span class="sd">``phasedict[&#39;Drawing&#39;][&#39;Atoms&#39;]``. Also needed to read atom information </span>
+<span class="sd">are four pointers, ``cx,ct,cs,ci = phasedict[&#39;Drawing&#39;][&#39;AtomPtrs&#39;]``,</span>
+<span class="sd">which define locations in the atom record, as shown below. Items shown are </span>
+<span class="sd">always present; additional ones for macromolecular phases are marked &#39;mm&#39;</span>
+
+<span class="sd">.. tabularcolumns:: |l|p{4.5in}|</span>
+
+<span class="sd">==============   ====================================================</span>
+<span class="sd">location         explanation</span>
+<span class="sd">==============   ====================================================</span>
+<span class="sd">ct-4              mm - residue number (str)</span>
+<span class="sd">ct-3              mm - residue name (e.g. ALA) (str)</span>
+<span class="sd">ct-2              mm - chain label (str)</span>
+<span class="sd">ct-1              atom label (str)</span>
+<span class="sd">ct                atom type (str)</span>
+<span class="sd">cx,cx+1,cx+2      the x,y and z coordinates (3 floats)</span>
+<span class="sd">cs-1              Sym Op symbol; sym. op number + unit cell id (e.g. &#39;1,0,-1&#39;) (str)</span>
+<span class="sd">cs                atom drawing style; e.g. &#39;balls &amp; sticks&#39; (str)</span>
+<span class="sd">cs+1              atom label style (e.g. &#39;name&#39;) (str)</span>
+<span class="sd">cs+2              atom color (RBG triplet) (int)</span>
+<span class="sd">cs+3              ADP flag: Isotropic (&#39;I&#39;) or Anisotropic (&#39;A&#39;)</span>
+<span class="sd">cs+4              Uiso (float)</span>
+<span class="sd">cs+5...cs+11      U11, U22, U33, U12, U13, U23 (6 floats)</span>
+<span class="sd">ci                unique atom identifier; matches source atom Id in Atom Records (int)</span>
 <span class="sd">==============   ====================================================</span>
 
 <span class="sd">Powder Diffraction Tree Items</span>
@@ -380,7 +497,8 @@
 <span class="sd">with a top-level entry named beginning with the string &quot;PWDR &quot;. The</span>
 <span class="sd">diffraction data for that information are directly associated with</span>
 <span class="sd">that tree item and there are a series of children to that item. The</span>
-<span class="sd">routine :func:`~GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree` will</span>
+<span class="sd">routines :func:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`</span>
+<span class="sd">and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will</span>
 <span class="sd">load this information into a dictionary where the child tree name is</span>
 <span class="sd">used as a key, and the information in the main entry is assigned</span>
 <span class="sd">a key of ``Data``, as outlined below.</span>
@@ -397,8 +515,8 @@
 <span class="sd">                                          two-theta value to be used.</span>
 <span class="sd">Reflection Lists              \           A dict with an entry for each phase in the</span>
 <span class="sd">                                          histogram. The contents of each dict item</span>
-<span class="sd">                                          is a list of reflections as described in the</span>
-<span class="sd">                                          :ref:`Powder Reflections &lt;PowderRefl_table&gt;`</span>
+<span class="sd">                                          is a dict containing reflections, as described in</span>
+<span class="sd">                                          the :ref:`Powder Reflections &lt;PowderRefl_table&gt;`</span>
 <span class="sd">                                          description.</span>
 <span class="sd">Instrument Parameters         \           A list containing two dicts where the possible</span>
 <span class="sd">                                          keys in each dict are listed below. The value</span>
@@ -501,8 +619,9 @@
 <span class="sd">   single: Powder reflection object description</span>
 <span class="sd">   single: Data object descriptions; Powder Reflections</span>
 <span class="sd">   </span>
-<span class="sd">For every phase in a histogram, the ``Reflection Lists`` value is a list of</span>
-<span class="sd">reflections. The items in that list are documented below.</span>
+<span class="sd">For every phase in a histogram, the ``Reflection Lists`` value is a dict</span>
+<span class="sd">one element of which is `&#39;RefList&#39;`, which is a np.array containing</span>
+<span class="sd">reflections. The columns in that array are documented below.</span>
 
 <span class="sd">==========  ====================================================</span>
 <span class="sd">  index         explanation</span>
@@ -516,16 +635,8 @@
 <span class="sd"> 8           :math:`F_{obs}^2`</span>
 <span class="sd"> 9           :math:`F_{calc}^2`</span>
 <span class="sd"> 10          reflection phase, in degrees</span>
-<span class="sd"> 11          the equivalent reflections as a (m x 3) </span>
-<span class="sd">             np.array, where m is 0.5 * multiplicity. Note</span>
-<span class="sd">             that Freidel pairs, (-h,-k-,l), are not</span>
-<span class="sd">             included. </span>
-<span class="sd"> 12          phase shift for each of the equivalent</span>
-<span class="sd">             reflections as a length (m) array</span>
-<span class="sd"> 13          intensity correction for reflection, this times</span>
+<span class="sd"> 11          intensity correction for reflection, this times</span>
 <span class="sd">             :math:`F_{obs}^2` or :math:`F_{calc}^2` gives Iobs or Icalc </span>
-<span class="sd"> 14          dict with the form factor (f or b) by atom type</span>
-<span class="sd">             symbol at the reflection position.</span>
 <span class="sd">==========  ====================================================</span>
 
 <span class="sd">Single Crystal Tree Items</span>
@@ -534,14 +645,15 @@
 <span class="sd">.. _Xtal_table:</span>
 
 <span class="sd">.. index::</span>
-<span class="sd">   single: Single Crytsal data object description</span>
+<span class="sd">   single: Single Crystal data object description</span>
 <span class="sd">   single: Data object descriptions; Single crystal data</span>
 
 <span class="sd">Every single crystal diffraction histogram is stored in the GSAS-II data tree</span>
 <span class="sd">with a top-level entry named beginning with the string &quot;HKLF &quot;. The</span>
 <span class="sd">diffraction data for that information are directly associated with</span>
 <span class="sd">that tree item and there are a series of children to that item. The</span>
-<span class="sd">routine :func:`~GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree` will</span>
+<span class="sd">routines :func:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`</span>
+<span class="sd">and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will</span>
 <span class="sd">load this information into a dictionary where the child tree name is</span>
 <span class="sd">used as a key, and the information in the main entry is assigned</span>
 <span class="sd">a key of ``Data``, as outlined below.</span>
@@ -551,9 +663,8 @@
 <span class="sd">======================  ===============  ====================================================</span>
 <span class="sd">  key                      sub-key        explanation</span>
 <span class="sd">======================  ===============  ====================================================</span>
-<span class="sd">Data</span>
-<span class="sd">                                          A list of lists, where each inner item</span>
-<span class="sd">                                          is an individual reflection</span>
+<span class="sd">Data                          \           A dict that contains the </span>
+<span class="sd">                                          reflection table,</span>
 <span class="sd">                                          as described in the</span>
 <span class="sd">                                          :ref:`Single Crystal Reflections</span>
 <span class="sd">                                          &lt;XtalRefl_table&gt;`</span>
@@ -582,6 +693,8 @@
 
 <span class="sd">hId                           \           The number assigned to the histogram when</span>
 <span class="sd">                                          the project is loaded or edited (can change)</span>
+<span class="sd">ranId                         \           A random number id for the histogram</span>
+<span class="sd">                                          that does not change</span>
 <span class="sd">======================  ===============  ====================================================</span>
 
 <span class="sd">Single Crystal Reflection Data Structure</span>
@@ -593,8 +706,9 @@
 <span class="sd">   single: Single Crystal reflection object description</span>
 <span class="sd">   single: Data object descriptions; Single Crystal Reflections</span>
 <span class="sd">   </span>
-<span class="sd">For every phase in a histogram, the ``Reflection Lists`` value is a list of</span>
-<span class="sd">reflections. The items in that list are documented below.</span>
+<span class="sd">For every simgle crystal a histogram, the ``&#39;Data&#39;`` item contains</span>
+<span class="sd">the structure factors as an np.array in item `&#39;RefList&#39;`.</span>
+<span class="sd">The columns in that array are documented below.</span>
 
 <span class="sd">==========  ====================================================</span>
 <span class="sd">  index         explanation</span>
@@ -608,16 +722,9 @@
 <span class="sd"> 8           :math:`F_{obs}^2T`</span>
 <span class="sd"> 9           :math:`F_{calc}^2T`</span>
 <span class="sd"> 10          reflection phase, in degrees</span>
-<span class="sd"> 11          the equivalent reflections as a (m x 3) </span>
-<span class="sd">             np.array.</span>
-<span class="sd"> 12          phase shift for each of the equivalent</span>
-<span class="sd">             reflections as a length (m) array</span>
-<span class="sd"> 13          intensity correction for reflection, this times</span>
+<span class="sd"> 11          intensity correction for reflection, this times</span>
 <span class="sd">             :math:`F_{obs}^2` or :math:`F_{calc}^2`</span>
 <span class="sd">             gives Iobs or Icalc</span>
-<span class="sd">             (not used in single crystals?)</span>
-<span class="sd"> 14          dict with the form factor (f or b) by atom type</span>
-<span class="sd">             symbol at the reflection position.</span>
 <span class="sd">==========  ====================================================</span>
 
 
@@ -625,63 +732,377 @@
 <span class="sd">----------------------</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1077 $&quot;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 
-<div class="viewcode-block" id="LoadHistogramIDs"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.LoadHistogramIDs">[docs]</a><span class="k">def</span> <span class="nf">LoadHistogramIDs</span><span class="p">(</span><span class="n">histList</span><span class="p">,</span><span class="n">idList</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Save the Id values for a series of histograms&#39;&#39;&#39;</span>
-    <span class="n">VarName</span><span class="o">.</span><span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;hists&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">h</span><span class="p">,</span><span class="n">i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">histList</span><span class="p">,</span><span class="n">idList</span><span class="p">):</span>
-        <span class="n">VarName</span><span class="o">.</span><span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;hists&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1147 $&quot;</span><span class="p">)</span>
+
+<span class="n">DefaultControls</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;deriv type&#39;</span><span class="p">:</span><span class="s">&#39;analytic Hessian&#39;</span><span class="p">,</span>    <span class="c">#default controls</span>
+    <span class="s">&#39;min dM/M&#39;</span><span class="p">:</span><span class="mf">0.0001</span><span class="p">,</span><span class="s">&#39;shift factor&#39;</span><span class="p">:</span><span class="mf">1.</span><span class="p">,</span><span class="s">&#39;max cyc&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;F**2&#39;</span><span class="p">:</span><span class="bp">True</span><span class="p">,</span>
+    <span class="s">&#39;minF/sig&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
+    <span class="s">&#39;Author&#39;</span><span class="p">:</span><span class="s">&#39;no name&#39;</span><span class="p">,</span>
+    <span class="s">&#39;FreeVar1&#39;</span><span class="p">:</span><span class="s">&#39;Sample humidity (%)&#39;</span><span class="p">,</span>
+    <span class="s">&#39;FreeVar2&#39;</span><span class="p">:</span><span class="s">&#39;Sample voltage (V)&#39;</span><span class="p">,</span>
+    <span class="s">&#39;FreeVar3&#39;</span><span class="p">:</span><span class="s">&#39;Applied load (MN)&#39;</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="sd">&#39;&#39;&#39;Values to be used as defaults for the initial contents of the ``Controls``</span>
+<span class="sd">data tree item.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="MakeUniqueLabel"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.MakeUniqueLabel">[docs]</a><span class="k">def</span> <span class="nf">MakeUniqueLabel</span><span class="p">(</span><span class="n">lbl</span><span class="p">,</span><span class="n">labellist</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Make sure that every a label is unique against a list by adding</span>
+<span class="sd">    digits at the end until it is not found in list.</span>
+
+<span class="sd">    :param str lbl: the input label</span>
+<span class="sd">    :param list labellist: the labels that have already been encountered</span>
+<span class="sd">    :returns: lbl if not found in labellist or lbl with ``_1-9` (or</span>
+<span class="sd">      ``_10-99``, etc.) appended at the end</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">lbl</span> <span class="o">=</span> <span class="n">lbl</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">lbl</span><span class="p">:</span> <span class="c"># deal with a blank label</span>
+        <span class="n">lbl</span> <span class="o">=</span> <span class="s">&#39;_1&#39;</span>
+    <span class="k">if</span> <span class="n">lbl</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">labellist</span><span class="p">:</span>
+        <span class="n">labellist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">lbl</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="n">lbl</span>
+    <span class="k">if</span> <span class="s">&#39;_&#39;</span> <span class="ow">in</span> <span class="n">lbl</span><span class="p">:</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">lbl</span><span class="p">[:</span><span class="n">lbl</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">)]</span>
+        <span class="n">suffix</span> <span class="o">=</span> <span class="n">lbl</span><span class="p">[</span><span class="n">lbl</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">suffix</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span>
+        <span class="k">except</span><span class="p">:</span> <span class="c"># suffix could not be parsed</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">lbl</span>
+    <span class="k">while</span> <span class="n">prefix</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="ow">in</span> <span class="n">labellist</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lbl</span> <span class="o">=</span> <span class="n">prefix</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">labellist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lbl</span>
 </div>
-<span class="k">def</span> <span class="nf">LoadPhaseIDs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">pass</span>
+<span class="n">PhaseIdLookup</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&#39;&#39;&#39;dict listing phase name and random Id keyed by sequential phase index as a str;</span>
+<span class="sd">best to access this using :func:`LookupPhaseName`</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">PhaseRanIdLookup</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&#39;&#39;&#39;dict listing phase sequential index keyed by phase random Id;</span>
+<span class="sd">best to access this using :func:`LookupPhaseId`</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">HistIdLookup</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&#39;&#39;&#39;dict listing histogram name and random Id, keyed by sequential histogram index as a str;</span>
+<span class="sd">best to access this using :func:`LookupHistName`</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">HistRanIdLookup</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&#39;&#39;&#39;dict listing histogram sequential index keyed by histogram random Id;</span>
+<span class="sd">best to access this using :func:`LookupHistId`</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">AtomIdLookup</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&#39;&#39;&#39;dict listing for each phase index as a str, the atom label and atom random Id,</span>
+<span class="sd">keyed by atom sequential index as a str;</span>
+<span class="sd">best to access this using :func:`LookupAtomLabel`</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">AtomRanIdLookup</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&#39;&#39;&#39;dict listing for each phase the atom sequential index keyed by atom random Id;</span>
+<span class="sd">best to access this using :func:`LookupAtomId`</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">ShortPhaseNames</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&#39;&#39;&#39;a dict containing a possibly shortened and when non-unique numbered</span>
+<span class="sd">version of the phase name. Keyed by the phase sequential index.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="n">ShortHistNames</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&#39;&#39;&#39;a dict containing a possibly shortened and when non-unique numbered</span>
+<span class="sd">version of the histogram name. Keyed by the histogram sequential index.</span>
+<span class="sd">&#39;&#39;&#39;</span>
 
-<div class="viewcode-block" id="VarName"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.VarName">[docs]</a><span class="k">class</span> <span class="nc">VarName</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Defines a GSAS-II variable either using the phase/atom/histogram</span>
-<span class="sd">    unique Id numbers or using a character string that specifies</span>
-<span class="sd">    variables by phase/atom/histogram number (which can change).</span>
-<span class="sd">    Note that :func:`LoadID` should be used to (re)load the current Ids</span>
-<span class="sd">    before creating or later using the VarName object.</span>
+<span class="n">VarDesc</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&#39;&#39;&#39; This dictionary lists descriptions for GSAS-II variables,</span>
+<span class="sd">as set in :func:`CompileVarDesc`. See that function for a description</span>
+<span class="sd">for how keys and values are written.</span>
+<span class="sd">&#39;&#39;&#39;</span>
 
-<span class="sd">    A :class:`VarName` object can be created with a single parameter:</span>
-<span class="sd">    </span>
-<span class="sd">    :param str varname: a single value can be used to create a :class:`VarName`</span>
-<span class="sd">      object. The string must be of form &quot;p:h:var&quot; or &quot;p:h:var:a&quot;, where</span>
+<span class="n">reVarDesc</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&#39;&#39;&#39; This dictionary lists descriptions for GSAS-II variables with</span>
+<span class="sd">the same values as :attr:`VarDesc` except that keys have been compiled as</span>
+<span class="sd">regular expressions. Initialized in :func:`CompileVarDesc`.</span>
+<span class="sd">&#39;&#39;&#39;</span>
 
-<span class="sd">     * p is the phase number (which may be left blank); </span>
-<span class="sd">     * h is the histogram number (which may be left blank); </span>
-<span class="sd">     * a is the atom number (which may be left blank in which case the third colon is omitted).</span>
+<div class="viewcode-block" id="IndexAllIds"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.IndexAllIds">[docs]</a><span class="k">def</span> <span class="nf">IndexAllIds</span><span class="p">(</span><span class="n">Histograms</span><span class="p">,</span><span class="n">Phases</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Scan through the used phases &amp; histograms and create an index</span>
+<span class="sd">    to the random numbers of phases, histograms and atoms. While doing this,</span>
+<span class="sd">    confirm that assigned random numbers are unique -- just in case lightning</span>
+<span class="sd">    strikes twice in the same place.</span>
 
-<span class="sd">    Alternately, a :class:`VarName` object can be created with exactly four positional parameters:</span>
+<span class="sd">    Note: this code assumes that the atom random Id (ranId) is the last </span>
+<span class="sd">    element each atom record.</span>
 
-<span class="sd">    :param int phasenum: The number for the phase</span>
-<span class="sd">    :param int histnum: The number for the histogram</span>
-<span class="sd">    :param str varname: a single value can be used to create a :class:`VarName`</span>
-<span class="sd">    :param int atomnum: The number for the atom</span>
+<span class="sd">    This is called in two places (only) :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`</span>
+<span class="sd">    (which loads the histograms and phases from a GPX file) and</span>
+<span class="sd">    :meth:`GSASII.GSASII.GetUsedHistogramsAndPhases`</span>
+<span class="sd">    (which loads the histograms and phases from the data tree.)</span>
+
+<span class="sd">    TODO: do we need a lookup for rigid body variables?</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c"># process phases and atoms</span>
+    <span class="n">PhaseIdLookup</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">PhaseRanIdLookup</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>    
+    <span class="n">AtomIdLookup</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">AtomRanIdLookup</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">ph</span> <span class="ow">in</span> <span class="n">Phases</span><span class="p">:</span>
+        <span class="n">cx</span><span class="p">,</span><span class="n">ct</span><span class="p">,</span><span class="n">cs</span><span class="p">,</span><span class="n">cia</span> <span class="o">=</span> <span class="n">Phases</span><span class="p">[</span><span class="n">ph</span><span class="p">][</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;AtomPtrs&#39;</span><span class="p">]</span>
+        <span class="n">ranId</span> <span class="o">=</span> <span class="n">Phases</span><span class="p">[</span><span class="n">ph</span><span class="p">][</span><span class="s">&#39;ranId&#39;</span><span class="p">]</span> 
+        <span class="k">while</span> <span class="n">ranId</span> <span class="ow">in</span> <span class="n">PhaseRanIdLookup</span><span class="p">:</span>
+            <span class="c"># Found duplicate random Id! note and reassign</span>
+            <span class="k">print</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n\n</span><span class="s">*** Phase &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ph</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; has repeated ranId. Fixing.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="n">Phases</span><span class="p">[</span><span class="n">ph</span><span class="p">][</span><span class="s">&#39;ranId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ranId</span> <span class="o">=</span> <span class="n">ran</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">)</span>
+        <span class="n">pId</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Phases</span><span class="p">[</span><span class="n">ph</span><span class="p">][</span><span class="s">&#39;pId&#39;</span><span class="p">])</span>
+        <span class="n">PhaseIdLookup</span><span class="p">[</span><span class="n">pId</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ph</span><span class="p">,</span><span class="n">ranId</span><span class="p">)</span>
+        <span class="n">PhaseRanIdLookup</span><span class="p">[</span><span class="n">ranId</span><span class="p">]</span> <span class="o">=</span> <span class="n">pId</span>
+        <span class="n">shortname</span> <span class="o">=</span> <span class="n">ph</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span>
+        <span class="k">while</span> <span class="n">shortname</span> <span class="ow">in</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">shortname</span> <span class="o">=</span> <span class="n">ph</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39; (&#39;</span><span class="o">+</span> <span class="n">pId</span> <span class="o">+</span> <span class="s">&#39;)&#39;</span>
+        <span class="n">ShortPhaseNames</span><span class="p">[</span><span class="n">pId</span><span class="p">]</span> <span class="o">=</span> <span class="n">shortname</span>
+        <span class="n">AtomIdLookup</span><span class="p">[</span><span class="n">pId</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">AtomRanIdLookup</span><span class="p">[</span><span class="n">pId</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">iatm</span><span class="p">,</span><span class="n">at</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Phases</span><span class="p">[</span><span class="n">ph</span><span class="p">][</span><span class="s">&#39;Atoms&#39;</span><span class="p">]):</span>
+            <span class="n">ranId</span> <span class="o">=</span> <span class="n">at</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">while</span> <span class="n">ranId</span> <span class="ow">in</span> <span class="n">AtomRanIdLookup</span><span class="p">[</span><span class="n">pId</span><span class="p">]:</span> <span class="c"># check for dups</span>
+                <span class="k">print</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n\n</span><span class="s">*** Phase &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ph</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; atom &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">iatm</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; has repeated ranId. Fixing.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+                <span class="n">at</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">ranId</span> <span class="o">=</span> <span class="n">ran</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">)</span>
+            <span class="n">AtomRanIdLookup</span><span class="p">[</span><span class="n">pId</span><span class="p">][</span><span class="n">ranId</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">iatm</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">Phases</span><span class="p">[</span><span class="n">ph</span><span class="p">][</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;macromolecular&#39;</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">_</span><span class="si">%s</span><span class="s">_</span><span class="si">%s</span><span class="s">_</span><span class="si">%s</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">at</span><span class="p">[</span><span class="n">ct</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">at</span><span class="p">[</span><span class="n">ct</span><span class="o">-</span><span class="mi">3</span><span class="p">],</span><span class="n">at</span><span class="p">[</span><span class="n">ct</span><span class="o">-</span><span class="mi">4</span><span class="p">],</span><span class="n">at</span><span class="p">[</span><span class="n">ct</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="n">at</span><span class="p">[</span><span class="n">ct</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">AtomIdLookup</span><span class="p">[</span><span class="n">pId</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">iatm</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span><span class="n">label</span><span class="p">,</span><span class="n">ranId</span><span class="p">)</span>
+    <span class="c"># process histograms</span>
+    <span class="n">HistIdLookup</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">HistRanIdLookup</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">ShortHistNames</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="n">Histograms</span><span class="p">:</span>
+        <span class="n">ranId</span> <span class="o">=</span> <span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">][</span><span class="s">&#39;ranId&#39;</span><span class="p">]</span>
+        <span class="k">while</span> <span class="n">ranId</span> <span class="ow">in</span> <span class="n">HistRanIdLookup</span><span class="p">:</span>
+            <span class="c"># Found duplicate random Id! note and reassign</span>
+            <span class="k">print</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n\n</span><span class="s">*** Histogram &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; has repeated ranId. Fixing.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+            <span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">][</span><span class="s">&#39;ranId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ranId</span> <span class="o">=</span> <span class="n">ran</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">)</span>
+        <span class="n">hId</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">][</span><span class="s">&#39;hId&#39;</span><span class="p">])</span>
+        <span class="n">HistIdLookup</span><span class="p">[</span><span class="n">hId</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">hist</span><span class="p">,</span><span class="n">ranId</span><span class="p">)</span>
+        <span class="n">HistRanIdLookup</span><span class="p">[</span><span class="n">ranId</span><span class="p">]</span> <span class="o">=</span> <span class="n">hId</span>
+        <span class="n">shortname</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[:</span><span class="mi">15</span><span class="p">]</span>
+        <span class="k">while</span> <span class="n">shortname</span> <span class="ow">in</span> <span class="n">ShortHistNames</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">shortname</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[:</span><span class="mi">11</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39; (&#39;</span><span class="o">+</span> <span class="n">hId</span> <span class="o">+</span> <span class="s">&#39;)&#39;</span>
+        <span class="n">ShortHistNames</span><span class="p">[</span><span class="n">hId</span><span class="p">]</span> <span class="o">=</span> <span class="n">shortname</span>
+</div>
+<div class="viewcode-block" id="LookupAtomId"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.LookupAtomId">[docs]</a><span class="k">def</span> <span class="nf">LookupAtomId</span><span class="p">(</span><span class="n">pId</span><span class="p">,</span><span class="n">ranId</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Get the atom number from a phase and atom random Id</span>
+
+<span class="sd">    :param int/str pId: the sequential number of the phase</span>
+<span class="sd">    :param int ranId: the random Id assigned to an atom</span>
+
+<span class="sd">    :returns: the index number of the atom (str)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">AtomRanIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&#39;Error: LookupAtomId called before IndexAllIds was run&#39;</span>
+    <span class="k">if</span> <span class="n">pId</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">pId</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: phase is invalid (None or blank)&#39;</span>
+    <span class="n">pId</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pId</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pId</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">AtomRanIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: LookupAtomId does not have phase &#39;</span><span class="o">+</span><span class="n">pId</span>
+    <span class="k">if</span> <span class="n">ranId</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">AtomRanIdLookup</span><span class="p">[</span><span class="n">pId</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: LookupAtomId, ranId &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ranId</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; not in AtomRanIdLookup[&#39;</span><span class="o">+</span><span class="n">pId</span><span class="o">+</span><span class="s">&#39;]&#39;</span>
+    <span class="k">return</span> <span class="n">AtomRanIdLookup</span><span class="p">[</span><span class="n">pId</span><span class="p">][</span><span class="n">ranId</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="LookupAtomLabel"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.LookupAtomLabel">[docs]</a><span class="k">def</span> <span class="nf">LookupAtomLabel</span><span class="p">(</span><span class="n">pId</span><span class="p">,</span><span class="n">index</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Get the atom label from a phase and atom index number</span>
+
+<span class="sd">    :param int/str pId: the sequential number of the phase</span>
+<span class="sd">    :param int index: the index of the atom in the list of atoms</span>
+
+<span class="sd">    :returns: the label for the atom (str) and the random Id of the atom (int)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">AtomIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&#39;Error: LookupAtomLabel called before IndexAllIds was run&#39;</span>
+    <span class="k">if</span> <span class="n">pId</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">pId</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: phase is invalid (None or blank)&#39;</span>
+    <span class="n">pId</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pId</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pId</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">AtomIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: LookupAtomLabel does not have phase &#39;</span><span class="o">+</span><span class="n">pId</span>
+    <span class="k">if</span> <span class="n">index</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">AtomIdLookup</span><span class="p">[</span><span class="n">pId</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: LookupAtomLabel, ranId &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; not in AtomRanIdLookup[&#39;</span><span class="o">+</span><span class="n">pId</span><span class="o">+</span><span class="s">&#39;]&#39;</span>
+    <span class="k">return</span> <span class="n">AtomIdLookup</span><span class="p">[</span><span class="n">pId</span><span class="p">][</span><span class="n">index</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="LookupPhaseId"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.LookupPhaseId">[docs]</a><span class="k">def</span> <span class="nf">LookupPhaseId</span><span class="p">(</span><span class="n">ranId</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Get the phase number and name from a phase random Id</span>
+
+<span class="sd">    :param int ranId: the random Id assigned to a phase</span>
+<span class="sd">    :returns: the sequential Id (pId) number for the phase (str)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">PhaseRanIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&#39;Error: LookupPhaseId called before IndexAllIds was run&#39;</span>
+    <span class="k">if</span> <span class="n">ranId</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PhaseRanIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: LookupPhaseId does not have ranId &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ranId</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">PhaseRanIdLookup</span><span class="p">[</span><span class="n">ranId</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="LookupPhaseName"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.LookupPhaseName">[docs]</a><span class="k">def</span> <span class="nf">LookupPhaseName</span><span class="p">(</span><span class="n">pId</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Get the phase number and name from a phase Id</span>
+
+<span class="sd">    :param int/str pId: the sequential assigned to a phase</span>
+<span class="sd">    :returns:  (phase,ranId) where phase is the name of the phase (str)</span>
+<span class="sd">      and ranId is the random # id for the phase (int)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">PhaseIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&#39;Error: LookupPhaseName called before IndexAllIds was run&#39;</span>
+    <span class="k">if</span> <span class="n">pId</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">pId</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: phase is invalid (None or blank)&#39;</span>
+    <span class="n">pId</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pId</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pId</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PhaseIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: LookupPhaseName does not have index &#39;</span><span class="o">+</span><span class="n">pId</span>
+    <span class="k">return</span> <span class="n">PhaseIdLookup</span><span class="p">[</span><span class="n">pId</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="LookupHistId"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.LookupHistId">[docs]</a><span class="k">def</span> <span class="nf">LookupHistId</span><span class="p">(</span><span class="n">ranId</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Get the histogram number and name from a histogram random Id</span>
+
+<span class="sd">    :param int ranId: the random Id assigned to a histogram</span>
+<span class="sd">    :returns: the sequential Id (hId) number for the histogram (str)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">HistRanIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&#39;Error: LookupHistId called before IndexAllIds was run&#39;</span>
+    <span class="k">if</span> <span class="n">ranId</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">HistRanIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: LookupHistId does not have ranId &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">ranId</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">HistRanIdLookup</span><span class="p">[</span><span class="n">ranId</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="LookupHistName"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.LookupHistName">[docs]</a><span class="k">def</span> <span class="nf">LookupHistName</span><span class="p">(</span><span class="n">hId</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Get the histogram number and name from a histogram Id</span>
+
+<span class="sd">    :param int/str hId: the sequential assigned to a histogram</span>
+<span class="sd">    :returns:  (hist,ranId) where hist is the name of the histogram (str)</span>
+<span class="sd">      and ranId is the random # id for the histogram (int)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">HistIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&#39;Error: LookupHistName called before IndexAllIds was run&#39;</span>
+    <span class="k">if</span> <span class="n">hId</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">hId</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: histogram is invalid (None or blank)&#39;</span>
+    <span class="n">hId</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hId</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">hId</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">HistIdLookup</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">,</span><span class="s">&#39;Error: LookupHistName does not have index &#39;</span><span class="o">+</span><span class="n">hId</span>
+    <span class="k">return</span> <span class="n">HistIdLookup</span><span class="p">[</span><span class="n">hId</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="fmtVarDescr"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.fmtVarDescr">[docs]</a><span class="k">def</span> <span class="nf">fmtVarDescr</span><span class="p">(</span><span class="n">varname</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Return a string with a more complete description for a GSAS-II variable </span>
+
+<span class="sd">    TODO: This will not handle rigid body parameters yet</span>
+
+<span class="sd">    :param str name: A full G2 variable name with 2 or 3</span>
+<span class="sd">       colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;])</span>
+<span class="sd">       </span>
+<span class="sd">    :returns: a string with the description</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="n">l</span> <span class="o">=</span> <span class="n">getVarDescr</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">l</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s">&quot;invalid variable name (&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;)!&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">]:</span>
+        <span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;(variable needs a definition!)&quot;</span>
+
+    <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># HAP: keep short</span>
+        <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">hlbl</span> <span class="o">=</span> <span class="n">ShortHistNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">hlbl</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;HKLF&#39;</span><span class="p">:</span>
+            <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Xtl=&#39;</span><span class="o">+</span><span class="n">hlbl</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
+        <span class="k">elif</span> <span class="n">hlbl</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;PWDR&#39;</span><span class="p">:</span>
+            <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Pwd=&#39;</span><span class="o">+</span><span class="n">hlbl</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Hist=&#39;</span><span class="o">+</span><span class="n">hlbl</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Ph=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; * &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">hlbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;: &quot;</span>
+    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># atom parameter, </span>
+        <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;phase?&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">albl</span> <span class="o">=</span> <span class="n">LookupAtomLabel</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">albl</span> <span class="o">=</span> <span class="s">&#39;Atom?&#39;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Atom &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">albl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; in &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;: &quot;</span>
+    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;phase?&#39;</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Phase &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;: &quot;</span>
+    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">hlbl</span> <span class="o">=</span> <span class="n">ShortHistNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">hlbl</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;HKLF&#39;</span><span class="p">:</span>
+            <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Xtl=&#39;</span><span class="o">+</span><span class="n">hlbl</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
+        <span class="k">elif</span> <span class="n">hlbl</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;PWDR&#39;</span><span class="p">:</span>
+            <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Pwd=&#39;</span><span class="o">+</span><span class="n">hlbl</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Hist=&#39;</span><span class="o">+</span><span class="n">hlbl</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hlbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;: &quot;</span>    
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;Global: &#39;</span>
+    <span class="n">s</span> <span class="o">+=</span> <span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">s</span>
+</div>
+<div class="viewcode-block" id="getVarDescr"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.getVarDescr">[docs]</a><span class="k">def</span> <span class="nf">getVarDescr</span><span class="p">(</span><span class="n">varname</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Return a short description for a GSAS-II variable </span>
+
+<span class="sd">    :param str name: A full G2 variable name with 2 or 3</span>
+<span class="sd">       colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;])</span>
+<span class="sd">      </span>
+<span class="sd">    :returns: a five element list as [`p`,`h`,`name`,`a`,`description`],</span>
+<span class="sd">      where `p`, `h`, `a` are str values or `None`, for the phase number,</span>
+<span class="sd">      the histogram number and the atom number; `name` will always be</span>
+<span class="sd">      an str; and `description` is str or `None`.</span>
+<span class="sd">      If the variable name is incorrectly formed (for example, wrong</span>
+<span class="sd">      number of colons), `None` is returned instead of a list.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">varname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">l</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">None</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">l</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">l</span> <span class="o">+=</span> <span class="p">[</span><span class="n">getDescr</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">2</span><span class="p">])]</span>
+    <span class="k">return</span> <span class="n">l</span>
+    </div>
+<div class="viewcode-block" id="CompileVarDesc"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.CompileVarDesc">[docs]</a><span class="k">def</span> <span class="nf">CompileVarDesc</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;Set the values in the variable description lookup table (:attr:`VarDesc`)</span>
+<span class="sd">    into :attr:`reVarDesc`. This is called in :func:`getDescr` so the initialization</span>
+<span class="sd">    is always done before use.</span>
+
+<span class="sd">    Note that keys may contain regular expressions, where &#39;[xyz]&#39;</span>
+<span class="sd">    matches &#39;x&#39; &#39;y&#39; or &#39;z&#39; (equivalently &#39;[x-z]&#39; describes this as range of values).</span>
+<span class="sd">    &#39;.*&#39; matches any string. For example::</span>
+
+<span class="sd">    &#39;AUiso&#39;:&#39;Atomic isotropic displacement parameter&#39;,</span>
+
+<span class="sd">    will match variable ``&#39;p::AUiso:a&#39;``.</span>
+<span class="sd">    If parentheses are used in the key, the contents of those parentheses can be</span>
+<span class="sd">    used in the value, such as::</span>
+
+<span class="sd">    &#39;AU([123][123])&#39;:&#39;Atomic anisotropic displacement parameter U\\1&#39;,</span>
+
+<span class="sd">    will match ``AU11``, ``AU23``,.. and `U11`, `U23` etc will be displayed</span>
+<span class="sd">    in the value when used.</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="kn">import</span> <span class="nn">re</span>
-    <span class="n">IDdict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;phases&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;hists&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;atoms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="c"># This dictionary lists descriptions for GSAS-II variables.</span>
-    <span class="c"># Note that keys may contain regular expressions, where &#39;[xyz]&#39;</span>
-    <span class="c"># matches &#39;x&#39; &#39;y&#39; or &#39;z&#39; (equivalently &#39;[x-z]&#39; describes this as range of values).</span>
-    <span class="c"># &#39;.*&#39; matches any string</span>
-    <span class="n">VarDesc</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="n">reVarDesc</span><span class="p">:</span> <span class="k">return</span> <span class="c"># already done</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="p">{</span>
         <span class="c"># Phase vars (p::&lt;var&gt;)</span>
-        <span class="s">&#39;A[0-5]&#39;</span> <span class="p">:</span> <span class="s">&#39;Reciprocal metric tensor component&#39;</span><span class="p">,</span>
+        <span class="s">&#39;A([0-5])&#39;</span> <span class="p">:</span> <span class="s">&#39;Reciprocal metric tensor component </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;Vol&#39;</span> <span class="p">:</span> <span class="s">&#39;Unit cell volume????&#39;</span><span class="p">,</span>
         <span class="c"># Atom vars (p::&lt;var&gt;:a)</span>
-        <span class="s">&#39;dA[xyz]&#39;</span> <span class="p">:</span> <span class="s">&#39;change to atomic position&#39;</span><span class="p">,</span>
+        <span class="s">&#39;dA([xyz])&#39;</span> <span class="p">:</span> <span class="s">&#39;change to atomic position </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;AUiso&#39;</span><span class="p">:</span><span class="s">&#39;Atomic isotropic displacement parameter&#39;</span><span class="p">,</span>
-        <span class="s">&#39;AU[123][123]&#39;</span><span class="p">:</span><span class="s">&#39;Atomic anisotropic displacement parameter&#39;</span><span class="p">,</span>
-        <span class="s">&#39;AFrac&#39;</span><span class="p">:</span> <span class="s">&#39;Atomic occupancy parameter&#39;</span><span class="p">,</span>
+        <span class="s">&#39;AU([123][123])&#39;</span><span class="p">:</span><span class="s">&#39;Atomic anisotropic displacement parameter U</span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Afrac&#39;</span><span class="p">:</span> <span class="s">&#39;Atomic occupancy parameter&#39;</span><span class="p">,</span>
         <span class="c"># Hist &amp; Phase (HAP) vars (p:h:&lt;var&gt;)</span>
-        <span class="s">&#39;Bab[AU]&#39;</span><span class="p">:</span> <span class="s">&#39;Babinet solvent scattering coef.&#39;</span><span class="p">,</span>
-        <span class="s">&#39;D[123][123]&#39;</span> <span class="p">:</span> <span class="s">&#39;Anisotropic strain coef.&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Bab([AU])&#39;</span><span class="p">:</span> <span class="s">&#39;Babinet solvent scattering coef. </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;D([123][123])&#39;</span> <span class="p">:</span> <span class="s">&#39;Anisotropic strain coef. </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;Extinction&#39;</span> <span class="p">:</span> <span class="s">&#39;Extinction coef.&#39;</span><span class="p">,</span>
         <span class="s">&#39;MD&#39;</span> <span class="p">:</span> <span class="s">&#39;March-Dollase coef.&#39;</span><span class="p">,</span>
         <span class="s">&#39;Mustrain;.*&#39;</span> <span class="p">:</span> <span class="s">&#39;Microstrain coef.&#39;</span><span class="p">,</span>
@@ -690,110 +1111,147 @@
         <span class="s">&#39;eA&#39;</span> <span class="p">:</span> <span class="s">&#39;?&#39;</span><span class="p">,</span>
         <span class="c">#Histogram vars (:h:&lt;var&gt;)</span>
         <span class="s">&#39;Absorption&#39;</span> <span class="p">:</span> <span class="s">&#39;Absorption coef.&#39;</span><span class="p">,</span>
-        <span class="s">&#39;Displace[XY]&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye-Scherrer sample displacement&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Displace([XY])&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye-Scherrer sample displacement </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;Lam&#39;</span> <span class="p">:</span> <span class="s">&#39;Wavelength&#39;</span><span class="p">,</span>
-        <span class="s">&#39;Polariz&#39;</span> <span class="p">:</span> <span class="s">&#39;Polarization correction&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Polariz\.&#39;</span> <span class="p">:</span> <span class="s">&#39;Polarization correction&#39;</span><span class="p">,</span>
         <span class="s">&#39;SH/L&#39;</span> <span class="p">:</span> <span class="s">&#39;FCJ peak asymmetry correction&#39;</span><span class="p">,</span>
         <span class="s">&#39;Scale&#39;</span> <span class="p">:</span> <span class="s">&#39;Histogram scale factor&#39;</span><span class="p">,</span>
-        <span class="s">&#39;[UVW]&#39;</span> <span class="p">:</span> <span class="s">&#39;Gaussian instrument broadening&#39;</span><span class="p">,</span>
-        <span class="s">&#39;[XY]&#39;</span> <span class="p">:</span> <span class="s">&#39;Cauchy instrument broadening&#39;</span><span class="p">,</span>
+        <span class="s">&#39;([UVW])&#39;</span> <span class="p">:</span> <span class="s">&#39;Gaussian instrument broadening </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;([XY])&#39;</span> <span class="p">:</span> <span class="s">&#39;Cauchy instrument broadening </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;Zero&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye-Scherrer zero correction&#39;</span><span class="p">,</span>
         <span class="s">&#39;nDebye&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye model background corr. terms&#39;</span><span class="p">,</span>
-        <span class="s">&#39;nPeaks&#39;</span> <span class="p">:</span> <span class="s">&#39;Fixed peak  background corr. terms&#39;</span><span class="p">,</span>
+        <span class="s">&#39;nPeaks&#39;</span> <span class="p">:</span> <span class="s">&#39;Fixed peak background corr. terms&#39;</span><span class="p">,</span>
         <span class="c"># Global vars (::&lt;var&gt;)</span>
-        <span class="p">}</span>
+        <span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">VarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="n">reVarDesc</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span>
+</div>
+<div class="viewcode-block" id="getDescr"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.getDescr">[docs]</a><span class="k">def</span> <span class="nf">getDescr</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Return a short description for a GSAS-II variable </span>
+
+<span class="sd">    :param str name: The descriptive part of the variable name without colons (:)</span>
+<span class="sd">      </span>
+<span class="sd">    :returns: a short description or None if not found</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">CompileVarDesc</span><span class="p">()</span> <span class="c"># compile the regular expressions, if needed</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">reVarDesc</span><span class="p">:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">m</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">reVarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+    <span class="k">return</span> <span class="bp">None</span>
+</div>
+<span class="k">def</span> <span class="nf">_lookup</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span><span class="n">key</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Lookup a key in a dictionary, where None returns an empty string</span>
+<span class="sd">    but an unmatched key returns a question mark. Used in :class:`G2VarObj`</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s">&quot;&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="G2VarObj"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.G2VarObj">[docs]</a><span class="k">class</span> <span class="nc">G2VarObj</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Defines a GSAS-II variable either using the phase/atom/histogram</span>
+<span class="sd">    unique Id numbers or using a character string that specifies</span>
+<span class="sd">    variables by phase/atom/histogram number (which can change).</span>
+<span class="sd">    Note that :func:`LoadID` should be used to (re)load the current Ids</span>
+<span class="sd">    before creating or later using the G2VarObj object.</span>
+
+<span class="sd">    A :class:`G2VarObj` object can be created with a single parameter:</span>
+<span class="sd">    </span>
+<span class="sd">    :param str/tuple varname: a single value can be used to create a :class:`G2VarObj`</span>
+<span class="sd">      object. If a string, it must be of form &quot;p:h:var&quot; or &quot;p:h:var:a&quot;, where</span>
+
+<span class="sd">     * p is the phase number (which may be left blank); </span>
+<span class="sd">     * h is the histogram number (which may be left blank); </span>
+<span class="sd">     * a is the atom number (which may be left blank in which case the third colon is omitted).</span>
+
+<span class="sd">      Alternately a single tuple of form (Phase,Histogram,VarName,AtomID) can be used, where</span>
+<span class="sd">      Phase, Histogram, and AtomID are None or are ranId values and VarName is a string.     </span>
+
+<span class="sd">    If four positional arguments are supplied, they are:</span>
+
+<span class="sd">    :param str/int phasenum: The number for the phase</span>
+<span class="sd">    :param str/int histnum: The number for the histogram</span>
+<span class="sd">    :param str varname: a single value can be used to create a :class:`G2VarObj`</span>
+<span class="sd">    :param str/int atomnum: The number for the atom</span>
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">IDdict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;phases&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;hists&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;atoms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>            
             <span class="n">lst</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span> <span class="s">&quot;Need to look up IDs&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">PhaseIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">],[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="n">HistIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">],[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">AtomIdLookup</span><span class="p">[</span><span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">3</span><span class="p">],[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">PhaseIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="n">HistIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]),[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">AtomIdLookup</span><span class="p">[</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">]),[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;Incorrectly called GSAS-II parameter name&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">()</span>
+        <span class="c">#print &quot;DEBUG: created &quot;,self.phase,self.histogram,self.name,self.atom</span>
 
-<div class="viewcode-block" id="VarName.name"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.VarName.name">[docs]</a>    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Formats the GSAS-II variable name as a &quot;traditional&quot; string (p:h:&lt;var&gt;:a)</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">varname</span><span class="p">()</span>
+
+<div class="viewcode-block" id="G2VarObj.varname"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.G2VarObj.varname">[docs]</a>    <span class="k">def</span> <span class="nf">varname</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Formats the GSAS-II variable name as a &quot;traditional&quot; GSAS-II variable </span>
+<span class="sd">        string (p:h:&lt;var&gt;:a) or (p:h:&lt;var&gt;)</span>
 
 <span class="sd">        :returns: the variable name as a str</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">def</span> <span class="nf">_fmt</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="s">&quot;&quot;</span>
-            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span> <span class="o">+</span> <span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="n">_fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
-</div>
+        <span class="n">ph</span> <span class="o">=</span> <span class="n">_lookup</span><span class="p">(</span><span class="n">PhaseRanIdLookup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="n">_lookup</span><span class="p">(</span><span class="n">HistRanIdLookup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="p">(</span><span class="n">ph</span> <span class="o">+</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="n">hist</span> <span class="o">+</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> 
+             <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ph</span> <span class="ow">in</span> <span class="n">AtomRanIdLookup</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="n">AtomRanIdLookup</span><span class="p">[</span><span class="n">ph</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;:?&quot;</span>
+        <span class="k">return</span> <span class="n">s</span>
+    </div>
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Return the detailed contents of the object</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Phase: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;; &quot;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;&lt;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">ph</span> <span class="o">=</span>  <span class="n">_lookup</span><span class="p">(</span><span class="n">PhaseRanIdLookup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Phase: rId=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; (#&quot;</span><span class="o">+</span> <span class="n">ph</span> <span class="o">+</span> <span class="s">&quot;); &quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">hist</span> <span class="o">=</span> <span class="n">_lookup</span><span class="p">(</span><span class="n">HistRanIdLookup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Histogram: rId=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; (#&quot;</span><span class="o">+</span> <span class="n">hist</span> <span class="o">+</span> <span class="s">&quot;); &quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Atom rId=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ph</span> <span class="ow">in</span> <span class="n">AtomRanIdLookup</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot; (#&quot;</span> <span class="o">+</span> <span class="n">AtomRanIdLookup</span><span class="p">[</span><span class="n">ph</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;); &quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot; (#? -- not found!); &quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="s">&#39;Variable name=&quot;&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;&quot;&gt;&#39;</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">+</span><span class="s">&quot;(&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">varname</span><span class="p">()</span><span class="o">+</span><span class="s">&quot;)&quot;</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Histogram: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;; &quot;</span>
-            
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Variable name: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;; &quot;</span>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">phase</span> <span class="ow">and</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">histogram</span> <span class="ow">and</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">False</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Atom number: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;; &quot;</span>
-
-        <span class="k">return</span> <span class="n">s</span><span class="o">+</span><span class="s">&quot;(&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">()</span><span class="o">+</span><span class="s">&quot;)&quot;</span>
-
-    <span class="k">def</span> <span class="nf">getDescr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Return a short description for a GSAS-II variable </span>
-
-<span class="sd">        :returns: a short description or &#39;no definition&#39; if not found</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="c"># iterating over uncompiled regular expressions is not terribly fast,</span>
-        <span class="c"># but this routine should not need to be all that speedy</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-        <span class="k">return</span> <span class="s">&#39;no definition&#39;</span>
-
-<div class="viewcode-block" id="VarName.getDescr"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.VarName.getDescr">[docs]</a>    <span class="k">def</span> <span class="nf">getDescr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Return a short description for a GSAS-II variable </span>
-
-<span class="sd">        :returns: a short description or &#39;no definition&#39; if not found</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="c"># iterating over uncompiled regular expressions is not terribly fast,</span>
-        <span class="c"># but this routine should not need to be all that speedy</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-        <span class="k">return</span> <span class="s">&#39;no definition&#39;</span>
-</div>
-<div class="viewcode-block" id="VarName.fullDescr"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.VarName.fullDescr">[docs]</a>    <span class="k">def</span> <span class="nf">fullDescr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Return a longer description for a GSAS-II variable </span>
-
-<span class="sd">        :returns: a short description or &#39;no definition&#39; if not found</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="c"># iterating over uncompiled regular expressions is not terribly fast,</span>
-        <span class="c"># but this routine should not need to be all that speedy</span>
-        <span class="nb">str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">()</span>
-        
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">VarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-        <span class="k">return</span> <span class="s">&#39;no definition&#39;</span>
-
-</div>
     <span class="k">def</span> <span class="nf">_show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="s">&#39;For testing, shows the current lookup table&#39;</span>
         <span class="k">print</span> <span class="s">&#39;phases&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;phases&#39;</span><span class="p">]</span>

@@ -70,7 +70,7 @@ that respond to some tabs in the phase GUI in other modules
 <dt id="GSASIIphsGUI.UpdatePhaseData">
 <tt class="descclassname">GSASIIphsGUI.</tt><tt class="descname">UpdatePhaseData</tt><big>(</big><em>G2frame</em>, <em>Item</em>, <em>data</em>, <em>oldPage</em><big>)</big><a class="reference internal" href="_modules/GSASIIphsGUI.html#UpdatePhaseData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIphsGUI.UpdatePhaseData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create the data display window contents when a phase is clicked on
-in the man (data tree) window.
+in the main (data tree) window.
 Called only from <a class="reference internal" href="GSASIIGUIr.html#GSASIIgrid.MovePatternTreeToGrid" title="GSASIIgrid.MovePatternTreeToGrid"><tt class="xref py py-meth docutils literal"><span class="pre">GSASIIgrid.MovePatternTreeToGrid()</span></tt></a>,
 which in turn is called from <a class="reference internal" href="GSASII.html#GSASII.GSASII.OnPatternTreeSelChanged" title="GSASII.GSASII.OnPatternTreeSelChanged"><tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.OnPatternTreeSelChanged()</span></tt></a>
 when a tree item is selected.</p>
@@ -153,6 +153,12 @@ to delete an element from a list of selected elements.</p>
 <span class="target" id="module-GSASIIconstrGUI"></span><div class="section" id="gsasiiconstrgui-constraint-gui-routines">
 <h2><em>GSASIIconstrGUI: Constraint GUI routines</em><a class="headerlink" href="#gsasiiconstrgui-constraint-gui-routines" title="Permalink to this headline">¶</a></h2>
 <p>Used to define constraints and rigid bodies.</p>
+<dl class="class">
+<dt id="GSASIIconstrGUI.ConstraintDialog">
+<em class="property">class </em><tt class="descclassname">GSASIIconstrGUI.</tt><tt class="descname">ConstraintDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>text</em>, <em>data</em>, <em>separator='*'</em>, <em>varname=''</em>, <em>varyflag=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIconstrGUI.html#ConstraintDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIconstrGUI.ConstraintDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Window to edit Constraint values</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="GSASIIconstrGUI.MultiIntegerDialog">
 <em class="property">class </em><tt class="descclassname">GSASIIconstrGUI.</tt><tt class="descname">MultiIntegerDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>prompts</em>, <em>values</em><big>)</big><a class="reference internal" href="_modules/GSASIIconstrGUI.html#MultiIntegerDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIconstrGUI.MultiIntegerDialog" title="Permalink to this definition">¶</a></dt>

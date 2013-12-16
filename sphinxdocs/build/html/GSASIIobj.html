@@ -57,7 +57,8 @@
             
   <span class="target" id="module-GSASIIobj"></span><div class="section" id="gsasiiobj-data-objects">
 <h1><em>GSASIIobj: Data objects</em><a class="headerlink" href="#gsasiiobj-data-objects" title="Permalink to this headline">¶</a></h1>
-<p>This module defines and/or documents the data structures used in GSAS-II.</p>
+<p>This module defines and/or documents the data structures used in GSAS-II, as well
+as provides misc. support routines.</p>
 <div class="section" id="constraints-tree-item">
 <h2>Constraints Tree Item<a class="headerlink" href="#constraints-tree-item" title="Permalink to this headline">¶</a></h2>
 <span class="target" id="constraints-table"></span><p id="index-0">Constraints are stored in a dict, separated into groups.
@@ -67,7 +68,9 @@ p:h:&lt;var&gt;:n, where p is the phase number, h is the histogram number
 If a parameter does not depend on a histogram or phase or is unnumbered, that
 number is omitted.
 Note that the contents of each dict item is a List where each element in the
-list is a <a class="reference internal" href="#constraint-definitions-table"><em>constraint definition objects</em></a>.</p>
+list is a <a class="reference internal" href="#constraint-definitions-table"><em>constraint definition objects</em></a>.
+The constraints in this form are converted in
+<a class="reference internal" href="GSASIIstruc.html#GSASIIstrIO.ProcessConstraints" title="GSASIIstrIO.ProcessConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrIO.ProcessConstraints()</span></tt></a> to the form used in <a class="reference internal" href="GSASIImapvars.html#module-GSASIImapvars" title="GSASIImapvars"><tt class="xref py py-mod docutils literal"><span class="pre">GSASIImapvars</span></tt></a></p>
 <p>The keys in the Constraints dict are:</p>
 <table border="1" class="docutils">
 <colgroup>
@@ -102,35 +105,49 @@ are of form ::&lt;var&gt;:n</td>
 </tr>
 </tbody>
 </table>
-<span class="target" id="constraint-definitions-table"></span><p id="index-1">Each constraint is defined as a list using a series of terms of form</p>
-<div class="highlight-python"><pre>[[&lt;mult1&gt;, &lt;var1&gt;], [&lt;mult2&gt;, &lt;var2&gt;],..., &lt;fixed val&gt;, &lt;vary flag&gt;, &lt;cons type&gt;]</pre>
+<span class="target" id="constraint-definitions-table"></span><p id="index-1">Each constraint is defined as an item in a list. Each constraint is of form:</p>
+<div class="highlight-python"><pre>[[&lt;mult1&gt;, &lt;var1&gt;], [&lt;mult2&gt;, &lt;var2&gt;],..., &lt;fixedval&gt;, &lt;varyflag&gt;, &lt;constype&gt;]</pre>
 </div>
-<p>Where the variable pair list item containing two values [&lt;mult&gt;, &lt;var&gt;],</p>
+<p>Where the variable pair list item containing two values [&lt;mult&gt;, &lt;var&gt;], where:</p>
 <blockquote>
-<div><ul class="simple">
-<li>&lt;mult&gt; is a multiplier for the constraint (float)</li>
-<li>&lt;var&gt; is the name of the variable (str) (or to be implemented a <a class="reference internal" href="#GSASIIobj.VarName" title="GSASIIobj.VarName"><tt class="xref py py-class docutils literal"><span class="pre">VarName</span></tt></a> object.)</li>
+<div><ul>
+<li><p class="first">&lt;mult&gt; is a multiplier for the constraint (float)</p>
+</li>
+<li><dl class="first docutils">
+<dt>&lt;var&gt; a <a class="reference internal" href="#GSASIIobj.G2VarObj" title="GSASIIobj.G2VarObj"><tt class="xref py py-class docutils literal"><span class="pre">G2VarObj</span></tt></a> object (previously a str variable name of form</dt>
+<dd><p class="first last">&#8216;p:h:name[:at]&#8217;)</p>
+</dd>
+</dl>
+</li>
 </ul>
 </div></blockquote>
 <p>Note that the last three items in the list play a special role:</p>
 <blockquote>
 <div><ul>
-<li><p class="first">&lt;fixed val&gt; is the fixed value for a constraint equation or is None</p>
+<li><p class="first">&lt;fixedval&gt; is the fixed value for a <cite>constant equation</cite> (<tt class="docutils literal"><span class="pre">constype=c</span></tt>)
+constraint or is None. For a <cite>New variable</cite> (<tt class="docutils literal"><span class="pre">constype=f</span></tt>) constraint,
+a variable name can be specified as a str (used for externally
+generated constraints)</p>
 </li>
-<li><p class="first">&lt;vary flag&gt; is True, False or None and is intended to use to indicate if new variables
+<li><p class="first">&lt;varyflag&gt; is True or False for <cite>New variable</cite> (<tt class="docutils literal"><span class="pre">constype=f</span></tt>) constraints
+or is None. This will be implemented in the future to indicate if these variables
 should be refined.</p>
 </li>
-<li><p class="first">&lt;cons type&gt; is one of four letters, &#8216;e&#8217;, &#8216;c&#8217;, &#8216;h&#8217;, &#8216;f&#8217; that determines the type of constraint.</p>
+<li><p class="first">&lt;constype&gt; is one of four letters, &#8216;e&#8217;, &#8216;c&#8217;, &#8216;h&#8217;, &#8216;f&#8217; that determines the type of constraint:</p>
 <blockquote>
 <div><ul class="simple">
 <li>&#8216;e&#8217; defines a set of equivalent variables. Only the first variable is refined (if the
 appropriate refine flag is set) and and all other equivalent variables in the list
-are generated from that variable. The vary flag for those variables is ignored.</li>
-<li>&#8216;c&#8217; defines a constraint equation of form, <span class="math">\(m_1 \times var_1 + m_2 \times var_2 + ... = c\)</span></li>
-<li>&#8216;h&#8217; defines a variable to hold (not vary). Any variable on this list is not varied, even if its refinement
-flag is set. This is of particular value when needing to hold one or more variables in a set such as
+are generated from that variable, using the appropriate multipliers.</li>
+<li>&#8216;c&#8217; defines a constraint equation of form,
+<span class="math">\(m_1 \times var_1 + m_2 \times var_2 + ... = c\)</span></li>
+<li>&#8216;h&#8217; defines a variable to hold (not vary). Any variable on this list is not varied,
+even if its refinement flag is set. Only one [mult,var] pair is allowed in a hold
+constraint and the mult value is ignored.
+This is of particular value when needing to hold one or more variables where a
+single flag controls a set of variables such as, coordinates, 
 the reciprocal metric tensor or anisotropic displacement parameter.</li>
-<li>&#8216;f&#8217; defines a relationship to define a new variable according to relationship 
+<li>&#8216;f&#8217; defines a new variable (function) according to relationship 
 <span class="math">\(newvar = m_1 \times var_1 + m_2 \times var_2 + ...\)</span></li>
 </ul>
 </div></blockquote>
@@ -846,7 +863,8 @@ always present; additional ones for macromolecular phases are marked &#8216;mm&#
 with a top-level entry named beginning with the string &#8220;PWDR &#8221;. The
 diffraction data for that information are directly associated with
 that tree item and there are a series of children to that item. The
-routine <a class="reference internal" href="GSASII.html#GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree" title="GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree"><tt class="xref py py-func docutils literal"><span class="pre">GetUsedHistogramsAndPhasesfromTree()</span></tt></a> will
+routines <a class="reference internal" href="GSASII.html#GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree" title="GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree"><tt class="xref py py-func docutils literal"><span class="pre">GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree()</span></tt></a>
+and <a class="reference internal" href="GSASIIstruc.html#GSASIIstrIO.GetUsedHistogramsAndPhases" title="GSASIIstrIO.GetUsedHistogramsAndPhases"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrIO.GetUsedHistogramsAndPhases()</span></tt></a> will
 load this information into a dictionary where the child tree name is
 used as a key, and the information in the main entry is assigned
 a key of <tt class="docutils literal"><span class="pre">Data</span></tt>, as outlined below.</p>
@@ -1124,7 +1142,8 @@ reflections. The columns in that array are documented below.</p>
 with a top-level entry named beginning with the string &#8220;HKLF &#8221;. The
 diffraction data for that information are directly associated with
 that tree item and there are a series of children to that item. The
-routine <a class="reference internal" href="GSASII.html#GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree" title="GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree"><tt class="xref py py-func docutils literal"><span class="pre">GetUsedHistogramsAndPhasesfromTree()</span></tt></a> will
+routines <a class="reference internal" href="GSASII.html#GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree" title="GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree"><tt class="xref py py-func docutils literal"><span class="pre">GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree()</span></tt></a>
+and <a class="reference internal" href="GSASIIstruc.html#GSASIIstrIO.GetUsedHistogramsAndPhases" title="GSASIIstrIO.GetUsedHistogramsAndPhases"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrIO.GetUsedHistogramsAndPhases()</span></tt></a> will
 load this information into a dictionary where the child tree name is
 used as a key, and the information in the main entry is assigned
 a key of <tt class="docutils literal"><span class="pre">Data</span></tt>, as outlined below.</p>
@@ -1142,7 +1161,7 @@ a key of <tt class="docutils literal"><span class="pre">Data</span></tt>, as out
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>Data</td>
-<td>&nbsp;</td>
+<td></td>
 <td>A dict that contains the
 reflection table,
 as described in the
@@ -1194,12 +1213,17 @@ to decreasing the uncertainties).</td>
 <td>The number assigned to the histogram when
 the project is loaded or edited (can change)</td>
 </tr>
+<tr class="row-odd"><td>ranId</td>
+<td></td>
+<td>A random number id for the histogram
+that does not change</td>
+</tr>
 </tbody>
 </table>
 </div>
 <div class="section" id="single-crystal-reflection-data-structure">
 <h2>Single Crystal Reflection Data Structure<a class="headerlink" href="#single-crystal-reflection-data-structure" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="xtalrefl-table"></span><p id="index-11">For every simgle crystal a histogram, the <tt class="docutils literal"><span class="pre">'Data'</span></tt> item contains
+<span class="target" id="xtalrefl-table"></span><p id="index-11">For every single crystal a histogram, the <tt class="docutils literal"><span class="pre">'Data'</span></tt> item contains
 the structure factors as an np.array in item <cite>&#8216;RefList&#8217;</cite>.
 The columns in that array are documented below.</p>
 <table border="1" class="docutils">
@@ -1250,85 +1274,97 @@ gives Iobs or Icalc</td>
 </div>
 <div class="section" id="classes-and-routines">
 <h2><em>Classes and routines</em><a class="headerlink" href="#classes-and-routines" title="Permalink to this headline">¶</a></h2>
+<dl class="data">
+<dt id="GSASIIobj.AtomIdLookup">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">AtomIdLookup</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIobj.AtomIdLookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>dict listing for each phase index as a str, the atom label and atom random Id,
+keyed by atom sequential index as a str;
+best to access this using <a class="reference internal" href="#GSASIIobj.LookupAtomLabel" title="GSASIIobj.LookupAtomLabel"><tt class="xref py py-func docutils literal"><span class="pre">LookupAtomLabel()</span></tt></a></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIobj.AtomRanIdLookup">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">AtomRanIdLookup</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIobj.AtomRanIdLookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>dict listing for each phase the atom sequential index keyed by atom random Id;
+best to access this using <a class="reference internal" href="#GSASIIobj.LookupAtomId" title="GSASIIobj.LookupAtomId"><tt class="xref py py-func docutils literal"><span class="pre">LookupAtomId()</span></tt></a></p>
+</dd></dl>
+
 <dl class="function">
-<dt id="GSASIIobj.LoadHistogramIDs">
-<tt class="descclassname">GSASIIobj.</tt><tt class="descname">LoadHistogramIDs</tt><big>(</big><em>histList</em>, <em>idList</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#LoadHistogramIDs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.LoadHistogramIDs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Save the Id values for a series of histograms</p>
+<dt id="GSASIIobj.CompileVarDesc">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">CompileVarDesc</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#CompileVarDesc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.CompileVarDesc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the values in the variable description lookup table (<a class="reference internal" href="#GSASIIobj.VarDesc" title="GSASIIobj.VarDesc"><tt class="xref py py-attr docutils literal"><span class="pre">VarDesc</span></tt></a>)
+into <a class="reference internal" href="#GSASIIobj.reVarDesc" title="GSASIIobj.reVarDesc"><tt class="xref py py-attr docutils literal"><span class="pre">reVarDesc</span></tt></a>. This is called in <a class="reference internal" href="#GSASIIobj.getDescr" title="GSASIIobj.getDescr"><tt class="xref py py-func docutils literal"><span class="pre">getDescr()</span></tt></a> so the initialization
+is always done before use.</p>
+<p>Note that keys may contain regular expressions, where &#8216;[xyz]&#8217;
+matches &#8216;x&#8217; &#8216;y&#8217; or &#8216;z&#8217; (equivalently &#8216;[x-z]&#8217; describes this as range of values).
+&#8216;.*&#8217; matches any string. For example:</p>
+<div class="highlight-python"><pre>'AUiso':'Atomic isotropic displacement parameter',</pre>
+</div>
+<p>will match variable <tt class="docutils literal"><span class="pre">'p::AUiso:a'</span></tt>.
+If parentheses are used in the key, the contents of those parentheses can be
+used in the value, such as:</p>
+<div class="highlight-python"><pre>'AU([123][123])':'Atomic anisotropic displacement parameter U\1',</pre>
+</div>
+<p>will match <tt class="docutils literal"><span class="pre">AU11</span></tt>, <tt class="docutils literal"><span class="pre">AU23</span></tt>,.. and <cite>U11</cite>, <cite>U23</cite> etc will be displayed
+in the value when used.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIobj.DefaultControls">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">DefaultControls</tt><em class="property"> = {'F**2': True, 'shift factor': 1.0, 'deriv type': 'analytic Hessian', 'max cyc': 3, 'minF/sig': 0, 'FreeVar1': 'Sample humidity (%)', 'Author': 'no name', 'FreeVar2': 'Sample voltage (V)', 'FreeVar3': 'Applied load (MN)', 'min dM/M': 0.0001}</em><a class="headerlink" href="#GSASIIobj.DefaultControls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Values to be used as defaults for the initial contents of the <tt class="docutils literal"><span class="pre">Controls</span></tt>
+data tree item.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="GSASIIobj.VarName">
-<em class="property">class </em><tt class="descclassname">GSASIIobj.</tt><tt class="descname">VarName</tt><big>(</big><em>*args</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#VarName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.VarName" title="Permalink to this definition">¶</a></dt>
+<dt id="GSASIIobj.G2VarObj">
+<em class="property">class </em><tt class="descclassname">GSASIIobj.</tt><tt class="descname">G2VarObj</tt><big>(</big><em>*args</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#G2VarObj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.G2VarObj" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a GSAS-II variable either using the phase/atom/histogram
 unique Id numbers or using a character string that specifies
 variables by phase/atom/histogram number (which can change).
 Note that <tt class="xref py py-func docutils literal"><span class="pre">LoadID()</span></tt> should be used to (re)load the current Ids
-before creating or later using the VarName object.</p>
-<p>A <a class="reference internal" href="#GSASIIobj.VarName" title="GSASIIobj.VarName"><tt class="xref py py-class docutils literal"><span class="pre">VarName</span></tt></a> object can be created with a single parameter:</p>
+before creating or later using the G2VarObj object.</p>
+<p>A <a class="reference internal" href="#GSASIIobj.G2VarObj" title="GSASIIobj.G2VarObj"><tt class="xref py py-class docutils literal"><span class="pre">G2VarObj</span></tt></a> object can be created with a single parameter:</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>varname</strong> (<em>str</em>) &#8211; <dl class="docutils">
-<dt>a single value can be used to create a <a class="reference internal" href="#GSASIIobj.VarName" title="GSASIIobj.VarName"><tt class="xref py py-class docutils literal"><span class="pre">VarName</span></tt></a></dt>
-<dd>object. The string must be of form &#8220;p:h:var&#8221; or &#8220;p:h:var:a&#8221;, where</dd>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>varname</strong> (<em>str/tuple</em>) &#8211; <dl class="docutils">
+<dt>a single value can be used to create a <a class="reference internal" href="#GSASIIobj.G2VarObj" title="GSASIIobj.G2VarObj"><tt class="xref py py-class docutils literal"><span class="pre">G2VarObj</span></tt></a></dt>
+<dd>object. If a string, it must be of form &#8220;p:h:var&#8221; or &#8220;p:h:var:a&#8221;, where</dd>
 </dl>
 <ul class="simple">
 <li>p is the phase number (which may be left blank);</li>
 <li>h is the histogram number (which may be left blank);</li>
 <li>a is the atom number (which may be left blank in which case the third colon is omitted).</li>
 </ul>
+<blockquote>
+<div>Alternately a single tuple of form (Phase,Histogram,VarName,AtomID) can be used, where
+Phase, Histogram, and AtomID are None or are ranId values and VarName is a string.</div></blockquote>
 </td>
 </tr>
 </tbody>
 </table>
-<p>Alternately, a <a class="reference internal" href="#GSASIIobj.VarName" title="GSASIIobj.VarName"><tt class="xref py py-class docutils literal"><span class="pre">VarName</span></tt></a> object can be created with exactly four positional parameters:</p>
+<p>If four positional arguments are supplied, they are:</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>phasenum</strong> (<em>int</em>) &#8211; The number for the phase</li>
-<li><strong>histnum</strong> (<em>int</em>) &#8211; The number for the histogram</li>
-<li><strong>varname</strong> (<em>str</em>) &#8211; a single value can be used to create a <a class="reference internal" href="#GSASIIobj.VarName" title="GSASIIobj.VarName"><tt class="xref py py-class docutils literal"><span class="pre">VarName</span></tt></a></li>
-<li><strong>atomnum</strong> (<em>int</em>) &#8211; The number for the atom</li>
+<li><strong>phasenum</strong> (<em>str/int</em>) &#8211; The number for the phase</li>
+<li><strong>histnum</strong> (<em>str/int</em>) &#8211; The number for the histogram</li>
+<li><strong>varname</strong> (<em>str</em>) &#8211; a single value can be used to create a <a class="reference internal" href="#GSASIIobj.G2VarObj" title="GSASIIobj.G2VarObj"><tt class="xref py py-class docutils literal"><span class="pre">G2VarObj</span></tt></a></li>
+<li><strong>atomnum</strong> (<em>str/int</em>) &#8211; The number for the atom</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
-<dt id="GSASIIobj.VarName.fullDescr">
-<tt class="descname">fullDescr</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#VarName.fullDescr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.VarName.fullDescr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a longer description for a GSAS-II variable</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a short description or &#8216;no definition&#8217; if not found</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="GSASIIobj.VarName.getDescr">
-<tt class="descname">getDescr</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#VarName.getDescr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.VarName.getDescr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a short description for a GSAS-II variable</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a short description or &#8216;no definition&#8217; if not found</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="GSASIIobj.VarName.name">
-<tt class="descname">name</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#VarName.name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.VarName.name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Formats the GSAS-II variable name as a &#8220;traditional&#8221; string (p:h:&lt;var&gt;:a)</p>
+<dt id="GSASIIobj.G2VarObj.varname">
+<tt class="descname">varname</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#G2VarObj.varname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.G2VarObj.varname" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formats the GSAS-II variable name as a &#8220;traditional&#8221; GSAS-II variable 
+string (p:h:&lt;var&gt;:a) or (p:h:&lt;var&gt;)</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1339,11 +1375,267 @@ before creating or later using the VarName object.</p>
 </table>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="GSASIIobj.VarName.re">
-<tt class="descname">re</tt><em class="property"> = &lt;module 're' from 'D:\Python27\lib\re.pyc'&gt;</em><a class="headerlink" href="#GSASIIobj.VarName.re" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+</dd></dl>
 
+<dl class="data">
+<dt id="GSASIIobj.HistIdLookup">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">HistIdLookup</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIobj.HistIdLookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>dict listing histogram name and random Id, keyed by sequential histogram index as a str;
+best to access this using <a class="reference internal" href="#GSASIIobj.LookupHistName" title="GSASIIobj.LookupHistName"><tt class="xref py py-func docutils literal"><span class="pre">LookupHistName()</span></tt></a></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIobj.HistRanIdLookup">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">HistRanIdLookup</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIobj.HistRanIdLookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>dict listing histogram sequential index keyed by histogram random Id;
+best to access this using <a class="reference internal" href="#GSASIIobj.LookupHistId" title="GSASIIobj.LookupHistId"><tt class="xref py py-func docutils literal"><span class="pre">LookupHistId()</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.IndexAllIds">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">IndexAllIds</tt><big>(</big><em>Histograms</em>, <em>Phases</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#IndexAllIds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.IndexAllIds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scan through the used phases &amp; histograms and create an index
+to the random numbers of phases, histograms and atoms. While doing this,
+confirm that assigned random numbers are unique &#8211; just in case lightning
+strikes twice in the same place.</p>
+<p>Note: this code assumes that the atom random Id (ranId) is the last 
+element each atom record.</p>
+<p>This is called in two places (only) <a class="reference internal" href="GSASIIstruc.html#GSASIIstrIO.GetUsedHistogramsAndPhases" title="GSASIIstrIO.GetUsedHistogramsAndPhases"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrIO.GetUsedHistogramsAndPhases()</span></tt></a>
+(which loads the histograms and phases from a GPX file) and
+<tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.GetUsedHistogramsAndPhases()</span></tt>
+(which loads the histograms and phases from the data tree.)</p>
+<p>TODO: do we need a lookup for rigid body variables?</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.LookupAtomId">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">LookupAtomId</tt><big>(</big><em>pId</em>, <em>ranId</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#LookupAtomId"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.LookupAtomId" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the atom number from a phase and atom random Id</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pId</strong> (<em>int/str</em>) &#8211; the sequential number of the phase</li>
+<li><strong>ranId</strong> (<em>int</em>) &#8211; the random Id assigned to an atom</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the index number of the atom (str)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.LookupAtomLabel">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">LookupAtomLabel</tt><big>(</big><em>pId</em>, <em>index</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#LookupAtomLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.LookupAtomLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the atom label from a phase and atom index number</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pId</strong> (<em>int/str</em>) &#8211; the sequential number of the phase</li>
+<li><strong>index</strong> (<em>int</em>) &#8211; the index of the atom in the list of atoms</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the label for the atom (str) and the random Id of the atom (int)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.LookupHistId">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">LookupHistId</tt><big>(</big><em>ranId</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#LookupHistId"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.LookupHistId" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the histogram number and name from a histogram random Id</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ranId</strong> (<em>int</em>) &#8211; the random Id assigned to a histogram</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the sequential Id (hId) number for the histogram (str)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.LookupHistName">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">LookupHistName</tt><big>(</big><em>hId</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#LookupHistName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.LookupHistName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the histogram number and name from a histogram Id</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hId</strong> (<em>int/str</em>) &#8211; the sequential assigned to a histogram</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(hist,ranId) where hist is the name of the histogram (str)
+and ranId is the random # id for the histogram (int)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.LookupPhaseId">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">LookupPhaseId</tt><big>(</big><em>ranId</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#LookupPhaseId"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.LookupPhaseId" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the phase number and name from a phase random Id</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ranId</strong> (<em>int</em>) &#8211; the random Id assigned to a phase</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the sequential Id (pId) number for the phase (str)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.LookupPhaseName">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">LookupPhaseName</tt><big>(</big><em>pId</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#LookupPhaseName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.LookupPhaseName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the phase number and name from a phase Id</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pId</strong> (<em>int/str</em>) &#8211; the sequential assigned to a phase</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(phase,ranId) where phase is the name of the phase (str)
+and ranId is the random # id for the phase (int)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.MakeUniqueLabel">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">MakeUniqueLabel</tt><big>(</big><em>lbl</em>, <em>labellist</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#MakeUniqueLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.MakeUniqueLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make sure that every a label is unique against a list by adding
+digits at the end until it is not found in list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>lbl</strong> (<em>str</em>) &#8211; the input label</li>
+<li><strong>labellist</strong> (<em>list</em>) &#8211; the labels that have already been encountered</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">lbl if not found in labellist or lbl with <tt class="docutils literal"><span class="pre">_1-9`</span> <span class="pre">(or</span>
+<span class="pre">``_10-99</span></tt>, etc.) appended at the end</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIobj.PhaseIdLookup">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">PhaseIdLookup</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIobj.PhaseIdLookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>dict listing phase name and random Id keyed by sequential phase index as a str;
+best to access this using <a class="reference internal" href="#GSASIIobj.LookupPhaseName" title="GSASIIobj.LookupPhaseName"><tt class="xref py py-func docutils literal"><span class="pre">LookupPhaseName()</span></tt></a></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIobj.PhaseRanIdLookup">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">PhaseRanIdLookup</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIobj.PhaseRanIdLookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>dict listing phase sequential index keyed by phase random Id;
+best to access this using <a class="reference internal" href="#GSASIIobj.LookupPhaseId" title="GSASIIobj.LookupPhaseId"><tt class="xref py py-func docutils literal"><span class="pre">LookupPhaseId()</span></tt></a></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIobj.ShortHistNames">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">ShortHistNames</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIobj.ShortHistNames" title="Permalink to this definition">¶</a></dt>
+<dd><p>a dict containing a possibly shortened and when non-unique numbered
+version of the histogram name. Keyed by the histogram sequential index.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIobj.ShortPhaseNames">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">ShortPhaseNames</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIobj.ShortPhaseNames" title="Permalink to this definition">¶</a></dt>
+<dd><p>a dict containing a possibly shortened and when non-unique numbered
+version of the phase name. Keyed by the phase sequential index.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIobj.VarDesc">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">VarDesc</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIobj.VarDesc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This dictionary lists descriptions for GSAS-II variables,
+as set in <a class="reference internal" href="#GSASIIobj.CompileVarDesc" title="GSASIIobj.CompileVarDesc"><tt class="xref py py-func docutils literal"><span class="pre">CompileVarDesc()</span></tt></a>. See that function for a description
+for how keys and values are written.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.fmtVarDescr">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">fmtVarDescr</tt><big>(</big><em>varname</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#fmtVarDescr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.fmtVarDescr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a string with a more complete description for a GSAS-II variable</p>
+<p>TODO: This will not handle rigid body parameters yet</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; A full G2 variable name with 2 or 3
+colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;])</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a string with the description</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.getDescr">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">getDescr</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#getDescr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.getDescr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a short description for a GSAS-II variable</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; The descriptive part of the variable name without colons (:)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a short description or None if not found</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.getVarDescr">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">getVarDescr</tt><big>(</big><em>varname</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#getVarDescr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.getVarDescr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a short description for a GSAS-II variable</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; A full G2 variable name with 2 or 3
+colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;])</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a five element list as [<cite>p</cite>,`h`,`name`,`a`,`description`],
+where <cite>p</cite>, <cite>h</cite>, <cite>a</cite> are str values or <cite>None</cite>, for the phase number,
+the histogram number and the atom number; <cite>name</cite> will always be
+an str; and <cite>description</cite> is str or <cite>None</cite>.
+If the variable name is incorrectly formed (for example, wrong
+number of colons), <cite>None</cite> is returned instead of a list.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIobj.reVarDesc">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">reVarDesc</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIobj.reVarDesc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This dictionary lists descriptions for GSAS-II variables with
+the same values as <a class="reference internal" href="#GSASIIobj.VarDesc" title="GSASIIobj.VarDesc"><tt class="xref py py-attr docutils literal"><span class="pre">VarDesc</span></tt></a> except that keys have been compiled as
+regular expressions. Initialized in <a class="reference internal" href="#GSASIIobj.CompileVarDesc" title="GSASIIobj.CompileVarDesc"><tt class="xref py py-func docutils literal"><span class="pre">CompileVarDesc()</span></tt></a>.</p>
 </dd></dl>
 
 </div>

@@ -33,12 +33,12 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
 
     # Validate the contents -- look for a bank line
     def ContentsValidator(self, filepointer):
+        'Validate by checking to see if the file has BANK lines'
         #print 'ContentsValidator: '+self.formatName
         for i,line in enumerate(filepointer):
             self.GSAS = True
             if i==0: # first line is always a comment
                 continue
-#            if i==1 and line[:4].lower() == 'inst' and ':' in line:
             if i==1 and line[:4].lower() == 'inst':
                 # 2nd line is optional instrument parameter file
                 continue
@@ -49,14 +49,15 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             elif line [:8] == 'TIME_MAP':          #LANSCE TOF data
                 return True
             else:
-                print 'ContentsValidator: '+self.formatName
-                print 'Unexpected information in line:',i+1 # debug info
-                print line
+                self.errors = 'Unexpected information in line: '+str(i+1)
+                self.errors += '  '+str(line)
                 return False
         return False # no bank records
 
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
-        
+        '''Read a GSAS (old formats) file of type FXY, FXYE, ESD or STD types.
+        If multiple datasets are requested, use self.repeat and buffer caching.
+        '''
         def GetFXYEdata(File,Pos,Bank):
             File.seek(Pos)
             x = []
@@ -218,8 +219,10 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             comments = rdbuffer.get('comments')
 
         # read through the file and find the beginning of each bank
-        # Save the offset (Pos), BANK line (Banks), comments for each
-        # bank
+        # Save the offset (Pos), BANK line (Banks), comments for each bank
+        #
+        # This is going to need a fair amount of work to track line numbers
+        # in the input file. 
         if len(Banks) != len(Pos) or len(Banks) == 0:
             try:
                 i = -1
@@ -229,11 +232,13 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                     if len(S) == 0: break
                         
                     if i==0: # first line is always a comment
+                        self.errors = 'Error reading title'
                         title = S[:-1]
                         comments = [[title,]]
                         continue
                     if i==1 and S[:4].lower() == 'inst' and ':' in S:
                         # 2nd line is instrument parameter file (optional)
+                        self.errors = 'Error reading instrument parameter filename'
                         self.instparm = S.split(':')[1].strip()
                         continue
                     if S[0] == '#': # allow comments anywhere in the file
@@ -241,12 +246,19 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                         comments[-1].append(S[:-1])
                         continue
                     if S[:4] == 'BANK':
+                        self.errors = 'Error reading bank:'
+                        self.errors += '  '+str(S)
                         comments.append([title,])
                         Banks.append(S)
                         Pos.append(filepointer.tell())
                     if S[:8] == 'TIME_MAP':
+                        if len(Banks) == 0:
+                            self.errors = 'Error reading time map before any bank lines'
+                        else:
+                            self.errors = 'Error reading time map after bank:\n  '+str(Banks[-1])
                         self.TimeMap,self.clockWd = GetTimeMap(filepointer,filepointer.tell(),S)
             except Exception as detail:
+                self.errors += '\n  '+str(detail)
                 print self.formatName+' scan error:'+str(detail) # for testing
                 import traceback
                 traceback.print_exc(file=sys.stdout)
@@ -256,6 +268,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         if not Banks: # use of ContentsValidator should prevent this error
             print self.formatName+' scan error: no BANK records'
             selblk = None # no block to choose
+            self.errors = 'No BANK records found (strange!)'
             return False
         elif len(Banks) == 1: # only one Bank, don't ask
             selblk = 0
@@ -287,20 +300,28 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         Bank = Banks[selblk]
         try:
             if 'FXYE' in Bank:
+                self.errors = 'Error reading FXYE data in Bank\n  '+Banks[selblk]
                 self.powderdata = GetFXYEdata(filepointer,Pos[selblk],Banks[selblk])
             elif 'FXY' in Bank:
+                self.errors = 'Error reading FXY data in Bank\n  '+Banks[selblk]
                 self.powderdata = GetFXYdata(filepointer,Pos[selblk],Banks[selblk])
             elif 'ESD' in Bank:
+                self.errors = 'Error reading ESD data in Bank\n  '+Banks[selblk]
                 self.powderdata = GetESDdata(filepointer,Pos[selblk],Banks[selblk])
             elif 'STD' in Bank:
+                self.errors = 'Error reading STD data in Bank\n  '+Banks[selblk]
                 self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])
             else:
+                self.errors = 'Error reading STD data in Bank\n  '+Banks[selblk]
                 self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])
         except Exception as detail:
+            self.errors += '\n  '+str(detail)
             print self.formatName+' read error:'+str(detail) # for testing
             import traceback
             traceback.print_exc(file=sys.stdout)
             return False
+
+        self.errors = 'Error processing information after read complete'
         if comments is not None:
             self.comments = comments[selblk]
         self.powderentry[0] = filename

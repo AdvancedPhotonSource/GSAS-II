@@ -55,51 +55,261 @@
 <h1><em>GSAS-II Import Modules</em><a class="headerlink" href="#gsas-ii-import-modules" title="Permalink to this headline">¶</a></h1>
 <p>Imports are implemented by deriving a class from
 <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPhase" title="GSASIIIO.ImportPhase"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPhase</span></tt></a>, <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportStructFactor" title="GSASIIIO.ImportStructFactor"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportStructFactor</span></tt></a>
-or <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPowderData" title="GSASIIIO.ImportPowderData"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPowderData</span></tt></a> to implement import of
+or <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPowderData" title="GSASIIIO.ImportPowderData"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPowderData</span></tt></a> (which are in turn
+derived from <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportBaseclass" title="GSASIIIO.ImportBaseclass"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportBaseclass</span></tt></a>)
+to implement import of
 a phase, a single crystal or a powder dataset, respectively.
-Module names are used to determine which menu an import routine should
-be placed in.</p>
+Module file names (<cite>G2phase_</cite>, <cite>G2pwd_</cite> and <cite>G2sfact_</cite>) are used to
+determine which menu an import routine should be placed into. (N.B. this
+was an unnecessary choice; this could be done from the class used.)</p>
+<div class="section" id="writing-an-import-routine">
+<h2>Writing an Import Routine<a class="headerlink" href="#writing-an-import-routine" title="Permalink to this headline">¶</a></h2>
+<p id="import-routines">When writing a import routine, one should create a new class derived
+from <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPhase" title="GSASIIIO.ImportPhase"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPhase</span></tt></a>, <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportStructFactor" title="GSASIIIO.ImportStructFactor"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportStructFactor</span></tt></a>
+or <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPowderData" title="GSASIIIO.ImportPowderData"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPowderData</span></tt></a>. As described below,
+all these classes will implement
+an <tt class="docutils literal"><span class="pre">__init__()</span></tt> and a <tt class="docutils literal"><span class="pre">Reader()</span></tt> method, and most will supply a
+<tt class="docutils literal"><span class="pre">ContentsValidator()</span></tt> method, too.
+See the <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPhase" title="GSASIIIO.ImportPhase"><tt class="xref py py-class docutils literal"><span class="pre">ImportPhase</span></tt></a>, <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportStructFactor" title="GSASIIIO.ImportStructFactor"><tt class="xref py py-class docutils literal"><span class="pre">ImportStructFactor</span></tt></a>
+or <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPowderData" title="GSASIIIO.ImportPowderData"><tt class="xref py py-class docutils literal"><span class="pre">ImportPowderData</span></tt></a> class documentation
+for details on what values each type of <tt class="docutils literal"><span class="pre">Reader()</span></tt> should set.</p>
+<div class="section" id="init">
+<h3>__init__()<a class="headerlink" href="#init" title="Permalink to this headline">¶</a></h3>
+<p>The class should supply a
+<tt class="docutils literal"><span class="pre">__init__</span></tt> method which calls the parent <tt class="docutils literal"><span class="pre">__init__</span></tt> method and
+specifies the following parameters:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>extensionlist</cite>: a list of extensions that may be used for this type of file.</li>
+<li><cite>strictExtension</cite>: Should be True if only files with extensions in
+<cite>extensionlist</cite> are allows; False if all file types should be offered
+in the file browser. Also if False, the import class will be
+used on all files when &#8220;guess from format&#8221; is tried, though
+readers with matching extensions will be tried first.</li>
+<li><cite>formatName</cite>: a string to be used in the menu. Should be short.</li>
+<li><cite>longFormatName</cite>: a longer string to be used to describe the format in help.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="reader">
+<h3>Reader()<a class="headerlink" href="#reader" title="Permalink to this headline">¶</a></h3>
+<p>The class must supply a <tt class="docutils literal"><span class="pre">Reader</span></tt> method that actually performs the
+reading. All readers must have at a minimum these arguments:</p>
+<div class="highlight-python"><pre>def Reader(self, filename, filepointer, ParentFrame, **unused):</pre>
+</div>
+<p>where the arguments have the following uses:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>filename</cite>: a string with the name of the file being read</li>
+<li><cite>filepointer</cite>: a file object (created by <tt class="xref py py-func docutils literal"><span class="pre">open()</span></tt>) that accesses
+the file and is points to the beginning of the file when Reader is
+called.</li>
+<li><cite>ParentFrame</cite>: a reference to the main GSAS-II (tree) windows, for
+the unusual <tt class="docutils literal"><span class="pre">Reader</span></tt> routines that will create GUI windows to ask
+questions.</li>
+</ul>
+</div></blockquote>
+<p>In addition, the following keyword parameters are defined that <tt class="docutils literal"><span class="pre">Reader</span></tt>
+routines may optionally use:</p>
+<blockquote>
+<div><ul class="simple">
+<li><cite>buffer</cite>: a dict that can be used to retain information between repeated calls of the routine</li>
+<li><cite>blocknum</cite>: counts the number of times that a reader is called</li>
+<li><cite>usedRanIdList</cite>: a list of previously used random Id values that can be checked to determine that a value is unique.</li>
+</ul>
+</div></blockquote>
+<p>As an example, the <cite>buffer</cite> dict is used for CIF reading to hold the parsed CIF file
+so that it can be reused without having to reread the file from
+scratch.</p>
+<div class="section" id="reader-return-values">
+<h4>Reader return values<a class="headerlink" href="#reader-return-values" title="Permalink to this headline">¶</a></h4>
+<p>The <tt class="docutils literal"><span class="pre">Reader</span></tt> routine should return the value of True if the file has been
+read successfully. Optionally, use <cite>self.warnings</cite> to indicate any
+problems.</p>
+<p>If the file cannot be read,  the <tt class="docutils literal"><span class="pre">Reader</span></tt> routine should
+return False or raise an <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportBaseclass.ImportException" title="GSASIIIO.ImportBaseclass.ImportException"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportBaseclass.ImportException</span></tt></a>
+exception. (Why either? Sometimes an exception is the easiest way to
+bail out of a called routine.) Place text in <cite>self.errors</cite> and/or use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ImportException</span><span class="p">(</span><span class="s">&#39;Error message&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>to give the user information on what went wrong during the reading.</p>
+</div>
+<div class="section" id="self-warnings">
+<h4>self.warnings<a class="headerlink" href="#self-warnings" title="Permalink to this headline">¶</a></h4>
+<p>Use <cite>self.warnings</cite> to indicate any information
+that should be displayed to the user if the file is read successfully,
+but perhaps not completely or additional settings will need to be
+made.</p>
+</div>
+<div class="section" id="self-errors">
+<h4>self.errors<a class="headerlink" href="#self-errors" title="Permalink to this headline">¶</a></h4>
+<p>Use <cite>self.errors</cite> to give the user information on where and why a read
+error occurs in the file. Note that text supplied with the <tt class="docutils literal"><span class="pre">raise</span></tt>
+statement will be appended to <tt class="docutils literal"><span class="pre">self.errors</span></tt>.</p>
+</div>
+<div class="section" id="self-repeat">
+<h4>self.repeat<a class="headerlink" href="#self-repeat" title="Permalink to this headline">¶</a></h4>
+<p>Set <cite>self.repeat</cite> to True (the default is False) if a Reader should be
+called again to read a second block from a file. Most commonly
+(only?) used for reading multiple powder histograms from a single
+file. Variable <cite>self.repeatcount</cite> is used to keep track of the block
+numbers.</p>
+</div>
+<div class="section" id="support-routines">
+<h4><em>support routines</em><a class="headerlink" href="#support-routines" title="Permalink to this headline">¶</a></h4>
+<p>Note that the base class (<a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportBaseclass" title="GSASIIIO.ImportBaseclass"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportBaseclass</span></tt></a>) supplies two routines,
+<a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportBaseclass.BlockSelector" title="GSASIIIO.ImportBaseclass.BlockSelector"><tt class="xref py py-meth docutils literal"><span class="pre">BlockSelector()</span></tt></a> and
+<a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportBaseclass.MultipleBlockSelector" title="GSASIIIO.ImportBaseclass.MultipleBlockSelector"><tt class="xref py py-meth docutils literal"><span class="pre">MultipleBlockSelector()</span></tt></a> that are useful for
+selecting amongst one or more datasets (and perhaps phases) for
+<tt class="docutils literal"><span class="pre">Reader()</span></tt> routines that may encounter more than one set of information
+in a file.
+Likewise, when an operation will take some time to complete,
+use <tt class="xref py py-meth docutils literal"><span class="pre">ShowBusy()</span></tt> and
+<tt class="xref py py-meth docutils literal"><span class="pre">DoneBusy()</span></tt> to show the user
+that something is happening.</p>
+</div>
+</div>
+<div class="section" id="contentsvalidator">
+<h3>ContentsValidator()<a class="headerlink" href="#contentsvalidator" title="Permalink to this headline">¶</a></h3>
+<p>Defining a <tt class="docutils literal"><span class="pre">ContentsValidator</span></tt> method is optional, but is usually a
+good idea, particularly if the file extension is not a reliable
+identifier for the file type. The intent of this routine is to take a
+superficial look at the file to see if it has the expected
+characteristics of the expected file type. For example, are there
+numbers in the expected places?</p>
+<p>This routine is passed a single argument:</p>
+<ul class="simple">
+<li><cite>filepointer</cite>: a file object (created by <tt class="xref py py-func docutils literal"><span class="pre">open()</span></tt>) that accesses
+the file and is points to the beginning of the file when ContentsValidator is
+called.</li>
+</ul>
+<p>Note that <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportBaseclass.CIFValidator" title="GSASIIIO.ImportBaseclass.CIFValidator"><tt class="xref py py-meth docutils literal"><span class="pre">GSASIIIO.ImportBaseclass.CIFValidator()</span></tt></a> is a ContentsValidator
+for validating CIF files.</p>
+<div class="section" id="contentsvalidator-return-values">
+<h4>ContentsValidator return values<a class="headerlink" href="#contentsvalidator-return-values" title="Permalink to this headline">¶</a></h4>
+<p>The <tt class="docutils literal"><span class="pre">ContentsValidator</span></tt> routine should return the value of True if
+the file appears to match the type expected for the class.</p>
+<p>If the file cannot be read by this class,  the routine should
+return False. Preferably one will also place text in <cite>self.errors</cite>
+to give the user information on what went wrong during the reading.</p>
+</div>
+</div>
+</div>
+<div class="section" id="currently-defined-phase-import-routines">
+<h2>Currently Defined Phase Import Routines<a class="headerlink" href="#currently-defined-phase-import-routines" title="Permalink to this headline">¶</a></h2>
+<p>Phase import routines are classes derived from
+<a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPhase" title="GSASIIIO.ImportPhase"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPhase</span></tt></a>.
+They must be found in files named <cite>G2phase*.py</cite> that are in the Python path
+and the class must override the <tt class="docutils literal"><span class="pre">__init__</span></tt> method and add a <tt class="docutils literal"><span class="pre">Reader</span></tt> method.
+The distributed routines are:</p>
 <span class="target" id="module-G2phase"></span><div class="section" id="module-g2phase-pdb-and-exp">
-<h2><em>Module G2phase: PDB and .EXP</em><a class="headerlink" href="#module-g2phase-pdb-and-exp" title="Permalink to this headline">¶</a></h2>
+<h3><em>Module G2phase: PDB and .EXP</em><a class="headerlink" href="#module-g2phase-pdb-and-exp" title="Permalink to this headline">¶</a></h3>
 <p>A set of short routines to read in phases using routines that were
 previously implemented in GSAS-II: PDB and GSAS .EXP file formats</p>
 <dl class="class">
 <dt id="G2phase.EXP_ReaderClass">
 <em class="property">class </em><tt class="descclassname">G2phase.</tt><tt class="descname">EXP_ReaderClass</tt><a class="reference internal" href="_modules/G2phase.html#EXP_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase.EXP_ReaderClass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Routine to import Phase information from GSAS .EXP files</p>
+<dl class="method">
+<dt id="G2phase.EXP_ReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2phase.html#EXP_ReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase.EXP_ReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Look for a VERSION tag in 1st line</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2phase.EXP_ReaderClass.ReadEXPPhase">
+<tt class="descname">ReadEXPPhase</tt><big>(</big><em>G2frame</em>, <em>filepointer</em><big>)</big><a class="headerlink" href="#G2phase.EXP_ReaderClass.ReadEXPPhase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a phase from a GSAS .EXP file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2phase.EXP_ReaderClass.Reader">
+<tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**unused</em><big>)</big><a class="reference internal" href="_modules/G2phase.html#EXP_ReaderClass.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase.EXP_ReaderClass.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a phase from a GSAS .EXP file using <a class="reference internal" href="#G2phase.EXP_ReaderClass.ReadEXPPhase" title="G2phase.EXP_ReaderClass.ReadEXPPhase"><tt class="xref py py-meth docutils literal"><span class="pre">ReadEXPPhase()</span></tt></a></p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="G2phase.PDB_ReaderClass">
 <em class="property">class </em><tt class="descclassname">G2phase.</tt><tt class="descname">PDB_ReaderClass</tt><a class="reference internal" href="_modules/G2phase.html#PDB_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase.PDB_ReaderClass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Routine to import Phase information from a PDB file</p>
+<dl class="method">
+<dt id="G2phase.PDB_ReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="headerlink" href="#G2phase.PDB_ReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Taking a stab a validating a PDB file
+(look for cell &amp; at least one atom)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2phase.PDB_ReaderClass.ReadPDBPhase">
+<tt class="descname">ReadPDBPhase</tt><big>(</big><em>filename</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#G2phase.PDB_ReaderClass.ReadPDBPhase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a phase from a PDB file.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2phase.PDB_ReaderClass.Reader">
+<tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**unused</em><big>)</big><a class="reference internal" href="_modules/G2phase.html#PDB_ReaderClass.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase.PDB_ReaderClass.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a PDF file using <a class="reference internal" href="#G2phase.PDB_ReaderClass.ReadPDBPhase" title="G2phase.PDB_ReaderClass.ReadPDBPhase"><tt class="xref py py-meth docutils literal"><span class="pre">ReadPDBPhase()</span></tt></a></p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
 <span class="target" id="module-G2phase_GPX"></span><div class="section" id="module-g2phase-gpx-import-phase-from-gsas-ii-project">
-<h2><em>Module G2phase_GPX: Import phase from GSAS-II project</em><a class="headerlink" href="#module-g2phase-gpx-import-phase-from-gsas-ii-project" title="Permalink to this headline">¶</a></h2>
+<h3><em>Module G2phase_GPX: Import phase from GSAS-II project</em><a class="headerlink" href="#module-g2phase-gpx-import-phase-from-gsas-ii-project" title="Permalink to this headline">¶</a></h3>
 <p>Copies a phase from another GSAS-II project file into the
 current project.</p>
 <dl class="class">
 <dt id="G2phase_GPX.PhaseReaderClass">
 <em class="property">class </em><tt class="descclassname">G2phase_GPX.</tt><tt class="descname">PhaseReaderClass</tt><a class="reference internal" href="_modules/G2phase_GPX.html#PhaseReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase_GPX.PhaseReaderClass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Opens a .GPX file and pulls out a selected phase</p>
+<dl class="method">
+<dt id="G2phase_GPX.PhaseReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2phase_GPX.html#PhaseReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase_GPX.PhaseReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if the 1st section can be read as a cPickle block, if not it can&#8217;t be .GPX!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2phase_GPX.PhaseReaderClass.Reader">
+<tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**unused</em><big>)</big><a class="reference internal" href="_modules/G2phase_GPX.html#PhaseReaderClass.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase_GPX.PhaseReaderClass.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a phase from a .GPX file. Does not (yet?) support selecting and reading
+more than one phase at a time.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
 <span class="target" id="module-G2phase_CIF"></span><div class="section" id="module-g2phase-cif-coordinates-from-cif">
-<h2><em>Module G2phase_CIF: Coordinates from CIF</em><a class="headerlink" href="#module-g2phase-cif-coordinates-from-cif" title="Permalink to this headline">¶</a></h2>
+<h3><em>Module G2phase_CIF: Coordinates from CIF</em><a class="headerlink" href="#module-g2phase-cif-coordinates-from-cif" title="Permalink to this headline">¶</a></h3>
 <p>Parses a CIF using  PyCifRW from James Hester and pulls out the
 structural information.</p>
+<p>If a CIF generated by ISODISTORT is encountered, extra information is
+added to the phase entry and constraints are generated.</p>
 <dl class="class">
 <dt id="G2phase_CIF.CIFPhaseReader">
 <em class="property">class </em><tt class="descclassname">G2phase_CIF.</tt><tt class="descname">CIFPhaseReader</tt><a class="reference internal" href="_modules/G2phase_CIF.html#CIFPhaseReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase_CIF.CIFPhaseReader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implements a phase importer from a possibly multi-block CIF file</p>
+<dl class="method">
+<dt id="G2phase_CIF.CIFPhaseReader.ISODISTORT_proc">
+<tt class="descname">ISODISTORT_proc</tt><big>(</big><em>blk</em>, <em>atomlbllist</em>, <em>ranIdlookup</em><big>)</big><a class="headerlink" href="#G2phase_CIF.CIFPhaseReader.ISODISTORT_proc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process ISODISTORT items to create constraints etc.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
+</div>
+<div class="section" id="currently-defined-powder-data-import-routines">
+<h2>Currently Defined Powder Data Import Routines<a class="headerlink" href="#currently-defined-powder-data-import-routines" title="Permalink to this headline">¶</a></h2>
+<p>Powder data import routines are classes derived from
+<a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPowderData" title="GSASIIIO.ImportPowderData"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPowderData</span></tt></a>.
+They must be found in files named <cite>G2pwd*.py</cite> that are in the Python path
+and the class must override the <tt class="docutils literal"><span class="pre">__init__</span></tt> method and add a <tt class="docutils literal"><span class="pre">Reader</span></tt> method.
+The distributed routines are:</p>
 <span class="target" id="module-G2pwd_GPX"></span><div class="section" id="module-g2pwd-gpx-gsas-ii-projects">
-<h2><em>Module G2pwd_GPX: GSAS-II projects</em><a class="headerlink" href="#module-g2pwd-gpx-gsas-ii-projects" title="Permalink to this headline">¶</a></h2>
+<h3><em>Module G2pwd_GPX: GSAS-II projects</em><a class="headerlink" href="#module-g2pwd-gpx-gsas-ii-projects" title="Permalink to this headline">¶</a></h3>
 <p>Routine to import powder data from GSAS-II .gpx files</p>
 <dl class="class">
 <dt id="G2pwd_GPX.GSAS2_ReaderClass">
@@ -107,17 +317,43 @@ structural information.</p>
 <dd><p>Routines to import powder data from a GSAS-II file
 This should work to pull data out from a out of date .GPX file
 as long as the details of the histogram data itself don&#8217;t change</p>
+<dl class="method">
+<dt id="G2pwd_GPX.GSAS2_ReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2pwd_GPX.html#GSAS2_ReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_GPX.GSAS2_ReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if the 1st section can be read as a cPickle block, if not it can&#8217;t be .GPX!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2pwd_GPX.GSAS2_ReaderClass.Reader">
+<tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**kwarg</em><big>)</big><a class="reference internal" href="_modules/G2pwd_GPX.html#GSAS2_ReaderClass.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_GPX.GSAS2_ReaderClass.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a dataset from a .GPX file.
+If multiple datasets are requested, use self.repeat and buffer caching.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
 <span class="target" id="module-G2pwd_fxye"></span><div class="section" id="module-g2pwd-fxye-gsas-data-files">
-<h2><em>Module G2pwd_fxye: GSAS data files</em><a class="headerlink" href="#module-g2pwd-fxye-gsas-data-files" title="Permalink to this headline">¶</a></h2>
+<h3><em>Module G2pwd_fxye: GSAS data files</em><a class="headerlink" href="#module-g2pwd-fxye-gsas-data-files" title="Permalink to this headline">¶</a></h3>
 <p>Routine to read in powder data in a variety of formats
 that are defined for GSAS.</p>
 <dl class="class">
 <dt id="G2pwd_fxye.GSAS_ReaderClass">
 <em class="property">class </em><tt class="descclassname">G2pwd_fxye.</tt><tt class="descname">GSAS_ReaderClass</tt><a class="reference internal" href="_modules/G2pwd_fxye.html#GSAS_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_fxye.GSAS_ReaderClass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Routines to import powder data from a GSAS files</p>
+<dl class="method">
+<dt id="G2pwd_fxye.GSAS_ReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2pwd_fxye.html#GSAS_ReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_fxye.GSAS_ReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate by checking to see if the file has BANK lines</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2pwd_fxye.GSAS_ReaderClass.Reader">
+<tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**kwarg</em><big>)</big><a class="reference internal" href="_modules/G2pwd_fxye.html#GSAS_ReaderClass.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_fxye.GSAS_ReaderClass.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a GSAS (old formats) file of type FXY, FXYE, ESD or STD types.
+If multiple datasets are requested, use self.repeat and buffer caching.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="function">
@@ -134,51 +370,128 @@ that are defined for GSAS.</p>
 
 </div>
 <span class="target" id="module-G2pwd_xye"></span><div class="section" id="module-g2pwd-xye-topas-xye-data">
-<h2><em>Module G2pwd_xye: Topas .xye data</em><a class="headerlink" href="#module-g2pwd-xye-topas-xye-data" title="Permalink to this headline">¶</a></h2>
+<h3><em>Module G2pwd_xye: Topas .xye data</em><a class="headerlink" href="#module-g2pwd-xye-topas-xye-data" title="Permalink to this headline">¶</a></h3>
 <p>Routine to read in powder data from a Topas-compatible .xye file</p>
 <dl class="class">
 <dt id="G2pwd_xye.xye_ReaderClass">
 <em class="property">class </em><tt class="descclassname">G2pwd_xye.</tt><tt class="descname">xye_ReaderClass</tt><a class="reference internal" href="_modules/G2pwd_xye.html#xye_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_xye.xye_ReaderClass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Routines to import powder data from a .xye file</p>
+<dl class="method">
+<dt id="G2pwd_xye.xye_ReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2pwd_xye.html#xye_ReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_xye.xye_ReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Look through the file for expected types of lines in a valid Topas file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2pwd_xye.xye_ReaderClass.Reader">
+<tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**unused</em><big>)</big><a class="reference internal" href="_modules/G2pwd_xye.html#xye_ReaderClass.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_xye.xye_ReaderClass.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a Topas file</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
 <span class="target" id="module-G2pwd_CIF"></span><div class="section" id="module-g2pwd-cif-cif-powder-data">
-<h2><em>Module G2pwd_CIF: CIF powder data</em><a class="headerlink" href="#module-g2pwd-cif-cif-powder-data" title="Permalink to this headline">¶</a></h2>
+<h3><em>Module G2pwd_CIF: CIF powder data</em><a class="headerlink" href="#module-g2pwd-cif-cif-powder-data" title="Permalink to this headline">¶</a></h3>
 <p>Routine to read in powder data from a CIF.</p>
 <dl class="class">
 <dt id="G2pwd_CIF.CIFpwdReader">
 <em class="property">class </em><tt class="descclassname">G2pwd_CIF.</tt><tt class="descname">CIFpwdReader</tt><a class="reference internal" href="_modules/G2pwd_CIF.html#CIFpwdReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_CIF.CIFpwdReader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Routines to import powder data from a CIF file</p>
+<dl class="method">
+<dt id="G2pwd_CIF.CIFpwdReader.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2pwd_CIF.html#CIFpwdReader.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_CIF.CIFpwdReader.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use standard CIF validator</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2pwd_CIF.CIFpwdReader.Reader">
+<tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**kwarg</em><big>)</big><a class="reference internal" href="_modules/G2pwd_CIF.html#CIFpwdReader.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2pwd_CIF.CIFpwdReader.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read powder data from a CIF.
+If multiple datasets are requested, use self.repeat and buffer caching.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
+</div>
+<div class="section" id="currently-defined-single-crystal-data-import-routines">
+<h2>Currently Defined Single Crystal Data Import Routines<a class="headerlink" href="#currently-defined-single-crystal-data-import-routines" title="Permalink to this headline">¶</a></h2>
+<p>Single crystal data import routines are classes derived from
+, <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportStructFactor" title="GSASIIIO.ImportStructFactor"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportStructFactor</span></tt></a>.
+They must be found in files named <cite>G2sfact*.py</cite> that are in the Python path
+and the class must override the <tt class="docutils literal"><span class="pre">__init__</span></tt> method and add a <tt class="docutils literal"><span class="pre">Reader</span></tt> method.
+The distributed routines are:</p>
 <span class="target" id="module-G2sfact"></span><div class="section" id="module-g2sfact-simple-hkl-import">
-<h2><em>Module G2sfact: simple HKL import</em><a class="headerlink" href="#module-g2sfact-simple-hkl-import" title="Permalink to this headline">¶</a></h2>
+<h3><em>Module G2sfact: simple HKL import</em><a class="headerlink" href="#module-g2sfact-simple-hkl-import" title="Permalink to this headline">¶</a></h3>
 <p>Read structure factors from a simple hkl file. Two routines are
 provided to read from files containing F or F<sup>2</sup> values.</p>
+<dl class="function">
+<dt id="G2sfact.ColumnValidator">
+<tt class="descclassname">G2sfact.</tt><tt class="descname">ColumnValidator</tt><big>(</big><em>parent</em>, <em>filepointer</em><big>)</big><a class="headerlink" href="#G2sfact.ColumnValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate a file to check that it contains columns of numbers</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="G2sfact.HKLF2_ReaderClass">
 <em class="property">class </em><tt class="descclassname">G2sfact.</tt><tt class="descname">HKLF2_ReaderClass</tt><a class="reference internal" href="_modules/G2sfact.html#HKLF2_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.HKLF2_ReaderClass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Routines to import F**2, sig(F**2) reflections from a HKLF file</p>
+<dl class="method">
+<dt id="G2sfact.HKLF2_ReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2sfact.html#HKLF2_ReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.HKLF2_ReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make sure file contains the expected columns on numbers</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2sfact.HKLF2_ReaderClass.Reader">
+<tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**unused</em><big>)</big><a class="reference internal" href="_modules/G2sfact.html#HKLF2_ReaderClass.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.HKLF2_ReaderClass.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the file</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="G2sfact.HKLF_ReaderClass">
 <em class="property">class </em><tt class="descclassname">G2sfact.</tt><tt class="descname">HKLF_ReaderClass</tt><a class="reference internal" href="_modules/G2sfact.html#HKLF_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.HKLF_ReaderClass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Routines to import F, sig(F) reflections from a HKLF file</p>
+<dl class="method">
+<dt id="G2sfact.HKLF_ReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2sfact.html#HKLF_ReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.HKLF_ReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make sure file contains the expected columns on numbers</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2sfact.HKLF_ReaderClass.Reader">
+<tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**unused</em><big>)</big><a class="reference internal" href="_modules/G2sfact.html#HKLF_ReaderClass.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.HKLF_ReaderClass.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the file</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
 <span class="target" id="module-G2sfact_CIF"></span><div class="section" id="module-g2sfact-cif-cif-import">
-<h2><em>Module G2sfact_CIF: CIF import</em><a class="headerlink" href="#module-g2sfact-cif-cif-import" title="Permalink to this headline">¶</a></h2>
+<h3><em>Module G2sfact_CIF: CIF import</em><a class="headerlink" href="#module-g2sfact-cif-cif-import" title="Permalink to this headline">¶</a></h3>
 <p>Read structure factors from a CIF reflection table.</p>
 <dl class="class">
 <dt id="G2sfact_CIF.CIFhklReader">
 <em class="property">class </em><tt class="descclassname">G2sfact_CIF.</tt><tt class="descname">CIFhklReader</tt><a class="reference internal" href="_modules/G2sfact_CIF.html#CIFhklReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact_CIF.CIFhklReader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Routines to import Phase information from a CIF file</p>
+<dl class="method">
+<dt id="G2sfact_CIF.CIFhklReader.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2sfact_CIF.html#CIFhklReader.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact_CIF.CIFhklReader.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use standard CIF validator</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="G2sfact_CIF.CIFhklReader.Reader">
+<tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**kwarg</em><big>)</big><a class="reference internal" href="_modules/G2sfact_CIF.html#CIFhklReader.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact_CIF.CIFhklReader.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read single crystal data from a CIF.
+If multiple datasets are requested, use self.repeat and buffer caching.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 </div>
 
@@ -194,15 +507,40 @@ provided to read from files containing F or F<sup>2</sup> values.</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#"><em>GSAS-II Import Modules</em></a><ul>
+<li><a class="reference internal" href="#writing-an-import-routine">Writing an Import Routine</a><ul>
+<li><a class="reference internal" href="#init">__init__()</a></li>
+<li><a class="reference internal" href="#reader">Reader()</a><ul>
+<li><a class="reference internal" href="#reader-return-values">Reader return values</a></li>
+<li><a class="reference internal" href="#self-warnings">self.warnings</a></li>
+<li><a class="reference internal" href="#self-errors">self.errors</a></li>
+<li><a class="reference internal" href="#self-repeat">self.repeat</a></li>
+<li><a class="reference internal" href="#support-routines"><em>support routines</em></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#contentsvalidator">ContentsValidator()</a><ul>
+<li><a class="reference internal" href="#contentsvalidator-return-values">ContentsValidator return values</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#currently-defined-phase-import-routines">Currently Defined Phase Import Routines</a><ul>
 <li><a class="reference internal" href="#module-g2phase-pdb-and-exp"><em>Module G2phase: PDB and .EXP</em></a></li>
 <li><a class="reference internal" href="#module-g2phase-gpx-import-phase-from-gsas-ii-project"><em>Module G2phase_GPX: Import phase from GSAS-II project</em></a></li>
 <li><a class="reference internal" href="#module-g2phase-cif-coordinates-from-cif"><em>Module G2phase_CIF: Coordinates from CIF</em></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#currently-defined-powder-data-import-routines">Currently Defined Powder Data Import Routines</a><ul>
 <li><a class="reference internal" href="#module-g2pwd-gpx-gsas-ii-projects"><em>Module G2pwd_GPX: GSAS-II projects</em></a></li>
 <li><a class="reference internal" href="#module-g2pwd-fxye-gsas-data-files"><em>Module G2pwd_fxye: GSAS data files</em></a></li>
 <li><a class="reference internal" href="#module-g2pwd-xye-topas-xye-data"><em>Module G2pwd_xye: Topas .xye data</em></a></li>
 <li><a class="reference internal" href="#module-g2pwd-cif-cif-powder-data"><em>Module G2pwd_CIF: CIF powder data</em></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#currently-defined-single-crystal-data-import-routines">Currently Defined Single Crystal Data Import Routines</a><ul>
 <li><a class="reference internal" href="#module-g2sfact-simple-hkl-import"><em>Module G2sfact: simple HKL import</em></a></li>
 <li><a class="reference internal" href="#module-g2sfact-cif-cif-import"><em>Module G2sfact_CIF: CIF import</em></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

@@ -19,34 +19,48 @@ import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 
+def ColumnValidator(parent, filepointer):
+    'Validate a file to check that it contains columns of numbers'
+    l = S = filepointer.readline()
+    line = 1
+    while '#' in S[0]:        #get past comments, if any
+        l = filepointer.readline()        
+        line += 1
+    for i in range(10): # scan a few lines
+        S = l.split()
+        if len(S) != 5:
+            parent.errors = 'line '+str(line)+': invalid input\n'+l
+            return False
+        for v in S:
+            try:
+                float(v)
+            except ValueError:
+                parent.errors = 'line '+str(line)+': string found where a number is expected\n'+l
+                return False            
+        l = filepointer.readline()
+        line += 1
+    return True
+
+
 class HKLF_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import F, sig(F) reflections from a HKLF file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
-            formatName = 'F HKL',
-            longFormatName = 'Simple (hkl Fo sig(Fo)) Structure factor text file'
+            formatName = 'F containing HKL',
+            longFormatName = 'Simple [hkl, Fo, sig(Fo)] Structure factor text file'
             )
-    # Validate the contents
+
     def ContentsValidator(self, filepointer):
-        S = filepointer.readline() 
-        while '#' in S[0]:        #get past comments, if any
-            S = filepointer.readline()        
-        for i in range(3): # scan a few lines
-            S = S.split()
-            if len(S) != 5: return False
-            for v in S:
-                try:
-                    float(v)
-                except ValueError:
-                    return False            
-            S = filepointer.readline()
-        return True
+        'Make sure file contains the expected columns on numbers'
+        return ColumnValidator(self, filepointer)
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        'Read the file'
         try:
-            for S in filepointer:
+            for line,S in enumerate(filepointer):
+                self.errors = '  Error reading line '+str(line+1)
                 if S[0] == '#': continue       #ignore comments, if any
                 h,k,l,Fo,sigFo = S.split()
                 h,k,l = [int(h),int(k),int(l)]
@@ -56,13 +70,15 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
                 sigFo = float(sigFo)
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 self.RefDict['RefList'].append([h,k,l,0,0,Fo**2,2.*Fo*sigFo,0,Fo**2,0,0,0])
-                self.RefDict['FF'].append({})
+                #self.RefDict['FF'].append({}) # now done in OnImportSfact
+            self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.UpdateControls(Type='Fosq',FcalcPresent=False) # set Fobs type & if Fcalc values are loaded
             self.UpdateParameters(Type='SXC',Wave=None) # histogram type
             return True
         except Exception as detail:
-            print self.formatName+' read error:'+str(detail) # for testing
+            self.errors += '\n  '+str(detail)
+            print '\n\n'+self.formatName+' read error: '+str(detail) # for testing
             import traceback
             traceback.print_exc(file=sys.stdout)
             return False
@@ -73,28 +89,19 @@ class HKLF2_ReaderClass(G2IO.ImportStructFactor):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
-            formatName = 'F**2 HKL',
-            longFormatName = 'Simple (hkl Fo**2 sig(Fo**2)) Structure factor text file'
+            formatName = u'F\u00b2 containing HKL',
+            longFormatName = u'Simple [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
             )
-    # Validate the contents
+
     def ContentsValidator(self, filepointer):
-        S = filepointer.readline() 
-        while '#' in S[0]:        #get past comments, if any
-            S = filepointer.readline()        
-        for i in range(3): # scan a few lines
-            S = S.split()
-            if len(S) != 5: return False
-            for v in S:
-                try:
-                    float(v)
-                except ValueError:
-                    return False            
-            S = filepointer.readline()
-        return True
+        'Make sure file contains the expected columns on numbers'
+        return ColumnValidator(self, filepointer)
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        'Read the file'
         try:
-            for S in filepointer:
+            for line,S in enumerate(filepointer):
+                self.errors = '  Error reading line '+str(line+1)
                 if S[0] == '#': continue       #ignore comments, if any
                 h,k,l,Fo,sigFo = S.split()
                 h,k,l = [int(h),int(k),int(l)]
@@ -104,13 +111,15 @@ class HKLF2_ReaderClass(G2IO.ImportStructFactor):
                 sigFo = float(sigFo)
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0])
-                self.RefDict['FF'].append({})
+                #self.RefDict['FF'].append({}) # now done in OnImportSfact
+            self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.UpdateControls(Type='Fosq',FcalcPresent=False) # set Fobs type & if Fcalc values are loaded
             self.UpdateParameters(Type='SXC',Wave=None) # histogram type
             return True
         except Exception as detail:
-            print self.formatName+' read error:'+str(detail) # for testing
+            self.errors += '\n  '+str(detail)
+            print '\n\n'+self.formatName+' read error: '+str(detail) # for testing
             import traceback
             traceback.print_exc(file=sys.stdout)
             return False

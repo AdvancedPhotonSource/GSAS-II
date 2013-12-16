@@ -113,14 +113,16 @@ the output from GroupConstraints and generates the
 global variables. Each generated parameter is named sequentially using paramPrefix.</p>
 <p>A list of parameters that will be varied is specified as input to GenerateConstraints
 (varyList). A fixed parameter will simply be removed from this list preventing that
-parameter from being varied. Note that all parameters in a relationship must specified as
-varied (appear in varyList) or none can be varied. This is checked in GenerateConstraints
-(as well as for generated relationships in SetVaryFlags).</p>
+parameter from being varied. Note that all parameters in a constraint relationship
+must specified as varied (appear in varyList) or none can be varied. This is
+checked in GenerateConstraints (as well as for generated relationships in SetVaryFlags).</p>
 <ul class="simple">
-<li>If all parameters in a parameter redefinition (new var) relationship are varied, the
-parameter assigned to this expression (::constr:n, see paramPrefix) newly generated
-parameter is varied. Note that any generated &#8220;missing&#8221; relations are not varied. Only
-the input relations are varied.</li>
+<li>When a new variable is created, the variable is assigned the name associated
+in the constraint definition or it is assigned a default name of form
+<tt class="docutils literal"><span class="pre">::constr&lt;n&gt;</span></tt> (see paramPrefix). The vary setting for variables used in the
+constraint are ignored.
+Note that any generated &#8220;missing&#8221; relations are not varied. Only
+the input relations can be are varied.</li>
 <li>If all parameters in a fixed constraint equation are varied, the generated &#8220;missing&#8221;
 relations in the group are all varied. This provides the N-C degrees of freedom.</li>
 </ul>
@@ -225,9 +227,12 @@ parameter/variable definitions and or inconsistently varied parameters.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>varyList</strong> (<em>list</em>) &#8211; a list of parameters names that will be varied</li>
-<li><strong>constrDict</strong> (<em>dict</em>) &#8211; a list of dicts defining relationships/constraints (as defined in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a>)</li>
-<li><strong>fixedList</strong> (<em>list</em>) &#8211; a list of values specifying a fixed value for each dict in constrDict. Values are
-either strings that can be converted to floats or None if the constraint defines a new parameter rather
+<li><strong>constrDict</strong> (<em>dict</em>) &#8211; a list of dicts defining relationships/constraints
+(as created in <a class="reference internal" href="GSASIIstruc.html#GSASIIstrIO.ProcessConstraints" title="GSASIIstrIO.ProcessConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrIO.ProcessConstraints()</span></tt></a> and
+documented in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a>)</li>
+<li><strong>fixedList</strong> (<em>list</em>) &#8211; a list of values specifying a fixed value for each
+dict in constrDict. Values are either strings that can be converted to
+floats or <tt class="docutils literal"><span class="pre">None</span></tt> if the constraint defines a new parameter rather
 than a constant.</li>
 </ul>
 </td>
@@ -313,16 +318,20 @@ conflicts or inconsistencies in parameter/variable definitions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>groups</strong> (<em>list</em>) &#8211; a list of grouped contraints where each constraint grouped containts a list of
-indices for constraint constrDict entries, created in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a> (returned as 1st value)</li>
-<li><strong>parmlist</strong> (<em>list</em>) &#8211; a list containing lists of parameter names contained in each group,
+<li><strong>groups</strong> (<em>list</em>) &#8211; a list of grouped contraints where each constraint
+grouped containts a list of indices for constraint constrDict entries,
 created in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a> (returned as 1st value)</li>
-<li><strong>varyList</strong> (<em>list</em>) &#8211; a list of parameters names (strings of form <tt class="docutils literal"><span class="pre">&lt;ph&gt;:&lt;hst&gt;:&lt;nam&gt;</span></tt>) that will be varied</li>
-<li><strong>constrDict</strong> (<em>dict</em>) &#8211; a list of dicts defining relationships/constraints (as defined in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a>)</li>
-<li><strong>fixedList</strong> (<em>list</em>) &#8211; a list of values specifying a fixed value for each dict in constrDict. Values are
-either strings that can be converted to floats, float values or None if the constraint defines a new
-parameter</li>
-<li><strong>constrDict</strong> &#8211; a list of dicts defining relationships/constraints</li>
+<li><strong>parmlist</strong> (<em>list</em>) &#8211; a list containing lists of parameter names
+contained in each group, created in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a>
+(returned as 2nd value)</li>
+<li><strong>varyList</strong> (<em>list</em>) &#8211; a list of parameters names (strings of form
+<tt class="docutils literal"><span class="pre">&lt;ph&gt;:&lt;hst&gt;:&lt;nam&gt;</span></tt>) that will be varied</li>
+<li><strong>constrDict</strong> (<em>dict</em>) &#8211; a list of dicts defining relationships/constraints
+(as defined in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a>)</li>
+<li><strong>fixedList</strong> (<em>list</em>) &#8211; a list of values specifying a fixed value for each
+dict in constrDict. Values are either strings that can be converted to
+floats, float values or None if the constraint defines a new parameter.</li>
+<li><strong>constrDict</strong> &#8211; a list of dicts defining relationships/constraints.</li>
 </ul>
 </td>
 </tr>
@@ -388,13 +397,14 @@ find orthonormal unit vectors relative to first row.</p>
 </table>
 <div class="highlight-python"><pre>constrDict = [{&lt;constr1&gt;}, {&lt;constr2&gt;}, ...]</pre>
 </div>
-<p>where {&lt;constr1&gt;} is {&#8216;param1&#8217;: mult1, &#8216;param2&#8217;: mult2,...}</p>
+<p>where {&lt;constr1&gt;} is {&#8216;var1&#8217;: mult1, &#8216;var2&#8217;: mult2,... }</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">two lists of lists:<ul class="simple">
-<li>a list of grouped contraints where each constraint grouped containts a list of indices for constraint constrDict entries</li>
+<li>a list of grouped contraints where each constraint grouped containts a list
+of indices for constraint constrDict entries</li>
 <li>a list containing lists of parameter names contained in each group</li>
 </ul>
 </td>
@@ -464,6 +474,28 @@ name or a tuple containing a name and multiplier:
 <tt class="docutils literal"><span class="pre">['parm1',('parm2',.5),]</span></tt></li>
 </ul>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImapvars.VarKeys">
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">VarKeys</tt><big>(</big><em>constr</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#VarKeys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.VarKeys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the keys in a constraint that represent variables
+e.g. eliminates any that start with &#8216;_&#8217;</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>constr</strong> (<em>dict</em>) &#8211; <p>a single constraint entry of form:</p>
+<div class="highlight-python"><pre>{'var1': mult1, 'var2': mult2,... '_notVar': val,...}</pre>
+</div>
+<p>(see <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a>)</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a list of keys where any keys beginning with &#8216;_&#8217; are
+removed.</td>
 </tr>
 </tbody>
 </table>

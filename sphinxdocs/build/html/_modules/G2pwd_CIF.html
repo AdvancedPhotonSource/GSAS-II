@@ -55,7 +55,7 @@
 <span class="c"># $Date: 2013-10-25 14:24:22 -0500 (Fri, 25 Oct 2013) $</span>
 <span class="c"># $Author: toby $</span>
 <span class="c"># $Revision: 1123 $</span>
-<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_CIF.py $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_CIF.py $</span>
 <span class="c"># $Id: G2pwd_CIF.py 1123 2013-10-25 19:24:22Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
@@ -83,7 +83,7 @@
             <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Powder data from CIF&#39;</span>
             <span class="p">)</span>
     <span class="c"># Validate the contents</span>
-    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
+<div class="viewcode-block" id="CIFpwdReader.ContentsValidator"><a class="viewcode-back" href="../imports.html#G2pwd_CIF.CIFpwdReader.ContentsValidator">[docs]</a>    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filepointer</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">1000</span><span class="p">:</span> <span class="k">break</span>
             <span class="sd">&#39;&#39;&#39; Encountered only blank lines or comments in first 1000</span>
@@ -100,8 +100,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">False</span> <span class="c"># found something else</span>
         <span class="k">return</span> <span class="bp">True</span>
-
-    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
+</div>
+<div class="viewcode-block" id="CIFpwdReader.Reader"><a class="viewcode-back" href="../imports.html#G2pwd_CIF.CIFpwdReader.Reader">[docs]</a>    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
         <span class="c"># Define lists of data names used for holding powder diffraction data </span>
         <span class="n">xDataItems</span> <span class="o">=</span> <span class="p">(</span>  <span class="c"># &quot;x-axis&quot; data names&quot;</span>
             <span class="p">(</span><span class="s">&#39;_pd_meas_2theta_range_min&#39;</span><span class="p">,</span> <span class="s">&#39;_pd_meas_2theta_range_max&#39;</span><span class="p">,</span> <span class="s">&#39;_pd_meas_2theta_range_inc&#39;</span><span class="p">),</span>
@@ -388,7 +388,7 @@
             <span class="n">w</span><span class="p">,</span><span class="n">e</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">w</span><span class="p">:</span> 
                 <span class="bp">self</span><span class="o">.</span><span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span>
-        <span class="k">return</span> <span class="bp">True</span></div>
+        <span class="k">return</span> <span class="bp">True</span></div></div>
 </pre></div>
 
           </div>

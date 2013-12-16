@@ -52,11 +52,11 @@
   <h1>Source code for G2sfact_CIF</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-25 14:24:22 -0500 (Fri, 25 Oct 2013) $</span>
+<span class="c"># $Date: 2013-11-12 15:52:13 -0600 (Tue, 12 Nov 2013) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1123 $</span>
-<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2sfact_CIF.py $</span>
-<span class="c"># $Id: G2sfact_CIF.py 1123 2013-10-25 19:24:22Z toby $</span>
+<span class="c"># $Revision: 1145 $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/imports/G2sfact_CIF.py $</span>
+<span class="c"># $Id: G2sfact_CIF.py 1145 2013-11-12 21:52:13Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*Module G2sfact_CIF: CIF import*</span>
@@ -71,7 +71,7 @@
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1123 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1145 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">CifFile</span> <span class="kn">as</span> <span class="nn">cif</span> <span class="c"># PyCifRW from James Hester</span>
 
 <div class="viewcode-block" id="CIFhklReader"><a class="viewcode-back" href="../imports.html#G2sfact_CIF.CIFhklReader">[docs]</a><span class="k">class</span> <span class="nc">CIFhklReader</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ImportStructFactor</span><span class="p">):</span>
@@ -84,7 +84,7 @@
             <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;CIF format structure factor file (.cif or .hkl)&#39;</span>
             <span class="p">)</span>
     <span class="c"># Validate the contents</span>
-    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
+<div class="viewcode-block" id="CIFhklReader.ContentsValidator"><a class="viewcode-back" href="../imports.html#G2sfact_CIF.CIFhklReader.ContentsValidator">[docs]</a>    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filepointer</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">1000</span><span class="p">:</span> <span class="k">break</span>
             <span class="sd">&#39;&#39;&#39; Encountered only blank lines or comments in first 1000</span>
@@ -100,12 +100,46 @@
                 <span class="k">return</span> <span class="bp">True</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">False</span> <span class="c"># found something else</span>
-        <span class="k">return</span> <span class="bp">True</span>
-    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
-        <span class="n">hklitems</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_refln_index_h&#39;</span><span class="p">,</span><span class="s">&#39;_refln_index_k&#39;</span><span class="p">,</span><span class="s">&#39;_refln_index_l&#39;</span><span class="p">)</span>
-        <span class="n">cellitems</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s">&#39;_cell_length_a&#39;</span><span class="p">,</span><span class="s">&#39;_cell_length_b&#39;</span><span class="p">,</span><span class="s">&#39;_cell_length_c&#39;</span><span class="p">,</span>
-            <span class="s">&#39;_cell_angle_alpha&#39;</span><span class="p">,</span><span class="s">&#39;_cell_angle_beta&#39;</span><span class="p">,</span><span class="s">&#39;_cell_angle_gamma&#39;</span><span class="p">,)</span>
+        <span class="k">return</span> <span class="bp">True</span></div>
+<div class="viewcode-block" id="CIFhklReader.Reader"><a class="viewcode-back" href="../imports.html#G2sfact_CIF.CIFhklReader.Reader">[docs]</a>    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
+        <span class="n">hklitems</span> <span class="o">=</span> <span class="p">[(</span><span class="s">&#39;_refln_index_h&#39;</span><span class="p">,</span><span class="s">&#39;_refln_index_k&#39;</span><span class="p">,</span><span class="s">&#39;_refln_index_l&#39;</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s">&#39;_refln.index_h&#39;</span><span class="p">,</span><span class="s">&#39;_refln.index_k&#39;</span><span class="p">,</span><span class="s">&#39;_refln.index_l&#39;</span><span class="p">)]</span>
+        <span class="n">cellitems</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s">&#39;_cell_length_a&#39;</span><span class="p">,</span><span class="s">&#39;_cell_length_b&#39;</span><span class="p">,</span><span class="s">&#39;_cell_length_c&#39;</span><span class="p">,</span>
+             <span class="s">&#39;_cell_angle_alpha&#39;</span><span class="p">,</span><span class="s">&#39;_cell_angle_beta&#39;</span><span class="p">,</span><span class="s">&#39;_cell_angle_gamma&#39;</span><span class="p">,),</span>
+            <span class="p">(</span><span class="s">&#39;_cell.length_a&#39;</span><span class="p">,</span><span class="s">&#39;_cell.length_b&#39;</span><span class="p">,</span><span class="s">&#39;_cell.length_c&#39;</span><span class="p">,</span>
+             <span class="s">&#39;_cell.angle_alpha&#39;</span><span class="p">,</span><span class="s">&#39;_cell.angle_beta&#39;</span><span class="p">,</span><span class="s">&#39;_cell.angle_gamma&#39;</span><span class="p">,),]</span>
+
+        <span class="n">Fdatanames</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_refln_f_meas&#39;</span><span class="p">,</span><span class="s">&#39;_refln.f_meas&#39;</span><span class="p">,</span><span class="s">&#39;_refln.f_meas_au&#39;</span><span class="p">,</span>
+                      <span class="p">)</span>
+        
+        <span class="n">F2datanames</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_refln_f_squared_meas&#39;</span><span class="p">,</span><span class="s">&#39;_refln.f_squared_meas&#39;</span><span class="p">,</span>
+                      <span class="p">)</span>
+
+        <span class="n">Idatanames</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_refln_intensity_meas&#39;</span><span class="p">,</span><span class="s">&#39;_refln.intensity_meas&#39;</span><span class="p">,</span>
+                      <span class="p">)</span> <span class="c"># not used yet</span>
+
+        <span class="n">Isignames</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_refln_intensity_meas_sigma&#39;</span><span class="p">,</span><span class="s">&#39;_refln.intensity_meas_sigma&#39;</span><span class="p">,</span>
+                      <span class="p">)</span> <span class="c"># not used yet</span>
+
+        <span class="n">Fcalcnames</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_refln_f_calc&#39;</span><span class="p">,</span><span class="s">&#39;_refln.f_calc&#39;</span><span class="p">,</span><span class="s">&#39;_refln.f_calc_au&#39;</span><span class="p">,</span>
+                      <span class="p">)</span>
+        
+        <span class="n">F2calcnames</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_refln_f_squared_calc&#39;</span><span class="p">,</span><span class="s">&#39;_refln.f_squared_calc&#39;</span><span class="p">,</span>
+                      <span class="p">)</span>
+
+        <span class="n">Fsignames</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_refln_f_meas_sigma&#39;</span><span class="p">,</span><span class="s">&#39;_refln.f_meas_sigma&#39;</span><span class="p">,</span><span class="s">&#39;_refln.f_meas_sigma_au&#39;</span><span class="p">,</span>
+                      <span class="p">)</span>
+        
+        <span class="n">F2signames</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_refln_f_squared_meas_sigma&#39;</span><span class="p">,</span><span class="s">&#39;_refln.f_squared_meas_sigma&#39;</span><span class="p">,</span>
+                      <span class="p">)</span>
+
+        <span class="n">phasenames</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_refln_phase_calc&#39;</span><span class="p">,</span><span class="s">&#39;_refln.phase_calc&#39;</span><span class="p">,</span>
+                      <span class="p">)</span>
+
+
+        <span class="n">SGdataname</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_symmetry_space_group_name_H-M&#39;</span><span class="p">,</span> <span class="s">&#39;_symmetry.space_group_name_H-M&#39;</span><span class="p">)</span>
+                     
         <span class="n">phasenamefields</span> <span class="o">=</span> <span class="p">(</span>
             <span class="s">&#39;_chemical_name_common&#39;</span><span class="p">,</span>
             <span class="s">&#39;_pd_phase_name&#39;</span><span class="p">,</span>
@@ -116,29 +150,36 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="ow">and</span> <span class="n">rdbuffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="n">cf</span> <span class="o">=</span> <span class="n">rdbuffer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;lastcif&#39;</span><span class="p">)</span>
-                <span class="k">print</span> <span class="s">&#39;Reuse previously parsed CIF&#39;</span>
+                <span class="k">print</span> <span class="s">&#39;Reusing previously parsed CIF&#39;</span>
             <span class="k">if</span> <span class="n">cf</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">ShowBusy</span><span class="p">()</span> <span class="c"># this can take a while</span>
                 <span class="n">cf</span> <span class="o">=</span> <span class="n">G2IO</span><span class="o">.</span><span class="n">ReadCIF</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">DoneBusy</span><span class="p">()</span>
             <span class="c"># scan blocks for reflections</span>
             <span class="n">blklist</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">blktype</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">blk</span> <span class="ow">in</span> <span class="n">cf</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">blk</span> <span class="ow">in</span> <span class="n">cf</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span> <span class="c"># scan for reflections, F or F2 values and cell lengths.</span>
+                <span class="c"># Ignore blocks that do not have structure factors and a cell</span>
                 <span class="n">blkkeys</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
-                <span class="n">gotFo</span> <span class="o">=</span> <span class="bp">True</span>
-                <span class="n">gotFo2</span> <span class="o">=</span> <span class="bp">True</span>
-                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">hklitems</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">r</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
-                        <span class="n">gotFo</span> <span class="o">=</span> <span class="bp">False</span>
-                        <span class="n">gotFo2</span> <span class="o">=</span> <span class="bp">False</span>
-                <span class="k">if</span> <span class="s">&#39;_refln_f_squared_meas&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
-                    <span class="n">gotFo</span> <span class="o">=</span> <span class="bp">False</span>
-                <span class="k">if</span> <span class="s">&#39;_refln_f_squared_meas&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
-                    <span class="n">gotFo2</span> <span class="o">=</span> <span class="bp">False</span>
-                <span class="k">if</span> <span class="n">gotFo</span> <span class="ow">or</span> <span class="n">gotFo2</span><span class="p">:</span>
-                    <span class="n">blklist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">blk</span><span class="p">)</span>
-                    <span class="n">blktype</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gotFo2</span><span class="p">)</span>
+                <span class="n">gotFo</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="n">gotFo2</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">hklitems</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">blkkeys</span> <span class="ow">and</span> <span class="n">hklitems</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">blkkeys</span> <span class="ow">and</span> <span class="n">hklitems</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
+                        <span class="n">dnIndex</span> <span class="o">=</span> <span class="n">i</span>
+                        <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span> <span class="c"># no reflections</span>
+                <span class="k">for</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">Fdatanames</span><span class="p">:</span> 
+                    <span class="k">if</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
+                        <span class="n">blklist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">blk</span><span class="p">)</span>
+                        <span class="n">gotFo</span> <span class="o">=</span> <span class="bp">True</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="n">gotFo</span><span class="p">:</span> <span class="k">break</span>
+                <span class="k">for</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">F2datanames</span><span class="p">:</span> 
+                    <span class="k">if</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
+                        <span class="n">blklist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">blk</span><span class="p">)</span>
+                        <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">blklist</span><span class="p">:</span>
                 <span class="n">selblk</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># no block to choose</span>
             <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">blklist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c"># only one choice</span>
@@ -158,15 +199,18 @@
                             <span class="k">break</span>
                     <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
                     <span class="n">fmt</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%.2f</span><span class="s">,&quot;</span>
-                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cellitems</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cellitems</span><span class="p">[</span><span class="n">dnIndex</span><span class="p">]):</span>
                         <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span> <span class="n">fmt</span> <span class="o">=</span> <span class="s">&quot;%.f,&quot;</span>
                         <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span> <span class="n">fmt</span> <span class="o">=</span> <span class="s">&quot;%.f&quot;</span>
                         <span class="n">val</span> <span class="o">=</span> <span class="n">cf</span><span class="p">[</span><span class="n">blknm</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
                         <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">break</span>
                         <span class="n">s</span> <span class="o">+=</span> <span class="n">fmt</span> <span class="o">%</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">s</span><span class="p">:</span> <span class="n">choice</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39;, cell: &#39;</span> <span class="o">+</span> <span class="n">s</span>
-                    <span class="n">sg</span> <span class="o">=</span> <span class="n">cf</span><span class="p">[</span><span class="n">blknm</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;_symmetry_space_group_name_H-M&quot;</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">sg</span><span class="p">:</span> <span class="n">choice</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39;, (&#39;</span> <span class="o">+</span> <span class="n">sg</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s">&#39;)&#39;</span>
+                    <span class="k">for</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">SGdataname</span><span class="p">:</span>
+                        <span class="n">sg</span> <span class="o">=</span> <span class="n">cf</span><span class="p">[</span><span class="n">blknm</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dn</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">sg</span><span class="p">:</span> 
+                            <span class="n">choice</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39;, (&#39;</span> <span class="o">+</span> <span class="n">sg</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s">&#39;)&#39;</span>
+                            <span class="k">break</span>
                 <span class="n">choice</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;Import all of the above&#39;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">:</span> <span class="c"># we were called to repeat the read</span>
                     <span class="n">selblk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeatcount</span>
@@ -191,84 +235,124 @@
             <span class="n">blk</span> <span class="o">=</span> <span class="n">cf</span><span class="p">[</span><span class="n">blklist</span><span class="p">[</span><span class="n">selblk</span><span class="p">]]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">objname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">blknm</span><span class="p">)</span>
             <span class="c"># read in reflections</span>
-            <span class="n">refloop</span> <span class="o">=</span> <span class="n">blk</span><span class="o">.</span><span class="n">GetLoop</span><span class="p">(</span><span class="s">&#39;_refln_index_h&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">refloop</span> <span class="o">=</span> <span class="n">blk</span><span class="o">.</span><span class="n">GetLoop</span><span class="p">(</span><span class="n">hklitems</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">dnIndex</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">refloop</span> <span class="o">=</span> <span class="n">blk</span><span class="o">.</span><span class="n">GetLoop</span><span class="p">(</span><span class="n">hklitems</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">dnIndex</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span> <span class="s">&quot;Unexpected: index_h not found!&quot;</span>
             <span class="n">itemkeys</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="c"># prepare an index to the CIF reflection loop</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">refloop</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
                 <span class="n">itemkeys</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span> <span class="o">=</span> <span class="n">i</span>
-            <span class="k">if</span> <span class="s">&#39;_refln_f_squared_calc&#39;</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
-                <span class="n">FcalcPresent</span> <span class="o">=</span> <span class="bp">True</span>
-            <span class="k">elif</span> <span class="s">&#39;_refln_f_calc&#39;</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
-                <span class="n">FcalcPresent</span> <span class="o">=</span> <span class="bp">True</span>
+                
+            <span class="c"># scan for data names:</span>
+            <span class="n">F2dn</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">Fdn</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">F2cdn</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">Fcdn</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">F2sdn</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">Fsdn</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">Phdn</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">FcalcPresent</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">for</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">F2datanames</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
+                    <span class="n">F2dn</span> <span class="o">=</span> <span class="n">dn</span>
+                    <span class="k">for</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">F2calcnames</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
+                            <span class="n">F2cdn</span> <span class="o">=</span> <span class="n">dn</span>
+                            <span class="n">FcalcPresent</span> <span class="o">=</span> <span class="bp">True</span>
+                            <span class="k">break</span>
+                    <span class="k">for</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">F2signames</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
+                            <span class="n">F2sdn</span> <span class="o">=</span> <span class="n">dn</span>
+                            <span class="k">break</span>
+                    <span class="k">break</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">FcalcPresent</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">for</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">Fdatanames</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
+                        <span class="n">Fdn</span> <span class="o">=</span> <span class="n">dn</span>
+                        <span class="k">for</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">Fcalcnames</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
+                                <span class="n">Fcdn</span> <span class="o">=</span> <span class="n">dn</span>
+                                <span class="n">FcalcPresent</span> <span class="o">=</span> <span class="bp">True</span>
+                                <span class="k">break</span>
+                        <span class="k">for</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">Fsignames</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
+                                <span class="n">Fsdn</span> <span class="o">=</span> <span class="n">dn</span>
+                                <span class="k">break</span>
+                        <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span> <span class="s">&quot;no F or F2 value&quot;</span>
+            <span class="k">for</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">phasenames</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dn</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
+                    <span class="n">Phdn</span> <span class="o">=</span> <span class="n">dn</span>
+                    <span class="k">break</span>
+                
+            <span class="c"># loop over all reflections</span>
             <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">refloop</span><span class="p">:</span>
+                <span class="n">F2c</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">sigF2</span> <span class="o">=</span> <span class="mf">0.0</span>
                 <span class="n">HKL</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hklitems</span><span class="p">:</span> <span class="c"># (&#39;_refln_index_h&#39;,&#39;_refln_index_k&#39;,&#39;_refln_index_l&#39;)</span>
-                    <span class="n">num</span> <span class="o">=</span> <span class="n">itemkeys</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">HKL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">num</span><span class="p">]))</span>
-                    <span class="k">except</span><span class="p">:</span>
-                        <span class="n">HKL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)</span>
-                <span class="c">#h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...</span>
-                <span class="n">ref</span> <span class="o">=</span> <span class="n">HKL</span><span class="o">+</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> 
-                <span class="k">if</span> <span class="s">&#39;_refln_f_squared_meas&#39;</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">Fsq</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="s">&#39;_refln_f_squared_meas&#39;</span><span class="p">]])</span>
-                        <span class="n">ref</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
-                        <span class="n">ref</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
-                    <span class="k">except</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hklitems</span><span class="p">[</span><span class="n">dnIndex</span><span class="p">]:</span> <span class="c"># &#39;_refln[._]index_[hkl]&#39;</span>
+                        <span class="n">num</span> <span class="o">=</span> <span class="n">itemkeys</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
                         <span class="k">try</span><span class="p">:</span>
-                            <span class="n">Fsq</span><span class="p">,</span><span class="n">Esd</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="s">&#39;_refln_f_squared_meas&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;(&#39;</span><span class="p">)</span>
-                            <span class="n">Fsq</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Fsq</span><span class="p">)</span>
-                            <span class="n">ref</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
-                            <span class="n">ref</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
-                            <span class="n">ref</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Esd</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                            <span class="n">HKL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">num</span><span class="p">]))</span>
+                        <span class="k">except</span><span class="p">:</span>
+                            <span class="n">HKL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)</span>
+                    <span class="c">#h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...</span>
+                    <span class="n">ref</span> <span class="o">=</span> <span class="n">HKL</span><span class="o">+</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> 
+                    <span class="k">if</span> <span class="n">F2dn</span><span class="p">:</span>
+                        <span class="n">F2</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="n">F2dn</span><span class="p">]]</span>
+                        <span class="k">if</span> <span class="s">&#39;(&#39;</span> <span class="ow">in</span> <span class="n">F2</span><span class="p">:</span>
+                            <span class="n">F2</span><span class="p">,</span> <span class="n">sigF2</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">F2</span><span class="p">)</span>
+                            <span class="n">F2</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">F2</span><span class="p">)</span>
+                            <span class="n">sigF2</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sigF2</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="n">F2sdn</span><span class="p">:</span>
+                            <span class="n">F2</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">F2</span><span class="p">)</span>
+                            <span class="n">sigF2</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="n">F2sdn</span><span class="p">]])</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">F2</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">F2</span><span class="p">)</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">F2cdn</span><span class="p">:</span>
+                                <span class="n">F2c</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="n">F2cdn</span><span class="p">]])</span>
                         <span class="k">except</span><span class="p">:</span>
                             <span class="k">pass</span>
-                    <span class="k">if</span>  <span class="s">&#39;_refln_f_squared_sigma&#39;</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">F</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="n">Fdn</span><span class="p">]]</span>
+                        <span class="k">if</span> <span class="s">&#39;(&#39;</span> <span class="ow">in</span> <span class="n">F</span><span class="p">:</span>
+                            <span class="n">F</span><span class="p">,</span> <span class="n">sig</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="n">Fsdn</span><span class="p">:</span>
+                            <span class="n">F</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+                            <span class="n">sig</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="n">Fsdn</span><span class="p">]])</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">F</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+                            <span class="n">sig</span> <span class="o">=</span> <span class="mf">0.0</span>
+                        <span class="n">F2</span> <span class="o">=</span> <span class="n">F</span><span class="o">**</span><span class="mi">2</span>
+                        <span class="n">sigF2</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">F</span><span class="o">*</span><span class="n">sig</span>
                         <span class="k">try</span><span class="p">:</span>
-                            <span class="n">ref</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="s">&#39;_refln_f_squared_sigma&#39;</span><span class="p">]])</span>
+                            <span class="k">if</span> <span class="n">Fcdn</span><span class="p">:</span>
+                                <span class="n">Fc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="n">Fcdn</span><span class="p">]])</span>
+                                <span class="n">F2c</span> <span class="o">=</span> <span class="n">Fc</span><span class="o">*</span><span class="n">Fc</span>
                         <span class="k">except</span><span class="p">:</span>
-                            <span class="k">pass</span>                            
-                <span class="k">elif</span> <span class="s">&#39;_refln_f_meas&#39;</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
+                            <span class="k">pass</span>
+                                
+                    <span class="n">ref</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">F2</span>
+                    <span class="n">ref</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">F2</span>
+                    <span class="n">ref</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigF2</span>
+                    <span class="n">ref</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">=</span> <span class="n">F2c</span>
+                    <span class="n">ref</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="n">F2c</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="n">Fsq</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="s">&#39;_refln_f_meas&#39;</span><span class="p">]])</span><span class="o">**</span><span class="mi">2</span>
-                        <span class="n">ref</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
-                        <span class="n">ref</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
+                        <span class="k">if</span> <span class="n">Phdn</span><span class="p">:</span>
+                            <span class="n">ref</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="n">Phdn</span><span class="p">]])</span>
                     <span class="k">except</span><span class="p">:</span>
-                        <span class="k">try</span><span class="p">:</span>
-                            <span class="n">Fsq</span><span class="p">,</span><span class="n">Esd</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="s">&#39;_refln_f_squared_meas&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;(&#39;</span><span class="p">)</span>
-                            <span class="n">Fsq</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Fsq</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
-                            <span class="n">ref</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
-                            <span class="n">ref</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
-                            <span class="n">ref</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Fsq</span><span class="p">)</span><span class="o">*</span><span class="nb">float</span><span class="p">(</span><span class="n">Esd</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-                        <span class="k">except</span><span class="p">:</span>
-                            <span class="k">pass</span>                                
-                    <span class="k">if</span>  <span class="s">&#39;_refln_f_sigma&#39;</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
-                        <span class="k">try</span><span class="p">:</span>
-                            <span class="n">ref</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span><span class="o">*</span><span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="s">&#39;_refln_f_sigma&#39;</span><span class="p">]])</span>
-                        <span class="k">except</span><span class="p">:</span>
-                            <span class="k">pass</span>                                
-                <span class="k">if</span> <span class="s">&#39;_refln_f_squared_calc&#39;</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">Fsq</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="s">&#39;_refln_f_squared_calc&#39;</span><span class="p">]])</span>
-                        <span class="n">ref</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
-                        <span class="n">ref</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
-                    <span class="k">except</span><span class="p">:</span>
-                        <span class="k">pass</span>                                
-                <span class="k">elif</span> <span class="s">&#39;_refln_f_calc&#39;</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">Fsq</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="s">&#39;_refln_f_calc&#39;</span><span class="p">]])</span><span class="o">**</span><span class="mi">2</span>
-                        <span class="n">ref</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
-                        <span class="n">ref</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fsq</span>
-                    <span class="k">except</span><span class="p">:</span>
-                        <span class="k">pass</span>                                
-                <span class="k">if</span> <span class="s">&#39;_refln_phase_calc&#39;</span> <span class="ow">in</span> <span class="n">itemkeys</span><span class="p">:</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">ref</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="n">itemkeys</span><span class="p">[</span><span class="s">&#39;_refln_phase_calc&#39;</span><span class="p">]])</span>
-                    <span class="k">except</span><span class="p">:</span>
-                        <span class="k">pass</span>                                
+                        <span class="k">pass</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">continue</span> <span class="c"># skip over incompletely parsed reflections</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span><span class="p">[</span><span class="s">&#39;FF&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({})</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">])</span>
@@ -276,10 +360,15 @@
             <span class="k">if</span> <span class="n">blk</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;_diffrn_radiation_probe&#39;</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">blk</span><span class="p">[</span><span class="s">&#39;_diffrn_radiation_probe&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;neutron&#39;</span><span class="p">:</span>
                     <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;SNC&#39;</span>
+            <span class="k">elif</span> <span class="n">blk</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;_diffrn_radiation.probe&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">blk</span><span class="p">[</span><span class="s">&#39;_diffrn_radiation.probe&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;neutron&#39;</span><span class="p">:</span>
+                    <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;SNC&#39;</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;SXC&#39;</span>
             <span class="k">if</span> <span class="n">blk</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;_diffrn_radiation_wavelength&#39;</span><span class="p">):</span>
                 <span class="n">wave</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">blk</span><span class="p">[</span><span class="s">&#39;_diffrn_radiation_wavelength&#39;</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">blk</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;_diffrn_radiation.wavelength&#39;</span><span class="p">):</span>
+                <span class="n">wave</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">blk</span><span class="p">[</span><span class="s">&#39;_diffrn_radiation.wavelength&#39;</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">wave</span> <span class="o">=</span> <span class="bp">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">UpdateParameters</span><span class="p">(</span><span class="n">Type</span><span class="o">=</span><span class="nb">type</span><span class="p">,</span><span class="n">Wave</span><span class="o">=</span><span class="n">wave</span><span class="p">)</span> <span class="c"># histogram type</span>
@@ -288,7 +377,7 @@
             <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">formatName</span><span class="o">+</span><span class="s">&#39; read error:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span> <span class="c"># for testing</span>
             <span class="kn">import</span> <span class="nn">traceback</span>
             <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">False</span></div>
+        <span class="k">return</span> <span class="bp">False</span></div></div>
 </pre></div>
 
           </div>

@@ -58,11 +58,11 @@
   <span class="target" id="module-GSASIIimage"></span><div class="section" id="gsasiiimage-image-calc-module">
 <h1><em>GSASIIimage: Image calc module</em><a class="headerlink" href="#gsasiiimage-image-calc-module" title="Permalink to this headline">¶</a></h1>
 <p>Ellipse fitting &amp; image integration</p>
-<p>needs some minor refactoring to remove wx code</p>
 <dl class="function">
 <dt id="GSASIIimage.EdgeFinder">
 <tt class="descclassname">GSASIIimage.</tt><tt class="descname">EdgeFinder</tt><big>(</big><em>image</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#EdgeFinder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.EdgeFinder" title="Permalink to this definition">¶</a></dt>
-<dd><p>this makes list of all x,y where I&gt;edgeMin suitable for an ellipse search?</p>
+<dd><p>this makes list of all x,y where I&gt;edgeMin suitable for an ellipse search?
+Not currently used but might be useful in future?</p>
 </dd></dl>
 
 <dl class="function">
@@ -79,7 +79,7 @@
 
 <dl class="function">
 <dt id="GSASIIimage.FitDetector">
-<tt class="descclassname">GSASIIimage.</tt><tt class="descname">FitDetector</tt><big>(</big><em>rings</em>, <em>varyList</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#FitDetector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.FitDetector" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">FitDetector</tt><big>(</big><em>rings</em>, <em>varyList</em>, <em>parmDict</em>, <em>Print=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#FitDetector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.FitDetector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
@@ -110,7 +110,7 @@
 <dl class="function">
 <dt id="GSASIIimage.GetAzm">
 <tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetAzm</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetAzm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetAzm" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Give azimuth value for detector x,y position; calibration info in data</p>
 </dd></dl>
 
 <dl class="function">
@@ -128,31 +128,47 @@
 <dl class="function">
 <dt id="GSASIIimage.GetDsp">
 <tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetDsp</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetDsp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetDsp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Give d-spacing value for detector x,y position; calibration info in data</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIimage.GetEllipse">
 <tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetEllipse</tt><big>(</big><em>dsp</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetEllipse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetEllipse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>uses Dandelin spheres to find ellipse or hyperbola parameters from detector geometry
+as given in image controls dictionary (data) and a d-spacing (dsp)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.GetEllipse2">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetEllipse2</tt><big>(</big><em>tth</em>, <em>dxy</em>, <em>dist</em>, <em>cent</em>, <em>tilt</em>, <em>phi</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetEllipse2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetEllipse2" title="Permalink to this definition">¶</a></dt>
+<dd><p>uses Dandelin spheres to find ellipse or hyperbola parameters from detector geometry
+on output
+radii[0] (b-minor axis) set &lt; 0. for hyperbola</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIimage.GetTth">
 <tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetTth</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetTth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetTth" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Give 2-theta value for detector x,y position; calibration info in data</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIimage.GetTthAzm">
 <tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetTthAzm</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetTthAzm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetTthAzm" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Give 2-theta, azimuth values for detector x,y position; calibration info in data</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIimage.GetTthAzmD">
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetTthAzmD</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetTthAzmD"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetTthAzmD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Give 2-theta, azimuth &amp; geometric correction values for detector x,y position;
+calibration info in data</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIimage.GetTthAzmDsp">
 <tt class="descclassname">GSASIIimage.</tt><tt class="descname">GetTthAzmDsp</tt><big>(</big><em>x</em>, <em>y</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#GetTthAzmDsp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.GetTthAzmDsp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Needs a doc string - checked OK for ellipses dont know about hyperbola</p>
 </dd></dl>
 
 <dl class="function">
@@ -169,7 +185,7 @@
 
 <dl class="function">
 <dt id="GSASIIimage.ImageIntegrate">
-<tt class="descclassname">GSASIIimage.</tt><tt class="descname">ImageIntegrate</tt><big>(</big><em>image</em>, <em>data</em>, <em>masks</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#ImageIntegrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.ImageIntegrate" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">ImageIntegrate</tt><big>(</big><em>image</em>, <em>data</em>, <em>masks</em>, <em>blkSize=128</em>, <em>dlg=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#ImageIntegrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.ImageIntegrate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
@@ -181,19 +197,13 @@
 
 <dl class="function">
 <dt id="GSASIIimage.ImageRecalibrate">
-<tt class="descclassname">GSASIIimage.</tt><tt class="descname">ImageRecalibrate</tt><big>(</big><em>self</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#ImageRecalibrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.ImageRecalibrate" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIimage.</tt><tt class="descname">ImageRecalibrate</tt><big>(</big><em>self</em>, <em>data</em>, <em>masks</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#ImageRecalibrate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.ImageRecalibrate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIimage.Make2ThetaAzimuthMap">
 <tt class="descclassname">GSASIIimage.</tt><tt class="descname">Make2ThetaAzimuthMap</tt><big>(</big><em>data</em>, <em>masks</em>, <em>iLim</em>, <em>jLim</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#Make2ThetaAzimuthMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.Make2ThetaAzimuthMap" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="GSASIIimage.calcDist">
-<tt class="descclassname">GSASIIimage.</tt><tt class="descname">calcDist</tt><big>(</big><em>radii</em>, <em>tth</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#calcDist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.calcDist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
@@ -219,20 +229,8 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="GSASIIimage.calcZdisCosB">
-<tt class="descclassname">GSASIIimage.</tt><tt class="descname">calcZdisCosB</tt><big>(</big><em>radius</em>, <em>tth</em>, <em>radii</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#calcZdisCosB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.calcZdisCosB" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="GSASIIimage.checkEllipse">
 <tt class="descclassname">GSASIIimage.</tt><tt class="descname">checkEllipse</tt><big>(</big><em>Zsum</em>, <em>distSum</em>, <em>xSum</em>, <em>ySum</em>, <em>dist</em>, <em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#checkEllipse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.checkEllipse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="GSASIIimage.makeIdealRing">
-<tt class="descclassname">GSASIIimage.</tt><tt class="descname">makeIdealRing</tt><big>(</big><em>ellipse</em>, <em>azm=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIimage.html#makeIdealRing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIimage.makeIdealRing" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 

@@ -55,7 +55,7 @@
 <span class="c"># $Date: 2013-10-25 14:24:22 -0500 (Fri, 25 Oct 2013) $</span>
 <span class="c"># $Author: toby $</span>
 <span class="c"># $Revision: 1123 $</span>
-<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2phase.py $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/imports/G2phase.py $</span>
 <span class="c"># $Id: G2phase.py 1123 2013-10-25 19:24:22Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="c">#</span>
@@ -88,7 +88,7 @@
     <span class="c">#    filepointer.seek(0) # rewind the file pointer</span>
     <span class="c">#    return True</span>
 
-    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">unused</span><span class="p">):</span>
+<div class="viewcode-block" id="PDB_ReaderClass.Reader"><a class="viewcode-back" href="../imports.html#G2phase.PDB_ReaderClass.Reader">[docs]</a>    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">unused</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Phase</span> <span class="o">=</span> <span class="n">G2IO</span><span class="o">.</span><span class="n">ReadPDBPhase</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">True</span>
@@ -96,7 +96,7 @@
             <span class="k">print</span> <span class="s">&#39;PDB read error:&#39;</span><span class="p">,</span><span class="n">detail</span> <span class="c"># for testing</span>
             <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">False</span>
-</div>
+</div></div>
 <div class="viewcode-block" id="EXP_ReaderClass"><a class="viewcode-back" href="../imports.html#G2phase.EXP_ReaderClass">[docs]</a><span class="k">class</span> <span class="nc">EXP_ReaderClass</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ImportPhase</span><span class="p">):</span>
     <span class="s">&#39; Routine to import Phase information from GSAS .EXP files&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -106,7 +106,7 @@
             <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;GSAS .EXP&#39;</span><span class="p">,</span>
             <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;GSAS Experiment (.EXP file) import&#39;</span>
             <span class="p">)</span>
-    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
+<div class="viewcode-block" id="EXP_ReaderClass.ContentsValidator"><a class="viewcode-back" href="../imports.html#G2phase.EXP_ReaderClass.ContentsValidator">[docs]</a>    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
         <span class="n">filepointer</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c"># rewind the file pointer</span>
         <span class="c"># first 13 characters should be VERSION tag -- I think</span>
         <span class="k">try</span><span class="p">:</span>
@@ -114,15 +114,15 @@
                 <span class="k">return</span> <span class="bp">True</span>
         <span class="k">except</span><span class="p">:</span> <span class="k">pass</span>
         <span class="k">return</span> <span class="bp">False</span>
-
-    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">unused</span><span class="p">):</span>
+</div>
+<div class="viewcode-block" id="EXP_ReaderClass.Reader"><a class="viewcode-back" href="../imports.html#G2phase.EXP_ReaderClass.Reader">[docs]</a>    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">unused</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Phase</span> <span class="o">=</span> <span class="n">G2IO</span><span class="o">.</span><span class="n">ReadEXPPhase</span><span class="p">(</span><span class="n">ParentFrame</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">True</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">detail</span><span class="p">:</span>
             <span class="k">print</span> <span class="s">&#39;GSAS .EXP read error:&#39;</span><span class="p">,</span><span class="n">detail</span> <span class="c"># for testing</span>
             <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">False</span></div>
+            <span class="k">return</span> <span class="bp">False</span></div></div>
 </pre></div>
 
           </div>

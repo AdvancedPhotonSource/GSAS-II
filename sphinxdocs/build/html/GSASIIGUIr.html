@@ -294,6 +294,33 @@ specified for <tt class="xref py py-data docutils literal"><span class="pre">cho
 </dd></dl>
 
 <dl class="class">
+<dt id="GSASIIgrid.G2CheckBox">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2CheckBox</tt><big>(</big><em>parent</em>, <em>label</em>, <em>loc</em>, <em>key</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2CheckBox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2CheckBox" title="Permalink to this definition">¶</a></dt>
+<dd><p>A customized version of a CheckBox that automatically initializes
+the control to match a supplied</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parent</strong> (<em>wx.Panel</em>) &#8211; name of panel or frame that will be
+the parent to the TextCtrl. Can be None.</li>
+<li><strong>label</strong> (<em>str</em>) &#8211; text to put on check button</li>
+<li><strong>loc</strong> (<em>dict/list</em>) &#8211; the dict or list with the initial value to be
+placed in the CheckBox.</li>
+<li><strong>key</strong> (<em>int/str</em>) &#8211; the dict key or the list index for the value to be
+edited by the CheckBox. The <tt class="docutils literal"><span class="pre">loc[key]</span></tt> element must exist.
+The CheckBox will be initialized from this value.
+If the value is anything other that True (or 1), it will be taken as
+False.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
 <dt id="GSASIIgrid.G2HtmlWindow">
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2HtmlWindow</tt><big>(</big><em>parent</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2HtmlWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2HtmlWindow" title="Permalink to this definition">¶</a></dt>
 <dd><p>Displays help information in a primitive HTML browser type window</p>
@@ -301,7 +328,7 @@ specified for <tt class="xref py py-data docutils literal"><span class="pre">cho
 
 <dl class="class">
 <dt id="GSASIIgrid.G2MultiChoiceDialog">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2MultiChoiceDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>header</em>, <em>ChoiceList</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#GSASIIgrid.G2MultiChoiceDialog" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2MultiChoiceDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>header</em>, <em>ChoiceList</em>, <em>toggle=True</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2MultiChoiceDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2MultiChoiceDialog" title="Permalink to this definition">¶</a></dt>
 <dd><p>A dialog similar to MultiChoiceDialog except that buttons are
 added to set all choices and to toggle all choices.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -313,9 +340,11 @@ added to set all choices and to toggle all choices.</p>
 <li><strong>title</strong> (<em>str</em>) &#8211; heading above list of choices</li>
 <li><strong>header</strong> (<em>str</em>) &#8211; Title to place on window frame</li>
 <li><strong>ChoiceList</strong> (<em>list</em>) &#8211; a list of choices where one will be selected</li>
+<li><strong>toggle</strong> (<em>bool</em>) &#8211; If True (default) the toggle and select all buttons
+are displayed</li>
 <li><strong>kw</strong> &#8211; optional keyword parameters for the wx.Dialog may
-be included such as Size [which defaults to <cite>(320,310)</cite>] and
-Style (which defaults to <cite>wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL</cite>);
+be included such as size [which defaults to <cite>(320,310)</cite>] and
+style (which defaults to <cite>wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL</cite>);
 note that <cite>wx.OK</cite> and <cite>wx.CANCEL</cite> controls
 the presence of the eponymous buttons in the dialog.</li>
 </ul>
@@ -328,7 +357,7 @@ the presence of the eponymous buttons in the dialog.</li>
 </table>
 <dl class="method">
 <dt id="GSASIIgrid.G2MultiChoiceDialog.GetSelections">
-<tt class="descname">GetSelections</tt><big>(</big><big>)</big><a class="headerlink" href="#GSASIIgrid.G2MultiChoiceDialog.GetSelections" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">GetSelections</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2MultiChoiceDialog.GetSelections"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2MultiChoiceDialog.GetSelections" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of the indices for the selected choices</p>
 </dd></dl>
 
@@ -363,6 +392,28 @@ the presence of the eponymous buttons in the dialog.</li>
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">GridFractionEditor</tt><big>(</big><em>grid</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GridFractionEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GridFractionEditor" title="Permalink to this definition">¶</a></dt>
 <dd><p>A grid cell editor class that allows entry of values as fractions as well
 as sine and cosine values [as s() and c()]</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.HelpButton">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">HelpButton</tt><big>(</big><em>parent</em>, <em>msg</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#HelpButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.HelpButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a help button that displays help information.
+The text is displayed in a modal message window.</p>
+<p>TODO: it might be nice if it were non-modal: e.g. it stays around until
+the parent is deleted or the user closes it, but this did not work for
+me.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parent</strong> &#8211; the panel which will be the parent of the button</li>
+<li><strong>msg</strong> (<em>str</em>) &#8211; the help text to be displayed</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -678,6 +729,12 @@ the data tree window.</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="GSASIIgrid.ShowLSParms">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ShowLSParms</tt><big>(</big><em>parent</em>, <em>title</em>, <em>parmDict</em>, <em>varyList</em>, <em>fullVaryList</em>, <em>size=(300</em>, <em>430)</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ShowLSParms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ShowLSParms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create frame to show least-squares parameters</p>
+</dd></dl>
+
+<dl class="class">
 <dt id="GSASIIgrid.SingleFloatDialog">
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">SingleFloatDialog</tt><big>(</big><em>parent, title, prompt, value, limits=[0.0, 1.0], format='%.5g'</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#SingleFloatDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.SingleFloatDialog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Dialog to obtain a single float value from user</p>
@@ -960,7 +1017,7 @@ file object self.fp is closed.</td>
 
 <dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.ExportSelect">
-<tt class="descname">ExportSelect</tt><big>(</big><em>AskFile=True</em><big>)</big><a class="headerlink" href="#GSASIIIO.ExportBaseclass.ExportSelect" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ExportSelect</tt><big>(</big><em>AskFile=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.ExportSelect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.ExportSelect" title="Permalink to this definition">¶</a></dt>
 <dd><p>Selects histograms or phases when needed. Sets a default file name.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1024,7 +1081,7 @@ cell values and <cite>cellSig</cite> has their uncertainties.</td>
 
 <dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.InitExport">
-<tt class="descname">InitExport</tt><big>(</big><em>event</em><big>)</big><a class="headerlink" href="#GSASIIIO.ExportBaseclass.InitExport" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">InitExport</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.InitExport"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.InitExport" title="Permalink to this definition">¶</a></dt>
 <dd><p>Determines the type of menu that called the Exporter.</p>
 </dd></dl>
 
@@ -1219,12 +1276,19 @@ incorrectly in some way.</p>
 <dt id="GSASIIIO.ImportBaseclass">
 <em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportBaseclass</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the reading of input files (diffraction
-data, coordinates,...</p>
+data, coordinates,...). See <a class="reference internal" href="imports.html#import-routines"><em>Writing a Import Routine</em></a>
+for an explanation on how to use a subclass of this class.</p>
 <dl class="method">
 <dt id="GSASIIIO.ImportBaseclass.BlockSelector">
 <tt class="descname">BlockSelector</tt><big>(</big><em>ChoiceList</em>, <em>ParentFrame=None</em>, <em>title='Select a block'</em>, <em>size=None</em>, <em>header='Block Selector'</em>, <em>useCancel=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.BlockSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.BlockSelector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provide a wx dialog to select a block if the file contains more
 than one set of data and one must be selected</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ImportBaseclass.CIFValidator">
+<tt class="descname">CIFValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="headerlink" href="#GSASIIIO.ImportBaseclass.CIFValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#GSASIIIO.ImportBaseclass.ContentsValidator" title="GSASIIIO.ImportBaseclass.ContentsValidator"><tt class="xref py py-meth docutils literal"><span class="pre">ContentsValidator()</span></tt></a> for use to validate CIF files.</p>
 </dd></dl>
 
 <dl class="method">
@@ -1248,9 +1312,18 @@ Return True if the extension matches the list supplied by the reader
 Return None if the reader allows un-registered extensions</p>
 </dd></dl>
 
+<dl class="exception">
+<dt id="GSASIIIO.ImportBaseclass.ImportException">
+<em class="property">exception </em><tt class="descname">ImportException</tt><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.ImportException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.ImportException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines an Exception that is used when an import routine hits an expected error,
+usually in .Reader.</p>
+<p>Good practice is that the Reader should define a value in self.errors that
+tells the user some information about what is wrong with their file.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="GSASIIIO.ImportBaseclass.MultipleBlockSelector">
-<tt class="descname">MultipleBlockSelector</tt><big>(</big><em>ChoiceList</em>, <em>ParentFrame=None</em>, <em>title='Select a block'</em>, <em>size=None</em>, <em>header='Block Selector'</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.MultipleBlockSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.MultipleBlockSelector" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">ImportBaseclass.</tt><tt class="descname">MultipleBlockSelector</tt><big>(</big><em>ChoiceList</em>, <em>ParentFrame=None</em>, <em>title='Select a block'</em>, <em>size=None</em>, <em>header='Block Selector'</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.MultipleBlockSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.MultipleBlockSelector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provide a wx dialog to select a block of data if the
 file contains more than one set of data and one must be
 selected.</p>
@@ -1266,7 +1339,7 @@ selected.</p>
 
 <dl class="method">
 <dt id="GSASIIIO.ImportBaseclass.MultipleChoicesDialog">
-<tt class="descname">MultipleChoicesDialog</tt><big>(</big><em>choicelist</em>, <em>headinglist</em>, <em>ParentFrame=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.MultipleChoicesDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.MultipleChoicesDialog" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">ImportBaseclass.</tt><tt class="descname">MultipleChoicesDialog</tt><big>(</big><em>choicelist</em>, <em>headinglist</em>, <em>ParentFrame=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.MultipleChoicesDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.MultipleChoicesDialog" title="Permalink to this definition">¶</a></dt>
 <dd><p>A modal dialog that offers a series of choices, each with a title and a wx.Choice
 widget. Typical input:</p>
 <blockquote>
@@ -1285,6 +1358,10 @@ returns a list of selected indicies for each choice (or None)</p>
 <dt id="GSASIIIO.ImportPhase">
 <em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportPhase</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPhase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the reading of files with coordinates</p>
+<p>Objects constructed that subclass this (in import/G2phase_*.py) will be used
+in <a class="reference internal" href="GSASII.html#GSASII.GSASII.OnImportPhase" title="GSASII.GSASII.OnImportPhase"><tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.OnImportPhase()</span></tt></a>. 
+See <a class="reference internal" href="imports.html#import-routines"><em>Writing a Import Routine</em></a>
+for an explanation on how to use this class.</p>
 <dl class="method">
 <dt id="GSASIIIO.ImportPhase.PhaseSelector">
 <tt class="descname">PhaseSelector</tt><big>(</big><em>ChoiceList</em>, <em>ParentFrame=None</em>, <em>title='Select a phase'</em>, <em>size=None</em>, <em>header='Phase Selector'</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPhase.PhaseSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPhase.PhaseSelector" title="Permalink to this definition">¶</a></dt>
@@ -1297,7 +1374,9 @@ than one phase</p>
 <dl class="class">
 <dt id="GSASIIIO.ImportPowderData">
 <em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportPowderData</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPowderData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPowderData" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines a base class for the reading of files with powder data</p>
+<dd><p>Defines a base class for the reading of files with powder data.
+See <a class="reference internal" href="imports.html#import-routines"><em>Writing a Import Routine</em></a>
+for an explanation on how to use this class.</p>
 <dl class="attribute">
 <dt id="GSASIIIO.ImportPowderData.powderdata">
 <tt class="descname">powderdata</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIIO.ImportPowderData.powderdata" title="Permalink to this definition">¶</a></dt>
@@ -1316,15 +1395,28 @@ np.array(yd), # obs-calc profiles</p>
 <dt id="GSASIIIO.ImportStructFactor">
 <em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportStructFactor</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the reading of files with tables
-of structure factors</p>
-<p>Note that the default controls are stored in self.Controls and the
-default instrument parameters are stored in self.Parameters.
-These can be changed, but any changes will be the defaults for all
-subsequent uses of the <a class="reference internal" href="#GSASIIIO.ImportStructFactor" title="GSASIIIO.ImportStructFactor"><tt class="xref py py-class docutils literal"><span class="pre">ImportStructFactor</span></tt></a> derived classes
-until <a class="reference internal" href="#GSASIIIO.ImportStructFactor.InitControls" title="GSASIIIO.ImportStructFactor.InitControls"><tt class="xref py py-meth docutils literal"><span class="pre">InitControls()</span></tt></a> and <a class="reference internal" href="#GSASIIIO.ImportStructFactor.InitParameters" title="GSASIIIO.ImportStructFactor.InitParameters"><tt class="xref py py-meth docutils literal"><span class="pre">InitParameters()</span></tt></a> are
-called. Probably better to use <a class="reference internal" href="#GSASIIIO.ImportStructFactor.UpdateControls" title="GSASIIIO.ImportStructFactor.UpdateControls"><tt class="xref py py-meth docutils literal"><span class="pre">UpdateControls()</span></tt></a> and
-<a class="reference internal" href="#GSASIIIO.ImportStructFactor.UpdateControls" title="GSASIIIO.ImportStructFactor.UpdateControls"><tt class="xref py py-meth docutils literal"><span class="pre">UpdateControls()</span></tt></a> (adding new args if needed) to change
-values.</p>
+of structure factors.</p>
+<p>Structure factors are read with a call to <a class="reference internal" href="GSASII.html#GSASII.GSASII.OnImportSfact" title="GSASII.GSASII.OnImportSfact"><tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.OnImportSfact()</span></tt></a>
+which in turn calls <a class="reference internal" href="GSASII.html#GSASII.GSASII.OnImportGeneric" title="GSASII.GSASII.OnImportGeneric"><tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.OnImportGeneric()</span></tt></a>, which calls
+methods <tt class="xref py py-meth docutils literal"><span class="pre">ExtensionValidator()</span></tt>, <tt class="xref py py-meth docutils literal"><span class="pre">ContentsValidator()</span></tt> and
+<tt class="xref py py-meth docutils literal"><span class="pre">Reader()</span></tt>.</p>
+<p>See <a class="reference internal" href="imports.html#import-routines"><em>Writing a Import Routine</em></a>
+for an explanation on how to use import classes in general. The specifics 
+for reading a structure factor histogram require that
+the <tt class="docutils literal"><span class="pre">Reader()</span></tt> routine in the import
+class need to do only a few things: It
+should load <a class="reference internal" href="#GSASIIIO.ImportStructFactor.RefDict" title="GSASIIIO.ImportStructFactor.RefDict"><tt class="xref py py-attr docutils literal"><span class="pre">RefDict</span></tt></a> item <tt class="docutils literal"><span class="pre">'RefList'</span></tt> with the reflection list,
+and set <a class="reference internal" href="#GSASIIIO.ImportStructFactor.Parameters" title="GSASIIIO.ImportStructFactor.Parameters"><tt class="xref py py-attr docutils literal"><span class="pre">Parameters</span></tt></a> with the instrument parameters
+(initialized with <a class="reference internal" href="#GSASIIIO.ImportStructFactor.InitParameters" title="GSASIIIO.ImportStructFactor.InitParameters"><tt class="xref py py-meth docutils literal"><span class="pre">InitParameters()</span></tt></a> and set with <a class="reference internal" href="#GSASIIIO.ImportStructFactor.UpdateParameters" title="GSASIIIO.ImportStructFactor.UpdateParameters"><tt class="xref py py-meth docutils literal"><span class="pre">UpdateParameters()</span></tt></a>).
+Also, set <a class="reference internal" href="#GSASIIIO.ImportStructFactor.Controls" title="GSASIIIO.ImportStructFactor.Controls"><tt class="xref py py-attr docutils literal"><span class="pre">Controls</span></tt></a>, 
+which specifies how the histogram is plotted
+(initialized with <a class="reference internal" href="#GSASIIIO.ImportStructFactor.InitControls" title="GSASIIIO.ImportStructFactor.InitControls"><tt class="xref py py-meth docutils literal"><span class="pre">InitControls()</span></tt></a> and set with <a class="reference internal" href="#GSASIIIO.ImportStructFactor.UpdateControls" title="GSASIIIO.ImportStructFactor.UpdateControls"><tt class="xref py py-meth docutils literal"><span class="pre">UpdateControls()</span></tt></a>).</p>
+<dl class="attribute">
+<dt id="GSASIIIO.ImportStructFactor.Controls">
+<tt class="descname">Controls</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIIO.ImportStructFactor.Controls" title="Permalink to this definition">¶</a></dt>
+<dd><p>self.Controls is a dict with plotting controls</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="GSASIIIO.ImportStructFactor.InitControls">
 <tt class="descname">InitControls</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.InitControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.InitControls" title="Permalink to this definition">¶</a></dt>
@@ -1335,6 +1427,23 @@ values.</p>
 <dt id="GSASIIIO.ImportStructFactor.InitParameters">
 <tt class="descname">InitParameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.InitParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.InitParameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>initialize the instrument parameters structure</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIIO.ImportStructFactor.Parameters">
+<tt class="descname">Parameters</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIIO.ImportStructFactor.Parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>self.Parameters is a list with two dicts for data parameter settings</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIIO.ImportStructFactor.RefDict">
+<tt class="descname">RefDict</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIIO.ImportStructFactor.RefDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>self.RefDict is a dict containing the reflection information, as read from the file.
+Item &#8216;RefList&#8217; contains the reflection information. See the
+<a class="reference internal" href="GSASIIobj.html#xtalrefl-table"><em>Single Crystal Reflection Data Structure</em></a>
+for the contents of each row. Dict element &#8216;FF&#8217;
+contains the form factor values for each element type; if this entry
+is left as initialized (an empty list) it will be initialized as needed later.</p>
 </dd></dl>
 
 <dl class="method">
@@ -1387,7 +1496,7 @@ typical input:</p>
 <dl class="function">
 <dt id="GSASIIIO.ProjFileOpen">
 <tt class="descclassname">GSASIIIO.</tt><tt class="descname">ProjFileOpen</tt><big>(</big><em>G2frame</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ProjFileOpen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ProjFileOpen" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read a GSAS-II project file</p>
+<dd><p>Read a GSAS-II project file and load into the G2 data tree</p>
 </dd></dl>
 
 <dl class="function">
@@ -1424,20 +1533,6 @@ to open it as a file and then as a URL.</td>
 </dd></dl>
 
 <dl class="function">
-<dt id="GSASIIIO.ReadEXPPhase">
-<tt class="descclassname">GSASIIIO.</tt><tt class="descname">ReadEXPPhase</tt><big>(</big><em>G2frame</em>, <em>filename</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ReadEXPPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ReadEXPPhase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read a phase from a GSAS .EXP file.
-Called in the GSAS phase import routine (see imports/G2phase.py)</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="GSASIIIO.ReadPDBPhase">
-<tt class="descclassname">GSASIIIO.</tt><tt class="descname">ReadPDBPhase</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ReadPDBPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ReadPDBPhase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read a phase from a PDB file.
-Called in the PDB phase import routine (see imports/G2phase.py)</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="GSASIIIO.SaveIntegration">
 <tt class="descclassname">GSASIIIO.</tt><tt class="descname">SaveIntegration</tt><big>(</big><em>G2frame</em>, <em>PickId</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#SaveIntegration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.SaveIntegration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save image integration results as powder pattern(s)</p>
@@ -1446,7 +1541,7 @@ Called in the PDB phase import routine (see imports/G2phase.py)</p>
 <dl class="function">
 <dt id="GSASIIIO.SetNewPhase">
 <tt class="descclassname">GSASIIIO.</tt><tt class="descname">SetNewPhase</tt><big>(</big><em>Name='New Phase'</em>, <em>SGData=None</em>, <em>cell=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#SetNewPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.SetNewPhase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new phase with default values for various parameters</p>
+<dd><p>Create a new phase dict with default values for various parameters</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />

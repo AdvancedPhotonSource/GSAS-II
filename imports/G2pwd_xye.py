@@ -33,7 +33,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
 
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filepointer):
-        #print 'ContentsValidator: '+self.formatName
+        'Look through the file for expected types of lines in a valid Topas file'
         gotCcomment = False
         begin = True
         for i,S in enumerate(filepointer):
@@ -54,13 +54,13 @@ class xye_ReaderClass(G2IO.ImportPowderData):
             if len(vals) == 2 or len(vals) == 3:
                 continue
             else:
-                print 'ContentsValidator: '+self.formatName
-                print 'Unexpected information in line:',i+1 # debug info
-                print S
+                self.errors = 'Unexpected information in line: '+str(i+1)
+                self.errors += '  '+str(S)
                 return False
         return True # no errors encountered
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        'Read a Topas file'
         x = []
         y = []
         w = []
@@ -68,6 +68,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
             gotCcomment = False
             begin = True
             for i,S in enumerate(filepointer):
+                self.errors = 'Error reading line: '+str(i+1)
                 # or a block of comments delimited by /* and */
                 # or (GSAS style) each line can begin with '#'
                 if begin:
@@ -127,6 +128,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
 
             return True
         except Exception as detail:
+            self.errors += '\n  '+str(detail)
             print self.formatName+' read error:'+str(detail) # for testing
             import traceback
             traceback.print_exc(file=sys.stdout)

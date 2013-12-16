@@ -52,11 +52,11 @@
   <h1>Source code for GSASIIIO</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-15 12:25:24 -0500 (Tue, 15 Oct 2013) $</span>
-<span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1106 $</span>
-<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $</span>
-<span class="c"># $Id: GSASIIIO.py 1106 2013-10-15 17:25:24Z vondreele $</span>
+<span class="c"># $Date: 2013-11-28 21:16:02 -0600 (Thu, 28 Nov 2013) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 1160 $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $</span>
+<span class="c"># $Id: GSASIIIO.py 1160 2013-11-29 03:16:02Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIIO: Misc I/O routines*</span>
@@ -81,7 +81,7 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1106 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1160 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -91,6 +91,8 @@
 <span class="kn">import</span> <span class="nn">GSASIImapvars</span> <span class="kn">as</span> <span class="nn">G2mv</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">os.path</span> <span class="kn">as</span> <span class="nn">ospath</span>
+
+<span class="n">DEBUG</span> <span class="o">=</span> <span class="bp">False</span>       <span class="c">#=True for various prints</span>
 
 <div class="viewcode-block" id="sfloat"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.sfloat">[docs]</a><span class="k">def</span> <span class="nf">sfloat</span><span class="p">(</span><span class="n">S</span><span class="p">):</span>
     <span class="s">&#39;Convert a string to float. An empty field is treated as zero&#39;</span>
@@ -207,7 +209,7 @@
     <span class="sd">&#39;&#39;&#39;Read an image with the file reader keyed by the</span>
 <span class="sd">    file extension</span>
 
-<span class="sd">    :param wx.Frame G2frame: main GSAS-II Frame and data object</span>
+<span class="sd">    :param wx.Frame G2frame: main GSAS-II Frame and data object. Note: not used!</span>
 
 <span class="sd">    :param str imagefile: name of image file</span>
 
@@ -295,6 +297,8 @@
     <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">fileSize</span><span class="o">-</span><span class="n">imSize</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">dType</span> <span class="o">==</span> <span class="s">&#39;UnsignedShort&#39;</span><span class="p">:</span>        
         <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">imSize</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">dType</span> <span class="o">==</span> <span class="s">&#39;UnsignedInt&#39;</span><span class="p">:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;L&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">imSize</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>        
     <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">image</span><span class="p">,(</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
     <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pixelSize&#39;</span><span class="p">:</span><span class="n">pixSize</span><span class="p">,</span><span class="s">&#39;wavelength&#39;</span><span class="p">:</span><span class="n">wave</span><span class="p">,</span><span class="s">&#39;distance&#39;</span><span class="p">:</span><span class="n">dist</span><span class="p">,</span><span class="s">&#39;center&#39;</span><span class="p">:</span><span class="n">cent</span><span class="p">,</span><span class="s">&#39;size&#39;</span><span class="p">:</span><span class="n">sizexy</span><span class="p">}</span>
     <span class="n">Npix</span> <span class="o">=</span> <span class="n">sizexy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -461,6 +465,9 @@
     <span class="kn">import</span> <span class="nn">ReadMarCCDFrame</span> <span class="kn">as</span> <span class="nn">rmf</span>
     <span class="n">File</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;rb&#39;</span><span class="p">)</span>
     <span class="n">dataType</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">center</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">]</span>
+    <span class="n">wavelength</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="bp">None</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">Meta</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="o">+</span><span class="s">&#39;.metadata&#39;</span><span class="p">,</span><span class="s">&#39;Ur&#39;</span><span class="p">)</span>
         <span class="n">head</span> <span class="o">=</span> <span class="n">Meta</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
@@ -503,7 +510,7 @@
         <span class="k">elif</span> <span class="n">Type</span> <span class="o">==</span> <span class="mi">11</span><span class="p">:</span>
             <span class="n">Value</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">byteOrd</span><span class="o">+</span><span class="n">nVal</span><span class="o">*</span><span class="s">&#39;f&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">nVal</span><span class="o">*</span><span class="mi">4</span><span class="p">))</span>
         <span class="n">IFD</span><span class="p">[</span><span class="n">Tag</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Type</span><span class="p">,</span><span class="n">nVal</span><span class="p">,</span><span class="n">Value</span><span class="p">]</span>
-        <span class="c">#print Tag,IFD[Tag]</span>
+        <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span> <span class="k">print</span> <span class="n">Tag</span><span class="p">,</span><span class="n">IFD</span><span class="p">[</span><span class="n">Tag</span><span class="p">]</span>
     <span class="n">sizexy</span> <span class="o">=</span> <span class="p">[</span><span class="n">IFD</span><span class="p">[</span><span class="mi">256</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="n">IFD</span><span class="p">[</span><span class="mi">257</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span>
     <span class="p">[</span><span class="n">nx</span><span class="p">,</span><span class="n">ny</span><span class="p">]</span> <span class="o">=</span> <span class="n">sizexy</span>
     <span class="n">Npix</span> <span class="o">=</span> <span class="n">nx</span><span class="o">*</span><span class="n">ny</span>
@@ -515,6 +522,18 @@
         <span class="n">tifType</span> <span class="o">=</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">filetitle</span>
         <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeX</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">,</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeY</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">)</span>
         <span class="n">head</span> <span class="o">=</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">outputHead</span><span class="p">()</span>
+<span class="c"># extract resonable wavelength from header</span>
+        <span class="n">wavelength</span> <span class="o">=</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">sourceWavelength</span><span class="o">*</span><span class="mf">1e-5</span>
+        <span class="n">wavelength</span> <span class="o">=</span> <span class="p">(</span><span class="n">marFrame</span><span class="o">.</span><span class="n">opticsWavelength</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">opticsWavelength</span><span class="o">*</span><span class="mf">1e-5</span> <span class="ow">or</span> <span class="n">wavelength</span>
+        <span class="n">wavelength</span> <span class="o">=</span> <span class="p">(</span><span class="n">wavelength</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">wavelength</span>
+<span class="c"># extract resonable distance from header</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="p">(</span><span class="n">marFrame</span><span class="o">.</span><span class="n">startXtalToDetector</span><span class="o">+</span><span class="n">marFrame</span><span class="o">.</span><span class="n">endXtalToDetector</span><span class="p">)</span><span class="o">*</span><span class="mf">5e-4</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="p">(</span><span class="n">distance</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">xtalToDetector</span><span class="o">*</span><span class="mf">1e-3</span> <span class="ow">or</span> <span class="n">distance</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="p">(</span><span class="n">distance</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">distance</span>
+<span class="c"># extract resonable center from header</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="p">[</span><span class="n">marFrame</span><span class="o">.</span><span class="n">beamX</span><span class="o">*</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeX</span><span class="o">*</span><span class="mf">1e-9</span><span class="p">,</span><span class="n">marFrame</span><span class="o">.</span><span class="n">beamY</span><span class="o">*</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeY</span><span class="o">*</span><span class="mf">1e-9</span><span class="p">]</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">center</span> <span class="ow">or</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">]</span>
+<span class="c">#print head,tifType,pixy</span>
     <span class="k">elif</span> <span class="mi">272</span> <span class="ow">in</span> <span class="n">IFD</span><span class="p">:</span>
         <span class="n">ifd</span> <span class="o">=</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">272</span><span class="p">]</span>
         <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">ifd</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
@@ -528,6 +547,24 @@
                 <span class="k">print</span> <span class="s">&#39;Read Pilatus tiff file: &#39;</span><span class="p">,</span><span class="n">filename</span>
             <span class="n">image</span> <span class="o">=</span> <span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;L&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">Npix</span><span class="p">))</span>
             <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">image</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">258</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">16</span><span class="p">:</span>
+                <span class="k">print</span> <span class="n">sizexy</span>
+                <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;GE&#39;</span>
+                <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">)</span>
+                <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&#39;Read GE-detector tiff file: &#39;</span><span class="p">,</span><span class="n">filename</span>
+                <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">Npix</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">258</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">32</span><span class="p">:</span>
+                <span class="k">print</span> <span class="n">sizexy</span>
+                <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;CHESS&#39;</span>
+                <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">)</span>
+                <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
+                    <span class="k">print</span> <span class="s">&#39;Read CHESS-detector tiff file: &#39;</span><span class="p">,</span><span class="n">filename</span>
+                <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;L&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">Npix</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+            
     <span class="k">elif</span> <span class="mi">262</span> <span class="ow">in</span> <span class="n">IFD</span> <span class="ow">and</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">262</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
         <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;DND&#39;</span>
         <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">158</span><span class="p">,</span><span class="mi">158</span><span class="p">)</span>
@@ -554,6 +591,7 @@
                     <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;f&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">Npix</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;I&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">Npix</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+                
         <span class="k">elif</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">273</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4096</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">sizexy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3072</span><span class="p">:</span>
                 <span class="n">pixy</span> <span class="o">=</span>  <span class="p">(</span><span class="mi">73</span><span class="p">,</span><span class="mi">73</span><span class="p">)</span>
@@ -601,8 +639,10 @@
         <span class="k">return</span> <span class="n">lines</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span>
         
     <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">image</span><span class="p">,(</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
-    <span class="n">center</span> <span class="o">=</span> <span class="p">[</span><span class="n">pixy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2000</span><span class="p">,</span><span class="n">pixy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2000</span><span class="p">]</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pixelSize&#39;</span><span class="p">:</span><span class="n">pixy</span><span class="p">,</span><span class="s">&#39;wavelength&#39;</span><span class="p">:</span><span class="mf">0.10</span><span class="p">,</span><span class="s">&#39;distance&#39;</span><span class="p">:</span><span class="mf">100.0</span><span class="p">,</span><span class="s">&#39;center&#39;</span><span class="p">:</span><span class="n">center</span><span class="p">,</span><span class="s">&#39;size&#39;</span><span class="p">:</span><span class="n">sizexy</span><span class="p">}</span>
+    <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="ow">not</span> <span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">and</span> <span class="p">[</span><span class="n">pixy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2000</span><span class="p">,</span><span class="n">pixy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mi">2000</span><span class="p">]</span> <span class="ow">or</span> <span class="n">center</span>
+    <span class="n">wavelength</span> <span class="o">=</span> <span class="p">(</span><span class="ow">not</span> <span class="n">wavelength</span><span class="p">)</span> <span class="ow">and</span> <span class="mf">0.10</span> <span class="ow">or</span> <span class="n">wavelength</span>
+    <span class="n">distance</span> <span class="o">=</span> <span class="p">(</span><span class="ow">not</span> <span class="n">distance</span><span class="p">)</span> <span class="ow">and</span> <span class="mf">100.0</span> <span class="ow">or</span> <span class="n">distance</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pixelSize&#39;</span><span class="p">:</span><span class="n">pixy</span><span class="p">,</span><span class="s">&#39;wavelength&#39;</span><span class="p">:</span><span class="n">wavelength</span><span class="p">,</span><span class="s">&#39;distance&#39;</span><span class="p">:</span><span class="n">distance</span><span class="p">,</span><span class="s">&#39;center&#39;</span><span class="p">:</span><span class="n">center</span><span class="p">,</span><span class="s">&#39;size&#39;</span><span class="p">:</span><span class="n">sizexy</span><span class="p">}</span>
     <span class="n">File</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>    
     <span class="k">if</span> <span class="n">imageOnly</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">image</span>
@@ -755,7 +795,7 @@
 <span class="c">#        return head,data,Npix,image</span>
 <span class="c">#    </span></div>
 <div class="viewcode-block" id="ProjFileOpen"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ProjFileOpen">[docs]</a><span class="k">def</span> <span class="nf">ProjFileOpen</span><span class="p">(</span><span class="n">G2frame</span><span class="p">):</span>
-    <span class="s">&#39;Read a GSAS-II project file&#39;</span>
+    <span class="s">&#39;Read a GSAS-II project file and load into the G2 data tree&#39;</span>
     <span class="nb">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GSASprojectfile</span><span class="p">,</span><span class="s">&#39;rb&#39;</span><span class="p">)</span>
     <span class="k">print</span> <span class="s">&#39;load from file: &#39;</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GSASprojectfile</span>
     <span class="n">G2frame</span><span class="o">.</span><span class="n">SetTitle</span><span class="p">(</span><span class="s">&quot;GSAS-II data tree: &quot;</span><span class="o">+</span>
@@ -771,7 +811,13 @@
             
             <span class="n">Id</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">datum</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">datum</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>                
-                <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="mi">3</span><span class="p">])</span>     <span class="c">#temp. trim off junk</span>
+                <span class="k">if</span> <span class="s">&#39;ranId&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span> <span class="c"># patch: add random Id if not present</span>
+                    <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;ranId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ran</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">)</span>
+                <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][:</span><span class="mi">3</span><span class="p">])</span>  <span class="c">#temp. trim off junk (patch?)</span>
+            <span class="k">elif</span> <span class="n">datum</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;HKLF&#39;</span><span class="p">):</span> 
+                <span class="k">if</span> <span class="s">&#39;ranId&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span> <span class="c"># patch: add random Id if not present</span>
+                    <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;ranId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ran</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">)</span>
+                <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="k">for</span> <span class="n">datus</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
@@ -791,7 +837,7 @@
                 <span class="k">if</span> <span class="n">Data</span><span class="p">[</span><span class="s">&#39;setDefault&#39;</span><span class="p">]:</span>
                     <span class="n">G2frame</span><span class="o">.</span><span class="n">imageDefault</span> <span class="o">=</span> <span class="n">Data</span>                
         <span class="nb">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="k">print</span> <span class="s">&#39;project load successful&#39;</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;project load successful&#39;</span><span class="p">)</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">NewPlot</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="k">except</span><span class="p">:</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">MessageDialog</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">message</span><span class="o">=</span><span class="s">&quot;Error reading file &quot;</span><span class="o">+</span>
@@ -823,7 +869,7 @@
             <span class="nb">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="n">wx</span><span class="o">.</span><span class="n">EndBusyCursor</span><span class="p">()</span>
-        <span class="k">print</span> <span class="s">&#39;project save successful&#39;</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;project save successful&#39;</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="SaveIntegration"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.SaveIntegration">[docs]</a><span class="k">def</span> <span class="nf">SaveIntegration</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">PickId</span><span class="p">,</span><span class="n">data</span><span class="p">):</span>
     <span class="s">&#39;Save image integration results as powder pattern(s)&#39;</span>
@@ -887,8 +933,15 @@
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Peak List&#39;</span><span class="p">),[])</span>
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Index Peak List&#39;</span><span class="p">),[])</span>
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Unit Cells List&#39;</span><span class="p">),[])</span>
-            <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">),{})</span>             
-        <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Id</span><span class="p">,[[</span><span class="s">&#39;&#39;</span><span class="p">],[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Y</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">W</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)]])</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">),{})</span>
+            <span class="n">valuesdict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s">&#39;wtFactor&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span>
+                <span class="s">&#39;Dummy&#39;</span><span class="p">:</span><span class="bp">False</span><span class="p">,</span>
+                <span class="s">&#39;ranId&#39;</span><span class="p">:</span><span class="n">ran</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">),</span>
+                <span class="p">}</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+            <span class="n">Id</span><span class="p">,[</span><span class="n">valuesdict</span><span class="p">,</span>
+                <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Y</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">W</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)]])</span>
     <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
     <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">Expand</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
     <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternId</span> <span class="o">=</span> <span class="n">Id</span>
@@ -1012,7 +1065,7 @@
     <span class="k">print</span> <span class="s">&#39;index peak list saved&#39;</span>
     </div>
 <div class="viewcode-block" id="SetNewPhase"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.SetNewPhase">[docs]</a><span class="k">def</span> <span class="nf">SetNewPhase</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="s">&#39;New Phase&#39;</span><span class="p">,</span><span class="n">SGData</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">cell</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Create a new phase with default values for various parameters</span>
+    <span class="sd">&#39;&#39;&#39;Create a new phase dict with default values for various parameters</span>
 
 <span class="sd">    :param str Name: Name for new Phase</span>
 
@@ -1030,6 +1083,7 @@
         <span class="s">&#39;General&#39;</span><span class="p">:{</span>
             <span class="s">&#39;Name&#39;</span><span class="p">:</span><span class="n">Name</span><span class="p">,</span>
             <span class="s">&#39;Type&#39;</span><span class="p">:</span><span class="s">&#39;nuclear&#39;</span><span class="p">,</span>
+            <span class="s">&#39;AtomPtrs&#39;</span><span class="p">:[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">9</span><span class="p">],</span>
             <span class="s">&#39;SGData&#39;</span><span class="p">:</span><span class="n">SGData</span><span class="p">,</span>
             <span class="s">&#39;Cell&#39;</span><span class="p">:[</span><span class="bp">False</span><span class="p">,]</span><span class="o">+</span><span class="n">cell</span><span class="p">,</span>
             <span class="s">&#39;Pawley dmin&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span>
@@ -1176,6 +1230,10 @@
     <span class="n">Phase</span> <span class="o">=</span> <span class="n">SetNewPhase</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="n">PhaseName</span><span class="p">,</span><span class="n">SGData</span><span class="o">=</span><span class="n">SGData</span><span class="p">,</span><span class="n">cell</span><span class="o">=</span><span class="n">abc</span><span class="o">+</span><span class="n">angles</span><span class="o">+</span><span class="p">[</span><span class="n">Volume</span><span class="p">,])</span>
     <span class="n">general</span> <span class="o">=</span> <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">]</span>
     <span class="n">general</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Ptype</span>
+    <span class="k">if</span> <span class="n">general</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span><span class="s">&#39;macromolecular&#39;</span><span class="p">:</span>
+        <span class="n">general</span><span class="p">[</span><span class="s">&#39;AtomPtrs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">12</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">general</span><span class="p">[</span><span class="s">&#39;AtomPtrs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">9</span><span class="p">]</span>    
     <span class="n">general</span><span class="p">[</span><span class="s">&#39;SH Texture&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">textureData</span>
     <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;Atoms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Atoms</span>
     <span class="k">return</span> <span class="n">Phase</span>
@@ -1265,8 +1323,8 @@
         <span class="n">PhaseName</span> <span class="o">=</span> <span class="s">&#39;None&#39;</span>
     <span class="n">Phase</span> <span class="o">=</span> <span class="n">SetNewPhase</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="n">PhaseName</span><span class="p">,</span><span class="n">SGData</span><span class="o">=</span><span class="n">SGData</span><span class="p">,</span><span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="o">+</span><span class="p">[</span><span class="n">Volume</span><span class="p">,])</span>
     <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;macromolecular&#39;</span>
+    <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;AtomPtrs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">12</span><span class="p">]</span>
     <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;Atoms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Atoms</span>
-    
     <span class="k">return</span> <span class="n">Phase</span>
 </div>
 <div class="viewcode-block" id="MultipleChoicesDialog"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.MultipleChoicesDialog">[docs]</a><span class="k">class</span> <span class="nc">MultipleChoicesDialog</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="p">):</span>
@@ -1458,10 +1516,21 @@
 <span class="c">#   not used directly, only by subclassing</span>
 <span class="c">######################################################################</span></div>
 <span class="n">E</span><span class="p">,</span><span class="n">SGData</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SpcGroup</span><span class="p">(</span><span class="s">&#39;P 1&#39;</span><span class="p">)</span> <span class="c"># data structure for default space group</span>
+<span class="n">P1SGData</span> <span class="o">=</span> <span class="n">SGData</span>
 <div class="viewcode-block" id="ImportBaseclass"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportBaseclass">[docs]</a><span class="k">class</span> <span class="nc">ImportBaseclass</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Defines a base class for the reading of input files (diffraction</span>
-<span class="sd">    data, coordinates,...</span>
+<span class="sd">    data, coordinates,...). See :ref:`Writing a Import Routine&lt;Import_Routines&gt;`</span>
+<span class="sd">    for an explanation on how to use a subclass of this class. </span>
 <span class="sd">    &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="ImportBaseclass.ImportException"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportBaseclass.ImportException">[docs]</a>    <span class="k">class</span> <span class="nc">ImportException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Defines an Exception that is used when an import routine hits an expected error,</span>
+<span class="sd">        usually in .Reader.</span>
+
+<span class="sd">        Good practice is that the Reader should define a value in self.errors that</span>
+<span class="sd">        tells the user some information about what is wrong with their file.         </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">pass</span>
+</div>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">formatName</span><span class="p">,</span>
                  <span class="n">longFormatName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
@@ -1481,6 +1550,7 @@
         <span class="c"># If strictExtension is True, the file will not be read, unless</span>
         <span class="c"># the extension matches one in the extensionlist</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">strictExtension</span> <span class="o">=</span> <span class="n">strictExtension</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">warnings</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="c"># used for readers that will use multiple passes to read</span>
         <span class="c"># more than one data block</span>
@@ -1562,11 +1632,15 @@
         <span class="n">wx</span><span class="o">.</span><span class="n">EndBusyCursor</span><span class="p">()</span>
         
 <span class="c">#    def Reader(self, filename, filepointer, ParentFrame=None, **unused):</span>
-<span class="c">#        &#39;&#39;&#39;This method must be supplied in the child class</span>
-<span class="c">#        it will read the file</span>
+<span class="c">#        &#39;&#39;&#39;This method must be supplied in the child class to read the file. </span>
+<span class="c">#        if the read fails either return False or raise an Exception</span>
+<span class="c">#        preferably of type ImportException. </span>
 <span class="c">#        &#39;&#39;&#39;</span>
-<span class="c">#        return True # if read OK</span>
+<span class="c">#        #start reading</span>
+<span class="c">#        raise ImportException(&quot;Error occurred while...&quot;)</span>
+<span class="c">#        self.errors += &quot;Hint for user on why the error occur</span>
 <span class="c">#        return False # if an error occurs</span>
+<span class="c">#        return True # if read OK</span>
 
 <div class="viewcode-block" id="ImportBaseclass.ExtensionValidator"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportBaseclass.ExtensionValidator">[docs]</a>    <span class="k">def</span> <span class="nf">ExtensionValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;This methods checks if the file has the correct extension</span>
@@ -1595,14 +1669,20 @@
 </div></div>
 <div class="viewcode-block" id="ImportPhase"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportPhase">[docs]</a><span class="k">class</span> <span class="nc">ImportPhase</span><span class="p">(</span><span class="n">ImportBaseclass</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Defines a base class for the reading of files with coordinates</span>
+
+<span class="sd">    Objects constructed that subclass this (in import/G2phase_*.py) will be used</span>
+<span class="sd">    in :meth:`GSASII.GSASII.OnImportPhase`. </span>
+<span class="sd">    See :ref:`Writing a Import Routine&lt;Import_Routines&gt;`</span>
+<span class="sd">    for an explanation on how to use this class. </span>
+
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">formatName</span><span class="p">,</span><span class="n">longFormatName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">extensionlist</span><span class="o">=</span><span class="p">[],</span>
         <span class="n">strictExtension</span><span class="o">=</span><span class="bp">False</span><span class="p">,):</span>
         <span class="c"># call parent __init__</span>
         <span class="n">ImportBaseclass</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">formatName</span><span class="p">,</span><span class="n">longFormatName</span><span class="p">,</span>
             <span class="n">extensionlist</span><span class="p">,</span><span class="n">strictExtension</span><span class="p">)</span>
-        <span class="c"># define a default Phase structure</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Phase</span> <span class="o">=</span> <span class="n">SetNewPhase</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="s">&#39;new phase&#39;</span><span class="p">,</span><span class="n">SGData</span><span class="o">=</span><span class="n">SGData</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Phase</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># a phase must be created with G2IO.SetNewPhase in the Reader</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Constraints</span> <span class="o">=</span> <span class="bp">None</span>
 
 <div class="viewcode-block" id="ImportPhase.PhaseSelector"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportPhase.PhaseSelector">[docs]</a>    <span class="k">def</span> <span class="nf">PhaseSelector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
         <span class="n">title</span><span class="o">=</span><span class="s">&#39;Select a phase&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">header</span><span class="o">=</span><span class="s">&#39;Phase Selector&#39;</span><span class="p">):</span>
@@ -1614,7 +1694,14 @@
 </div></div>
 <div class="viewcode-block" id="ImportStructFactor"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportStructFactor">[docs]</a><span class="k">class</span> <span class="nc">ImportStructFactor</span><span class="p">(</span><span class="n">ImportBaseclass</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Defines a base class for the reading of files with tables</span>
-<span class="sd">    of structure factors</span>
+<span class="sd">    of structure factors.</span>
+
+<span class="sd">    Structure factors are read with a call to :meth:`GSASII.GSASII.OnImportSfact`</span>
+<span class="sd">    which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`, which calls</span>
+<span class="sd">    methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and</span>
+<span class="sd">    :meth:`Reader`. </span>
+<span class="sd">    See :ref:`Writing a Import Routine&lt;Import_Routines&gt;`</span>
+<span class="sd">    for an explanation on how to use this class. </span>
 
 <span class="sd">    Note that the default controls are stored in self.Controls and the</span>
 <span class="sd">    default instrument parameters are stored in self.Parameters.</span>
@@ -1633,7 +1720,7 @@
         <span class="c"># define contents of Structure Factor entry</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">InitParameters</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">InitControls</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;Uniq&#39;</span><span class="p">:[],</span><span class="s">&#39;Phi&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
         
 <div class="viewcode-block" id="ImportStructFactor.InitControls"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportStructFactor.InitControls">[docs]</a>    <span class="k">def</span> <span class="nf">InitControls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="s">&#39;initialize the controls structure&#39;</span>
@@ -1697,7 +1784,9 @@
 
 <span class="c">######################################################################</span></div></div>
 <div class="viewcode-block" id="ImportPowderData"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportPowderData">[docs]</a><span class="k">class</span> <span class="nc">ImportPowderData</span><span class="p">(</span><span class="n">ImportBaseclass</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Defines a base class for the reading of files with powder data</span>
+    <span class="sd">&#39;&#39;&#39;Defines a base class for the reading of files with powder data.</span>
+<span class="sd">    See :ref:`Writing a Import Routine&lt;Import_Routines&gt;`</span>
+<span class="sd">    for an explanation on how to use this class. </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="c"># define some default instrument parameter files</span>
     <span class="c"># just like GSAS, sigh</span>
@@ -1810,8 +1899,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="c"># updated in SetupExport, when used</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c"># updated in InitExport:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># type of export that has been requested</span>
+        <span class="c"># updated in ExportSelect (when used):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># a list of selected phases</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># a list of selected histograms</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># name of file to be written</span>
@@ -1820,90 +1912,145 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">exporttype</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c"># defines the type(s) of exports that the class can handle.</span>
         <span class="c"># The following types are defined: &#39;project&#39;, &quot;phase&quot;, &quot;powder&quot;, &quot;single&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># set as True if the class can export multiple phases or histograms</span>
-        <span class="c"># ignored for &quot;project&quot; exports</span>
+        <span class="c"># self.multiple is ignored for &quot;project&quot; exports</span>
 
-<div class="viewcode-block" id="ExportBaseclass.SetupExport"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ExportBaseclass.SetupExport">[docs]</a>    <span class="k">def</span> <span class="nf">SetupExport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">,</span><span class="n">AskFile</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Determines the type of menu that called the Exporter. Selects histograms</span>
-<span class="sd">        or phases when needed. </span>
+<div class="viewcode-block" id="ExportBaseclass.InitExport"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ExportBaseclass.InitExport">[docs]</a>    <span class="k">def</span> <span class="nf">InitExport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Determines the type of menu that called the Exporter.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">event</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ExportLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">Id</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ExportBaseclass.ExportSelect"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ExportBaseclass.ExportSelect">[docs]</a>    <span class="k">def</span> <span class="nf">ExportSelect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">AskFile</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Selects histograms or phases when needed. Sets a default file name.</span>
 
 <span class="sd">        :param bool AskFile: if AskFile is True (default) get the name of the file</span>
 <span class="sd">          in a dialog</span>
 <span class="sd">        :returns: True in case of an error</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">if</span> <span class="n">event</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ExportLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">Id</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;phase&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ErrorDialog</span><span class="p">(</span>
+                    <span class="s">&#39;Empty project&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;Project does not contain any phases.&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span><span class="p">:</span> 
+                <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="n">phasenum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">phasenum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">phasenum</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="n">phasenum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">phasenum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">phasenum</span><span class="p">]]</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;single&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ErrorDialog</span><span class="p">(</span>
+                    <span class="s">&#39;Empty project&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;Project does not contain any single crystal data.&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span><span class="p">:</span>
+                <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+                <span class="n">hnum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">hnum</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hnum</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+                <span class="n">hnum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">hnum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">hnum</span><span class="p">]]</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;powder&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ErrorDialog</span><span class="p">(</span>
+                    <span class="s">&#39;Empty project&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;Project does not contain any powder data.&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span><span class="p">:</span>
+                <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+                <span class="n">hnum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">hnum</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hnum</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+                <span class="n">hnum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">hnum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">hnum</span><span class="p">]]</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;image&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ErrorDialog</span><span class="p">(</span>
+                    <span class="s">&#39;Empty project&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;Project does not contain any images.&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="n">hnum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">multiple</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">hnum</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hnum</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">hnum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">hnum</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;map&#39;</span><span class="p">:</span>
+            <span class="c"># search for phases with maps</span>
+            <span class="n">mapPhases</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">choices</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">phasenam</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">):</span>
+                <span class="n">phasedict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">]</span> <span class="c"># pointer to current phase info            </span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Map&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;rho&#39;</span><span class="p">,[])):</span>
+                    <span class="n">mapPhases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Map&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Flip&#39;</span><span class="p">):</span>
+                        <span class="n">choices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;Charge flip map: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">))</span>
+                    <span class="k">elif</span> <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Map&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;MapType&#39;</span><span class="p">):</span>
+                        <span class="n">choices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="nb">str</span><span class="p">(</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Map&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;MapType&#39;</span><span class="p">))</span>
+                            <span class="o">+</span> <span class="s">&#39; map: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">choices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;unknown map: &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">))</span>
+            <span class="c"># select a map if needed</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mapPhases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ErrorDialog</span><span class="p">(</span>
+                    <span class="s">&#39;Empty project&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;Project does not contain any maps.&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">mapPhases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span> <span class="o">=</span> <span class="n">mapPhases</span>
+            <span class="k">else</span><span class="p">:</span> 
+                <span class="n">phasenum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">multiple</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">phasenum</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span> <span class="o">=</span> <span class="p">[</span><span class="n">mapPhases</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">phasenum</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">phasenum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span> <span class="o">=</span> <span class="p">[</span><span class="n">mapPhases</span><span class="p">[</span><span class="n">phasenum</span><span class="p">]]</span>
+
         <span class="k">if</span> <span class="n">AskFile</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">askSaveFile</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultSaveFile</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
         
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;phase&#39;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ErrorDialog</span><span class="p">(</span>
-                    <span class="s">&#39;Empty project&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;Project does not contain any data or phases or they are not interconnected.&#39;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="bp">True</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span><span class="p">:</span> 
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-                    <span class="n">phasenum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">phasenum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">phasenum</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-                    <span class="n">phasenum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">phasenum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">phasenum</span><span class="p">]]</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;single&#39;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ErrorDialog</span><span class="p">(</span>
-                    <span class="s">&#39;Empty project&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;Project does not contain any single crystal data or data is not connected to a phase.&#39;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="bp">True</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-                    <span class="n">hnum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">hnum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hnum</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-                    <span class="n">hnum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">hnum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">hnum</span><span class="p">]]</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;powder&#39;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ErrorDialog</span><span class="p">(</span>
-                    <span class="s">&#39;Empty project&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;Project does not contain any powder data or data is not connected to a phase.&#39;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="bp">True</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiple</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-                    <span class="n">hnum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">hnum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hnum</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">choices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-                    <span class="n">hnum</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ItemSelector</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">hnum</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span> <span class="o">=</span> <span class="p">[</span><span class="n">choices</span><span class="p">[</span><span class="n">hnum</span><span class="p">]]</span>
+    <span class="c"># def SetupExport(self,event,AskFile=True):</span>
+    <span class="c">#     &#39;&#39;&#39;Determines the type of menu that called the Exporter. Selects histograms</span>
+    <span class="c">#     or phases when needed. Better to replace with individual calls to </span>
+    <span class="c">#     self.InitExport() and self.ExportSelect() so that the former can be called prior</span>
+    <span class="c">#     to self.LoadTree()</span>
+
+    <span class="c">#     :param bool AskFile: if AskFile is True (default) get the name of the file</span>
+    <span class="c">#       in a dialog</span>
+    <span class="c">#     :returns: True in case of an error</span>
+    <span class="c">#     &#39;&#39;&#39;</span>
+    <span class="c">#     self.ExportInit(event)</span>
+    <span class="c">#     return self.ExportSelect(AskFile)</span>
                     </div>
 <div class="viewcode-block" id="ExportBaseclass.loadParmDict"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ExportBaseclass.loadParmDict">[docs]</a>    <span class="k">def</span> <span class="nf">loadParmDict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update</span>
@@ -1949,6 +2096,7 @@
         <span class="c"># expand to include constraints: first compile a list of constraints</span>
         <span class="n">constList</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">consDict</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span> <span class="k">continue</span>
             <span class="n">constList</span> <span class="o">+=</span> <span class="n">consDict</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
         <span class="c"># now process the constraints</span>
         <span class="n">G2mv</span><span class="o">.</span><span class="n">InitVars</span><span class="p">()</span>
@@ -1960,7 +2108,7 @@
         <span class="k">elif</span> <span class="n">varyList</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="c"># old GPX file from before pre-constraint varyList is saved</span>
             <span class="k">print</span> <span class="s">&#39; *** Old refinement: Please use Calculate/Refine to redo  ***&#39;</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39; *** CIF creation aborted ***&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39; *** Export aborted ***&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">varyList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">varyList</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1991,8 +2139,70 @@
 <span class="sd">          begin with a keyword, such as PWDR, IMG, HKLF,... that identifies the data type.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GetUsedHistogramsAndPhasesfromTree</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">IsEmpty</span><span class="p">():</span> <span class="k">return</span> <span class="c"># nothing to do</span>
+        <span class="n">histType</span> <span class="o">=</span> <span class="bp">None</span>        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;phase&#39;</span><span class="p">:</span>
+            <span class="c"># if exporting phases load them here</span>
+            <span class="n">sub</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span><span class="s">&#39;Phases&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">sub</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;no phases found&#39;</span>
+                <span class="k">return</span> <span class="bp">True</span>
+            <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">item</span><span class="p">:</span>
+                <span class="n">phaseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phaseName</span><span class="p">]</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;single&#39;</span><span class="p">:</span>
+            <span class="n">histType</span> <span class="o">=</span> <span class="s">&#39;HKLF&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;powder&#39;</span><span class="p">:</span>
+            <span class="n">histType</span> <span class="o">=</span> <span class="s">&#39;PWDR&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;image&#39;</span><span class="p">:</span>
+            <span class="n">histType</span> <span class="o">=</span> <span class="s">&#39;IMG&#39;</span>
+
+        <span class="k">if</span> <span class="n">histType</span><span class="p">:</span> <span class="c"># Loading just one kind of tree entry</span>
+            <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">item</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">histType</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">):</span> <span class="c"># there is already an item with this name</span>
+                        <span class="k">if</span> <span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;9&#39;</span><span class="p">:</span>
+                            <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;10&#39;</span>
+                        <span class="k">elif</span> <span class="n">name</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="s">&#39;012345678&#39;</span><span class="p">:</span>
+                            <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>                            
+                            <span class="n">name</span> <span class="o">+=</span> <span class="s">&#39;-1&#39;</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="c"># the main info goes into Data, but the 0th</span>
+                    <span class="c"># element contains refinement results, carry</span>
+                    <span class="c"># that over too now. </span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s">&#39;Data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">item2</span><span class="p">,</span> <span class="n">cookie2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                    <span class="k">while</span> <span class="n">item2</span><span class="p">:</span> 
+                        <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">child</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item2</span><span class="p">)</span>
+                        <span class="n">item2</span><span class="p">,</span> <span class="n">cookie2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">cookie2</span><span class="p">)</span>
+                <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
+            <span class="c"># index powder and single crystal histograms by number</span>
+            <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;PWDR&quot;</span><span class="p">):</span> 
+                    <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span>
+                <span class="k">elif</span> <span class="n">hist</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;HKLF&quot;</span><span class="p">):</span> 
+                    <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span>                    
+                <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;hId&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">elif</span> <span class="n">i</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">+</span><span class="mi">1</span>
+                <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span>
+            <span class="k">return</span>
+        <span class="c"># else standard load: using all interlinked phases and histograms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Phases</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GetUsedHistogramsAndPhasesfromTree</span><span class="p">()</span>
         <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
         <span class="k">while</span> <span class="n">item</span><span class="p">:</span>
             <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
@@ -2001,8 +2211,6 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
             <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
         <span class="c"># index powder and single crystal histograms</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">xtalDict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">:</span>
             <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">][</span><span class="s">&#39;hId&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;PWDR&quot;</span><span class="p">):</span> 
@@ -2096,14 +2304,18 @@
 <span class="sd">          to a, b, c, alpha, beta, gamma, volume where `cellList` has the</span>
 <span class="sd">          cell values and `cellSig` has their uncertainties.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">phasedict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">]</span> <span class="c"># pointer to current phase info            </span>
-        <span class="n">pfx</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;pId&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;::&#39;</span>
-        <span class="n">A</span><span class="p">,</span><span class="n">sigA</span> <span class="o">=</span> <span class="n">G2stIO</span><span class="o">.</span><span class="n">cellFill</span><span class="p">(</span><span class="n">pfx</span><span class="p">,</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;SGData&#39;</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">sigDict</span><span class="p">)</span>
-        <span class="n">cellSig</span> <span class="o">=</span> <span class="n">G2stIO</span><span class="o">.</span><span class="n">getCellEsd</span><span class="p">(</span><span class="n">pfx</span><span class="p">,</span>
-                                    <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;SGData&#39;</span><span class="p">],</span><span class="n">A</span><span class="p">,</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span><span class="p">[</span><span class="s">&#39;Covariance&#39;</span><span class="p">])</span>  <span class="c"># returns 7 vals, includes sigVol</span>
-        <span class="n">cellList</span> <span class="o">=</span> <span class="n">G2lat</span><span class="o">.</span><span class="n">A2cell</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">G2lat</span><span class="o">.</span><span class="n">calc_V</span><span class="p">(</span><span class="n">A</span><span class="p">),)</span>
-        <span class="k">return</span> <span class="n">cellList</span><span class="p">,</span><span class="n">cellSig</span>
+        <span class="n">phasedict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">]</span> <span class="c"># pointer to current phase info</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pfx</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;pId&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;::&#39;</span>
+            <span class="n">A</span><span class="p">,</span><span class="n">sigA</span> <span class="o">=</span> <span class="n">G2stIO</span><span class="o">.</span><span class="n">cellFill</span><span class="p">(</span><span class="n">pfx</span><span class="p">,</span><span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;SGData&#39;</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">sigDict</span><span class="p">)</span>
+            <span class="n">cellSig</span> <span class="o">=</span> <span class="n">G2stIO</span><span class="o">.</span><span class="n">getCellEsd</span><span class="p">(</span><span class="n">pfx</span><span class="p">,</span>
+                                        <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;SGData&#39;</span><span class="p">],</span><span class="n">A</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">OverallParms</span><span class="p">[</span><span class="s">&#39;Covariance&#39;</span><span class="p">])</span>  <span class="c"># returns 7 vals, includes sigVol</span>
+            <span class="n">cellList</span> <span class="o">=</span> <span class="n">G2lat</span><span class="o">.</span><span class="n">A2cell</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">G2lat</span><span class="o">.</span><span class="n">calc_V</span><span class="p">(</span><span class="n">A</span><span class="p">),)</span>
+            <span class="k">return</span> <span class="n">cellList</span><span class="p">,</span><span class="n">cellSig</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="n">phasedict</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Cell&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">return</span> <span class="n">cell</span><span class="p">,</span><span class="mi">7</span><span class="o">*</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     </div>
 <div class="viewcode-block" id="ExportBaseclass.GetAtoms"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ExportBaseclass.GetAtoms">[docs]</a>    <span class="k">def</span> <span class="nf">GetAtoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">phasenam</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Gets the atoms associated with a phase. Can be used with standard</span>
@@ -2119,7 +2331,7 @@
 <span class="sd">            x, y, z and fractional occupancy and</span>
 <span class="sd">            their standard uncertainty (or a negative value)</span>
 <span class="sd">          * td is contains a list with either one or six pairs of numbers:</span>
-<span class="sd">            if one number it is U\ :sub:`iso` and with six it is</span>
+<span class="sd">            if one number it is U\ :sub:`iso` and with six numbers it is</span>
 <span class="sd">            U\ :sub:`11`, U\ :sub:`22`, U\ :sub:`33`, U\ :sub:`12`, U\ :sub:`13` &amp; U\ :sub:`23`</span>
 <span class="sd">            paired with their standard uncertainty (or a negative value)</span>
 <span class="sd">        &quot;&quot;&quot;</span>

@@ -654,7 +654,7 @@ Single Crystal Reflection Data Structure
    single: Single Crystal reflection object description
    single: Data object descriptions; Single Crystal Reflections
    
-For every simgle crystal a histogram, the ``'Data'`` item contains
+For every single crystal a histogram, the ``'Data'`` item contains
 the structure factors as an np.array in item `'RefList'`.
 The columns in that array are documented below.
 

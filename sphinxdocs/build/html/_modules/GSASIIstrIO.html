@@ -52,11 +52,11 @@
   <h1>Source code for GSASIIstrIO</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-15 15:01:21 -0500 (Tue, 15 Oct 2013) $</span>
-<span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1107 $</span>
-<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIstrIO.py $</span>
-<span class="c"># $Id: GSASIIstrIO.py 1107 2013-10-15 20:01:21Z vondreele $</span>
+<span class="c"># $Date: 2013-11-28 21:16:02 -0600 (Thu, 28 Nov 2013) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 1160 $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIstrIO.py $</span>
+<span class="c"># $Id: GSASIIstrIO.py 1160 2013-11-29 03:16:02Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIstrIO: structure I/O routines*</span>
@@ -76,10 +76,12 @@
 <span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="kn">as</span> <span class="nn">nl</span>
 <span class="kn">import</span> <span class="nn">scipy.optimize</span> <span class="kn">as</span> <span class="nn">so</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1107 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1160 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIElem</span> <span class="kn">as</span> <span class="nn">G2el</span>
+<span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
+<span class="kn">import</span> <span class="nn">GSASIIobj</span> <span class="kn">as</span> <span class="nn">G2obj</span>
 <span class="kn">import</span> <span class="nn">GSASIImapvars</span> <span class="kn">as</span> <span class="nn">G2mv</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 
@@ -98,8 +100,7 @@
 <span class="sd">    :param str GPXfile: full .gpx file name</span>
 <span class="sd">    :return: dictionary of control items</span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">Controls</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;deriv type&#39;</span><span class="p">:</span><span class="s">&#39;analytic Hessian&#39;</span><span class="p">,</span><span class="s">&#39;max cyc&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="s">&#39;max Hprocess&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
-        <span class="s">&#39;max Rprocess&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;min dM/M&#39;</span><span class="p">:</span><span class="mf">0.0001</span><span class="p">,</span><span class="s">&#39;shift factor&#39;</span><span class="p">:</span><span class="mf">1.</span><span class="p">}</span>
+    <span class="n">Controls</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">G2obj</span><span class="o">.</span><span class="n">DefaultControls</span><span class="p">)</span>
     <span class="n">fl</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">GPXfile</span><span class="p">,</span><span class="s">&#39;rb&#39;</span><span class="p">)</span>
     <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
@@ -114,8 +115,10 @@
     </div>
 <div class="viewcode-block" id="GetConstraints"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrIO.GetConstraints">[docs]</a><span class="k">def</span> <span class="nf">GetConstraints</span><span class="p">(</span><span class="n">GPXfile</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Read the constraints from the GPX file and interpret them</span>
+
+<span class="sd">    called in :func:`CheckConstraints`, :func:`GSASIIstrMain.Refine`</span>
+<span class="sd">    and :func:`GSASIIstrMain.SeqRefine`. </span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">constList</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">fl</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">GPXfile</span><span class="p">,</span><span class="s">&#39;rb&#39;</span><span class="p">)</span>
     <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
@@ -124,41 +127,37 @@
             <span class="k">break</span>
         <span class="n">datum</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">datum</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Constraints&#39;</span><span class="p">:</span>
-            <span class="n">constDict</span> <span class="o">=</span> <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">constDict</span><span class="p">:</span>
-                <span class="n">constList</span> <span class="o">+=</span> <span class="n">constDict</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+            <span class="n">constList</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span> <span class="k">continue</span>
+                <span class="n">constList</span> <span class="o">+=</span> <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">item</span><span class="p">]</span>
+            <span class="n">fl</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">constDict</span><span class="p">,</span><span class="n">fixedList</span><span class="p">,</span><span class="n">ignored</span> <span class="o">=</span> <span class="n">ProcessConstraints</span><span class="p">(</span><span class="n">constList</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ignored</span><span class="p">:</span>
+                <span class="k">print</span> <span class="n">ignored</span><span class="p">,</span><span class="s">&#39;Constraints were rejected. Was a constrained phase, histogram or atom deleted?&#39;</span>
+            <span class="k">return</span> <span class="n">constDict</span><span class="p">,</span><span class="n">fixedList</span>
     <span class="n">fl</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="n">constDict</span><span class="p">,</span><span class="n">fixedList</span><span class="p">,</span><span class="n">ignored</span> <span class="o">=</span> <span class="n">ProcessConstraints</span><span class="p">(</span><span class="n">constList</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">ignored</span><span class="p">:</span>
-        <span class="k">print</span> <span class="n">ignored</span><span class="p">,</span><span class="s">&#39;old-style Constraints were rejected&#39;</span>
-    <span class="k">return</span> <span class="n">constDict</span><span class="p">,</span><span class="n">fixedList</span>
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;No constraints in GPX file&quot;</span>
     </div>
 <div class="viewcode-block" id="ProcessConstraints"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrIO.ProcessConstraints">[docs]</a><span class="k">def</span> <span class="nf">ProcessConstraints</span><span class="p">(</span><span class="n">constList</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Interpret the constraints in the constList input into a dictionary, etc.</span>
+<span class="sd">    All :class:`GSASIIobj.G2VarObj` objects are mapped to the appropriate</span>
+<span class="sd">    phase/hist/atoms based on the object internals (random Ids). If this can&#39;t be</span>
+<span class="sd">    done (if a phase has been deleted, etc.), the variable is ignored.</span>
+<span class="sd">    If the constraint cannot be used due to too many dropped variables,</span>
+<span class="sd">    it is counted as ignored.</span>
 <span class="sd">    </span>
 <span class="sd">    :param list constList: a list of lists where each item in the outer list</span>
-<span class="sd">      specifies a constraint of some form. The last item in each inner list</span>
-<span class="sd">      determines which of the four constraints types has been input:</span>
-
-<span class="sd">        * h (hold): a single variable that will not be varied. It</span>
-<span class="sd">          will be removed from the varyList later.</span>
-<span class="sd">        * c (constraint): specifies a linear relationship that</span>
-<span class="sd">          can be varied as a new grouped variable</span>
-<span class="sd">          a fixed value.</span>
-<span class="sd">        * f (fixed): specifies a linear relationship that is assigned</span>
-<span class="sd">          a fixed value.</span>
-<span class="sd">        * e (equivalence): specifies a series of variables where the</span>
-<span class="sd">          first variable in the last can be used to generate the</span>
-<span class="sd">          values for all the remaining variables.</span>
+<span class="sd">      specifies a constraint of some form, as described in the :mod:`GSASIIobj`</span>
+<span class="sd">      :ref:`Constraint definition &lt;Constraint_definitions_table&gt;`.</span>
 
 <span class="sd">    :returns:  a tuple of (constDict,fixedList,ignored) where:</span>
 <span class="sd">      </span>
-<span class="sd">      * constDict (list) contains the constraint relationships</span>
-<span class="sd">      * fixedList (list) contains the fixed values for type</span>
+<span class="sd">      * constDict (list of dicts) contains the constraint relationships</span>
+<span class="sd">      * fixedList (list) contains the fixed values for each type</span>
 <span class="sd">        of constraint.</span>
 <span class="sd">      * ignored (int) counts the number of invalid constraint items</span>
 <span class="sd">        (should always be zero!)</span>
-
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">constDict</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">fixedList</span> <span class="o">=</span> <span class="p">[]</span>
@@ -167,32 +166,63 @@
         <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;h&#39;</span><span class="p">:</span>
             <span class="c"># process a hold</span>
             <span class="n">fixedList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;0&#39;</span><span class="p">)</span>
-            <span class="n">constDict</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span><span class="mf">0.0</span><span class="p">})</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">if</span> <span class="s">&#39;?&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">var</span><span class="p">:</span>
+                <span class="n">constDict</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="n">var</span><span class="p">:</span><span class="mf">0.0</span><span class="p">})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ignored</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">elif</span> <span class="n">item</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;f&#39;</span><span class="p">:</span>
             <span class="c"># process a new variable</span>
             <span class="n">fixedList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
-            <span class="n">constDict</span><span class="o">.</span><span class="n">append</span><span class="p">({})</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">varyFlag</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">varname</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">item</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]:</span>
-                <span class="n">constDict</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">term</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">term</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="s">&#39;?&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">var</span><span class="p">:</span>
+                    <span class="n">D</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">D</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c"># add extra dict terms for input variable name and vary flag</span>
+                <span class="k">if</span> <span class="n">varname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>                    
+                    <span class="k">if</span> <span class="n">varname</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;::&#39;</span><span class="p">):</span>
+                        <span class="n">varname</span> <span class="o">=</span> <span class="n">varname</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">,</span><span class="s">&#39;;&#39;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">varname</span> <span class="o">=</span> <span class="n">varname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">,</span><span class="s">&#39;;&#39;</span><span class="p">)</span>
+                    <span class="n">D</span><span class="p">[</span><span class="s">&#39;_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;::&#39;</span> <span class="o">+</span> <span class="n">varname</span>
+                <span class="n">D</span><span class="p">[</span><span class="s">&#39;_vary&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">varyFlag</span> <span class="o">==</span> <span class="bp">True</span> <span class="c"># force to bool</span>
+                <span class="n">constDict</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ignored</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="c">#constFlag[-1] = [&#39;Vary&#39;]</span>
         <span class="k">elif</span> <span class="n">item</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;c&#39;</span><span class="p">:</span> 
             <span class="c"># process a contraint relationship</span>
-            <span class="n">fixedList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]))</span>
-            <span class="n">constDict</span><span class="o">.</span><span class="n">append</span><span class="p">({})</span>
+            <span class="n">D</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">item</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]:</span>
-                <span class="n">constDict</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">term</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="c">#constFlag[-1] = [&#39;VaryFree&#39;]</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">term</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="s">&#39;?&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">var</span><span class="p">:</span>
+                    <span class="n">D</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">D</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">fixedList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]))</span>
+                <span class="n">constDict</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">D</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ignored</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">elif</span> <span class="n">item</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;e&#39;</span><span class="p">:</span>
             <span class="c"># process an equivalence</span>
             <span class="n">firstmult</span> <span class="o">=</span> <span class="bp">None</span>
             <span class="n">eqlist</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">item</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">term</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="s">&#39;?&#39;</span> <span class="ow">in</span> <span class="n">var</span><span class="p">:</span> <span class="k">continue</span>
                 <span class="k">if</span> <span class="n">firstmult</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                    <span class="n">firstmult</span><span class="p">,</span><span class="n">firstvar</span> <span class="o">=</span> <span class="n">term</span>
+                    <span class="n">firstmult</span> <span class="o">=</span> <span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">firstvar</span> <span class="o">=</span> <span class="n">var</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">eqlist</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">term</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">firstmult</span><span class="o">/</span><span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
-            <span class="n">G2mv</span><span class="o">.</span><span class="n">StoreEquivalence</span><span class="p">(</span><span class="n">firstvar</span><span class="p">,</span><span class="n">eqlist</span><span class="p">)</span>
+                    <span class="n">eqlist</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">var</span><span class="p">,</span><span class="n">firstmult</span><span class="o">/</span><span class="n">term</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">eqlist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">G2mv</span><span class="o">.</span><span class="n">StoreEquivalence</span><span class="p">(</span><span class="n">firstvar</span><span class="p">,</span><span class="n">eqlist</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ignored</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">ignored</span> <span class="o">+=</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">constDict</span><span class="p">,</span><span class="n">fixedList</span><span class="p">,</span><span class="n">ignored</span>
@@ -348,15 +378,13 @@
                 <span class="n">HKLFdata</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>        <span class="c">#weight factor</span>
 <span class="c">#patch</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="nb">list</span><span class="p">):</span>
-                    <span class="n">RefData</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;Uniq&#39;</span><span class="p">:[],</span><span class="s">&#39;Phi&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+                    <span class="n">RefData</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:{}}</span>
                     <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
                         <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[:</span><span class="mi">11</span><span class="p">]</span><span class="o">+</span><span class="p">[</span><span class="n">ref</span><span class="p">[</span><span class="mi">13</span><span class="p">],])</span>
-                        <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;Uniq&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">11</span><span class="p">])</span>
-                        <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;Phi&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">12</span><span class="p">])</span>
-                        <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;FF&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span>
                     <span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">RefData</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">])</span>
                     <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">RefData</span>
 <span class="c">#end patch</span>
+                <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;FF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="n">HKLFdata</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
                 <span class="n">HKLFdata</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>       <span class="c">#Instrument parameters</span>
                 <span class="n">HKLFdata</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
@@ -388,10 +416,12 @@
     </div>
 <div class="viewcode-block" id="GetUsedHistogramsAndPhases"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrIO.GetUsedHistogramsAndPhases">[docs]</a><span class="k">def</span> <span class="nf">GetUsedHistogramsAndPhases</span><span class="p">(</span><span class="n">GPXfile</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; Returns all histograms that are found in any phase</span>
-<span class="sd">    and any phase that uses a histogram</span>
+<span class="sd">    and any phase that uses a histogram. This also</span>
+<span class="sd">    assigns numbers to used phases and histograms by the</span>
+<span class="sd">    order they appear in the file. </span>
 
 <span class="sd">    :param str GPXfile: full .gpx file name</span>
-<span class="sd">    :return: (Histograms,Phases)</span>
+<span class="sd">    :returns: (Histograms,Phases)</span>
 
 <span class="sd">     * Histograms = dictionary of histograms as {name:data,...}</span>
 <span class="sd">     * Phases = dictionary of phases that use histograms</span>
@@ -416,9 +446,15 @@
                 <span class="k">if</span> <span class="s">&#39;Use&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;Histograms&#39;</span><span class="p">][</span><span class="n">hist</span><span class="p">]:</span>      <span class="c">#patch</span>
                     <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;Histograms&#39;</span><span class="p">][</span><span class="n">hist</span><span class="p">][</span><span class="s">&#39;Use&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>         
                 <span class="k">if</span> <span class="n">hist</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Histograms</span> <span class="ow">and</span> <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;Histograms&#39;</span><span class="p">][</span><span class="n">hist</span><span class="p">][</span><span class="s">&#39;Use&#39;</span><span class="p">]:</span>
-                    <span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">]</span> <span class="o">=</span> <span class="n">allHistograms</span><span class="p">[</span><span class="n">hist</span><span class="p">]</span>
-                    <span class="n">hId</span> <span class="o">=</span> <span class="n">histoList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span>
-                    <span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">][</span><span class="s">&#39;hId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hId</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">]</span> <span class="o">=</span> <span class="n">allHistograms</span><span class="p">[</span><span class="n">hist</span><span class="p">]</span>
+                        <span class="n">hId</span> <span class="o">=</span> <span class="n">histoList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span>
+                        <span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">][</span><span class="s">&#39;hId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hId</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span> <span class="c"># would happen if a referenced histogram were</span>
+                        <span class="c"># renamed or deleted</span>
+                        <span class="k">print</span><span class="p">(</span><span class="s">&#39;For phase &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span><span class="o">+</span>
+                              <span class="s">&#39;&quot; unresolved reference to histogram &quot;&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;&quot;&#39;</span><span class="p">)</span>
+    <span class="n">G2obj</span><span class="o">.</span><span class="n">IndexAllIds</span><span class="p">(</span><span class="n">Histograms</span><span class="o">=</span><span class="n">Histograms</span><span class="p">,</span><span class="n">Phases</span><span class="o">=</span><span class="n">Phases</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">Histograms</span><span class="p">,</span><span class="n">Phases</span>
     </div>
 <div class="viewcode-block" id="getBackupName"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrIO.getBackupName">[docs]</a><span class="k">def</span> <span class="nf">getBackupName</span><span class="p">(</span><span class="n">GPXfile</span><span class="p">,</span><span class="n">makeBack</span><span class="p">):</span>
@@ -1017,7 +1053,7 @@
                                 <span class="k">for</span> <span class="n">eqv</span> <span class="ow">in</span> <span class="n">equiv</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
                                     <span class="n">G2mv</span><span class="o">.</span><span class="n">StoreEquivalence</span><span class="p">(</span><span class="n">name</span><span class="p">,(</span><span class="n">eqv</span><span class="p">,))</span>
                     <span class="k">if</span> <span class="s">&#39;U&#39;</span> <span class="ow">in</span> <span class="n">at</span><span class="p">[</span><span class="n">ct</span><span class="o">+</span><span class="mi">1</span><span class="p">]:</span>
-                        <span class="k">if</span> <span class="n">at</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;I&#39;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">at</span><span class="p">[</span><span class="n">cia</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;I&#39;</span><span class="p">:</span>
                             <span class="n">phaseVary</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pfx</span><span class="o">+</span><span class="s">&#39;AUiso:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">uId</span><span class="p">,</span><span class="n">uCoef</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">GetCSuinel</span><span class="p">(</span><span class="n">at</span><span class="p">[</span><span class="n">cs</span><span class="p">])[:</span><span class="mi">2</span><span class="p">]</span>
@@ -1809,7 +1845,6 @@
                     <span class="n">refList</span> <span class="o">=</span> <span class="p">[]</span>
                     <span class="n">Uniq</span> <span class="o">=</span> <span class="p">[]</span>
                     <span class="n">Phi</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="n">FF</span> <span class="o">=</span> <span class="p">[]</span>
                     <span class="k">for</span> <span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">d</span> <span class="ow">in</span> <span class="n">HKLd</span><span class="p">:</span>
                         <span class="n">ext</span><span class="p">,</span><span class="n">mul</span><span class="p">,</span><span class="n">uniq</span><span class="p">,</span><span class="n">phi</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">GenHKLf</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">],</span><span class="n">SGData</span><span class="p">)</span>
                         <span class="n">mul</span> <span class="o">*=</span> <span class="mi">2</span>      <span class="c"># for powder overlap of Friedel pairs</span>
@@ -1821,11 +1856,9 @@
                                 <span class="n">refList</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">h</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">mul</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">pos</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">])</span>
                                 <span class="n">Uniq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">uniq</span><span class="p">)</span>
                                 <span class="n">Phi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
-                                <span class="n">FF</span><span class="o">.</span><span class="n">append</span><span class="p">({})</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="k">raise</span> <span class="ne">ValueError</span> 
-                    <span class="n">Histogram</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phase</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">refList</span><span class="p">),</span>
-                        <span class="s">&#39;Uniq&#39;</span><span class="p">:</span><span class="n">Uniq</span><span class="p">,</span><span class="s">&#39;Phi&#39;</span><span class="p">:</span><span class="n">Phi</span><span class="p">,</span><span class="s">&#39;FF&#39;</span><span class="p">:</span><span class="n">FF</span><span class="p">}</span>
+                    <span class="n">Histogram</span><span class="p">[</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">][</span><span class="n">phase</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">refList</span><span class="p">),</span><span class="s">&#39;FF&#39;</span><span class="p">:{}}</span>
             <span class="k">elif</span> <span class="s">&#39;HKLF&#39;</span> <span class="ow">in</span> <span class="n">histogram</span><span class="p">:</span>
                 <span class="n">inst</span> <span class="o">=</span> <span class="n">Histogram</span><span class="p">[</span><span class="s">&#39;Instrument Parameters&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">hId</span> <span class="o">=</span> <span class="n">Histogram</span><span class="p">[</span><span class="s">&#39;hId&#39;</span><span class="p">]</span>

@@ -73,7 +73,7 @@
 
 <dl class="function">
 <dt id="GSASIIstrMain.PrintDistAngle">
-<tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">PrintDistAngle</tt><big>(</big><em>DisAglCtls</em>, <em>DisAglData</em>, <em>out=&lt;open file '&lt;stdout&gt;'</em>, <em>mode 'w' at 0x01D95078&gt;</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#PrintDistAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.PrintDistAngle" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">PrintDistAngle</tt><big>(</big><em>DisAglCtls</em>, <em>DisAglData</em>, <em>out=&lt;open file '&lt;stdout&gt;'</em>, <em>mode 'w' at 0x240078&gt;</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#PrintDistAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.PrintDistAngle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print distances and angles</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -518,6 +518,8 @@ a new file; if False, the last backup is overwritten</li>
 <dt id="GSASIIstrIO.GetConstraints">
 <tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">GetConstraints</tt><big>(</big><em>GPXfile</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#GetConstraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.GetConstraints" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read the constraints from the GPX file and interpret them</p>
+<p>called in <a class="reference internal" href="#GSASIIstrIO.CheckConstraints" title="GSASIIstrIO.CheckConstraints"><tt class="xref py py-func docutils literal"><span class="pre">CheckConstraints()</span></tt></a>, <a class="reference internal" href="#GSASIIstrMain.Refine" title="GSASIIstrMain.Refine"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrMain.Refine()</span></tt></a>
+and <a class="reference internal" href="#GSASIIstrMain.SeqRefine" title="GSASIIstrMain.SeqRefine"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrMain.SeqRefine()</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="function">
@@ -669,7 +671,9 @@ Throws an exception if not found in the .GPX file</p>
 <dt id="GSASIIstrIO.GetUsedHistogramsAndPhases">
 <tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">GetUsedHistogramsAndPhases</tt><big>(</big><em>GPXfile</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#GetUsedHistogramsAndPhases"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.GetUsedHistogramsAndPhases" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns all histograms that are found in any phase
-and any phase that uses a histogram</p>
+and any phase that uses a histogram. This also
+assigns numbers to used phases and histograms by the
+order they appear in the file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -695,33 +699,23 @@ and any phase that uses a histogram</p>
 <dl class="function">
 <dt id="GSASIIstrIO.ProcessConstraints">
 <tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">ProcessConstraints</tt><big>(</big><em>constList</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#ProcessConstraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.ProcessConstraints" title="Permalink to this definition">¶</a></dt>
-<dd><p>Interpret the constraints in the constList input into a dictionary, etc.</p>
+<dd><p>Interpret the constraints in the constList input into a dictionary, etc.
+All <a class="reference internal" href="GSASIIobj.html#GSASIIobj.G2VarObj" title="GSASIIobj.G2VarObj"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIobj.G2VarObj</span></tt></a> objects are mapped to the appropriate
+phase/hist/atoms based on the object internals (random Ids). If this can&#8217;t be
+done (if a phase has been deleted, etc.), the variable is ignored.
+If the constraint cannot be used due to too many dropped variables,
+it is counted as ignored.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>constList</strong> (<em>list</em>) &#8211; <p>a list of lists where each item in the outer list
-specifies a constraint of some form. The last item in each inner list
-determines which of the four constraints types has been input:</p>
-<blockquote>
-<div><ul class="simple">
-<li>h (hold): a single variable that will not be varied. It
-will be removed from the varyList later.</li>
-<li>c (constraint): specifies a linear relationship that
-can be varied as a new grouped variable
-a fixed value.</li>
-<li>f (fixed): specifies a linear relationship that is assigned
-a fixed value.</li>
-<li>e (equivalence): specifies a series of variables where the
-first variable in the last can be used to generate the
-values for all the remaining variables.</li>
-</ul>
-</div></blockquote>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>constList</strong> (<em>list</em>) &#8211; a list of lists where each item in the outer list
+specifies a constraint of some form, as described in the <a class="reference internal" href="GSASIIobj.html#module-GSASIIobj" title="GSASIIobj"><tt class="xref py py-mod docutils literal"><span class="pre">GSASIIobj</span></tt></a>
+<a class="reference internal" href="GSASIIobj.html#constraint-definitions-table"><em>Constraint definition</em></a>.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a tuple of (constDict,fixedList,ignored) where:<ul class="simple">
-<li>constDict (list) contains the constraint relationships</li>
-<li>fixedList (list) contains the fixed values for type
+<li>constDict (list of dicts) contains the constraint relationships</li>
+<li>fixedList (list) contains the fixed values for each type
 of constraint.</li>
 <li>ignored (int) counts the number of invalid constraint items
 (should always be zero!)</li>

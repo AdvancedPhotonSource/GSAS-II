@@ -14,7 +14,7 @@ Copies a phase from another GSAS-II project file into the
 current project.
 
 '''
-# Routines to import Phase information from GSAS-II .gpx files
+import sys
 import cPickle
 import GSASIIIO as G2IO
 import GSASIIstrIO as G2stIO
@@ -30,21 +30,28 @@ class PhaseReaderClass(G2IO.ImportPhase):
             formatName = 'GSAS-II gpx',
             longFormatName = 'GSAS-II project (.gpx file) import'
             )
+        
     def ContentsValidator(self, filepointer):
-        # if the 1st section can't be read as a cPickle file, it can't be!
+        "Test if the 1st section can be read as a cPickle block, if not it can't be .GPX!"
         try: 
             cPickle.load(filepointer)
         except:
+            self.errors = 'This is not a valid .GPX file. Not recognized by cPickle'
             return False
         return True
+
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        '''Read a phase from a .GPX file. Does not (yet?) support selecting and reading
+        more than one phase at a time.'''
         try:
             phasenames = G2stIO.GetPhaseNames(filename)
         except:
+            self.errors = 'Reading of phase names failed'
             return False
         if not phasenames:
+            self.errors = 'No phases found in '+str(filename)
             return False            # no blocks with coordinates
-        elif len(phasenames) == 1: # no choices
+        elif len(phasenames) == 1: # one block, no choices
             selblk = 0
         else:                       # choose from options                
             selblk = self.PhaseSelector(
@@ -52,14 +59,17 @@ class PhaseReaderClass(G2IO.ImportPhase):
                 ParentFrame=ParentFrame,
                 title= 'Select a phase from the list below',
                 )
-            if selblk is None: return False # User pressed cancel
+            if selblk is None:
+                self.errors = 'No phase selected'
+                return False # User pressed cancel
         try:
             self.Phase = G2stIO.GetAllPhaseData(filename,phasenames[selblk])
             self.Phase['Histograms'] = {}       #remove any histograms
             self.Phase['Pawley ref'] = []       # & any Pawley refl.
             return True
         except Exception as detail:
-            import sys
+            self.errors = 'Error reading selected phase'
+            self.errors += '\n  '+str(detail)
             print self.formatName+' error:',detail # for testing
             print sys.exc_info()[0] # for testing
             import traceback

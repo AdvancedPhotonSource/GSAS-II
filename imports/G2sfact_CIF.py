@@ -33,23 +33,13 @@ class CIFhklReader(G2IO.ImportStructFactor):
             )
     # Validate the contents
     def ContentsValidator(self, filepointer):
-        for i,line in enumerate(filepointer):
-            if i >= 1000: break
-            ''' Encountered only blank lines or comments in first 1000
-            lines. This is unlikely, but assume it is CIF since we are
-            even less likely to find a file with nothing but hashes and
-            blank lines'''
-            line = line.strip()
-            if len(line) == 0:
-                continue # ignore blank lines
-            elif line.startswith('#'):
-                continue # ignore comments
-            elif line.startswith('data_'):
-                return True
-            else:
-                return False # found something else
-        return True
-    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+        'Use standard CIF validator'
+        return self.CIFValidator(filepointer)
+
+    def Reader(self, filename, filepointer, ParentFrame=None, **kwarg):
+        '''Read single crystal data from a CIF.
+        If multiple datasets are requested, use self.repeat and buffer caching.
+        '''
         hklitems = [('_refln_index_h','_refln_index_k','_refln_index_l'),
                     ('_refln.index_h','_refln.index_k','_refln.index_l')]
         cellitems = [
@@ -101,9 +91,15 @@ class CIFhklReader(G2IO.ImportStructFactor):
                 print 'Reusing previously parsed CIF'
             if cf is None:
                 self.ShowBusy() # this can take a while
-                cf = G2IO.ReadCIF(filename)
-                self.DoneBusy()
+                try:
+                    cf = G2IO.ReadCIF(filename)
+                except Exception as detail:
+                    self.errors = "Parse or reading of file failed in pyCifRW; check syntax of file in enCIFer or CheckCIF"
+                    return False
+                finally:
+                    self.DoneBusy()
             # scan blocks for reflections
+            self.errors = 'Error during scan of blocks for datasets'
             blklist = []
             for blk in cf.keys(): # scan for reflections, F or F2 values and cell lengths.
                 # Ignore blocks that do not have structure factors and a cell
@@ -171,6 +167,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                         title='Select a dataset from one the CIF data_ blocks below',
                         size=(600,100),
                         header='Dataset Selector')
+            self.errors = 'Error during reading of selected block'
             if selblk is None:
                 return False # no block selected or available
             if selblk >= len(blklist): # all blocks selected
@@ -182,6 +179,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
             blknm = blklist[selblk]
             blk = cf[blklist[selblk]]
             self.objname = os.path.basename(filename)+':'+str(blknm)
+            self.errors = 'Error during reading of reflections'
             # read in reflections
             try:
                 refloop = blk.GetLoop(hklitems[0][0])
@@ -191,7 +189,8 @@ class CIFhklReader(G2IO.ImportStructFactor):
                     refloop = blk.GetLoop(hklitems[1][0])
                     dnIndex = 1
                 except KeyError:
-                    raise Exception, "Unexpected: index_h not found!"
+                    self.errors += "\nUnexpected: '_refln[-.]index_h not found!"
+                    return False
             itemkeys = {}
             # prepare an index to the CIF reflection loop
             for i,key in enumerate(refloop.keys()):
@@ -234,7 +233,12 @@ class CIFhklReader(G2IO.ImportStructFactor):
                                 break
                         break
                 else:
-                    raise Exception, "no F or F2 value"
+                    msg = "\nno F or F2 loop value found in file\n"
+                    msg += "A CIF reflection file needs to have at least one of\n"
+                    for dn in F2datanames+Fdatanames:
+                        msg += dn + ', '
+                    self.errors += msg                        
+                    return False
             for dn in phasenames:
                 if dn in itemkeys:
                     Phdn = dn
@@ -304,6 +308,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                 self.RefDict['RefList'].append(ref)
                 self.RefDict['FF'].append({})
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+            self.errors = 'Error during reading of dataset parameters'
             self.UpdateControls(Type='Fosq',FcalcPresent=FcalcPresent) # set Fobs type & if Fcalc values are loaded
             if blk.get('_diffrn_radiation_probe'):
                 if blk['_diffrn_radiation_probe'] == 'neutron':
@@ -322,6 +327,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
             self.UpdateParameters(Type=type,Wave=wave) # histogram type
             return True
         except Exception as detail:
+            self.errors += '\n  '+str(detail)
             print self.formatName+' read error:'+str(detail) # for testing
             import traceback
             traceback.print_exc(file=sys.stdout)

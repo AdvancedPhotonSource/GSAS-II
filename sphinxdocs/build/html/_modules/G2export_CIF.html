@@ -53,11 +53,11 @@
 <span class="c">#!/usr/bin/env python</span>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-29 11:42:23 -0500 (Tue, 29 Oct 2013) $</span>
+<span class="c"># $Date: 2013-10-29 16:46:45 -0500 (Tue, 29 Oct 2013) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1127 $</span>
-<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_CIF.py $</span>
-<span class="c"># $Id: G2export_CIF.py 1127 2013-10-29 16:42:23Z toby $</span>
+<span class="c"># $Revision: 1130 $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_CIF.py $</span>
+<span class="c"># $Id: G2export_CIF.py 1130 2013-10-29 21:46:45Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*Module G2export_CIF: CIF Exports*</span>
@@ -88,7 +88,7 @@
 <span class="kn">import</span> <span class="nn">wx.lib.scrolledpanel</span> <span class="kn">as</span> <span class="nn">wxscroll</span>
 <span class="kn">import</span> <span class="nn">wx.lib.resizewidget</span> <span class="kn">as</span> <span class="nn">rw</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1127 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1130 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIstrIO</span> <span class="kn">as</span> <span class="nn">G2stIO</span>
@@ -413,7 +413,15 @@
                 <span class="n">size</span> <span class="o">=</span> <span class="n">hapData</span><span class="p">[</span><span class="s">&#39;Size&#39;</span><span class="p">]</span>
                 <span class="n">mustrain</span> <span class="o">=</span> <span class="n">hapData</span><span class="p">[</span><span class="s">&#39;Mustrain&#39;</span><span class="p">]</span>
                 <span class="n">hstrain</span> <span class="o">=</span> <span class="n">hapData</span><span class="p">[</span><span class="s">&#39;HStrain&#39;</span><span class="p">]</span>
-                <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;  Crystallite size model &quot;</span><span class="si">%s</span><span class="s">&quot; for </span><span class="si">%s</span><span class="s"> (microns)</span><span class="se">\n</span><span class="s">  &#39;</span><span class="o">%</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">phasenam</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">powderDict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">s</span><span class="p">:</span>
+                        <span class="n">s</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">s</span> <span class="o">+=</span> <span class="s">&#39;  Crystallite size model &quot;</span><span class="si">%s</span><span class="s">&quot; for </span><span class="si">%s</span><span class="s"> (microns)</span><span class="se">\n</span><span class="s">  &#39;</span><span class="o">%</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">phasenam</span><span class="p">)</span>
+                    <span class="n">s</span> <span class="o">+=</span> <span class="s">&#39;  Parameters for histogram #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">hId</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">histogram</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">s</span> <span class="o">+=</span> <span class="s">&#39;  Crystallite size model &quot;</span><span class="si">%s</span><span class="s">&quot; for </span><span class="si">%s</span><span class="s"> (microns)</span><span class="se">\n</span><span class="s">  &#39;</span><span class="o">%</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">phasenam</span><span class="p">)</span>
+                
                 <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Size;i&#39;</span><span class="p">,</span><span class="s">&#39;Size;mx&#39;</span><span class="p">]</span>
                 <span class="k">if</span> <span class="s">&#39;uniax&#39;</span> <span class="ow">in</span> <span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
                     <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Size;i&#39;</span><span class="p">,</span><span class="s">&#39;Size;a&#39;</span><span class="p">,</span><span class="s">&#39;Size;mx&#39;</span><span class="p">]</span>
@@ -477,16 +485,22 @@
                         <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="o">-</span><span class="mf">0.009</span><span class="p">)</span>
                         <span class="n">s</span> <span class="o">+=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="n">mustrain</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">],</span><span class="n">sig</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;, &#39;</span>
                         <span class="n">i</span> <span class="o">=</span> <span class="mi">2</span>    <span class="c">#skip the aniso value                </span>
-                <span class="n">s</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">  Macrostrain for </span><span class="si">%s</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span>
-                <span class="n">txt</span> <span class="o">=</span> <span class="s">&#39;  parameters: &#39;</span>
+                <span class="n">s1</span> <span class="o">=</span> <span class="s">&#39;  </span><span class="se">\n</span><span class="s">  Macrostrain parameters: &#39;</span>
                 <span class="n">names</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">HStrainNames</span><span class="p">(</span><span class="n">SGData</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
-                    <span class="n">txt</span> <span class="o">+=</span> <span class="n">name</span><span class="o">+</span><span class="s">&#39;, &#39;</span>
-                <span class="n">s</span> <span class="o">+=</span> <span class="n">txt</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">    &#39;</span>
+                    <span class="n">s1</span> <span class="o">+=</span> <span class="n">name</span><span class="o">+</span><span class="s">&#39;, &#39;</span>
+                <span class="n">s1</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">    &#39;</span>
+                <span class="n">macrostrain</span> <span class="o">=</span> <span class="bp">False</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)):</span>
                     <span class="n">name</span> <span class="o">=</span> <span class="n">phfx</span><span class="o">+</span><span class="n">name</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                     <span class="n">sig</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="o">-</span><span class="mf">0.009</span><span class="p">)</span>
-                    <span class="n">s</span> <span class="o">+=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="n">hstrain</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">],</span><span class="n">sig</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;, &#39;</span>
+                    <span class="n">s1</span> <span class="o">+=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="n">hstrain</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">],</span><span class="n">sig</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;, &#39;</span>
+                    <span class="k">if</span> <span class="n">hstrain</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]:</span> <span class="n">macrostrain</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">if</span> <span class="n">macrostrain</span><span class="p">:</span>
+                    <span class="n">s</span> <span class="o">+=</span> <span class="n">s1</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
+                    <span class="c"># show revised lattice parameters here someday</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">s</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
             <span class="k">return</span> <span class="n">s</span>
         
         <span class="k">def</span> <span class="nf">FmtAtomType</span><span class="p">(</span><span class="n">sym</span><span class="p">):</span>
@@ -1071,6 +1085,22 @@
 
             <span class="c">#refprx = &#39;_refln.&#39; # mm</span>
             <span class="n">refprx</span> <span class="o">=</span> <span class="s">&#39;_refln_&#39;</span> <span class="c"># normal</span>
+            <span class="c"># data collection parameters for the powder dataset</span>
+            
+            <span class="n">temperature</span> <span class="o">=</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Sample Parameters&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Temperature&#39;</span><span class="p">)</span> <span class="c"># G2 uses K</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">temperature</span><span class="p">:</span>
+                <span class="n">T</span> <span class="o">=</span> <span class="s">&#39;?&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">T</span> <span class="o">=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="n">temperature</span><span class="p">,</span><span class="o">-</span><span class="mf">0.009</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span> <span class="c"># CIF uses K</span>
+            <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&#39;_diffrn_ambient_temperature&#39;</span><span class="p">,</span><span class="n">T</span><span class="p">)</span>
+
+            <span class="n">pressure</span> <span class="o">=</span> <span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Sample Parameters&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Pressure&#39;</span><span class="p">)</span> <span class="c">#G2 uses mega-Pascal</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pressure</span><span class="p">:</span>
+                <span class="n">P</span> <span class="o">=</span> <span class="s">&#39;?&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">P</span> <span class="o">=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">ValEsd</span><span class="p">(</span><span class="n">pressure</span><span class="o">*</span><span class="mi">1000</span><span class="p">,</span><span class="o">-</span><span class="mf">0.09</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span> <span class="c"># CIF uses kilopascal</span>
+            <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&#39;_diffrn_ambient_pressure&#39;</span><span class="p">,</span><span class="n">P</span><span class="p">)</span>
+
             <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s"># STRUCTURE FACTOR TABLE&#39;</span><span class="p">)</span>            
             <span class="c"># compute maximum intensity reflection</span>
             <span class="n">Imax</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1690,7 +1720,31 @@
                         <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
                         <span class="k">return</span>
                     <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
-
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">quickmode</span><span class="p">:</span>
+            <span class="c"># check if temperature values &amp; pressure are defaulted</span>
+            <span class="n">default</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;PWDR&quot;</span><span class="p">):</span> 
+                    <span class="n">key2</span> <span class="o">=</span> <span class="s">&quot;Sample Parameters&quot;</span>
+                    <span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">][</span><span class="n">key2</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Temperature&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">T</span><span class="p">:</span>
+                        <span class="n">default</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">elif</span> <span class="n">T</span> <span class="o">==</span> <span class="mi">300</span><span class="p">:</span>
+                        <span class="n">default</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">P</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">][</span><span class="n">key2</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Pressure&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">P</span><span class="p">:</span>
+                        <span class="n">default</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">elif</span> <span class="n">P</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">default</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">default</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">MessageDialog</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="p">,</span>
+                    <span class="s">&#39;Temperature/Pressure values appear to be defaulted for some powder histograms (See Sample Parameters for each PWDR tree entry). Do you want to use those values?&#39;</span><span class="p">,</span>
+                    <span class="s">&#39;Check T and P values&#39;</span><span class="p">,</span>
+                    <span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CANCEL</span><span class="p">)</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span>
+                <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span> <span class="k">return</span>
         <span class="k">if</span> <span class="n">oneblock</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">quickmode</span><span class="p">:</span>
             <span class="c"># select a dataset to use (there should only be one set in one block,</span>
             <span class="c"># but take whatever comes 1st)</span>

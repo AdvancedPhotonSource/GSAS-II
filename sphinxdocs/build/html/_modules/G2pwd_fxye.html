@@ -55,7 +55,7 @@
 <span class="c"># $Date: 2013-10-25 14:24:22 -0500 (Fri, 25 Oct 2013) $</span>
 <span class="c"># $Author: toby $</span>
 <span class="c"># $Revision: 1123 $</span>
-<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_fxye.py $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_fxye.py $</span>
 <span class="c"># $Id: G2pwd_fxye.py 1123 2013-10-25 19:24:22Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
@@ -84,7 +84,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">clockWd</span> <span class="o">=</span> <span class="bp">None</span>
 
     <span class="c"># Validate the contents -- look for a bank line</span>
-    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
+<div class="viewcode-block" id="GSAS_ReaderClass.ContentsValidator"><a class="viewcode-back" href="../imports.html#G2pwd_fxye.GSAS_ReaderClass.ContentsValidator">[docs]</a>    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
         <span class="c">#print &#39;ContentsValidator: &#39;+self.formatName</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filepointer</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">GSAS</span> <span class="o">=</span> <span class="bp">True</span>
@@ -106,8 +106,8 @@
                 <span class="k">print</span> <span class="n">line</span>
                 <span class="k">return</span> <span class="bp">False</span>
         <span class="k">return</span> <span class="bp">False</span> <span class="c"># no bank records</span>
-
-    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
+</div>
+<div class="viewcode-block" id="GSAS_ReaderClass.Reader"><a class="viewcode-back" href="../imports.html#G2pwd_fxye.GSAS_ReaderClass.Reader">[docs]</a>    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
         
         <span class="k">def</span> <span class="nf">GetFXYEdata</span><span class="p">(</span><span class="n">File</span><span class="p">,</span><span class="n">Pos</span><span class="p">,</span><span class="n">Bank</span><span class="p">):</span>
             <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">Pos</span><span class="p">)</span>
@@ -377,7 +377,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Temperature</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Gonio. radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Radius</span>
         <span class="k">return</span> <span class="bp">True</span>        
-</div>
+</div></div>
 <div class="viewcode-block" id="sfloat"><a class="viewcode-back" href="../imports.html#G2pwd_fxye.sfloat">[docs]</a><span class="k">def</span> <span class="nf">sfloat</span><span class="p">(</span><span class="n">S</span><span class="p">):</span>
     <span class="s">&#39;convert a string to a float, treating an all-blank string as zero&#39;</span>
     <span class="k">if</span> <span class="n">S</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>

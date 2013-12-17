@@ -703,7 +703,7 @@ class GSASII(wx.Frame):
                     HistName = dlg.GetValue()
                 dlg.Destroy()
             HistName = 'HKLF '+HistName
-            # make new phase names unique
+            # make new histogram names unique
             HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
             print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
             if not rd.RefDict.get('FF'):
@@ -735,8 +735,6 @@ class GSASII(wx.Frame):
         header = 'Select phase(s) to add the new\nsingle crystal dataset(s) to:'
         for Name in newHistList:
             header += '\n  '+str(Name)
-
-        notOK = True
         result = G2gd.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
         if not result: return
         # connect new phases to histograms
@@ -1174,7 +1172,7 @@ class GSASII(wx.Frame):
             lastdatafile = rd.powderentry[0]
             HistName = rd.idstring
             HistName = 'PWDR '+HistName
-            # make new phase names unique
+            # make new histogram names unique
             HistName = G2obj.MakeUniqueLabel(HistName,PWDRlist)
             print 'Read powder data '+str(HistName)+ \
                 ' from file '+str(self.lastimport) + \
@@ -1252,7 +1250,6 @@ class GSASII(wx.Frame):
         for Name in newHistList:
             header += '\n  '+str(Name)
 
-        notOK = True
         result = G2gd.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
         if not result: return
         # connect new phases to histograms
@@ -1294,6 +1291,16 @@ class GSASII(wx.Frame):
 
         Reads an instrument parameter file and then gets input from the user
         '''
+        # get a list of existing histograms
+        PWDRlist = []
+        if self.PatternTree.GetCount():
+            item, cookie = self.PatternTree.GetFirstChild(self.root)
+            while item:
+                name = self.PatternTree.GetItemText(item)
+                if name.startswith('PWDR ') and name not in PWDRlist:
+                    PWDRlist.append(name)
+                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        # Initialize a base class reader
         rd = G2IO.ImportPowderData(
             extensionlist=tuple(),
             strictExtension=False,
@@ -1308,7 +1315,7 @@ class GSASII(wx.Frame):
         lastIparmfile = ''
         lastdatafile = ''
         self.zipfile = None
-        # get instrument parameters for 
+        # get instrument parameters for it
         Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
         if 'T' in Iparm1['Type'][0]:
             print('TOF simulation not supported yet')
@@ -1365,8 +1372,10 @@ class GSASII(wx.Frame):
         Tmin = rd.powderdata[0][0]
         Tmax = rd.powderdata[0][-1]
         # data are read, now store them in the tree
-        Id = self.PatternTree.AppendItem(parent=self.root,
-                                         text='PWDR '+inp[0])
+        HistName = inp[0]
+        HistName = 'PWDR '+HistName
+        HistName = G2obj.MakeUniqueLabel(HistName,PWDRlist)  # make new histogram names unique
+        Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
         valuesdict = {
             'wtFactor':1.0,
             'Dummy':True,
@@ -1404,8 +1413,46 @@ class GSASII(wx.Frame):
             {})
         self.PatternTree.Expand(Id)
         self.PatternTree.SelectItem(Id)
-        print('Added simulation powder data '+str(rd.idstring)+ 
+        print('Added simulation powder data '+str(HistName)+ 
               ' with parameters from '+str(rd.instmsg))
+
+        # make a list of phase names
+        phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
+        phaseNameList = usedHistograms.keys() # phase names in use
+        if not phaseNameList: return # no phases yet, nothing to do
+        header = 'Select phase(s) to add the new\npowder simulation (dummy) dataset to:'
+        result = G2gd.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
+        if not result: return
+        # connect new phases to histograms
+        sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
+        if not sub:
+            raise Exception('ERROR -- why are there no phases here?')
+        item, cookie = self.PatternTree.GetFirstChild(sub)
+        iph = -1
+        while item: # loop over (new) phases
+            iph += 1
+            phaseName = self.PatternTree.GetItemText(item)
+            data = self.PatternTree.GetItemPyData(item)
+            item, cookie = self.PatternTree.GetNextChild(sub, cookie)
+            if iph not in result: continue
+            generalData = data['General']
+            SGData = generalData['SGData']
+            UseList = data['Histograms']
+            NShkl = len(G2spc.MustrainNames(SGData))
+            NDij = len(G2spc.HStrainNames(SGData))
+            UseList[HistName] = {
+                'Histogram':HistName,'Show':False,
+                'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
+                'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
+                        [1.,1.,1.,0.,0.,0.],6*[False,]],
+                'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
+                            NShkl*[0.01,],NShkl*[False,]],
+                'HStrain':[NDij*[0.0,],NDij*[False,]],                          
+                'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
+            Id = G2gd.GetPatternTreeItemId(self,self.root,HistName)
+            refList = self.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'))
+            refList[generalData['Name']] = []
         return # success
 
     def _init_Exports(self,menu):

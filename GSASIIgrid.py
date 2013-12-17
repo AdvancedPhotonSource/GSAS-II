@@ -1435,46 +1435,46 @@ def ItemSelector(ChoiceList, ParentFrame=None,
                  title='Select an item',
                  size=None, header='Item Selector',
                  useCancel=True,multiple=False):
-        ''' Provide a wx dialog to select a single item from list of choices
+    ''' Provide a wx dialog to select a single item or multiple items from list of choices
 
-        :param list ChoiceList: a list of choices where one will be selected
-        :param wx.Frame ParentFrame: Name of parent frame (default None)
-        :param str title: heading above list of choices (default 'Select an item')
-        :param wx.Size size: Size for dialog to be created (default None -- size as needed)
-        :param str header: Title to place on window frame (default 'Item Selector')
-        :param bool useCancel: If True (default) both the OK and Cancel buttons are offered
-        :param bool multiple: If True then multiple items can be selected (default False)
-
-        :returns: the selection index or None or a selection list if multiple is true
-        '''
-        if multiple:
-            if useCancel:
-                dlg = G2MultiChoiceDialog(
-                    ParentFrame,title, header, ChoiceList)
-            else:
-                dlg = G2MultiChoiceDialog(
-                    ParentFrame,title, header, ChoiceList,
-                    style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+    :param list ChoiceList: a list of choices where one will be selected
+    :param wx.Frame ParentFrame: Name of parent frame (default None)
+    :param str title: heading above list of choices (default 'Select an item')
+    :param wx.Size size: Size for dialog to be created (default None -- size as needed)
+    :param str header: Title to place on window frame (default 'Item Selector')
+    :param bool useCancel: If True (default) both the OK and Cancel buttons are offered
+    :param bool multiple: If True then multiple items can be selected (default False)
+    
+    :returns: the selection index or None or a selection list if multiple is true
+    '''
+    if multiple:
+        if useCancel:
+            dlg = G2MultiChoiceDialog(
+                ParentFrame,title, header, ChoiceList)
         else:
-            if useCancel:
-                dlg = wx.SingleChoiceDialog(
-                    ParentFrame,title, header, ChoiceList)
-            else:
-                dlg = wx.SingleChoiceDialog(
-                    ParentFrame,title, header,ChoiceList,
-                    style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
-        if size: dlg.SetSize(size)
-        if dlg.ShowModal() == wx.ID_OK:
-            if multiple:
-                dlg.Destroy()
-                return dlg.GetSelections()
-            else:
-                dlg.Destroy()
-                return dlg.GetSelection()
+            dlg = G2MultiChoiceDialog(
+                ParentFrame,title, header, ChoiceList,
+                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+    else:
+        if useCancel:
+            dlg = wx.SingleChoiceDialog(
+                ParentFrame,title, header, ChoiceList)
+        else:
+            dlg = wx.SingleChoiceDialog(
+                ParentFrame,title, header,ChoiceList,
+                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+    if size: dlg.SetSize(size)
+    if dlg.ShowModal() == wx.ID_OK:
+        if multiple:
+            dlg.Destroy()
+            return dlg.GetSelections()
         else:
             dlg.Destroy()
-            return None
+            return dlg.GetSelection()
+    else:
         dlg.Destroy()
+        return None
+    dlg.Destroy()
 
 ################################################################################
 class GridFractionEditor(wg.PyGridCellEditor):
@@ -2473,8 +2473,8 @@ class DataFrame(wx.Frame):
             help='Select new powder histograms to be used for this phase')
         self.DataEdit.Append(id=wxID_HKLFADD, kind=wx.ITEM_NORMAL,text='Add single crystal histograms',
             help='Select new single crystal histograms to be used for this phase')
-        self.DataEdit.Append(id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,text='Delete histograms',
-            help='Delete histograms from use for this phase')
+        self.DataEdit.Append(id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,text='Remove histograms',
+            help='Remove histograms from use for this phase')
         self.PostfillDataMenu()
             
         # Phase / Atoms tab

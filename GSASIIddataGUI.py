@@ -971,6 +971,8 @@ def UpdateDData(G2frame,DData,data):
             mainSizer.Add(BabSizer())
             mainSizer.Add((0,5),0)
             pass
-        #G2gd.HorizontalLine(mainSizer,DData)
+        if UseList[item]['Show']:
+            G2gd.HorizontalLine(mainSizer,DData)
+
     mainSizer.Add((5,5),0)
     G2phsGUI.SetPhaseWindow(G2frame.dataFrame,DData,mainSizer)

@@ -3263,30 +3263,54 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         UseList = data['Histograms']
         keyList = UseList.keys()
         TextList = []
-        if G2frame.PatternTree.GetCount():
-            item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-            while item:
-                name = G2frame.PatternTree.GetItemText(item)
-                if name not in keyList and 'HKLF' in name:
-                    TextList.append(name)
-                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                        
-            dlg = wx.MultiChoiceDialog(G2frame, 'Which new data to use?', 'Use data', TextList, wx.CHOICEDLG_STYLE)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetSelections()
-                    for i in result:
-                        histoName = TextList[i]
-                        UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-                            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-                            'Extinction':['Lorentzian','None',
-                            {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]},]}                        
-                        wx.BeginBusyCursor()
-                        UpdateHKLFdata(histoName)
-                        wx.EndBusyCursor()
-                    data['Histograms'] = UseList
-                    wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
-            finally:
-                dlg.Destroy()
+        if not G2frame.PatternTree.GetCount():
+            return
+        
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        while item:
+            name = G2frame.PatternTree.GetItemText(item)
+            if name not in keyList and 'HKLF' in name:
+                TextList.append(name)
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                        
+        dlg = wx.MultiChoiceDialog(G2frame, 'Which new data to use?', 'Use data', TextList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+            else:
+                return
+        finally:
+            dlg.Destroy()
+
+        # get the histograms used in other phases
+        phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
+        usedHKLFhists = [] # used single-crystal histograms
+        for p in usedHistograms:
+            for h in usedHistograms[p]:
+                if h.startswith('HKLF ') and h not in usedHKLFhists:
+                    usedHKLFhists.append(h)
+        # check that selected single crystal histograms are not already in use!
+        for i in result:
+            used = [TextList[i] for i in result if TextList[i] in usedHKLFhists]
+            if used:
+                msg = 'The following single crystal histogram(s) are already in use'
+                for i in used:
+                    msg += '\n  '+str(i)
+                msg += '\nAre you sure you want to add them to this phase? '
+                msg += 'Associating a single crystal dataset to >1 histogram is usually an error, '
+                msg += 'so No is suggested here.'
+                if G2frame.ErrorDialog('Likely error',msg,G2frame,wtype=wx.YES_NO) != wx.ID_YES: return
+
+        wx.BeginBusyCursor()
+        for i in result:
+            histoName = TextList[i]
+            UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
+                                  'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
+                                  'Extinction':['Lorentzian','None',
+                                                {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]},]}                        
+            UpdateHKLFdata(histoName)
+            data['Histograms'] = UseList
+        wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
+        wx.EndBusyCursor()
                 
     def UpdateHKLFdata(histoName):
         generalData = data['General']
@@ -3299,7 +3323,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             H = list(ref[:3])
             ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
             iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
-        G2frame.PatternTree.SetItemPyData(Id,[refDict,reflData])
+        #G2frame.PatternTree.SetItemPyData(Id,[refDict,reflData]) #removed by BHT -- not needed!
         
     def OnPwdrAdd(event):
         generalData = data['General']
@@ -3325,7 +3349,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     if 'All PWDR' in newList:
                         newList = TextList[1:]
                     for histoName in newList:
-                        pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
+                        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
                         UseList[histoName] = {'Histogram':histoName,'Show':False,
                             'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
@@ -3334,7 +3358,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                 NShkl*[0.01,],NShkl*[False,]],
                             'HStrain':[NDij*[0.0,],NDij*[False,]],                          
                             'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
-                        refList = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,pId,'Reflection Lists'))
+                        refList = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Reflection Lists'))
                         refList[generalData['Name']] = []                       
                     data['Histograms'] = UseList
                     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)

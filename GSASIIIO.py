@@ -1293,6 +1293,13 @@ class ImportBaseclass(object):
         self.repeatcount = 0
         #print 'created',self.__class__
 
+    def ReInitialize(self):
+        'Reinitialize the Reader to initital settings'
+        self.errors = ''
+        self.warnings = ''
+        self.repeat = False
+        self.repeatcount = 0
+
     def BlockSelector(self, ChoiceList, ParentFrame=None,
                       title='Select a block',
                       size=None, header='Block Selector',
@@ -1493,6 +1500,13 @@ class ImportStructFactor(ImportBaseclass):
         contains the form factor values for each element type; if this entry
         is left as initialized (an empty list) it will be initialized as needed later. 
         '''
+    def ReInitialize(self):
+        'Reinitialize the Reader to initital settings'
+        ImportBaseclass.ReInitialize(self)
+        self.InitParameters()
+        self.InitControls()
+        self.RefDict = {'RefList':[],'FF':[]}
+
         
     def InitControls(self):
         'initialize the controls structure'

@@ -114,6 +114,7 @@ numbers.
 
 *support routines*
 _________________________
+
 Note that the base class (:class:`GSASIIIO.ImportBaseclass`) supplies two routines, 
 :meth:`~GSASIIIO.ImportBaseclass.BlockSelector` and 
 :meth:`~GSASIIIO.ImportBaseclass.MultipleBlockSelector` that are useful for 
@@ -144,6 +145,17 @@ This routine is passed a single argument:
 
 Note that :meth:`GSASIIIO.ImportBaseclass.CIFValidator` is a ContentsValidator
 for validating CIF files. 
+
+
+ReInitialize()
+~~~~~~~~~~~~~~~~~~~~
+
+Import classes are substantiated only once and are used as needed.
+This means that if something needs to be initialized before the
+``Reader()`` will be called to read a new file, it must be coded. The
+``ReInitialize()`` method is provided for this and it is always called
+before the ``ContentsValidator`` method is called. Use care to call
+the parent class ``ReInitialize()`` method, if this is overridden. 
 
 
 ContentsValidator return values

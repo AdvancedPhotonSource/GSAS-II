@@ -778,7 +778,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     taz = ma.compressed(ma.array(taz.flatten(),mask=tam))
     tad = ma.compressed(ma.array(tad.flatten(),mask=tam))
-    return tax,tay,taz*tad
+    return tax,tay,taz,tad
     
 def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     'Needs a doc string'
@@ -815,14 +815,14 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
             if dlg:
                 dlg.Update(Nup)
             Block = image[iBeg:iFin,jBeg:jFin]
-            tax,tay,taz = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
+            tax,tay,taz,tad = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
             Nup += 1
             if dlg:
                 dlg.Update(Nup)
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
-                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
+                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz*tad,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
             Nup += 1
             if dlg:
                 dlg.Update(Nup)

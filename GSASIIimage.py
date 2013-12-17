@@ -372,24 +372,26 @@ def GetTthAzmDsp(x,y,data):
     cent = data['center']
     tilt = data['tilt']
     dist = data['distance']/cosd(tilt)
+    x0 = data['distance']*tand(tilt)
     phi = data['rotation']
     dep = data['DetDepth']
     LRazim = data['LRazimuth']
     azmthoff = data['azmthOff']
     dx = np.array(x-cent[0],dtype=np.float32)
     dy = np.array(y-cent[1],dtype=np.float32)
+    D = ((dx-x0)**2+dy**2+data['distance']**2)      #sample to pixel distance
     X = np.array(([dx,dy,np.zeros_like(dx)]),dtype=np.float32).T
     X = np.dot(X,makeMat(phi,2))
     Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
-    dxy = peneCorr(tth,dep)
+    dxy = peneCorr(tth,dep)     #depth corr not correct for tilted detector
     DX = dist-Z+dxy
     DY = np.sqrt(dx**2+dy**2-Z**2)
-    D = (DX**2+DY**2)/data['distance']**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    tth = npatan2d(DY,DX) #depth corr not correct for tilted detector
+    tth = npatan2d(DY,DX) 
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dy,dx)+azmthoff+720.)%360.
-    return tth,azm,D,dsp
+    G = D/data['distance']**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+    return tth,azm,G,dsp
     
 def GetTth(x,y,data):
     'Give 2-theta value for detector x,y position; calibration info in data'
@@ -753,7 +755,7 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     for X,Y,diam in spots:
         tamp = ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2))
         tam = ma.mask_or(tam,tamp)
-    TA = np.array(GetTthAzmD(tax,tay,data))     #includes geom. corr.
+    TA = np.array(GetTthAzmD(tax,tay,data))     #includes geom. corr. as dist**2/d0**2
     TA[1] = np.where(TA[1]<0,TA[1]+360,TA[1])
     return np.array(TA),tam           #2-theta, azimuth & geom. corr. arrays & position mask
 
@@ -763,7 +765,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     rings = masks['Rings']
     arcs = masks['Arcs']
     TA = np.dstack((ma.getdata(TA[1]),ma.getdata(TA[0]),ma.getdata(TA[2])))    #azimuth, 2-theta, dist
-    tax,tay,tad = np.dsplit(TA,3)    #azimuth, 2-theta, dist
+    tax,tay,tad = np.dsplit(TA,3)    #azimuth, 2-theta, dist**2/d0**2
     for tth,thick in rings:
         tam = ma.mask_or(tam.flatten(),ma.getmask(ma.masked_inside(tay.flatten(),max(0.01,tth-thick/2.),tth+thick/2.)))
     for tth,azm,thick in arcs:
@@ -776,7 +778,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     taz = ma.compressed(ma.array(taz.flatten(),mask=tam))
     tad = ma.compressed(ma.array(tad.flatten(),mask=tam))
-    return tax,tay,taz      #*tad**2 wrong - why?
+    return tax,tay,taz*tad
     
 def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     'Needs a doc string'

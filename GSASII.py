@@ -2140,7 +2140,8 @@ class GSASII(wx.Frame):
             item, cookie = self.PatternTree.GetFirstChild(self.root)
             while item:
                 name = self.PatternTree.GetItemText(item)
-                if name not in ['Notebook','Controls','Covariance','Constraints','Restraints','Phases']:
+                if name not in ['Notebook','Controls','Covariance','Constraints',
+                    'Restraints','Phases','Rigid bodies']:
                     if 'PWDR' in name: ifPWDR = True
                     if 'IMG' in name: ifIMG = True
                     if 'HKLF' in name: ifHKLF = True

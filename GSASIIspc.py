@@ -251,15 +251,20 @@ def AllOps(SGData):
     
 def MT2text(M,T):
     "From space group matrix/translation operator returns text version"
-    XYZ = ('-Z ','-Y ','-X ','X-Y','ERR','Y-X',' X ',' Y ',' Z ','+X ','+Y ','+Z ')
+    XYZ = ('-Z','-Y','-X','X-Y','ERR','Y-X','X','Y','Z')
     TRA = ('   ','ERR','1/6','1/4','1/3','ERR','1/2','ERR','2/3','3/4','5/6','ERR')
     Fld = ''
     for j in range(3):
         IJ = int(round(2*M[j][0]+3*M[j][1]+4*M[j][2]+4))%12
         IK = int(round(T[j]*12))%12
-        if IK > 0 and IJ > 4: IJ += 3
-        Fld += TRA[IK]+XYZ[IJ]
-        if j != 2: Fld += ','
+        if IK:
+            if IJ < 3:
+                Fld += TRA[IK]+XYZ[IJ]
+            else:
+                Fld += TRA[IK]+'+'+XYZ[IJ]
+        else:
+            Fld += XYZ[IJ]
+        if j != 2: Fld += ', '
     return Fld
     
 def Latt2text(Latt):

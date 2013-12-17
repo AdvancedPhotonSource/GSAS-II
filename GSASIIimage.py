@@ -367,7 +367,7 @@ def GetDetXYfromThAzm(Th,Azm,data):
     return GetDetectorXY(dsp,azm,data)
                     
 def GetTthAzmDsp(x,y,data):
-    'Needs a doc string - checked OK for ellipses dont know about hyperbola'
+    'Needs a doc string - checked OK for ellipses & hyperbola'
     wave = data['wavelength']
     cent = data['center']
     tilt = data['tilt']
@@ -385,7 +385,7 @@ def GetTthAzmDsp(x,y,data):
     dxy = peneCorr(tth,dep)
     DX = dist-Z+dxy
     DY = np.sqrt(dx**2+dy**2-Z**2)
-    D = (DX**2+DY**2)/dist**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+    D = (DX**2+DY**2)/data['distance']**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
     tth = npatan2d(DY,DX) #depth corr not correct for tilted detector
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dy,dx)+azmthoff+720.)%360.

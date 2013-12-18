@@ -97,28 +97,32 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
     :param float Phi: flat plate tilt angle - future
     :param float Psi: flat plate tilt axis - future
     '''
+    
+    def muRunder3(Sth2):
+        T0 = 16.0/(3.*np.pi)
+        T1 = (25.99978-0.01911*Sth2**0.25)*np.exp(-0.024551*Sth2)+ \
+            0.109561*np.sqrt(Sth2)-26.04556
+        T2 = -0.02489-0.39499*Sth2+1.219077*Sth2**1.5- \
+            1.31268*Sth2**2+0.871081*Sth2**2.5-0.2327*Sth2**3
+        T3 = 0.003045+0.018167*Sth2-0.03305*Sth2**2
+        Trns = -T0*MuR-T1*MuR**2-T2*MuR**3-T3*MuR**4
+        return np.exp(Trns)
+    
+    def muRover3(Sth2):
+        T1 = 1.433902+11.07504*Sth2-8.77629*Sth2*Sth2+ \
+            10.02088*Sth2**3-3.36778*Sth2**4
+        T2 = (0.013869-0.01249*Sth2)*np.exp(3.27094*Sth2)+ \
+            (0.337894+13.77317*Sth2)/(1.0+11.53544*Sth2)**1.555039
+        T3 = 1.933433/(1.0+23.12967*Sth2)**1.686715- \
+            0.13576*np.sqrt(Sth2)+1.163198
+        T4 = 0.044365-0.04259/(1.0+0.41051*Sth2)**148.4202
+        Trns = (T1-T4)/(1.0+T2*(MuR-3.0))**T3+T4
+        return Trns/100.
+        
     Sth2 = npsind(Tth/2.0)**2
     Cth2 = 1.-Sth2
     if 'Cylinder' in Geometry:      #Lobanov & Alte da Veiga for 2-theta = 0; beam fully illuminates sample
-        if MuR < 3.0:
-            T0 = 16.0/(3*np.pi)
-            T1 = (25.99978-0.01911*Sth2**0.25)*np.exp(-0.024551*Sth2)+ \
-                0.109561*np.sqrt(Sth2)-26.04556
-            T2 = -0.02489-0.39499*Sth2+1.219077*Sth2**1.5- \
-                1.31268*Sth2**2+0.871081*Sth2**2.5-0.2327*Sth2**3
-            T3 = 0.003045+0.018167*Sth2-0.03305*Sth2**2
-            Trns = -T0*MuR-T1*MuR**2-T2*MuR**3-T3*MuR**4
-            return np.exp(Trns)
-        else:
-            T1 = 1.433902+11.07504*Sth2-8.77629*Sth2*Sth2+ \
-                10.02088*Sth2**3-3.36778*Sth2**4
-            T2 = (0.013869-0.01249*Sth2)*np.exp(3.27094*Sth2)+ \
-                (0.337894+13.77317*Sth2)/(1.0+11.53544*Sth2)**1.555039
-            T3 = 1.933433/(1.0+23.12967*Sth2)**1.686715- \
-                0.13576*np.sqrt(Sth2)+1.163198
-            T4 = 0.044365-0.04259/(1.0+0.41051*Sth2)**148.4202
-            Trns = (T1-T4)/(1.0+T2*(MuR-3.0))**T3+T4
-            return Trns/100.
+        return np.where(MuR <3.0,muRunder3(Sth2),muRover3(Sth2))
     elif 'Bragg' in Geometry:
         return 1.0
     elif 'Fixed' in Geometry: #assumes sample plane is perpendicular to incident beam

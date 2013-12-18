@@ -773,12 +773,14 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
         tama = ma.getmask(ma.masked_inside(tax.flatten(),azm[0],azm[1]))
         tam = ma.mask_or(tam.flatten(),tamt*tama)
     taz = ma.masked_outside(image.flatten(),int(Zlim[0]),Zlim[1])
+    tabs = np.ones_like(taz)
     tam = ma.mask_or(tam.flatten(),ma.getmask(taz))
     tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
     tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
     taz = ma.compressed(ma.array(taz.flatten(),mask=tam))
     tad = ma.compressed(ma.array(tad.flatten(),mask=tam))
-    return tax,tay,taz,tad
+    tabs = ma.compressed(ma.array(tabs.flatten(),mask=tam))
+    return tax,tay,taz,tad,tabs
     
 def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     'Needs a doc string'
@@ -815,14 +817,17 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
             if dlg:
                 dlg.Update(Nup)
             Block = image[iBeg:iFin,jBeg:jFin]
-            tax,tay,taz,tad = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
+            tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
             Nup += 1
             if dlg:
                 dlg.Update(Nup)
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
+            if data['SampleAbs'][1]:
+                muR = data['SampleAbs'][0]*(1.+npsind(tax)**2/2.)/(npcosd(tay))
+                tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
-                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz*tad,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
+                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz*tad*tabs,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
             Nup += 1
             if dlg:
                 dlg.Update(Nup)

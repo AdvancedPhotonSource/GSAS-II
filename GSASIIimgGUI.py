@@ -50,6 +50,9 @@ def UpdateImageControls(G2frame,data,masks):
     if 'DetDepth' not in data:
         data['DetDepth'] = 0.
         data['DetDepthRef'] = False
+    if 'SampleAbs' not in data:
+        data['SampleShape'] = 'Cylinder'
+        data['SampleAbs'] = [0.0,False]
 #end patch
 
     
@@ -512,6 +515,23 @@ def UpdateImageControls(G2frame,data,masks):
                 pass
             obliqVal.SetValue('%.3f'%(data['Oblique'][0]))
                            
+        def OnSamAbs(event):
+            if data['SampleAbs'][1]:
+                data['SampleAbs'][1] = False
+            else:
+                data['SampleAbs'][1] = True
+                
+        def OnSamAbsVal(event):
+            try:
+                value = float(samabsVal.GetValue())
+                if 0.00 <= value <= 2.00:
+                    data['SampleAbs'][0] = value
+                else:
+                    raise ValueError
+            except ValueError:
+                pass
+            samabsVal.SetValue('%.3f'%(data['SampleAbs'][0]))
+                           
         def OnShowLines(event):
             if data['showLines']:
                 data['showLines'] = False
@@ -613,6 +633,18 @@ def UpdateImageControls(G2frame,data,masks):
         outAzim.Bind(wx.EVT_TEXT_ENTER,OnNumOutAzms)
         outAzim.Bind(wx.EVT_KILL_FOCUS,OnNumOutAzms)
         littleSizer.Add(outAzim,0,wx.ALIGN_CENTER_VERTICAL)
+        dataSizer.Add(littleSizer,0,)
+        littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+        samabs = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply sample absorption?')
+        dataSizer.Add(samabs,0,wx.ALIGN_CENTER_VERTICAL)
+        samabs.Bind(wx.EVT_CHECKBOX, OnSamAbs)
+        samabs.SetValue(data['SampleAbs'][1])
+        littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='mu/R (0.00-2.0) '),0,
+            wx.ALIGN_CENTER_VERTICAL)
+        samabsVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['SampleAbs'][0]),style=wx.TE_PROCESS_ENTER)
+        samabsVal.Bind(wx.EVT_TEXT_ENTER,OnSamAbsVal)
+        samabsVal.Bind(wx.EVT_KILL_FOCUS,OnSamAbsVal)
+        littleSizer.Add(samabsVal,0,wx.ALIGN_CENTER_VERTICAL)
         dataSizer.Add(littleSizer,0,)
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         oblique = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply detector absorption?')

@@ -90,7 +90,11 @@ def Transmission(Geometry,Abs,Diam):
         return 0.0
         
 def SurfaceRough(SRA,SRB,Tth):
-    ''' Suortti surface roughness correction
+    ''' Suortti (J. Appl. Cryst, 5,325-331, 1972) surface roughness correction
+    :param float SRA: Suortti surface roughness parameter
+    :param float SRB: Suortti surface roughness parameter
+    :param float Tth: 2-theta(deg) - can be numpy array
+    
     '''
     sth = npsind(Tth/2.)
     T1 = np.exp(-SRB/sth)
@@ -99,6 +103,10 @@ def SurfaceRough(SRA,SRB,Tth):
     
 def SurfaceRoughDerv(SRA,SRB,Tth):
     ''' Suortti surface roughness correction derivatives
+    :param float SRA: Suortti surface roughness parameter (dimensionless)
+    :param float SRB: Suortti surface roughness parameter (dimensionless)
+    :param float Tth: 2-theta(deg) - can be numpy array
+    :return list: [dydSRA,dydSRB] derivatives to be used for intensity derivative
     '''
     sth = npsind(Tth/2.)
     T1 = np.exp(-SRB/sth)

@@ -544,7 +544,6 @@ class GSASII(wx.Frame):
             self.PatternTree.Expand(self.root) # make sure phases are seen
             self.PatternTree.Expand(sub) 
             self.PatternTree.Expand(psub)
-            self.PatternTree.UnselectAll()
             self.PatternTree.SelectItem(psub) # show the page to complete the initialization (yuk!)
             wx.Yield() # make sure call of GSASII.OnPatternTreeSelChanged happens before we go on
 

@@ -174,6 +174,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       If the value is not None, it must have a base
       type of int, float, str or unicode; the TextCrtl will be initialized
       from this value.
+      
+    :param list [nDig,nPlc]: number of digits & places after decimal to use
+      for display of float (default=[10,2])
 
     :param bool notBlank: if True (default) blank values are invalid
       for str inputs.
@@ -222,12 +225,13 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       wx.TextCtrl widget such as Size or Style may be specified.
 
     '''
-    def __init__(self,parent,loc,key,notBlank=True,min=None,max=None,
+    def __init__(self,parent,loc,key,nDig=[10,2],notBlank=True,min=None,max=None,
                  OKcontrol=None,OnLeave=None,typeHint=None,
                  CIFinput=False, **kw):
         # save passed values needed outside __init__
         self.result = loc
         self.key = key
+        self.nDig = nDig
         self.OKcontrol=OKcontrol
         self.OnLeave = OnLeave
         self.CIFinput = CIFinput
@@ -313,7 +317,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                     pass
                 else:
                     self.invalid = True
-            wx.TextCtrl.SetValue(self,str(G2py3.FormatValue(val)))
+            wx.TextCtrl.SetValue(self,str(G2py3.FormatValue(val,self.nDig)))
         else:
             wx.TextCtrl.SetValue(self,str(val))
             self.ShowStringValidity() # test if valid input

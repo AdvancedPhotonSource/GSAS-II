@@ -1316,22 +1316,22 @@ def UpdateSampleGrid(G2frame,data):
 #patch end
     
     parms = []
-    parms.append(['Scale','Histogram scale factor: '])
-    parms.append(['Gonio. radius','Goniometer radius (mm): '])
+    parms.append(['Scale','Histogram scale factor: ',[10,4]])
+    parms.append(['Gonio. radius','Goniometer radius (mm): ',[10,3]])
     if data['Type'] == 'Debye-Scherrer':
-        parms += [['DisplaceX',u'Sample X displ. perp. to beam (\xb5m): '],
-            ['DisplaceY',u'Sample Y displ. || to beam (\xb5m): '],
-            ['Absorption',u'Sample absorption (\xb5\xb7r): '],]
+        parms += [['DisplaceX',u'Sample X displ. perp. to beam (\xb5m): ',[10,3]],
+            ['DisplaceY',u'Sample Y displ. || to beam (\xb5m): ',[10,3]],
+            ['Absorption',u'Sample absorption (\xb5\xb7r): ',[10,4]],]
     elif data['Type'] == 'Bragg-Brentano':
-        parms += [['Shift',u'Sample displacement(\xb5m): '],
-            ['Transparency',u'Sample transparency(1/\xb5eff, cm): '],
-            ['SurfRoughA','Surface roughness A: '],
-            ['SurfRoughB','Surface roughness B: '],]
-    parms.append(['Omega','Goniometer omega:',])
-    parms.append(['Chi','Goniometer chi:',])
-    parms.append(['Phi','Goniometer phi:',])
-    parms.append(['Temperature','Sample temperature (K): ',])
-    parms.append(['Pressure','Sample pressure (MPa): ',])
+        parms += [['Shift',u'Sample displacement(\xb5m): ',[10,4]],
+            ['Transparency',u'Sample transparency(1/\xb5eff, cm): ',[10,3]],
+            ['SurfRoughA','Surface roughness A: ',[10,4]],
+            ['SurfRoughB','Surface roughness B: ',[10,4]]]
+    parms.append(['Omega','Goniometer omega:',[10,3]])
+    parms.append(['Chi','Goniometer chi:',[10,3]])
+    parms.append(['Phi','Goniometer phi:',[10,3]])
+    parms.append(['Temperature','Sample temperature (K): ',[10,3]])
+    parms.append(['Pressure','Sample pressure (MPa): ',[10,3]])
                 
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1362,11 +1362,11 @@ def UpdateSampleGrid(G2frame,data):
     mainSizer.Add((5,5),0)
 
     parmSizer = wx.FlexGridSizer(10,2,5,0)
-    for key,lbl in parms:
+    for key,lbl,nDig in parms:
         if 'list' in str(type(data[key])):
             parmRef = G2gd.G2CheckBox(G2frame.dataDisplay,' '+lbl,data[key],1)
             parmSizer.Add(parmRef,0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-            parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data[key],0,typeHint=float)
+            parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data[key],0,nDig=nDig,typeHint=float)
         else:
             parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' '+lbl),
                 0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)

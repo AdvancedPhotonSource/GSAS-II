@@ -1024,14 +1024,14 @@ def GetAbsorb(refl,hfx,calcControls,parmDict):
     if 'Debye' in calcControls[hfx+'instType']:
         return G2pwd.Absorb('Cylinder',parmDict[hfx+'Absorption'],refl[5],0,0)
     else:
-        return 1.0
+        return G2pwd.SurfaceRough(parmDict[hfx+'SurfRoughA'],parmDict[hfx+'SurfRoughB'],refl[5])
     
 def GetAbsorbDerv(refl,hfx,calcControls,parmDict):
     'Needs a doc string'
     if 'Debye' in calcControls[hfx+'instType']:
         return G2pwd.AbsorbDerv('Cylinder',parmDict[hfx+'Absorption'],refl[5],0,0)
     else:
-        return 0.0
+        return G2pwd.SurfaceRoughDerv(parmDict[hfx+'SurfRoughA'],parmDict[hfx+'SurfRoughB'],refl[5])
     
 def GetIntensityCorr(refl,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     'Needs a doc string'
@@ -1581,7 +1581,12 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'SH/L':[1.0,'shl'],
                     hfx+'I(L2)/I(L1)':[1.0,'L1/L2'],hfx+'Zero':[dpdZ,'pos'],hfx+'Lam':[dpdw,'pos'],
                     hfx+'Shift':[dpdSh,'pos'],hfx+'Transparency':[dpdTr,'pos'],hfx+'DisplaceX':[dpdX,'pos'],
-                    hfx+'DisplaceY':[dpdY,'pos'],hfx+'Absorption':[dFdAb,'int'],}
+                    hfx+'DisplaceY':[dpdY,'pos'],}
+                if 'Bragg' in calcControls[hfx+'instType']:
+                    names.update({hfx+'SurfRoughA':[dFdAb[0],'int'],
+                        hfx+'SurfRoughB':[dFdAb[1],'int'],})
+                else:
+                    names.update({hfx+'Absorption':[dFdAb,'int'],})
                 for name in names:
                     item = names[name]
                     if name in varylist:

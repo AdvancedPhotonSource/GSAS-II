@@ -2221,7 +2221,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             hfx+'Chi':Sample['Chi'],hfx+'Phi':Sample['Phi']}
         Type = Sample['Type']
         if 'Bragg' in Type:             #Bragg-Brentano
-            for item in ['Scale','Shift','Transparency']:       #surface roughness?, diffuse scattering?
+            for item in ['Scale','Shift','Transparency','SurfRoughA','SurfRoughB']:
                 sampDict[hfx+item] = Sample[item][0]
                 if Sample[item][1]:
                     sampVary.append(hfx+item)
@@ -2294,7 +2294,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         ptstr =  ' value :'
         varstr = ' refine:'
         if 'Bragg' in Sample['Type']:
-            for item in ['Scale','Shift','Transparency']:
+            for item in ['Scale','Shift','Transparency','SurfRoughA','SurfRoughB']:
                 ptlbls += '%14s'%(item)
                 ptstr += '%14.4f'%(Sample[item][0])
                 varstr += '%14s'%(str(bool(Sample[item][1])))
@@ -2419,8 +2419,8 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
         
     def SetSampleParms(pfx,Sample,parmDict,sigDict):
         if 'Bragg' in Sample['Type']:             #Bragg-Brentano
-            sampSig = [0 for i in range(3)]
-            for i,item in enumerate(['Scale','Shift','Transparency']):       #surface roughness?, diffuse scattering?
+            sampSig = [0 for i in range(5)]
+            for i,item in enumerate(['Scale','Shift','Transparency','SurfRoughA','SurfRoughB']):
                 Sample[item][0] = parmDict[pfx+item]
                 if pfx+item in sigDict:
                     sampSig[i] = sigDict[pfx+item]
@@ -2513,7 +2513,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
         sigstr = ' sig   :'
         refine = False
         if 'Bragg' in Sample['Type']:
-            for i,item in enumerate(['Scale','Shift','Transparency']):
+            for i,item in enumerate(['Scale','Shift','Transparency','SurfRoughA','SurfRoughB']):
                 ptlbls += '%14s'%(item)
                 ptstr += '%14.4f'%(Sample[item][0])
                 if sampleSig[i]:

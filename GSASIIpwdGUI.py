@@ -1099,7 +1099,7 @@ def UpdateSampleGrid(G2frame,data):
             if 'Debye' in dataType:
                 copyNames += ['DisplaceX','DisplaceY','Absorption']
             else:       #Bragg-Brentano
-                copyNames += ['Shift','Transparency']
+                copyNames += ['Shift','Transparency','SurfRoughA','SurfRoughB']
         if len(addNames):
          copyNames += addNames
         return histType,copyNames
@@ -1310,6 +1310,9 @@ def UpdateSampleGrid(G2frame,data):
         data['FreePrm2'] = 0.
     if 'FreePrm3' not in data:
         data['FreePrm3'] = 0.
+    if 'SurfRoughA' not in data:
+        data['SurfRoughA'] = [0.,False]
+        data['SurfRoughB'] = [0.,False]
 #patch end
     
     parms = []
@@ -1321,7 +1324,9 @@ def UpdateSampleGrid(G2frame,data):
             ['Absorption',u'Sample absorption (\xb5\xb7r): '],]
     elif data['Type'] == 'Bragg-Brentano':
         parms += [['Shift',u'Sample displacement(\xb5m): '],
-            ['Transparency',u'Sample transparency(1/\xb5eff, cm): '],]
+            ['Transparency',u'Sample transparency(1/\xb5eff, cm): '],
+            ['SurfRoughA','Surface roughness A: '],
+            ['SurfRoughB','Surface roughness B: '],]
     parms.append(['Omega','Goniometer omega:',])
     parms.append(['Chi','Goniometer chi:',])
     parms.append(['Phi','Goniometer phi:',])

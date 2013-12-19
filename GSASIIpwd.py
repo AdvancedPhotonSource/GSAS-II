@@ -88,6 +88,25 @@ def Transmission(Geometry,Abs,Diam):
         return math.exp(-MuR)
     elif 'Bragg' in Geometry:
         return 0.0
+        
+def SurfaceRough(SRA,SRB,Tth):
+    ''' Suortti surface roughness correction
+    '''
+    sth = npsind(Tth/2.)
+    T1 = np.exp(-SRB/sth)
+    T2 = SRA+(1.-SRA)*np.exp(-SRB)
+    return (SRA+(1.-SRA)*T1)/T2
+    
+def SurfaceRoughDerv(SRA,SRB,Tth):
+    ''' Suortti surface roughness correction derivatives
+    '''
+    sth = npsind(Tth/2.)
+    T1 = np.exp(-SRB/sth)
+    T2 = SRA+(1.-SRA)*np.exp(-SRB)
+    Trans = (SRA+(1.-SRA)*T1)/T2
+    dydSRA = ((1.-T1)*T2-(1.-np.exp(-SRB))*Trans)/T2**2
+    dydSRB = ((SRA-1.)*T1*T2/sth-Trans*(SRA-T2))/T2**2
+    return [dydSRA,dydSRB]
 
 def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
     '''Calculate sample absorption

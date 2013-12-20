@@ -64,9 +64,10 @@ def pointInPolygon(pXY,xy):
         p1x,p1y = p2x,p2y
     return Inside
     
-def peneCorr(tth,dep):
+def peneCorr(tth,dep,tilt=0.,azm=0.):
     'Needs a doc string'
-    return dep*(1.-npcosd(tth))         #best one
+    return dep*(1.-npcosd(abs(tilt*npsind(azm))-tth*npcosd(azm)))
+#    return dep*(1.-npcosd(tth))         #best one
 #    return dep*npsind(tth)             #not as good as 1-cos2Q
         
 def makeMat(Angle,Axis):
@@ -162,7 +163,8 @@ def FitDetector(rings,varyList,parmDict,Print=True):
             wave = B[-1]
         phi = chi-90.               #get rotation of major axis from tilt axis
         tth = 2.0*npasind(wave/(2.*dsp))
-        dxy = peneCorr(tth,dep)
+        phi0 = npatan2d(y-y0,x-x0)
+        dxy = peneCorr(tth,dep,tilt,phi0)
         ttth = nptand(tth)
         stth = npsind(tth)
         cosb = npcosd(tilt)
@@ -179,7 +181,6 @@ def FitDetector(rings,varyList,parmDict,Print=True):
         R1 = (vplus+vminus)/2.                                    #major axis
         zdis = (fplus-fminus)/2.
         Robs = np.sqrt((x-x0)**2+(y-y0)**2)
-        phi0 = npatan2d(y-y0,x-x0)
         rsqplus = R0**2+R1**2
         rsqminus = R0**2-R1**2
         R = rsqminus*npcosd(2.*phi0-2.*phi)+rsqplus
@@ -312,7 +313,7 @@ def GetEllipse(dsp,data):
     phi = data['rotation']
     dep = data['DetDepth']
     tth = 2.0*asind(data['wavelength']/(2.*dsp))
-    dxy = peneCorr(tth,dep)
+    dxy = peneCorr(tth,dep,tilt)
     dist = data['distance']
     return GetEllipse2(tth,dxy,dist,cent,tilt,phi)
         
@@ -384,7 +385,7 @@ def GetTthAzmDsp(x,y,data):
     X = np.dot(X,makeMat(phi,2))
     Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
-    dxy = peneCorr(tth,dep)     #depth corr not correct for tilted detector
+    dxy = peneCorr(tth,dep,tilt,npatan2d(dy,dx))
     DX = dist-Z+dxy
     DY = np.sqrt(dx**2+dy**2-Z**2)
     tth = npatan2d(DY,DX) 

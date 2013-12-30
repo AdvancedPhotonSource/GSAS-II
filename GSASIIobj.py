@@ -456,6 +456,9 @@ a key of ``Data``, as outlined below.
 ======================  ===============  ====================================================
   key                      sub-key        explanation
 ======================  ===============  ====================================================
+Comments                      \           Text strings extracted from the original powder 
+                                          data header. These cannot be changed by the user; 
+                                          it may be empty.
 Limits                       \            A list of two two element lists, as [[Ld,Hd],[L,H]]
                                           where L and Ld are the current and default lowest
                                           two-theta value to be used and 
@@ -517,7 +520,12 @@ Sample Parameters             \           Specifies a dict with parameters that 
 \                         Scale           The histogram scale factor (refinable) 
 \                         Absorption      The sample absorption coefficient as
                                           :math:`\\mu r` where r is the radius
-                                          (refinable).
+                                          (refinable). Only valid for Debye-Scherrer geometry.
+\                         SurfaceRoughA   Surface roughness parameter A as defined by
+                                          Surotti,J. Appl. Cryst, 5,325-331, 1972.(refinable - 
+                                          only valid for Bragg-Brentano geometry)                                         
+\                         SurfaceRoughB   Surface roughness parameter B (refinable - 
+                                          only valid for Bragg-Brentano geometry)                                          
 \                         DisplaceX,      Sample displacement from goniometer center
                           DisplaceY       where Y is along the beam direction and
                                           X is perpendicular. Units are :math:`\\mu m`
@@ -675,6 +683,129 @@ The columns in that array are documented below.
              gives Iobs or Icalc
 ==========  ====================================================
 
+Image Data Structure
+--------------------
+
+.. _Image_table:
+
+.. index::
+   image: Image data object description
+   image: Image object descriptions
+   
+Every 2-dimensional image is stored in the GSAS-II data tree
+with a top-level entry named beginning with the string "IMG ". The
+image data are directly associated with that tree item and there 
+are a series of children to that item. The routines :func:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`
+and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will
+load this information into a dictionary where the child tree name is
+used as a key, and the information in the main entry is assigned
+a key of ``Data``, as outlined below.
+
+.. tabularcolumns:: |l|l|p{4in}|
+
+======================  ======================  ====================================================
+  key                      sub-key              explanation
+======================  ======================  ====================================================
+Comments                       \                Text strings extracted from the original image data 
+                                                header or a metafile. These cannot be changed by  
+                                                the user; it may be empty.                                                
+Image Controls              azmthOff            (float) The offset to be applied to an azimuthal 
+                                                value. Accomodates 
+                                                detector orientations other than with the detector 
+                                                X-axis
+                                                horizontal.
+\                           background image    (list:str,float) The name of a tree item ("IMG ...") that is to be subtracted
+                                                during image integration multiplied by value. It must have the same size/shape as 
+                                                the integrated image. NB: value < 0 for subtraction.
+\                           calibrant           (str) The material used for determining the position/orientation
+                                                of the image. The data is obtained from :func:`ImageCalibrants` 
+                                                and UserCalibrants.py (supplied by user).
+\                           calibdmin           (float) The minimum d-spacing used during the last calibration run.
+\                           calibskip           (int) The number of expected diffraction lines skipped during the last
+                                                calibration run.
+\                           center              (list:floats) The [X,Y] point in detector coordinates (mm) where the direct beam
+                                                strikes the detector plane as determined by calibration. This point 
+                                                does not have to be within the limits of the detector boundaries. 
+\                           centerAzm           (bool) If True then the azimuth reported for the integrated slice
+                                                of the image is at the center line otherwise it is at the leading edge.
+\                           color               (str) The name of the colormap used to display the image. Default = 'Paired'.
+\                           cutoff              (float) The minimum value of I/Ib for a point selected in a diffraction ring for 
+                                                calibration calculations. See pixLimit for details as how point is found.           
+\                           DetDepth            (float) Coefficient for penetration correction to distance; accounts for diffraction
+                                                ring offset at higher angles. Optionally determined by calibration.
+\                           DetDepthRef         (bool) If True then refine DetDepth during calibration/recalibration calculation.
+\                           distance            (float) The distance (mm) from sample to detector plane.
+\                           ellipses            (list:lists) Each object in ellipses is a list [center,phi,radii,color] where
+                                                center (list) is location (mm) of the ellipse center on the detector plane, phi is the 
+                                                rotation of the ellipse minor axis from the x-axis, and radii are the minor & major
+                                                radii of the ellipse. If radii[0] is negative then parameters describe a hyperbola. Color
+                                                is the selected drawing color (one of 'b', 'g' ,'r') for the ellipse/hyperbola.
+\                           edgemin             (float) Not used;  parameter in EdgeFinder code.
+\                           fullIntegrate       (bool) If True then integrate over full 360 deg azimuthal range.
+\                           GonioAngles         (list:floats) The 'Omega','Chi','Phi' goniometer angles used for this image. 
+                                                Required for texture calculations.
+\                           invert_x            (bool) If True display the image with the x-axis inverted.
+\                           invert_y            (bool) If True display the image with the y-axis inverted.
+\                           IOtth               (list:floats) The minimum and maximum 2-theta values to be used for integration.
+\                           LRazimuth           (list:floats) The minimum and maximum azimuth values to be used for integration.
+\                           Oblique             (list:float,bool) If True apply a detector absorption correction using the value to the
+                                                intensities obtained during integration.
+\                           outAzimuths         (int) The number of azimuth pie slices.
+\                           outChannels         (int) The number of 2-theta steps. 
+\                           pixelSize           (list:ints) The X,Y dimensions (microns) of each pixel.
+\                           pixLimit            (int) A box in the image with 2*pixLimit+1 edges is searched to find the maximum.
+                                                This value (I) along with the minimum (Ib) in the box is reported by :func:`GSASIIimage.ImageLocalMax`
+                                                and subject to cutoff in :func:`GSASIIimage.makeRing`. 
+                                                Locations are used to construct rings of points for calibration calcualtions.
+\                           PolaVal             (list:float,bool) If type='SASD' and if True, apply polarization correction to intensities from 
+                                                integration using value.
+\                           rings               (list:lists) Each entry is [X,Y,dsp] where X & Y are lists of x,y coordinates around a 
+                                                diffraction ring with the same d-spacing (dsp)
+\                           ring                (list) The x,y coordinates of the >5 points on an inner ring 
+                                                selected by the user,
+\                           Range               (list) The minimum & maximum values of the image
+\                           rotation            (float) The angle between the x-axis and the vector about which the 
+                                                detector is tilted. Constrained to -180 to 180 deg.     
+\                           SampleShape         (str) Currently only 'Cylinder'. Sample shape for Debye-Scherrer experiments; used for absorption
+                                                calculations.
+\                           SampleAbs           (list: float,bool) Value of absorption coefficient for Debye-Scherrer experimnents, flag if True
+                                                to cause correction to be applied.
+\                           setDefault          (bool) If True the use the image controls values for all new images to be read. (might be removed)
+\                           setRings            (bool) If True then display all the selected x,y ring positions (vida supra rings) used in the calibration.            
+\                           showLines           (bool) If True then isplay the integration limits to be used.
+\                           size                (list:int) The number of pixels on the image x & y axes
+\                           type                (str) One of 'PWDR', 'SASD' or 'REFL' for powder, small angle or reflectometry data, respectively.
+\                           tilt                (float) The angle the detector normal makes with the incident beam; range -90 to 90.
+\                           wavelength          (float) Tha radiation wavelength (Angstroms) as entered by the user (or someday obtained from the image header).
+                                                
+Masks                       Arcs                (list: lists) Each entry [2-theta,[azimuth[0],azimuth[1]],thickness] describes an arc mask
+                                                to be excluded from integration
+\                           Frames              (list:lists) Each entry describes the x,y points (3 or more - mm) that describe a frame outside
+                                                of which is excluded from recalibration and integration. Only one frame is allowed.
+\                           Points              (list:lists) Each entry [x,y,radius] (mm) describes an excluded spot on the image to be excluded
+                                                from integration.
+\                           Polygons            (list:lists) Each entry is a list of 3+ [x,y] points (mm) that describe a polygon on the image
+                                                to be excluded from integration.
+\                           Rings               (list: lists) Each entry [2-theta,thickness] describes a ring mask
+                                                to be excluded from integration.
+\                           Thresholds          (list:[tuple,list]) [(Imin,Imax),[Imin,Imax]] This gives lower and upper limits for points on the image to be included
+                                                in integrsation. The tuple is the image intensity limits and the list are those set by the user.    
+                                                
+Stress/Strain               Sample phi          (float) Sample rotation about vertical axis.
+\                           Sample z            (float) Sample translation from the calibration sample position (for Sample phi = 0)
+\                           strain              (list: 3x3 array of float) The strain tensor coefficients [[' e11','e12','e13'],[' e21','e22','e23'],[' e31','e32','e33']].
+                                                These will be restricted by space group symmetry; result of strain fit refinement.
+\                           Type                (str) 'True' or 'Conventional': The strain model used for the calculation.
+\                           d-zero              (list:dict) Each item is for a diffraction ring on the image; all items are from the same phase and are used to determine the strain tensor.
+                                                The dictionary items are:
+                                                'Dset': (float) True d-spacing for the diffraction ring; entered by the user.
+                                                'Dcalc': (float) d-spacing...
+                                                'pixLimit': (int) Search range to find highest point on ring for each data point
+                                                'cutoff': (float) I/Ib cutoff for searching.
+                                                'ImxyObs': (list:lists) [[X],[Y]] observed points to be used for strain calculations.
+                                                'ImxyCalc':(list:lists) [[X],[Y]] calculated points based on refined strain.                                           
+                                                
+======================  ======================  ====================================================
 
 *Classes and routines*
 ----------------------

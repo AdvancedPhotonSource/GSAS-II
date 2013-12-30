@@ -578,9 +578,9 @@ def ImageCalibrate(self,data):
     data['ellipses'].append(ellipse[:]+('g',))
     Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
     if Ring:
-        ellipse = FitEllipse(ring)
+        ellipse = FitEllipse(Ring)
         Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)    #do again
-        ellipse = FitEllipse(ring)
+        ellipse = FitEllipse(Ring)
     else:
         print '1st ring not sufficiently complete to proceed'
         return False
@@ -860,7 +860,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
 def FitStrSta(Image,StrSta,Controls,Masks):
     'Needs a doc string'
     
-#    print 'Masks:',Masks
     StaControls = copy.deepcopy(Controls)
     phi = StrSta['Sample phi']
     wave = Controls['wavelength']

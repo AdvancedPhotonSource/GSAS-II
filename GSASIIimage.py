@@ -871,10 +871,10 @@ def FitStrSta(Image,StrSta,Controls,Masks):
 
     for ring in StrSta['d-zero']:       #get observed x,y,d points for the d-zeros
         ellipse = GetEllipse(ring['Dset'],StaControls)
-        Ring = makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)
-        Ring = np.array(Ring).T
+        Ring = np.array(makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)).T
         ring['ImxyObs'] = np.array(Ring[:2])      #need to apply masks to this to eliminate bad points
-        Ring[:2] = GetTthAzm(Ring[0],Ring[1],StaControls)       #convert x,y to tth,azm
+        ring['ImtaObs'] = GetTthAzm(Ring[0],Ring[1],StaControls)       #convert x,y to tth,azm
+        ring['ImtaCalc'] = np.zeros_like(ring['ImtaObs'])
         Ring[0] /= 2.                                           #convert to theta
         if len(rings):
             rings = np.concatenate((rings,Ring),axis=1)
@@ -882,7 +882,13 @@ def FitStrSta(Image,StrSta,Controls,Masks):
             rings = np.array(Ring)
     E = StrSta['strain']
     p0 = [E[0][0],E[1][1],E[2][2],E[0][1],E[0][2],E[1][2]]
-    E = FitStrain(rings,p0,wave,phi)
+    E,dth = FitStrain(rings,p0,wave,phi)
+    for ring in StrSta['d-zero']:
+        th,azm = ring['ImtaObs']
+        th0 = npasind(wave/(2.*ring['Dset']))
+        V = np.sum(np.sum(E*calcFij(90.,phi,azm,th0).T,axis=2),axis=1)
+        dth = 180.*V/(np.pi*10e6) #in degrees & microstrain units
+        ring['ImtaCalc'] = np.array([(th0-dth)/2,azm])
     StrSta['strain'] = E
 
 def calcFij(omg,phi,azm,th):
@@ -890,7 +896,8 @@ def calcFij(omg,phi,azm,th):
 
     Uses parameters as defined by Bob He & Kingsley Smith, Adv. in X-Ray Anal. 41, 501 (1997)
 
-    :param omg: his omega = sample omega rotation; 0 when incident beam || sample surface, 90 when perp. to sample surface
+    :param omg: his omega = sample omega rotation; 0 when incident beam || sample surface, 
+        90 when perp. to sample surface
     :param phi: his phi = sample phi rotation; usually = 0, axis rotates with omg.
     :param azm: his chi = azimuth around incident beam
     :param th:  his theta = theta
@@ -929,13 +936,14 @@ def FitStrain(rings,p0,wave,phi):
         E = np.array([[p[0],0,0],[0,p[1],0],[0,0,0]])
         th,azm,dsp = xyd
         th0 = npasind(wave/(2.*dsp))
-        dth = 180.*np.sum(E*calcFij(phi,0.,azm,th).T)/(np.pi*1.e6) #in degrees & microstrain units
+        V = np.sum(np.sum(E*calcFij(90.,phi,azm,th).T,axis=2),axis=1)
+        dth = 180.*V/(np.pi*10e6) #in degrees & microstrain units
         th0 += dth
-        return (th-th0)**2
+        return th-th0
         
     names = ['e11','e22','e33','e12','e13','e23']
     fmt = ['%12.2f','%12.2f','%12.2f','%12.2f','%12.2f','%12.5f']
-    p1 = [p0[0],p0[1]]   
+    p1 = [1,-1]   
     result = leastsq(strainCalc,p1,args=(rings,wave,phi),full_output=True)
     vals = list(result[0])
     chi = np.sqrt(np.sum(strainCalc(result[0],rings,wave,phi)**2))
@@ -943,6 +951,6 @@ def FitStrain(rings,p0,wave,phi):
     ValSig = zip(names,fmt,vals,sig)
     StrainPrint(ValSig)
 #    return np.array([[vals[0],vals[3],vals[4]],[vals[3],vals[1],vals[5]],[vals[4],vals[5],vals[2]]])
-    return np.array([[vals[0],0,0],[0,vals[1],0],[0,0,0]])
+    return np.array([[vals[0],0,0],[0,vals[1],0],[0,0,0]]),result[2]['fvec']
     
         

@@ -1394,7 +1394,9 @@ def UpdateStressStrain(G2frame,data):
         Controls = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
         G2img.FitStrSta(G2frame.ImageZ,data,Controls,Masks)
+        UpdateStressStrain(G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
+        G2plt.PlotStrain(G2frame,data,newPlot=False,type='Strain')
         
     def SamSizer():
         

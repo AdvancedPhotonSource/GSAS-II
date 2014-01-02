@@ -1192,7 +1192,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
 ##### PlotXY
 ################################################################################
             
-def PlotXY(G2frame,XY,newPlot=False,type=''):
+def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,type=''):
     '''simple plot of xy data, used for diagnostic purposes
     '''
     def OnMotion(event):
@@ -1224,14 +1224,76 @@ def PlotXY(G2frame,XY,newPlot=False,type=''):
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     Plot.set_title(type)
-    Plot.set_xlabel(r'X',fontsize=14)
-    Plot.set_ylabel(r''+type,fontsize=14)
+    if xLabel:
+        Plot.set_xlabel(r''+xLabel,fontsize=14)
+    else:
+        Plot.set_xlabel(r'X',fontsize=14)
+    if yLabel:
+        Plot.set_ylabel(r''+yLabel,fontsize=14)
+    else:
+        Plot.set_ylabel(r'Y',fontsize=14)
     colors=['b','g','r','c','m','k']
-    Ymax = 1.0
-    lenX = 0
-    X,Y = XY[:2]
-    Ymax = max(Ymax,max(Y))
-    Plot.plot(X,Y,'k',picker=False)
+    for ixy,xy in enumerate(XY):
+        X,Y = xy
+        Plot.plot(X,Y,color(ixy%6)+'+',picker=False)
+    if len(XY2):
+        for ixy,xy in enumerate(XY2):
+            X,Y = xy
+            Plot.plot(X,Y,color(ixy%6),picker=False)
+    if not newPlot:
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
+        xylim = []
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
+    else:
+        Page.canvas.draw()
+
+################################################################################
+##### PlotStrain
+################################################################################
+            
+def PlotStrain(G2frame,data,newPlot=False,type=''):
+    '''plot of strain data, used for diagnostic purposes
+    '''
+    def OnMotion(event):
+        xpos = event.xdata
+        if xpos:                                        #avoid out of frame mouse position
+            ypos = event.ydata
+            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            try:
+                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,type,ypos),1)                   
+            except TypeError:
+                G2frame.G2plotNB.status.SetStatusText('Select '+type+' pattern first',1)
+
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index(type)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        if not newPlot:
+            Plot = Page.figure.gca()
+            xylim = Plot.get_xlim(),Plot.get_ylim()
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+    except ValueError:
+        newPlot = True
+        Plot = G2frame.G2plotNB.addMpl(type).gca()
+        plotNum = G2frame.G2plotNB.plotList.index(type)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    
+    Page.Choice = None
+    Page.SetFocus()
+    G2frame.G2plotNB.status.DestroyChildren()
+    Plot.set_title(type)
+    Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
+    Plot.set_ylabel(r'Azimuth',fontsize=14)
+    colors=['b','g','r','c','m','k']
+    for N,item in enumerate(data['d-zero']):
+        X,Y = np.array(item['ImtaObs'])
+        Plot.plot(X,Y,colors[N%6]+'+',picker=False)
+        X,Y = np.array(item['ImtaCalc'])
+        Plot.plot(X,Y,colors[N%6],picker=False)
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
@@ -2533,12 +2595,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
         if G2frame.PatternTree.GetItemText(G2frame.PickId) in 'Stress/Strain':
             print 'plot stress/strain stuff'
-            for ring in StrSta['d-zero']:
+            for N,ring in enumerate(StrSta['d-zero']):
                 xring,yring = ring['ImxyObs']
-                Plot.plot(xring,yring,'r+')
-#                for xring,yring in ring['ImxyCalc'].T:
-#                    Plot.add_artist(Polygon(ring['ImxyCalc'].T,ec='b',fc='none'))
-#                    Plot.plot(xring,yring)
+                Plot.plot(xring,yring,colors[N%6]+'+')
+                for xring,yring in np.array(ring['ImxyCalc']).T:
+                    Plot.add_artist(Polygon(ring['ImxyCalc'].T,ec='b',fc='none'))
+                    Plot.plot(xring,yring)
         #masks - mask lines numbered after integration limit lines
         spots = Masks['Points']
         rings = Masks['Rings']

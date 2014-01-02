@@ -72,5 +72,8 @@ def FormatValue(val,maxdigits=[10,2]):
     else: # in range where g formatting should do what I want
         decimals = maxdigits[0] - 1
         fmt = "{" + (":{:d}.{:d}g".format(maxdigits[0],decimals))+"}"
-    print fmt,val
-    return fmt.format(val).strip()
+    try:
+        return fmt.format(val).strip()
+    except ValueError as err:
+        print 'FormatValue Error with val,maxdigits,fmt=',val,maxdigits,fmt
+        return str(val)

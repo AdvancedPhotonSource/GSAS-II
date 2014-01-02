@@ -2219,6 +2219,9 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         hfx = ':'+str(hId)+':'        
         sampDict = {hfx+'Gonio. radius':Sample['Gonio. radius'],hfx+'Omega':Sample['Omega'],
             hfx+'Chi':Sample['Chi'],hfx+'Phi':Sample['Phi']}
+        for key in ('Temperature','Pressure','FreePrm1','FreePrm2','FreePrm3'):
+            if key in Sample:
+                sampDict[hfx+key] = Sample[key]
         Type = Sample['Type']
         if 'Bragg' in Type:             #Bragg-Brentano
             for item in ['Scale','Shift','Transparency','SurfRoughA','SurfRoughB']:

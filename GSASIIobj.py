@@ -807,6 +807,27 @@ Stress/Strain               Sample phi          (float) Sample rotation about ve
                                                 
 ======================  ======================  ====================================================
 
+Parameter Dictionary
+-------------------------
+
+.. _parmDict_table:
+
+.. index::
+   single: Parameter dictionary
+
+The parameter dictionary contains all of the variable parameters for the refinement.
+The dictionary keys are the name of the parameter (<phase>:<hist>:<name>:<atom>). 
+It is prepared in two ways. When loaded from the tree
+(in :meth:`GSASII.GSASII.MakeLSParmDict` and
+:meth:`GSASIIIO.ExportBaseclass.loadParmDict`), 
+the values are lists with two elements: ``[value, refine flag]``
+
+When loaded from the GPX file (in
+:func:`GSASIIstrMain.Refine` and :func:`GSASIIstrMain.SeqRefine`), the value in the
+dict is the actual parameter value (usually a float, but sometimes a 
+letter or string flag value (such as I or A for iso/anisotropic). 
+
+
 *Classes and routines*
 ----------------------
 
@@ -837,7 +858,7 @@ def MakeUniqueLabel(lbl,labellist):
 
     :param str lbl: the input label
     :param list labellist: the labels that have already been encountered
-    :returns: lbl if not found in labellist or lbl with ``_1-9` (or
+    :returns: lbl if not found in labellist or lbl with ``_1-9`` (or
       ``_10-99``, etc.) appended at the end
     '''
     lbl = lbl.strip()
@@ -920,7 +941,7 @@ def IndexAllIds(Histograms,Phases):
 
     This is called in two places (only) :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`
     (which loads the histograms and phases from a GPX file) and
-    :meth:`GSASII.GSASII.GetUsedHistogramsAndPhases`
+    :meth:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`
     (which loads the histograms and phases from the data tree.)
 
     TODO: do we need a lookup for rigid body variables?

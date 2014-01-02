@@ -2803,10 +2803,12 @@ class GSASII(wx.Frame):
         '''Get the phase names and their rId values,
         also the histograms used in each phase. 
 
-        :returns: (phaseRIdList, usedHistograms) where
+        :returns: (phaseRIdList, usedHistograms) where 
 
-          * 
-          ,phaseRIdList,usedHistograms
+          * phaseRIdList is a list of random Id values for each phase
+          * usedHistograms is a dict where the keys are the phase names
+            and the values for each key are a list of the histogram names
+            used in each phase. 
         '''
         phaseRIdList = []
         usedHistograms = {}
@@ -2914,6 +2916,11 @@ class GSASII(wx.Frame):
         different than the parmDict used in the refinement, which only has
         values.
 
+        Note that similar things are done in
+        :meth:`GSASIIIO.ExportBaseclass.loadParmDict` (from the tree) and 
+        :func:`GSASIIstrMain.Refine` and :func:`GSASIIstrMain.SeqRefine` (from
+        a GPX file).
+
         :returns: (parmDict,varyList) where:
 
          * parmDict is a dict with values and refinement flags
@@ -2948,6 +2955,11 @@ class GSASII(wx.Frame):
                 parmDict[parm] = [parmDict[parm],'T']
             else:
                 parmDict[parm] = [parmDict[parm],'F']
+        # for i in parmDict: print i,'\t',parmDict[i]
+        # fl = open('parmDict.dat','wb')
+        # import cPickle
+        # cPickle.dump(parmDict,fl,1)
+        # fl.close()
         return parmDict,varyList
 
     def ShowLSParms(self,event):

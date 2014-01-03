@@ -1194,7 +1194,7 @@ def CompileVarDesc():
     for key,value in {
         # Phase vars (p::<var>)
         'A([0-5])' : 'Reciprocal metric tensor component \\1',
-        'Vol' : 'Unit cell volume????',
+        'Vol' : 'Unit cell volume',
         # Atom vars (p::<var>:a)
         'dA([xyz])' : 'change to atomic position \\1',
         'AUiso':'Atomic isotropic displacement parameter',

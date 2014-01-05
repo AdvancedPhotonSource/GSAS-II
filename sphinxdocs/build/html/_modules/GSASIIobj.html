@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIobj - data objects for GSAS-II</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-11-22 16:24:29 -0600 (Fri, 22 Nov 2013) $</span>
+<span class="c"># $Date: 2014-01-02 14:18:25 -0600 (Thu, 02 Jan 2014) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1147 $</span>
+<span class="c"># $Revision: 1181 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIobj.py $</span>
-<span class="c"># $Id: GSASIIobj.py 1147 2013-11-22 22:24:29Z toby $</span>
+<span class="c"># $Id: GSASIIobj.py 1181 2014-01-02 20:18:25Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
@@ -508,6 +508,9 @@
 <span class="sd">======================  ===============  ====================================================</span>
 <span class="sd">  key                      sub-key        explanation</span>
 <span class="sd">======================  ===============  ====================================================</span>
+<span class="sd">Comments                      \           Text strings extracted from the original powder </span>
+<span class="sd">                                          data header. These cannot be changed by the user; </span>
+<span class="sd">                                          it may be empty.</span>
 <span class="sd">Limits                       \            A list of two two element lists, as [[Ld,Hd],[L,H]]</span>
 <span class="sd">                                          where L and Ld are the current and default lowest</span>
 <span class="sd">                                          two-theta value to be used and </span>
@@ -569,7 +572,12 @@
 <span class="sd">\                         Scale           The histogram scale factor (refinable) </span>
 <span class="sd">\                         Absorption      The sample absorption coefficient as</span>
 <span class="sd">                                          :math:`\\mu r` where r is the radius</span>
-<span class="sd">                                          (refinable).</span>
+<span class="sd">                                          (refinable). Only valid for Debye-Scherrer geometry.</span>
+<span class="sd">\                         SurfaceRoughA   Surface roughness parameter A as defined by</span>
+<span class="sd">                                          Surotti,J. Appl. Cryst, 5,325-331, 1972.(refinable - </span>
+<span class="sd">                                          only valid for Bragg-Brentano geometry)                                         </span>
+<span class="sd">\                         SurfaceRoughB   Surface roughness parameter B (refinable - </span>
+<span class="sd">                                          only valid for Bragg-Brentano geometry)                                          </span>
 <span class="sd">\                         DisplaceX,      Sample displacement from goniometer center</span>
 <span class="sd">                          DisplaceY       where Y is along the beam direction and</span>
 <span class="sd">                                          X is perpendicular. Units are :math:`\\mu m`</span>
@@ -706,7 +714,7 @@
 <span class="sd">   single: Single Crystal reflection object description</span>
 <span class="sd">   single: Data object descriptions; Single Crystal Reflections</span>
 <span class="sd">   </span>
-<span class="sd">For every simgle crystal a histogram, the ``&#39;Data&#39;`` item contains</span>
+<span class="sd">For every single crystal a histogram, the ``&#39;Data&#39;`` item contains</span>
 <span class="sd">the structure factors as an np.array in item `&#39;RefList&#39;`.</span>
 <span class="sd">The columns in that array are documented below.</span>
 
@@ -727,6 +735,150 @@
 <span class="sd">             gives Iobs or Icalc</span>
 <span class="sd">==========  ====================================================</span>
 
+<span class="sd">Image Data Structure</span>
+<span class="sd">--------------------</span>
+
+<span class="sd">.. _Image_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   image: Image data object description</span>
+<span class="sd">   image: Image object descriptions</span>
+<span class="sd">   </span>
+<span class="sd">Every 2-dimensional image is stored in the GSAS-II data tree</span>
+<span class="sd">with a top-level entry named beginning with the string &quot;IMG &quot;. The</span>
+<span class="sd">image data are directly associated with that tree item and there </span>
+<span class="sd">are a series of children to that item. The routines :func:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`</span>
+<span class="sd">and :func:`GSASIIstrIO.GetUsedHistogramsAndPhases` will</span>
+<span class="sd">load this information into a dictionary where the child tree name is</span>
+<span class="sd">used as a key, and the information in the main entry is assigned</span>
+<span class="sd">a key of ``Data``, as outlined below.</span>
+
+<span class="sd">.. tabularcolumns:: |l|l|p{4in}|</span>
+
+<span class="sd">======================  ======================  ====================================================</span>
+<span class="sd">  key                      sub-key              explanation</span>
+<span class="sd">======================  ======================  ====================================================</span>
+<span class="sd">Comments                       \                Text strings extracted from the original image data </span>
+<span class="sd">                                                header or a metafile. These cannot be changed by  </span>
+<span class="sd">                                                the user; it may be empty.                                                </span>
+<span class="sd">Image Controls              azmthOff            (float) The offset to be applied to an azimuthal </span>
+<span class="sd">                                                value. Accomodates </span>
+<span class="sd">                                                detector orientations other than with the detector </span>
+<span class="sd">                                                X-axis</span>
+<span class="sd">                                                horizontal.</span>
+<span class="sd">\                           background image    (list:str,float) The name of a tree item (&quot;IMG ...&quot;) that is to be subtracted</span>
+<span class="sd">                                                during image integration multiplied by value. It must have the same size/shape as </span>
+<span class="sd">                                                the integrated image. NB: value &lt; 0 for subtraction.</span>
+<span class="sd">\                           calibrant           (str) The material used for determining the position/orientation</span>
+<span class="sd">                                                of the image. The data is obtained from :func:`ImageCalibrants` </span>
+<span class="sd">                                                and UserCalibrants.py (supplied by user).</span>
+<span class="sd">\                           calibdmin           (float) The minimum d-spacing used during the last calibration run.</span>
+<span class="sd">\                           calibskip           (int) The number of expected diffraction lines skipped during the last</span>
+<span class="sd">                                                calibration run.</span>
+<span class="sd">\                           center              (list:floats) The [X,Y] point in detector coordinates (mm) where the direct beam</span>
+<span class="sd">                                                strikes the detector plane as determined by calibration. This point </span>
+<span class="sd">                                                does not have to be within the limits of the detector boundaries. </span>
+<span class="sd">\                           centerAzm           (bool) If True then the azimuth reported for the integrated slice</span>
+<span class="sd">                                                of the image is at the center line otherwise it is at the leading edge.</span>
+<span class="sd">\                           color               (str) The name of the colormap used to display the image. Default = &#39;Paired&#39;.</span>
+<span class="sd">\                           cutoff              (float) The minimum value of I/Ib for a point selected in a diffraction ring for </span>
+<span class="sd">                                                calibration calculations. See pixLimit for details as how point is found.           </span>
+<span class="sd">\                           DetDepth            (float) Coefficient for penetration correction to distance; accounts for diffraction</span>
+<span class="sd">                                                ring offset at higher angles. Optionally determined by calibration.</span>
+<span class="sd">\                           DetDepthRef         (bool) If True then refine DetDepth during calibration/recalibration calculation.</span>
+<span class="sd">\                           distance            (float) The distance (mm) from sample to detector plane.</span>
+<span class="sd">\                           ellipses            (list:lists) Each object in ellipses is a list [center,phi,radii,color] where</span>
+<span class="sd">                                                center (list) is location (mm) of the ellipse center on the detector plane, phi is the </span>
+<span class="sd">                                                rotation of the ellipse minor axis from the x-axis, and radii are the minor &amp; major</span>
+<span class="sd">                                                radii of the ellipse. If radii[0] is negative then parameters describe a hyperbola. Color</span>
+<span class="sd">                                                is the selected drawing color (one of &#39;b&#39;, &#39;g&#39; ,&#39;r&#39;) for the ellipse/hyperbola.</span>
+<span class="sd">\                           edgemin             (float) Not used;  parameter in EdgeFinder code.</span>
+<span class="sd">\                           fullIntegrate       (bool) If True then integrate over full 360 deg azimuthal range.</span>
+<span class="sd">\                           GonioAngles         (list:floats) The &#39;Omega&#39;,&#39;Chi&#39;,&#39;Phi&#39; goniometer angles used for this image. </span>
+<span class="sd">                                                Required for texture calculations.</span>
+<span class="sd">\                           invert_x            (bool) If True display the image with the x-axis inverted.</span>
+<span class="sd">\                           invert_y            (bool) If True display the image with the y-axis inverted.</span>
+<span class="sd">\                           IOtth               (list:floats) The minimum and maximum 2-theta values to be used for integration.</span>
+<span class="sd">\                           LRazimuth           (list:floats) The minimum and maximum azimuth values to be used for integration.</span>
+<span class="sd">\                           Oblique             (list:float,bool) If True apply a detector absorption correction using the value to the</span>
+<span class="sd">                                                intensities obtained during integration.</span>
+<span class="sd">\                           outAzimuths         (int) The number of azimuth pie slices.</span>
+<span class="sd">\                           outChannels         (int) The number of 2-theta steps. </span>
+<span class="sd">\                           pixelSize           (list:ints) The X,Y dimensions (microns) of each pixel.</span>
+<span class="sd">\                           pixLimit            (int) A box in the image with 2*pixLimit+1 edges is searched to find the maximum.</span>
+<span class="sd">                                                This value (I) along with the minimum (Ib) in the box is reported by :func:`GSASIIimage.ImageLocalMax`</span>
+<span class="sd">                                                and subject to cutoff in :func:`GSASIIimage.makeRing`. </span>
+<span class="sd">                                                Locations are used to construct rings of points for calibration calcualtions.</span>
+<span class="sd">\                           PolaVal             (list:float,bool) If type=&#39;SASD&#39; and if True, apply polarization correction to intensities from </span>
+<span class="sd">                                                integration using value.</span>
+<span class="sd">\                           rings               (list:lists) Each entry is [X,Y,dsp] where X &amp; Y are lists of x,y coordinates around a </span>
+<span class="sd">                                                diffraction ring with the same d-spacing (dsp)</span>
+<span class="sd">\                           ring                (list) The x,y coordinates of the &gt;5 points on an inner ring </span>
+<span class="sd">                                                selected by the user,</span>
+<span class="sd">\                           Range               (list) The minimum &amp; maximum values of the image</span>
+<span class="sd">\                           rotation            (float) The angle between the x-axis and the vector about which the </span>
+<span class="sd">                                                detector is tilted. Constrained to -180 to 180 deg.     </span>
+<span class="sd">\                           SampleShape         (str) Currently only &#39;Cylinder&#39;. Sample shape for Debye-Scherrer experiments; used for absorption</span>
+<span class="sd">                                                calculations.</span>
+<span class="sd">\                           SampleAbs           (list: float,bool) Value of absorption coefficient for Debye-Scherrer experimnents, flag if True</span>
+<span class="sd">                                                to cause correction to be applied.</span>
+<span class="sd">\                           setDefault          (bool) If True the use the image controls values for all new images to be read. (might be removed)</span>
+<span class="sd">\                           setRings            (bool) If True then display all the selected x,y ring positions (vida supra rings) used in the calibration.            </span>
+<span class="sd">\                           showLines           (bool) If True then isplay the integration limits to be used.</span>
+<span class="sd">\                           size                (list:int) The number of pixels on the image x &amp; y axes</span>
+<span class="sd">\                           type                (str) One of &#39;PWDR&#39;, &#39;SASD&#39; or &#39;REFL&#39; for powder, small angle or reflectometry data, respectively.</span>
+<span class="sd">\                           tilt                (float) The angle the detector normal makes with the incident beam; range -90 to 90.</span>
+<span class="sd">\                           wavelength          (float) Tha radiation wavelength (Angstroms) as entered by the user (or someday obtained from the image header).</span>
+<span class="sd">                                                </span>
+<span class="sd">Masks                       Arcs                (list: lists) Each entry [2-theta,[azimuth[0],azimuth[1]],thickness] describes an arc mask</span>
+<span class="sd">                                                to be excluded from integration</span>
+<span class="sd">\                           Frames              (list:lists) Each entry describes the x,y points (3 or more - mm) that describe a frame outside</span>
+<span class="sd">                                                of which is excluded from recalibration and integration. Only one frame is allowed.</span>
+<span class="sd">\                           Points              (list:lists) Each entry [x,y,radius] (mm) describes an excluded spot on the image to be excluded</span>
+<span class="sd">                                                from integration.</span>
+<span class="sd">\                           Polygons            (list:lists) Each entry is a list of 3+ [x,y] points (mm) that describe a polygon on the image</span>
+<span class="sd">                                                to be excluded from integration.</span>
+<span class="sd">\                           Rings               (list: lists) Each entry [2-theta,thickness] describes a ring mask</span>
+<span class="sd">                                                to be excluded from integration.</span>
+<span class="sd">\                           Thresholds          (list:[tuple,list]) [(Imin,Imax),[Imin,Imax]] This gives lower and upper limits for points on the image to be included</span>
+<span class="sd">                                                in integrsation. The tuple is the image intensity limits and the list are those set by the user.    </span>
+<span class="sd">                                                </span>
+<span class="sd">Stress/Strain               Sample phi          (float) Sample rotation about vertical axis.</span>
+<span class="sd">\                           Sample z            (float) Sample translation from the calibration sample position (for Sample phi = 0)</span>
+<span class="sd">\                           strain              (list: 3x3 array of float) The strain tensor coefficients [[&#39; e11&#39;,&#39;e12&#39;,&#39;e13&#39;],[&#39; e21&#39;,&#39;e22&#39;,&#39;e23&#39;],[&#39; e31&#39;,&#39;e32&#39;,&#39;e33&#39;]].</span>
+<span class="sd">                                                These will be restricted by space group symmetry; result of strain fit refinement.</span>
+<span class="sd">\                           Type                (str) &#39;True&#39; or &#39;Conventional&#39;: The strain model used for the calculation.</span>
+<span class="sd">\                           d-zero              (list:dict) Each item is for a diffraction ring on the image; all items are from the same phase and are used to determine the strain tensor.</span>
+<span class="sd">                                                The dictionary items are:</span>
+<span class="sd">                                                &#39;Dset&#39;: (float) True d-spacing for the diffraction ring; entered by the user.</span>
+<span class="sd">                                                &#39;Dcalc&#39;: (float) d-spacing...</span>
+<span class="sd">                                                &#39;pixLimit&#39;: (int) Search range to find highest point on ring for each data point</span>
+<span class="sd">                                                &#39;cutoff&#39;: (float) I/Ib cutoff for searching.</span>
+<span class="sd">                                                &#39;ImxyObs&#39;: (list:lists) [[X],[Y]] observed points to be used for strain calculations.</span>
+<span class="sd">                                                &#39;ImxyCalc&#39;:(list:lists) [[X],[Y]] calculated points based on refined strain.                                           </span>
+<span class="sd">                                                </span>
+<span class="sd">======================  ======================  ====================================================</span>
+
+<span class="sd">Parameter Dictionary</span>
+<span class="sd">-------------------------</span>
+
+<span class="sd">.. _parmDict_table:</span>
+
+<span class="sd">.. index::</span>
+<span class="sd">   single: Parameter dictionary</span>
+
+<span class="sd">The parameter dictionary contains all of the variable parameters for the refinement.</span>
+<span class="sd">The dictionary keys are the name of the parameter (&lt;phase&gt;:&lt;hist&gt;:&lt;name&gt;:&lt;atom&gt;). </span>
+<span class="sd">It is prepared in two ways. When loaded from the tree</span>
+<span class="sd">(in :meth:`GSASII.GSASII.MakeLSParmDict` and</span>
+<span class="sd">:meth:`GSASIIIO.ExportBaseclass.loadParmDict`), </span>
+<span class="sd">the values are lists with two elements: ``[value, refine flag]``</span>
+
+<span class="sd">When loaded from the GPX file (in</span>
+<span class="sd">:func:`GSASIIstrMain.Refine` and :func:`GSASIIstrMain.SeqRefine`), the value in the</span>
+<span class="sd">dict is the actual parameter value (usually a float, but sometimes a </span>
+<span class="sd">letter or string flag value (such as I or A for iso/anisotropic). </span>
+
 
 <span class="sd">*Classes and routines*</span>
 <span class="sd">----------------------</span>
@@ -737,7 +889,7 @@
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1147 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1181 $&quot;</span><span class="p">)</span>
 
 <span class="n">DefaultControls</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s">&#39;deriv type&#39;</span><span class="p">:</span><span class="s">&#39;analytic Hessian&#39;</span><span class="p">,</span>    <span class="c">#default controls</span>
@@ -758,7 +910,7 @@
 
 <span class="sd">    :param str lbl: the input label</span>
 <span class="sd">    :param list labellist: the labels that have already been encountered</span>
-<span class="sd">    :returns: lbl if not found in labellist or lbl with ``_1-9` (or</span>
+<span class="sd">    :returns: lbl if not found in labellist or lbl with ``_1-9`` (or</span>
 <span class="sd">      ``_10-99``, etc.) appended at the end</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">lbl</span> <span class="o">=</span> <span class="n">lbl</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
@@ -841,7 +993,7 @@
 
 <span class="sd">    This is called in two places (only) :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`</span>
 <span class="sd">    (which loads the histograms and phases from a GPX file) and</span>
-<span class="sd">    :meth:`GSASII.GSASII.GetUsedHistogramsAndPhases`</span>
+<span class="sd">    :meth:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`</span>
 <span class="sd">    (which loads the histograms and phases from the data tree.)</span>
 
 <span class="sd">    TODO: do we need a lookup for rigid body variables?</span>

@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASII - image data display routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-11-27 14:34:56 -0600 (Wed, 27 Nov 2013) $</span>
+<span class="c"># $Date: 2014-01-02 11:38:59 -0600 (Thu, 02 Jan 2014) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1158 $</span>
+<span class="c"># $Revision: 1180 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIimgGUI.py $</span>
-<span class="c"># $Id: GSASIIimgGUI.py 1158 2013-11-27 20:34:56Z vondreele $</span>
+<span class="c"># $Id: GSASIIimgGUI.py 1180 2014-01-02 17:38:59Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIimgGUI: Image GUI*</span>
@@ -73,7 +73,7 @@
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">cPickle</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1158 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1180 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIimage</span> <span class="kn">as</span> <span class="nn">G2img</span>
 <span class="kn">import</span> <span class="nn">GSASIIplot</span> <span class="kn">as</span> <span class="nn">G2plt</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
@@ -102,6 +102,9 @@
     <span class="k">if</span> <span class="s">&#39;DetDepth&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
         <span class="n">data</span><span class="p">[</span><span class="s">&#39;DetDepth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
         <span class="n">data</span><span class="p">[</span><span class="s">&#39;DetDepthRef&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">if</span> <span class="s">&#39;SampleAbs&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="n">data</span><span class="p">[</span><span class="s">&#39;SampleShape&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;Cylinder&#39;</span>
+        <span class="n">data</span><span class="p">[</span><span class="s">&#39;SampleAbs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="bp">False</span><span class="p">]</span>
 <span class="c">#end patch</span>
 
     
@@ -515,12 +518,14 @@
             <span class="n">G2plt</span><span class="o">.</span><span class="n">PlotExposedImage</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">)</span>
         
         <span class="k">def</span> <span class="nf">OnLRazim</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
-            <span class="n">Lazm</span> <span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">Lazim</span><span class="o">.</span><span class="n">GetValue</span><span class="p">())</span>
-            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;fullIntegrate&#39;</span><span class="p">]:</span>
-               <span class="n">G2frame</span><span class="o">.</span><span class="n">Razim</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%6d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">Lazm</span><span class="o">+</span><span class="mi">360</span><span class="p">))</span>
-            <span class="n">Razm</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">Razim</span><span class="o">.</span><span class="n">GetValue</span><span class="p">())</span>
+            <span class="n">Lazm</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">Lazim</span><span class="o">.</span><span class="n">GetValue</span><span class="p">())</span><span class="o">%</span><span class="mi">360</span>
+            <span class="n">Razm</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">Razim</span><span class="o">.</span><span class="n">GetValue</span><span class="p">())</span><span class="o">%</span><span class="mi">360</span>
             <span class="k">if</span> <span class="n">Lazm</span> <span class="o">&gt;</span> <span class="n">Razm</span><span class="p">:</span>
-                <span class="n">Lazm</span> <span class="o">-=</span> <span class="mi">360</span>
+                <span class="n">Razm</span> <span class="o">+=</span> <span class="mi">360</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;fullIntegrate&#39;</span><span class="p">]:</span>
+                <span class="n">Razm</span> <span class="o">=</span> <span class="n">Lazm</span><span class="o">+</span><span class="mi">360</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">Lazim</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%6d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">Lazm</span><span class="p">))</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">Razim</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%6d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">Razm</span><span class="p">))</span>
             <span class="n">data</span><span class="p">[</span><span class="s">&#39;LRazimuth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Lazm</span><span class="p">,</span><span class="n">Razm</span><span class="p">]</span>
             <span class="n">G2plt</span><span class="o">.</span><span class="n">PlotExposedImage</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">)</span>
         
@@ -561,6 +566,23 @@
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                 <span class="k">pass</span>
             <span class="n">obliqVal</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%.3f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;Oblique&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+                           
+        <span class="k">def</span> <span class="nf">OnSamAbs</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;SampleAbs&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">data</span><span class="p">[</span><span class="s">&#39;SampleAbs&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="s">&#39;SampleAbs&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                
+        <span class="k">def</span> <span class="nf">OnSamAbsVal</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">samabsVal</span><span class="o">.</span><span class="n">GetValue</span><span class="p">())</span>
+                <span class="k">if</span> <span class="mf">0.00</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mf">2.00</span><span class="p">:</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s">&#39;SampleAbs&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="n">samabsVal</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%.3f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;SampleAbs&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
                            
         <span class="k">def</span> <span class="nf">OnShowLines</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;showLines&#39;</span><span class="p">]:</span>
@@ -663,6 +685,18 @@
         <span class="n">outAzim</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_TEXT_ENTER</span><span class="p">,</span><span class="n">OnNumOutAzms</span><span class="p">)</span>
         <span class="n">outAzim</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_KILL_FOCUS</span><span class="p">,</span><span class="n">OnNumOutAzms</span><span class="p">)</span>
         <span class="n">littleSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">outAzim</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">)</span>
+        <span class="n">dataSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">littleSizer</span><span class="p">,</span><span class="mi">0</span><span class="p">,)</span>
+        <span class="n">littleSizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="n">samabs</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">CheckBox</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s">&#39;Apply sample absorption?&#39;</span><span class="p">)</span>
+        <span class="n">dataSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">samabs</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">)</span>
+        <span class="n">samabs</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_CHECKBOX</span><span class="p">,</span> <span class="n">OnSamAbs</span><span class="p">)</span>
+        <span class="n">samabs</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;SampleAbs&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">littleSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s">&#39;mu/R (0.00-2.0) &#39;</span><span class="p">),</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">)</span>
+        <span class="n">samabsVal</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">TextCtrl</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">,</span><span class="n">value</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%.3f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;SampleAbs&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span><span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">TE_PROCESS_ENTER</span><span class="p">)</span>
+        <span class="n">samabsVal</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_TEXT_ENTER</span><span class="p">,</span><span class="n">OnSamAbsVal</span><span class="p">)</span>
+        <span class="n">samabsVal</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_KILL_FOCUS</span><span class="p">,</span><span class="n">OnSamAbsVal</span><span class="p">)</span>
+        <span class="n">littleSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">samabsVal</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">)</span>
         <span class="n">dataSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">littleSizer</span><span class="p">,</span><span class="mi">0</span><span class="p">,)</span>
         <span class="n">littleSizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
         <span class="n">oblique</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">CheckBox</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s">&#39;Apply detector absorption?&#39;</span><span class="p">)</span>
@@ -1412,7 +1446,9 @@
         <span class="n">Controls</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span>
             <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="s">&#39;Image Controls&#39;</span><span class="p">))</span>
         <span class="n">G2img</span><span class="o">.</span><span class="n">FitStrSta</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">ImageZ</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">Controls</span><span class="p">,</span><span class="n">Masks</span><span class="p">)</span>
+        <span class="n">UpdateStressStrain</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">data</span><span class="p">)</span>
         <span class="n">G2plt</span><span class="o">.</span><span class="n">PlotExposedImage</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">)</span>
+        <span class="n">G2plt</span><span class="o">.</span><span class="n">PlotStrain</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">newPlot</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="nb">type</span><span class="o">=</span><span class="s">&#39;Strain&#39;</span><span class="p">)</span>
         
     <span class="k">def</span> <span class="nf">SamSizer</span><span class="p">():</span>
         

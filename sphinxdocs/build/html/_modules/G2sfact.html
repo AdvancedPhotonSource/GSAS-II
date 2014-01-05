@@ -52,11 +52,11 @@
   <h1>Source code for G2sfact</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-11-06 15:16:07 -0600 (Wed, 06 Nov 2013) $</span>
-<span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1137 $</span>
+<span class="c"># $Date: 2013-12-16 10:43:01 -0600 (Mon, 16 Dec 2013) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 1168 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/imports/G2sfact.py $</span>
-<span class="c"># $Id: G2sfact.py 1137 2013-11-06 21:16:07Z vondreele $</span>
+<span class="c"># $Id: G2sfact.py 1168 2013-12-16 16:43:01Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*Module G2sfact: simple HKL import*</span>
@@ -69,38 +69,47 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1137 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1168 $&quot;</span><span class="p">)</span>
 
+<div class="viewcode-block" id="ColumnValidator"><a class="viewcode-back" href="../imports.html#G2sfact.ColumnValidator">[docs]</a><span class="k">def</span> <span class="nf">ColumnValidator</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
+    <span class="s">&#39;Validate a file to check that it contains columns of numbers&#39;</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">S</span> <span class="o">=</span> <span class="n">filepointer</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="s">&#39;#&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>        <span class="c">#get past comments, if any</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">filepointer</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>        
+        <span class="n">line</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span> <span class="c"># scan a few lines</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="n">parent</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;line &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">line</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;: invalid input</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="n">l</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">S</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">parent</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;line &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">line</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;: string found where a number is expected</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">+</span><span class="n">l</span>
+                <span class="k">return</span> <span class="bp">False</span>            
+        <span class="n">l</span> <span class="o">=</span> <span class="n">filepointer</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="n">line</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="bp">True</span>
+
+</div>
 <div class="viewcode-block" id="HKLF_ReaderClass"><a class="viewcode-back" href="../imports.html#G2sfact.HKLF_ReaderClass">[docs]</a><span class="k">class</span> <span class="nc">HKLF_ReaderClass</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ImportStructFactor</span><span class="p">):</span>
     <span class="s">&#39;Routines to import F, sig(F) reflections from a HKLF file&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to self-reference</span>
             <span class="n">extensionlist</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;.hkl&#39;</span><span class="p">,</span><span class="s">&#39;.HKL&#39;</span><span class="p">),</span>
             <span class="n">strictExtension</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
-            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;F HKL&#39;</span><span class="p">,</span>
-            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Simple (hkl Fo sig(Fo)) Structure factor text file&#39;</span>
+            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;F containing HKL&#39;</span><span class="p">,</span>
+            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Simple [hkl, Fo, sig(Fo)] Structure factor text file&#39;</span>
             <span class="p">)</span>
-    <span class="c"># Validate the contents</span>
+
 <div class="viewcode-block" id="HKLF_ReaderClass.ContentsValidator"><a class="viewcode-back" href="../imports.html#G2sfact.HKLF_ReaderClass.ContentsValidator">[docs]</a>    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
-        <span class="n">S</span> <span class="o">=</span> <span class="n">filepointer</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span> 
-        <span class="n">line</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">while</span> <span class="s">&#39;#&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>        <span class="c">#get past comments, if any</span>
-            <span class="n">S</span> <span class="o">=</span> <span class="n">filepointer</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>        
-            <span class="n">line</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span> <span class="c"># scan a few lines</span>
-            <span class="n">S</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span> <span class="k">return</span> <span class="bp">False</span>
-            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">S</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;line &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">line</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;: string found where a number is expected&#39;</span>
-                    <span class="k">return</span> <span class="bp">False</span>            
-            <span class="n">S</span> <span class="o">=</span> <span class="n">filepointer</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-            <span class="n">line</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="s">&#39;Make sure file contains the expected columns on numbers&#39;</span>
+        <span class="k">return</span> <span class="n">ColumnValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="HKLF_ReaderClass.Reader"><a class="viewcode-back" href="../imports.html#G2sfact.HKLF_ReaderClass.Reader">[docs]</a>    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">unused</span><span class="p">):</span>
+        <span class="s">&#39;Read the file&#39;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">line</span><span class="p">,</span><span class="n">S</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filepointer</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;  Error reading line &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">line</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
@@ -132,30 +141,16 @@
         <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="c"># fancy way to self-reference</span>
             <span class="n">extensionlist</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;.hkl&#39;</span><span class="p">,</span><span class="s">&#39;.HKL&#39;</span><span class="p">),</span>
             <span class="n">strictExtension</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
-            <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;F**2 HKL&#39;</span><span class="p">,</span>
-            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;Simple (hkl Fo**2 sig(Fo**2)) Structure factor text file&#39;</span>
+            <span class="n">formatName</span> <span class="o">=</span> <span class="s">u&#39;F</span><span class="se">\u00b2</span><span class="s"> containing HKL&#39;</span><span class="p">,</span>
+            <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">u&#39;Simple [hkl, Fo</span><span class="se">\u00b2</span><span class="s">, sig(Fo</span><span class="se">\u00b2</span><span class="s">)] Structure factor text file&#39;</span>
             <span class="p">)</span>
-    <span class="c"># Validate the contents</span>
+
 <div class="viewcode-block" id="HKLF2_ReaderClass.ContentsValidator"><a class="viewcode-back" href="../imports.html#G2sfact.HKLF2_ReaderClass.ContentsValidator">[docs]</a>    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
-        <span class="n">S</span> <span class="o">=</span> <span class="n">filepointer</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-        <span class="n">line</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">while</span> <span class="s">&#39;#&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>        <span class="c">#get past comments, if any</span>
-            <span class="n">S</span> <span class="o">=</span> <span class="n">filepointer</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>        
-            <span class="n">line</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span> <span class="c"># scan a few lines</span>
-            <span class="n">S</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span> <span class="k">return</span> <span class="bp">False</span>
-            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">S</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;line &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">line</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;: string found where a number is expected&#39;</span>
-                    <span class="k">return</span> <span class="bp">False</span>            
-            <span class="n">S</span> <span class="o">=</span> <span class="n">filepointer</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-            <span class="n">line</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="s">&#39;Make sure file contains the expected columns on numbers&#39;</span>
+        <span class="k">return</span> <span class="n">ColumnValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="HKLF2_ReaderClass.Reader"><a class="viewcode-back" href="../imports.html#G2sfact.HKLF2_ReaderClass.Reader">[docs]</a>    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">unused</span><span class="p">):</span>
+        <span class="s">&#39;Read the file&#39;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">line</span><span class="p">,</span><span class="n">S</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filepointer</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;  Error reading line &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">line</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>

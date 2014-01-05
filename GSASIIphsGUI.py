@@ -1732,13 +1732,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     subSizer2.Add((-1,-1))
                 subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
                 try:
-                    value = G2py3.FormatValue(xyz)
+                    value = G2py3.FormatSigFigs(xyz)
                 except TypeError:
                     value = str(xyz)            
                 subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
                 subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
                 try:
-                    value = G2py3.FormatValue(val)
+                    value = G2py3.FormatSigFigs(val)
                 except TypeError:
                     value = str(val)            
                 subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
@@ -1766,14 +1766,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     subSizer2.Add((-1,-1))
                 subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
                 try:
-                    value = G2py3.FormatValue(xyz)
+                    value = G2py3.FormatSigFigs(xyz)
                 except TypeError:
                     value = str(xyz)            
                 subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)
                 #subSizer.Add((10,-1))
                 subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,str(var)))
                 try:
-                    value = G2py3.FormatValue(val)
+                    value = G2py3.FormatSigFigs(val)
                 except TypeError:
                     value = str(val)            
                 subSizer2.Add(wx.StaticText(panel2,wx.ID_ANY,value),0,wx.ALIGN_RIGHT)

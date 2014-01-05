@@ -165,6 +165,27 @@ get same info from GPX file.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="GSASII.GSASII.GetPhaseInfofromTree">
+<tt class="descclassname">GSASII.</tt><tt class="descname">GetPhaseInfofromTree</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetPhaseInfofromTree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetPhaseInfofromTree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the phase names and their rId values,
+also the histograms used in each phase.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">(phaseRIdList, usedHistograms) where<ul class="simple">
+<li>phaseRIdList is a list of random Id values for each phase</li>
+<li>usedHistograms is a dict where the keys are the phase names
+and the values for each key are a list of the histogram names
+used in each phase.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASII.GSASII.GetPhaseNames">
 <tt class="descclassname">GSASII.</tt><tt class="descname">GetPhaseNames</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.GetPhaseNames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.GetPhaseNames" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of defined phases. 
@@ -228,6 +249,10 @@ get same info from GPX file.</p>
 dict of paired values [value, refine flag]. Note that this is
 different than the parmDict used in the refinement, which only has
 values.</p>
+<p>Note that similar things are done in
+<a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ExportBaseclass.loadParmDict" title="GSASIIIO.ExportBaseclass.loadParmDict"><tt class="xref py py-meth docutils literal"><span class="pre">GSASIIIO.ExportBaseclass.loadParmDict()</span></tt></a> (from the tree) and 
+<a class="reference internal" href="GSASIIstruc.html#GSASIIstrMain.Refine" title="GSASIIstrMain.Refine"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrMain.Refine()</span></tt></a> and <a class="reference internal" href="GSASIIstruc.html#GSASIIstrMain.SeqRefine" title="GSASIIstrMain.SeqRefine"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrMain.SeqRefine()</span></tt></a> (from
+a GPX file).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />

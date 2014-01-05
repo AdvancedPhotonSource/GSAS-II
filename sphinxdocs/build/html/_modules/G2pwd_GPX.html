@@ -52,11 +52,11 @@
   <h1>Source code for G2pwd_GPX</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-25 14:24:22 -0500 (Fri, 25 Oct 2013) $</span>
+<span class="c"># $Date: 2013-12-16 10:43:01 -0600 (Mon, 16 Dec 2013) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1123 $</span>
+<span class="c"># $Revision: 1168 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_GPX.py $</span>
-<span class="c"># $Id: G2pwd_GPX.py 1123 2013-10-25 19:24:22Z toby $</span>
+<span class="c"># $Id: G2pwd_GPX.py 1168 2013-12-16 16:43:01Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*Module G2pwd_GPX: GSAS-II projects*</span>
@@ -64,11 +64,12 @@
 <span class="sd">Routine to import powder data from GSAS-II .gpx files</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">cPickle</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1123 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1168 $&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="GSAS2_ReaderClass"><a class="viewcode-back" href="../imports.html#G2pwd_GPX.GSAS2_ReaderClass">[docs]</a><span class="k">class</span> <span class="nc">GSAS2_ReaderClass</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ImportPowderData</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Routines to import powder data from a GSAS-II file</span>
@@ -82,14 +83,20 @@
             <span class="n">formatName</span> <span class="o">=</span> <span class="s">&#39;GSAS-II gpx&#39;</span><span class="p">,</span>
             <span class="n">longFormatName</span> <span class="o">=</span> <span class="s">&#39;GSAS-II project (.gpx file) import&#39;</span>
             <span class="p">)</span>
+        
 <div class="viewcode-block" id="GSAS2_ReaderClass.ContentsValidator"><a class="viewcode-back" href="../imports.html#G2pwd_GPX.GSAS2_ReaderClass.ContentsValidator">[docs]</a>    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
-        <span class="c"># if the 1st section can&#39;t be read as a cPickle file, it can&#39;t be a GPX!</span>
+        <span class="s">&quot;Test if the 1st section can be read as a cPickle block, if not it can&#39;t be .GPX!&quot;</span>
         <span class="k">try</span><span class="p">:</span> 
             <span class="n">cPickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">filepointer</span><span class="p">)</span>
         <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;This is not a valid .GPX file. Not recognized by cPickle&#39;</span>
             <span class="k">return</span> <span class="bp">False</span>
-        <span class="k">return</span> <span class="bp">True</span></div>
+        <span class="k">return</span> <span class="bp">True</span>
+</div>
 <div class="viewcode-block" id="GSAS2_ReaderClass.Reader"><a class="viewcode-back" href="../imports.html#G2pwd_GPX.GSAS2_ReaderClass.Reader">[docs]</a>    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Read a dataset from a .GPX file.</span>
+<span class="sd">        If multiple datasets are requested, use self.repeat and buffer caching.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">histnames</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">poslist</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">rdbuffer</span> <span class="o">=</span> <span class="n">kwarg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;buffer&#39;</span><span class="p">)</span>
@@ -111,13 +118,13 @@
                         <span class="n">histnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
                         <span class="n">poslist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
             <span class="k">except</span><span class="p">:</span>
-                <span class="k">print</span> <span class="s">&#39;error scanning GPX file&#39;</span><span class="p">,</span><span class="n">filename</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;Reading of histogram names failed&#39;</span>
                 <span class="k">return</span> <span class="bp">False</span>
             <span class="k">finally</span><span class="p">:</span>
                 <span class="n">fl</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">histnames</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">False</span>            <span class="c"># no blocks with coordinates</span>
-        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">histnames</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c"># no choices</span>
+            <span class="k">return</span> <span class="bp">False</span>            <span class="c"># no blocks with powder data</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">histnames</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c"># one block, no choices</span>
             <span class="n">selblk</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="ow">and</span> <span class="n">selections</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="c"># we were called to repeat the read</span>
@@ -126,19 +133,15 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">repeatcount</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeatcount</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">else</span><span class="p">:</span>                       <span class="c"># choose from options                </span>
-<span class="c">#            selblk = self.BlockSelector(</span>
-<span class="c">#                histnames,</span>
-<span class="c">#                ParentFrame=ParentFrame,</span>
-<span class="c">#                title= &#39;Select a block from the list below&#39;,</span>
-<span class="c">#                )</span>
-<span class="c">#            if selblk is None: return False # User pressed cancel</span>
             <span class="n">selections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MultipleBlockSelector</span><span class="p">(</span>
                 <span class="n">histnames</span><span class="p">,</span>
                 <span class="n">ParentFrame</span><span class="o">=</span><span class="n">ParentFrame</span><span class="p">,</span>
                 <span class="n">title</span><span class="o">=</span><span class="s">&#39;Select histogram(s) to read from the list below&#39;</span><span class="p">,</span>
                 <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span><span class="mi">100</span><span class="p">),</span>
                 <span class="n">header</span><span class="o">=</span><span class="s">&#39;Dataset Selector&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;No histogram selected&#39;</span>
+                <span class="k">return</span> <span class="bp">False</span>
             <span class="n">selblk</span> <span class="o">=</span> <span class="n">selections</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># select first in list</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="c"># prepare to loop through again</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="bp">True</span>
@@ -179,17 +182,19 @@
                     <span class="n">pos</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&#39;Lam&#39;</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">instdict</span><span class="p">[</span><span class="s">&#39;wave&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="n">pos</span><span class="p">],]</span>
             <span class="k">except</span><span class="p">:</span>
-                <span class="k">pass</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">warnings</span> <span class="o">+=</span> <span class="s">&quot;Failed to read wavelength&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">warnings</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">  &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span>
             <span class="c"># pull out temperature</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Temperature&#39;</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">5</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;Temperature&#39;</span><span class="p">]</span>
             <span class="k">except</span><span class="p">:</span>
-                <span class="k">pass</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">warnings</span> <span class="o">+=</span> <span class="s">&quot;Failed to read temperature&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">warnings</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">  &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">repeat_instparm</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># prevent reuse of iparm when several hists are read</span>
             <span class="k">return</span> <span class="bp">True</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">detail</span><span class="p">:</span>
-            <span class="kn">import</span> <span class="nn">sys</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;Error reading selected histogram</span><span class="se">\n</span><span class="s">  &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span>
             <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">formatName</span><span class="o">+</span><span class="s">&#39; error:&#39;</span><span class="p">,</span><span class="n">detail</span> <span class="c"># for testing</span>
             <span class="k">print</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># for testing</span>
             <span class="kn">import</span> <span class="nn">traceback</span>

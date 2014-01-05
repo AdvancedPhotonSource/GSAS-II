@@ -186,6 +186,15 @@ called.</li>
 </ul>
 <p>Note that <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportBaseclass.CIFValidator" title="GSASIIIO.ImportBaseclass.CIFValidator"><tt class="xref py py-meth docutils literal"><span class="pre">GSASIIIO.ImportBaseclass.CIFValidator()</span></tt></a> is a ContentsValidator
 for validating CIF files.</p>
+</div>
+<div class="section" id="reinitialize">
+<h3>ReInitialize()<a class="headerlink" href="#reinitialize" title="Permalink to this headline">¶</a></h3>
+<p>Import classes are substantiated only once and are used as needed.
+This means that if something needs to be initialized before the
+<tt class="docutils literal"><span class="pre">Reader()</span></tt> will be called to read a new file, it must be coded. The
+<tt class="docutils literal"><span class="pre">ReInitialize()</span></tt> method is provided for this and it is always called
+before the <tt class="docutils literal"><span class="pre">ContentsValidator</span></tt> method is called. Use care to call
+the parent class <tt class="docutils literal"><span class="pre">ReInitialize()</span></tt> method, if this is overridden.</p>
 <div class="section" id="contentsvalidator-return-values">
 <h4>ContentsValidator return values<a class="headerlink" href="#contentsvalidator-return-values" title="Permalink to this headline">¶</a></h4>
 <p>The <tt class="docutils literal"><span class="pre">ContentsValidator</span></tt> routine should return the value of True if
@@ -219,7 +228,7 @@ previously implemented in GSAS-II: PDB and GSAS .EXP file formats</p>
 
 <dl class="method">
 <dt id="G2phase.EXP_ReaderClass.ReadEXPPhase">
-<tt class="descname">ReadEXPPhase</tt><big>(</big><em>G2frame</em>, <em>filepointer</em><big>)</big><a class="headerlink" href="#G2phase.EXP_ReaderClass.ReadEXPPhase" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ReadEXPPhase</tt><big>(</big><em>G2frame</em>, <em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2phase.html#EXP_ReaderClass.ReadEXPPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase.EXP_ReaderClass.ReadEXPPhase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a phase from a GSAS .EXP file.</p>
 </dd></dl>
 
@@ -237,14 +246,14 @@ previously implemented in GSAS-II: PDB and GSAS .EXP file formats</p>
 <dd><p>Routine to import Phase information from a PDB file</p>
 <dl class="method">
 <dt id="G2phase.PDB_ReaderClass.ContentsValidator">
-<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="headerlink" href="#G2phase.PDB_ReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2phase.html#PDB_ReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase.PDB_ReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Taking a stab a validating a PDB file
 (look for cell &amp; at least one atom)</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="G2phase.PDB_ReaderClass.ReadPDBPhase">
-<tt class="descname">ReadPDBPhase</tt><big>(</big><em>filename</em>, <em>parent=None</em><big>)</big><a class="headerlink" href="#G2phase.PDB_ReaderClass.ReadPDBPhase" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ReadPDBPhase</tt><big>(</big><em>filename</em>, <em>parent=None</em><big>)</big><a class="reference internal" href="_modules/G2phase.html#PDB_ReaderClass.ReadPDBPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase.PDB_ReaderClass.ReadPDBPhase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a phase from a PDB file.</p>
 </dd></dl>
 
@@ -293,7 +302,7 @@ added to the phase entry and constraints are generated.</p>
 <dd><p>Implements a phase importer from a possibly multi-block CIF file</p>
 <dl class="method">
 <dt id="G2phase_CIF.CIFPhaseReader.ISODISTORT_proc">
-<tt class="descname">ISODISTORT_proc</tt><big>(</big><em>blk</em>, <em>atomlbllist</em>, <em>ranIdlookup</em><big>)</big><a class="headerlink" href="#G2phase_CIF.CIFPhaseReader.ISODISTORT_proc" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">ISODISTORT_proc</tt><big>(</big><em>blk</em>, <em>atomlbllist</em>, <em>ranIdlookup</em><big>)</big><a class="reference internal" href="_modules/G2phase_CIF.html#CIFPhaseReader.ISODISTORT_proc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2phase_CIF.CIFPhaseReader.ISODISTORT_proc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Process ISODISTORT items to create constraints etc.</p>
 </dd></dl>
 
@@ -428,7 +437,7 @@ The distributed routines are:</p>
 provided to read from files containing F or F<sup>2</sup> values.</p>
 <dl class="function">
 <dt id="G2sfact.ColumnValidator">
-<tt class="descclassname">G2sfact.</tt><tt class="descname">ColumnValidator</tt><big>(</big><em>parent</em>, <em>filepointer</em><big>)</big><a class="headerlink" href="#G2sfact.ColumnValidator" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">G2sfact.</tt><tt class="descname">ColumnValidator</tt><big>(</big><em>parent</em>, <em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2sfact.html#ColumnValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.ColumnValidator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Validate a file to check that it contains columns of numbers</p>
 </dd></dl>
 
@@ -517,7 +526,8 @@ If multiple datasets are requested, use self.repeat and buffer caching.</p>
 <li><a class="reference internal" href="#support-routines"><em>support routines</em></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#contentsvalidator">ContentsValidator()</a><ul>
+<li><a class="reference internal" href="#contentsvalidator">ContentsValidator()</a></li>
+<li><a class="reference internal" href="#reinitialize">ReInitialize()</a><ul>
 <li><a class="reference internal" href="#contentsvalidator-return-values">ContentsValidator return values</a></li>
 </ul>
 </li>

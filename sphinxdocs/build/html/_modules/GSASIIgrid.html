@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIgrid - data display routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-12-05 14:50:03 -0600 (Thu, 05 Dec 2013) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1161 $</span>
+<span class="c"># $Date: 2013-12-19 13:34:54 -0600 (Thu, 19 Dec 2013) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 1177 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIgrid.py $</span>
-<span class="c"># $Id: GSASIIgrid.py 1161 2013-12-05 20:50:03Z toby $</span>
+<span class="c"># $Id: GSASIIgrid.py 1177 2013-12-19 19:34:54Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIgrid: Basic GUI routines*</span>
@@ -79,7 +79,7 @@
 <span class="kn">import</span> <span class="nn">wx.html</span>        <span class="c"># could postpone this for quicker startup</span>
 <span class="kn">import</span> <span class="nn">webbrowser</span>     <span class="c"># could postpone this for quicker startup</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1161 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1177 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -226,6 +226,9 @@
 <span class="sd">      If the value is not None, it must have a base</span>
 <span class="sd">      type of int, float, str or unicode; the TextCrtl will be initialized</span>
 <span class="sd">      from this value.</span>
+<span class="sd">      </span>
+<span class="sd">    :param list [nDig,nPlc]: number of digits &amp; places after decimal to use</span>
+<span class="sd">      for display of float (default=[10,2])</span>
 
 <span class="sd">    :param bool notBlank: if True (default) blank values are invalid</span>
 <span class="sd">      for str inputs.</span>
@@ -274,12 +277,13 @@
 <span class="sd">      wx.TextCtrl widget such as Size or Style may be specified.</span>
 
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="n">loc</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">notBlank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="nb">min</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="nb">max</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">,</span><span class="n">loc</span><span class="p">,</span><span class="n">key</span><span class="p">,</span><span class="n">nDig</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span><span class="n">notBlank</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="nb">min</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="nb">max</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                  <span class="n">OKcontrol</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">OnLeave</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">typeHint</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                  <span class="n">CIFinput</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
         <span class="c"># save passed values needed outside __init__</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">loc</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nDig</span> <span class="o">=</span> <span class="n">nDig</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">OKcontrol</span><span class="o">=</span><span class="n">OKcontrol</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">OnLeave</span> <span class="o">=</span> <span class="n">OnLeave</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">CIFinput</span> <span class="o">=</span> <span class="n">CIFinput</span>
@@ -365,7 +369,7 @@
                     <span class="k">pass</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">invalid</span> <span class="o">=</span> <span class="bp">True</span>
-            <span class="n">wx</span><span class="o">.</span><span class="n">TextCtrl</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">G2py3</span><span class="o">.</span><span class="n">FormatValue</span><span class="p">(</span><span class="n">val</span><span class="p">)))</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">TextCtrl</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">G2py3</span><span class="o">.</span><span class="n">FormatValue</span><span class="p">(</span><span class="n">val</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">nDig</span><span class="p">)))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">wx</span><span class="o">.</span><span class="n">TextCtrl</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ShowStringValidity</span><span class="p">()</span> <span class="c"># test if valid input</span>
@@ -1487,46 +1491,46 @@
                  <span class="n">title</span><span class="o">=</span><span class="s">&#39;Select an item&#39;</span><span class="p">,</span>
                  <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="s">&#39;Item Selector&#39;</span><span class="p">,</span>
                  <span class="n">useCancel</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39; Provide a wx dialog to select a single item from list of choices</span>
+    <span class="sd">&#39;&#39;&#39; Provide a wx dialog to select a single item or multiple items from list of choices</span>
 
-<span class="sd">        :param list ChoiceList: a list of choices where one will be selected</span>
-<span class="sd">        :param wx.Frame ParentFrame: Name of parent frame (default None)</span>
-<span class="sd">        :param str title: heading above list of choices (default &#39;Select an item&#39;)</span>
-<span class="sd">        :param wx.Size size: Size for dialog to be created (default None -- size as needed)</span>
-<span class="sd">        :param str header: Title to place on window frame (default &#39;Item Selector&#39;)</span>
-<span class="sd">        :param bool useCancel: If True (default) both the OK and Cancel buttons are offered</span>
-<span class="sd">        :param bool multiple: If True then multiple items can be selected (default False)</span>
-
-<span class="sd">        :returns: the selection index or None or a selection list if multiple is true</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">if</span> <span class="n">multiple</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">useCancel</span><span class="p">:</span>
-                <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2MultiChoiceDialog</span><span class="p">(</span>
-                    <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2MultiChoiceDialog</span><span class="p">(</span>
-                    <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">,</span>
-                    <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">RESIZE_BORDER</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CENTRE</span><span class="p">)</span>
+<span class="sd">    :param list ChoiceList: a list of choices where one will be selected</span>
+<span class="sd">    :param wx.Frame ParentFrame: Name of parent frame (default None)</span>
+<span class="sd">    :param str title: heading above list of choices (default &#39;Select an item&#39;)</span>
+<span class="sd">    :param wx.Size size: Size for dialog to be created (default None -- size as needed)</span>
+<span class="sd">    :param str header: Title to place on window frame (default &#39;Item Selector&#39;)</span>
+<span class="sd">    :param bool useCancel: If True (default) both the OK and Cancel buttons are offered</span>
+<span class="sd">    :param bool multiple: If True then multiple items can be selected (default False)</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: the selection index or None or a selection list if multiple is true</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">multiple</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">useCancel</span><span class="p">:</span>
+            <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2MultiChoiceDialog</span><span class="p">(</span>
+                <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">useCancel</span><span class="p">:</span>
-                <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">SingleChoiceDialog</span><span class="p">(</span>
-                    <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">SingleChoiceDialog</span><span class="p">(</span>
-                    <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span><span class="n">ChoiceList</span><span class="p">,</span>
-                    <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">RESIZE_BORDER</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CENTRE</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">size</span><span class="p">:</span> <span class="n">dlg</span><span class="o">.</span><span class="n">SetSize</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">multiple</span><span class="p">:</span>
-                <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
-                <span class="k">return</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetSelections</span><span class="p">()</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
-                <span class="k">return</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
+            <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2MultiChoiceDialog</span><span class="p">(</span>
+                <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">,</span>
+                <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">RESIZE_BORDER</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CENTRE</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">useCancel</span><span class="p">:</span>
+            <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">SingleChoiceDialog</span><span class="p">(</span>
+                <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">SingleChoiceDialog</span><span class="p">(</span>
+                <span class="n">ParentFrame</span><span class="p">,</span><span class="n">title</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span><span class="n">ChoiceList</span><span class="p">,</span>
+                <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">RESIZE_BORDER</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CENTRE</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">size</span><span class="p">:</span> <span class="n">dlg</span><span class="o">.</span><span class="n">SetSize</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">multiple</span><span class="p">:</span>
+            <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetSelections</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
-            <span class="k">return</span> <span class="bp">None</span>
+            <span class="k">return</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
         <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">None</span>
+    <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
 
 <span class="c">################################################################################</span></div>
 <div class="viewcode-block" id="GridFractionEditor"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIgrid.GridFractionEditor">[docs]</a><span class="k">class</span> <span class="nc">GridFractionEditor</span><span class="p">(</span><span class="n">wg</span><span class="o">.</span><span class="n">PyGridCellEditor</span><span class="p">):</span>
@@ -2525,8 +2529,8 @@
             <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select new powder histograms to be used for this phase&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">DataEdit</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_HKLFADD</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Add single crystal histograms&#39;</span><span class="p">,</span>
             <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select new single crystal histograms to be used for this phase&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">DataEdit</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_DATADELETE</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Delete histograms&#39;</span><span class="p">,</span>
-            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Delete histograms from use for this phase&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DataEdit</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">wxID_DATADELETE</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Remove histograms&#39;</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Remove histograms from use for this phase&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">PostfillDataMenu</span><span class="p">()</span>
             
         <span class="c"># Phase / Atoms tab</span>

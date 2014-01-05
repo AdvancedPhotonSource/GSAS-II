@@ -176,7 +176,9 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       from this value.
       
     :param list [nDig,nPlc]: number of digits & places after decimal to use
-      for display of float (default=[10,2])
+      for display of float. Alternately, None can be specified which causes
+      numbers to be displayed with approximately 5 significant figures
+      (Default=None).
 
     :param bool notBlank: if True (default) blank values are invalid
       for str inputs.
@@ -225,7 +227,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       wx.TextCtrl widget such as Size or Style may be specified.
 
     '''
-    def __init__(self,parent,loc,key,nDig=[10,2],notBlank=True,min=None,max=None,
+    def __init__(self,parent,loc,key,nDig=None,notBlank=True,min=None,max=None,
                  OKcontrol=None,OnLeave=None,typeHint=None,
                  CIFinput=False, **kw):
         # save passed values needed outside __init__
@@ -317,7 +319,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                     pass
                 else:
                     self.invalid = True
-            wx.TextCtrl.SetValue(self,str(G2py3.FormatValue(val,self.nDig)))
+            if self.nDig:
+                wx.TextCtrl.SetValue(self,str(G2py3.FormatValue(val,self.nDig)))
+            else:
+                wx.TextCtrl.SetValue(self,str(G2py3.FormatSigFigs(val)))
         else:
             wx.TextCtrl.SetValue(self,str(val))
             self.ShowStringValidity() # test if valid input
@@ -1597,7 +1602,7 @@ class ShowLSParms(wx.Dialog):
             # skip entries without numerical values
             if isinstance(parmDict[name],basestring): continue
             try:
-                value = G2py3.FormatValue(parmDict[name])
+                value = G2py3.FormatSigFigs(parmDict[name])
             except TypeError:
                 value = str(parmDict[name])+' -?' # unexpected
                 #continue

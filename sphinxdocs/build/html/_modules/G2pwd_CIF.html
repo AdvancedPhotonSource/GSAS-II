@@ -52,11 +52,11 @@
   <h1>Source code for G2pwd_CIF</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-25 14:24:22 -0500 (Fri, 25 Oct 2013) $</span>
+<span class="c"># $Date: 2013-12-16 10:43:01 -0600 (Mon, 16 Dec 2013) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1123 $</span>
+<span class="c"># $Revision: 1168 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_CIF.py $</span>
-<span class="c"># $Id: G2pwd_CIF.py 1123 2013-10-25 19:24:22Z toby $</span>
+<span class="c"># $Id: G2pwd_CIF.py 1168 2013-12-16 16:43:01Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*Module G2pwd_CIF: CIF powder data*</span>
@@ -71,7 +71,7 @@
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">CifFile</span> <span class="kn">as</span> <span class="nn">cif</span> <span class="c"># PyCifRW from James Hester</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1123 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1168 $&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="CIFpwdReader"><a class="viewcode-back" href="../imports.html#G2pwd_CIF.CIFpwdReader">[docs]</a><span class="k">class</span> <span class="nc">CIFpwdReader</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ImportPowderData</span><span class="p">):</span>
     <span class="s">&#39;Routines to import powder data from a CIF file&#39;</span>
@@ -84,25 +84,17 @@
             <span class="p">)</span>
     <span class="c"># Validate the contents</span>
 <div class="viewcode-block" id="CIFpwdReader.ContentsValidator"><a class="viewcode-back" href="../imports.html#G2pwd_CIF.CIFpwdReader.ContentsValidator">[docs]</a>    <span class="k">def</span> <span class="nf">ContentsValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filepointer</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">1000</span><span class="p">:</span> <span class="k">break</span>
-            <span class="sd">&#39;&#39;&#39; Encountered only blank lines or comments in first 1000</span>
-<span class="sd">            lines. This is unlikely, but assume it is CIF since we are</span>
-<span class="sd">            even less likely to find a file with nothing but hashes and</span>
-<span class="sd">            blank lines&#39;&#39;&#39;</span>
-            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">continue</span> <span class="c"># ignore blank lines</span>
-            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;#&#39;</span><span class="p">):</span>
-                <span class="k">continue</span> <span class="c"># ignore comments</span>
-            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;data_&#39;</span><span class="p">):</span>
-                <span class="k">return</span> <span class="bp">True</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">False</span> <span class="c"># found something else</span>
-        <span class="k">return</span> <span class="bp">True</span>
+        <span class="s">&#39;Use standard CIF validator&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">CIFValidator</span><span class="p">(</span><span class="n">filepointer</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="CIFpwdReader.Reader"><a class="viewcode-back" href="../imports.html#G2pwd_CIF.CIFpwdReader.Reader">[docs]</a>    <span class="k">def</span> <span class="nf">Reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filename</span><span class="p">,</span><span class="n">filepointer</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
-        <span class="c"># Define lists of data names used for holding powder diffraction data </span>
+        <span class="sd">&#39;&#39;&#39;Read powder data from a CIF.</span>
+<span class="sd">        If multiple datasets are requested, use self.repeat and buffer caching.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="c"># Define lists of data names used for holding powder diffraction data</span>
+        <span class="c"># entries of a type that are not implemented are commented out in case</span>
+        <span class="c"># we will want them later.</span>
         <span class="n">xDataItems</span> <span class="o">=</span> <span class="p">(</span>  <span class="c"># &quot;x-axis&quot; data names&quot;</span>
             <span class="p">(</span><span class="s">&#39;_pd_meas_2theta_range_min&#39;</span><span class="p">,</span> <span class="s">&#39;_pd_meas_2theta_range_max&#39;</span><span class="p">,</span> <span class="s">&#39;_pd_meas_2theta_range_inc&#39;</span><span class="p">),</span>
             <span class="p">(</span><span class="s">&#39;_pd_proc_2theta_range_min&#39;</span><span class="p">,</span> <span class="s">&#39;_pd_proc_2theta_range_max&#39;</span><span class="p">,</span> <span class="s">&#39;_pd_proc_2theta_range_inc&#39;</span><span class="p">),</span>
@@ -152,76 +144,87 @@
             <span class="n">choicelist</span> <span class="o">=</span> <span class="n">rdbuffer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;choicelist&#39;</span><span class="p">)</span>
             <span class="k">print</span> <span class="s">&#39;debug: Reuse previously parsed CIF&#39;</span>
             <span class="n">selections</span> <span class="o">=</span> <span class="n">rdbuffer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;selections&#39;</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">cf</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">ShowBusy</span><span class="p">()</span> <span class="c"># this can take a while</span>
+        <span class="k">if</span> <span class="n">cf</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ShowBusy</span><span class="p">()</span> <span class="c"># this can take a while</span>
+            <span class="k">print</span> <span class="s">&quot;Starting parse of CIF file&quot;</span>
+            <span class="k">try</span><span class="p">:</span>
                 <span class="n">cf</span> <span class="o">=</span> <span class="n">G2IO</span><span class="o">.</span><span class="n">ReadCIF</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">detail</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&quot;Parse or reading of file failed in pyCifRW; check syntax of file in enCIFer or CheckCIF&quot;</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">finally</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">DoneBusy</span><span class="p">()</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">detail</span><span class="p">:</span>
-            <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">formatName</span><span class="o">+</span><span class="s">&#39; read error:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span> <span class="c"># for testing</span>
-            <span class="kn">import</span> <span class="nn">traceback</span>
-            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">False</span>
-                
+            <span class="k">print</span> <span class="s">&quot;CIF file parsed&quot;</span>
         <span class="c"># scan all blocks for sets of data</span>
         <span class="k">if</span> <span class="n">choicelist</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">choicelist</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">blk</span> <span class="ow">in</span> <span class="n">cf</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">blkkeys</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span> <span class="c"># save a list of the data items, since we will use it often</span>
-                <span class="c"># scan through block for x items</span>
-                <span class="n">xldict</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xDataItems</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">:</span> <span class="c"># check for the presence of all three items that define a range of data</span>
-                        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">i</span> <span class="ow">in</span> <span class="n">blkkeys</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]):</span> <span class="k">continue</span>
-                        <span class="k">try</span><span class="p">:</span>
-                            <span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">xi</span><span class="p">])</span> <span class="k">for</span> <span class="n">xi</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
-                            <span class="n">l</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="p">(</span><span class="n">items</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">items</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-                        <span class="k">except</span><span class="p">:</span>
-                            <span class="k">continue</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span> <span class="k">continue</span>
-                        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">x</span><span class="p">])</span>
-                    <span class="k">if</span> <span class="n">xldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                        <span class="n">xldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">]</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">xldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-                <span class="c"># now look for matching intensity items</span>
-                <span class="n">yldict</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="n">suldict</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">intDataItems</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
-                        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">y</span><span class="p">])</span>
-                        <span class="k">if</span> <span class="n">yldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                            <span class="n">yldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">choicelist</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">blk</span> <span class="ow">in</span> <span class="n">cf</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">blkkeys</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span> <span class="c"># save a list of the data items, since we will use it often</span>
+                    <span class="c"># scan through block for x items</span>
+                    <span class="n">xldict</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xDataItems</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">:</span> <span class="c"># check for the presence of all three items that define a range of data</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">i</span> <span class="ow">in</span> <span class="n">blkkeys</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]):</span> <span class="k">continue</span>
+                            <span class="k">try</span><span class="p">:</span>
+                                <span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">xi</span><span class="p">])</span> <span class="k">for</span> <span class="n">xi</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
+                                <span class="n">l</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="p">(</span><span class="n">items</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">items</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                            <span class="k">except</span><span class="p">:</span>
+                                <span class="k">continue</span>
                         <span class="k">else</span><span class="p">:</span>
-                            <span class="n">yldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-                        <span class="c"># now check if the first item has an uncertainty</span>
-                        <span class="k">if</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">y</span><span class="p">][</span><span class="mi">0</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">continue</span>
-                        <span class="k">if</span> <span class="n">suldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                            <span class="n">suldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span> <span class="k">continue</span>
+                            <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">x</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="n">xldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                            <span class="n">xldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">]</span>
                         <span class="k">else</span><span class="p">:</span>
-                            <span class="n">suldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ESDDataItems</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
-                        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">y</span><span class="p">])</span>
-                        <span class="k">if</span> <span class="n">suldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                            <span class="n">suldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span><span class="p">]</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">suldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-                <span class="n">modldict</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ModDataItems</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
-                        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">y</span><span class="p">])</span>
-                        <span class="k">if</span> <span class="n">modldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                            <span class="n">modldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span><span class="p">]</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">modldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">xldict</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">yldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">continue</span>
-                    <span class="n">choicelist</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">blk</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">xldict</span><span class="p">[</span><span class="n">l</span><span class="p">],</span><span class="n">yldict</span><span class="p">[</span><span class="n">l</span><span class="p">],</span><span class="n">suldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">,[]),</span><span class="n">modldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">,[])])</span>
-                    <span class="c">#print blk,l,xldict[l],yldict[l],suldict.get(l,[]),modldict.get(l,[])</span>
+                            <span class="n">xldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                    <span class="c"># now look for matching intensity items</span>
+                    <span class="n">yldict</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="n">suldict</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">intDataItems</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
+                            <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">y</span><span class="p">])</span>
+                            <span class="k">if</span> <span class="n">yldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                                <span class="n">yldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span><span class="p">]</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">yldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                            <span class="c"># now check if the first item has an uncertainty</span>
+                            <span class="k">if</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">y</span><span class="p">][</span><span class="mi">0</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">continue</span>
+                            <span class="k">if</span> <span class="n">suldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                                <span class="n">suldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span><span class="p">]</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">suldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ESDDataItems</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
+                            <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">y</span><span class="p">])</span>
+                            <span class="k">if</span> <span class="n">suldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                                <span class="n">suldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span><span class="p">]</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">suldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                    <span class="n">modldict</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ModDataItems</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">blkkeys</span><span class="p">:</span>
+                            <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">y</span><span class="p">])</span>
+                            <span class="k">if</span> <span class="n">modldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                                <span class="n">modldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span><span class="p">]</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">modldict</span><span class="p">[</span><span class="n">l</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">xldict</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">yldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">continue</span>
+                        <span class="n">choicelist</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">blk</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">xldict</span><span class="p">[</span><span class="n">l</span><span class="p">],</span><span class="n">yldict</span><span class="p">[</span><span class="n">l</span><span class="p">],</span><span class="n">suldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">,[]),</span><span class="n">modldict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">,[])])</span>
+                        <span class="c">#print blk,l,xldict[l],yldict[l],suldict.get(l,[]),modldict.get(l,[])</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">detail</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&quot;Error scanning blocks&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">  Read exception: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span>
+                <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">formatName</span><span class="o">+</span><span class="s">&#39; read error:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span> <span class="c"># for testing</span>
+                <span class="kn">import</span> <span class="nn">traceback</span>
+                <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+                <span class="c">#self.errors += &quot;\n  Traceback info:\n&quot;+str(traceback.format_exc())</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">print</span> <span class="s">&quot;CIF file scanned for blocks with data&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">choicelist</span><span class="p">:</span>
             <span class="n">selblk</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># no block to choose</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&quot;No powder diffraction blocks found&quot;</span>
             <span class="k">return</span> <span class="bp">False</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">choicelist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> <span class="c"># only one choice</span>
             <span class="n">selblk</span> <span class="o">=</span> <span class="mi">0</span>
@@ -248,7 +251,9 @@
                 <span class="n">title</span><span class="o">=</span><span class="s">&#39;Select dataset(s) to read from the list below&#39;</span><span class="p">,</span>
                 <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">600</span><span class="p">,</span><span class="mi">100</span><span class="p">),</span>
                 <span class="n">header</span><span class="o">=</span><span class="s">&#39;Dataset Selector&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&quot;Abort: block not selected&quot;</span>
+                <span class="k">return</span> <span class="bp">False</span>
             <span class="n">selblk</span> <span class="o">=</span> <span class="n">selections</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c"># select first in list</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selections</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="c"># prepare to loop through again</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="bp">True</span>
@@ -259,6 +264,7 @@
                     <span class="n">rdbuffer</span><span class="p">[</span><span class="s">&#39;choicelist&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">choicelist</span> <span class="c"># save the parsed choices for the future</span>
 
         <span class="c"># got a selection, now read it</span>
+        <span class="c"># do we need to ask which fields to read?</span>
         <span class="n">blk</span><span class="p">,</span><span class="n">l</span><span class="p">,</span><span class="n">xch</span><span class="p">,</span><span class="n">ych</span><span class="p">,</span><span class="n">such</span><span class="p">,</span><span class="n">modch</span> <span class="o">=</span> <span class="n">choicelist</span><span class="p">[</span><span class="n">selblk</span><span class="p">]</span>
         <span class="n">xi</span><span class="p">,</span><span class="n">yi</span><span class="p">,</span><span class="n">sui</span><span class="p">,</span><span class="n">modi</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">xch</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">ych</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">such</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">modch</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -279,71 +285,32 @@
             <span class="n">chlbls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;Divide intensities by data item&#39;</span><span class="p">)</span>
             <span class="n">choices</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="s">&#39;none&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">modch</span><span class="p">)</span>
             <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MultipleChoicesDialog</span><span class="p">(</span><span class="n">choices</span><span class="p">,</span><span class="n">chlbls</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="p">:</span> <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&quot;Abort: data items not selected&quot;</span>
+                <span class="k">return</span> <span class="bp">False</span>
             <span class="n">xi</span><span class="p">,</span><span class="n">yi</span><span class="p">,</span><span class="n">sui</span><span class="p">,</span><span class="n">modi</span> <span class="o">=</span> <span class="n">res</span>
 
         <span class="c"># now read in the values</span>
-        <span class="c"># x-values</span>
-        <span class="n">xcf</span> <span class="o">=</span> <span class="n">xch</span><span class="p">[</span><span class="n">xi</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">xcf</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">:</span>
-            <span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">xi</span><span class="p">])</span> <span class="k">for</span> <span class="n">xi</span> <span class="ow">in</span> <span class="n">xcf</span><span class="p">]</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                <span class="p">[(</span><span class="n">i</span><span class="o">*</span><span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">]))]</span>
-                <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">vl</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">xcf</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">):</span>
-                <span class="n">v</span><span class="p">,</span><span class="n">e</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># not parsed</span>
-                    <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-            <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span>
-        <span class="c"># y-values</span>
-        <span class="n">ycf</span> <span class="o">=</span> <span class="n">ych</span><span class="p">[</span><span class="n">yi</span><span class="p">]</span>
-        <span class="n">vl</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ycf</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">):</span>
-            <span class="n">v</span><span class="p">,</span><span class="n">e</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># not parsed</span>
-                <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ShowBusy</span><span class="p">()</span> <span class="c"># this can also take a while</span>
+            <span class="c"># x-values</span>
+            <span class="n">xcf</span> <span class="o">=</span> <span class="n">xch</span><span class="p">[</span><span class="n">xi</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">xcf</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">:</span>
+                <span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">][</span><span class="n">xi</span><span class="p">])</span> <span class="k">for</span> <span class="n">xi</span> <span class="ow">in</span> <span class="n">xcf</span><span class="p">]</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                    <span class="p">[(</span><span class="n">i</span><span class="o">*</span><span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">+</span> <span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">vals</span><span class="p">[</span><span class="mi">2</span><span class="p">]))]</span>
+                    <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span>
-        <span class="c"># weights</span>
-        <span class="k">if</span> <span class="n">sui</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-            <span class="c"># no weights</span>
-            <span class="n">vl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">+</span> <span class="mf">1.</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">sucf</span> <span class="o">=</span> <span class="n">such</span><span class="p">[</span><span class="n">sui</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">sucf</span> <span class="o">==</span>  <span class="s">&#39;_pd_proc_ls_weight&#39;</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sucf</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">):</span>
+                <span class="n">vl</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">xcf</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">):</span>
                     <span class="n">v</span><span class="p">,</span><span class="n">e</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># not parsed</span>
-                        <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+                        <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">sucf</span> <span class="o">==</span>  <span class="s">&#39;_pd_meas_counts_total&#39;</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sucf</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">):</span>
-                    <span class="n">v</span><span class="p">,</span><span class="n">e</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># not parsed</span>
-                        <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">v</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">v</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sucf</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">):</span>
-                    <span class="n">v</span><span class="p">,</span><span class="n">e</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># not parsed</span>
-                        <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">v</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="n">v</span><span class="o">*</span><span class="n">v</span><span class="p">))</span>
-        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span>
-        <span class="c"># intensity modification factor</span>
-        <span class="k">if</span> <span class="n">modi</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">ycf</span> <span class="o">=</span> <span class="n">modch</span><span class="p">[</span><span class="n">modi</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span>
+            <span class="c"># y-values</span>
+            <span class="n">ycf</span> <span class="o">=</span> <span class="n">ych</span><span class="p">[</span><span class="n">yi</span><span class="p">]</span>
             <span class="n">vl</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ycf</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">):</span>
                 <span class="n">v</span><span class="p">,</span><span class="n">e</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
@@ -351,9 +318,65 @@
                     <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-            <span class="n">y</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span>
-            <span class="n">w</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span>
-        <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span>
+            <span class="c"># weights</span>
+            <span class="k">if</span> <span class="n">sui</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="c"># no weights</span>
+                <span class="n">vl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">+</span> <span class="mf">1.</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sucf</span> <span class="o">=</span> <span class="n">such</span><span class="p">[</span><span class="n">sui</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">sucf</span> <span class="o">==</span>  <span class="s">&#39;_pd_proc_ls_weight&#39;</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sucf</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">):</span>
+                        <span class="n">v</span><span class="p">,</span><span class="n">e</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># not parsed</span>
+                            <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">sucf</span> <span class="o">==</span>  <span class="s">&#39;_pd_meas_counts_total&#39;</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sucf</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">):</span>
+                        <span class="n">v</span><span class="p">,</span><span class="n">e</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># not parsed</span>
+                            <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="n">v</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sucf</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">):</span>
+                        <span class="n">v</span><span class="p">,</span><span class="n">e</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># not parsed</span>
+                            <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+                        <span class="k">elif</span> <span class="n">v</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="n">v</span><span class="o">*</span><span class="n">v</span><span class="p">))</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span>
+            <span class="c"># intensity modification factor</span>
+            <span class="k">if</span> <span class="n">modi</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">ycf</span> <span class="o">=</span> <span class="n">modch</span><span class="p">[</span><span class="n">modi</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">vl</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cf</span><span class="p">[</span><span class="n">blk</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ycf</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">):</span>
+                    <span class="n">v</span><span class="p">,</span><span class="n">e</span> <span class="o">=</span> <span class="n">cif</span><span class="o">.</span><span class="n">get_number_with_esd</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># not parsed</span>
+                        <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">NaN</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">vl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="n">y</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span>
+                <span class="n">w</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">detail</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&quot;Error reading from selected block&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">  Read exception: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span>
+            <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">formatName</span><span class="o">+</span><span class="s">&#39; read error:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span> <span class="c"># for testing</span>
+            <span class="kn">import</span> <span class="nn">traceback</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="nb">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+            <span class="c">#self.errors += &quot;\n  Traceback info:\n&quot;+str(traceback.format_exc())</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">DoneBusy</span><span class="p">()</span>
+            <span class="k">print</span> <span class="s">&quot;CIF file, read from selected block&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&quot;Error while storing read values&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">powderdata</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="c"># x-axis values</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="c"># powder pattern intensities</span>

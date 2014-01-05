@@ -170,6 +170,25 @@ which (if either) of these is &#8220;right&#8221;?</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIpwd.SurfaceRough">
+<tt class="descclassname">GSASIIpwd.</tt><tt class="descname">SurfaceRough</tt><big>(</big><em>SRA</em>, <em>SRB</em>, <em>Tth</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwd.html#SurfaceRough"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwd.SurfaceRough" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suortti (J. Appl. Cryst, 5,325-331, 1972) surface roughness correction
+:param float SRA: Suortti surface roughness parameter
+:param float SRB: Suortti surface roughness parameter
+:param float Tth: 2-theta(deg) - can be numpy array</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwd.SurfaceRoughDerv">
+<tt class="descclassname">GSASIIpwd.</tt><tt class="descname">SurfaceRoughDerv</tt><big>(</big><em>SRA</em>, <em>SRB</em>, <em>Tth</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwd.html#SurfaceRoughDerv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwd.SurfaceRoughDerv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suortti surface roughness correction derivatives
+:param float SRA: Suortti surface roughness parameter (dimensionless)
+:param float SRB: Suortti surface roughness parameter (dimensionless)
+:param float Tth: 2-theta(deg) - can be numpy array
+:return list: [dydSRA,dydSRB] derivatives to be used for intensity derivative</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIpwd.TestData">
 <tt class="descclassname">GSASIIpwd.</tt><tt class="descname">TestData</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIpwd.html#TestData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwd.TestData" title="Permalink to this definition">¶</a></dt>
 <dd><p>needs a doc string</p>

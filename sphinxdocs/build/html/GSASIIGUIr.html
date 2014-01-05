@@ -426,7 +426,7 @@ This shows up on the Mac as a very thin line, no matter what I do</p>
 <dl class="function">
 <dt id="GSASIIgrid.ItemSelector">
 <tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ItemSelector</tt><big>(</big><em>ChoiceList</em>, <em>ParentFrame=None</em>, <em>title='Select an item'</em>, <em>size=None</em>, <em>header='Item Selector'</em>, <em>useCancel=True</em>, <em>multiple=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ItemSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ItemSelector" title="Permalink to this definition">¶</a></dt>
-<dd><p>Provide a wx dialog to select a single item from list of choices</p>
+<dd><p>Provide a wx dialog to select a single item or multiple items from list of choices</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -850,7 +850,7 @@ to show results from a sequential refinement.</p>
 
 <dl class="class">
 <dt id="GSASIIgrid.ValidatedTxtCtrl">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ValidatedTxtCtrl</tt><big>(</big><em>parent</em>, <em>loc</em>, <em>key</em>, <em>notBlank=True</em>, <em>min=None</em>, <em>max=None</em>, <em>OKcontrol=None</em>, <em>OnLeave=None</em>, <em>typeHint=None</em>, <em>CIFinput=False</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ValidatedTxtCtrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ValidatedTxtCtrl" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ValidatedTxtCtrl</tt><big>(</big><em>parent</em>, <em>loc</em>, <em>key</em>, <em>nDig=None</em>, <em>notBlank=True</em>, <em>min=None</em>, <em>max=None</em>, <em>OKcontrol=None</em>, <em>OnLeave=None</em>, <em>typeHint=None</em>, <em>CIFinput=False</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ValidatedTxtCtrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ValidatedTxtCtrl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a TextCtrl widget that uses a validator to prevent the
 entry of inappropriate characters and changes color to highlight
 when invalid input is supplied. As valid values are typed,
@@ -880,6 +880,10 @@ default value: a user must set a valid value.
 If the value is not None, it must have a base
 type of int, float, str or unicode; the TextCrtl will be initialized
 from this value.</li>
+<li><strong>[nDig,nPlc]</strong> (<em>list</em>) &#8211; number of digits &amp; places after decimal to use
+for display of float. Alternately, None can be specified which causes
+numbers to be displayed with approximately 5 significant figures
+(Default=None).</li>
 <li><strong>notBlank</strong> (<em>bool</em>) &#8211; if True (default) blank values are invalid
 for str inputs.</li>
 <li><strong>min</strong> (<em>number</em>) &#8211; minimum allowed valid value. If None (default) the
@@ -1287,7 +1291,7 @@ than one set of data and one must be selected</p>
 
 <dl class="method">
 <dt id="GSASIIIO.ImportBaseclass.CIFValidator">
-<tt class="descname">CIFValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="headerlink" href="#GSASIIIO.ImportBaseclass.CIFValidator" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">CIFValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.CIFValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.CIFValidator" title="Permalink to this definition">¶</a></dt>
 <dd><p>A <a class="reference internal" href="#GSASIIIO.ImportBaseclass.ContentsValidator" title="GSASIIIO.ImportBaseclass.ContentsValidator"><tt class="xref py py-meth docutils literal"><span class="pre">ContentsValidator()</span></tt></a> for use to validate CIF files.</p>
 </dd></dl>
 
@@ -1350,6 +1354,12 @@ widget. Typical input:</p>
 </div></blockquote>
 <p>optional keyword parameters are: head (window title) and title
 returns a list of selected indicies for each choice (or None)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ImportBaseclass.ReInitialize">
+<tt class="descclassname">ImportBaseclass.</tt><tt class="descname">ReInitialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.ReInitialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.ReInitialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reinitialize the Reader to initital settings</p>
 </dd></dl>
 
 </dd></dl>
@@ -1433,6 +1443,12 @@ which specifies how the histogram is plotted
 <dt id="GSASIIIO.ImportStructFactor.Parameters">
 <tt class="descname">Parameters</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIIO.ImportStructFactor.Parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>self.Parameters is a list with two dicts for data parameter settings</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ImportStructFactor.ReInitialize">
+<tt class="descname">ReInitialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.ReInitialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.ReInitialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reinitialize the Reader to initital settings</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1631,10 +1647,10 @@ characters with a single space.</p>
 <p>Module to hold python 3-compatible code, to keep it separate from
 code that will break with __future__ options.</p>
 <dl class="function">
-<dt id="GSASIIpy3.FormatValue">
-<tt class="descclassname">GSASIIpy3.</tt><tt class="descname">FormatValue</tt><big>(</big><em>val</em>, <em>maxdigits=10</em><big>)</big><a class="reference internal" href="_modules/GSASIIpy3.html#FormatValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpy3.FormatValue" title="Permalink to this definition">¶</a></dt>
-<dd><p>Format a float to fit in <tt class="docutils literal"><span class="pre">maxdigits</span></tt> spaces, showing as much
-precision as possible, more or less.</p>
+<dt id="GSASIIpy3.FormatSigFigs">
+<tt class="descclassname">GSASIIpy3.</tt><tt class="descname">FormatSigFigs</tt><big>(</big><em>val</em>, <em>maxdigits=10</em>, <em>sigfigs=5</em>, <em>treatAsZero=1e-20</em><big>)</big><a class="reference internal" href="_modules/GSASIIpy3.html#FormatSigFigs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpy3.FormatSigFigs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format a float to use <tt class="docutils literal"><span class="pre">maxdigits</span></tt> or fewer digits with <tt class="docutils literal"><span class="pre">sigfigs</span></tt>
+significant digits showing (if room allows).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1643,6 +1659,32 @@ precision as possible, more or less.</p>
 <li><strong>val</strong> (<em>float</em>) &#8211; number to be formatted.</li>
 <li><strong>maxdigits</strong> (<em>int</em>) &#8211; the number of digits to be used for display of the
 number (defaults to 10).</li>
+<li><strong>sigfigs</strong> (<em>int</em>) &#8211; the number of significant figures to use, if room allows</li>
+<li><strong>treatAsZero</strong> (<em>float</em>) &#8211; numbers that are less than this in magnitude
+are treated as zero. Defaults to 1.0e-20, but this can be disabled
+if set to None.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a string with &lt;= maxdigits characters (I hope).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpy3.FormatValue">
+<tt class="descclassname">GSASIIpy3.</tt><tt class="descname">FormatValue</tt><big>(</big><em>val</em>, <em>maxdigits=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIpy3.html#FormatValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpy3.FormatValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format a float to fit in <tt class="docutils literal"><span class="pre">maxdigits[0]</span></tt> spaces with maxdigits[1] after decimal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>val</strong> (<em>float</em>) &#8211; number to be formatted.</li>
+<li><strong>maxdigits</strong> (<em>list</em>) &#8211; the number of digits &amp; places after decimal to be used for display of the
+number (defaults to [10,2]).</li>
 </ul>
 </td>
 </tr>

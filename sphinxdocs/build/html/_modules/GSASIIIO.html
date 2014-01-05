@@ -52,11 +52,11 @@
   <h1>Source code for GSASIIIO</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-11-28 21:16:02 -0600 (Thu, 28 Nov 2013) $</span>
+<span class="c"># $Date: 2013-12-17 16:12:54 -0600 (Tue, 17 Dec 2013) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1160 $</span>
+<span class="c"># $Revision: 1172 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $</span>
-<span class="c"># $Id: GSASIIIO.py 1160 2013-11-29 03:16:02Z toby $</span>
+<span class="c"># $Id: GSASIIIO.py 1172 2013-12-17 22:12:54Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIIO: Misc I/O routines*</span>
@@ -81,7 +81,7 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1160 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1172 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -93,6 +93,7 @@
 <span class="kn">import</span> <span class="nn">os.path</span> <span class="kn">as</span> <span class="nn">ospath</span>
 
 <span class="n">DEBUG</span> <span class="o">=</span> <span class="bp">False</span>       <span class="c">#=True for various prints</span>
+<span class="n">TRANSP</span> <span class="o">=</span> <span class="bp">False</span>      <span class="c">#=true to transpose images for testing</span>
 
 <div class="viewcode-block" id="sfloat"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.sfloat">[docs]</a><span class="k">def</span> <span class="nf">sfloat</span><span class="p">(</span><span class="n">S</span><span class="p">):</span>
     <span class="s">&#39;Convert a string to float. An empty field is treated as zero&#39;</span>
@@ -236,9 +237,15 @@
     <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s">&#39;.G2img&#39;</span><span class="p">:</span>
         <span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">Image</span> <span class="o">=</span> <span class="n">GetG2Image</span><span class="p">(</span><span class="n">imagefile</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">imageOnly</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">Image</span>
+        <span class="k">if</span> <span class="n">TRANSP</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Image</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Image</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">Image</span>
+        <span class="k">if</span> <span class="n">TRANSP</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">Image</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">Image</span>
         </div>
 <div class="viewcode-block" id="PutG2Image"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.PutG2Image">[docs]</a><span class="k">def</span> <span class="nf">PutG2Image</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">image</span><span class="p">):</span>
     <span class="s">&#39;Write an image as a python pickle&#39;</span>
@@ -1106,227 +1113,7 @@
         <span class="s">&#39;RBModels&#39;</span><span class="p">:{},</span>
         <span class="p">}</span>
     <span class="k">return</span> <span class="n">phaseData</span>
-    </div>
-<div class="viewcode-block" id="ReadEXPPhase"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ReadEXPPhase">[docs]</a><span class="k">def</span> <span class="nf">ReadEXPPhase</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">filename</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Read a phase from a GSAS .EXP file.</span>
-<span class="sd">    Called in the GSAS phase import routine (see imports/G2phase.py)</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">shModels</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;cylindrical&#39;</span><span class="p">,</span><span class="s">&#39;none&#39;</span><span class="p">,</span><span class="s">&#39;shear - 2/m&#39;</span><span class="p">,</span><span class="s">&#39;rolling - mmm&#39;</span><span class="p">]</span>
-    <span class="n">textureData</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;Order&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;Model&#39;</span><span class="p">:</span><span class="s">&#39;cylindrical&#39;</span><span class="p">,</span><span class="s">&#39;Sample omega&#39;</span><span class="p">:[</span><span class="bp">False</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span>
-        <span class="s">&#39;Sample chi&#39;</span><span class="p">:[</span><span class="bp">False</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span><span class="s">&#39;Sample phi&#39;</span><span class="p">:[</span><span class="bp">False</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span><span class="s">&#39;SH Coeff&#39;</span><span class="p">:[</span><span class="bp">False</span><span class="p">,{}],</span>
-        <span class="s">&#39;SHShow&#39;</span><span class="p">:</span><span class="bp">False</span><span class="p">,</span><span class="s">&#39;PFhkl&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;PFxyz&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;PlotType&#39;</span><span class="p">:</span><span class="s">&#39;Pole figure&#39;</span><span class="p">}</span>
-    <span class="n">shNcof</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="nb">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;Ur&#39;</span><span class="p">)</span>
-    <span class="n">S</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="n">Expr</span> <span class="o">=</span> <span class="p">[{},{},{},{},{},{},{},{},{}]</span>
-    <span class="k">while</span> <span class="n">S</span><span class="p">:</span>
-        <span class="n">S</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-        <span class="k">if</span> <span class="s">&#39;EXPR NPHAS&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[:</span><span class="mi">12</span><span class="p">]:</span>
-            <span class="n">Num</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s">&#39;0&#39;</span><span class="p">)</span>
-            <span class="n">NPhas</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-        <span class="k">if</span> <span class="s">&#39;CRS&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[:</span><span class="mi">3</span><span class="p">]:</span>
-            <span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span>
-            <span class="n">Expr</span><span class="p">[</span><span class="n">N</span><span class="p">][</span><span class="n">S</span><span class="p">[:</span><span class="mi">12</span><span class="p">]]</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="nb">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="n">PNames</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">n</span><span class="p">,</span><span class="n">N</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">NPhas</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">N</span> <span class="o">!=</span> <span class="s">&#39;0&#39;</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">n</span>
-            <span class="n">key</span> <span class="o">=</span> <span class="s">&#39;CRS&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;    PNAM&#39;</span>
-            <span class="n">PNames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Expr</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
-    <span class="k">if</span> <span class="n">Num</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
-        <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">SingleChoiceDialog</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span> <span class="s">&#39;Which phase to read?&#39;</span><span class="p">,</span> <span class="s">&#39;Read phase data&#39;</span><span class="p">,</span> <span class="n">PNames</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">CHOICEDLG_STYLE</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
-        <span class="k">finally</span><span class="p">:</span>
-            <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>        
-    <span class="n">EXPphase</span> <span class="o">=</span> <span class="n">Expr</span><span class="p">[</span><span class="n">result</span><span class="p">]</span>
-    <span class="n">keyList</span> <span class="o">=</span> <span class="n">EXPphase</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-    <span class="n">keyList</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
-    <span class="n">SGData</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">if</span> <span class="n">NPhas</span><span class="p">[</span><span class="n">result</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;1&#39;</span><span class="p">:</span>
-        <span class="n">Ptype</span> <span class="o">=</span> <span class="s">&#39;nuclear&#39;</span>
-    <span class="k">elif</span> <span class="n">NPhas</span><span class="p">[</span><span class="n">result</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;2&#39;</span><span class="p">,</span><span class="s">&#39;3&#39;</span><span class="p">]:</span>
-        <span class="n">Ptype</span> <span class="o">=</span> <span class="s">&#39;magnetic&#39;</span>
-    <span class="k">elif</span> <span class="n">NPhas</span><span class="p">[</span><span class="n">result</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;4&#39;</span><span class="p">:</span>
-        <span class="n">Ptype</span> <span class="o">=</span> <span class="s">&#39;macromolecular&#39;</span>
-    <span class="k">elif</span> <span class="n">NPhas</span><span class="p">[</span><span class="n">result</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;10&#39;</span><span class="p">:</span>
-        <span class="n">Ptype</span> <span class="o">=</span> <span class="s">&#39;Pawley&#39;</span>
-    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keyList</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s">&#39;PNAM&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
-           <span class="n">PhaseName</span> <span class="o">=</span> <span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="s">&#39;ABC   &#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
-            <span class="n">abc</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">][:</span><span class="mi">10</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">20</span><span class="p">:</span><span class="mi">30</span><span class="p">])]</span>                        
-        <span class="k">elif</span> <span class="s">&#39;ANGLES&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
-            <span class="n">angles</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">][:</span><span class="mi">10</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">20</span><span class="p">:</span><span class="mi">30</span><span class="p">])]</span>                                                
-        <span class="k">elif</span> <span class="s">&#39;SG SYM&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
-            <span class="n">SpGrp</span> <span class="o">=</span> <span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">][:</span><span class="mi">15</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-            <span class="n">E</span><span class="p">,</span><span class="n">SGData</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SpcGroup</span><span class="p">(</span><span class="n">SpGrp</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">E</span><span class="p">:</span>
-                <span class="n">E</span><span class="p">,</span><span class="n">SGData</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SpcGroup</span><span class="p">(</span><span class="s">&#39;P 1&#39;</span><span class="p">)</span> <span class="c"># unlikely to need this</span>
-        <span class="k">elif</span> <span class="s">&#39;OD    &#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
-            <span class="n">SHdata</span> <span class="o">=</span> <span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="c"># may not have all 9 values</span>
-            <span class="n">SHvals</span> <span class="o">=</span> <span class="mi">9</span><span class="o">*</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="nb">float</span><span class="p">(</span><span class="n">SHdata</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-                    <span class="n">SHvals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">SHdata</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-                <span class="k">except</span><span class="p">:</span>
-                    <span class="k">pass</span>
-            <span class="n">textureData</span><span class="p">[</span><span class="s">&#39;Order&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">SHvals</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-            <span class="n">textureData</span><span class="p">[</span><span class="s">&#39;Model&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">shModels</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">SHvals</span><span class="p">[</span><span class="mi">2</span><span class="p">])]</span>
-            <span class="n">textureData</span><span class="p">[</span><span class="s">&#39;Sample omega&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">False</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="n">SHvals</span><span class="p">[</span><span class="mi">6</span><span class="p">])]</span>
-            <span class="n">textureData</span><span class="p">[</span><span class="s">&#39;Sample chi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">False</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="n">SHvals</span><span class="p">[</span><span class="mi">7</span><span class="p">])]</span>
-            <span class="n">textureData</span><span class="p">[</span><span class="s">&#39;Sample phi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">False</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="n">SHvals</span><span class="p">[</span><span class="mi">8</span><span class="p">])]</span>
-            <span class="n">shNcof</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">SHvals</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">Atoms</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">if</span> <span class="n">Ptype</span> <span class="o">==</span> <span class="s">&#39;nuclear&#39;</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keyList</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s">&#39;AT&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">key</span><span class="p">[</span><span class="mi">11</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&#39;A&#39;</span><span class="p">:</span>
-                    <span class="n">S</span> <span class="o">=</span> <span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                <span class="k">elif</span> <span class="n">key</span><span class="p">[</span><span class="mi">11</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&#39;B&#39;</span><span class="p">:</span>
-                    <span class="n">S</span> <span class="o">+=</span> <span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                    <span class="n">Atom</span> <span class="o">=</span> <span class="p">[</span><span class="n">S</span><span class="p">[</span><span class="mi">50</span><span class="p">:</span><span class="mi">58</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span><span class="n">S</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span><span class="s">&#39;&#39;</span><span class="p">,</span>
-                        <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">20</span><span class="p">:</span><span class="mi">30</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">30</span><span class="p">:</span><span class="mi">40</span><span class="p">]),</span>
-                        <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">40</span><span class="p">:</span><span class="mi">50</span><span class="p">]),</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">60</span><span class="p">:</span><span class="mi">62</span><span class="p">]),</span><span class="n">S</span><span class="p">[</span><span class="mi">130</span><span class="p">:</span><span class="mi">131</span><span class="p">]]</span>
-                    <span class="k">if</span> <span class="n">Atom</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;I&#39;</span><span class="p">:</span>
-                        <span class="n">Atom</span> <span class="o">+=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">68</span><span class="p">:</span><span class="mi">78</span><span class="p">]),</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">]</span>
-                    <span class="k">elif</span> <span class="n">Atom</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;A&#39;</span><span class="p">:</span>
-                        <span class="n">Atom</span> <span class="o">+=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">68</span><span class="p">:</span><span class="mi">78</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">78</span><span class="p">:</span><span class="mi">88</span><span class="p">]),</span>
-                            <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">88</span><span class="p">:</span><span class="mi">98</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">98</span><span class="p">:</span><span class="mi">108</span><span class="p">]),</span>
-                            <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">108</span><span class="p">:</span><span class="mi">118</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">118</span><span class="p">:</span><span class="mi">128</span><span class="p">])]</span>
-                    <span class="n">XYZ</span> <span class="o">=</span> <span class="n">Atom</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span>
-                    <span class="n">Atom</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span><span class="n">Atom</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SytSym</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span><span class="n">SGData</span><span class="p">)</span>
-                    <span class="n">Atom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ran</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">))</span>
-                    <span class="n">Atoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Atom</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">Ptype</span> <span class="o">==</span> <span class="s">&#39;macromolecular&#39;</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keyList</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s">&#39;AT&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">8</span><span class="p">]:</span>
-                <span class="n">S</span> <span class="o">=</span> <span class="n">EXPphase</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                <span class="n">Atom</span> <span class="o">=</span> <span class="p">[</span><span class="n">S</span><span class="p">[</span><span class="mi">56</span><span class="p">:</span><span class="mi">60</span><span class="p">],</span><span class="n">S</span><span class="p">[</span><span class="mi">50</span><span class="p">:</span><span class="mi">54</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span><span class="n">S</span><span class="p">[</span><span class="mi">54</span><span class="p">:</span><span class="mi">56</span><span class="p">],</span>
-                    <span class="n">S</span><span class="p">[</span><span class="mi">46</span><span class="p">:</span><span class="mi">51</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span><span class="n">S</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span><span class="s">&#39;&#39;</span><span class="p">,</span>
-                    <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">16</span><span class="p">:</span><span class="mi">24</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">24</span><span class="p">:</span><span class="mi">32</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">32</span><span class="p">:</span><span class="mi">40</span><span class="p">]),</span>
-                    <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">8</span><span class="p">:</span><span class="mi">16</span><span class="p">]),</span><span class="s">&#39;1&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;I&#39;</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">40</span><span class="p">:</span><span class="mi">46</span><span class="p">]),</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">XYZ</span> <span class="o">=</span> <span class="n">Atom</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">9</span><span class="p">]</span>
-                <span class="n">Atom</span><span class="p">[</span><span class="mi">10</span><span class="p">],</span><span class="n">Atom</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SytSym</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span><span class="n">SGData</span><span class="p">)</span>
-                <span class="n">Atom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ran</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">))</span>
-                <span class="n">Atoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Atom</span><span class="p">)</span>
-    <span class="n">Volume</span> <span class="o">=</span> <span class="n">G2lat</span><span class="o">.</span><span class="n">calc_V</span><span class="p">(</span><span class="n">G2lat</span><span class="o">.</span><span class="n">cell2A</span><span class="p">(</span><span class="n">abc</span><span class="o">+</span><span class="n">angles</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">shNcof</span><span class="p">:</span>
-        <span class="n">shCoef</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">nRec</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">((</span><span class="n">shNcof</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">6</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
-        <span class="k">for</span> <span class="n">irec</span> <span class="ow">in</span> <span class="n">nRec</span><span class="p">:</span>
-            <span class="n">ODkey</span> <span class="o">=</span> <span class="n">keyList</span><span class="p">[</span><span class="mi">0</span><span class="p">][:</span><span class="mi">6</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;OD&#39;</span><span class="o">+</span><span class="s">&#39;</span><span class="si">%3d</span><span class="s">A&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">irec</span><span class="p">)</span>
-            <span class="n">indx</span> <span class="o">=</span> <span class="n">EXPphase</span><span class="p">[</span><span class="n">ODkey</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-            <span class="n">ODkey</span> <span class="o">=</span> <span class="n">ODkey</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;B&#39;</span>
-            <span class="n">vals</span> <span class="o">=</span> <span class="n">EXPphase</span><span class="p">[</span><span class="n">ODkey</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">vals</span><span class="p">):</span>
-                <span class="n">key</span> <span class="o">=</span> <span class="s">&#39;C(</span><span class="si">%s</span><span class="s">,</span><span class="si">%s</span><span class="s">,</span><span class="si">%s</span><span class="s">)&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">indx</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="p">],</span><span class="n">indx</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span><span class="n">indx</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span>
-                <span class="n">shCoef</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-        <span class="n">textureData</span><span class="p">[</span><span class="s">&#39;SH Coeff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">False</span><span class="p">,</span><span class="n">shCoef</span><span class="p">]</span>
-        
-    <span class="n">Phase</span> <span class="o">=</span> <span class="n">SetNewPhase</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="n">PhaseName</span><span class="p">,</span><span class="n">SGData</span><span class="o">=</span><span class="n">SGData</span><span class="p">,</span><span class="n">cell</span><span class="o">=</span><span class="n">abc</span><span class="o">+</span><span class="n">angles</span><span class="o">+</span><span class="p">[</span><span class="n">Volume</span><span class="p">,])</span>
-    <span class="n">general</span> <span class="o">=</span> <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">]</span>
-    <span class="n">general</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Ptype</span>
-    <span class="k">if</span> <span class="n">general</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">==</span><span class="s">&#39;macromolecular&#39;</span><span class="p">:</span>
-        <span class="n">general</span><span class="p">[</span><span class="s">&#39;AtomPtrs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">12</span><span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">general</span><span class="p">[</span><span class="s">&#39;AtomPtrs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">9</span><span class="p">]</span>    
-    <span class="n">general</span><span class="p">[</span><span class="s">&#39;SH Texture&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">textureData</span>
-    <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;Atoms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Atoms</span>
-    <span class="k">return</span> <span class="n">Phase</span>
        </div>
-<div class="viewcode-block" id="ReadPDBPhase"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ReadPDBPhase">[docs]</a><span class="k">def</span> <span class="nf">ReadPDBPhase</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Read a phase from a PDB file.</span>
-<span class="sd">    Called in the PDB phase import routine (see imports/G2phase.py)</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">EightPiSq</span> <span class="o">=</span> <span class="mf">8.</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span>
-    <span class="nb">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;Ur&#39;</span><span class="p">)</span>
-    <span class="n">Phase</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">Title</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
-    <span class="n">Compnd</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
-    <span class="n">Atoms</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
-    <span class="n">S</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-    <span class="k">while</span> <span class="n">S</span><span class="p">:</span>
-        <span class="n">Atom</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">if</span> <span class="s">&#39;TITLE&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[:</span><span class="mi">5</span><span class="p">]:</span>
-            <span class="n">Title</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">72</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-            <span class="n">S</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="s">&#39;COMPND    &#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[:</span><span class="mi">10</span><span class="p">]:</span>
-            <span class="n">Compnd</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">72</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-            <span class="n">S</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="s">&#39;CRYST&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[:</span><span class="mi">5</span><span class="p">]:</span>
-            <span class="n">abc</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="mi">7</span><span class="p">:</span><span class="mi">34</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-            <span class="n">angles</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="mi">34</span><span class="p">:</span><span class="mi">55</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-            <span class="n">cell</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">abc</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">abc</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">abc</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
-                <span class="nb">float</span><span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">angles</span><span class="p">[</span><span class="mi">2</span><span class="p">])]</span>
-            <span class="n">Volume</span> <span class="o">=</span> <span class="n">G2lat</span><span class="o">.</span><span class="n">calc_V</span><span class="p">(</span><span class="n">G2lat</span><span class="o">.</span><span class="n">cell2A</span><span class="p">(</span><span class="n">cell</span><span class="p">))</span>
-            <span class="n">AA</span><span class="p">,</span><span class="n">AB</span> <span class="o">=</span> <span class="n">G2lat</span><span class="o">.</span><span class="n">cell2AB</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
-            <span class="n">SpGrp</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="mi">55</span><span class="p">:</span><span class="mi">65</span><span class="p">]</span>
-            <span class="n">E</span><span class="p">,</span><span class="n">SGData</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SpcGroup</span><span class="p">(</span><span class="n">SpGrp</span><span class="p">)</span>
-            <span class="c"># space group processing failed, try to look up name in table</span>
-            <span class="k">if</span> <span class="n">E</span><span class="p">:</span>
-                <span class="n">SpGrpNorm</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">StandardizeSpcName</span><span class="p">(</span><span class="n">SpGrp</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">SpGrpNorm</span><span class="p">:</span>
-                    <span class="n">E</span><span class="p">,</span><span class="n">SGData</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SpcGroup</span><span class="p">(</span><span class="n">SpGrpNorm</span><span class="p">)</span>
-            <span class="k">while</span> <span class="n">E</span><span class="p">:</span>
-                <span class="k">print</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SGErrors</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
-                <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">TextEntryDialog</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span>
-                    <span class="n">SpGrp</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s">&#39; is invalid </span><span class="se">\n</span><span class="s">N.B.: make sure spaces separate axial fields in symbol&#39;</span><span class="p">,</span>
-                    <span class="s">&#39;ERROR in space group symbol&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
-                    <span class="n">SpGrp</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetValue</span><span class="p">()</span>
-                    <span class="n">E</span><span class="p">,</span><span class="n">SGData</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SpcGroup</span><span class="p">(</span><span class="n">SpGrp</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="bp">None</span>
-                <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>                
-            <span class="n">SGlines</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SGPrint</span><span class="p">(</span><span class="n">SGData</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">SGlines</span><span class="p">:</span> <span class="k">print</span> <span class="n">line</span>
-            <span class="n">S</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="s">&#39;SCALE&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[:</span><span class="mi">5</span><span class="p">]:</span>
-            <span class="n">V</span> <span class="o">=</span> <span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">41</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
-            <span class="n">A</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">V</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">V</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">V</span><span class="p">[</span><span class="mi">2</span><span class="p">])]</span>
-            <span class="n">S</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="s">&#39;ATOM&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="ow">or</span> <span class="s">&#39;HETATM&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[:</span><span class="mi">6</span><span class="p">]:</span>
-            <span class="n">XYZ</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">31</span><span class="p">:</span><span class="mi">39</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">39</span><span class="p">:</span><span class="mi">47</span><span class="p">]),</span><span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">47</span><span class="p">:</span><span class="mi">55</span><span class="p">])]</span>
-            <span class="n">XYZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">AB</span><span class="p">,</span><span class="n">XYZ</span><span class="p">)</span>
-            <span class="n">XYZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">XYZ</span><span class="p">)</span><span class="o">&lt;</span><span class="mf">0.00001</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">XYZ</span><span class="p">)</span>
-            <span class="n">SytSym</span><span class="p">,</span><span class="n">Mult</span> <span class="o">=</span> <span class="n">G2spc</span><span class="o">.</span><span class="n">SytSym</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span><span class="n">SGData</span><span class="p">)</span>
-            <span class="n">Uiso</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">61</span><span class="p">:</span><span class="mi">67</span><span class="p">])</span><span class="o">/</span><span class="n">EightPiSq</span>
-            <span class="n">Type</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="mi">14</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">Type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="s">&#39;123456789&#39;</span><span class="p">:</span>
-                <span class="n">Type</span> <span class="o">=</span> <span class="n">Type</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-            <span class="n">Atom</span> <span class="o">=</span> <span class="p">[</span><span class="n">S</span><span class="p">[</span><span class="mi">22</span><span class="p">:</span><span class="mi">27</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span><span class="n">S</span><span class="p">[</span><span class="mi">17</span><span class="p">:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span><span class="n">S</span><span class="p">[</span><span class="mi">20</span><span class="p">:</span><span class="mi">22</span><span class="p">],</span>
-                <span class="n">S</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="mi">17</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span><span class="n">Type</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">XYZ</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">XYZ</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">XYZ</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
-                <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="mi">55</span><span class="p">:</span><span class="mi">61</span><span class="p">]),</span><span class="n">SytSym</span><span class="p">,</span><span class="n">Mult</span><span class="p">,</span><span class="s">&#39;I&#39;</span><span class="p">,</span><span class="n">Uiso</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">S</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-            <span class="k">if</span> <span class="s">&#39;ANISOU&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">[:</span><span class="mi">6</span><span class="p">]:</span>
-                <span class="n">Uij</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="mi">30</span><span class="p">:</span><span class="mi">72</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-                <span class="n">Uij</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">Uij</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mf">10000.</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="n">Uij</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mf">10000.</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="n">Uij</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">/</span><span class="mf">10000.</span><span class="p">,</span>
-                    <span class="nb">float</span><span class="p">(</span><span class="n">Uij</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">/</span><span class="mf">10000.</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="n">Uij</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span><span class="o">/</span><span class="mf">10000.</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="n">Uij</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">/</span><span class="mf">10000.</span><span class="p">]</span>
-                <span class="n">Atom</span> <span class="o">=</span> <span class="n">Atom</span><span class="p">[:</span><span class="mi">14</span><span class="p">]</span><span class="o">+</span><span class="n">Uij</span>
-                <span class="n">Atom</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;A&#39;</span>
-                <span class="n">S</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-            <span class="n">Atom</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ran</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">))</span>
-            <span class="n">Atoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Atom</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>           
-            <span class="n">S</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-    <span class="nb">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">Title</span><span class="p">:</span>
-        <span class="n">PhaseName</span> <span class="o">=</span> <span class="n">Title</span>
-    <span class="k">elif</span> <span class="n">Compnd</span><span class="p">:</span>
-        <span class="n">PhaseName</span> <span class="o">=</span> <span class="n">Compnd</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">PhaseName</span> <span class="o">=</span> <span class="s">&#39;None&#39;</span>
-    <span class="n">Phase</span> <span class="o">=</span> <span class="n">SetNewPhase</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="n">PhaseName</span><span class="p">,</span><span class="n">SGData</span><span class="o">=</span><span class="n">SGData</span><span class="p">,</span><span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="o">+</span><span class="p">[</span><span class="n">Volume</span><span class="p">,])</span>
-    <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;macromolecular&#39;</span>
-    <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;General&#39;</span><span class="p">][</span><span class="s">&#39;AtomPtrs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">12</span><span class="p">]</span>
-    <span class="n">Phase</span><span class="p">[</span><span class="s">&#39;Atoms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Atoms</span>
-    <span class="k">return</span> <span class="n">Phase</span>
-</div>
 <div class="viewcode-block" id="MultipleChoicesDialog"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.MultipleChoicesDialog">[docs]</a><span class="k">class</span> <span class="nc">MultipleChoicesDialog</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;A dialog that offers a series of choices, each with a</span>
 <span class="sd">    title and a wx.Choice widget. Intended to be used Modally. </span>
@@ -1519,7 +1306,7 @@
 <span class="n">P1SGData</span> <span class="o">=</span> <span class="n">SGData</span>
 <div class="viewcode-block" id="ImportBaseclass"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportBaseclass">[docs]</a><span class="k">class</span> <span class="nc">ImportBaseclass</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Defines a base class for the reading of input files (diffraction</span>
-<span class="sd">    data, coordinates,...). See :ref:`Writing a Import Routine&lt;Import_Routines&gt;`</span>
+<span class="sd">    data, coordinates,...). See :ref:`Writing a Import Routine&lt;Import_routines&gt;`</span>
 <span class="sd">    for an explanation on how to use a subclass of this class. </span>
 <span class="sd">    &#39;&#39;&#39;</span>
 <div class="viewcode-block" id="ImportBaseclass.ImportException"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportBaseclass.ImportException">[docs]</a>    <span class="k">class</span> <span class="nc">ImportException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
@@ -1558,6 +1345,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">repeatcount</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="c">#print &#39;created&#39;,self.__class__</span>
 
+<div class="viewcode-block" id="ImportBaseclass.ReInitialize"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportBaseclass.ReInitialize">[docs]</a>    <span class="k">def</span> <span class="nf">ReInitialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&#39;Reinitialize the Reader to initital settings&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">warnings</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repeatcount</span> <span class="o">=</span> <span class="mi">0</span>
+</div>
 <div class="viewcode-block" id="ImportBaseclass.BlockSelector"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportBaseclass.BlockSelector">[docs]</a>    <span class="k">def</span> <span class="nf">BlockSelector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ChoiceList</span><span class="p">,</span> <span class="n">ParentFrame</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                       <span class="n">title</span><span class="o">=</span><span class="s">&#39;Select a block&#39;</span><span class="p">,</span>
                       <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="s">&#39;Block Selector&#39;</span><span class="p">,</span>
@@ -1627,9 +1421,11 @@
 </div>
     <span class="k">def</span> <span class="nf">ShowBusy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">wx</span><span class="o">.</span><span class="n">BeginBusyCursor</span><span class="p">()</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">Yield</span><span class="p">()</span> <span class="c"># make it happen now!</span>
 
     <span class="k">def</span> <span class="nf">DoneBusy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">wx</span><span class="o">.</span><span class="n">EndBusyCursor</span><span class="p">()</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">Yield</span><span class="p">()</span> <span class="c"># make it happen now!</span>
         
 <span class="c">#    def Reader(self, filename, filepointer, ParentFrame=None, **unused):</span>
 <span class="c">#        &#39;&#39;&#39;This method must be supplied in the child class to read the file. </span>
@@ -1666,6 +1462,29 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="c">#filepointer.seek(0) # rewind the file pointer</span>
         <span class="k">return</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="ImportBaseclass.CIFValidator"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportBaseclass.CIFValidator">[docs]</a>    <span class="k">def</span> <span class="nf">CIFValidator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepointer</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;A :meth:`ContentsValidator` for use to validate CIF files.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">l</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">filepointer</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">1000</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+            <span class="sd">&#39;&#39;&#39;Encountered only blank lines or comments in first 1000</span>
+<span class="sd">            lines. This is unlikely, but assume it is CIF anyway, since we are</span>
+<span class="sd">            even less likely to find a file with nothing but hashes and</span>
+<span class="sd">            blank lines&#39;&#39;&#39;</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c"># ignore blank lines</span>
+                <span class="k">continue</span> 
+            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;#&#39;</span><span class="p">):</span> <span class="c"># ignore comments</span>
+                <span class="k">continue</span> 
+            <span class="k">elif</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;data_&#39;</span><span class="p">):</span> <span class="c"># on the right track, accept this file</span>
+                <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c"># found something invalid</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">=</span> <span class="s">&#39;line &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; contains unexpected data:</span><span class="se">\n</span><span class="s">&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">+=</span> <span class="s">&#39;  &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">+=</span> <span class="s">&#39;  Note: a CIF should only have blank lines or comments before&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">errors</span> <span class="o">+=</span> <span class="s">&#39;        a data_ statement begins a block.&#39;</span>
+                <span class="k">return</span> <span class="bp">False</span> 
 </div></div>
 <div class="viewcode-block" id="ImportPhase"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportPhase">[docs]</a><span class="k">class</span> <span class="nc">ImportPhase</span><span class="p">(</span><span class="n">ImportBaseclass</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Defines a base class for the reading of files with coordinates</span>
@@ -1699,18 +1518,19 @@
 <span class="sd">    Structure factors are read with a call to :meth:`GSASII.GSASII.OnImportSfact`</span>
 <span class="sd">    which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`, which calls</span>
 <span class="sd">    methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and</span>
-<span class="sd">    :meth:`Reader`. </span>
-<span class="sd">    See :ref:`Writing a Import Routine&lt;Import_Routines&gt;`</span>
-<span class="sd">    for an explanation on how to use this class. </span>
+<span class="sd">    :meth:`Reader`.</span>
 
-<span class="sd">    Note that the default controls are stored in self.Controls and the</span>
-<span class="sd">    default instrument parameters are stored in self.Parameters.</span>
-<span class="sd">    These can be changed, but any changes will be the defaults for all</span>
-<span class="sd">    subsequent uses of the :class:`ImportStructFactor` derived classes</span>
-<span class="sd">    until :meth:`InitControls` and :meth:`InitParameters` are</span>
-<span class="sd">    called. Probably better to use :meth:`UpdateControls` and</span>
-<span class="sd">    :meth:`UpdateControls` (adding new args if needed) to change</span>
-<span class="sd">    values.</span>
+<span class="sd">    See :ref:`Writing a Import Routine&lt;Import_Routines&gt;`</span>
+<span class="sd">    for an explanation on how to use import classes in general. The specifics </span>
+<span class="sd">    for reading a structure factor histogram require that</span>
+<span class="sd">    the ``Reader()`` routine in the import</span>
+<span class="sd">    class need to do only a few things: It</span>
+<span class="sd">    should load :attr:`RefDict` item ``&#39;RefList&#39;`` with the reflection list,</span>
+<span class="sd">    and set :attr:`Parameters` with the instrument parameters</span>
+<span class="sd">    (initialized with :meth:`InitParameters` and set with :meth:`UpdateParameters`).</span>
+<span class="sd">    Also, set :attr:`Controls`, </span>
+<span class="sd">    which specifies how the histogram is plotted</span>
+<span class="sd">    (initialized with :meth:`InitControls` and set with :meth:`UpdateControls`).</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">formatName</span><span class="p">,</span><span class="n">longFormatName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">extensionlist</span><span class="o">=</span><span class="p">[],</span>
         <span class="n">strictExtension</span><span class="o">=</span><span class="bp">False</span><span class="p">,):</span>
@@ -1718,10 +1538,28 @@
             <span class="n">extensionlist</span><span class="p">,</span><span class="n">strictExtension</span><span class="p">)</span>
 
         <span class="c"># define contents of Structure Factor entry</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Parameters</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="s">&#39;self.Parameters is a list with two dicts for data parameter settings&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">InitParameters</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Controls</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="s">&#39;self.Controls is a dict with plotting controls&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">InitControls</span><span class="p">()</span> <span class="c"># initialize the above</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+        <span class="sd">&#39;&#39;&#39;self.RefDict is a dict containing the reflection information, as read from the file.</span>
+<span class="sd">        Item &#39;RefList&#39; contains the reflection information. See the</span>
+<span class="sd">        :ref:`Single Crystal Reflection Data Structure&lt;XtalRefl_table&gt;`</span>
+<span class="sd">        for the contents of each row. Dict element &#39;FF&#39;</span>
+<span class="sd">        contains the form factor values for each element type; if this entry</span>
+<span class="sd">        is left as initialized (an empty list) it will be initialized as needed later. </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+<div class="viewcode-block" id="ImportStructFactor.ReInitialize"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportStructFactor.ReInitialize">[docs]</a>    <span class="k">def</span> <span class="nf">ReInitialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&#39;Reinitialize the Reader to initital settings&#39;</span>
+        <span class="n">ImportBaseclass</span><span class="o">.</span><span class="n">ReInitialize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">InitParameters</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">InitControls</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
-        
+
+        </div>
 <div class="viewcode-block" id="ImportStructFactor.InitControls"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportStructFactor.InitControls">[docs]</a>    <span class="k">def</span> <span class="nf">InitControls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="s">&#39;initialize the controls structure&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Controls</span> <span class="o">=</span> <span class="p">{</span> <span class="c"># dictionary with plotting controls</span>
@@ -1743,6 +1581,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Parameters</span> <span class="o">=</span> <span class="p">[{</span><span class="s">&#39;Type&#39;</span><span class="p">:[</span><span class="n">HistType</span><span class="p">,</span><span class="n">HistType</span><span class="p">],</span> <span class="c"># create the structure</span>
                             <span class="s">&#39;Lam&#39;</span><span class="p">:[</span><span class="n">Lambda</span><span class="p">,</span><span class="n">Lambda</span><span class="p">]</span>
                             <span class="p">},</span> <span class="p">{}]</span>
+        <span class="s">&#39;Parameters is a list with two dicts for data parameter settings&#39;</span>
 </div>
 <div class="viewcode-block" id="ImportStructFactor.UpdateParameters"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportStructFactor.UpdateParameters">[docs]</a>    <span class="k">def</span> <span class="nf">UpdateParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">Type</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">Wave</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="s">&#39;Revise the instrument parameters&#39;</span>

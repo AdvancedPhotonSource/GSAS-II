@@ -870,9 +870,9 @@ used as a key, and the information in the main entry is assigned
 a key of <tt class="docutils literal"><span class="pre">Data</span></tt>, as outlined below.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="25%" />
+<col width="24%" />
 <col width="17%" />
-<col width="58%" />
+<col width="59%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">key</th>
@@ -881,7 +881,13 @@ a key of <tt class="docutils literal"><span class="pre">Data</span></tt>, as out
 </tr>
 </thead>
 <tbody valign="top">
-<tr class="row-even"><td>Limits</td>
+<tr class="row-even"><td>Comments</td>
+<td></td>
+<td>Text strings extracted from the original powder
+data header. These cannot be changed by the user;
+it may be empty.</td>
+</tr>
+<tr class="row-odd"><td>Limits</td>
 <td></td>
 <td>A list of two two element lists, as [[Ld,Hd],[L,H]]
 where L and Ld are the current and default lowest
@@ -889,7 +895,7 @@ two-theta value to be used and
 where H and Hd are the current and default highest
 two-theta value to be used.</td>
 </tr>
-<tr class="row-odd"><td>Reflection Lists</td>
+<tr class="row-even"><td>Reflection Lists</td>
 <td></td>
 <td>A dict with an entry for each phase in the
 histogram. The contents of each dict item
@@ -897,7 +903,7 @@ is a dict containing reflections, as described in
 the <a class="reference internal" href="#powderrefl-table"><em>Powder Reflections</em></a>
 description.</td>
 </tr>
-<tr class="row-even"><td>Instrument Parameters</td>
+<tr class="row-odd"><td>Instrument Parameters</td>
 <td></td>
 <td>A list containing two dicts where the possible
 keys in each dict are listed below. The value
@@ -909,17 +915,17 @@ cannot be refined. The first and second
 values are floats unless otherwise noted.
 Items in the first dict are noted as [1]</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>Lam</td>
 <td>Specifies a wavelength in Angstroms [1]</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>Lam1</td>
 <td>Specifies the primary wavelength in
 Angstrom, when an alpha1, alpha2
 source is used [1]</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td><p class="first">Lam2</p>
 <p class="last">I(L2)/I(L1)</p>
 </td>
@@ -928,7 +934,7 @@ Angstrom, when an alpha1, alpha2
 source is used [1]
 Ratio of Lam2 to Lam1 [1]</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>Type</td>
 <td><dl class="first last docutils">
 <dt>Histogram type (str) [1]:</dt>
@@ -941,28 +947,28 @@ Ratio of Lam2 to Lam1 [1]</td>
 </dl>
 </td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>Zero</td>
 <td>Two-theta zero correction in <em>degrees</em> [1]</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>Azimuth</td>
 <td>Azimuthal setting angle for data recorded
 with differing setting angles [1]</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>U, V, W</td>
 <td>Cagliotti profile coefficients
 for Gaussian instrumental broadening, where the
 FWHM goes as
 <span class="math">\(U \tan^2\theta + V \tan\theta + W\)</span> [1]</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>X, Y</td>
 <td>Cauchy (Lorentzian) instrumental broadening
 coefficients [1]</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>SH/L</td>
 <td>Variant of the Finger-Cox-Jephcoat asymmetric
 peak broadening ratio. Note that this is the
@@ -970,11 +976,11 @@ average between S/L and H/L where S is
 sample height, H is the slit height and
 L is the goniometer diameter. [1]</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>Polariz.</td>
 <td>Polarization coefficient. [1]</td>
 </tr>
-<tr class="row-odd"><td>wtFactor</td>
+<tr class="row-even"><td>wtFactor</td>
 <td></td>
 <td>A weighting factor to increase or decrease
 the leverage of data in the histogram (float).
@@ -983,7 +989,7 @@ standard uncertainties and a larger value
 increases the weighting of the data (equivalent
 to decreasing the uncertainties).</td>
 </tr>
-<tr class="row-even"><td>Sample Parameters</td>
+<tr class="row-odd"><td>Sample Parameters</td>
 <td></td>
 <td>Specifies a dict with parameters that describe how
 the data were collected, as listed
@@ -992,17 +998,28 @@ a float and a bool, where the second value
 specifies if the value is refined, otherwise
 the value is a float unless otherwise noted.</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>Scale</td>
 <td>The histogram scale factor (refinable)</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>Absorption</td>
 <td>The sample absorption coefficient as
 <span class="math">\(\mu r\)</span> where r is the radius
-(refinable).</td>
+(refinable). Only valid for Debye-Scherrer geometry.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>SurfaceRoughA</td>
+<td>Surface roughness parameter A as defined by
+Surotti,J. Appl. Cryst, 5,325-331, 1972.(refinable -
+only valid for Bragg-Brentano geometry)</td>
 </tr>
 <tr class="row-odd"><td></td>
+<td>SurfaceRoughB</td>
+<td>Surface roughness parameter B (refinable -
+only valid for Bragg-Brentano geometry)</td>
+</tr>
+<tr class="row-even"><td></td>
 <td>DisplaceX,
 DisplaceY</td>
 <td>Sample displacement from goniometer center
@@ -1010,21 +1027,21 @@ where Y is along the beam direction and
 X is perpendicular. Units are <span class="math">\(\mu m\)</span>
 (refinable).</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>Phi, Chi,
 Omega</td>
 <td>Goniometer sample setting angles, in degrees.</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>Gonio. radius</td>
 <td>Radius of the diffractometer in mm</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>InstrName</td>
 <td>A name for the instrument, used in preparing
 a CIF (str).</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>Force,
 Temperature,
 Humidity,
@@ -1034,31 +1051,31 @@ Voltage</td>
 was performed. Not used directly in
 any computations.</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>ranId</td>
 <td>The random-number Id for the histogram
 (same value as where top-level key is ranId)</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>Type</td>
 <td>Type of diffraction data, may be &#8216;Debye-Scherrer&#8217;
 or &#8216;Bragg-Brentano&#8217; (str).</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>Diffuse</td>
 <td>not in use?</td>
 </tr>
-<tr class="row-odd"><td>hId</td>
+<tr class="row-even"><td>hId</td>
 <td></td>
 <td>The number assigned to the histogram when
 the project is loaded or edited (can change)</td>
 </tr>
-<tr class="row-even"><td>ranId</td>
+<tr class="row-odd"><td>ranId</td>
 <td></td>
 <td>A random number id for the histogram
 that does not change</td>
 </tr>
-<tr class="row-odd"><td>Background</td>
+<tr class="row-even"><td>Background</td>
 <td></td>
 <td>The background is stored as a list with where
 the first item in the list is list and the second
@@ -1067,7 +1084,7 @@ function and its coefficients; the dict contains
 Debye diffuse terms and background peaks.
 (TODO: this needs to be expanded.)</td>
 </tr>
-<tr class="row-even"><td>Data</td>
+<tr class="row-odd"><td>Data</td>
 <td></td>
 <td><p class="first">The data consist of a list of 6 np.arrays
 containing in order:</p>
@@ -1272,6 +1289,294 @@ gives Iobs or Icalc</td>
 </tbody>
 </table>
 </div>
+<div class="section" id="image-data-structure">
+<h2>Image Data Structure<a class="headerlink" href="#image-data-structure" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="image-table"></span><p id="index-12">Every 2-dimensional image is stored in the GSAS-II data tree
+with a top-level entry named beginning with the string &#8220;IMG &#8221;. The
+image data are directly associated with that tree item and there 
+are a series of children to that item. The routines <a class="reference internal" href="GSASII.html#GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree" title="GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree"><tt class="xref py py-func docutils literal"><span class="pre">GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree()</span></tt></a>
+and <a class="reference internal" href="GSASIIstruc.html#GSASIIstrIO.GetUsedHistogramsAndPhases" title="GSASIIstrIO.GetUsedHistogramsAndPhases"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrIO.GetUsedHistogramsAndPhases()</span></tt></a> will
+load this information into a dictionary where the child tree name is
+used as a key, and the information in the main entry is assigned
+a key of <tt class="docutils literal"><span class="pre">Data</span></tt>, as outlined below.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="12%" />
+<col width="12%" />
+<col width="76%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">key</th>
+<th class="head">sub-key</th>
+<th class="head">explanation</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Comments</td>
+<td></td>
+<td>Text strings extracted from the original image data
+header or a metafile. These cannot be changed by
+the user; it may be empty.</td>
+</tr>
+<tr class="row-odd"><td>Image Controls</td>
+<td>azmthOff</td>
+<td>(float) The offset to be applied to an azimuthal
+value. Accomodates
+detector orientations other than with the detector
+X-axis
+horizontal.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>background image</td>
+<td>(list:str,float) The name of a tree item (&#8220;IMG ...&#8221;) that is to be subtracted
+during image integration multiplied by value. It must have the same size/shape as
+the integrated image. NB: value &lt; 0 for subtraction.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>calibrant</td>
+<td>(str) The material used for determining the position/orientation
+of the image. The data is obtained from <a class="reference internal" href="GSASIIutil.html#module-ImageCalibrants" title="ImageCalibrants"><tt class="xref py py-func docutils literal"><span class="pre">ImageCalibrants()</span></tt></a>
+and UserCalibrants.py (supplied by user).</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>calibdmin</td>
+<td>(float) The minimum d-spacing used during the last calibration run.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>calibskip</td>
+<td>(int) The number of expected diffraction lines skipped during the last
+calibration run.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>center</td>
+<td>(list:floats) The [X,Y] point in detector coordinates (mm) where the direct beam
+strikes the detector plane as determined by calibration. This point
+does not have to be within the limits of the detector boundaries.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>centerAzm</td>
+<td>(bool) If True then the azimuth reported for the integrated slice
+of the image is at the center line otherwise it is at the leading edge.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>color</td>
+<td>(str) The name of the colormap used to display the image. Default = &#8216;Paired&#8217;.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>cutoff</td>
+<td>(float) The minimum value of I/Ib for a point selected in a diffraction ring for
+calibration calculations. See pixLimit for details as how point is found.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>DetDepth</td>
+<td>(float) Coefficient for penetration correction to distance; accounts for diffraction
+ring offset at higher angles. Optionally determined by calibration.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>DetDepthRef</td>
+<td>(bool) If True then refine DetDepth during calibration/recalibration calculation.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>distance</td>
+<td>(float) The distance (mm) from sample to detector plane.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>ellipses</td>
+<td>(list:lists) Each object in ellipses is a list [center,phi,radii,color] where
+center (list) is location (mm) of the ellipse center on the detector plane, phi is the
+rotation of the ellipse minor axis from the x-axis, and radii are the minor &amp; major
+radii of the ellipse. If radii[0] is negative then parameters describe a hyperbola. Color
+is the selected drawing color (one of &#8216;b&#8217;, &#8216;g&#8217; ,&#8217;r&#8217;) for the ellipse/hyperbola.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>edgemin</td>
+<td>(float) Not used;  parameter in EdgeFinder code.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>fullIntegrate</td>
+<td>(bool) If True then integrate over full 360 deg azimuthal range.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>GonioAngles</td>
+<td>(list:floats) The &#8216;Omega&#8217;,&#8217;Chi&#8217;,&#8217;Phi&#8217; goniometer angles used for this image.
+Required for texture calculations.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>invert_x</td>
+<td>(bool) If True display the image with the x-axis inverted.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>invert_y</td>
+<td>(bool) If True display the image with the y-axis inverted.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>IOtth</td>
+<td>(list:floats) The minimum and maximum 2-theta values to be used for integration.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>LRazimuth</td>
+<td>(list:floats) The minimum and maximum azimuth values to be used for integration.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Oblique</td>
+<td>(list:float,bool) If True apply a detector absorption correction using the value to the
+intensities obtained during integration.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>outAzimuths</td>
+<td>(int) The number of azimuth pie slices.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>outChannels</td>
+<td>(int) The number of 2-theta steps.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>pixelSize</td>
+<td>(list:ints) The X,Y dimensions (microns) of each pixel.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>pixLimit</td>
+<td>(int) A box in the image with 2*pixLimit+1 edges is searched to find the maximum.
+This value (I) along with the minimum (Ib) in the box is reported by <a class="reference internal" href="GSASIIimage.html#GSASIIimage.ImageLocalMax" title="GSASIIimage.ImageLocalMax"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIimage.ImageLocalMax()</span></tt></a>
+and subject to cutoff in <a class="reference internal" href="GSASIIimage.html#GSASIIimage.makeRing" title="GSASIIimage.makeRing"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIimage.makeRing()</span></tt></a>.
+Locations are used to construct rings of points for calibration calcualtions.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>PolaVal</td>
+<td>(list:float,bool) If type=&#8217;SASD&#8217; and if True, apply polarization correction to intensities from
+integration using value.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>rings</td>
+<td>(list:lists) Each entry is [X,Y,dsp] where X &amp; Y are lists of x,y coordinates around a
+diffraction ring with the same d-spacing (dsp)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>ring</td>
+<td>(list) The x,y coordinates of the &gt;5 points on an inner ring
+selected by the user,</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Range</td>
+<td>(list) The minimum &amp; maximum values of the image</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>rotation</td>
+<td>(float) The angle between the x-axis and the vector about which the
+detector is tilted. Constrained to -180 to 180 deg.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>SampleShape</td>
+<td>(str) Currently only &#8216;Cylinder&#8217;. Sample shape for Debye-Scherrer experiments; used for absorption
+calculations.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>SampleAbs</td>
+<td>(list: float,bool) Value of absorption coefficient for Debye-Scherrer experimnents, flag if True
+to cause correction to be applied.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>setDefault</td>
+<td>(bool) If True the use the image controls values for all new images to be read. (might be removed)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>setRings</td>
+<td>(bool) If True then display all the selected x,y ring positions (vida supra rings) used in the calibration.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>showLines</td>
+<td>(bool) If True then isplay the integration limits to be used.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>size</td>
+<td>(list:int) The number of pixels on the image x &amp; y axes</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>type</td>
+<td>(str) One of &#8216;PWDR&#8217;, &#8216;SASD&#8217; or &#8216;REFL&#8217; for powder, small angle or reflectometry data, respectively.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>tilt</td>
+<td>(float) The angle the detector normal makes with the incident beam; range -90 to 90.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>wavelength</td>
+<td>(float) Tha radiation wavelength (Angstroms) as entered by the user (or someday obtained from the image header).</td>
+</tr>
+<tr class="row-even"><td>Masks</td>
+<td>Arcs</td>
+<td>(list: lists) Each entry [2-theta,[azimuth[0],azimuth[1]],thickness] describes an arc mask
+to be excluded from integration</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Frames</td>
+<td>(list:lists) Each entry describes the x,y points (3 or more - mm) that describe a frame outside
+of which is excluded from recalibration and integration. Only one frame is allowed.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Points</td>
+<td>(list:lists) Each entry [x,y,radius] (mm) describes an excluded spot on the image to be excluded
+from integration.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Polygons</td>
+<td>(list:lists) Each entry is a list of 3+ [x,y] points (mm) that describe a polygon on the image
+to be excluded from integration.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>Rings</td>
+<td>(list: lists) Each entry [2-theta,thickness] describes a ring mask
+to be excluded from integration.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Thresholds</td>
+<td>(list:[tuple,list]) [(Imin,Imax),[Imin,Imax]] This gives lower and upper limits for points on the image to be included
+in integrsation. The tuple is the image intensity limits and the list are those set by the user.</td>
+</tr>
+<tr class="row-even"><td>Stress/Strain</td>
+<td>Sample phi</td>
+<td>(float) Sample rotation about vertical axis.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Sample z</td>
+<td>(float) Sample translation from the calibration sample position (for Sample phi = 0)</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>strain</td>
+<td>(list: 3x3 array of float) The strain tensor coefficients [[&#8216; e11&#8217;,&#8217;e12&#8217;,&#8217;e13&#8217;],[&#8216; e21&#8217;,&#8217;e22&#8217;,&#8217;e23&#8217;],[&#8216; e31&#8217;,&#8217;e32&#8217;,&#8217;e33&#8217;]].
+These will be restricted by space group symmetry; result of strain fit refinement.</td>
+</tr>
+<tr class="row-odd"><td></td>
+<td>Type</td>
+<td>(str) &#8216;True&#8217; or &#8216;Conventional&#8217;: The strain model used for the calculation.</td>
+</tr>
+<tr class="row-even"><td></td>
+<td>d-zero</td>
+<td>(list:dict) Each item is for a diffraction ring on the image; all items are from the same phase and are used to determine the strain tensor.
+The dictionary items are:
+&#8216;Dset&#8217;: (float) True d-spacing for the diffraction ring; entered by the user.
+&#8216;Dcalc&#8217;: (float) d-spacing...
+&#8216;pixLimit&#8217;: (int) Search range to find highest point on ring for each data point
+&#8216;cutoff&#8217;: (float) I/Ib cutoff for searching.
+&#8216;ImxyObs&#8217;: (list:lists) [[X],[Y]] observed points to be used for strain calculations.
+&#8216;ImxyCalc&#8217;:(list:lists) [[X],[Y]] calculated points based on refined strain.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="parameter-dictionary">
+<h2>Parameter Dictionary<a class="headerlink" href="#parameter-dictionary" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="parmdict-table"></span><p id="index-13">The parameter dictionary contains all of the variable parameters for the refinement.
+The dictionary keys are the name of the parameter (&lt;phase&gt;:&lt;hist&gt;:&lt;name&gt;:&lt;atom&gt;). 
+It is prepared in two ways. When loaded from the tree
+(in <a class="reference internal" href="GSASII.html#GSASII.GSASII.MakeLSParmDict" title="GSASII.GSASII.MakeLSParmDict"><tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.MakeLSParmDict()</span></tt></a> and
+<a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ExportBaseclass.loadParmDict" title="GSASIIIO.ExportBaseclass.loadParmDict"><tt class="xref py py-meth docutils literal"><span class="pre">GSASIIIO.ExportBaseclass.loadParmDict()</span></tt></a>), 
+the values are lists with two elements: <tt class="docutils literal"><span class="pre">[value,</span> <span class="pre">refine</span> <span class="pre">flag]</span></tt></p>
+<p>When loaded from the GPX file (in
+<a class="reference internal" href="GSASIIstruc.html#GSASIIstrMain.Refine" title="GSASIIstrMain.Refine"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrMain.Refine()</span></tt></a> and <a class="reference internal" href="GSASIIstruc.html#GSASIIstrMain.SeqRefine" title="GSASIIstrMain.SeqRefine"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrMain.SeqRefine()</span></tt></a>), the value in the
+dict is the actual parameter value (usually a float, but sometimes a 
+letter or string flag value (such as I or A for iso/anisotropic).</p>
+</div>
 <div class="section" id="classes-and-routines">
 <h2><em>Classes and routines</em><a class="headerlink" href="#classes-and-routines" title="Permalink to this headline">¶</a></h2>
 <dl class="data">
@@ -1402,7 +1707,7 @@ strikes twice in the same place.</p>
 element each atom record.</p>
 <p>This is called in two places (only) <a class="reference internal" href="GSASIIstruc.html#GSASIIstrIO.GetUsedHistogramsAndPhases" title="GSASIIstrIO.GetUsedHistogramsAndPhases"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIstrIO.GetUsedHistogramsAndPhases()</span></tt></a>
 (which loads the histograms and phases from a GPX file) and
-<tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.GetUsedHistogramsAndPhases()</span></tt>
+<a class="reference internal" href="GSASII.html#GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree" title="GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree"><tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree()</span></tt></a>
 (which loads the histograms and phases from the data tree.)</p>
 <p>TODO: do we need a lookup for rigid body variables?</p>
 </dd></dl>
@@ -1530,8 +1835,8 @@ digits at the end until it is not found in list.</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">lbl if not found in labellist or lbl with <tt class="docutils literal"><span class="pre">_1-9`</span> <span class="pre">(or</span>
-<span class="pre">``_10-99</span></tt>, etc.) appended at the end</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">lbl if not found in labellist or lbl with <tt class="docutils literal"><span class="pre">_1-9</span></tt> (or
+<tt class="docutils literal"><span class="pre">_10-99</span></tt>, etc.) appended at the end</p>
 </td>
 </tr>
 </tbody>
@@ -1664,6 +1969,8 @@ regular expressions. Initialized in <a class="reference internal" href="#GSASIIo
 <li><a class="reference internal" href="#powder-reflection-data-structure">Powder Reflection Data Structure</a></li>
 <li><a class="reference internal" href="#single-crystal-tree-items">Single Crystal Tree Items</a></li>
 <li><a class="reference internal" href="#single-crystal-reflection-data-structure">Single Crystal Reflection Data Structure</a></li>
+<li><a class="reference internal" href="#image-data-structure">Image Data Structure</a></li>
+<li><a class="reference internal" href="#parameter-dictionary">Parameter Dictionary</a></li>
 <li><a class="reference internal" href="#classes-and-routines"><em>Classes and routines</em></a></li>
 </ul>
 </li>

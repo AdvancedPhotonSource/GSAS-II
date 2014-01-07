@@ -1254,7 +1254,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,type=''):
 ##### PlotStrain
 ################################################################################
             
-def PlotStrain(G2frame,data,newPlot=False,type=''):
+def PlotStrain(G2frame,data,newPlot=False):
     '''plot of strain data, used for diagnostic purposes
     '''
     def OnMotion(event):
@@ -1263,12 +1263,12 @@ def PlotStrain(G2frame,data,newPlot=False,type=''):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,type,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('d-spacing =%9.5f Azimuth =%9.3f'%(xpos,ypos),1)                   
             except TypeError:
-                G2frame.G2plotNB.status.SetStatusText('Select '+type+' pattern first',1)
+                G2frame.G2plotNB.status.SetStatusText('Select Strain pattern first',1)
 
     try:
-        plotNum = G2frame.G2plotNB.plotList.index(type)
+        plotNum = G2frame.G2plotNB.plotList.index('Strain')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
             Plot = Page.figure.gca()
@@ -1277,16 +1277,16 @@ def PlotStrain(G2frame,data,newPlot=False,type=''):
         Plot = Page.figure.gca()
     except ValueError:
         newPlot = True
-        Plot = G2frame.G2plotNB.addMpl(type).gca()
-        plotNum = G2frame.G2plotNB.plotList.index(type)
+        Plot = G2frame.G2plotNB.addMpl('Strain').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Strain')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     
     Page.Choice = None
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
-    Plot.set_title(type)
-    Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
+    Plot.set_title('Strain')
+    Plot.set_xlabel(r'd-spacing',fontsize=14)
     Plot.set_ylabel(r'Azimuth',fontsize=14)
     colors=['b','g','r','c','m','k']
     for N,item in enumerate(data['d-zero']):
@@ -2597,10 +2597,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             print 'plot stress/strain stuff'
             for N,ring in enumerate(StrSta['d-zero']):
                 xring,yring = ring['ImxyObs']
-                Plot.plot(xring,yring,colors[N%6]+'+')
-                for xring,yring in np.array(ring['ImxyCalc']).T:
-                    Plot.add_artist(Polygon(ring['ImxyCalc'].T,ec='b',fc='none'))
-                    Plot.plot(xring,yring)
+                Plot.plot(xring,yring,colors[N%6]+'o')
         #masks - mask lines numbered after integration limit lines
         spots = Masks['Points']
         rings = Masks['Rings']

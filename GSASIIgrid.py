@@ -3754,6 +3754,7 @@ def MovePatternTreeToGrid(G2frame,item):
         data = G2frame.PatternTree.GetItemPyData(item)
         G2imG.UpdateStressStrain(G2frame,data)
         G2plt.PlotImage(G2frame)
+        G2plt.PlotStrain(G2frame,data,newPlot=True)
     elif G2frame.PatternTree.GetItemText(item) == 'HKL Plot Controls':
         G2frame.PickId = item
         G2frame.Sngl = G2frame.PatternTree.GetItemParent(item)

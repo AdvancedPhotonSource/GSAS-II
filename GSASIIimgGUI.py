@@ -1320,7 +1320,8 @@ def UpdateStressStrain(G2frame,data):
     '''
     
     def OnAppendDzero(event):
-        data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':10.0,'ImxyObs':[[],[]],'ImxyCalc':[[],[]]})
+        data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':10.0,
+            'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]]})
         UpdateStressStrain(G2frame,data)
             
     def OnCopyStrSta(event):
@@ -1382,7 +1383,7 @@ def UpdateStressStrain(G2frame,data):
                     File.write('\t\t{')
                     for key in keys2:
                         File.write("'"+key+"':"+':'+str(data2[key])+',')
-                    File.write("'ImxyObs':[[],[]],'Imxycalc':[[],[]]},\n")
+                    File.write("'ImxyObs':[[],[]],'ImtaObs':[[],[]],'Imtacalc':[[],[]]},\n")
                 File.write('\t]\n}')
                 File.close()
         finally:
@@ -1393,10 +1394,10 @@ def UpdateStressStrain(G2frame,data):
             G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
         Controls = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
-        G2img.FitStrSta(G2frame.ImageZ,data,Controls,Masks)
+        G2img.FitStrSta(G2frame.ImageZ,data,Controls)
         UpdateStressStrain(G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
-        G2plt.PlotStrain(G2frame,data,newPlot=False,type='Strain')
+        G2plt.PlotStrain(G2frame,data,newPlot=False)
         
     def SamSizer():
         
@@ -1451,11 +1452,18 @@ def UpdateStressStrain(G2frame,data):
                 value = 1.0
             Obj.SetValue("%.5f"%(value))
             data['d-zero'][Indx[Obj.GetId()]]['Dset'] = value
+            Ring,R = G2img.MakeStrStaRing(data['d-zero'][Indx[Obj.GetId()]],G2frame.ImageZ,Controls)
+            data['d-zero'][Indx[Obj.GetId()]].update(R)
+            UpdateStressStrain(G2frame,data)
+            G2plt.PlotExposedImage(G2frame,event=event)
+            G2plt.PlotStrain(G2frame,data,newPlot=False)
             
         def OnDeleteDzero(event):
             Obj = event.GetEventObject()
             del(data['d-zero'][delIndx.index(Obj)])
             UpdateStressStrain(G2frame,data)
+            G2plt.PlotExposedImage(G2frame,event=event)
+            G2plt.PlotStrain(G2frame,data,newPlot=False)
         
         def OnCutOff(event):
             Obj = event.GetEventObject()
@@ -1465,10 +1473,14 @@ def UpdateStressStrain(G2frame,data):
                 value = 10.0
             Obj.SetValue("%.1f"%(value))
             data['d-zero'][Indx[Obj.GetId()]]['cutoff'] = value 
+            G2plt.PlotExposedImage(G2frame,event=event)
+            G2plt.PlotStrain(G2frame,data,newPlot=False)
         
         def OnPixLimit(event):
             Obj = event.GetEventObject()
             data['d-zero'][Indx[Obj.GetId()]]['pixLimit'] = int(Obj.GetValue())
+            G2plt.PlotExposedImage(G2frame,event=event)
+            G2plt.PlotStrain(G2frame,data,newPlot=False)
             
         Indx = {}
         delIndx = []    
@@ -1510,6 +1522,21 @@ def UpdateStressStrain(G2frame,data):
         
     def StrainSizer():
         
+        def OnTensor(event):
+            Obj = event.GetEventObject()
+            try:
+                value = float(Obj.GetValue())
+            except ValueError:
+                value = 1.0
+            i,j = Indx[Obj.GetId()]
+            data['strain'][i][j] = value
+            if i != j:
+                data['strain'][j][i] = value
+            UpdateStressStrain(G2frame,data)
+            G2img.CalcStrSta(data,Controls)
+            G2plt.PlotStrain(G2frame,data,newPlot=False)
+
+        Indx = {}
         strainSizer = wx.BoxSizer(wx.VERTICAL)
         strainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' Strain tensor:')),
             0,wx.ALIGN_CENTER_VERTICAL)
@@ -1518,14 +1545,20 @@ def UpdateStressStrain(G2frame,data):
         for i in range(3):
             for j in range(3):
                 tensorSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=names[i][j]),0,wx.ALIGN_CENTER_VERTICAL)
-                tensorElem = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(data['strain'][i][j]),style=wx.TE_READONLY)
-                tensorElem.SetBackgroundColour(VERY_LIGHT_GREY)
+#                tensorElem = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(data['strain'][i][j]),style=wx.TE_READONLY)
+#                tensorElem.SetBackgroundColour(VERY_LIGHT_GREY)
+                tensorElem = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(data['strain'][i][j]),style=wx.TE_PROCESS_ENTER)
+                tensorElem.Bind(wx.EVT_TEXT_ENTER,OnTensor)
+                tensorElem.Bind(wx.EVT_KILL_FOCUS,OnTensor)
+                Indx[tensorElem.GetId()] = [i,j]
                 tensorSizer.Add(tensorElem,0,wx.ALIGN_CENTER_VERTICAL)
         strainSizer.Add(tensorSizer)
         return strainSizer
 
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
+    Controls = G2frame.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))        
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.StrStaMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAppendDzero, id=G2gd.wxID_APPENDDZERO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitStrSta, id=G2gd.wxID_STRSTAFIT)

@@ -235,32 +235,27 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
         apb = radii[1]+radii[0]
         amb = radii[1]-radii[0]
         return np.pi*apb*(1+3*(amb/apb)**2/(10+np.sqrt(4-3*(amb/apb)**2)))
+        
     cent,phi,radii = ellipse
-    cphi = cosd(phi)
-    sphi = sind(phi)
+    cphi = cosd(phi-90.)        #convert to major axis rotation
+    sphi = sind(phi-90.)
     ring = []
-    sumI = 0
-    amin = 0
-    amax = 360
-    C = int(ellipseC())
-    for i in range(0,C,1):
+    C = int(ellipseC())         #ring circumference
+    for i in range(0,C,1):      #step around ring in 1mm increments
         a = 360.*i/C
-        x = radii[0]*cosd(a)
-        y = radii[1]*sind(a)
+        x = radii[1]*cosd(a)        #major axis
+        y = radii[0]*sind(a)
         X = (cphi*x-sphi*y+cent[0])*scalex      #convert mm to pixels
         Y = (sphi*x+cphi*y+cent[1])*scaley
         X,Y,I,J = ImageLocalMax(image,pix,X,Y)
         if I and J and I/J > reject:
-            sumI += I/J
             X += .5                             #set to center of pixel
             Y += .5
-            X /= scalex                         #convert to mm
+            X /= scalex                         #convert back to mm
             Y /= scaley
-            amin = min(amin,a)
-            amax = max(amax,a)
-            if [X,Y,dsp] not in ring:
+            if [X,Y,dsp] not in ring:           #no duplicates!
                 ring.append([X,Y,dsp])
-    if len(ring) < 10:             #want more than 10 deg
+    if len(ring) < 10:
         ring = []
     return ring
     
@@ -392,7 +387,7 @@ def GetTthAzmDsp(x,y,data):
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dy,dx)+azmthoff+720.)%360.
     G = D/data['distance']**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    return tth,azm,G,dsp
+    return np.array([tth,azm,G,dsp])
     
 def GetTth(x,y,data):
     'Give 2-theta value for detector x,y position; calibration info in data'
@@ -403,7 +398,7 @@ def GetTthAzm(x,y,data):
     return GetTthAzmDsp(x,y,data)[0:2]
     
 def GetTthAzmD(x,y,data):
-    '''Give 2-theta, azimuth & geometric correction values for detector x,y position;
+    '''Give 2-theta, azimuth & d-spacing values for detector x,y position;
      calibration info in data
     '''
     return GetTthAzmDsp(x,y,data)[0:3]
@@ -857,39 +852,53 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     print "Elapsed time:","%8.3f"%(t1-t0), "s"
     return H0,H1,H2
     
-def FitStrSta(Image,StrSta,Controls,Masks):
+def MakeStrStaRing(ring,Image,Controls):
+    ellipse = GetEllipse(ring['Dset'],Controls)
+    pixSize = Controls['pixelSize']
+    scalex = 1000./pixSize[0]
+    scaley = 1000./pixSize[1]
+    Ring = np.array(makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)).T   #returns x,y,dsp for each point in ring
+    ring['ImxyObs'] = Ring[:2]
+    TA = GetTthAzm(Ring[0],Ring[1],Controls)       #convert x,y to tth,azm
+    TA[0] = Controls['wavelength']/(2.*npsind(TA[0]/2.))      #convert 2th to d
+    ring['ImtaObs'] = TA
+    ring['ImtaCalc'] = np.zeros_like(ring['ImtaObs'])
+    Ring[0] = TA[0]
+    Ring[1] = TA[1]
+    return Ring,ring
+    
+def FitStrSta(Image,StrSta,Controls):
     'Needs a doc string'
     
     StaControls = copy.deepcopy(Controls)
     phi = StrSta['Sample phi']
     wave = Controls['wavelength']
     StaControls['distance'] += StrSta['Sample z']*cosd(phi)
-    pixSize = StaControls['pixelSize']
-    scalex = 1000./pixSize[0]
-    scaley = 1000./pixSize[1]
     rings = []
 
     for ring in StrSta['d-zero']:       #get observed x,y,d points for the d-zeros
-        ellipse = GetEllipse(ring['Dset'],StaControls)
-        Ring = np.array(makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)).T
-        ring['ImxyObs'] = np.array(Ring[:2])      #need to apply masks to this to eliminate bad points
-        ring['ImtaObs'] = GetTthAzm(Ring[0],Ring[1],StaControls)       #convert x,y to tth,azm
-        ring['ImtaCalc'] = np.zeros_like(ring['ImtaObs'])
-        Ring[0] /= 2.                                           #convert to theta
+        Ring,R = MakeStrStaRing(ring,Image,StaControls)
+        ring.update(R)
         if len(rings):
             rings = np.concatenate((rings,Ring),axis=1)
         else:
-            rings = np.array(Ring)
+            rings = np.array(Ring)      
     E = StrSta['strain']
-    p0 = [E[0][0],E[1][1],E[2][2],E[0][1],E[0][2],E[1][2]]
-    E,dth = FitStrain(rings,p0,wave,phi)
+    p0 = [E[0][0],E[0][1],E[1][1]]
+    E = FitStrain(rings,p0,wave,phi)
+    StrSta['strain'] = E
+    CalcStrSta(StrSta,Controls)
+    
+def CalcStrSta(StrSta,Controls):
+
+    wave = Controls['wavelength']
+    phi = StrSta['Sample phi']
+    E = StrSta['strain']
     for ring in StrSta['d-zero']:
         th,azm = ring['ImtaObs']
-        th0 = npasind(wave/(2.*ring['Dset']))
-        V = np.sum(np.sum(E*calcFij(90.,phi,azm,th0).T,axis=2),axis=1)
-        dth = 180.*V/(np.pi*10e6) #in degrees & microstrain units
-        ring['ImtaCalc'] = np.array([(th0-dth)/2,azm])
-    StrSta['strain'] = E
+        th0 = np.ones_like(azm)*npasind(wave/(2.*ring['Dset']))
+        V = 1.+np.sum(np.sum(E*calcFij(90.,phi,azm,th0).T/1.e6,axis=2),axis=1)
+        ring['ImtaCalc'] = np.array([V*ring['Dset'],azm])
 
 def calcFij(omg,phi,azm,th):
     '''Does something...
@@ -932,25 +941,22 @@ def FitStrain(rings,p0,wave,phi):
         print sigstr
         
     def strainCalc(p,xyd,wave,phi):
-#        E = np.array([[p[0],p[3],p[4]],[p[3],p[1],p[5]],[p[4],p[5],p[2]]])
-        E = np.array([[p[0],0,0],[0,p[1],0],[0,0,0]])
-        th,azm,dsp = xyd
-        th0 = npasind(wave/(2.*dsp))
-        V = np.sum(np.sum(E*calcFij(90.,phi,azm,th).T,axis=2),axis=1)
-        dth = 180.*V/(np.pi*10e6) #in degrees & microstrain units
-        th0 += dth
-        return th-th0
+        E = np.array([[p[0],p[1],0],[p[1],p[2],0],[0,0,0]])
+        dspo,azm,dsp = xyd
+        th = npasind(wave/(2.0*dspo))
+        V = 1.+np.sum(np.sum(E*calcFij(90.,phi,azm,th).T/1.e6,axis=2),axis=1)
+        dspc = dsp*V
+        return dspo-dspc
         
-    names = ['e11','e22','e33','e12','e13','e23']
+    names = ['e11','e12','e22','e33','e13','e23']
     fmt = ['%12.2f','%12.2f','%12.2f','%12.2f','%12.2f','%12.5f']
-    p1 = [1,-1]   
+    p1 = [-20000.,0,5000.]  
     result = leastsq(strainCalc,p1,args=(rings,wave,phi),full_output=True)
     vals = list(result[0])
     chi = np.sqrt(np.sum(strainCalc(result[0],rings,wave,phi)**2))
     sig = list(chi*np.sqrt(np.diag(result[1])))
     ValSig = zip(names,fmt,vals,sig)
     StrainPrint(ValSig)
-#    return np.array([[vals[0],vals[3],vals[4]],[vals[3],vals[1],vals[5]],[vals[4],vals[5],vals[2]]])
-    return np.array([[vals[0],0,0],[0,vals[1],0],[0,0,0]]),result[2]['fvec']
+    return np.array([[vals[0],vals[1],0],[vals[1],vals[2],0],[0,0,0]])
     
         

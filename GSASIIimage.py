@@ -191,14 +191,13 @@ def FitDetector(rings,varyList,parmDict,Print=True):
         return M
         
     names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
-    fmt = ['%12.2f','%12.2f','%12.2f','%12.2f','%12.2f','%12.3f','%12.5f']
+    fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.5f']
     p0 = [parmDict[key] for key in varyList]
     result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
     chisq = np.sum(result[2]['fvec']**2)
     parmDict.update(zip(varyList,result[0]))
     vals = list(result[0])
-    chi = np.sqrt(np.sum(ellipseCalcD(result[0],rings.T,varyList,parmDict)**2))
-    sig = list(chi*np.sqrt(np.diag(result[1])))
+    sig = list(np.sqrt(chisq*np.diag(result[1])))
     sigList = np.zeros(7)
     for i,name in enumerate(names):
         if name in varyList:
@@ -206,7 +205,7 @@ def FitDetector(rings,varyList,parmDict,Print=True):
     ValSig = zip(names,fmt,vals,sig)
     if Print:
         CalibPrint(ValSig)
-    return chi,chisq
+    return chisq
                     
 def ImageLocalMax(image,w,Xpix,Ypix):
     'Needs a doc string'
@@ -635,7 +634,7 @@ def ImageCalibrate(self,data):
         'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}
     varyList = ['dist','det-X','det-Y','tilt','phi']
     if len(Ringp) > 10:
-        chip,chisqp = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)
+        chip = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)
         tiltp = parmDict['tilt']
         phip = parmDict['phi']
         centp = [parmDict['det-X'],parmDict['det-Y']]
@@ -646,7 +645,7 @@ def ImageCalibrate(self,data):
     Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,self.ImageZ)
     if len(Ringm) > 10:
         parmDict['tilt'] *= -1
-        chim,chisqm = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)
+        chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)
         tiltm = parmDict['tilt']
         phim = parmDict['phi']
         centm = [parmDict['det-X'],parmDict['det-Y']]
@@ -687,7 +686,7 @@ def ImageCalibrate(self,data):
             data['rings'].append(np.array(Ring))
             rings = np.concatenate((data['rings']),axis=0)
             if i:
-                chi,chisq = FitDetector(rings,varyList,parmDict,False)
+                chisq = FitDetector(rings,varyList,parmDict,False)
                 data['distance'] = parmDict['dist']
                 data['center'] = [parmDict['det-X'],parmDict['det-Y']]
                 data['rotation'] = parmDict['phi']
@@ -858,14 +857,17 @@ def MakeStrStaRing(ring,Image,Controls):
     scalex = 1000./pixSize[0]
     scaley = 1000./pixSize[1]
     Ring = np.array(makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)).T   #returns x,y,dsp for each point in ring
-    ring['ImxyObs'] = Ring[:2]
-    TA = GetTthAzm(Ring[0],Ring[1],Controls)       #convert x,y to tth,azm
-    TA[0] = Controls['wavelength']/(2.*npsind(TA[0]/2.))      #convert 2th to d
-    ring['ImtaObs'] = TA
-    ring['ImtaCalc'] = np.zeros_like(ring['ImtaObs'])
-    Ring[0] = TA[0]
-    Ring[1] = TA[1]
-    return Ring,ring
+    if len(Ring):
+        ring['ImxyObs'] = copy.copy(Ring[:2])
+        TA = GetTthAzm(Ring[0],Ring[1],Controls)       #convert x,y to tth,azm
+        TA[0] = Controls['wavelength']/(2.*npsind(TA[0]/2.))      #convert 2th to d
+        ring['ImtaObs'] = TA
+        ring['ImtaCalc'] = np.zeros_like(ring['ImtaObs'])
+        Ring[0] = TA[0]
+        Ring[1] = TA[1]
+        return Ring,ring
+    else:
+        return [],[]    #bad ring; no points found
     
 def FitStrSta(Image,StrSta,Controls):
     'Needs a doc string'
@@ -874,19 +876,14 @@ def FitStrSta(Image,StrSta,Controls):
     phi = StrSta['Sample phi']
     wave = Controls['wavelength']
     StaControls['distance'] += StrSta['Sample z']*cosd(phi)
-    rings = []
 
     for ring in StrSta['d-zero']:       #get observed x,y,d points for the d-zeros
+        dset = ring['Dset']
         Ring,R = MakeStrStaRing(ring,Image,StaControls)
-        ring.update(R)
-        if len(rings):
-            rings = np.concatenate((rings,Ring),axis=1)
-        else:
-            rings = np.array(Ring)      
-    E = StrSta['strain']
-    p0 = [E[0][0],E[0][1],E[1][1]]
-    E = FitStrain(rings,p0,wave,phi)
-    StrSta['strain'] = E
+        if len(Ring):
+            ring.update(R)
+            p0 = ring['Emat']
+            ring['Emat'] = FitStrain(Ring,p0,dset,wave,phi)
     CalcStrSta(StrSta,Controls)
     
 def CalcStrSta(StrSta,Controls):
@@ -895,6 +892,8 @@ def CalcStrSta(StrSta,Controls):
     phi = StrSta['Sample phi']
     E = StrSta['strain']
     for ring in StrSta['d-zero']:
+        Eij = ring['Emat']
+        E = [[Eij[0],Eij[1],0],[Eij[1],Eij[2],0],[0,0,0]]
         th,azm = ring['ImtaObs']
         th0 = np.ones_like(azm)*npasind(wave/(2.*ring['Dset']))
         V = 1.+np.sum(np.sum(E*calcFij(90.,phi,azm,th0).T/1.e6,axis=2),axis=1)
@@ -922,10 +921,10 @@ def calcFij(omg,phi,azm,th):
         [c*d,c*e,c**2]])
     return -Fij*nptand(th)
 
-def FitStrain(rings,p0,wave,phi):
+def FitStrain(rings,p0,dset,wave,phi):
     'Needs a doc string'
-    def StrainPrint(ValSig):
-        print 'Strain tensor:'
+    def StrainPrint(ValSig,dset):
+        print 'Strain tensor for Dset: %.6f'%(dset)
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
@@ -940,23 +939,22 @@ def FitStrain(rings,p0,wave,phi):
         print ptstr
         print sigstr
         
-    def strainCalc(p,xyd,wave,phi):
+    def strainCalc(p,xyd,dset,wave,phi):
         E = np.array([[p[0],p[1],0],[p[1],p[2],0],[0,0,0]])
         dspo,azm,dsp = xyd
         th = npasind(wave/(2.0*dspo))
         V = 1.+np.sum(np.sum(E*calcFij(90.,phi,azm,th).T/1.e6,axis=2),axis=1)
-        dspc = dsp*V
-        return dspo-dspc
+        dspc = dset*V
+        return dspo**2-dspc**2
         
-    names = ['e11','e12','e22','e33','e13','e23']
-    fmt = ['%12.2f','%12.2f','%12.2f','%12.2f','%12.2f','%12.5f']
-    p1 = [-20000.,0,5000.]  
-    result = leastsq(strainCalc,p1,args=(rings,wave,phi),full_output=True)
+    names = ['e11','e12','e22']
+    fmt = ['%12.2f','%12.2f','%12.2f']
+    result = leastsq(strainCalc,p0,args=(rings,dset,wave,phi),full_output=True)
     vals = list(result[0])
-    chi = np.sqrt(np.sum(strainCalc(result[0],rings,wave,phi)**2))
-    sig = list(chi*np.sqrt(np.diag(result[1])))
+    chisq = np.sum(result[2]['fvec']**2)
+    sig = list(np.sqrt(chisq*np.diag(result[1])))
     ValSig = zip(names,fmt,vals,sig)
-    StrainPrint(ValSig)
-    return np.array([[vals[0],vals[1],0],[vals[1],vals[2],0],[0,0,0]])
+    StrainPrint(ValSig,dset)
+    return vals
     
         

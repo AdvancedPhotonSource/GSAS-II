@@ -1263,7 +1263,7 @@ def PlotStrain(G2frame,data,newPlot=False):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                G2frame.G2plotNB.status.SetStatusText('d-spacing =%9.5f Azimuth =%9.3f'%(xpos,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('d-spacing =%9.5f Azimuth =%9.3f'%(ypos,xpos),1)                   
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select Strain pattern first',1)
 
@@ -1286,13 +1286,13 @@ def PlotStrain(G2frame,data,newPlot=False):
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     Plot.set_title('Strain')
-    Plot.set_xlabel(r'd-spacing',fontsize=14)
-    Plot.set_ylabel(r'Azimuth',fontsize=14)
+    Plot.set_ylabel(r'd-spacing',fontsize=14)
+    Plot.set_xlabel(r'Azimuth',fontsize=14)
     colors=['b','g','r','c','m','k']
     for N,item in enumerate(data['d-zero']):
-        X,Y = np.array(item['ImtaObs'])
+        Y,X = np.array(item['ImtaObs'])         #plot azimuth as X & d-spacing as Y
         Plot.plot(X,Y,colors[N%6]+'+',picker=False)
-        X,Y = np.array(item['ImtaCalc'])
+        Y,X = np.array(item['ImtaCalc'])
         Plot.plot(X,Y,colors[N%6],picker=False)
     if not newPlot:
         Page.toolbar.push_current()
@@ -2291,7 +2291,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             PickName = G2frame.PatternTree.GetItemText(G2frame.PickId)
         except TypeError:
             return
-        if PickName not in ['Image Controls','Masks']:
+        if PickName not in ['Image Controls','Masks','Stress/Strain']:
             return
         pixelSize = Data['pixelSize']
         scalex = 1000./pixelSize[0]
@@ -2364,6 +2364,20 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     frame.append([Xpos,Ypos])
             G2imG.UpdateMasks(G2frame,Masks)
             PlotImage(G2frame,newImage=False)
+        elif PickName == 'Stress/Strain':
+            Xpos,Ypos = [event.xdata,event.ydata]
+            if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
+                return
+            dsp = G2img.GetDsp(Xpos,Ypos,Data)
+            StrSta['d-zero'].append({'Dset':dsp,'Dcalc':0.0,'pixLimit':10,'cutoff':10.0,
+                'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0]})
+            R,r = G2img.MakeStrStaRing(StrSta['d-zero'][-1],G2frame.ImageZ,Data)
+            if not len(R):
+                del StrSta['d-zero'][-1]
+                G2frame.ErrorDialog('Strain peak selection','WARNING - No points found for this ring selection')
+            G2imG.UpdateStressStrain(G2frame,StrSta)
+            PlotStrain(G2frame,StrSta)
+            PlotImage(G2frame,newPlot=False)            
         else:
             Xpos,Ypos = [event.xdata,event.ydata]
             if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
@@ -2586,7 +2600,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 N = 0
                 for ring in Data['rings']:
                     xring,yring = np.array(ring).T[:2]
-                    Plot.plot(xring,yring,'+',color=colors[N%6])
+                    Plot.plot(xring,yring,'.',color=colors[N%6])
                     N += 1            
             for ellipse in Data['ellipses']:      #what about hyperbola?
                 cent,phi,[width,height],col = ellipse
@@ -2594,10 +2608,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
                     Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
         if G2frame.PatternTree.GetItemText(G2frame.PickId) in 'Stress/Strain':
-            print 'plot stress/strain stuff'
             for N,ring in enumerate(StrSta['d-zero']):
                 xring,yring = ring['ImxyObs']
-                Plot.plot(xring,yring,colors[N%6]+'o')
+                Plot.plot(xring,yring,colors[N%6]+'.')
         #masks - mask lines numbered after integration limit lines
         spots = Masks['Points']
         rings = Masks['Rings']

@@ -867,6 +867,9 @@ def MakeStrStaRing(ring,Image,Controls):
         Ring[1] = TA[1]
         return Ring,ring
     else:
+        ring['ImxyObs'] = [[],[]]
+        ring['ImtaObs'] = [[],[]]
+        ring['ImtaCalc'] = [[],[]]
         return [],[]    #bad ring; no points found
     
 def FitStrSta(Image,StrSta,Controls):

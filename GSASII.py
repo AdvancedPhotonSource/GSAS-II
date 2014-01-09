@@ -1769,6 +1769,7 @@ class GSASII(wx.Frame):
         self.Sngl = 0
         self.ifGetRing = False
         self.MaskKey = ''           #trigger for making image masks
+        self.StrainKey = ''         #ditto for new strain d-zeros
         arg = sys.argv
         if len(arg) > 1:
             self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'

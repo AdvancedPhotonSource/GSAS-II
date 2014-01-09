@@ -23,6 +23,7 @@ import cPickle
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIimage as G2img
+import GSASIImath as G2mth
 import GSASIIplot as G2plt
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
@@ -1453,11 +1454,13 @@ def UpdateStressStrain(G2frame,data):
                 value = 1.0
             Obj.SetValue("%.5f"%(value))
             data['d-zero'][Indx[Obj.GetId()]]['Dset'] = value
+            data['d-zero'] = G2mth.sortArray(data['d-zero'],'Dset',reverse=True)
             Ring,R = G2img.MakeStrStaRing(data['d-zero'][Indx[Obj.GetId()]],G2frame.ImageZ,Controls)
             if len(Ring):
                 data['d-zero'][Indx[Obj.GetId()]].update(R)
             else:
                 G2frame.ErrorDialog('Strain peak selection','WARNING - No points found for this ring selection')
+                
         #sort them on d-spacing?
             UpdateStressStrain(G2frame,data)
             G2plt.PlotExposedImage(G2frame,event=event)
@@ -1547,7 +1550,11 @@ def UpdateStressStrain(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveStrSta, id=G2gd.wxID_STRSTASAVE)    
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
-        Status.SetStatusText(" test  ")
+    if G2frame.StrainKey == 'a':    #probably doesn't happen
+        G2frame.dataFrame.GetStatusBar().SetStatusText('Add strain ring active - LB pick d-zero value')
+    else:
+        G2frame.dataFrame.GetStatusBar().SetStatusText("To add strain data: On On 2D Powder Image, key a:add ring")
+        
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)

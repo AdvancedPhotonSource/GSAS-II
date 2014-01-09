@@ -2167,6 +2167,16 @@ def OnStartMask(G2frame):
         Masks['Rings'].append([])
     G2imG.UpdateMasks(G2frame,Masks)
     PlotImage(G2frame,newImage=True)
+    
+def OnStartNewDzero(G2frame):
+    '''Initiate the start of adding a new d-zero to a strain data set
+
+    :param wx.Frame G2frame: The main GSAS-II tree "window"
+    :param str eventkey: a single letter ('a') that
+      triggers the addition of a d-zero.    
+    '''
+    StrSta = G2frame.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Stress/Strain'))
 
 def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     '''Plot of 2D detector images as contoured plot. Also plot calibration ellipses,
@@ -2223,11 +2233,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Int = G2frame.ImageZ[ypix][xpix]
                 tth,azm,D,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
+                fields = ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)]
                 if G2frame.MaskKey in ['p','f']:
-                    G2frame.G2plotNB.status.SetFields(['','Polygon/frame mask pick - LB next point, RB close polygon'])
-                else:
-                    G2frame.G2plotNB.status.SetFields(\
-                        ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)])
+                    fields[1] = 'Polygon/frame mask pick - LB next point, RB close polygon'
+                elif G2frame.StrainKey:
+                    fields[0] = 'd-zero pick active'
+                G2frame.G2plotNB.status.SetFields(fields)
 
     def OnImPlotKeyPress(event):
         try:
@@ -2238,6 +2249,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if event.key in ['p','f','s','a','r']:
                 G2frame.MaskKey = event.key
                 OnStartMask(G2frame)
+                
+        elif PickName == 'Stress/Strain':
+            if event.key in ['a',]:
+                G2frame.StrainKey = event.key
+                OnStartNewDzero(G2frame)
+            
                 
         elif PickName == 'Image Controls':
             if event.key in ['c',]:
@@ -2269,7 +2286,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     Data['invert_y'] = False
                 else:
                     Data['invert_y'] = True
-        PlotImage(G2frame,newPlot=True)
+        PlotImage(G2frame,newPlot=False)
             
     def OnKeyBox(event):
         if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('2D Powder Image'):
@@ -2364,7 +2381,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     frame.append([Xpos,Ypos])
             G2imG.UpdateMasks(G2frame,Masks)
             PlotImage(G2frame,newImage=False)
-        elif PickName == 'Stress/Strain':
+        elif PickName == 'Stress/Strain' and G2frame.StrainKey:
             Xpos,Ypos = [event.xdata,event.ydata]
             if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
                 return
@@ -2375,6 +2392,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if not len(R):
                 del StrSta['d-zero'][-1]
                 G2frame.ErrorDialog('Strain peak selection','WARNING - No points found for this ring selection')
+            StrSta['d-zero'] = G2mth.sortArray(StrSta['d-zero'],'Dset',reverse=True)
+            G2frame.StrainKey = ''
             G2imG.UpdateStressStrain(G2frame,StrSta)
             PlotStrain(G2frame,StrSta)
             PlotImage(G2frame,newPlot=False)            
@@ -2501,6 +2520,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         elif G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Masks',]:
             Page.Choice = (' key press','s: spot mask','a: arc mask','r: ring mask',
                 'p: polygon mask','f: frame mask',)
+            Page.keyPress = OnImPlotKeyPress
+        elif G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Stress/Strain',]:
+            Page.Choice = (' key press','a: add new ring',)
             Page.keyPress = OnImPlotKeyPress
     except TypeError:
         pass

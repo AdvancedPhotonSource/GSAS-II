@@ -1367,7 +1367,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
             chisq = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
             Rwp = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
-            GOF = chisq/(xFin-xBeg-len(varyList))
+            GOF = chisq/(xFin-xBeg-len(varyList))       #reduced chi^2
             print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
             print 'fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
             print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)

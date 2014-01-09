@@ -194,7 +194,7 @@ def FitDetector(rings,varyList,parmDict,Print=True):
     fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.5f']
     p0 = [parmDict[key] for key in varyList]
     result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
-    chisq = np.sum(result[2]['fvec']**2)
+    chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
     parmDict.update(zip(varyList,result[0]))
     vals = list(result[0])
     sig = list(np.sqrt(chisq*np.diag(result[1])))
@@ -898,6 +898,7 @@ def CalcStrSta(StrSta,Controls):
         th0 = np.ones_like(azm)*npasind(wave/(2.*ring['Dset']))
         V = 1.+np.sum(np.sum(E*calcFij(90.,phi,azm,th0).T/1.e6,axis=2),axis=1)
         ring['ImtaCalc'] = np.array([V*ring['Dset'],azm])
+        ring['Dcalc'] = np.mean(ring['ImtaCalc'][0])
 
 def calcFij(omg,phi,azm,th):
     '''Does something...
@@ -951,7 +952,7 @@ def FitStrain(rings,p0,dset,wave,phi):
     fmt = ['%12.2f','%12.2f','%12.2f']
     result = leastsq(strainCalc,p0,args=(rings,dset,wave,phi),full_output=True)
     vals = list(result[0])
-    chisq = np.sum(result[2]['fvec']**2)
+    chisq = np.sum(result[2]['fvec']**2)/(rings.shape[1]-3)     #reduced chi^2 = M/(Nobs-Nvar)
     sig = list(np.sqrt(chisq*np.diag(result[1])))
     ValSig = zip(names,fmt,vals,sig)
     StrainPrint(ValSig,dset)

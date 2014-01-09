@@ -1499,7 +1499,7 @@ def UpdateStressStrain(G2frame,data):
             dZero.Bind(wx.EVT_TEXT_ENTER,OnDzero)
             dZero.Bind(wx.EVT_KILL_FOCUS,OnDzero)
             Indx[dZero.GetId()] = id
-            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero calc: %.5f'%(dzero['Dcalc']))),
+            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero ave: %.5f'%(dzero['Dcalc']))),
                 0,wx.ALIGN_CENTER_VERTICAL)
                 
             dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min ring I/Ib '),0,

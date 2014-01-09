@@ -883,7 +883,9 @@ def FitStrSta(Image,StrSta,Controls):
         if len(Ring):
             ring.update(R)
             p0 = ring['Emat']
-            ring['Emat'] = FitStrain(Ring,p0,dset,wave,phi)
+            val,esd = FitStrain(Ring,p0,dset,wave,phi)
+            ring['Emat'] = val
+            ring['Esig'] = esd
     CalcStrSta(StrSta,Controls)
     
 def CalcStrSta(StrSta,Controls):
@@ -956,6 +958,6 @@ def FitStrain(rings,p0,dset,wave,phi):
     sig = list(np.sqrt(chisq*np.diag(result[1])))
     ValSig = zip(names,fmt,vals,sig)
     StrainPrint(ValSig,dset)
-    return vals
+    return vals,sig
     
         

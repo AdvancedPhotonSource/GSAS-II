@@ -558,7 +558,10 @@ def PlotPatterns(G2frame,newPlot=False):
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0]:                                    #picked a data point
                 data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
-                XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])           #what happens for a q-plot???
+                if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an elif
+                    if G2frame.qPlot:                              #qplot - convert back to 2-theta
+                        xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
+                XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
                 data.append(XY)
                 G2pdG.UpdatePeakGrid(G2frame,data)
                 PlotPatterns(G2frame)
@@ -2175,6 +2178,7 @@ def OnStartNewDzero(G2frame):
     :param str eventkey: a single letter ('a') that
       triggers the addition of a d-zero.    
     '''
+    G2frame.dataFrame.GetStatusBar().SetStatusText('Add strain ring active - LB pick d-zero value')
     StrSta = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Stress/Strain'))
 

@@ -1587,7 +1587,7 @@ def UpdateStressStrain(G2frame,data):
     if G2frame.StrainKey == 'a':    #probably doesn't happen
         G2frame.dataFrame.GetStatusBar().SetStatusText('Add strain ring active - LB pick d-zero value')
     else:
-        G2frame.dataFrame.GetStatusBar().SetStatusText("To add strain data: On On 2D Powder Image, key a:add ring")
+        G2frame.dataFrame.GetStatusBar().SetStatusText("To add strain data: On 2D Powder Image, key a:add ring")
         
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)

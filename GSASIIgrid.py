@@ -96,12 +96,12 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(8)]
 
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,wxID_NEWMASKSPOT,wxID_NEWMASKARC,wxID_NEWMASKRING,
-  wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,
+    wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,
 ] = [wx.NewId() for item in range(8)]
 
-
 [ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_APPENDDZERO,
-] = [wx.NewId() for item in range(5)]
+    wxID_STRSTAALLFIT,
+] = [wx.NewId() for item in range(6)]
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY,wxID_SAMPLECOPY, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
     wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,
@@ -2423,6 +2423,8 @@ class DataFrame(wx.Frame):
             id=wxID_APPENDDZERO, kind=wx.ITEM_NORMAL,text='Append d-zero')
         self.StrStaEdit.Append(help='Fit stress/strain data', 
             id=wxID_STRSTAFIT, kind=wx.ITEM_NORMAL,text='Fit stress/strain')
+        self.StrStaEdit.Append(help='Fit stress/strain data for all images', 
+            id=wxID_STRSTAALLFIT, kind=wx.ITEM_NORMAL,text='All image fit')
         self.StrStaEdit.Append(help='Copy stress/strain data to other images', 
             id=wxID_STRSTACOPY, kind=wx.ITEM_NORMAL,text='Copy stress/strain')
         self.StrStaEdit.Append(help='Save stress/strain data to file', 

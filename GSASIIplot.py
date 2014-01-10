@@ -2386,7 +2386,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
                 return
             dsp = G2img.GetDsp(Xpos,Ypos,Data)
-            StrSta['d-zero'].append({'Dset':dsp,'Dcalc':0.0,'pixLimit':10,'cutoff':10.0,
+            StrSta['d-zero'].append({'Dset':dsp,'Dcalc':0.0,'pixLimit':10,'cutoff':1.0,
                 'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0]})
             R,r = G2img.MakeStrStaRing(StrSta['d-zero'][-1],G2frame.ImageZ,Data)
             if not len(R):

@@ -1321,7 +1321,7 @@ def UpdateStressStrain(G2frame,data):
     '''
     
     def OnAppendDzero(event):
-        data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':10.0,
+        data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':1.0,
             'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0]})
         UpdateStressStrain(G2frame,data)
             
@@ -1391,8 +1391,6 @@ def UpdateStressStrain(G2frame,data):
             dlg.Destroy()
 
     def OnFitStrSta(event):
-        Masks = G2frame.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
         Controls = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
         G2img.FitStrSta(G2frame.ImageZ,data,Controls)
@@ -1400,6 +1398,41 @@ def UpdateStressStrain(G2frame,data):
         UpdateStressStrain(G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
         G2plt.PlotStrain(G2frame,data,newPlot=False)
+        
+    def OnAllFitStrSta(event):
+        TextList = [[False,'All IMG',0]]
+        Names = []
+        if G2frame.PatternTree.GetCount():
+            id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+            while id:
+                name = G2frame.PatternTree.GetItemText(id)
+                Names.append(name)
+                if 'IMG' in name:
+                    TextList.append([False,name,id])
+                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            if len(TextList) == 1:
+                G2frame.ErrorDialog('Nothing to fit','There must some "IMG" patterns')
+                return
+            dlg = G2frame.CopyDialog(G2frame,'Stress/Strain fitting','Select images to fit:',TextList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetData()
+                    if result[0][0]:                    #the 'All IMG' is True
+                        result = TextList[1:]
+                        for item in result: item[0] = True
+                    for item in result:
+                        ifFit,name,id = item
+                        if ifFit:
+                            Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls'))
+                            StaCtrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'))
+                            id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
+                            Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
+                            image = G2IO.GetImageData(G2frame,imagefile,True)
+                            G2img.FitStrSta(image,StaCtrls,Controls)
+                            G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)
+            finally:
+                dlg.Destroy()
+            print 'All images fitted'
         
     def SamSizer():
         
@@ -1478,7 +1511,7 @@ def UpdateStressStrain(G2frame,data):
             try:
                 value = min(10.0,max(0.5,float(Obj.GetValue())))
             except ValueError:
-                value = 10.0
+                value = 1.0
             Obj.SetValue("%.1f"%(value))
             data['d-zero'][Indx[Obj.GetId()]]['cutoff'] = value 
             G2plt.PlotExposedImage(G2frame,event=event)
@@ -1545,6 +1578,7 @@ def UpdateStressStrain(G2frame,data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.StrStaMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAppendDzero, id=G2gd.wxID_APPENDDZERO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitStrSta, id=G2gd.wxID_STRSTAFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAllFitStrSta, id=G2gd.wxID_STRSTAALLFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyStrSta, id=G2gd.wxID_STRSTACOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadStrSta, id=G2gd.wxID_STRSTALOAD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveStrSta, id=G2gd.wxID_STRSTASAVE)    

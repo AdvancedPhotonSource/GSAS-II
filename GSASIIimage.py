@@ -951,7 +951,7 @@ def FitStrain(rings,p0,dset,wave,phi):
         th = npasind(wave/(2.0*dspo))
         V = 1.+np.sum(np.sum(E*calcFij(90.,phi,azm,th).T/1.e6,axis=2),axis=1)
         dspc = dset*V
-        return dspo**2-dspc**2
+        return dspo-dspc
         
     names = ['e11','e12','e22']
     fmt = ['%12.2f','%12.2f','%12.2f']

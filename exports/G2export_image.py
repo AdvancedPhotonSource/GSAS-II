@@ -29,7 +29,7 @@ class ExportImagePNG(G2IO.ExportBaseclass):
     def __init__(self,G2frame):
         super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
             G2frame=G2frame,
-            formatName = 'PNG',
+            formatName = 'PNG image file',
             extension='.png',
             longFormatName = 'Export image in PNG format'
             )

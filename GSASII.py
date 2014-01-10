@@ -1480,8 +1480,8 @@ class GSASII(wx.Frame):
 
         imagemenu = wx.Menu()
         item = menu.AppendMenu(
-            wx.ID_ANY, 'Images as',
-            imagemenu, help='Export powder image(s)')
+            wx.ID_ANY, 'Image data as',
+            imagemenu, help='Export powder image(s) data')
 
         mapmenu = wx.Menu()
         item = menu.AppendMenu(

@@ -16,6 +16,7 @@ GSAS-II data export to a spreadsheet program, etc.
 
 '''
 import os.path
+import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
@@ -231,6 +232,51 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
             h,k,l,mult,dsp,Fobs,sigFobs,Fcalc,FobsT,FcalcT,phase,Icorr
             ) in histblk['Data']['RefList']:
             self.Write(fmt.format(h,k,l,dsp,Fobs,sigFobs,Fcalc,phase,mult))
+        self.CloseFile()
+        print(str(hist)+' written to file '+str(self.filename))                        
+
+class ExportStrainCSV(G2IO.ExportBaseclass):
+    '''Used to create a csv file with single crystal reflection data
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    '''
+    def __init__(self,G2frame):
+        super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
+            G2frame=G2frame,
+            formatName = 'Strain CSV file',
+            extension='.csv',
+            longFormatName = 'Export strain results as a comma-separated (csv) file'
+            )
+        self.exporttype = ['image']
+        self.multiple = False # only allow one histogram to be selected
+
+    def Exporter(self,event=None):
+        '''Export a set of single crystal data as a csv file
+        '''
+        # the export process starts here
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.loadTree()
+        if self.ExportSelect( # set export parameters
+            AskFile=True # use the default file name
+            ): return 
+        self.OpenFile()
+        hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
+        histblk = self.Histograms[hist]
+        StrSta = histblk['Stress/Strain']
+        WriteList(self,("Dset","Dcalc","e11","sig(e11)","e12","sig(e12)","e22","sig(e22)"))
+        fmt = 2*"{:.5f},"+6*"{:.0f},"
+        fmt1 = "{:.5f}"
+        fmt2 = "{:.2f},{:.5f},{:.5f}"
+        for item in StrSta['d-zero']:
+            Emat = item['Emat']
+            Esig = item['Esig']
+            self.Write(fmt.format(item['Dset'],item['Dcalc'],Emat[0],Esig[0],Emat[1],Esig[1],Emat[2],Esig[2]))
+        for item in StrSta['d-zero']:
+            WriteList(self,("Azm","dobs","dcalc","Dset="+fmt1.format(item['Dset'])))
+            ring = np.vstack((item['ImtaObs'],item['ImtaCalc']))
+            for dat in ring.T:
+                self.Write(fmt2.format(dat[1],dat[0],dat[2]))            
         self.CloseFile()
         print(str(hist)+' written to file '+str(self.filename))                        
 

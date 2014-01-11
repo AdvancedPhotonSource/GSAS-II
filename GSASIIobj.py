@@ -793,17 +793,20 @@ Masks                       Arcs                (list: lists) Each entry [2-thet
                                                 
 Stress/Strain               Sample phi          (float) Sample rotation about vertical axis.
 \                           Sample z            (float) Sample translation from the calibration sample position (for Sample phi = 0)
-\                           strain              (list: 3x3 array of float) The strain tensor coefficients [[' e11','e12','e13'],[' e21','e22','e23'],[' e31','e32','e33']].
                                                 These will be restricted by space group symmetry; result of strain fit refinement.
 \                           Type                (str) 'True' or 'Conventional': The strain model used for the calculation.
-\                           d-zero              (list:dict) Each item is for a diffraction ring on the image; all items are from the same phase and are used to determine the strain tensor.
+\                           d-zero              (list:dict) Each item is for a diffraction ring on the image; all items are from the same phase 
+                                                and are used to determine the strain tensor.
                                                 The dictionary items are:
                                                 'Dset': (float) True d-spacing for the diffraction ring; entered by the user.
-                                                'Dcalc': (float) d-spacing...
+                                                'Dcalc': (float) Average calculated d-spacing determined from strain coeff.
+                                                'Emat': (list: float) The strain tensor elements e11, e12 & e22 (e21=e12, rest are 0)
+                                                'Esig': (list: float) Esds for Emat from fitting.
                                                 'pixLimit': (int) Search range to find highest point on ring for each data point
                                                 'cutoff': (float) I/Ib cutoff for searching.
-                                                'ImxyObs': (list:lists) [[X],[Y]] observed points to be used for strain calculations.
-                                                'ImxyCalc':(list:lists) [[X],[Y]] calculated points based on refined strain.                                           
+                                                'ImxyObs': (list: lists) [[X],[Y]] observed points to be used for strain calculations.
+                                                'ImtaObs': (list: lists) [[d],[azm]] transformed via detector calibration from ImxyObs.
+                                                'ImtaCalc': (list: lists [[d],[azm]] calculated d-spacing & azimuth from fit.
                                                 
 ======================  ======================  ====================================================
 

@@ -15,6 +15,7 @@ Control image display and processing
 
 '''
 import wx
+import wx.lib.scrolledpanel as wxscroll
 import matplotlib as mpl
 import math
 import time
@@ -1589,7 +1590,7 @@ def UpdateStressStrain(G2frame,data):
     else:
         G2frame.dataFrame.GetStatusBar().SetStatusText("To add strain data: On 2D Powder Image, key a:add ring")
         
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
     mainSizer.Add(SamSizer())
@@ -1598,5 +1599,9 @@ def UpdateStressStrain(G2frame,data):
     
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
-    G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
-    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))    
+    G2frame.dataDisplay.SetAutoLayout(1)
+    G2frame.dataDisplay.SetupScrolling()
+    Size = mainSizer.Fit(G2frame.dataFrame)
+    Size[0] += 25
+    G2frame.dataDisplay.SetSize(Size)
+    G2frame.dataFrame.setSizePosLeft(Size)    

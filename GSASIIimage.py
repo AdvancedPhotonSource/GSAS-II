@@ -878,6 +878,7 @@ def FitStrSta(Image,StrSta,Controls):
     StaControls = copy.deepcopy(Controls)
     phi = StrSta['Sample phi']
     wave = Controls['wavelength']
+    StaType = StrSta['Type']
     StaControls['distance'] += StrSta['Sample z']*cosd(phi)
 
     for ring in StrSta['d-zero']:       #get observed x,y,d points for the d-zeros
@@ -886,7 +887,7 @@ def FitStrSta(Image,StrSta,Controls):
         if len(Ring):
             ring.update(R)
             p0 = ring['Emat']
-            val,esd = FitStrain(Ring,p0,dset,wave,phi)
+            val,esd = FitStrain(Ring,p0,dset,wave,phi,StaType)
             ring['Emat'] = val
             ring['Esig'] = esd
     CalcStrSta(StrSta,Controls)
@@ -896,13 +897,17 @@ def CalcStrSta(StrSta,Controls):
     wave = Controls['wavelength']
     phi = StrSta['Sample phi']
     E = StrSta['strain']
+    StaType = StrSta['Type']
     for ring in StrSta['d-zero']:
         Eij = ring['Emat']
         E = [[Eij[0],Eij[1],0],[Eij[1],Eij[2],0],[0,0,0]]
         th,azm = ring['ImtaObs']
         th0 = np.ones_like(azm)*npasind(wave/(2.*ring['Dset']))
-        V = 1.+np.sum(np.sum(E*calcFij(90.,phi,azm,th0).T/1.e6,axis=2),axis=1)
-        ring['ImtaCalc'] = np.array([V*ring['Dset'],azm])
+        V = np.sum(np.sum(E*calcFij(90.,phi,azm,th0).T/1.e6,axis=2),axis=1)
+        if StaType == 'True':
+            ring['ImtaCalc'] = np.array([np.exp(V)*ring['Dset'],azm])
+        else:
+            ring['ImtaCalc'] = np.array([(V+1.)*ring['Dset'],azm])
         ring['Dcalc'] = np.mean(ring['ImtaCalc'][0])
 
 def calcFij(omg,phi,azm,th):
@@ -927,7 +932,7 @@ def calcFij(omg,phi,azm,th):
         [c*d,c*e,c**2]])
     return -Fij*nptand(th)
 
-def FitStrain(rings,p0,dset,wave,phi):
+def FitStrain(rings,p0,dset,wave,phi,StaType):
     'Needs a doc string'
     def StrainPrint(ValSig,dset):
         print 'Strain tensor for Dset: %.6f'%(dset)
@@ -945,17 +950,20 @@ def FitStrain(rings,p0,dset,wave,phi):
         print ptstr
         print sigstr
         
-    def strainCalc(p,xyd,dset,wave,phi):
+    def strainCalc(p,xyd,dset,wave,phi,StaType):
         E = np.array([[p[0],p[1],0],[p[1],p[2],0],[0,0,0]])
         dspo,azm,dsp = xyd
         th = npasind(wave/(2.0*dspo))
-        V = 1.+np.sum(np.sum(E*calcFij(90.,phi,azm,th).T/1.e6,axis=2),axis=1)
-        dspc = dset*V
+        V = np.sum(np.sum(E*calcFij(90.,phi,azm,th).T/1.e6,axis=2),axis=1)
+        if StaType == 'True':
+            dspc = dset*np.exp(V)
+        else:
+            dspc = dset*(V+1.)
         return dspo-dspc
         
     names = ['e11','e12','e22']
     fmt = ['%12.2f','%12.2f','%12.2f']
-    result = leastsq(strainCalc,p0,args=(rings,dset,wave,phi),full_output=True)
+    result = leastsq(strainCalc,p0,args=(rings,dset,wave,phi,StaType),full_output=True)
     vals = list(result[0])
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[1]-3)     #reduced chi^2 = M/(Nobs-Nvar)
     sig = list(np.sqrt(chisq*np.diag(result[1])))

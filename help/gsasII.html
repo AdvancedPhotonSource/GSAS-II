@@ -24,17 +24,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>133</o:Revision>
-  <o:TotalTime>3974</o:TotalTime>
+  <o:Revision>134</o:Revision>
+  <o:TotalTime>3975</o:TotalTime>
   <o:Created>2011-11-28T16:49:00Z</o:Created>
-  <o:LastSaved>2013-07-12T10:17:00Z</o:LastSaved>
+  <o:LastSaved>2014-01-13T19:41:00Z</o:LastSaved>
   <o:Pages>27</o:Pages>
-  <o:Words>10727</o:Words>
-  <o:Characters>61145</o:Characters>
+  <o:Words>10790</o:Words>
+  <o:Characters>61503</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
-  <o:Lines>509</o:Lines>
-  <o:Paragraphs>143</o:Paragraphs>
-  <o:CharactersWithSpaces>71729</o:CharactersWithSpaces>
+  <o:Lines>512</o:Lines>
+  <o:Paragraphs>144</o:Paragraphs>
+  <o:CharactersWithSpaces>72149</o:CharactersWithSpaces>
   <o:Version>14.00</o:Version>
  </o:DocumentProperties>
 </xml><![endif]-->
@@ -463,7 +463,8 @@ h4
 	font-weight:bold;
 	font-style:italic;}
 h5
-	{mso-style-priority:9;
+	{mso-style-noshow:yes;
+	mso-style-priority:9;
 	mso-style-qformat:yes;
 	mso-style-link:"Heading 5 Char";
 	mso-margin-top-alt:auto;
@@ -610,8 +611,7 @@ p.MsoTitleCxSpLast, li.MsoTitleCxSpLast, div.MsoTitleCxSpLast
 	letter-spacing:.25pt;
 	mso-font-kerning:14.0pt;}
 a:link, span.MsoHyperlink
-	{mso-style-noshow:yes;
-	mso-style-priority:99;
+	{mso-style-priority:99;
 	color:blue;
 	text-decoration:underline;
 	text-underline:single;}
@@ -849,6 +849,7 @@ span.Heading4Char
 	font-style:italic;}
 span.Heading5Char
 	{mso-style-name:"Heading 5 Char";
+	mso-style-noshow:yes;
 	mso-style-priority:9;
 	mso-style-unhide:no;
 	mso-style-locked:yes;
@@ -2304,12 +2305,12 @@ representations of the results; and the console which has printout information
 that can be selected, cut &amp; pasted into a document. <o:p></o:p></span></p>
 
 <h2><a name=Programmers><strong>Programmers documentation</strong></a><strong>:<o:p></o:p></strong></h2>
-<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>
-The routines and classes used within GSAS-II are documented in a set of 
-<a href="../sphinxdocs/build/html/index.html">web pages</a> 
-and in a <a href="../sphinxdocs/build/latex/GSASIIdoc.pdf">PDF document</a>. 
-This documentation is created from the Python source code files using
-Sphinx. </span></p>
+
+<p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>The
+routines and classes used within GSAS-II are documented in a set of <a
+href="../sphinxdocs/build/html/index.html">web pages</a> and in a <a
+href="../sphinxdocs/build/latex/GSASIIdoc.pdf">PDF document</a>. This
+documentation is created from the Python source code files using Sphinx. </span></p>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'><o:p>&nbsp;</o:p></span></p>
 
@@ -2340,12 +2341,17 @@ style='font-weight:normal'>2-D Image calibration</span></a><o:p></o:p></strong><
 href="Integration%20of%20area%20detector%20data%20in%20GSAS.htm"><span
 style='font-weight:normal'>2-D Image integration</span></a><o:p></o:p></strong></p>
 
+<p class=MsoNormal><strong><a href="Strain%20fitting%20of%202D%20data%20in%20GSAS-II.htm"><span
+style='font-weight:normal'>2-D Strain data fitting</span></a><o:p></o:p></strong></p>
+
 <p class=MsoNormal><strong>Synchrotron X-ray powder pattern Rietveld refinement<o:p></o:p></strong></p>
 
 <p class=MsoNormal><strong><span style='font-weight:normal'>Charge flipping
 structure solution</span> &#8211; <a href="Charge%20Flipping%20in%20GSAS.htm"><span
 class=SpellE><span style='font-weight:normal'>jadarite</span></span></a> &amp; <a
 href="Charge%20Flipping%20-%20sucrose.htm"><span style='font-weight:normal'>sucrose</span></a><o:p></o:p></strong></p>
+
+<p class=MsoNormal><strong><o:p>&nbsp;</o:p></strong></p>
 
 <p class=MsoNormal><strong><o:p>&nbsp;</o:p></strong></p>
 
@@ -2372,9 +2378,9 @@ Clicking on any item in the tree opens a window where information in that item
 can be viewed or edited. For example, the <a href="#Sample_Parameters">&quot;Sample
 Parameters&quot;</a> item under a &#8216;PWDR&#8217; entry contains information
 about how data were collected, such as the sample temperature <a
-href="#Sample_Parameters">(see below)</a>. The arrow keys (up &amp; down) move
-the selection to successive entries in the data tree; both the data window and
-the associated plot (if any) will change.<o:p></o:p></span></p>
+href="#Sample_Parameters">(see below)</a>. The arrow keys (up &amp; down) move the
+selection to successive entries in the data tree; both the data window and the
+associated plot (if any) will change.<o:p></o:p></span></p>
 
 <h4><span style='mso-fareast-font-family:"Times New Roman"'>What can I do here?<o:p></o:p></span></h4>
 
@@ -2536,8 +2542,8 @@ style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span
 style='mso-bidi-font-weight:normal'>Make new PDFs</b> &#8211; This creates the
 pair distribution function (PDF) controls for each powder pattern selected in
 the dialog box. See <b style='mso-bidi-font-weight:normal'><span
-style='color:#4F81BD;mso-themecolor:accent1'><a href="#PDF_Controls">PDF Controls</a></span></b>
-for further directions.</p>
+style='color:#4F81BD;mso-themecolor:accent1'><a href="#PDF_Controls">PDF
+Controls</a></span></b> for further directions.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l14 level2 lfo1'><![if !supportLists]><span
@@ -2595,8 +2601,8 @@ auto;text-indent:-.25in;mso-list:l14 level3 lfo1;tab-stops:list 1.5in'><![if !su
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
 class=GramE><b style='mso-bidi-font-weight:normal'>from</b></span><b
-style='mso-bidi-font-weight:normal'> GSAS .EXP file - </b>This reads one phase
-from a GSAS experiment file (name.EXP). The file name is found in a directory
+style='mso-bidi-font-weight:normal'> GSAS .EXP file - </b>This reads one phase from
+a GSAS experiment file (name.EXP). The file name is found in a directory
 dialog; you can change directories as needed. Only .EXP (or .exp) file names
 are shown. If the selected file has more than one phase, a dialog is shown with
 the choices; only one can be chosen. If you want more than one, redo the <b
@@ -2743,8 +2749,8 @@ style='mso-list:Ignore'>1.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp
 </span></span></span></b><![endif]><span class=GramE><b style='mso-bidi-font-weight:
 normal'>from</b></span><b style='mso-bidi-font-weight:normal'> F**2 HKL file </b>This
 reads structure factors (as F**2) and sig(F**2) from a SHELX format .<span
-class=SpellE>hkl</span> file. The file names are found in a directory dialog;
-you can change directories as needed. You must know this is the content of this
+class=SpellE>hkl</span> file. The file names are found in a directory dialog; you
+can change directories as needed. You must know this is the content of this
 file as it will have no internal indication of its contents.<b
 style='mso-bidi-font-weight:normal'><o:p></o:p></b></p>
 
@@ -2767,8 +2773,8 @@ style='mso-list:Ignore'>3.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp
 </span></span></span></b><![endif]><span class=GramE><b style='mso-bidi-font-weight:
 normal'>from</b></span><b style='mso-bidi-font-weight:normal'> CIF file</b>
 This reads structure factors (as F**2 or F) and sig(F**2 or F) from a .CIF (or
-.<span class=SpellE>cif</span>) or .FCF (or .<span class=SpellE>fcf</span>) format
-file. The file names are found in a directory dialog; you can change
+.<span class=SpellE>cif</span>) or .FCF (or .<span class=SpellE>fcf</span>)
+format file. The file names are found in a directory dialog; you can change
 directories as needed. The internal structure of this file indicates in which
 form the structure factors are used.<b style='mso-bidi-font-weight:normal'><o:p></o:p></b></p>
 
@@ -3125,8 +3131,8 @@ style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times 
 restraints</span></b><span style='mso-fareast-font-family:"Times New Roman"'>
 &#8211; this takes you through a sequence of dialog boxes which ask for the
 identities of the atoms involved in the restraint and the value to be assigned
-to the restraint. The <span class=SpellE>esd</span> is given a default value which
-can be changed after the restraints are created.<o:p></o:p></span></p>
+to the restraint. The <span class=SpellE>esd</span> is given a default value
+which can be changed after the restraints are created.<o:p></o:p></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l12 level2 lfo4'><![if !supportLists]><span
@@ -3184,9 +3190,8 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
 style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times New Roman"'>Delete
 restraints</span></b><span style='mso-fareast-font-family:"Times New Roman"'>
-&#8211; this deletes selected restraints from the list. A single click in the
-blank box in the upper left corner of the table will select/deselect all
-restraints.<o:p></o:p></span></p>
+&#8211; this deletes selected restraints from the list. A single click in the blank
+box in the upper left corner of the table will select/deselect all restraints.<o:p></o:p></span></p>
 
 <h4><a name="Rigid_bodies"><span style='mso-fareast-font-family:"Times New Roman"'>Rigid
 bodies<o:p></o:p></span></a></h4>
@@ -3330,12 +3335,12 @@ directory if desired.<o:p></o:p></span></h5>
 
 <h3>Histograms</h3>
 
-<p class=MsoNormal>These are shown in the data tree with a prefix of &#8216;PWDR&#8217;,
-&#8217;HKLF&#8217;, &#8216;IMG&#8217;, or &#8216;PDF&#8217; and usually a file
-name. These constitute the data sets (&#8216;Histograms&#8217;) to be used by
-GSAS-II for analysis. Selection of these items does not produce any information
-in the data window but does display the data in the Plots Window. They are
-described below.</p>
+<p class=MsoNormal>These are shown in the data tree with a prefix of
+&#8216;PWDR&#8217;, &#8217;HKLF&#8217;, &#8216;IMG&#8217;, or &#8216;PDF&#8217;
+and usually a file name. These constitute the data sets
+(&#8216;Histograms&#8217;) to be used by GSAS-II for analysis. Selection of
+these items does not produce any information in the data window but does
+display the data in the Plots Window. They are described below.</p>
 
 <h3><a name="PWD_Analysis"></a>Powder Histograms - PWDR</h3>
 
@@ -3362,9 +3367,9 @@ style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span
 style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times New Roman"'>Analyze</span></b></span><span
 style='mso-bookmark:Comments'><span style='mso-fareast-font-family:"Times New Roman"'>
 &#8211; this produces a &#8216;normal probability&#8217; plot for the
-refinement result as bounded by the limits. The slope and intercept of the curve
-in the central region (-1 &lt; </span></span><span style='mso-bookmark:Comments'><span
-style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>D</span></span><span
+refinement result as bounded by the limits. The slope and intercept of the
+curve in the central region (-1 &lt; </span></span><span style='mso-bookmark:
+Comments'><span style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>D</span></span><span
 style='mso-bookmark:Comments'><span style='mso-fareast-font-family:"Times New Roman"'>/</span></span><span
 style='mso-bookmark:Comments'><span style='font-family:Symbol;mso-fareast-font-family:
 "Times New Roman"'>s</span></span><span style='mso-bookmark:Comments'><span
@@ -3397,11 +3402,12 @@ needed.<o:p></o:p></span></p>
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
 style='mso-fareast-font-family:"Times New Roman"'>You can change <span
-class=SpellE>Tmin</span> and <span class=SpellE>Tmax</span> in the &#8216;changed&#8217;
-row as needed. Use the mouse to select the value to be changed (the background
-on the box will be blue or have a black border or a vertical bar will appear in
-the value), then enter the new value and press Enter or click the mouse
-elsewhere in the Limits window. This will set the new value.<o:p></o:p></span></p>
+class=SpellE>Tmin</span> and <span class=SpellE>Tmax</span> in the
+&#8216;changed&#8217; row as needed. Use the mouse to select the value to be
+changed (the background on the box will be blue or have a black border or a
+vertical bar will appear in the value), then enter the new value and press
+Enter or click the mouse elsewhere in the Limits window. This will set the new
+value.<o:p></o:p></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l5 level1 lfo9'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
@@ -3576,10 +3582,10 @@ with the &#8216;A&#8217; coefficients.<o:p></o:p></span></p>
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l23 level1 lfo10'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>7.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman"'>You can introduce single Bragg
-peaks into the background. For each you should specify at least the position.
-Select parameters to refine; usually start with the &#8216;<span class=SpellE>int</span>&#8217;
-coefficients.<o:p></o:p></span></p>
+style='mso-fareast-font-family:"Times New Roman"'>You can introduce single
+Bragg peaks into the background. For each you should specify at least the
+position. Select parameters to refine; usually start with the &#8216;<span
+class=SpellE>int</span>&#8217; coefficients.<o:p></o:p></span></p>
 
 <h4><a name="Instrument_Parameters"><u><span style='mso-fareast-font-family:
 "Times New Roman"'>Instrument Parameters</span></u></a><u><span
@@ -3657,13 +3663,13 @@ style='mso-list:Ignore'>d.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp
 </span></span></span></span><![endif]><b style='mso-bidi-font-weight:normal'><span
 style='mso-fareast-font-family:"Times New Roman"'>Copy</span></b><span
 style='mso-fareast-font-family:"Times New Roman"'> &#8211; this copies the
-instrument parameters shown to other selected powder patterns. If used, a dialog
-box (Copy parameters) will appear showing the list of available powder
-patterns, you can copy the instrument parameters to any or all of them; select
-&#8216;All&#8217; to copy them to all patterns. Then select &#8216;OK&#8217; to
-do the copy; &#8216;Cancel&#8217; to cancel the operation. The copy will only
-work for instrument parameters that are commensurate with the one that is
-shown, e.g. single radiation patterns will not be updated from K</span><sub><span
+instrument parameters shown to other selected powder patterns. If used, a
+dialog box (Copy parameters) will appear showing the list of available powder
+patterns, you can copy the instrument parameters to any or all of them; select &#8216;All&#8217;
+to copy them to all patterns. Then select &#8216;OK&#8217; to do the copy;
+&#8216;Cancel&#8217; to cancel the operation. The copy will only work for
+instrument parameters that are commensurate with the one that is shown, e.g.
+single radiation patterns will not be updated from K</span><sub><span
 style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>a</span></sub><sub><span
 style='mso-fareast-font-family:"Times New Roman"'>1</span></sub><span
 style='mso-fareast-font-family:"Times New Roman"'>/K</span><sub><span
@@ -3682,16 +3688,15 @@ style='mso-list:Ignore'>e.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp
 style='mso-fareast-font-family:"Times New Roman"'>Copy flags </span></b><span
 style='mso-fareast-font-family:"Times New Roman"'>- &#8211; this copies the
 instrument parameter refinement flags shown to other selected powder patterns.
-If used, a dialog box (Copy refinement flags) will appear showing the list of
-available powder patterns, you can copy the instrument parameter refinement
-flags to any or all of them; select &#8216;All&#8217; to copy them to all
-patterns. Then select &#8216;OK&#8217; to do the copy; &#8216;Cancel&#8217; to
-cancel the operation. The copy will only work for instrument parameters that
-are commensurate with the one that is shown, e.g. single radiation patterns
-will not be updated from K</span><sub><span style='font-family:Symbol;
-mso-fareast-font-family:"Times New Roman"'>a</span></sub><sub><span
-style='mso-fareast-font-family:"Times New Roman"'>1</span></sub><span
-style='mso-fareast-font-family:"Times New Roman"'>/K</span><sub><span
+If used, a dialog box (Copy refinement flags) will appear showing the list of available
+powder patterns, you can copy the instrument parameter refinement flags to any
+or all of them; select &#8216;All&#8217; to copy them to all patterns. Then
+select &#8216;OK&#8217; to do the copy; &#8216;Cancel&#8217; to cancel the
+operation. The copy will only work for instrument parameters that are
+commensurate with the one that is shown, e.g. single radiation patterns will
+not be updated from K</span><sub><span style='font-family:Symbol;mso-fareast-font-family:
+"Times New Roman"'>a</span></sub><sub><span style='mso-fareast-font-family:
+"Times New Roman"'>1</span></sub><span style='mso-fareast-font-family:"Times New Roman"'>/K</span><sub><span
 style='font-family:Symbol;mso-fareast-font-family:"Times New Roman"'>a</span></sub><sub><span
 style='mso-fareast-font-family:"Times New Roman"'>2</span></sub><span
 style='mso-fareast-font-family:"Times New Roman"'> ones.<span
@@ -3812,9 +3817,9 @@ style='mso-fareast-font-family:"Times New Roman"'>Copy flags</span></b></span><s
 style='mso-bookmark:Powder_Peaks'><span style='mso-fareast-font-family:"Times New Roman"'>
 - &#8211; this copies the sample parameter refinement flags shown to other
 selected powder patterns. If used, a dialog box (Copy refinement flags) will
-appear showing the list of available powder patterns, you can copy the sample parameter
-refinement flags to any or all of them; select &#8216;All&#8217; to copy them
-to all patterns. Then select &#8216;OK&#8217; to do the copy;
+appear showing the list of available powder patterns, you can copy the sample
+parameter refinement flags to any or all of them; select &#8216;All&#8217; to
+copy them to all patterns. Then select &#8216;OK&#8217; to do the copy;
 &#8216;Cancel&#8217; to cancel the operation. <span class=MsoHyperlink><span
 style='color:windowtext;text-decoration:none;text-underline:none'><o:p></o:p></span></span></span></span></p>
 
@@ -3860,10 +3865,10 @@ style='mso-fareast-font-family:"Times New Roman";color:windowtext'>Auto search</
 style='mso-bookmark:Index_Peaks'><span style='mso-fareast-font-family:"Times New Roman";
 color:windowtext;font-weight:normal;mso-bidi-font-weight:bold'> &#8211; this
 fills the table with peak positions. These are selected based on peak tops that
-are substantially above background. Noisy data will give spurious peaks and
-small peaks or shoulders will not be found. Examine results &amp; modify as
-needed.<span class=MsoHyperlink><span style='color:windowtext;text-decoration:
-none;text-underline:none'><o:p></o:p></span></span></span></span></h5>
+are substantially above background. Noisy data will give spurious peaks and small
+peaks or shoulders will not be found. Examine results &amp; modify as needed.<span
+class=MsoHyperlink><span style='color:windowtext;text-decoration:none;
+text-underline:none'><o:p></o:p></span></span></span></span></h5>
 
 <h5 style='margin-left:1.0in;text-indent:-.25in;mso-list:l11 level2 lfo15;
 tab-stops:list 1.0in'><span style='mso-bookmark:Index_Peaks'><![if !supportLists]><span
@@ -3890,11 +3895,11 @@ style='mso-fareast-font-family:"Times New Roman";color:windowtext'>LSQ <span
 class=SpellE>PeakFit</span></span></span><span style='mso-bookmark:Index_Peaks'><span
 style='mso-fareast-font-family:"Times New Roman";color:windowtext;font-weight:
 normal;mso-bidi-font-weight:bold'> &#8211; perform a least squares fit of the
-peaks in Peak List to the data. Any peak parameters, background parameters and instrument
-parameters with refine checked will be varied in this refinement. The
-refinement will proceed until convergence. We suggest you vary the intensity
-along with the background first (the default), then vary the position and
-instrument parameters after. The order will depend on how poor is the initial
+peaks in Peak List to the data. Any peak parameters, background parameters and
+instrument parameters with refine checked will be varied in this refinement.
+The refinement will proceed until convergence. We suggest you vary the
+intensity along with the background first (the default), then vary the position
+and instrument parameters after. The order will depend on how poor is the initial
 estimate of the instrument parameters (U, V, W, X, Y &amp; SH/L). To determine
 how to proceed, examine in detail the powder pattern difference curve displayed
 in the GSASII Plots window. If individual peaks show peak widths that are
@@ -3914,13 +3919,13 @@ class=MsoHyperlink><span style='mso-fareast-font-family:"Times New Roman";
 color:windowtext;font-weight:normal;mso-bidi-font-weight:bold;text-decoration:
 none;text-underline:none'><span style='mso-list:Ignore'>d.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span></span><![endif]><span
-style='mso-fareast-font-family:"Times New Roman";color:windowtext'>LSQ one
-cycle </span></span><span style='mso-bookmark:Index_Peaks'><span
-style='mso-fareast-font-family:"Times New Roman";color:windowtext;font-weight:
-normal;mso-bidi-font-weight:bold'>&#8211; perform a single cycle of least
-squares refinement. This can be used in difficult cases to get a refinement
-started toward convergence.<span class=MsoHyperlink><span style='color:windowtext;
-text-decoration:none;text-underline:none'><o:p></o:p></span></span></span></span></h5>
+style='mso-fareast-font-family:"Times New Roman";color:windowtext'>LSQ one cycle
+</span></span><span style='mso-bookmark:Index_Peaks'><span style='mso-fareast-font-family:
+"Times New Roman";color:windowtext;font-weight:normal;mso-bidi-font-weight:
+bold'>&#8211; perform a single cycle of least squares refinement. This can be
+used in difficult cases to get a refinement started toward convergence.<span
+class=MsoHyperlink><span style='color:windowtext;text-decoration:none;
+text-underline:none'><o:p></o:p></span></span></span></span></h5>
 
 <h5 style='margin-left:1.0in;text-indent:-.25in;mso-list:l11 level2 lfo15;
 tab-stops:list 1.0in'><span style='mso-bookmark:Index_Peaks'><![if !supportLists]><span
@@ -4076,8 +4081,8 @@ accent1;text-decoration:none;text-underline:none'><o:p></o:p></span></span></h4>
 
 <p class=MsoNormal><span style='mso-fareast-font-family:"Times New Roman"'>This
 window shows the controls and results from indexing of the peaks in the <a
-href="#Index_Peak_List"><span style='color:windowtext;text-decoration:none;
-text-underline:none'>Index_Peak_List</span></a></span><!--[if supportFields]><span
+href="#Index_Peak_List"><span class=SpellE><span style='color:windowtext;
+text-decoration:none;text-underline:none'>Index_Peak_List</span></span></a></span><!--[if supportFields]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-element:
 field-begin'></span> REF Index_Peak_List \h </span><![endif]--><span
 style='mso-fareast-font-family:"Times New Roman"'><!--[if gte mso 9]><xml>
@@ -4191,9 +4196,9 @@ none;text-underline:none'><span style='mso-list:Ignore'>a.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span></span><![endif]><b
 style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times New Roman"'>Index
 Cell</span></b></span><span style='mso-bookmark:Reflection_List'><span
-style='mso-fareast-font-family:"Times New Roman"'> &#8211; this starts the
-indexing process. Output will appear on the console and a progress bar dialog
-will appear which tracks trial volume. A <b style='mso-bidi-font-weight:normal'>Cancel</b>
+style='mso-fareast-font-family:"Times New Roman"'> &#8211; this starts the indexing
+process. Output will appear on the console and a progress bar dialog will
+appear which tracks trial volume. A <b style='mso-bidi-font-weight:normal'>Cancel</b>
 button will terminate indexing; it may need to be pressed more than once to
 fully terminate the indexing process. Console output shows possible solutions
 with a computed <b style='mso-bidi-font-weight:normal'>M20</b> for each; good
@@ -4244,15 +4249,16 @@ none;text-underline:none'><span style='mso-list:Ignore'>d.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span></span><![endif]><b
 style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times New Roman"'>Make
 new phase</span></b></span><span style='mso-bookmark:Reflection_List'><span
-style='mso-fareast-font-family:"Times New Roman"'> &#8211; this creates a new
-phase from the selected unit cell and chosen space group. A dialog box will
-appear asking for a name for this phase. See the new entry under Phases and the
-new lattice parameters will be in the </span></span><a href="#General"><span
+style='mso-fareast-font-family:"Times New Roman"'> &#8211; this creates a new phase
+from the selected unit cell and chosen space group. A dialog box will appear
+asking for a name for this phase. See the new entry under Phases and the new
+lattice parameters will be in the </span></span><a href="#General"><span
 style='mso-bookmark:Reflection_List'><span style='mso-fareast-font-family:"Times New Roman";
-color:windowtext;text-decoration:none;text-underline:none'>General</span></span></a><span
-style='mso-bookmark:Reflection_List'><span style='mso-fareast-font-family:"Times New Roman"'>
-window for that phase.<span class=MsoHyperlink><span style='color:windowtext;
-text-decoration:none;text-underline:none'><o:p></o:p></span></span></span></span></p>
+color:windowtext;text-decoration:none;text-underline:none'>General</span></span><span
+style='mso-bookmark:Reflection_List'></span></a><span style='mso-bookmark:Reflection_List'><span
+style='mso-fareast-font-family:"Times New Roman"'> window for that phase.<span
+class=MsoHyperlink><span style='color:windowtext;text-decoration:none;
+text-underline:none'><o:p></o:p></span></span></span></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l16 level1 lfo17'><span
 style='mso-bookmark:Reflection_List'><![if !supportLists]><span
@@ -4263,9 +4269,9 @@ style='mso-list:Ignore'>5.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp
 style='mso-fareast-font-family:"Times New Roman"'>Select another solution
 &#8211; </span></b></span><span style='mso-bookmark:Reflection_List'><span
 style='mso-fareast-font-family:"Times New Roman"'>the plot will show (red
-dashed lines) the<b style='mso-bidi-font-weight:normal'> </b>generated reflection
-positions for the choice; compare them to the peak positions (blue lines) and
-any unfitted peaks for conformation.<span class=MsoHyperlink><span
+dashed lines) the<b style='mso-bidi-font-weight:normal'> </b>generated
+reflection positions for the choice; compare them to the peak positions (blue
+lines) and any unfitted peaks for conformation.<span class=MsoHyperlink><span
 style='color:windowtext;text-decoration:none;text-underline:none'><o:p></o:p></span></span></span></span></p>
 
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l16 level1 lfo17'><span
@@ -4410,8 +4416,8 @@ text-underline:none'><o:p></o:p></span></span></span></h3>
 <h4><u>Comments<o:p></o:p></u></h4>
 
 <p class=MsoNormal>This window shows whatever comment lines found in a
-&#8220;metadata&#8221; file when the image data file was read by GSAS-II. If
-you are lucky, there will be useful information here (e.g. sample name, date
+&#8220;metadata&#8221; file when the image data file was read by GSAS-II. If you
+are lucky, there will be useful information here (e.g. sample name, date
 collected, wavelength used, etc.). If not, this window will be blank. The text
 is read-only.</p>
 
@@ -4567,10 +4573,10 @@ color:windowtext;text-decoration:none;text-underline:none'><span
 style='mso-list:Ignore'>c.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span></span><![endif]><b style='mso-bidi-font-weight:normal'><span
 style='mso-fareast-font-family:"Times New Roman"'>Space group</span></b><span
-style='mso-fareast-font-family:"Times New Roman"'> &#8211; this should be set
-when the phase is initialized; it can be changed later. Be careful about the
-impact on Atom site symmetry and multiplicity if you do. GSAS-II will recognize
-any legal space group symbol using the short Hermann-Mauguin forms; put a space
+style='mso-fareast-font-family:"Times New Roman"'> &#8211; this should be set when
+the phase is initialized; it can be changed later. Be careful about the impact
+on Atom site symmetry and multiplicity if you do. GSAS-II will recognize any
+legal space group symbol using the short Hermann-Mauguin forms; put a space
 between the axial fields (e.g. &#8216;F d 3 m&#8217; not &#8216;Fd3m&#8217;).
 For space groups with a choice of origin (e.g. F d 3 m), GSAS-II always uses
 the 2<sup>nd</sup> setting where the center of inversion is located at the
@@ -4700,11 +4706,11 @@ class=MsoHyperlink><span style='mso-fareast-font-family:"Times New Roman";
 color:windowtext;text-decoration:none;text-underline:none'><span
 style='mso-list:Ignore'>3.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span></span><![endif]><span style='mso-fareast-font-family:
-"Times New Roman"'>If there are entries in the Atoms page then the Elements
-table is shown next on the General page; you may select the isotope (only
-relevant for neutron diffraction experiments). The density (just above the
-Elements) is computed depending on this choice, the unit cell volume and the
-atom fractions/site multiplicities in the entries on the Atoms page.<span
+"Times New Roman"'>If there are entries in the Atoms page then the Elements table
+is shown next on the General page; you may select the isotope (only relevant
+for neutron diffraction experiments). The density (just above the Elements) is
+computed depending on this choice, the unit cell volume and the atom
+fractions/site multiplicities in the entries on the Atoms page.<span
 class=MsoHyperlink><span style='color:windowtext'><o:p></o:p></span></span></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l1 level1 lfo20'><![if !supportLists]><span
@@ -4725,11 +4731,10 @@ style='mso-fareast-font-family:"Times New Roman"'>Do Pawley refinement?</span></
 style='mso-fareast-font-family:"Times New Roman"'> &#8211; This must be chosen
 to perform a Pawley refinement as opposed to a Rietveld refinement for this
 phase. <b style='mso-bidi-font-weight:normal'>NB:</b> you probably should clear
-the <b style='mso-bidi-font-weight:normal'>Histogram scale factor</b>
-refinement flag (found in <b style='mso-bidi-font-weight:normal'>Sample
-parameters</b> for the powder data set) as it cannot be refined simultaneously
-with the Pawley reflection intensities.<span class=MsoHyperlink><span
-style='color:windowtext'><o:p></o:p></span></span></span></p>
+the <b style='mso-bidi-font-weight:normal'>Histogram scale factor</b> refinement
+flag (found in <b style='mso-bidi-font-weight:normal'>Sample parameters</b> for
+the powder data set) as it cannot be refined simultaneously with the Pawley
+reflection intensities.<span class=MsoHyperlink><span style='color:windowtext'><o:p></o:p></span></span></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l1 level2 lfo20'><![if !supportLists]><span
@@ -4825,8 +4830,8 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><span
 class=GramE><b style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:
 "Times New Roman"'>k-Factor</span></b></span><span style='mso-fareast-font-family:
-"Times New Roman"'> &#8211; This is the threshold on the density map, all
-densities below this are charge flipped.</span></p>
+"Times New Roman"'> &#8211; This is the threshold on the density map, all densities
+below this are charge flipped.</span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l1 level2 lfo20'><![if !supportLists]><span
@@ -4879,8 +4884,8 @@ style='mso-list:Ignore'>c.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp
 style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:"Times New Roman";
 color:windowtext;text-decoration:none;text-underline:none'>MC/SA algorithm</span></b></span><span
 class=MsoHyperlink><span style='mso-fareast-font-family:"Times New Roman";
-color:windowtext;text-decoration:none;text-underline:none'> &#8211; This selects
-the type of jump to be used for each MC/SA trial.<o:p></o:p></span></span></p>
+color:windowtext;text-decoration:none;text-underline:none'> &#8211; This
+selects the type of jump to be used for each MC/SA trial.<o:p></o:p></span></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l1 level2 lfo20'><![if !supportLists]><span
@@ -4962,10 +4967,10 @@ color:windowtext;text-decoration:none;text-underline:none'><span
 style='mso-list:Ignore'>b.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span></span><![endif]><b style='mso-bidi-font-weight:normal'><span
 style='mso-fareast-font-family:"Times New Roman"'>Shift LMB</span></b><span
-style='mso-fareast-font-family:"Times New Roman"'> &#8211; on a row number
-selects all atoms from last selection to the selected row (or top is none
-previously selected).<span class=MsoHyperlink><span style='color:windowtext;
-text-decoration:none;text-underline:none'><o:p></o:p></span></span></span></p>
+style='mso-fareast-font-family:"Times New Roman"'> &#8211; on a row number selects
+all atoms from last selection to the selected row (or top is none previously
+selected).<span class=MsoHyperlink><span style='color:windowtext;text-decoration:
+none;text-underline:none'><o:p></o:p></span></span></span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l3 level2 lfo21'><![if !supportLists]><span
@@ -4986,10 +4991,10 @@ style='mso-list:Ignore'>d.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp
 </span></span></span></span><![endif]><b style='mso-bidi-font-weight:normal'><span
 style='mso-fareast-font-family:"Times New Roman"'>Alt LMB</span></b><span
 style='mso-fareast-font-family:"Times New Roman"'> &#8211; on a row number
-selects that atom for moving; the status line at bottom of window will show
-name of atom selected. Use <b style='mso-bidi-font-weight:normal'>Alt LMB</b>
-again to select a target row for this atom; insertion will be before this row
-and the table will be updated to show the change. NB: the <b style='mso-bidi-font-weight:
+selects that atom for moving; the status line at bottom of window will show name
+of atom selected. Use <b style='mso-bidi-font-weight:normal'>Alt LMB</b> again
+to select a target row for this atom; insertion will be before this row and the
+table will be updated to show the change. NB: the <b style='mso-bidi-font-weight:
 normal'>Draw Atoms</b> list is not updated by this change.<span
 class=MsoHyperlink><span style='color:windowtext;text-decoration:none;
 text-underline:none'><o:p></o:p></span></span></span></p>
@@ -5110,8 +5115,8 @@ name=Texture></a><a name="Draw_Options"></a><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>5.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Menu
 &#8216;<b style='mso-bidi-font-weight:normal'>Edit&#8217; - </b>The edit menu
-shows operations that can be performed on your selected atoms. You must select one
-or more atoms before using many of the menu items.</p>
+shows operations that can be performed on your selected atoms. You must select
+one or more atoms before using many of the menu items.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l3 level2 lfo21'><![if !supportLists]><span
@@ -5171,11 +5176,11 @@ dialog box appears with a list of atom parameter names; select one to apply to
 all atoms. <b style='mso-bidi-font-weight:normal'>Name</b> will rename selected
 atoms according to position in table (e.g. Na(1) for Na atom as 1<sup>st</sup>
 atom in list in row &#8216;0&#8217;). <b style='mso-bidi-font-weight:normal'>Type</b>
-will give periodic table popup; selected element valence will be used for all selected
-atoms and atoms names will be changed. <b style='mso-bidi-font-weight:normal'>I/A</b>
-will give popup with choices to be used for all selected atoms. <b
-style='mso-bidi-font-weight:normal'>x,y,z</b> will give popup for shift to be
-applied to the parameter for all selected atoms. <span class=SpellE><b
+will give periodic table popup; selected element valence will be used for all
+selected atoms and atoms names will be changed. <b style='mso-bidi-font-weight:
+normal'>I/A</b> will give popup with choices to be used for all selected atoms.
+<b style='mso-bidi-font-weight:normal'>x,y,z</b> will give popup for shift to
+be applied to the parameter for all selected atoms. <span class=SpellE><b
 style='mso-bidi-font-weight:normal'>Uiso</b></span> and <span class=SpellE><b
 style='mso-bidi-font-weight:normal'>frac</b></span> will give popup for new
 value to be used for all selected atoms. </p>
@@ -5234,11 +5239,11 @@ none'><o:p></o:p></span></span></span></h5>
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
 style='mso-bidi-font-weight:normal'>Atom Selection from table</b>: select
-individual atoms by a left click of the mouse when pointed at the left most
-column (atom numbers) of the atom display; hold down the Ctrl key to add to
-your selection; a previously selected atom will be deselected; hold down Shift
-key to select from last in list selected to current selection. A selected atom
-will be highlighted (in grey) and the atoms will be shown in green on the plot.
+individual atoms by a left click of the mouse when pointed at the left most column
+(atom numbers) of the atom display; hold down the Ctrl key to add to your
+selection; a previously selected atom will be deselected; hold down Shift key
+to select from last in list selected to current selection. A selected atom will
+be highlighted (in grey) and the atoms will be shown in green on the plot.
 Selection without the Ctrl key will clear previous selections. A double left
 click in the (empty) upper left box will select or deselect all atoms.</p>
 
@@ -5261,8 +5266,8 @@ style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
 style='mso-bidi-font-weight:normal'>Double left click a Name, Type and Sym Op
 column heading</b>: a dialog box is shown that allows you to select all atoms
-with that characteristic. For example, selecting the Type column will show all the
-atom types; your choice will then cause all those atoms to be selected.</p>
+with that characteristic. For example, selecting the Type column will show all
+the atom types; your choice will then cause all those atoms to be selected.</p>
 
 <p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l13 level1 lfo22'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>4.<span
@@ -5407,9 +5412,9 @@ are selected, a best plane is determined for them. The result is shown on the
 console window; it may be cut &amp; pasted to another application (e.g.
 Microsoft Word). Shown are the atom coordinates transformed to Cartesian best
 plane coordinates where the largest range is over the X-axis and the smallest
-is over the Z-axis with the origin at the unweighted center of the selection. Root
-mean square displacements along each axis for the best plane are also listed.
-The Z-axis RMS value indicates the flatness of the proposed plane. <b
+is over the Z-axis with the origin at the unweighted center of the selection.
+Root mean square displacements along each axis for the best plane are also
+listed. The Z-axis RMS value indicates the flatness of the proposed plane. <b
 style='mso-bidi-font-weight:normal'>NB</b>: if you select (e.g. all) atoms then
 Best plane will give Cartesian coordinates for these atoms with respect to a
 coordinate system where the X-axis is along the longest axis of the atom
@@ -5463,9 +5468,9 @@ maximum peak magnitude.</span></p>
 style='mso-bookmark:Pawley'><![if !supportLists]><span style='mso-fareast-font-family:
 "Times New Roman"'><span style='mso-list:Ignore'>1.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Peak
-Selection from table</b>: select individual atoms by a left click of the mouse
-when pointed at the left most column (atom numbers) of the atom display; hold
-down the Ctrl key to add to your selection; a previously selected atom will be
+Selection from table</b>: select individual atoms by a left click of the mouse when
+pointed at the left most column (atom numbers) of the atom display; hold down
+the Ctrl key to add to your selection; a previously selected atom will be
 deselected; hold down Shift key to select from last in list selected to current
 selection. A selected atom will be highlighted (in grey) and the atoms will be
 shown in green on the plot. Selection without the Ctrl key will clear previous
@@ -5535,7 +5540,8 @@ normal'>Calc</b></span><b style='mso-bidi-font-weight:normal'> <span
 class=SpellE>dist</span>/<span class=SpellE>ang</span> </b>&#8211; if 2 peaks
 are selected, this calculates the distance between them. If 3 peaks are
 selected this calculates the angle between them; NB: selection order matters.
-If selection is not 2 or 3 peaks this is ignored. Output is on the console window.</span></p>
+If selection is not 2 or 3 peaks this is ignored. Output is on the console
+window.</span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l28 level2 lfo24;tab-stops:list 1.0in'><span
@@ -5622,8 +5628,8 @@ style='mso-bookmark:Pawley'><![if !supportLists]><span style='mso-fareast-font-f
 </span></span></span><![endif]>You can change the refine flags either by
 clicking on the box or by selecting one and then selecting the column (a single
 click on the column heading). Then type &#8216;y&#8217; to set the refine flags
-or &#8216;n&#8217; to clear the flags. You should deselect those reflections
-that fall below the lower limit or above the upper limit of the powder pattern
+or &#8216;n&#8217; to clear the flags. You should deselect those reflections that
+fall below the lower limit or above the upper limit of the powder pattern
 otherwise you may have a singular matrix error in your Pawley refinement.</span></p>
 
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l7 level1 lfo25'><span
@@ -5659,6 +5665,9 @@ text-decoration:none;text-underline:none'>
 style='mso-bookmark:Pawley'><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal align=center style='text-align:center'><span
+style='mso-bookmark:Pawley'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal align=center style='text-align:center'><span
 style='mso-bookmark:Pawley'><span class=MsoHyperlink><span style='color:windowtext;
 text-decoration:none;text-underline:none'><o:p>&nbsp;</o:p></span></span></span></p>
 
@@ -5675,6 +5684,9 @@ text-decoration:none;text-underline:none'>
 <hr size=2 width="100%" align=center>
 
 </span></span></a></div>
+
+<p class=MsoNormal align=center style='text-align:center'><span
+style='mso-bookmark:Pawley'><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal align=center style='text-align:center'><span
 style='mso-bookmark:Pawley'><o:p>&nbsp;</o:p></span></p>
@@ -5850,9 +5862,9 @@ auto;text-indent:-.25in;mso-list:l6 level2 lfo28;tab-stops:list 1.0in'><span
 style='mso-bookmark:Pawley'><![if !supportLists]><span style='mso-fareast-font-family:
 "Times New Roman"'><span style='mso-list:Ignore'>c.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]><span class=GramE><b style='mso-bidi-font-weight:
-normal'>d</b></span><b style='mso-bidi-font-weight:normal'>: offset down</b> -
-for a waterfall plot of multiple powder profiles, increase the offset down.
-Does not apply if only one pattern.</span></p>
+normal'>d</b></span><b style='mso-bidi-font-weight:normal'>: offset down</b> - for
+a waterfall plot of multiple powder profiles, increase the offset down. Does
+not apply if only one pattern.</span></p>
 
 <p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
 auto;text-indent:-.25in;mso-list:l6 level2 lfo28;tab-stops:list 1.0in'><span
@@ -6233,8 +6245,8 @@ style='color:#4F81BD;mso-themecolor:accent1;text-decoration:none;text-underline:
 none'><o:p></o:p></span></span></span></span></h4>
 
 <p class=MsoNormal><span style='mso-bookmark:Pawley'>This plot shows the atoms
-of the crystal structure. The atoms are displayed according to the controls in
-the </span><a href="gsasII.html"><span style='mso-bookmark:Pawley'><span
+of the crystal structure. The atoms are displayed according to the controls in the
+</span><a href="gsasII.html"><span style='mso-bookmark:Pawley'><span
 style='color:windowtext;text-decoration:none;text-underline:none'>Draw Options</span></span></a><span
 style='mso-bookmark:Pawley'> page.</span></p>
 
@@ -6255,6 +6267,9 @@ color:windowtext;text-decoration:none;text-underline:none'>
 <hr size=2 width="100%" align=center>
 
 </span></span></a></div>
+
+<p class=MsoNormal align=center style='text-align:center'><span
+style='mso-bookmark:Pawley'><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal align=center style='text-align:center'><span
 style='mso-bookmark:Pawley'><o:p>&nbsp;</o:p></span></p>

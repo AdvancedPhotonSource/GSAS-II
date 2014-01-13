@@ -24,17 +24,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>5</o:Revision>
-  <o:TotalTime>372</o:TotalTime>
+  <o:Revision>7</o:Revision>
+  <o:TotalTime>379</o:TotalTime>
   <o:Created>2014-01-13T15:39:00Z</o:Created>
-  <o:LastSaved>2014-01-13T19:33:00Z</o:LastSaved>
+  <o:LastSaved>2014-01-13T19:49:00Z</o:LastSaved>
   <o:Pages>6</o:Pages>
-  <o:Words>888</o:Words>
-  <o:Characters>5066</o:Characters>
+  <o:Words>890</o:Words>
+  <o:Characters>5078</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
   <o:Lines>42</o:Lines>
   <o:Paragraphs>11</o:Paragraphs>
-  <o:CharactersWithSpaces>5943</o:CharactersWithSpaces>
+  <o:CharactersWithSpaces>5957</o:CharactersWithSpaces>
   <o:Version>14.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -971,10 +971,10 @@ div.WordSection1
 
 <h1>Strain fitting of 2D data in GSAS-II</h1>
 
-<p class=MsoNormal>For this demo, data was collected with a MAR2300 area
+<p class=MsoNormal>For this demo, data were collected with a MAR2300 area
 detector at APS 1-ID-C with a wavelength 0.12398 Å (100<span style='font-family:
-Symbol'>m</span>m diameter beam) from a 1.5mm square hot rolled steel test
-specimen; the front surface has been dusted with some CeO<sub>2</sub> to aid in
+Symbol'>m</span>m diameter beam) from a 1.5mm square hot rolled steel test specimen;
+the front surface has been dusted with some CeO<sub>2</sub> to aid in
 calibration. Two images are used here; one is with no load on the sample and
 the other is with the sample under tension along the y-axis (vertical). The
 loading will distort the steel (ferrite &amp; austenite) diffraction rings and
@@ -1015,8 +1015,8 @@ and press <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calib
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
 Calibri;mso-bidi-theme-font:minor-latin'>Open</span></b>.<span
 style='mso-no-proof:yes'> Select the 1<sup>st</sup> image (001) from the
-GSAS-II data tree and select Image Controls; adjust the Max intensity so that the
-CeO2 rings are visible (~1500 will suffice). You should see:<o:p></o:p></span></p>
+GSAS-II data tree and select Image Controls; adjust the Max intensity so that
+the CeO2 rings are visible (~1500 will suffice). You should see:<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shapetype
  id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t"
@@ -1062,9 +1062,9 @@ v:shapes="Picture_x0020_9"><![endif]><o:p></o:p></span></p>
 <h2>Step 2: Calibration of the detector position</h2>
 
 <p class=MsoNormal>This image is a superposition of three diffraction patterns;
-CeO<sub>2</sub> <span class=SpellE>calibrant</span>, ferrite (BCC iron) and austenite
-(FCC iron). Consequently the calibration needs to be done with some care; the
-steps are as follows:</p>
+CeO<sub>2</sub> <span class=SpellE>calibrant</span>, ferrite (BCC iron) and
+austenite (FCC iron). Consequently the calibration needs to be done with some
+care; the steps are as follows:</p>
 
 <p class=MsoNormal>Set the wavelength to <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
@@ -1235,14 +1235,15 @@ src="Strain%20fitting%20of%202D%20data%20in%20GSAS-II_files/image010.png"
 v:shapes="Picture_x0020_17"><![endif]></span></p>
 
 <p class=MsoNormal>We are now ready for the first strain fit; do Operations/Fit
-stress/strain. Each ring will be fitted to the three strain tensor elements (&#949;<sub>11</sub>,
-&#949;<sub>12</sub> &amp; &#949;<sub>22</sub>) that can be determined from a single
-2D diffraction ring. The resulting Strain plot now shows curves calculated from
-the fitted tensor elements; these are very nearly straight lines as expected
-from an unloaded sample.<span style='mso-spacerun:yes'>  </span>In particular
-the austenite 111 line (~2.08Å) is much flatter than the ferrite 200 line (~2.03Å);
-this reflects the sample history (hot rolled steel). The tensor elements with <span
-class=SpellE>esds</span> are shown on the console and in the data window</p>
+stress/strain. Each ring will be fitted to the three strain tensor elements
+(&#949;<sub>11</sub>, &#949;<sub>12</sub> &amp; &#949;<sub>22</sub>) that can
+be determined from a single 2D diffraction ring. The resulting Strain plot now
+shows curves calculated from the fitted tensor elements; these are very nearly
+straight lines as expected from an unloaded sample.<span
+style='mso-spacerun:yes'>  </span>In particular the austenite 111 line (~2.08Å)
+is much flatter than the ferrite 200 line (~2.03Å); this reflects the sample
+history (hot rolled steel). The tensor elements with <span class=SpellE>esds</span>
+are shown on the console and in the data window</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_18" o:spid="_x0000_i1029" type="#_x0000_t75" style='width:569.25pt;
@@ -1315,7 +1316,7 @@ src="Strain%20fitting%20of%202D%20data%20in%20GSAS-II_files/image014.png"
 v:shapes="Picture_x0020_22"><![endif]></span></p>
 
 <p class=MsoNormal>I only show the bottom of the listing. The strain plot gives
-(I zoomed in on just one line).</p>
+(I zoomed in on just one line; ferrite 211).</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_24" o:spid="_x0000_i1025" type="#_x0000_t75" style='width:501pt;
@@ -1328,7 +1329,7 @@ v:shapes="Picture_x0020_24"><![endif]></span></p>
 
 <p class=MsoNormal>When you look at the other lines, you should notice that the
 ones at ca. 3.13Å, 1.91Å, and 1.63Å remain straight lines; these are from CeO<sub>2</sub>
-and should be unchanged under load.<o:p></o:p></p>
+and should be unchanged under load.</p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 

@@ -1325,6 +1325,12 @@ def UpdateStressStrain(G2frame,data):
         data['d-zero'].append({'Dset':1.0,'Dcalc':0.0,'pixLimit':10,'cutoff':1.0,
             'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0]})
         UpdateStressStrain(G2frame,data)
+        
+    def OnUpdateDzero(event):
+        for item in data['d-zero']:
+            if item['Dcalc']:   #skip unrefined ones
+                item['Dset'] = item['Dcalc']
+        UpdateStressStrain(G2frame,data)
             
     def OnCopyStrSta(event):
         import copy
@@ -1355,7 +1361,6 @@ def UpdateStressStrain(G2frame,data):
                     for i,item in enumerate(result):
                         ifcopy,name,id = item
                         if ifcopy:
-                            oldData = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain')))
                             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'),copy.deepcopy(Data))
             finally:
                 dlg.Destroy()
@@ -1398,7 +1403,7 @@ def UpdateStressStrain(G2frame,data):
         print 'Strain fitting finished'
         UpdateStressStrain(G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
-        G2plt.PlotStrain(G2frame,data,newPlot=False)
+        G2plt.PlotStrain(G2frame,data,newPlot=True)
         
     def OnAllFitStrSta(event):
         TextList = [[False,'All IMG',0]]
@@ -1495,17 +1500,16 @@ def UpdateStressStrain(G2frame,data):
             else:
                 G2frame.ErrorDialog('Strain peak selection','WARNING - No points found for this ring selection')
                 
-        #sort them on d-spacing?
             UpdateStressStrain(G2frame,data)
-            G2plt.PlotExposedImage(G2frame,event=event)
-            G2plt.PlotStrain(G2frame,data,newPlot=False)
+            G2plt.PlotExposedImage(G2frame,event=event,newPlot=False)
+            G2plt.PlotStrain(G2frame,data,newPlot=True)
             
         def OnDeleteDzero(event):
             Obj = event.GetEventObject()
             del(data['d-zero'][delIndx.index(Obj)])
             UpdateStressStrain(G2frame,data)
-            G2plt.PlotExposedImage(G2frame,event=event)
-            G2plt.PlotStrain(G2frame,data,newPlot=False)
+            G2plt.PlotExposedImage(G2frame,event=event,newPlot=True)
+            G2plt.PlotStrain(G2frame,data,newPlot=True)
         
         def OnCutOff(event):
             Obj = event.GetEventObject()
@@ -1515,14 +1519,16 @@ def UpdateStressStrain(G2frame,data):
                 value = 1.0
             Obj.SetValue("%.1f"%(value))
             data['d-zero'][Indx[Obj.GetId()]]['cutoff'] = value 
+            Ring,R = G2img.MakeStrStaRing(data['d-zero'][Indx[Obj.GetId()]],G2frame.ImageZ,Controls)
             G2plt.PlotExposedImage(G2frame,event=event)
-            G2plt.PlotStrain(G2frame,data,newPlot=False)
+            G2plt.PlotStrain(G2frame,data,newPlot=True)
         
         def OnPixLimit(event):
             Obj = event.GetEventObject()
             data['d-zero'][Indx[Obj.GetId()]]['pixLimit'] = int(Obj.GetValue())
+            Ring,R = G2img.MakeStrStaRing(data['d-zero'][Indx[Obj.GetId()]],G2frame.ImageZ,Controls)
             G2plt.PlotExposedImage(G2frame,event=event)
-            G2plt.PlotStrain(G2frame,data,newPlot=False)
+            G2plt.PlotStrain(G2frame,data,newPlot=True)
             
         Indx = {}
         delIndx = []    
@@ -1578,6 +1584,7 @@ def UpdateStressStrain(G2frame,data):
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))        
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.StrStaMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAppendDzero, id=G2gd.wxID_APPENDDZERO)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnUpdateDzero, id=G2gd.wxID_UPDATEDZERO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitStrSta, id=G2gd.wxID_STRSTAFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAllFitStrSta, id=G2gd.wxID_STRSTAALLFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyStrSta, id=G2gd.wxID_STRSTACOPY)

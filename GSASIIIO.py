@@ -1928,6 +1928,8 @@ class ExportBaseclass(object):
         self.OverallParms = {}
         self.powderDict = {}
         self.xtalDict = {}
+        self.Phases = {}
+        self.Histograms = {}
         if self.G2frame.PatternTree.IsEmpty(): return # nothing to do
         histType = None        
         if self.currentExportType == 'phase':
@@ -1955,10 +1957,11 @@ class ExportBaseclass(object):
                 name = self.G2frame.PatternTree.GetItemText(item)
                 if name.startswith(histType):
                     if self.Histograms.get(name): # there is already an item with this name
+                        print('Histogram name '+str(name)+' is repeated. Renaming')
                         if name[-1] == '9':
                             name = name[:-1] + '10'
                         elif name[-1] in '012345678':
-                            name = name[:-1] + str(int(name[:-1])+1)
+                            name = name[:-1] + str(int(name[-1])+1)
                         else:                            
                             name += '-1'
                     self.Histograms[name] = {}

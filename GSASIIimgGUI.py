@@ -55,6 +55,8 @@ def UpdateImageControls(G2frame,data,masks):
     if 'SampleAbs' not in data:
         data['SampleShape'] = 'Cylinder'
         data['SampleAbs'] = [0.0,False]
+    if 'binType' not in data:
+        data['binType'] = '2-theta'
 #end patch
 
     
@@ -93,9 +95,6 @@ def UpdateImageControls(G2frame,data,masks):
                 Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
                 backImage = G2IO.GetImageData(G2frame,imagefile,True)*backScale
                 sumImage = G2frame.ImageZ+backImage
-                sumMin = np.min(sumImage)
-                sumMax = np.max(sumImage)
-                maskCopy['Thresholds'] = [(sumMin,sumMax),[sumMin,sumMax]]
                 G2frame.Integrate = G2img.ImageIntegrate(sumImage,data,maskCopy,blkSize,dlg)
             else:
                 G2frame.Integrate = G2img.ImageIntegrate(G2frame.ImageZ,data,masks,blkSize,dlg)
@@ -277,6 +276,8 @@ def UpdateImageControls(G2frame,data,masks):
 
         def OnDataType(event):
             data['type'] = typeSel.GetValue()[:4]
+            if 'SASD' in data['type'] and not data['SampleAbs'][0]:
+                data['SampleAbs'][0] = 1.0  #switch from muT to trans!
             wx.CallAfter(UpdateImageControls,G2frame,data,masks)
     
         def OnNewColorBar(event):
@@ -443,19 +444,23 @@ def UpdateImageControls(G2frame,data,masks):
         rotSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%9.3f"%(data['rotation'])),style=wx.TE_READONLY)
         rotSel.SetBackgroundColour(VERY_LIGHT_GREY)
         calibSizer.Add(rotSel,0,wx.ALIGN_CENTER_VERTICAL)
-        penSel = wx.CheckBox(parent=G2frame.dataDisplay,label='Penetration?')
-        calibSizer.Add(penSel,0,wx.ALIGN_CENTER_VERTICAL)
-        penSel.Bind(wx.EVT_CHECKBOX, OnDetDepthRef)
-        penSel.SetValue(data['DetDepthRef'])
-        penVal = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%6.5f" % (data['DetDepth'])),
-            style=wx.TE_PROCESS_ENTER)
-        penVal.Bind(wx.EVT_TEXT_ENTER,OnDetDepth)
-        penVal.Bind(wx.EVT_KILL_FOCUS,OnDetDepth)
-        calibSizer.Add(penVal,0,wx.ALIGN_CENTER_VERTICAL)             
+        if 'PWDR' in data['type']:
+            penSel = wx.CheckBox(parent=G2frame.dataDisplay,label='Penetration?')
+            calibSizer.Add(penSel,0,wx.ALIGN_CENTER_VERTICAL)
+            penSel.Bind(wx.EVT_CHECKBOX, OnDetDepthRef)
+            penSel.SetValue(data['DetDepthRef'])
+            penVal = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%6.5f" % (data['DetDepth'])),
+                style=wx.TE_PROCESS_ENTER)
+            penVal.Bind(wx.EVT_TEXT_ENTER,OnDetDepth)
+            penVal.Bind(wx.EVT_KILL_FOCUS,OnDetDepth)
+            calibSizer.Add(penVal,0,wx.ALIGN_CENTER_VERTICAL)             
         
         return calibSizer
     
     def IntegrateSizer():
+        
+        def OnNewBinType(event):
+            data['binType'] = binSel.GetValue()
         
         def OnIOtth(event):
             Ltth = max(float(G2frame.InnerTth.GetValue()),0.001)
@@ -482,7 +487,7 @@ def UpdateImageControls(G2frame,data,masks):
         def OnNumOutChans(event):
             try:
                 numChans = int(outChan.GetValue())
-                if numChans < 1:
+                if numChans < 10:
                     raise ValueError
                 data['outChannels'] = numChans
             except ValueError:
@@ -526,7 +531,10 @@ def UpdateImageControls(G2frame,data,masks):
         def OnSamAbsVal(event):
             try:
                 value = float(samabsVal.GetValue())
-                if 0.00 <= value <= 2.00:
+                minmax = [0.,2.]
+                if 'SASD' in data['type']:
+                    minmax = [.05,1.0]
+                if minmax[0] <= value <= minmax[1]:
                     data['SampleAbs'][0] = value
                 else:
                     raise ValueError
@@ -589,9 +597,15 @@ def UpdateImageControls(G2frame,data,masks):
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Integration coefficients'),0,
             wx.ALIGN_CENTER_VERTICAL)    
         dataSizer.Add((5,0),0)
+        binChoice = ['2-theta','q','log(q)']
+        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Bin style: Constant'),0,
+            wx.ALIGN_CENTER_VERTICAL)            
+        binSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['binType'],choices=binChoice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
+        binSel.Bind(wx.EVT_COMBOBOX, OnNewBinType)
+        dataSizer.Add(binSel,0,wx.ALIGN_CENTER_VERTICAL)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Inner/Outer 2-theta'),0,
-            wx.ALIGN_CENTER_VERTICAL)
-            
+            wx.ALIGN_CENTER_VERTICAL)            
         IOtth = data['IOtth']
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         G2frame.InnerTth = wx.TextCtrl(parent=G2frame.dataDisplay,
@@ -641,25 +655,30 @@ def UpdateImageControls(G2frame,data,masks):
         dataSizer.Add(samabs,0,wx.ALIGN_CENTER_VERTICAL)
         samabs.Bind(wx.EVT_CHECKBOX, OnSamAbs)
         samabs.SetValue(data['SampleAbs'][1])
-        littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='mu/R (0.00-2.0) '),0,
-            wx.ALIGN_CENTER_VERTICAL)
-        samabsVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['SampleAbs'][0]),style=wx.TE_PROCESS_ENTER)
+        if 'PWDR' in data['type']:
+            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='mu/R (0.00-2.0) '),0,
+                wx.ALIGN_CENTER_VERTICAL)
+        elif 'SASD' in data['type']:
+            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='transmission '),0,
+                wx.ALIGN_CENTER_VERTICAL)
+        samabsVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['SampleAbs'][0]),style=wx.TE_PROCESS_ENTER)            
         samabsVal.Bind(wx.EVT_TEXT_ENTER,OnSamAbsVal)
         samabsVal.Bind(wx.EVT_KILL_FOCUS,OnSamAbsVal)
         littleSizer.Add(samabsVal,0,wx.ALIGN_CENTER_VERTICAL)
         dataSizer.Add(littleSizer,0,)
-        littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        oblique = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply detector absorption?')
-        dataSizer.Add(oblique,0,wx.ALIGN_CENTER_VERTICAL)
-        oblique.Bind(wx.EVT_CHECKBOX, OnOblique)
-        oblique.SetValue(data['Oblique'][1])
-        littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Value (0.01-0.99)  '),0,
-            wx.ALIGN_CENTER_VERTICAL)
-        obliqVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['Oblique'][0]),style=wx.TE_PROCESS_ENTER)
-        obliqVal.Bind(wx.EVT_TEXT_ENTER,OnObliqVal)
-        obliqVal.Bind(wx.EVT_KILL_FOCUS,OnObliqVal)
-        littleSizer.Add(obliqVal,0,wx.ALIGN_CENTER_VERTICAL)
-        dataSizer.Add(littleSizer,0,)
+        if 'PWDR' in data['type']:
+            littleSizer = wx.BoxSizer(wx.HORIZONTAL)
+            oblique = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply detector absorption?')
+            dataSizer.Add(oblique,0,wx.ALIGN_CENTER_VERTICAL)
+            oblique.Bind(wx.EVT_CHECKBOX, OnOblique)
+            oblique.SetValue(data['Oblique'][1])
+            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Value (0.01-0.99)  '),0,
+                wx.ALIGN_CENTER_VERTICAL)
+            obliqVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['Oblique'][0]),style=wx.TE_PROCESS_ENTER)
+            obliqVal.Bind(wx.EVT_TEXT_ENTER,OnObliqVal)
+            obliqVal.Bind(wx.EVT_KILL_FOCUS,OnObliqVal)
+            littleSizer.Add(obliqVal,0,wx.ALIGN_CENTER_VERTICAL)
+            dataSizer.Add(littleSizer,0,)
         if 'SASD' in data['type']:
             littleSizer = wx.BoxSizer(wx.HORIZONTAL)
             setPolariz = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply polarization?')

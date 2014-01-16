@@ -389,13 +389,14 @@ def PlotSngl(self,newPlot=False):
 ##### PlotPatterns
 ################################################################################
             
-def PlotPatterns(G2frame,newPlot=False):
+def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     '''Powder pattern plotting package - displays single or multiple powder patterns as intensity vs
     2-theta, q or TOF. Can display multiple patterns as "waterfall plots" or contour plots. Log I 
     plotting available.
     '''
     global HKL
     global exclLines
+    plottype = plotType
     def OnPlotKeyPress(event):
         newPlot = False
         if event.key == 'w':
@@ -487,7 +488,7 @@ def PlotPatterns(G2frame,newPlot=False):
                 G2frame.Interpolate = 'nearest'
             dlg.Destroy()
             
-        PlotPatterns(G2frame,newPlot=newPlot)
+        PlotPatterns(G2frame,newPlot=newPlot,plotType=plottype)
         
     def OnMotion(event):
         xpos = event.xdata
@@ -535,7 +536,7 @@ def PlotPatterns(G2frame,newPlot=False):
                             Page.canvas.SetToolTipString('')
 
             except TypeError:
-                G2frame.G2plotNB.status.SetStatusText('Select PWDR powder pattern first',1)
+                G2frame.G2plotNB.status.SetStatusText('Select '+plotType+' powder pattern first',1)
                                                    
     def OnPick(event):
         if G2frame.itemPicked is not None: return
@@ -564,7 +565,7 @@ def PlotPatterns(G2frame,newPlot=False):
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
                 data.append(XY)
                 G2pdG.UpdatePeakGrid(G2frame,data)
-                PlotPatterns(G2frame)
+                PlotPatterns(G2frame,plotType=plottype)
             else:                                                   #picked a peak list line
                 G2frame.itemPicked = pick
         elif G2frame.PatternTree.GetItemText(PickId) == 'Limits':
@@ -587,7 +588,7 @@ def PlotPatterns(G2frame,newPlot=False):
                         data[1][1] = max(xy[0],data[1][0])
                 G2frame.PatternTree.SetItemPyData(LimitId,data)
                 G2pdG.UpdateLimitsGrid(G2frame,data)
-                wx.CallAfter(PlotPatterns,G2frame)
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
             else:                                                   #picked a limit line
                 G2frame.itemPicked = pick
         elif G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' or \
@@ -649,7 +650,7 @@ def PlotPatterns(G2frame,newPlot=False):
                     G2frame.refDelt = -(event.ydata-G2frame.refOffset)/(num*Ymax)
                 else:       #1st row of refl ticks
                     G2frame.refOffset = event.ydata
-        PlotPatterns(G2frame)
+        PlotPatterns(G2frame,plotType=plottype)
         G2frame.itemPicked = None    
 
     xylim = []
@@ -705,7 +706,7 @@ def PlotPatterns(G2frame,newPlot=False):
         ParmList = []
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         while item:
-            if 'PWDR' in G2frame.PatternTree.GetItemText(item):
+            if plotType in G2frame.PatternTree.GetItemText(item):
                 Pattern = G2frame.PatternTree.GetItemPyData(item)
                 if len(Pattern) < 3:                    # put name on end if needed
                     Pattern.append(G2frame.PatternTree.GetItemText(item))
@@ -769,6 +770,7 @@ def PlotPatterns(G2frame,newPlot=False):
         LimitId = 0
         if Pattern[1] is None: continue # skip over uncomputed simulations
         xye = ma.array(ma.getdata(Pattern[1]))
+        Zero = Parms.get('Zero',[0.,0.])[1]
         if PickId:
             ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)
             LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
@@ -779,11 +781,11 @@ def PlotPatterns(G2frame,newPlot=False):
         if G2frame.qPlot:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
             if 'C' in Parms['Type'][0]:
-                X = 4*np.pi*npsind((xye[0]-Parms['Zero'][1])/2.0)/wave
+                X = 4*np.pi*npsind((xye[0]-Zero)/2.0)/wave
             else:
-                X = 2*np.pi*Parms['difC'][1]/(xye[0]-Parms['Zero'][1])
+                X = 2*np.pi*Parms['difC'][1]/(xye[0]-Zero)
         else:
-            X = xye[0]-Parms['Zero'][1]
+            X = xye[0]-Zero
         if not lenX:
             lenX = len(X)
         Y = xye[1]+offset*N
@@ -813,12 +815,19 @@ def PlotPatterns(G2frame,newPlot=False):
             Xum = ma.getdata(X)
             if ifpicked:
                 Z = xye[3]+offset*N
-                W = xye[4]+offset*N
-                D = xye[5]-Ymax*G2frame.delOffset
+                if 'PWDR' in plotType:  #powder background
+                    W = xye[4]+offset*N
+                    D = xye[5]-Ymax*G2frame.delOffset
+                elif 'SASD' in plotType:
+                    D = xye[4]-Ymax*G2frame.delOffset
                 if G2frame.logPlot:
-                    Plot.semilogy(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
-                    Plot.semilogy(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
-                    Plot.semilogy(X,W,colors[(N+2)%6],picker=False,nonposy='mask')
+                    if 'PWDR' in plotType:
+                        Plot.semilogy(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
+                        Plot.semilogy(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
+                        Plot.semilogy(X,W,colors[(N+2)%6],picker=False,nonposy='mask')
+                    elif 'SASD' in plotType:
+                        Plot.loglog(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
+                        Plot.loglog(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
                 elif G2frame.Weight:
                     DY = xye[1]*np.sqrt(xye[2])
                     DYmax = max(DY)
@@ -829,13 +838,14 @@ def PlotPatterns(G2frame,newPlot=False):
                     Plot.plot(X,DS,colors[(N+3)%6],picker=False)
                     Plot.axhline(0.,color=wx.BLACK)
                 else:
-                    if G2frame.SubBack:
+                    if G2frame.SubBack and 'PWDR' in plotType:
                         Plot.plot(Xum,Y-W,colors[N%6]+'+',picker=3.,clip_on=False)
                         Plot.plot(X,Z-W,colors[(N+1)%6],picker=False)
                     else:
                         Plot.plot(Xum,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
-                    Plot.plot(X,W,colors[(N+2)%6],picker=False)
+                    if 'PWDR' in plotType:
+                        Plot.plot(X,W,colors[(N+2)%6],picker=False)
                     Plot.plot(X,D,colors[(N+3)%6],picker=False)
                     Plot.axhline(0.,color=wx.BLACK)
                 Page.canvas.SetToolTipString('')
@@ -857,9 +867,14 @@ def PlotPatterns(G2frame,newPlot=False):
                     data = G2frame.LimitsTable.GetData()
             else:
                 if G2frame.logPlot:
-                    Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='clip')
+                    if 'PWDR' in plotType:
+                        Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
+                    elif 'SASD' in plotType:
+                        Plot.loglog(X,Y,colors[N%6],picker=False,nonposy='mask')
                 else:
                     Plot.plot(X,Y,colors[N%6],picker=False)
+            if G2frame.logPlot:
+                Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.)
     if PickId and not G2frame.Contour:
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         if 'C' in Parms['Type'][0]:

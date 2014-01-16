@@ -215,6 +215,8 @@ class GSASII(wx.Frame):
         self._init_Import_routines('sfact',self.ImportSfactReaderlist,'Struct_Factor')
         self.ImportPowderReaderlist = []
         self._init_Import_routines('pwd',self.ImportPowderReaderlist,'Powder_Data')
+        self.ImportSmallAngleReaderlist = []
+        self._init_Import_routines('sad',self.ImportSmallAngleReaderlist,'SmallAngle_Data')
         self.ImportMenuId = {}
 
     def _init_Import_routines(self,prefix,readerlist,errprefix):
@@ -255,10 +257,10 @@ class GSASII(wx.Frame):
                             reader = clss[1]() # create an import instance
                             readerlist.append(reader)
             except AttributeError:
-                print 'Import_'+errprefix+': Attribute Error'+str(filename)
+                print 'Import_'+errprefix+': Attribute Error '+str(filename)
                 pass
             except ImportError:
-                print 'Import_'+errprefix+': Error importing file'+str(filename)
+                print 'Import_'+errprefix+': Error importing file '+str(filename)
                 pass
             if fp: fp.close()
 
@@ -1454,6 +1456,117 @@ class GSASII(wx.Frame):
             refList[generalData['Name']] = []
         return # success
 
+    def _Add_ImportMenu_smallangle(self,parent):
+        '''configure the Small Angle Data menus accord to the readers found in _init_Imports
+        '''
+        submenu = wx.Menu()
+        item = parent.AppendMenu(wx.ID_ANY, 'Small Angle Data',
+            submenu, help='Import small angle data')
+        for reader in self.ImportSmallAngleReaderlist:
+            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
+                kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
+            self.ImportMenuId[item.GetId()] = reader
+            self.Bind(wx.EVT_MENU, self.OnImportSmallAngle, id=item.GetId())
+        item = submenu.Append(wx.ID_ANY,
+            help='Import small angle data, use file to try to determine format',
+            kind=wx.ITEM_NORMAL,text='guess format from file')
+        self.Bind(wx.EVT_MENU, self.OnImportSmallAngle, id=item.GetId())
+           
+
+    def OnImportSmallAngle(self,event):
+        '''Called in response to an Import/Small Angle Data/... menu item
+        to read a small angle diffraction data set. 
+        dict self.ImportMenuId is used to look up the specific
+        reader item associated with the menu item, which will be
+        None for the last menu item, which is the "guess" option
+        where all appropriate formats will be tried.
+
+        '''
+        
+        def GetSASDIparm(reader):
+            parm = reader.instdict
+            Iparm = {'Type':[parm['type'],parm['type'],0],'Lam':[parm['wave'],
+                parm['wave'],0],'Azimuth':[0.,0.,0]}           
+            return Iparm,{}
+            
+        # get a list of existing histograms
+        SASDlist = []
+        if self.PatternTree.GetCount():
+            item, cookie = self.PatternTree.GetFirstChild(self.root)
+            while item:
+                name = self.PatternTree.GetItemText(item)
+                if name.startswith('SASD ') and name not in SASDlist:
+                    SASDlist.append(name)
+                item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+        # look up which format was requested
+        reqrdr = self.ImportMenuId.get(event.GetId())  
+        rdlist = self.OnImportGeneric(
+            reqrdr,self.ImportSmallAngleReaderlist,'Small Angle Data',multiple=True)
+        if len(rdlist) == 0: return
+        self.CheckNotebook()
+        Iparm = None
+        lastdatafile = ''
+        newHistList = []
+        for rd in rdlist:
+            lastdatafile = rd.smallangleentry[0]
+            HistName = rd.idstring
+            HistName = 'SASD '+HistName
+            # make new histogram names unique
+            HistName = G2obj.MakeUniqueLabel(HistName,SASDlist)
+            print 'Read small angle data '+str(HistName)+ \
+                ' from file '+str(self.lastimport)
+            # data are read, now store them in the tree
+            Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
+            Iparm1,Iparm2 = GetSASDIparm(rd)
+#            if 'T' in Iparm1['Type'][0]:
+#                if not rd.clockWd and rd.GSAS:
+#                    rd.powderdata[0] *= 100.        #put back the CW centideg correction
+#                cw = np.diff(rd.powderdata[0])
+#                rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
+#                rd.powderdata[1] = rd.powderdata[1][:-1]/cw
+#                rd.powderdata[2] = rd.powderdata[2][:-1]*cw**2  #1/var=w at this point
+#                if 'Itype' in Iparm2:
+#                    Ibeg = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][0])
+#                    Ifin = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][1])
+#                    rd.powderdata[0] = rd.powderdata[0][Ibeg:Ifin]
+#                    YI,WYI = G2pwd.calcIncident(Iparm2,rd.powderdata[0])
+#                    rd.powderdata[1] = rd.powderdata[1][Ibeg:Ifin]/YI
+#                    var = 1./rd.powderdata[2][Ibeg:Ifin]
+#                    var += WYI*rd.powderdata[1]**2
+#                    var /= YI**2
+#                    rd.powderdata[2] = 1./var
+#                rd.powderdata[3] = np.zeros_like(rd.powderdata[0])                                        
+#                rd.powderdata[4] = np.zeros_like(rd.powderdata[0])                                        
+#                rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        
+            Tmin = min(rd.smallangledata[0])
+            Tmax = max(rd.smallangledata[0])
+            valuesdict = {
+                'wtFactor':1.0,
+                'Dummy':False,
+                'ranId':ran.randint(0,sys.maxint),
+                }
+            rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
+            self.PatternTree.SetItemPyData(Id,[valuesdict,rd.smallangledata])
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Comments'),
+                rd.comments)
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Limits'),
+                [(Tmin,Tmax),[Tmin,Tmax]])
+            self.PatternId = G2gd.GetPatternTreeItemId(self,Id,'Limits')
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Instrument Parameters'),
+                [Iparm1,Iparm2])
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Sample Parameters'),
+                rd.Sample)
+            self.PatternTree.Expand(Id)
+            self.PatternTree.SelectItem(Id)
+            newHistList.append(HistName)
+            
+        if not newHistList: return # somehow, no new histograms
+        return # success
+
     def _init_Exports(self,menu):
         '''Find exporter routines and add them into menus
         '''
@@ -1623,6 +1736,7 @@ class GSASII(wx.Frame):
         self._Add_ImportMenu_Phase(Import)
         self._Add_ImportMenu_powder(Import)
         self._Add_ImportMenu_Sfact(Import)
+        self._Add_ImportMenu_smallangle(Import)
         #======================================================================
         # Code to help develop/debug an importer, much is hard-coded below
         # but module is reloaded before each use, allowing faster testing
@@ -2401,6 +2515,7 @@ class GSASII(wx.Frame):
         DelList = []
         DelItemList = []
         ifPWDR = False
+        ifSASD = False
         ifIMG = False
         ifHKLF = False
         ifPDF = False
@@ -2411,12 +2526,14 @@ class GSASII(wx.Frame):
                 if name not in ['Notebook','Controls','Covariance','Constraints',
                     'Restraints','Phases','Rigid bodies']:
                     if 'PWDR' in name: ifPWDR = True
+                    if 'SASD' in name: ifSASD = True
                     if 'IMG' in name: ifIMG = True
                     if 'HKLF' in name: ifHKLF = True
                     if 'PDF' in name: ifPDF = True
                     TextList.append(name)
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             if ifPWDR: TextList.insert(1,'All PWDR')
+            if ifSASD: TextList.insert(1,'All SASD')
             if ifIMG: TextList.insert(1,'All IMG')
             if ifHKLF: TextList.insert(1,'All HKLF')
             if ifPDF: TextList.insert(1,'All PDF')                
@@ -2429,6 +2546,8 @@ class GSASII(wx.Frame):
                         DelList = [item for item in TextList if item[:3] != 'All']
                     elif 'All PWDR' in DelList:
                         DelList = [item for item in TextList if item[:4] == 'PWDR']
+                    elif 'All SASD' in DelList:
+                        DelList = [item for item in TextList if item[:4] == 'SASD']
                     elif 'All IMG' in DelList:
                         DelList = [item for item in TextList if item[:3] == 'IMG']
                     elif 'All HKLF' in DelList:

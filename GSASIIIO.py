@@ -834,10 +834,14 @@ def SaveIntegration(G2frame,PickId,data):
     N = len(X)
     Id = G2frame.PatternTree.GetItemParent(PickId)
     name = G2frame.PatternTree.GetItemText(Id)
-    name = name.replace('IMG ','PWDR ')
+    name = name.replace('IMG ',data['type']+' ')
     Comments = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Comments'))
-    names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
-    codes = [0 for i in range(12)]
+    if 'PWDR' in name:
+        names = ['Type','Lam','Zero','Polariz.','U','V','W','X','Y','SH/L','Azimuth'] 
+        codes = [0 for i in range(11)]
+    elif 'SASD' in name:
+        names = ['Type','Lam','Zero','Azimuth'] 
+        codes = [0 for i in range(4)]
     LRazm = data['LRazimuth']
     Azms = []
     if data['fullIntegrate'] and data['outAzimuths'] == 1:
@@ -853,7 +857,10 @@ def SaveIntegration(G2frame,PickId,data):
             if name == Name:
                 Id = item
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-        parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]    #set polarization for synchrotron radiation!
+        if 'PWDR' in name:
+            parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]    #set polarization for synchrotron radiation!
+        elif 'SASD' in name:    
+            parms = ['LXC',data['wavelength'],0.0,Azms[i]]            
         Y = G2frame.Integrate[0][i]
         W = 1./Y                    #probably not true
         Sample = G2pdG.SetDefaultSample()
@@ -864,31 +871,35 @@ def SaveIntegration(G2frame,PickId,data):
         if Id:
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Comments'),Comments)                    
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),[tuple(Xminmax),Xminmax])
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0],
-                            {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
+            if 'PWDR' in name:
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),[['chebyschev',1,3,1.0,0.0,0.0],
+                    {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
             inst = [dict(zip(names,zip(parms,parms,codes))),{}]
             for item in inst[0]:
                 inst[0][item] = list(inst[0][item])
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'),inst)
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Peak List'),[])
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Index Peak List'),[])
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Unit Cells List'),[])             
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Reflection Lists'),{})             
+            if 'PWDR' in name:
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Peak List'),[])
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Index Peak List'),[])
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Unit Cells List'),[])             
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Reflection Lists'),{})             
         else:
             Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=name+" Azm= %.2f"%(Azms[i]))
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
-                            {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
+            if 'PWDR' in name:
+                G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
+                    {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
             inst = [dict(zip(names,zip(parms,parms,codes))),{}]
             for item in inst[0]:
                 inst[0][item] = list(inst[0][item])
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Instrument Parameters'),inst)
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Peak List'),[])
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Index Peak List'),[])
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Unit Cells List'),[])
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Reflection Lists'),{})
+            if 'PWDR' in name:
+                G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Peak List'),[])
+                G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Index Peak List'),[])
+                G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Unit Cells List'),[])
+                G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Reflection Lists'),{})
             valuesdict = {
                 'wtFactor':1.0,
                 'Dummy':False,
@@ -1662,6 +1673,33 @@ class ImportPowderData(ImportBaseclass):
         self.instbank = '' # inst parm bank number
         self.instmsg = ''  # a label that gets printed to show
                            # where instrument parameters are from
+        self.numbanks = 1
+        self.instdict = {} # place items here that will be transferred to the instrument parameters
+######################################################################
+class ImportSmallAngleData(ImportBaseclass):
+    '''Defines a base class for the reading of files with small angle data.
+    See :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use this class. 
+    '''
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+            
+        ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
+            strictExtension)
+        self.smallangleentry = ['',None,None] #  (filename,Pos,Bank)
+        self.smallangledata = [] # SASD dataset
+        '''A small angle data set is a list with items [x,y,w,yc,yd]:
+                np.array(x), # x-axis values
+                np.array(y), # powder pattern intensities
+                np.array(w), # 1/sig(intensity)^2 values (weights)
+                np.array(yc), # calc. intensities (zero)
+                np.array(yd), # obs-calc profiles
+        '''                            
+        self.comments = []
+        self.idstring = ''
+        self.Sample = G2pdG.SetDefaultSample()
+        self.GSAS = None     # used in TOF
+        self.clockWd = None  # used in TOF
         self.numbanks = 1
         self.instdict = {} # place items here that will be transferred to the instrument parameters
 ######################################################################

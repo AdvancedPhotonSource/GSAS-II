@@ -3472,7 +3472,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
     G2frame.dataFrame.setSizePosLeft(Size)
     G2frame.PatternTree.SetItemPyData(item,data)
     if kind == 'PWDR':
-        G2plt.PlotPatterns(G2frame,newPlot=True)
+        G2plt.PlotPatterns(G2frame,plotType=kind,newPlot=True)
+    elif kind == 'SASD':
+        G2plt.PlotPatterns(G2frame,plotType=kind,newPlot=True)
     elif kind == 'HKLF':
         G2plt.PlotSngl(G2frame,newPlot=True)
                  
@@ -3698,6 +3700,9 @@ def MovePatternTreeToGrid(G2frame,item):
         elif 'PWDR' in G2frame.PatternTree.GetItemText(item):
             for i in G2frame.ExportPattern: i.Enable(True)
             UpdatePWHKPlot(G2frame,'PWDR',item)
+        elif 'SASD' in G2frame.PatternTree.GetItemText(item):
+            for i in G2frame.ExportPattern: i.Enable(True)
+            UpdatePWHKPlot(G2frame,'SASD',item)
         elif 'HKLF' in G2frame.PatternTree.GetItemText(item):
             G2frame.Sngl = item
             UpdatePWHKPlot(G2frame,'HKLF',item)
@@ -3799,7 +3804,8 @@ def MovePatternTreeToGrid(G2frame,item):
         G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)[0]
         G2pdG.UpdateInstrumentGrid(G2frame,data)
-        G2plt.PlotPeakWidths(G2frame)
+        if 'P' in data['Type'][0]:          #powder data only
+            G2plt.PlotPeakWidths(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Sample Parameters':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         G2frame.PickId = item

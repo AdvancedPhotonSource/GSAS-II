@@ -770,25 +770,33 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     taz = ma.masked_outside(image.flatten(),int(Zlim[0]),Zlim[1])
     tabs = np.ones_like(taz)
     tam = ma.mask_or(tam.flatten(),ma.getmask(taz))
-    tax = ma.compressed(ma.array(tax.flatten(),mask=tam))
-    tay = ma.compressed(ma.array(tay.flatten(),mask=tam))
-    taz = ma.compressed(ma.array(taz.flatten(),mask=tam))
-    tad = ma.compressed(ma.array(tad.flatten(),mask=tam))
-    tabs = ma.compressed(ma.array(tabs.flatten(),mask=tam))
+    tax = ma.compressed(ma.array(tax.flatten(),mask=tam))   #azimuth
+    tay = ma.compressed(ma.array(tay.flatten(),mask=tam))   #2-theta
+    taz = ma.compressed(ma.array(taz.flatten(),mask=tam))   #intensity
+    tad = ma.compressed(ma.array(tad.flatten(),mask=tam))   #dist**2/d0**2
+    tabs = ma.compressed(ma.array(tabs.flatten(),mask=tam)) #ones - later used for absorption corr.
     return tax,tay,taz,tad,tabs
     
 def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
-    'Needs a doc string'
+    'Needs a doc string'    #for q, log(q) bins need data['binType']
     import histogram2d as h2d
     print 'Begin image integration'
-    LUtth = data['IOtth']
+    LUtth = np.array(data['IOtth'])
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
     numAzms = data['outAzimuths']
     numChans = data['outChannels']
-    Dtth = (LUtth[1]-LUtth[0])/numChans
     Dazm = (LRazm[1]-LRazm[0])/numAzms
-    if data['centerAzm']:
-        LRazm += Dazm/2.
+    LRazm += Dazm/2.
+    if 'log(q)' in data['binType']:
+        lutth = np.log(4.*np.pi*npsind(LUtth/2.)/data['wavelength'])
+    elif 'q' == data['binType']:
+        lutth = 4.*np.pi*npsind(LUtth/2.)/data['wavelength']
+    elif '2-theta' in data['binType']:
+        lutth = LUtth                
+    dtth = (lutth[1]-lutth[0])/numChans
+    muT = data['SampleAbs'][0]
+    if 'SASD' in data['type']:
+        muT = np.log(muT)
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     imageN = len(image)
@@ -819,10 +827,18 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if data['SampleAbs'][1]:
-                muR = data['SampleAbs'][0]*(1.+npsind(tax)**2/2.)/(npcosd(tay))
-                tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
+                if 'PWDR' in data['type']:
+                    muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))
+                    tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
+                elif 'SASD' in data['type']:    #assumes flat plate sample normal to beam
+                    tabs = G2pwd.Absorb('Fixed',muT,tay)
+            if 'log(q)' in data['binType']:
+                tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])
+            elif 'q' == data['binType']:
+                tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
+            #change 2-theta (tay) to q or log(q) here? then LUtth & Dtth need to be changed also
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
-                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz*tad*tabs,numAzms,numChans,LRazm,LUtth,Dazm,Dtth,NST,H0)
+                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz*tad*tabs,numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
             Nup += 1
             if dlg:
                 dlg.Update(Nup)
@@ -830,10 +846,11 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     H0 = np.divide(H0,NST)
     H0 = np.nan_to_num(H0)
     del NST
-    if Dtth:
-        H2 = np.array([tth for tth in np.linspace(LUtth[0],LUtth[1],numChans+1)])
-    else:
-        H2 = np.array(LUtth)
+    H2 = np.array([tth for tth in np.linspace(lutth[0],lutth[1],numChans+1)])
+    if 'log(q)' in data['binType']:
+        H2 = 2.*npasind(np.exp(H2)*data['wavelength']/(4.*np.pi))
+    elif 'q' == data['binType']:
+        H2 = 2.*npasind(H2*data['wavelength']/(4.*np.pi))    
     if Dazm:        
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
     else:

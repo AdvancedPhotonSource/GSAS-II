@@ -1255,20 +1255,6 @@ def UpdateSampleGrid(G2frame,data):
         finally:
             dlg.Destroy()
 
-    def OnScaleRef(event):
-        Obj = event.GetEventObject()
-        data['Scale'][1] = Obj.GetValue()
-        
-    def OnScaleVal(event):
-        Obj = event.GetEventObject()
-        try:
-            scale = float(Obj.GetValue())
-            if scale > 0:
-                data['Scale'][0] = scale
-        except ValueError:
-            pass
-        Obj.SetValue("%.4f"%(data['Scale'][0]))          #reset in case of error
-        
     def OnHistoType(event):
         Obj = event.GetEventObject()
         data['Type'] = Obj.GetValue()
@@ -1283,7 +1269,14 @@ def UpdateSampleGrid(G2frame,data):
 
     def OnNameVal(event):
         event.Skip()
-        wx.CallAfter(SetNameVal)       
+        wx.CallAfter(SetNameVal)
+        
+    def AfterChange(invalid,value,tc):
+        if invalid:
+            return
+        if tc.key == 0 and 'SASD' in histName:          #a kluge!
+            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+                   
 
     ######## DEBUG #######################################################
     #import GSASIIpwdGUI
@@ -1383,7 +1376,8 @@ def UpdateSampleGrid(G2frame,data):
         if 'list' in str(type(data[key])):
             parmRef = G2gd.G2CheckBox(G2frame.dataDisplay,' '+lbl,data[key],1)
             parmSizer.Add(parmRef,0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-            parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data[key],0,nDig=nDig,typeHint=float)
+            parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data[key],0,
+                nDig=nDig,typeHint=float,OnLeave=AfterChange)
         else:
             parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' '+lbl),
                 0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)

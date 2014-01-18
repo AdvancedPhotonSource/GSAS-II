@@ -399,14 +399,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     plottype = plotType
     def OnPlotKeyPress(event):
         newPlot = False
-        if event.key == 'w':
+        if event.key == 'w' and 'PWDR' in plottype:
             if G2frame.Weight:
                 G2frame.Weight = False
             else:
                 G2frame.Weight = True
                 G2frame.SinglePlot = True
             newPlot = True
-        elif event.key == 'b':
+        elif event.key == 'b' and 'PWDR' in plottype:
             if G2frame.SubBack:
                 G2frame.SubBack = False
             else:
@@ -536,7 +536,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                             Page.canvas.SetToolTipString('')
 
             except TypeError:
-                G2frame.G2plotNB.status.SetStatusText('Select '+plotType+' powder pattern first',1)
+                G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' powder pattern first',1)
                                                    
     def OnPick(event):
         if G2frame.itemPicked is not None: return
@@ -682,9 +682,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Page.Choice = (' key press','n: log(I) off','l: offset left','r: offset right',
                 'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
         else:
-            Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
-                'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
-                'q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
+            if 'PWDR' in plottype:
+                Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
+                    'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
+                    'q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
+            elif 'SASD' in plottype:
+                Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
+                    'u: offset up','o: reset offset','n: log(I) on','c: contour on',
+                    'q: toggle q plot','s: toggle single plot','+: no selection')
     Page.keyPress = OnPlotKeyPress
     
     PickId = G2frame.PickId
@@ -698,21 +703,25 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         PlotList = [Pattern,]
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
             G2frame.PatternId, 'Instrument Parameters'))
+        Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
         ParmList = [Parms,]
         Title = Pattern[-1]
     else:        
         Title = os.path.split(G2frame.GSASprojectfile)[1]
         PlotList = []
         ParmList = []
+        SampleList = []
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         while item:
-            if plotType in G2frame.PatternTree.GetItemText(item):
+            if plottype in G2frame.PatternTree.GetItemText(item):
                 Pattern = G2frame.PatternTree.GetItemPyData(item)
                 if len(Pattern) < 3:                    # put name on end if needed
                     Pattern.append(G2frame.PatternTree.GetItemText(item))
                 PlotList.append(Pattern)
                 ParmList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
                     item,'Instrument Parameters'))[0])
+                SampleList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+                    item, 'Sample Parameters')))
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                
     lenX = 0
     if PickId:
@@ -751,7 +760,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Plot.set_ylabel(r'$\mathsf{I/\sigma(I)}$',fontsize=14)
     else:
         if 'C' in ParmList[0]['Type'][0]:
-            Plot.set_ylabel('Intensity',fontsize=14)
+            if 'PWDR' in plottype:
+                Plot.set_ylabel('Intensity',fontsize=14)
+            elif 'SASD' in plottype:
+                Plot.set_ylabel('Intensity, cm-1',fontsize=14)
         else:
             Plot.set_ylabel('Normalized intensity',fontsize=14)
     if G2frame.Contour:
@@ -762,6 +774,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         G2frame.Contour = False
     for N,Pattern in enumerate(PlotList):
         Parms = ParmList[N]
+        Sample = SampleList[N]
         if 'C' in Parms['Type'][0]:
             wave = G2mth.getWave(Parms)
         else:
@@ -788,7 +801,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             X = xye[0]-Zero
         if not lenX:
             lenX = len(X)
-        Y = xye[1]+offset*N
+        if 'PWDR' in plottype:
+            Y = xye[1]+offset*N
+        elif 'SASD' in plottype:
+            Y = xye[1]*Sample['Scale'][0]+offset*N
         if LimitId:
             limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))
             if G2frame.qPlot:
@@ -815,17 +831,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Xum = ma.getdata(X)
             if ifpicked:
                 Z = xye[3]+offset*N
-                if 'PWDR' in plotType:  #powder background
+                if 'PWDR' in plottype:  #powder background
                     W = xye[4]+offset*N
                     D = xye[5]-Ymax*G2frame.delOffset
-                elif 'SASD' in plotType:
+                elif 'SASD' in plottype:
                     D = xye[4]-Ymax*G2frame.delOffset
                 if G2frame.logPlot:
-                    if 'PWDR' in plotType:
+                    if 'PWDR' in plottype:
                         Plot.semilogy(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
                         Plot.semilogy(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
                         Plot.semilogy(X,W,colors[(N+2)%6],picker=False,nonposy='mask')
-                    elif 'SASD' in plotType:
+                    elif 'SASD' in plottype:
                         Plot.loglog(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
                         Plot.loglog(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
                 elif G2frame.Weight:
@@ -838,13 +854,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Plot.plot(X,DS,colors[(N+3)%6],picker=False)
                     Plot.axhline(0.,color=wx.BLACK)
                 else:
-                    if G2frame.SubBack and 'PWDR' in plotType:
+                    if G2frame.SubBack and 'PWDR' in plottype:
                         Plot.plot(Xum,Y-W,colors[N%6]+'+',picker=3.,clip_on=False)
                         Plot.plot(X,Z-W,colors[(N+1)%6],picker=False)
                     else:
                         Plot.plot(Xum,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
-                    if 'PWDR' in plotType:
+                    if 'PWDR' in plottype:
                         Plot.plot(X,W,colors[(N+2)%6],picker=False)
                     Plot.plot(X,D,colors[(N+3)%6],picker=False)
                     Plot.axhline(0.,color=wx.BLACK)
@@ -867,9 +883,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     data = G2frame.LimitsTable.GetData()
             else:
                 if G2frame.logPlot:
-                    if 'PWDR' in plotType:
+                    if 'PWDR' in plottype:
                         Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
-                    elif 'SASD' in plotType:
+                    elif 'SASD' in plottype:
                         Plot.loglog(X,Y,colors[N%6],picker=False,nonposy='mask')
                 else:
                     Plot.plot(X,Y,colors[N%6],picker=False)
@@ -997,7 +1013,7 @@ def PlotDeltSig(G2frame,kind):
 ################################################################################
             
 def PlotISFG(G2frame,newPlot=False,type=''):
-    ''' PLotting package for PDF analysis; displays I(q), S(q), F(q) and G(r) as single 
+    ''' Plotting package for PDF analysis; displays I(q), S(q), F(q) and G(r) as single 
     or multiple plots with waterfall and contour plots as options
     '''
     if not type:

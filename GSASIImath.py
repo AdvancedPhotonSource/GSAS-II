@@ -151,7 +151,6 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
         Yvec,Amat = Hess(x0,*args)
         Adiag = np.sqrt(np.diag(Amat))
         Anorm = np.outer(Adiag,Adiag)
-#        Amat /= Anorm
         Amatlam = Amat*(One+Lam)/Anorm              #scale Amat to Marquardt array        
     try:
         Bmat = nl.inv(Amatlam)*(One+Lam)/Anorm      #rescale Bmat to Marquardt array

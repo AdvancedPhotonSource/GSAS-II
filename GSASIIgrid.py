@@ -294,7 +294,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                              ") type: "+str(type(val)))
         # When the mouse is moved away or the widget loses focus
         # display the last saved value, if an expression
-        self.Bind(wx.EVT_LEAVE_WINDOW, self._onLoseFocus)
+#        self.Bind(wx.EVT_LEAVE_WINDOW, self._onLoseFocus)
+        self.Bind(wx.EVT_TEXT_ENTER, self._onLoseFocus)
         self.Bind(wx.EVT_KILL_FOCUS, self._onLoseFocus)
 
     def SetValue(self,val):

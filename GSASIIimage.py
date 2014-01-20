@@ -796,7 +796,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     dtth = (lutth[1]-lutth[0])/numChans
     muT = data['SampleAbs'][0]
     if 'SASD' in data['type']:
-        muT = np.log(muT)
+        muT = -np.log(muT)/2.       #Transmission to 1/2 thickness muT
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     H0 = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
     imageN = len(image)

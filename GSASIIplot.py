@@ -507,18 +507,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     dsp = 0.0
                     if abs(xpos) > 0.:                  #avoid possible singularity at beam center
                         dsp = wave/(2.*sind(abs(xpos)/2.0))
+                        q = 2.*np.pi/dsp
                     if G2frame.Contour:
-                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f pattern ID =%5d'%(xpos,dsp,int(ypos)),1)
+                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
                     else:
-                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
+                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
                 else:       #TOF neutrons
                     dsp = 0.0
                     difC = Parms['difC'][1]
                     dsp = xpos/difC             #rough approx.!
+                    q = 2.*np.pi/dsp
                     if G2frame.Contour:
-                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f pattern ID =%5d'%(xpos,dsp,int(ypos)),1)
+                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
                     else:
-                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f Intensity =%9.1f'%(xpos,dsp,ypos),1)
+                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
                 if G2frame.itemPicked:
                     Page.canvas.SetToolTipString('%9.3f'%(xpos))
                 if G2frame.PickId:
@@ -705,6 +707,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             G2frame.PatternId, 'Instrument Parameters'))
         Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
         ParmList = [Parms,]
+        SampleList = [Sample,]
         Title = Pattern[-1]
     else:        
         Title = os.path.split(G2frame.GSASprojectfile)[1]
@@ -750,22 +753,22 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Title = 'log('+Title+')'
     Plot.set_title(Title)
     if G2frame.qPlot:
-        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=14)
+        Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=16)
     else:
         if 'C' in ParmList[0]['Type'][0]:        
-            Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
+            Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=16)
         else:
-            Plot.set_xlabel(r'TOF, $\mathsf{\mu}$s',fontsize=14)            
+            Plot.set_xlabel(r'$TOF, \mathsf{\mu}$s',fontsize=16)            
     if G2frame.Weight:
-        Plot.set_ylabel(r'$\mathsf{I/\sigma(I)}$',fontsize=14)
+        Plot.set_ylabel(r'$\mathsf{I/\sigma(I)}$',fontsize=16)
     else:
         if 'C' in ParmList[0]['Type'][0]:
             if 'PWDR' in plottype:
-                Plot.set_ylabel('Intensity',fontsize=14)
+                Plot.set_ylabel('$Intensity$',fontsize=16)
             elif 'SASD' in plottype:
-                Plot.set_ylabel('Intensity, cm-1',fontsize=14)
+                Plot.set_ylabel('$Intensity, cm^{-1}$',fontsize=16)
         else:
-            Plot.set_ylabel('Normalized intensity',fontsize=14)
+            Plot.set_ylabel('Normalized intensity',fontsize=16)
     if G2frame.Contour:
         ContourZ = []
         ContourY = []

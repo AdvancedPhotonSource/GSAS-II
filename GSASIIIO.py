@@ -857,17 +857,17 @@ def SaveIntegration(G2frame,PickId,data):
             if name == Name:
                 Id = item
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-        if 'PWDR' in name:
-            parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]    #set polarization for synchrotron radiation!
-        elif 'SASD' in name:    
-            parms = ['LXC',data['wavelength'],0.0,Azms[i]]            
-        Y = G2frame.Integrate[0][i]
-        W = 1./Y                    #probably not true
         Sample = G2pdG.SetDefaultSample()
         Sample['Gonio. radius'] = data['distance']
         Sample['Omega'] = data['GonioAngles'][0]
         Sample['Chi'] = data['GonioAngles'][1]
         Sample['Phi'] = data['GonioAngles'][2]
+        if 'PWDR' in name:
+            parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]    #set polarization for synchrotron radiation!
+        elif 'SASD' in name:    
+            parms = ['LXC',data['wavelength'],0.0,Azms[i]]
+        Y = G2frame.Integrate[0][i]
+        W = 1./Y                    #probably not true
         if Id:
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Comments'),Comments)                    
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),[tuple(Xminmax),Xminmax])

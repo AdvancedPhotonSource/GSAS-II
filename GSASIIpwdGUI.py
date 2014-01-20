@@ -63,6 +63,7 @@ def IsHistogramInAnyPhase(G2frame,histoName):
 def SetDefaultSample():
     'Needs a doc string'
     return {
+        'InstrName':'',
         'ranId':ran.randint(0,sys.maxint),
         'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
         'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
@@ -1141,8 +1142,7 @@ def UpdateSampleGrid(G2frame,data):
                 File.close()
         finally:
             dlg.Destroy()
-                                                
-        
+                                                        
     def OnSampleLoad(event):
         '''Loads sample parameters from a G2 .samprm file
         in response to the Sample Parameters-Operations/Load menu

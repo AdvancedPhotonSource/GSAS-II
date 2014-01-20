@@ -4857,7 +4857,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     dx = xdata[0][indx+1]-xdata[0][indx]
                     ref[6] = FWHM*(xdata[1][indx]-xdata[4][indx])*cosd(pos/2.)**3/dx
                     Lorenz = 1./(2.*sind(xdata[0][indx]/2.)**2*cosd(xdata[0][indx]/2.))           #Lorentz correction
-                    pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'][1],xdata[0][indx],Inst['Azimuth'][1])
+                    pola = 1.0
+                    if 'X' in Inst['Type']:
+                        pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'][1],xdata[0][indx],Inst['Azimuth'][1])
                     ref[6] /= (Lorenz*pola*ref[3])
                 except IndexError:
                     pass

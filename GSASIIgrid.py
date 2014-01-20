@@ -2302,7 +2302,7 @@ class DataFrame(wx.Frame):
         self.SampleMenu = wx.MenuBar()
         self.PrefillDataMenu(self.SampleMenu,helpType='Sample Parameters')
         self.SampleEdit = wx.Menu(title='')
-        self.SampleMenu.Append(menu=self.SampleEdit, title='File')
+        self.SampleMenu.Append(menu=self.SampleEdit, title='Command')
         self.SampleEdit.Append(id=wxID_SAMPLELOAD, kind=wx.ITEM_NORMAL,text='Load',
             help='Load sample parameters from file')
         self.SampleEdit.Append(id=wxID_SAMPLESAVE, kind=wx.ITEM_NORMAL,text='Save',

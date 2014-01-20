@@ -277,7 +277,7 @@ def UpdateImageControls(G2frame,data,masks):
         def OnDataType(event):
             data['type'] = typeSel.GetValue()[:4]
             if 'SASD' in data['type'] and not data['SampleAbs'][0]:
-                data['SampleAbs'][0] = 1.0  #switch from muT to trans!
+                data['SampleAbs'][0] = 1.0  #switch from muT=0 to trans=1!
             wx.CallAfter(UpdateImageControls,G2frame,data,masks)
     
         def OnNewColorBar(event):

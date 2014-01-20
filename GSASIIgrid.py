@@ -223,19 +223,23 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       to be ASCII rather than Unicode. For float and int input, allows
       use of a single '?' or '.' character as valid input.
 
+    :param dict OnLeaveArgs: a dict with keyword args that are passed to
+      the :attr:`OnLeave` function. Defaults to ``{}``
+
     :param (other): other optional keyword parameters for the
       wx.TextCtrl widget such as Size or Style may be specified.
 
     '''
     def __init__(self,parent,loc,key,nDig=None,notBlank=True,min=None,max=None,
                  OKcontrol=None,OnLeave=None,typeHint=None,
-                 CIFinput=False, **kw):
+                 CIFinput=False, OnLeaveArgs={}, **kw):
         # save passed values needed outside __init__
         self.result = loc
         self.key = key
         self.nDig = nDig
         self.OKcontrol=OKcontrol
         self.OnLeave = OnLeave
+        self.OnLeaveArgs = OnLeaveArgs
         self.CIFinput = CIFinput
         self.type = str
         # initialization
@@ -294,7 +298,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                              ") type: "+str(type(val)))
         # When the mouse is moved away or the widget loses focus
         # display the last saved value, if an expression
-#        self.Bind(wx.EVT_LEAVE_WINDOW, self._onLoseFocus)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
         self.Bind(wx.EVT_TEXT_ENTER, self._onLoseFocus)
         self.Bind(wx.EVT_KILL_FOCUS, self._onLoseFocus)
 
@@ -395,8 +399,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         if self.evaluated: self.EvaluateExpression()
         if self.OnLeave: self.OnLeave(invalid=self.invalid,
                                       value=self.result[self.key],
-                                      tc=self)
-            
+                                      tc=self,
+                                      **self.OnLeaveArgs)
+
+    def _onLeaveWindow(self,event):
+        if self.evaluated: self.EvaluateExpression()
+
     def EvaluateExpression(self):
         '''Show the computed value when an expression is entered to the TextCtrl
         Make sure that the number fits by truncating decimal places and switching

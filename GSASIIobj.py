@@ -1250,6 +1250,8 @@ def _lookup(dic,key):
     '''
     if key is None:
         return ""
+    elif key == "*":
+        return "*"
     else:
         return dic.get(key,'?')
 
@@ -1265,19 +1267,21 @@ class G2VarObj(object):
     :param str/tuple varname: a single value can be used to create a :class:`G2VarObj`
       object. If a string, it must be of form "p:h:var" or "p:h:var:a", where
 
-     * p is the phase number (which may be left blank); 
-     * h is the histogram number (which may be left blank); 
+     * p is the phase number (which may be left blank or may be '*' to indicate all phases); 
+     * h is the histogram number (which may be left blank or may be '*' to indicate all histograms); 
      * a is the atom number (which may be left blank in which case the third colon is omitted).
+       The atom number can be specified as '*' if a phase number is specified (not as '*')
 
       Alternately a single tuple of form (Phase,Histogram,VarName,AtomID) can be used, where
-      Phase, Histogram, and AtomID are None or are ranId values and VarName is a string.     
+      Phase, Histogram, and AtomID are None or are ranId values (or one can be '*')
+      and VarName is a string. Note that if Phase is '*' then the AtomID is an atom number.
 
     If four positional arguments are supplied, they are:
 
-    :param str/int phasenum: The number for the phase
-    :param str/int histnum: The number for the histogram
+    :param str/int phasenum: The number for the phase (or None or '*')
+    :param str/int histnum: The number for the histogram (or None or '*')
     :param str varname: a single value can be used to create a :class:`G2VarObj`
-    :param str/int atomnum: The number for the atom
+    :param str/int atomnum: The number for the atom (or None or '*')
     
     '''
     IDdict = {}
@@ -1293,16 +1297,38 @@ class G2VarObj(object):
             self.phase,self.histogram,self.name,self.atom = args[0]
         elif len(args) == 1 and ':' in args[0]:            
             lst = args[0].split(':')
-            self.phase = PhaseIdLookup.get(lst[0],[None,None])[1]
-            self.histogram = HistIdLookup.get(lst[1],[None,None])[1]
+            if lst[0] == '*':
+                self.phase = '*'
+                if len(lst) > 3:
+                    self.atom = lst[3]
+            else:
+                self.phase = PhaseIdLookup.get(lst[0],[None,None])[1]
+                if len(lst) > 3:
+                    if lst[3] == '*':
+                        self.atom = '*'
+                    else:
+                        self.atom = AtomIdLookup[lst[0]].get(lst[3],[None,None])[1]
+
+            if lst[1] == '*':
+                self.histogram = '*'
+            else:
+                self.histogram = HistIdLookup.get(lst[1],[None,None])[1]
             self.name = lst[2]
-            if len(lst) > 3:
-                self.atom = AtomIdLookup[lst[0]].get(lst[3],[None,None])[1]
         elif len(args) == 4:
-            self.phase = PhaseIdLookup.get(str(args[0]),[None,None])[1]
-            self.histogram = HistIdLookup.get(str(args[1]),[None,None])[1]
+            if args[0] == '*':
+                self.phase = '*'
+                self.atom = args[3]
+            else:
+                self.phase = PhaseIdLookup.get(str(args[0]),[None,None])[1]
+                if args[3] == '*':
+                    self.atom = '*'
+                elif args[0] is not None:
+                    self.atom = AtomIdLookup[args[0]].get(str(args[3]),[None,None])[1]
+            if args[1] == '*':
+                self.histogram = '*'
+            else:
+                self.histogram = HistIdLookup.get(str(args[1]),[None,None])[1]
             self.name = args[2]
-            self.atom = AtomIdLookup[args[0]].get(str(args[3]),[None,None])[1]
         else:
             raise Exception,"Incorrectly called GSAS-II parameter name"
 
@@ -1317,35 +1343,53 @@ class G2VarObj(object):
 
         :returns: the variable name as a str
         '''
-        ph = _lookup(PhaseRanIdLookup,self.phase)
-        hist = _lookup(HistRanIdLookup,self.histogram)
-        s = (ph + ":" + hist + ":" + 
-             str(self.name))
-        if self.atom:
-            if ph in AtomRanIdLookup:
-                s += ":" + AtomRanIdLookup[ph].get(self.atom,'?')
-            else:
-                s += ":?"
+        a = ""
+        if self.phase == "*":
+            ph = "*"
+            if self.atom:
+                a = ":" + str(self.atom)
+        else:
+            ph = _lookup(PhaseRanIdLookup,self.phase)
+            if self.atom == '*':
+                a = ':*'
+            elif self.atom:
+                if ph in AtomRanIdLookup:
+                    a = ":" + AtomRanIdLookup[ph].get(self.atom,'?')
+                else:
+                    a = ":?"
+        if self.histogram == "*":
+            hist = "*"
+        else:
+            hist = _lookup(HistRanIdLookup,self.histogram)
+        s = (ph + ":" + hist + ":" + str(self.name)) + a
         return s
     
     def __repr__(self):
         '''Return the detailed contents of the object
         '''
         s = "<"
-        if self.phase is not None:
+        if self.phase == '*':
+            s += "Phases: all; "
+            if self.atom is not None:
+                s += "Atom #" + str(self.atom) + "; "
+        elif self.phase is not None:
             ph =  _lookup(PhaseRanIdLookup,self.phase)
             s += "Phase: rId=" + str(self.phase) + " (#"+ ph + "); "
-        if self.histogram is not None:
+            if self.atom == '*':
+                s += "Atoms: all; "
+            elif self.atom is not None:
+                s += "Atom rId=" + str(self.atom)
+                if ph in AtomRanIdLookup:
+                    s += " (#" + AtomRanIdLookup[ph].get(self.atom,'?') + "); "
+                else:
+                    s += " (#? -- not found!); "
+        if self.histogram == '*':
+            s += "Histograms: all; "
+        elif self.histogram is not None:
             hist = _lookup(HistRanIdLookup,self.histogram)
             s += "Histogram: rId=" + str(self.histogram) + " (#"+ hist + "); "
-        if self.atom is not None:
-            s += "Atom rId=" + str(self.atom)
-            if ph in AtomRanIdLookup:
-                s += " (#" + AtomRanIdLookup[ph].get(self.atom,'?') + "); "
-            else:
-                s += " (#? -- not found!); "
         s += 'Variable name="' + str(self.name) + '">'
-        return s+"("+self.varname()+")"
+        return s+" ("+self.varname()+")"
 
     def __eq__(self, other):
         if type(other) is type(self):

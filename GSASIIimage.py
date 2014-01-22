@@ -836,7 +836,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
                 tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])
             elif 'q' == data['binType']:
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
-            #change 2-theta (tay) to q or log(q) here? then LUtth & Dtth need to be changed also
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz*tad*tabs,numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
             Nup += 1
@@ -850,7 +849,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     if 'log(q)' in data['binType']:
         H2 = 2.*npasind(np.exp(H2)*data['wavelength']/(4.*np.pi))
     elif 'q' == data['binType']:
-        H2 = 2.*npasind(H2*data['wavelength']/(4.*np.pi))    
+        H2 = 2.*npasind(H2*data['wavelength']/(4.*np.pi))
     if Dazm:        
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
     else:
@@ -859,7 +858,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     if data['Oblique'][1]:
         H0 /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
     if 'SASD' in data['type'] and data['PolaVal'][1]:
-        H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm)[0] for azm in H1[:-1]+np.diff(H1)/2.])
+        H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm)[0] for azm in (H1[:-1]+np.diff(H1)/2.)])
     Nup += 1
     if dlg:
         dlg.Update(Nup)

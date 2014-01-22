@@ -450,7 +450,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2frame.Contour = True
                 G2frame.SinglePlot = False
                 G2frame.Offset = [0.,0.]
-        elif event.key == 'q':
+        elif event.key == 'q' and 'PWDR' in plottype:
             newPlot = True
             if G2frame.qPlot:
                 G2frame.qPlot = False
@@ -488,7 +488,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2frame.Interpolate = 'nearest'
             dlg.Destroy()
             
-        PlotPatterns(G2frame,newPlot=newPlot,plotType=plottype)
+        wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype)
         
     def OnMotion(event):
         xpos = event.xdata
@@ -499,19 +499,29 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
                 if 'C' in Parms['Type'][0]:
                     wave = G2mth.getWave(Parms)
-                    if G2frame.qPlot:
+                    if G2frame.qPlot and 'PWDR' in plottype:
                         try:
                             xpos = 2.0*asind(xpos*wave/(4*math.pi))
                         except ValueError:      #avoid bad value in asin beyond upper limit
                             pass
                     dsp = 0.0
-                    if abs(xpos) > 0.:                  #avoid possible singularity at beam center
-                        dsp = wave/(2.*sind(abs(xpos)/2.0))
-                        q = 2.*np.pi/dsp
+                    if abs(xpos) > 0.:
+                        if 'PWDR' in plottype:                  #avoid possible singularity at beam center
+                            dsp = wave/(2.*sind(abs(xpos)/2.0))
+                            q = 2.*np.pi/dsp
+                        elif 'SASD' in plottype:
+                            dsp = 2*np.pi/xpos
+                            q = xpos
                     if G2frame.Contour:
-                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
+                        if 'PWDR' in plottype:
+                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
+                        elif 'SASD' in plottype:
+                            G2frame.G2plotNB.status.SetStatusText('d =%9.5f q = %9.5f pattern ID =%5d'%(dsp,q,int(ypos)),1)
                     else:
-                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                        if 'PWDR' in plottype:
+                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                        elif 'SASD' in plottype:
+                            G2frame.G2plotNB.status.SetStatusText('d =%9.5f q = %9.5f Intensity =%12.5g'%(dsp,q,ypos),1)
                 else:       #TOF neutrons
                     dsp = 0.0
                     difC = Parms['difC'][1]
@@ -575,7 +585,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
                 data = G2frame.PatternTree.GetItemPyData(LimitId)
                 if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an elif
-                    if G2frame.qPlot:                              #qplot - convert back to 2-theta
+                    if G2frame.qPlot and 'PWDR' in plottype:                              #qplot - convert back to 2-theta
                         xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
                 if G2frame.ifGetExclude:
                     excl = [0,0]
@@ -611,14 +621,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             lines = []
             for line in G2frame.Lines: 
                 lines.append(line.get_xdata()[0])
-#            print G2frame.itemPicked.get_xdata()
-            lineNo = lines.index(G2frame.itemPicked.get_xdata()[0])
+            try:
+                lineNo = lines.index(G2frame.itemPicked.get_xdata()[0])
+            except ValueError:
+                lineNo = -1
             if  lineNo in [0,1] or lineNo in exclLines:
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits')
                 data = G2frame.PatternTree.GetItemPyData(LimitId)
                 id = lineNo/2+1
                 id2 = lineNo%2
-                if G2frame.qPlot:
+                if G2frame.qPlot and 'PWDR' in plottype:
                     if 'C' in Parms['Type'][0]:
                         data[id][id2] = 2.0*asind(wave*xpos/(4*math.pi))
                     else:
@@ -630,7 +642,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2frame.PatternTree.SetItemPyData(LimitId,data)
                 if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Limits':
                     G2pdG.UpdateLimitsGrid(G2frame,data)
-            else:
+            elif lineNo > 1:
                 PeakId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                 data = G2frame.PatternTree.GetItemPyData(PeakId)
                 if event.button == 3:
@@ -691,7 +703,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             elif 'SASD' in plottype:
                 Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
                     'u: offset up','o: reset offset','n: log(I) on','c: contour on',
-                    'q: toggle q plot','s: toggle single plot','+: no selection')
+                    's: toggle single plot','+: no selection')
     Page.keyPress = OnPlotKeyPress
     
     PickId = G2frame.PickId
@@ -752,7 +764,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     if G2frame.logPlot:
         Title = 'log('+Title+')'
     Plot.set_title(Title)
-    if G2frame.qPlot:
+    if G2frame.qPlot or 'SASD' in plottype:
         Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=16)
     else:
         if 'C' in ParmList[0]['Type'][0]:        
@@ -794,7 +806,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             excls = limits[2:]
             for excl in excls:
                 xye[0] = ma.masked_inside(xye[0],excl[0],excl[1])
-        if G2frame.qPlot:
+        if G2frame.qPlot and 'PWDR' in plottype:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
             if 'C' in Parms['Type'][0]:
                 X = 4*np.pi*npsind((xye[0]-Zero)/2.0)/wave
@@ -808,9 +820,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Y = xye[1]+offset*N
         elif 'SASD' in plottype:
             Y = xye[1]*Sample['Scale'][0]+offset*N
-        if LimitId:
+        if LimitId and ifpicked:
             limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))
-            if G2frame.qPlot:
+            if G2frame.qPlot and 'PWDR' in plottype:
                 if 'C' in Parms['Type'][0]:
                     limits = 4*np.pi*npsind(limits/2.0)/wave
                 else:

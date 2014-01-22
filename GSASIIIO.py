@@ -42,6 +42,7 @@ import os.path as ospath
 
 DEBUG = False       #=True for various prints
 TRANSP = False      #=true to transpose images for testing
+npsind = lambda x: np.sin(x*np.pi/180.)
 
 def sfloat(S):
     'Convert a string to float. An empty field is treated as zero'
@@ -830,7 +831,6 @@ def SaveIntegration(G2frame,PickId,data):
     'Save image integration results as powder pattern(s)'
     azms = G2frame.Integrate[1]
     X = G2frame.Integrate[2][:-1]
-    Xminmax = [X[0],X[-1]]
     N = len(X)
     Id = G2frame.PatternTree.GetItemParent(PickId)
     name = G2frame.PatternTree.GetItemText(Id)
@@ -842,6 +842,8 @@ def SaveIntegration(G2frame,PickId,data):
     elif 'SASD' in name:
         names = ['Type','Lam','Zero','Azimuth'] 
         codes = [0 for i in range(4)]
+        X = 4.*np.pi*npsind(X/2.)/data['wavelength']    #convert to q
+    Xminmax = [X[0],X[-1]]
     LRazm = data['LRazimuth']
     Azms = []
     if data['fullIntegrate'] and data['outAzimuths'] == 1:

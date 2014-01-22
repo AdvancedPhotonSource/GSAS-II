@@ -56,7 +56,10 @@ def UpdateImageControls(G2frame,data,masks):
         data['SampleShape'] = 'Cylinder'
         data['SampleAbs'] = [0.0,False]
     if 'binType' not in data:
-        data['binType'] = '2-theta'
+        if 'PWDR' in data['type']:
+            data['binType'] = '2-theta'
+        elif 'SASD' in data['type']:
+            data['binType'] = 'log(q)'
 #end patch
 
     
@@ -87,17 +90,27 @@ def UpdateImageControls(G2frame,data,masks):
         dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         try:
-            if data['background image'][0]:
-                maskCopy = copy.deepcopy(masks)
-                backImg = data['background image'][0]
-                backScale = data['background image'][1]
-                id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
-                Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
-                backImage = G2IO.GetImageData(G2frame,imagefile,True)*backScale
-                sumImage = G2frame.ImageZ+backImage
-                G2frame.Integrate = G2img.ImageIntegrate(sumImage,data,maskCopy,blkSize,dlg)
-            else:
-                G2frame.Integrate = G2img.ImageIntegrate(G2frame.ImageZ,data,masks,blkSize,dlg)
+            sumImg = G2frame.ImageZ
+            darkImg,darkScale = data['dark image']
+            if darkImg:
+                Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
+                Npix,imagefile = G2frame.PatternTree.GetItemPyData(Did)
+                darkImage = G2IO.GetImageData(G2frame,imagefile,True)
+                sumImg += darkImage*darkScale
+            backImg,backScale = data['background image']            
+            if backImg:     #ignores any transmission effect in the background image
+                Bid = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
+                Npix,imagefile = G2frame.PatternTree.GetItemPyData(Bid)
+                backImage = G2IO.GetImageData(G2frame,imagefile,True)
+                Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Bid,'Image Controls'))
+                BdarkImg,BdarkScale = Bdata['dark image']
+                if BdarkImg:
+                    BDid = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,BdarkImg)
+                    Npix,imagefile = G2frame.PatternTree.GetItemPyData(BDid)
+                    BdarkImage = G2IO.GetImageData(G2frame,imagefile,True)
+                    backImage += BdarkImage*BdarkScale                
+                sumImg += backImage*backScale
+            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,dlg)
     #        G2plt.PlotIntegration(G2frame,newPlot=True)
             G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
         finally:
@@ -276,8 +289,12 @@ def UpdateImageControls(G2frame,data,masks):
 
         def OnDataType(event):
             data['type'] = typeSel.GetValue()[:4]
-            if 'SASD' in data['type'] and not data['SampleAbs'][0]:
-                data['SampleAbs'][0] = 1.0  #switch from muT=0 to trans=1!
+            if 'SASD' in data['type']:
+                data['SampleAbs'][0] = np.exp(-data['SampleAbs'][0]) #switch from muT to trans!
+                if data['binType'] == '2-theta': data['binType'] = 'log(q)'  #switch default bin type
+            elif 'PWDR' in data['type']:
+                data['SampleAbs'][0] = -np.log(data['SampleAbs'][0])  #switch from trans to muT!
+                if data['binType'] == 'log(q)': data['binType'] = '2-theta'  #switch default bin type                 
             wx.CallAfter(UpdateImageControls,G2frame,data,masks)
     
         def OnNewColorBar(event):
@@ -597,8 +614,11 @@ def UpdateImageControls(G2frame,data,masks):
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Integration coefficients'),0,
             wx.ALIGN_CENTER_VERTICAL)    
         dataSizer.Add((5,0),0)
-        binChoice = ['2-theta','q','log(q)']
-        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Bin style: Constant'),0,
+        if 'PWDR' in data['type']:
+            binChoice = ['2-theta','q']
+        elif 'SASD' in data['type']:
+            binChoice = ['q','log(q)']
+        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Bin style: Constant step bins in'),0,
             wx.ALIGN_CENTER_VERTICAL)            
         binSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['binType'],choices=binChoice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
@@ -717,6 +737,9 @@ def UpdateImageControls(G2frame,data,masks):
         def OnBackImage(event):
             data['background image'][0] = backImage.GetValue()
             
+        def OnDarkImage(event):
+            data['dark image'][0] = darkImage.GetValue()
+
         def OnBackMult(event):
             try:
                 mult = float(backMult.GetValue())
@@ -725,7 +748,29 @@ def UpdateImageControls(G2frame,data,masks):
                 pass
             backMult.SetValue("%.3f" % (data['background image'][1]))          #reset in case of error 
         
+        def OnDarkMult(event):
+            try:
+                mult = float(darkMult.GetValue())
+                data['dark image'][1] = mult
+            except ValueError:
+                pass
+            darkMult.SetValue("%.3f" % (data['dark image'][1]))          #reset in case of error 
+        
         backSizer = wx.FlexGridSizer(1,4,5,5)
+
+        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Dark image'),0,wx.ALIGN_CENTER_VERTICAL)
+        Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+        darkImage = wx.ComboBox(parent=G2frame.dataDisplay,value=data['dark image'][0],choices=Choices,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        darkImage.Bind(wx.EVT_COMBOBOX,OnDarkImage)
+        backSizer.Add(darkImage)
+        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' multiplier'),0,wx.ALIGN_CENTER_VERTICAL)
+        darkMult =  wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (data['dark image'][1])),
+            style=wx.TE_PROCESS_ENTER)
+        darkMult.Bind(wx.EVT_TEXT_ENTER,OnDarkMult)
+        darkMult.Bind(wx.EVT_KILL_FOCUS,OnDarkMult)
+        backSizer.Add(darkMult,0,wx.ALIGN_CENTER_VERTICAL)
+
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background image'),0,wx.ALIGN_CENTER_VERTICAL)
         Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
         backImage = wx.ComboBox(parent=G2frame.dataDisplay,value=data['background image'][0],choices=Choices,
@@ -874,7 +919,9 @@ def UpdateImageControls(G2frame,data,masks):
     if 'azmthOff' not in data:
         data['azmthOff'] = 0.0
     if 'background image' not in data:
-        data['background image'] = ['',1.0]
+        data['background image'] = ['',-1.0]
+    if 'dark image' not in data:
+        data['dark image'] = ['',-1.0]
     if 'centerAzm' not in data:
         data['centerAzm'] = False
     if 'Oblique' not in data:

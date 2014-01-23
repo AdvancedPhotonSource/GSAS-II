@@ -400,40 +400,32 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     def OnPlotKeyPress(event):
         newPlot = False
         if event.key == 'w' and 'PWDR' in plottype:
-            if G2frame.Weight:
-                G2frame.Weight = False
-            else:
-                G2frame.Weight = True
+            G2frame.ErrorBars = not G2frame.ErrorBars
+            if not G2frame.Weight:
                 G2frame.SinglePlot = True
             newPlot = True
+        elif event.key == 'e' and 'SASD' in plottype:
+            G2frame.ErrorBars = not G2frame.ErrorBars
         elif event.key == 'b' and 'PWDR' in plottype:
-            if G2frame.SubBack:
-                G2frame.SubBack = False
-            else:
-                G2frame.SubBack = True
+            G2frame.SubBack = not G2frame.SubBack
+            if not G2frame.SubBack:
                 G2frame.SinglePlot = True                
         elif event.key == 'n':
             if G2frame.Contour:
                 pass
             else:
-                if G2frame.logPlot:
-                    G2frame.logPlot = False
-                else:
+                G2frame.logPlot = not G2frame.logPlot
+                if not G2frame.logPlot:
                     G2frame.Offset[0] = 0
-                    G2frame.logPlot = True
                 newPlot = True
         elif event.key == 'u':
             if G2frame.Contour:
                 G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
-            elif G2frame.logPlot:
-                pass
             elif G2frame.Offset[0] < 100.:
                 G2frame.Offset[0] += 1.
         elif event.key == 'd':
             if G2frame.Contour:
                 G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
-            elif G2frame.logPlot:
-                pass
             elif G2frame.Offset[0] > 0.:
                 G2frame.Offset[0] -= 1.
         elif event.key == 'l':
@@ -441,21 +433,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         elif event.key == 'r':
             G2frame.Offset[1] += 1.
         elif event.key == 'o':
+            G2frame.Cmax = 1.0
             G2frame.Offset = [0,0]
         elif event.key == 'c':
             newPlot = True
-            if G2frame.Contour:
-                G2frame.Contour = False
-            else:
-                G2frame.Contour = True
+            G2frame.Contour = not G2frame.Contour
+            if not G2frame.Contour:
                 G2frame.SinglePlot = False
                 G2frame.Offset = [0.,0.]
-        elif event.key == 'q' and 'PWDR' in plottype:
-            newPlot = True
-            if G2frame.qPlot:
-                G2frame.qPlot = False
-            else:
-                G2frame.qPlot = True
+        elif event.key == 'q': 
+            if 'PWDR' in plottype:
+                newPlot = True
+                G2frame.qPlot = not G2frame.qPlot
+            elif 'SASD' in plottype:
+                newPlot = True
+                G2frame.sqPlot = not G2frame.sqPlot        
         elif event.key == 's':
             if G2frame.Contour:
                 choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
@@ -467,16 +459,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 else:
                     G2frame.ContourColor = 'Paired'
                 dlg.Destroy()
-            else:                
-                if G2frame.SinglePlot:
-                    G2frame.SinglePlot = False
-                else:
-                    G2frame.SinglePlot = True
+            else:
+                G2frame.SinglePlot = not G2frame.SinglePlot                
             newPlot = True
         elif event.key == '+':
             if G2frame.PickId:
                 G2frame.PickId = False
-        elif event.key == 'i':                  #for smoothing contour plot
+        elif event.key == 'i' and G2frame.Contour:                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
                'mitchell','sinc','lanczos']
@@ -689,19 +678,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.Contour:
-        Page.Choice = (' key press','d: lower contour max','u: raise contour max',
+        Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
             'i: interpolation method','s: color scheme','c: contour off')
     else:
         if G2frame.logPlot:
-            Page.Choice = (' key press','n: log(I) off','l: offset left','r: offset right',
-                'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
+            if 'PWDR' in plottype:
+                Page.Choice = (' key press','n: log(I) off','l: offset left','r: offset right','o: reset offset',
+                    'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
+            elif 'SASD' in plottype:
+                Page.Choice = (' key press','n: log(I) off','l: offset left','r: offset right',
+                    'd: offset down','u: offset up','o: reset offset','q: toggle S(q) plot',
+                    'c: contour on','s: toggle single plot','+: no selection')
         else:
             if 'PWDR' in plottype:
                 Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
                     'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
                     'q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
             elif 'SASD' in plottype:
-                Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
+                Page.Choice = (' key press','e: toggle error bars','l: offset left','r: offset right','d: offset down',
                     'u: offset up','o: reset offset','n: log(I) on','c: contour on',
                     's: toggle single plot','+: no selection')
     Page.keyPress = OnPlotKeyPress
@@ -778,7 +772,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             if 'PWDR' in plottype:
                 Plot.set_ylabel('$Intensity$',fontsize=16)
             elif 'SASD' in plottype:
-                Plot.set_ylabel('$Intensity, cm^{-1}$',fontsize=16)
+                if G2frame.sqPlot:
+                    Plot.set_ylabel('$S(Q)=I*Q^{4}$',fontsize=16)
+                else:
+                    Plot.set_ylabel('$Intensity, cm^{-1}$',fontsize=16)
         else:
             Plot.set_ylabel('Normalized intensity',fontsize=16)
     if G2frame.Contour:
@@ -819,7 +816,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if 'PWDR' in plottype:
             Y = xye[1]+offset*N
         elif 'SASD' in plottype:
-            Y = xye[1]*Sample['Scale'][0]+offset*N
+            if G2frame.logPlot:
+                if G2frame.sqPlot:
+                    Y = xye[1]*Sample['Scale'][0]*(1.005)**(offset*N)*X**4
+                else:
+                    Y = xye[1]*Sample['Scale'][0]*(1.005)**(offset*N)
+            else:
+                Y = xye[1]*Sample['Scale'][0]+offset*N
         if LimitId and ifpicked:
             limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))
             if G2frame.qPlot and 'PWDR' in plottype:
@@ -842,7 +845,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
-            X += G2frame.Offset[1]*.005*N
+            if 'SASD' in plottype and G2frame.logPlot:
+                X *= (1.01)**(G2frame.Offset[1]*N)
+            else:
+                X += G2frame.Offset[1]*.005*N
             Xum = ma.getdata(X)
             if ifpicked:
                 Z = xye[3]+offset*N
@@ -853,13 +859,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     D = xye[4]-Ymax*G2frame.delOffset
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
-                        Plot.semilogy(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
-                        Plot.semilogy(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
-                        Plot.semilogy(X,W,colors[(N+2)%6],picker=False,nonposy='mask')
+                        Plot.set_yscale("log",nonposy='mask')
+                        Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
+                        Plot.plot(X,Z,colors[(N+1)%6],picker=False)
+                        Plot.plot(X,W,colors[(N+2)%6],picker=False)
                     elif 'SASD' in plottype:
-                        Plot.loglog(X,Y,colors[N%6]+'+',picker=3.,clip_on=False,nonposy='mask')
-                        Plot.loglog(X,Z,colors[(N+1)%6],picker=False,nonposy='mask')
-                elif G2frame.Weight:
+                        Plot.set_xscale("log",nonposx='mask')
+                        Plot.set_yscale("log",nonposy='mask')
+                        if G2frame.ErrorBars:
+                            Plot.errorbar(X,Y,yerr=np.sqrt(1./xye[2]),ecolor=colors[N%6],picker=3.,clip_on=False)
+                        else:
+                            Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
+                        Plot.plot(X,Z,colors[(N+1)%6],picker=False)
+                elif G2frame.Weight and 'PWDR' in plottype:
                     DY = xye[1]*np.sqrt(xye[2])
                     DYmax = max(DY)
                     DZ = xye[3]*np.sqrt(xye[2])
@@ -1057,10 +1069,8 @@ def PlotISFG(G2frame,newPlot=False,type=''):
             G2frame.Offset = [0,0]
         elif event.key == 'c':
             newPlot = True
-            if G2frame.Contour:
-                G2frame.Contour = False
-            else:
-                G2frame.Contour = True
+            G2frame.Contour = not G2frame.Contour
+            if not G2frame.Contour:
                 G2frame.SinglePlot = False
                 G2frame.Offset = [0.,0.]
         elif event.key == 's':
@@ -1074,11 +1084,8 @@ def PlotISFG(G2frame,newPlot=False,type=''):
                 else:
                     G2frame.ContourColor = 'Paired'
                 dlg.Destroy()
-            else:                
-                if G2frame.SinglePlot:
-                    G2frame.SinglePlot = False
-                else:
-                    G2frame.SinglePlot = True
+            else:
+                G2frame.SinglePlot = not G2frame.SinglePlot                
         elif event.key == 'i':                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
@@ -1091,10 +1098,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
                 G2frame.Interpolate = 'nearest'
             dlg.Destroy()
         elif event.key == 't' and not G2frame.Contour:
-            if G2frame.Legend:
-                G2frame.Legend = False
-            else:
-                G2frame.Legend = True
+            G2frame.Legend = not G2frame.Legend
         PlotISFG(G2frame,newPlot=newPlot,type=type)
         
     def OnKeyBox(event):
@@ -2142,10 +2146,7 @@ def PlotSeq(G2frame,SeqData,SeqSig,SeqNames,sampleParm):
     
     def OnKeyPress(event):
         if event.key == 's' and sampleParm:
-            if G2frame.xAxis:
-                G2frame.xAxis = False
-            else:
-                G2frame.xAxis = True
+            G2frame.xAxis = not G2frame.xAxis
             Draw(False)
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Sequential refinement')
@@ -2304,7 +2305,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if event.key in ['a',]:
                 G2frame.StrainKey = event.key
                 OnStartNewDzero(G2frame)
-            
                 
         elif PickName == 'Image Controls':
             if event.key in ['c',]:
@@ -2322,20 +2322,11 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 finally:
                     dlg.Destroy()
             elif event.key == 'l':
-                if G2frame.logPlot:
-                    G2frame.logPlot = False
-                else:
-                    G2frame.logPlot = True
+                G2frame.logPlot = not G2frame.logPlot
             elif event.key in ['x',]:
-                if Data['invert_x']:
-                    Data['invert_x'] = False
-                else:
-                    Data['invert_x'] = True
+                Data['invert_x'] = not Data['invert_x']
             elif event.key in ['y',]:
-                if Data['invert_y']:
-                    Data['invert_y'] = False
-                else:
-                    Data['invert_y'] = True
+                Data['invert_y'] = not Data['invert_y']
         PlotImage(G2frame,newPlot=False)
             
     def OnKeyBox(event):

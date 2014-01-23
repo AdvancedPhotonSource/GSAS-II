@@ -1560,6 +1560,9 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Sample Parameters'),
                 rd.Sample)
+            self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Models'),
+                {})     #Fill in defaults here
             self.PatternTree.Expand(Id)
             self.PatternTree.SelectItem(Id)
             newHistList.append(HistName)
@@ -1870,6 +1873,8 @@ class GSASII(wx.Frame):
         self.Projection = 'equal area'
         self.logPlot = False
         self.qPlot = False
+        self.sqPlot = False
+        self.ErrorBars = False
         self.Contour = False
         self.Legend = False
         self.SinglePlot = False

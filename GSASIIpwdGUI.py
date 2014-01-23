@@ -2060,6 +2060,35 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     G2frame.dataDisplay.Fit()
     size = G2frame.dataDisplay.GetSize()
     G2frame.dataFrame.setSizePosLeft([size[0]+32,350])
+    
+################################################################################
+#####  SASD Models 
+################################################################################           
+       
+def UpdateModelsGrid(G2frame,data):
+    '''respond to selection of SASD Models data tree item.
+    '''
+    
+    def FillDefaultModel():
+        data['Model'] = 'Size distribution'
+    
+    def OnCopyModel(event):
+        print 'copy model'
+        print data
+        
+    def OnFitModel(event):
+        print 'fit model'
+        
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ModelMenu)
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+    if not len(data['Model']):
+        FillDefaultModel()    
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModel, id=G2gd.wxID_MODELFIT)
+        
+    
 ################################################################################
 #####  PDF controls
 ################################################################################           

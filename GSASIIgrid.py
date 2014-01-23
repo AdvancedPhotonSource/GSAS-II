@@ -133,6 +133,9 @@ htmlFirstUse = True
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
 
+[ wxID_MODELCOPY,wxID_MODELFIT
+] = [wx.NewId() for item in range(2)]
+
 [ wxID_SELECTPHASE,
 ] = [wx.NewId() for item in range(1)]
 
@@ -2372,6 +2375,17 @@ class DataFrame(wx.Frame):
             kind=wx.ITEM_NORMAL,text='Select phase')
         self.PostfillDataMenu()
         
+        # SASD/ Models
+        self.ModelMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.ModelMenu,helpType='Models')
+        self.ModelEdit = wx.Menu(title='')
+        self.ModelMenu.Append(menu=self.ModelEdit, title='Models')
+        self.ModelEdit.Append(id=wxID_MODELFIT, kind=wx.ITEM_NORMAL,text='Fit',
+            help='Fit model parameters to data')
+        self.ModelEdit.Append(id=wxID_MODELCOPY, kind=wx.ITEM_NORMAL,text='Copy',
+            help='Copy model parameters to other histograms')
+        self.PostfillDataMenu()
+        
         # IMG / Image Controls
         self.ImageMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ImageMenu,helpType='Image Controls')
@@ -3815,6 +3829,11 @@ def MovePatternTreeToGrid(G2frame,item):
         G2pdG.UpdateInstrumentGrid(G2frame,data)
         if 'P' in data['Type'][0]:          #powder data only
             G2plt.PlotPeakWidths(G2frame)
+    elif G2frame.PatternTree.GetItemText(item) == 'Models':
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2pdG.UpdateModelsGrid(G2frame,data)
     elif G2frame.PatternTree.GetItemText(item) == 'Sample Parameters':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         G2frame.PickId = item

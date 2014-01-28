@@ -4665,6 +4665,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             nCyc = mcsaControls['Cycles']
             if process == 'single':
                 for i in range(nCyc):
+                    pgbar.SetTitle('MC/SA run '+str(i+1)+' of '+str(nCyc))
                     Result,tsum = G2mth.mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar)
                     MCSAdata['Results'].append(Result)
                     print ' MC/SA run completed: %d residual: %.3f%% SFcalc time: %.2fs'%(i,100*Result[2],tsum)

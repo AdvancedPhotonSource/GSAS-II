@@ -2997,7 +2997,7 @@ def UpdateNotebook(G2frame,data):
     editing of the text in that tree entry
     '''
     def OnNoteBook(event):
-        data = G2frame.dataDisplay.GetValue()
+        data = G2frame.dataDisplay.GetValue().split('\n')
         G2frame.PatternTree.SetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Notebook'),data)
                     
     if G2frame.dataDisplay:

@@ -23,7 +23,7 @@ import cPickle
 import sys
 import numpy as np
 import numpy.ma as ma
-import os.path
+import os
 import wx.html        # could postpone this for quicker startup
 import webbrowser     # could postpone this for quicker startup
 import GSASIIpath
@@ -2375,6 +2375,13 @@ class DataFrame(wx.Frame):
             kind=wx.ITEM_NORMAL,text='Select phase')
         self.PostfillDataMenu()
         
+        #SASD/ Contrast calculator
+        self.ContrastMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.ContrastMenu,helpType='Contrast')
+        self.ContrastEdit = wx.Menu(title='')
+        self.ContrastMenu.Append(menu=self.ContrastEdit, title='Models')
+        self.PostfillDataMenu()
+        
         # SASD/ Models
         self.ModelMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ModelMenu,helpType='Models')
@@ -2999,6 +3006,8 @@ def UpdateNotebook(G2frame,data):
     def OnNoteBook(event):
         data = G2frame.dataDisplay.GetValue().split('\n')
         G2frame.PatternTree.SetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Notebook'),data)
+        if 'nt' not in os.name:
+            G2frame.dataDisplay.AppendText('\n')
                     
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
@@ -3834,6 +3843,11 @@ def MovePatternTreeToGrid(G2frame,item):
         G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdateModelsGrid(G2frame,data)
+    elif G2frame.PatternTree.GetItemText(item) == 'Contrast':
+        G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        G2frame.PickId = item
+        data = G2frame.PatternTree.GetItemPyData(item)
+        G2pdG.UpdateContrastGrid(G2frame,data)
     elif G2frame.PatternTree.GetItemText(item) == 'Sample Parameters':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         G2frame.PickId = item

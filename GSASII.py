@@ -1561,6 +1561,9 @@ class GSASII(wx.Frame):
                 self.PatternTree.AppendItem(Id,text='Sample Parameters'),
                 rd.Sample)
             self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Contrast'),
+                {})     #Fill in defaults here
+            self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Models'),
                 {})     #Fill in defaults here
             self.PatternTree.Expand(Id)

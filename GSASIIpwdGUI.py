@@ -2062,6 +2062,25 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     G2frame.dataFrame.setSizePosLeft([size[0]+32,350])
     
 ################################################################################
+#####  SASD Contrast 
+################################################################################
+           
+def UpdateContrastGrid(G2frame,data):
+    '''respond to selection of SASD Contrast data tree item.
+    '''
+    
+    def FillDefaultContrast():
+        data = {}
+            
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ContrastMenu)
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+    if not len(data):
+        FillDefaultContrast()    
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+        
+       
+################################################################################
 #####  SASD Models 
 ################################################################################           
        
@@ -2082,7 +2101,7 @@ def UpdateModelsGrid(G2frame,data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ModelMenu)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
-    if not len(data['Model']):
+    if not len(data):
         FillDefaultModel()    
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)

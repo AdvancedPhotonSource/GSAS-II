@@ -2695,11 +2695,9 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         MDval = parmDict['0:MDval']                             #get March-Dollase coeff
         HX2pi = 2.*np.pi*np.inner(allX,refList[:3].T)           #form 2piHX for every H,X pair
         Aterm = refList[3]*np.sum(allFF*np.cos(HX2pi),axis=0)**2    #compute real part for all H
-        if ifInv:
-            refList[5] = Aterm
-        else:
-            Bterm = refList[3]*np.sum(allFF*np.sin(HX2pi),axis=0)**2    #imaginary part for all H
-            refList[5] = Aterm+Bterm
+        refList[5] = Aterm
+        if not ifInv:
+            refList[5] += refList[3]*np.sum(allFF*np.sin(HX2pi),axis=0)**2    #imaginary part for all H
         if len(cosTable):        #apply MD correction
             refList[5] *= np.sum(np.sqrt((MDval/(cosTable*(MDval**3-1.)+1.))**3),axis=1)/cosTable.shape[1]
         sumFcsq = np.sum(refList[5])

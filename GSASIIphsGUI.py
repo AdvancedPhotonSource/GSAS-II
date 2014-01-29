@@ -754,7 +754,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mcsaSizer.Add((5,5),)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
             line2Sizer.Add(wx.StaticText(General,label=' MC/SA runs: '),0,wx.ALIGN_CENTER_VERTICAL)
-            Cchoice = ['1','2','3','6','10','20','30','60','100']
+            Cchoice = ['1','2','4','8','16','32','64','128','256']
             cycles = wx.ComboBox(General,-1,value=str(MCSAdata.get('Cycles',1)),choices=Cchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             cycles.Bind(wx.EVT_COMBOBOX,OnCycles)        

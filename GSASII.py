@@ -1562,7 +1562,8 @@ class GSASII(wx.Frame):
                 rd.Sample)
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Contrast'),
-                {})     #Fill in defaults here
+                    {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0}},
+                    'Contrast':0.0})
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Models'),
                 {})     #Fill in defaults here

@@ -133,8 +133,9 @@ htmlFirstUse = True
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
 
-[ wxID_MODELCOPY,wxID_MODELFIT
-] = [wx.NewId() for item in range(2)]
+[ wxID_MODELCOPY,wxID_MODELFIT,wxID_CONTRASTADD,wxID_CONTRASTDELETE,wxID_ADDSUBSTANCE,
+    wxID_LOADSUBSTANCE,
+] = [wx.NewId() for item in range(6)]
 
 [ wxID_SELECTPHASE,
 ] = [wx.NewId() for item in range(1)]
@@ -2379,7 +2380,15 @@ class DataFrame(wx.Frame):
         self.ContrastMenu = wx.MenuBar()
         self.PrefillDataMenu(self.ContrastMenu,helpType='Contrast')
         self.ContrastEdit = wx.Menu(title='')
-        self.ContrastMenu.Append(menu=self.ContrastEdit, title='Models')
+        self.ContrastMenu.Append(menu=self.ContrastEdit, title='Edit')
+        self.ContrastEdit.Append(id=wxID_ADDSUBSTANCE, kind=wx.ITEM_NORMAL,text='Add substance',
+            help='Add new substance')
+        self.ContrastEdit.Append(id=wxID_LOADSUBSTANCE, kind=wx.ITEM_NORMAL,text='Load substance',
+            help='Load substance from file')
+        self.ContrastEdit.Append(id=wxID_CONTRASTADD, kind=wx.ITEM_NORMAL,text='Add elements',
+            help='Add elements to substance')
+        self.ContrastEdit.Append(id=wxID_CONTRASTDELETE, kind=wx.ITEM_NORMAL,text='Delete elements',
+            help='Delete elements from substance')
         self.PostfillDataMenu()
         
         # SASD/ Models

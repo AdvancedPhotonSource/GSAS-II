@@ -539,25 +539,24 @@ def GetSHCoeff(pId,parmDict,SHkeys):
     return SHCoeff
         
 def getMass(generalData):
-    '''default doc string
+    '''Computes mass of unit cell contents
     
-    :param type name: description
+    :param dict generalData: The General dictionary in Phase
     
-    :returns: type name: description
+    :returns: float mass: Crystal unit cell mass in AMU.
     
     '''
-    'Computes mass of unit cell contents'
     mass = 0.
     for i,elem in enumerate(generalData['AtomTypes']):
         mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
     return mass    
 
 def getDensity(generalData):
-    '''default doc string
+    '''calculate crystal structure density
     
-    :param type name: description
+    :param dict generalData: The General dictionary in Phase
     
-    :returns: type name: description
+    :returns: float density: crystal density in gm/cm^3
     
     '''
     mass = getMass(generalData)
@@ -566,17 +565,124 @@ def getDensity(generalData):
     return density,Volume/mass
     
 def getWave(Parms):
-    '''default doc string
+    '''returns wavelength from Instrument parameters dictionary
     
-    :param type name: description
+    :param dict Parms: Instrument parameters;
+        must contain:
+        Lam: single wavelength
+        or
+        Lam1: Ka1 radiation wavelength
     
-    :returns: type name: description
+    :returns: float wave: wavelength
     
     '''
     try:
         return Parms['Lam'][1]
     except KeyError:
         return Parms['Lam1'][1]
+        
+def El2Mass(Elements):
+    '''compute molecular weight from Elements 
+    
+    :param dict Elements: elements in molecular formula; 
+        each must contain 
+        Num: number of atoms in formula
+        Mass: at. wt. 
+    
+    :returns: float mass: molecular weight.
+    
+    '''
+    mass = 0
+    for El in Elements:
+        mass += Elements[El]['Num']*Elements[El]['Mass']
+    return mass
+        
+def Den2Vol(Elements,density):
+    '''converts density to molecular volume
+    
+    :param dict Elements: elements in molecular formula; 
+        each must contain 
+        Num: number of atoms in formula
+        Mass: at. wt. 
+    :param float density: material density in gm/cm^3
+    
+    :returns: float volume: molecular volume in A^3 
+    
+    '''
+    return El2Mass(Elements)/(density*0.6022137)
+    
+def Vol2Den(Elements,volume):
+    '''converts volume to density
+    
+    :param dict Elements: elements in molecular formula; 
+        each must contain 
+        Num: number of atoms in formula
+        Mass: at. wt. 
+    :param float volume: molecular volume in A^3
+    
+    :returns: float density: material density in gm/cm^3
+    
+    '''
+    return El2Mass(Elements)/(volume*0.6022137)
+    
+def El2EstVol(Elements):
+    '''Estimate volume from molecular formula; assumes atom volume = 10A^3
+    
+    :param dict Elements: elements in molecular formula; 
+        each must contain 
+        Num: number of atoms in formula
+    
+    :returns: float volume: estimate of molecular volume in A^3
+    
+    '''
+    vol = 0
+    for El in Elements:
+        vol += 10.*Elements[El]['Num']
+    return vol
+    
+def XScattDen(Elements,vol,wave=0.):
+    '''Estimate X-ray scattering density from molecular formula & volume;
+    ignores valence, but includes anomalous effects
+    
+    :param dict Elements: elements in molecular formula; 
+        each element must contain 
+        Num: number of atoms in formula
+        Z: atomic number
+    :param float vol: molecular volume in A^3
+    :param float wave: optional wavelength in A
+    
+    :returns: float rho: scattering density in 10^10cm^-2; 
+        if wave > 0 the includes f' contribution
+    
+    '''
+    rho = 0
+    if wave:
+        Xanom = XAnomAbs(Elements,wave)
+    for El in Elements:
+        f0 = Elements[El]['Z']
+        if wave:
+            f0 += Xanom[El][0]
+        rho += Elements[El]['Num']*f0
+    return 28.179*rho/vol
+    
+def wavekE(wavekE):
+    '''Convert wavelength to energy & vise versa
+    
+    :param float waveKe:wavelength in A or energy in kE
+    
+    :returns float waveKe:the other one
+    
+    '''
+    return 12.397639/wavekE
+        
+def XAnomAbs(Elements,wave):
+    kE = wavekE(wave)
+    Xanom = {}
+    for El in Elements:
+        Orbs = G2el.GetXsectionCoeff(El)
+        Xanom[El] = G2el.FPcalc(Orbs, kE)
+    return Xanom
+    
     
 ################################################################################
 ##### distance, angle, planes, torsion stuff stuff

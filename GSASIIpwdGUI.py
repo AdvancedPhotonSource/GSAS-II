@@ -19,6 +19,7 @@ import sys
 import os.path
 import wx
 import wx.grid as wg
+import wx.lib.scrolledpanel as wxscroll
 import numpy as np
 import numpy.ma as ma
 import math
@@ -2068,17 +2069,226 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
 def UpdateContrastGrid(G2frame,data):
     '''respond to selection of SASD Contrast data tree item.
     '''
+    import Substances as substFile
     
-    def FillDefaultContrast():
-        data = {}
+    def OnLoadSubstance(event):
+        names = substFile.Substances.keys()
+        dlg = wx.SingleChoiceDialog(G2frame, 'Which substance?', 'Select substance', names, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                name = names[dlg.GetSelection()]
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        data['Substances'][name] = {'Elements':{},'Volume':1.0,'Density':1.0,
+            'Scatt density':0.0,'XAnom density':0.0}
+        subst = substFile.Substances[name]
+        ElList = subst['Elements'].keys()
+        for El in ElList:
+            Info = G2elem.GetAtomInfo(El.strip().upper())
+            Info.update(subst['Elements'][El])
+            data['Substances'][name]['Elements'][El] = Info
+            if 'Volume' in subst:
+                data['Substances'][name]['Volume'] = subst['Volume']
+                data['Substances'][name]['Density'] = \
+                    G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
+            elif 'Density' in subst:
+                data['Substances'][name]['Density'] = subst['Density']
+                data['Substances'][name]['Volume'] = \
+                    G2mth.Den2Vol(data['Substances'][name]['Elements'],data['Substances'][name]['Density'])
+            else:
+                data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
+                data['Substances'][name]['Density'] = \
+                    G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
+            data['Substances'][name]['Scatt density'] = \
+                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])         
+            data['Substances'][name]['XAnom density'] = \
+                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
+        UpdateContrastGrid(G2frame,data)
+    
+    def OnAddSubstance(event):
+        dlg = wx.TextEntryDialog(None,'Enter a name for this substance','Substance Name Entry','New substance',
+            style=wx.OK)
+        if dlg.ShowModal() == wx.ID_OK:
+            Name = dlg.GetValue()
+            data['Substances'][Name] = {'Elements':{},'Volume':1.0,'Density':1.0,
+                'Scatt density':0.0,'XAnom density':0.}
+        dlg.Destroy()
+        UpdateContrastGrid(G2frame,data)
+                
+    def OnAddElement(event):        
+        TextList = []
+        for name in data['Substances']:
+            if name != 'vacuum':
+                TextList += [name,]
+        if not TextList:
+            return
+        dlg = wx.SingleChoiceDialog(G2frame, 'Which substance?', 'Select substance', TextList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                name = TextList[dlg.GetSelection()]
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        ElList = data['Substances'][name]['Elements'].keys()
+        dlg = G2elemGUI.PickElements(G2frame,ElList)
+        if dlg.ShowModal() == wx.ID_OK:
+            for El in dlg.Elem:
+                El = El.strip().upper()
+                Info = G2elem.GetAtomInfo(El)
+                Info.update({'Num':1})
+                data['Substances'][name]['Elements'][El] = Info
+                data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
+                data['Substances'][name]['Density'] = \
+                    G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
+                data['Substances'][name]['Scatt density'] = \
+                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])         
+                data['Substances'][name]['XAnom density'] = \
+                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
+        dlg.Destroy()
+        UpdateContrastGrid(G2frame,data)
+        
+    def OnDeleteElement(event):
+        TextList = []
+        for name in data['Substances']:
+            if name != 'vacuum':
+                TextList += [name,]
+        if not TextList:
+            return
+        dlg = wx.SingleChoiceDialog(G2frame, 'Which substance?', 'Select substance', TextList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                name = TextList[dlg.GetSelection()]
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        ElList = data['Substances'][name]['Elements'].keys()
+        if len(ElList):
+            DE = G2elemGUI.DeleteElement(G2frame,ElList)
+            if DE.ShowModal() == wx.ID_OK:
+                El = DE.GetDeleteElement().strip().upper()
+                del(data['Substances'][name]['Elements'][El])
+                data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
+                data['Substances'][name]['Density'] = \
+                    G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
+                data['Substances'][name]['Scatt density'] = \
+                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])         
+                data['Substances'][name]['XAnom density'] = \
+                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
+        UpdateContrastGrid(G2frame,data)
+                
+    def SubstSizer():
+        
+        def OnValueChange(event):
+            Obj = event.GetEventObject()
+            if len(Indx[Obj.GetId()]) == 3:
+                name,El,keyId = Indx[Obj.GetId()]
+                try:
+                    value = max(0,int(Obj.GetValue()))
+                except ValueError:
+                    value = 0
+                    Obj.SetValue(str(value))
+                data['Substances'][name]['Elements'][El][keyId] = value
+                data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
+                data['Substances'][name]['Density'] = \
+                    G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
+            else:
+                name,keyId = Indx[Obj.GetId()]
+                try:
+                    value = max(0,float(Obj.GetValue()))
+                except ValueError:
+                    value = 1.0
+                data['Substances'][name][keyId] = value
+                if keyId in 'Volume':
+                    data['Substances'][name]['Density'] = \
+                        G2mth.Vol2Den(data['Substances'][name]['Elements'],value)
+                elif keyId in 'Density':
+                    data['Substances'][name]['Volume'] = \
+                        G2mth.Den2Vol(data['Substances'][name]['Elements'],value)
+            data['Substances'][name]['Scatt density'] = \
+                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])         
+            data['Substances'][name]['XAnom density'] = \
+                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
+            UpdateContrastGrid(G2frame,data)
+        
+        Indx = {}
+        Pwr10 = unichr(0x0b9)+unichr(0x0b0)
+        Pwrm2 = unichr(0x207b)+unichr(0x0b2)
+        substSizer = wx.BoxSizer(wx.VERTICAL)
+        substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Substance list:'),
+            0,wx.ALIGN_CENTER_VERTICAL)
+        for name in data['Substances']:
+            substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Data for '+name+':'),
+                0,wx.ALIGN_CENTER_VERTICAL)
+            if name == 'vacuum':
+                substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='        Not applicable'),
+                    0,wx.ALIGN_CENTER_VERTICAL)
+            else:    
+                elSizer = wx.FlexGridSizer(1,6,5,5)
+                Substance = data['Substances'][name]
+                Elems = Substance['Elements']
+                for El in Elems:
+                    elSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+El+': '),
+                        0,wx.ALIGN_CENTER_VERTICAL)
+                    num = wx.TextCtrl(G2frame.dataDisplay,value=str(Elems[El]['Num']),style=wx.TE_PROCESS_ENTER)
+                    Indx[num.GetId()] = [name,El,'Num']
+                    num.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
+                    num.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
+                    elSizer.Add(num,0,wx.ALIGN_CENTER_VERTICAL)
+                substSizer.Add(elSizer,0)
+                vdsSizer = wx.FlexGridSizer(1,4,5,5)
+                vdsSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Volume: '),
+                    0,wx.ALIGN_CENTER_VERTICAL)
+                vol = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(Substance['Volume']),style=wx.TE_PROCESS_ENTER)
+                Indx[vol.GetId()] = [name,'Volume']
+                vol.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
+                vol.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
+                vdsSizer.Add(vol,0,wx.ALIGN_CENTER_VERTICAL)                
+                vdsSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Density: '),
+                    0,wx.ALIGN_CENTER_VERTICAL)
+                den = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(Substance['Density']),style=wx.TE_PROCESS_ENTER)
+                Indx[den.GetId()] = [name,'Density']
+                den.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
+                den.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
+                vdsSizer.Add(den,0,wx.ALIGN_CENTER_VERTICAL)
+                substSizer.Add(vdsSizer,0)
+                substSizer.Add(wx.StaticText(G2frame.dataDisplay,
+                    label=' Scattering density  : %.2f *10%scm%s'%(Substance['Scatt density'],Pwr10,Pwrm2)),
+                    0,wx.ALIGN_CENTER_VERTICAL)                
+                substSizer.Add(wx.StaticText(G2frame.dataDisplay,
+                    label=' Anomalous density : %.2f *10%scm%s'%(Substance['XAnom density'],Pwr10,Pwrm2)),
+                    0,wx.ALIGN_CENTER_VERTICAL)                
+                
+        return substSizer
             
+    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    wave = G2mth.getWave(Inst)
+    if G2frame.dataDisplay:
+        G2frame.dataFrame.DestroyChildren()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ContrastMenu)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
-    if not len(data):
-        FillDefaultContrast()    
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-        
+    G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
+    G2frame.dataFrame.SetLabel('Contrast calculator')
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadSubstance, id=G2gd.wxID_LOADSUBSTANCE)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddSubstance, id=G2gd.wxID_ADDSUBSTANCE)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddElement, id=G2gd.wxID_CONTRASTADD)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_CONTRASTDELETE)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(SubstSizer(),0)
+
+    mainSizer.Layout()    
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    G2frame.dataDisplay.SetAutoLayout(1)
+    G2frame.dataDisplay.SetupScrolling()
+    Size = mainSizer.Fit(G2frame.dataFrame)
+    Size[0] += 25
+    G2frame.dataDisplay.SetSize(Size)
+    G2frame.dataFrame.setSizePosLeft(Size)    
+           
        
 ################################################################################
 #####  SASD Models 
@@ -2103,9 +2313,19 @@ def UpdateModelsGrid(G2frame,data):
         Status = G2frame.dataFrame.CreateStatusBar()
     if not len(data):
         FillDefaultModel()    
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    G2frame.dataFrame.SetLabel('Modelling')
+    G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModel, id=G2gd.wxID_MODELFIT)
+
+    mainSizer.Layout()    
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    G2frame.dataDisplay.SetAutoLayout(1)
+    G2frame.dataDisplay.SetupScrolling()
+    Size = mainSizer.Fit(G2frame.dataFrame)
+    Size[0] += 25
+    G2frame.dataDisplay.SetSize(Size)
+    G2frame.dataFrame.setSizePosLeft(Size)    
         
     
 ################################################################################

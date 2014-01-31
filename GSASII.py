@@ -1561,12 +1561,9 @@ class GSASII(wx.Frame):
                 self.PatternTree.AppendItem(Id,text='Sample Parameters'),
                 rd.Sample)
             self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Contrast'),
-                    {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0}},
-                    'Contrast':0.0})
+                self.PatternTree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
             self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Models'),
-                {})     #Fill in defaults here
+                self.PatternTree.AppendItem(Id,text='Models'),G2pdG.SetDefaultSASDModel())
             self.PatternTree.Expand(Id)
             self.PatternTree.SelectItem(Id)
             newHistList.append(HistName)

@@ -62,7 +62,7 @@ def IsHistogramInAnyPhase(G2frame,histoName):
         return False
 
 def SetDefaultSample():
-    'Needs a doc string'
+    'Fills in default items for the Sample dictionary'
     return {
         'InstrName':'',
         'ranId':ran.randint(0,sys.maxint),
@@ -73,6 +73,21 @@ def SetDefaultSample():
         'Gonio. radius':200.0,
         'Omega':0.0,'Chi':0.0,'Phi':0.0
         }
+        
+def SetDefaultSASDModel():
+    'Fills in default items for the SASD Models dictionary'    
+    return {'Back':[0.0,False],'Size':{'MinMaxDiam':[50.,10000.],'Nbins':100,
+        'Contrast':['vacuum','vacuum'],'Method':'MaxEnt','Distribution':[],
+        'Shape':['Spheroid',1.0],'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':1e-6},
+        'IPG':{'Niter':100,'Approach':0.8},'Reg':{},},            
+        'Unified':{'Levels':[],},            
+        'Particle':{'Levels':[],},
+        }
+        
+def SetDefaultSubstances():
+    'Fills in default items for the SASD Substances dictionary'
+    return {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0}},
+                    'Contrast':0.0}
                          
 ################################################################################
 #####  Powder Peaks
@@ -2063,11 +2078,11 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     G2frame.dataFrame.setSizePosLeft([size[0]+32,350])
     
 ################################################################################
-#####  SASD Contrast 
+#####  SASD Substances 
 ################################################################################
            
-def UpdateContrastGrid(G2frame,data):
-    '''respond to selection of SASD Contrast data tree item.
+def UpdateSubstanceGrid(G2frame,data):
+    '''respond to selection of SASD Substance data tree item.
     '''
     import Substances as substFile
     
@@ -2082,7 +2097,7 @@ def UpdateContrastGrid(G2frame,data):
         finally:
             dlg.Destroy()
         data['Substances'][name] = {'Elements':{},'Volume':1.0,'Density':1.0,
-            'Scatt density':0.0,'XAnom density':0.0}
+            'Scatt density':0.0,'XAnom density':0.0,'XAbsorption':0.0}
         subst = substFile.Substances[name]
         ElList = subst['Elements'].keys()
         for El in ElList:
@@ -2102,10 +2117,12 @@ def UpdateContrastGrid(G2frame,data):
                 data['Substances'][name]['Density'] = \
                     G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
             data['Substances'][name]['Scatt density'] = \
-                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])         
-            data['Substances'][name]['XAnom density'] = \
-                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
-        UpdateContrastGrid(G2frame,data)
+                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+            contrst,absorb = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
+            data['Substances'][name]['XAnom density'] = contrst
+            data['Substances'][name]['XAbsorption'] = absorb
+                         
+        UpdateSubstanceGrid(G2frame,data)
     
     def OnAddSubstance(event):
         dlg = wx.TextEntryDialog(None,'Enter a name for this substance','Substance Name Entry','New substance',
@@ -2113,9 +2130,28 @@ def UpdateContrastGrid(G2frame,data):
         if dlg.ShowModal() == wx.ID_OK:
             Name = dlg.GetValue()
             data['Substances'][Name] = {'Elements':{},'Volume':1.0,'Density':1.0,
-                'Scatt density':0.0,'XAnom density':0.}
+                'Scatt density':0.0,'XAnom density':0.,'XAbsorption':0.}
         dlg.Destroy()
-        UpdateContrastGrid(G2frame,data)
+        AddElement(Name)
+        UpdateSubstanceGrid(G2frame,data)
+        
+    def OnDeleteSubstance(event):
+        TextList = []
+        for name in data['Substances']:
+            if name != 'vacuum':
+                TextList += [name,]
+        if not TextList:
+            return
+        dlg = wx.SingleChoiceDialog(G2frame, 'Which substance?', 'Select substance to delete', TextList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                name = TextList[dlg.GetSelection()]
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        del(data['Substances'][name])
+        UpdateSubstanceGrid(G2frame,data)        
                 
     def OnAddElement(event):        
         TextList = []
@@ -2132,6 +2168,10 @@ def UpdateContrastGrid(G2frame,data):
                 return
         finally:
             dlg.Destroy()
+        AddElement(name)
+        UpdateSubstanceGrid(G2frame,data)
+        
+    def AddElement(name):
         ElList = data['Substances'][name]['Elements'].keys()
         dlg = G2elemGUI.PickElements(G2frame,ElList)
         if dlg.ShowModal() == wx.ID_OK:
@@ -2144,11 +2184,12 @@ def UpdateContrastGrid(G2frame,data):
                 data['Substances'][name]['Density'] = \
                     G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
                 data['Substances'][name]['Scatt density'] = \
-                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])         
-                data['Substances'][name]['XAnom density'] = \
-                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
+                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                contrst,absorb = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
+                data['Substances'][name]['XAnom density'] = contrst
+                data['Substances'][name]['XAbsorption'] = absorb
         dlg.Destroy()
-        UpdateContrastGrid(G2frame,data)
+        
         
     def OnDeleteElement(event):
         TextList = []
@@ -2175,10 +2216,11 @@ def UpdateContrastGrid(G2frame,data):
                 data['Substances'][name]['Density'] = \
                     G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
                 data['Substances'][name]['Scatt density'] = \
-                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])         
-                data['Substances'][name]['XAnom density'] = \
-                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
-        UpdateContrastGrid(G2frame,data)
+                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+                contrst,absorb = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
+                data['Substances'][name]['XAnom density'] = contrst
+                data['Substances'][name]['XAbsorption'] = absorb
+        UpdateSubstanceGrid(G2frame,data)
                 
     def SubstSizer():
         
@@ -2209,18 +2251,21 @@ def UpdateContrastGrid(G2frame,data):
                     data['Substances'][name]['Volume'] = \
                         G2mth.Den2Vol(data['Substances'][name]['Elements'],value)
             data['Substances'][name]['Scatt density'] = \
-                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])         
-            data['Substances'][name]['XAnom density'] = \
-                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
-            UpdateContrastGrid(G2frame,data)
+                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+            contrst,absorb = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
+            data['Substances'][name]['XAnom density'] = contrst
+            data['Substances'][name]['XAbsorption'] = absorb
+            UpdateSubstanceGrid(G2frame,data)
         
         Indx = {}
         Pwr10 = unichr(0x0b9)+unichr(0x0b0)
         Pwrm2 = unichr(0x207b)+unichr(0x0b2)
+        Pwrm1 = unichr(0x207b)+unichr(0x0b9)
         substSizer = wx.BoxSizer(wx.VERTICAL)
-        substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Substance list:'),
+        substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Substance list: wavelength: %.5fA'%(wave)),
             0,wx.ALIGN_CENTER_VERTICAL)
         for name in data['Substances']:
+            G2gd.HorizontalLine(substSizer,G2frame.dataDisplay)    
             substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Data for '+name+':'),
                 0,wx.ALIGN_CENTER_VERTICAL)
             if name == 'vacuum':
@@ -2261,22 +2306,25 @@ def UpdateContrastGrid(G2frame,data):
                 substSizer.Add(wx.StaticText(G2frame.dataDisplay,
                     label=' Anomalous density : %.2f *10%scm%s'%(Substance['XAnom density'],Pwr10,Pwrm2)),
                     0,wx.ALIGN_CENTER_VERTICAL)                
-                
+                substSizer.Add(wx.StaticText(G2frame.dataDisplay,
+                    label=' X-ray absorption   : %.2f cm%s'%(Substance['XAbsorption'],Pwrm1)),
+                    0,wx.ALIGN_CENTER_VERTICAL)                
         return substSizer
             
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     wave = G2mth.getWave(Inst)
     if G2frame.dataDisplay:
         G2frame.dataFrame.DestroyChildren()
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ContrastMenu)
+    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.SubstanceMenu)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
-    G2frame.dataFrame.SetLabel('Contrast calculator')
+    G2frame.dataFrame.SetLabel('Substances')
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadSubstance, id=G2gd.wxID_LOADSUBSTANCE)    
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddSubstance, id=G2gd.wxID_ADDSUBSTANCE)    
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddElement, id=G2gd.wxID_CONTRASTADD)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_CONTRASTDELETE)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteSubstance, id=G2gd.wxID_DELETESUBSTANCE)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddElement, id=G2gd.wxID_ELEMENTADD)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_ELEMENTDELETE)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(SubstSizer(),0)
 
@@ -2288,7 +2336,6 @@ def UpdateContrastGrid(G2frame,data):
     Size[0] += 25
     G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)    
-           
        
 ################################################################################
 #####  SASD Models 
@@ -2297,9 +2344,6 @@ def UpdateContrastGrid(G2frame,data):
 def UpdateModelsGrid(G2frame,data):
     '''respond to selection of SASD Models data tree item.
     '''
-    
-    def FillDefaultModel():
-        data['Model'] = 'Size distribution'
     
     def OnCopyModel(event):
         print 'copy model'
@@ -2311,12 +2355,11 @@ def UpdateModelsGrid(G2frame,data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ModelMenu)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
-    if not len(data):
-        FillDefaultModel()    
     G2frame.dataFrame.SetLabel('Modelling')
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModel, id=G2gd.wxID_MODELFIT)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
 
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)

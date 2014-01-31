@@ -653,17 +653,20 @@ def XScattDen(Elements,vol,wave=0.):
     
     :returns: float rho: scattering density in 10^10cm^-2; 
         if wave > 0 the includes f' contribution
+    :returns: float mu: if wave>0 absorption coeff in cm^-1 ; otherwise 0
     
     '''
     rho = 0
+    mu = 0
     if wave:
         Xanom = XAnomAbs(Elements,wave)
     for El in Elements:
         f0 = Elements[El]['Z']
         if wave:
             f0 += Xanom[El][0]
+            mu += Xanom[El][2]*Elements[El]['Num']
         rho += Elements[El]['Num']*f0
-    return 28.179*rho/vol
+    return 28.179*rho/vol,0.1*mu/vol
     
 def wavekE(wavekE):
     '''Convert wavelength to energy & vise versa

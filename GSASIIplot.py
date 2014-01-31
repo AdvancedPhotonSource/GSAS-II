@@ -2297,7 +2297,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         except TypeError:
             return
         if PickName == 'Masks':
-            if event.key in ['p','f','s','a','r']:
+            if event.key in ['l','p','f','s','a','r']:
                 G2frame.MaskKey = event.key
                 OnStartMask(G2frame)
                 
@@ -2507,7 +2507,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                                 arcs[aN][1][0] = int(G2img.GetAzm(Xpos,Ypos,Data))
                             else:
                                 arcs[aN][1][1] = int(G2img.GetAzm(Xpos,Ypos,Data))
-                    for poly in G2frame.polyList:
+                    for poly in G2frame.polyList:   #merging points problem here & how can we insert a point?
                         if Obj == poly[0]:
                             ind = G2frame.itemPicked.contains(G2frame.mousePicked)[1]['ind'][0]
                             oldPos = np.array([G2frame.mousePicked.xdata,G2frame.mousePicked.ydata])
@@ -2559,8 +2559,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Page.Choice[1] = 'l: log(I) off'
             Page.keyPress = OnImPlotKeyPress
         elif G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Masks',]:
-            Page.Choice = (' key press','s: spot mask','a: arc mask','r: ring mask',
+            Page.Choice = (' key press','l: log(I) on','s: spot mask','a: arc mask','r: ring mask',
                 'p: polygon mask','f: frame mask',)
+            if G2frame.logPlot:
+                Page.Choice[1] = 'l: log(I) off'
             Page.keyPress = OnImPlotKeyPress
         elif G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Stress/Strain',]:
             Page.Choice = (' key press','a: add new ring',)
@@ -2599,11 +2601,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     try:
             
         if newImage:                    
+            Imin,Imax = Data['range'][1]
             MA = ma.masked_greater(ma.masked_less(G2frame.ImageZ,Zlim[0]),Zlim[1])
             MaskA = ma.getmaskarray(MA)
             A = G2img.ImageCompress(MA,imScale)
             AM = G2img.ImageCompress(MaskA,imScale)
             if G2frame.logPlot:
+                A = np.where(A>Imin,np.where(A<Imax,A,0),0)
                 A = np.where(A>0,np.log(A),0)
                 AM = np.where(AM>0,np.log(AM),0)
                 Imin,Imax = [np.amin(A),np.amax(A)]

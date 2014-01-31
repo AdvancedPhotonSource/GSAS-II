@@ -835,10 +835,13 @@ letter or string flag value (such as I or A for iso/anisotropic).
 ----------------------
 
 '''
+import re
+import imp
 import random as ran
 import sys
 import GSASIIpath
 import GSASIImath as G2mth
+import numpy as np
 
 GSASIIpath.SetVersionNumber("$Revision$")
 
@@ -1097,20 +1100,30 @@ def LookupHistName(hId):
 def fmtVarDescr(varname):
     '''Return a string with a more complete description for a GSAS-II variable 
 
-    TODO: This will not handle rigid body parameters yet
-
-    :param str name: A full G2 variable name with 2 or 3
-       colons (<p>:<h>:name[:<a>])
+    :param str name: A full G2 variable name with 2 or 3 or 4
+       colons (<p>:<h>:name[:<a>] or <p>::RBname:<?>:<?>])
        
     :returns: a string with the description
+    '''
+    s,l = VarDescr(varname)
+    return s+": "+l
+
+def VarDescr(varname):
+    '''Return two strings with a more complete description for a GSAS-II variable 
+
+    :param str name: A full G2 variable name with 2 or 3 or 4
+       colons (<p>:<h>:name[:<a>] or <p>::RBname:<?>:<?>])
+       
+    :returns: (loc,meaning) where loc describes what item the variable is mapped
+      (phase, histogram, etc.) and meaning describes what the variable does.
     '''
     
     l = getVarDescr(varname)
     if not l:
         return "invalid variable name ("+str(varname)+")!"
 
-    if not l[4]:
-        l[4] = "(variable needs a definition!)"
+    if not l[-1]:
+        l[-1] = "(variable needs a definition!)"
 
     s = ""
     if l[0] is not None and l[1] is not None: # HAP: keep short
@@ -1122,17 +1135,20 @@ def fmtVarDescr(varname):
             hlbl = 'Pwd='+hlbl[5:]
         else:
             hlbl = 'Hist='+hlbl
-        s = "Ph="+str(lbl)+" * "+str(hlbl)+": "
+        s = "Ph="+str(lbl)+" * "+str(hlbl)
+    elif l[4] is not None: # rigid body parameter
+        lbl = ShortPhaseNames.get(l[0],'phase?')
+        s = "Res #"+str(l[3])+" body #"+str(l[4])+" in "+str(lbl)
     elif l[3] is not None: # atom parameter, 
         lbl = ShortPhaseNames.get(l[0],'phase?')
         try:
             albl = LookupAtomLabel(l[0],l[3])[0]
         except KeyError:
             albl = 'Atom?'
-        s = "Atom "+str(albl)+" in "+str(lbl)+": "
+        s = "Atom "+str(albl)+" in "+str(lbl)
     elif l[0] is not None:
         lbl = ShortPhaseNames.get(l[0],'phase?')
-        s = "Phase "+str(lbl)+": "
+        s = "Phase "+str(lbl)
     elif l[1] is not None:
         hlbl = ShortHistNames.get(l[1],'? #'+str(l[1]))
         if hlbl[:4] == 'HKLF':
@@ -1141,20 +1157,19 @@ def fmtVarDescr(varname):
             hlbl = 'Pwd='+hlbl[5:]
         else:
             hlbl = 'Hist='+hlbl
-        s = str(hlbl)+": "    
+        s = str(hlbl)
     if not s:
-        s = 'Global: '
-    s += l[4]
-    return s
+        s = 'Global'
+    return s,l[-1]
 
 def getVarDescr(varname):
     '''Return a short description for a GSAS-II variable 
 
-    :param str name: A full G2 variable name with 2 or 3
-       colons (<p>:<h>:name[:<a>])
+    :param str name: A full G2 variable name with 2 or 3 or 4
+       colons (<p>:<h>:name[:<a1>][:<a2>])
       
-    :returns: a five element list as [`p`,`h`,`name`,`a`,`description`],
-      where `p`, `h`, `a` are str values or `None`, for the phase number,
+    :returns: a six element list as [`p`,`h`,`name`,`a1`,`a2`,`description`],
+      where `p`, `h`, `a1`, `a2` are str values or `None`, for the phase number,
       the histogram number and the atom number; `name` will always be
       an str; and `description` is str or `None`.
       If the variable name is incorrectly formed (for example, wrong
@@ -1162,10 +1177,12 @@ def getVarDescr(varname):
     '''
     l = varname.split(':')
     if len(l) == 3:
+        l += [None,None]
+    elif len(l) == 4:
         l += [None]
-    if len(l) != 4:
+    elif len(l) != 5:
         return None
-    for i in (0,1,3):
+    for i in (0,1,3,4):
         if l[i] == "":
             l[i] = None
     l += [getDescr(l[2])]
@@ -1192,7 +1209,6 @@ def CompileVarDesc():
     in the value when used.
     
     '''
-    import re
     if reVarDesc: return # already done
     for key,value in {
         # Phase vars (p::<var>)
@@ -1224,6 +1240,12 @@ def CompileVarDesc():
         'Zero' : 'Debye-Scherrer zero correction',
         'nDebye' : 'Debye model background corr. terms',
         'nPeaks' : 'Fixed peak background corr. terms',
+        'RBV.*' : 'Vector rigid body parameter',
+        'RBR.*' : 'Residue rigid body parameter',
+        'RBRO([aijk])' : 'Residue rigid body orientation parameter',
+        'RBRP([xyz])' : 'Residue rigid body position parameter',
+        'RBRTr;.*' : 'Residue rigid body torsion parameter',
+        'RBR([TLS])([123AB][123AB])' : 'Residue rigid body group disp. param.',
         # Global vars (::<var>)
         }.items():
         VarDesc[key] = value
@@ -1244,6 +1266,60 @@ def getDescr(name):
             return m.expand(reVarDesc[key])
     return None
 
+def GenWildCard(varlist):
+    '''Generate wildcard versions of G2 variables. These introduce '*'
+    for a phase, histogram or atom number (but only for one of these
+    fields) but only when there is more than one matching variable in the
+    input variable list. So if the input is this::
+    
+      varlist = ['0::AUiso:0', '0::AUiso:1', '1::AUiso:0']
+
+    then the output will be this::
+    
+       wildList = ['*::AUiso:0', '0::AUiso:*']
+
+    :param list varlist: an input list of GSAS-II variable names
+      (such as 0::AUiso:0)
+
+    :returns: wildList, the generated list of wild card variable names.
+    '''
+    wild = []
+    for i in (0,1,3):
+        currentL = varlist[:]
+        while currentL:
+            item1 = currentL.pop(0)
+            i1splt = item1.split(':')
+            if i >= len(i1splt): continue
+            if i1splt[i]:
+                nextL = []
+                i1splt[i] = '[0-9]+'
+                rexp = re.compile(':'.join(i1splt))
+                matchlist = [item1]
+                for nxtitem in currentL:
+                    if rexp.match(nxtitem):
+                        matchlist += [nxtitem]
+                    else:
+                        nextL.append(nxtitem)
+                if len(matchlist) > 1:
+                    i1splt[i] = '*'
+                    wild.append(':'.join(i1splt))
+                currentL = nextL
+    return wild
+
+def LookupWildCard(varname,varlist):
+    '''returns a list of variable names from list varname
+    that match wildcard name in varname
+    
+    :param str varname: a G2 variable name containing a wildcard
+      (such as \*::var)
+    :param list varlist: the list of all variable names used in
+      the current project
+    :returns: a list of matching GSAS-II variables (may be empty)  
+    '''
+    rexp = re.compile(varname.replace('*','[0-9]+'))
+    return sorted([var for var in varlist if rexp.match(var)])
+
+
 def _lookup(dic,key):
     '''Lookup a key in a dictionary, where None returns an empty string
     but an unmatched key returns a question mark. Used in :class:`G2VarObj`
@@ -1261,6 +1337,8 @@ class G2VarObj(object):
     variables by phase/atom/histogram number (which can change).
     Note that :func:`LoadID` should be used to (re)load the current Ids
     before creating or later using the G2VarObj object.
+
+    TODO: This does not handle rigid body variables at present
 
     A :class:`G2VarObj` object can be created with a single parameter:
     
@@ -1405,3 +1483,457 @@ class G2VarObj(object):
         print 'hists', self.IDdict['hists']
         print 'atomDict', self.IDdict['atoms']
 
+#==========================================================================
+# shortcut routines
+exp = np.exp
+sind = lambda x: np.sin(x*np.pi/180.)
+tand = lambda x: np.tan(x*np.pi/180.)
+cosd = lambda x: np.cos(x*np.pi/180.)
+sind = sin = s = lambda x: np.sin(x*np.pi/180.)
+cosd = cos = c = lambda x: np.cos(x*np.pi/180.)
+tand = tan = t = lambda x: np.tan(x*np.pi/180.)
+sqrt = sq = lambda x: np.sqrt(x)
+pi = lambda: np.pi
+class ExpressionObj(object):
+    '''Defines an object with a user-defined expression, to be used for
+    secondary fits or restraints. Object is created null, but is changed
+    using :meth:`LoadExpression`. This contains only the minimum
+    information that needs to be stored to save and load the expression
+    and how it is mapped to GSAS-II variables. 
+    '''
+    def __init__(self):
+        self.expression = ''
+        'The expression as a text string'
+        self.assgnVars = {}
+        '''A dict where keys are label names in the expression mapping to a GSAS-II
+        variable. The value is a list with a G2 variable name and derivative step size.
+        Note that the G2 variable name may contain a wild-card and correspond to
+        multiple values.
+        '''
+        self.freeVars = {}
+        '''A dict where keys are label names in the expression mapping to a free
+        parameter. The value is a list with:
+
+         * a name assigned to the parameter
+         * a value for to the parameter
+         * a derivative step size and
+         * a flag to determine if the variable is refined.
+        ''' 
+
+        self.lastError = ('','')
+        '''Shows last encountered error in processing expression
+        (list of 1-3 str values)'''
+
+    def LoadExpression(self,expr,exprVarLst,varSelect,varName,varValue,varStep,varRefflag):
+        '''Load the expression and associated settings into the object. Raises
+        an exception if the expression is not parsed, if not all functions
+        are defined or if not all needed parameter labels in the expression
+        are defined.
+
+        This will not test if the variable referenced in these definitions
+        are actually in the parameter dictionary. This is checked when the
+        computation for the expression is done in :meth:`SetupCalc`.
+        
+        :param str expr: the expression
+        :param list exprVarLst: parameter labels found in the expression
+        :param dict varSelect: this will be 0 for Free parameters
+          and non-zero for expression labels linked to G2 variables.
+        :param dict varName: Defines a name (str) associated with each free parameter
+        :param dict varValue: Defines a value (float) associated with each free parameter
+        :param dict varStep: Defines a derivative step size (float) for each
+          parameter labels found in the expression
+        :param dict varRefflag: Defines a refinement flag (bool)
+          associated with each free parameter
+        '''
+        self.expression = expr
+        self.compiledExpr = None
+        self.freeVars = {}
+        self.assgnVars = {}
+        for v in exprVarLst:
+            if varSelect[v] == 0:
+                self.freeVars[v] = [
+                    varName.get(v),
+                    varValue.get(v),
+                    varStep.get(v),
+                    varRefflag.get(v),
+                    ]
+            else:
+                self.assgnVars[v] = [
+                    varName[v],
+                    varStep.get(v),
+                    ]
+        self.CheckVars()
+
+    def EditExpression(self,exprVarLst,varSelect,varName,varValue,varStep,varRefflag):
+        '''Load the expression and associated settings from the object into
+        arrays used for editing.
+
+        :param list exprVarLst: parameter labels found in the expression
+        :param dict varSelect: this will be 0 for Free parameters
+          and non-zero for expression labels linked to G2 variables.
+        :param dict varName: Defines a name (str) associated with each free parameter
+        :param dict varValue: Defines a value (float) associated with each free parameter
+        :param dict varStep: Defines a derivative step size (float) for each
+          parameter labels found in the expression
+        :param dict varRefflag: Defines a refinement flag (bool)
+          associated with each free parameter
+
+        :returns: the expression as a str
+        '''
+        for v in self.freeVars:
+            varSelect[v] = 0
+            varName[v] = self.freeVars[v][0]
+            varValue[v] = self.freeVars[v][1]
+            varStep[v] = self.freeVars[v][2]
+            varRefflag[v] = self.freeVars[v][3]
+        for v in self.assgnVars:
+            varSelect[v] = 1
+            varName[v] = self.assgnVars[v][0]
+            varStep[v] = self.assgnVars[v][1]
+        return self.expression
+
+    def GetVaried(self):
+        'Returns the names of the free parameters that will be refined'
+        return ["::"+self.freeVars[v][0] for v in self.freeVars if self.freeVars[v][3]]
+
+    def CheckVars(self):
+        '''Check that the expression can be parsed, all functions are
+        defined and that input loaded into the object is internally
+        consistent. If not an Exception is raised.
+
+        :returns: a dict with references to packages needed to
+          find functions referenced in the expression.
+        '''
+        ret = self.ParseExpression(self.expression)
+        if not ret:
+            raise Exception("Expression parse error")
+        exprLblList,fxnpkgdict = ret
+        # check each var used in expression is defined
+        defined = self.assgnVars.keys() + self.freeVars.keys()
+        notfound = []
+        for var in exprLblList:
+            if var not in defined:
+                notfound.append(var)
+        if notfound:
+            msg = 'Not all variables defined'
+            msg1 = 'The following variables were not defined: '
+            msg2 = ''
+            for var in notfound:
+                if msg: msg += ', '
+                msg += var
+            self.lastError = (msg1,'  '+msg2)
+            raise Exception(msg)
+        return fxnpkgdict
+
+    def ParseExpression(self,expr):
+        '''Parse an expression and return a dict of called functions and
+        the variables used in the expression. Returns None in case an error
+        is encountered. If packages are referenced in functions, they are loaded 
+        and the functions are looked up into the modules global
+        workspace. 
+        
+        Note that no changes are made to the object other than
+        saving an error message, so that this can be used for testing prior
+        to the save. 
+
+        :returns: a list of variables used variables
+        '''
+        self.lastError = ('','')
+        import ast
+        def FindFunction(f):
+            '''Find the object corresponding to function f
+            :param str f: a function name such as 'numpy.exp'
+            :returns: (pkgdict,pkgobj) where pkgdict contains a dict
+              that defines the package location(s) and where pkgobj
+              defines the object associated with the function.
+              If the function is not found, pkgobj is None.
+            '''
+            df = f.split('.')
+            pkgdict = {}
+            # no listed package, try in current namespace
+            if len(df) == 1: 
+                try:
+                    fxnobj = eval(f)
+                    return pkgdict,fxnobj
+                except (AttributeError, NameError):
+                    return None
+            else:
+                try:
+                    fxnobj = eval(f)
+                    pkgdict[df[0]] = eval(df[0])
+                    return pkgdict,fxnobj
+                except (AttributeError, NameError):
+                    pass
+            # includes a package, lets try to load the packages
+            pkgname = ''
+            path = sys.path
+            for pkg in f.split('.')[:-1]: # if needed, descend down the tree
+                if pkgname:
+                    pkgname += '.' + pkg
+                else:
+                    pkgname = pkg
+                fp = None
+                try:
+                    fp, fppath,desc = imp.find_module(pkg,path)
+                    pkgobj = imp.load_module(pkg,fp,fppath,desc)
+                    pkgdict[pkgname] = pkgobj
+                    path = [fppath]
+                except Exception as msg:
+                    print('load of '+pkgname+' failed with error='+str(msg))
+                    return {},None
+                finally:
+                    if fp: fp.close()
+                try:
+                    #print 'before',pkgdict.keys()
+                    fxnobj = eval(f,globals(),pkgdict)
+                    #print 'after 1',pkgdict.keys()
+                    #fxnobj = eval(f,pkgdict)
+                    #print 'after 2',pkgdict.keys()
+                    return pkgdict,fxnobj
+                except:
+                    continue
+            return None # not found
+        def ASTtransverse(node,fxn=False):
+            '''Transverse a AST-parsed expresson, compiling a list of variables
+            referenced in the expression. This routine is used recursively.
+
+            :returns: varlist,fxnlist where
+              varlist is a list of referenced variable names and
+              fxnlist is a list of used functions
+            '''
+            varlist = []
+            fxnlist = []
+            if isinstance(node, list):
+                for b in node:
+                    v,f = ASTtransverse(b,fxn)
+                    varlist += v
+                    fxnlist += f
+            elif isinstance(node, ast.AST):
+                for a, b in ast.iter_fields(node):
+                    if isinstance(b, ast.AST):
+                        if a == 'func': 
+                            fxnlist += ['.'.join(ASTtransverse(b,True)[0])]
+                            continue
+                        v,f = ASTtransverse(b,fxn)
+                        varlist += v
+                        fxnlist += f
+                    elif isinstance(b, list):
+                        v,f = ASTtransverse(b,fxn)
+                        varlist += v
+                        fxnlist += f
+                    elif node.__class__.__name__ == "Name":
+                        varlist += [b]
+                    elif fxn and node.__class__.__name__ == "Attribute":
+                        varlist += [b]
+            return varlist,fxnlist
+        try:
+            exprast = ast.parse(expr)
+        except SyntaxError as err:
+            s = ''
+            for i in traceback.format_exc().splitlines()[-3:-1]:
+                if s: s += "\n"
+                s += str(i)
+            self.lastError = ("Error parsing expression:",s)
+            return
+        # find the variables & functions
+        v,f = ASTtransverse(exprast)
+        varlist = sorted(list(set(v)))
+        fxnlist = list(set(f))
+        pkgdict = {}
+        # check the functions are defined
+        for fxn in fxnlist:
+            fxndict,fxnobj = FindFunction(fxn)
+            if not fxnobj:
+                self.lastError = ("Error: Invalid function",fxn,
+                                  "is not defined")
+                return
+            if not hasattr(fxnobj,'__call__'):
+                self.lastError = ("Error: Not a function.",fxn,
+                                  "cannot be called as a function")
+                return
+            pkgdict.update(fxndict)
+        return varlist,pkgdict
+
+#==========================================================================
+class ExpressionCalcObj(object):
+    '''An object used to evaluate an expression from a :class:`ExpressionObj`
+    object.
+    
+    :param ExpressionObj exprObj: a :class:`~ExpressionObj` expression object with
+      an expression string and mappings for the parameter labels in that object.
+    '''
+    def __init__(self,exprObj):
+        self.eObj = exprObj
+        'The expression and mappings; a :class:`ExpressionObj` object'
+        self.compiledExpr = None
+        'The expression as compiled byte-code'
+        self.exprDict = {}
+        '''dict that defines values for labels used in expression and packages
+        referenced by functions
+        '''
+        self.derivStep = {}
+        '''Contains step sizes for derivatives for variables used in the expression;
+        if a variable is not included in this the derivatives will be computed as zero
+        '''
+        self.lblLookup = {}
+        '''Lookup table that specifies the expression label name that is
+        tied to a particular GSAS-II parameters in the parmDict.
+        '''
+        self.fxnpkgdict = {}
+        '''a dict with references to packages needed to
+        find functions referenced in the expression.
+        '''
+        self.varLookup = {}
+        '''Lookup table that specifies the GSAS-II variable(s)
+        indexed by the expression label name. (Used for only for diagnostics
+        not evaluation of expression.)
+        '''
+        
+    def SetupCalc(self,parmDict):
+        '''Do all preparations to use the expression for computation.
+        Adds the free parameter values to the parameter dict (parmDict).
+        '''
+        self.fxnpkgdict = self.eObj.CheckVars()
+        # all is OK, compile the expression
+        self.compiledExpr = compile(self.eObj.expression,'','eval')
+
+        # look at first value in parmDict to determine its type
+        parmsInList = True
+        for key in parmDict:
+            val = parmDict[key]
+            if isinstance(val, basestring):
+                parmsInList = False
+                break
+            try: # check if values are in lists
+                val = parmDict[key][0]
+            except TypeError:
+                parmsInList = False
+            break
+            
+        # set up the dicts needed to speed computations
+        self.exprDict = {}
+        self.derivStep = {}
+        self.lblLookup = {}
+        self.varLookup = {}
+        for v in self.eObj.freeVars:
+            varname = self.eObj.freeVars[v][0]
+            varname = "::" + varname.lstrip(':').replace(' ','_').replace(':',';')
+            self.lblLookup[varname] = v
+            self.varLookup[v] = varname
+            if parmsInList:
+                parmDict[varname] = [self.eObj.freeVars[v][1],self.eObj.freeVars[v][3]]
+            else:
+                parmDict[varname] = self.eObj.freeVars[v][1]
+            self.exprDict[v] = self.eObj.freeVars[v][1]
+            if self.eObj.freeVars[v][3]:
+                self.derivStep[varname] = self.eObj.freeVars[v][2]
+        for v in self.eObj.assgnVars:
+            step = self.eObj.assgnVars[v][1]
+            varname = self.eObj.assgnVars[v][0]
+            if '*' in varname:
+                varlist = LookupWildCard(varname,parmDict.keys())
+                if len(varlist) == 0:
+                    raise Exception,"No variables match "+str(v)
+                for var in varlist:
+                    self.lblLookup[var] = v
+                    self.derivStep[var] = np.array(
+                        [step if var1 == var else 0 for var1 in varlist]
+                        )
+                if parmsInList:
+                    self.exprDict[v] = np.array([parmDict[var][0] for var in varlist])
+                else:
+                    self.exprDict[v] = np.array([parmDict[var] for var in varlist])
+                self.varLookup[v] = [var for var in varlist]
+            elif varname in parmDict:
+                self.lblLookup[varname] = v
+                self.varLookup[v] = varname
+                if parmsInList:
+                    self.exprDict[v] = parmDict[varname][0]
+                else:
+                    self.exprDict[v] = parmDict[varname]
+                self.derivStep[varname] = step
+            else:
+                raise Exception,"No value for variable "+str(v)
+        self.exprDict.update(self.fxnpkgdict)
+
+    def EvalExpression(self):
+        '''Evaluate an expression. Note that the expression
+        and mapping are taken from the :class:`ExpressionObj` expression object
+        and the parameter values were specified in :meth:`SetupCalc`.
+        :returns: a single value for the expression. If parameter
+        values are arrays (for example, from wild-carded variable names),
+        the sum of the resulting expression is return.
+
+        For example, if the expression is ``'A*B'``,
+        where A is 2.0 and B maps to ``'1::Afrac:*'``, which evaluates to::
+
+        [0.5, 1, 0.5]
+
+        then the result will be ``4.0``.
+        '''
+        if self.compiledExpr is None:
+            raise Exception,"EvalExpression called before SetupCalc"
+        val = eval(self.compiledExpr,globals(),self.exprDict)
+        if not np.isscalar(val):
+            val = np.sum(val)
+        return val
+
+    def EvalDeriv(self,varname):
+        '''Evaluate the expression derivative with respect to a
+        GSAS-II variable name. 
+
+        :param str varname: a G2 variable name (will not have a wild-card)
+        :returns: the derivative
+        '''
+        if varname not in self.derivStep: return 0.0
+        if varname not in self.lblLookup: return 0.0
+        step = self.derivStep[varname]
+        lbl = self.lblLookup[varname] # what label does this map to in expression?
+        origval = self.exprDict[lbl]
+
+        self.exprDict[lbl] = origval + step
+        val1 = eval(self.compiledExpr,globals(),self.exprDict)
+
+        self.exprDict[lbl] = origval - step
+        val2 = eval(self.compiledExpr,globals(),self.exprDict)
+
+        self.exprDict[lbl] = origval # reset back to central value
+
+        val = (val1 - val2) / (2.*np.max(step))
+        if not np.isscalar(val):
+            val = np.sum(val)
+        return val
+
+if __name__ == "__main__":
+    # test equation evaluation
+    def showEQ(calcobj):
+        print 50*'='
+        print calcobj.eObj.expression,'=',calcobj.EvalExpression()
+        for v in sorted(calcobj.varLookup):
+            print "  ",v,'=',calcobj.exprDict[v],'=',calcobj.varLookup[v]
+        print '  Derivatives'
+        for v in calcobj.derivStep.keys():
+            print '    d(Expr)/d('+v+') =',calcobj.EvalDeriv(v)
+
+    obj = ExpressionObj()
+
+    obj.expression = "A*np.exp(B)"
+    obj.assgnVars =  {'B': ['0::Afrac:1', 0.0001]}
+    obj.freeVars =  {'A': [u'A', 0.5, 0.0001, True]}
+    #obj.CheckVars()
+    parmDict2 = {'0::Afrac:0':[0.0,True], '0::Afrac:1': [1.0,False]}
+    calcobj = ExpressionCalcObj(obj)
+    calcobj.SetupCalc(parmDict2)
+    showEQ(calcobj)
+
+    obj.expression = "A*np.exp(B)"
+    obj.assgnVars =  {'B': ['0::Afrac:*', 0.0001]}
+    obj.freeVars =  {'A': [u'Free Prm A', 0.5, 0.0001, True]}
+    #obj.CheckVars()
+    parmDict1 = {'0::Afrac:0':1.0, '0::Afrac:1': 1.0}
+    calcobj = ExpressionCalcObj(obj)
+    calcobj.SetupCalc(parmDict1)
+    showEQ(calcobj)
+
+    calcobj.SetupCalc(parmDict2)
+    showEQ(calcobj)

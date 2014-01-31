@@ -309,7 +309,7 @@ def UpdateConstraints(G2frame,data):
         :returns: a constraint, as defined in
           :ref:`GSASIIobj <Constraint_definitions_table>`
         '''
-        atchoice = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
+        choices = [[i]+list(G2obj.VarDescr(i)) for i in varList]
         meaning = G2obj.getDescr(FrstVarb.name)
         if not meaning:
             meaning = "(no definition found!)"
@@ -354,7 +354,7 @@ def UpdateConstraints(G2frame,data):
                         var = ph+"::"+nam
                         if var == str(FrstVarb) or var in varList: continue
                         varList += [var]
-                        atchoice += ['('+var+') '+plbl+": "+meaning]
+                        choices.append([var,plbl,meaning])
             else:
                 for nam in nameList:
                     for ph,plbl in zip(phaselist,phaselbl):
@@ -369,7 +369,7 @@ def UpdateConstraints(G2frame,data):
                             var = ph+"::"+nam+":"+akey
                             if var == str(FrstVarb) or var in varList: continue
                             varList += [var]
-                            atchoice += ['('+var+') '+albl+plbl+": "+meaning]
+                            choices.append([var,albl+plbl,meaning])
         elif page[1] == 'hap':
             for nam in nameList:
                 for ph,plbl in zip(phaselist,phaselbl):
@@ -383,7 +383,7 @@ def UpdateConstraints(G2frame,data):
                             var = ph+":"+hst+":"+nam
                             if var == str(FrstVarb) or var in varList: continue
                             varList += [var]
-                            atchoice += ['('+var+') '+plbl+hlbl+": "+meaning]
+                            choices.append([var,plbl+hlbl,meaning])
         elif page[1] == 'hst':
             for nam in nameList:
                 for hst,hlbl in zip(histlist,histlbl):
@@ -392,16 +392,22 @@ def UpdateConstraints(G2frame,data):
                         var = ":"+hst+":"+nam
                         if var == str(FrstVarb) or var in varList: continue
                         varList += [var]
-                        atchoice += ['('+var+') '+hlbl+": "+meaning]
+                        choices.append([var,hlbl,meaning])
         elif page[1] == 'glb':
             pass
         else:
             raise Exception, 'Unknown constraint page '+ page[1]                    
-        if len(atchoice):
-            dlg = wx.MultiChoiceDialog(
+        if len(choices):
+            l1 = l2 = 1
+            for i1,i2,i3 in choices:
+                l1 = max(l1,len(i1))
+                l2 = max(l2,len(i2))
+            fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
+            atchoice = [fmt.format(*i) for i in choices]
+            dlg = G2gd.G2MultiChoiceDialog(
                 G2frame.dataFrame,legend,
-                'Constrain '+str(FrstVarb)+' with...',atchoice)
-            dlg.SetSize((625,250))
+                'Constrain '+str(FrstVarb)+' with...',atchoice,
+                toggle=False,size=(625,400),monoFont=True)
             dlg.CenterOnParent()
             res = dlg.ShowModal()
             Selections = dlg.GetSelections()[:]
@@ -590,11 +596,18 @@ def UpdateConstraints(G2frame,data):
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
                                 parent=G2frame.dataFrame)
             return
-        varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
+        l2 = l1 = 1
+        for i in varList:
+            l1 = max(l1,len(i))
+            loc,desc = G2obj.VarDescr(i)
+            l2 = max(l2,len(loc))
+        fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
+        varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in varList]
+        #varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
         legend = "Select variables to hold (Will not be varied, even if vary flag is set)"
         dlg = G2gd.G2MultiChoiceDialog(
             G2frame.dataFrame,
-            legend,title1,varListlbl,toggle=False,size=(625,250))
+            legend,title1,varListlbl,toggle=False,size=(625,400),monoFont=True)
         dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
             for sel in dlg.GetSelections():
@@ -616,9 +629,8 @@ def UpdateConstraints(G2frame,data):
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
                                 parent=G2frame.dataFrame)
             return
-        varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
         legend = "Select variables to make equivalent (only one of the variables will be varied when all are set to be varied)"
-        GetAddVars(page,title1,title2,varList,varListlbl,constrDictEnt,'equivalence')
+        GetAddVars(page,title1,title2,varList,constrDictEnt,'equivalence')
    
     def OnAddFunction(event):
         '''add a Function (new variable) constraint'''
@@ -630,9 +642,8 @@ def UpdateConstraints(G2frame,data):
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
                                 parent=G2frame.dataFrame)
             return
-        varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
         legend = "Select variables to include in a new variable (the new variable will be varied when all included variables are varied)"
-        GetAddVars(page,title1,title2,varList,varListlbl,constrDictEnt,'function')
+        GetAddVars(page,title1,title2,varList,constrDictEnt,'function')
                         
     def OnAddConstraint(event):
         '''add a constraint equation to the constraints list'''
@@ -644,16 +655,24 @@ def UpdateConstraints(G2frame,data):
             G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
                                 parent=G2frame.dataFrame)
             return
-        varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
         legend = "Select variables to include in a constraint equation (the values will be constrainted to equal a specified constant)"
-        GetAddVars(page,title1,title2,varList,varListlbl,constrDictEnt,'constraint')
+        GetAddVars(page,title1,title2,varList,constrDictEnt,'constraint')
 
-    def GetAddVars(page,title1,title2,varList,varListlbl,constrDictEnt,constType):
+    def GetAddVars(page,title1,title2,varList,constrDictEnt,constType):
         '''Get the variables to be added for OnAddEquivalence, OnAddFunction,
         and OnAddConstraint. Then create and check the constraint.
         '''
-        dlg = wx.SingleChoiceDialog(G2frame.dataFrame,'Select 1st variable:',title1,varListlbl)
-        dlg.SetSize((625,250))
+        #varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
+        l2 = l1 = 1
+        for i in varList:
+            l1 = max(l1,len(i))
+            loc,desc = G2obj.VarDescr(i)
+            l2 = max(l2,len(loc))
+        fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
+        varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in varList]        
+        dlg = G2gd.G2SingleChoiceDialog(G2frame.dataFrame,'Select 1st variable:',
+                                      title1,varListlbl,
+                                      monoFont=True,size=(625,400))
         dlg.CenterOnParent()
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()

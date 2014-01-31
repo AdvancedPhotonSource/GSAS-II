@@ -1424,13 +1424,14 @@ class G2MultiChoiceDialog(wx.Dialog):
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
             topSizer.Add(wx.StaticText(self,wx.ID_ANY,'Filter: '),0,wx.ALL,1)
-            self.txt = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1))
-            self.txt.Bind(wx.EVT_CHAR,self.onChar)
-        topSizer.Add(self.txt,0,wx.ALL,0)
+            self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
+            self.filterBox.Bind(wx.EVT_CHAR,self.onChar)
+            self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
+        topSizer.Add(self.filterBox,0,wx.ALL,0)
         Sizer.Add(topSizer,0,wx.ALL|wx.EXPAND,8)
         self.clb = wx.CheckListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
         if monoFont:
-            font1 = wx.Font(self.clb.GetFont().GetPointSize()-1,
+            font1 = wx.Font(self.clb.GetFont().GetPointSize(),
                             wx.MODERN, wx.NORMAL, wx.NORMAL, False)
             self.clb.SetFont(font1)
         self.numchoices = len(ChoiceList)
@@ -1450,9 +1451,9 @@ class G2MultiChoiceDialog(wx.Dialog):
         # OK/Cancel buttons
         btnsizer = wx.StdDialogButtonSizer()
         if useOK:
-            OKbtn = wx.Button(self, wx.ID_OK)
-            OKbtn.SetDefault()
-            btnsizer.AddButton(OKbtn)
+            self.OKbtn = wx.Button(self, wx.ID_OK)
+            self.OKbtn.SetDefault()
+            btnsizer.AddButton(self.OKbtn)
         if useCANCEL:
             btn = wx.Button(self, wx.ID_CANCEL)
             btnsizer.AddButton(btn)
@@ -1473,12 +1474,15 @@ class G2MultiChoiceDialog(wx.Dialog):
         for i in range(self.numchoices):
             self.clb.Check(i,not self.clb.IsChecked(i))
     def onChar(self,event):
+        self.OKbtn.Enable(False)
         if self.timer.IsRunning():
             self.timer.Stop()
         self.timer.Start(1000,oneShot=True)
         event.Skip()
     def Filter(self,event):
-        txt = self.txt.GetValue()
+        if self.timer.IsRunning():
+            self.timer.Stop()
+        txt = self.filterBox.GetValue()
         self.clb.Clear()
         self.Update()
         self.filterlist = []
@@ -1493,6 +1497,7 @@ class G2MultiChoiceDialog(wx.Dialog):
             self.filterlist = range(len(self.ChoiceList))
             ChoiceList = self.ChoiceList
         self.clb.AppendItems(ChoiceList)
+        self.OKbtn.Enable(True)
 
 ################################################################################
 
@@ -1544,14 +1549,16 @@ class G2SingleChoiceDialog(wx.Dialog):
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
             topSizer.Add(wx.StaticText(self,wx.ID_ANY,'Filter: '),0,wx.ALL,1)
-            self.txt = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1))
-            self.txt.Bind(wx.EVT_CHAR,self.onChar)
-        topSizer.Add(self.txt,0,wx.ALL,0)
+            self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),
+                                         style=wx.TE_PROCESS_ENTER)
+            self.filterBox.Bind(wx.EVT_CHAR,self.onChar)
+            self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
+        topSizer.Add(self.filterBox,0,wx.ALL,0)
         Sizer.Add(topSizer,0,wx.ALL|wx.EXPAND,8)
         self.clb = wx.ListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
         self.clb.Bind(wx.EVT_LEFT_DCLICK,self.onDoubleClick)
         if monoFont:
-            font1 = wx.Font(self.clb.GetFont().GetPointSize()-1,
+            font1 = wx.Font(self.clb.GetFont().GetPointSize(),
                             wx.MODERN, wx.NORMAL, wx.NORMAL, False)
             self.clb.SetFont(font1)
         self.numchoices = len(ChoiceList)
@@ -1560,9 +1567,9 @@ class G2SingleChoiceDialog(wx.Dialog):
         # OK/Cancel buttons
         btnsizer = wx.StdDialogButtonSizer()
         if useOK:
-            OKbtn = wx.Button(self, wx.ID_OK)
-            OKbtn.SetDefault()
-            btnsizer.AddButton(OKbtn)
+            self.OKbtn = wx.Button(self, wx.ID_OK)
+            self.OKbtn.SetDefault()
+            btnsizer.AddButton(self.OKbtn)
         if useCANCEL:
             btn = wx.Button(self, wx.ID_CANCEL)
             btnsizer.AddButton(btn)
@@ -1579,12 +1586,15 @@ class G2SingleChoiceDialog(wx.Dialog):
             return wx.NOT_FOUND
         return self.filterlist[i]
     def onChar(self,event):
+        self.OKbtn.Enable(False)
         if self.timer.IsRunning():
             self.timer.Stop()
         self.timer.Start(1000,oneShot=True)
         event.Skip()
     def Filter(self,event):
-        txt = self.txt.GetValue()
+        if self.timer.IsRunning():
+            self.timer.Stop()
+        txt = self.filterBox.GetValue()
         self.clb.Clear()
         self.Update()
         self.filterlist = []
@@ -1599,6 +1609,7 @@ class G2SingleChoiceDialog(wx.Dialog):
             self.filterlist = range(len(self.ChoiceList))
             ChoiceList = self.ChoiceList
         self.clb.AppendItems(ChoiceList)
+        self.OKbtn.Enable(True)
     def onDoubleClick(self,event):
         self.EndModal(wx.ID_OK)
 

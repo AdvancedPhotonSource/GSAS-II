@@ -71,13 +71,16 @@ def SetDefaultSample():
         'Temperature':300.,'Pressure':0.1,
         'FreePrm1':0.,'FreePrm2':0.,'FreePrm3':0.,
         'Gonio. radius':200.0,
-        'Omega':0.0,'Chi':0.0,'Phi':0.0
+        'Omega':0.0,'Chi':0.0,'Phi':0.0,
+#SASD items
+        'Materials':[{'Name':'vacuum','VolFrac':1.0,},{'Name':'vacuum','VolFrac':0.0,}],
+        'Thick':1.0,
         }
         
 def SetDefaultSASDModel():
     'Fills in default items for the SASD Models dictionary'    
     return {'Back':[0.0,False],'Size':{'MinMaxDiam':[50.,10000.],'Nbins':100,
-        'Contrast':['vacuum','vacuum'],'Method':'MaxEnt','Distribution':[],
+        'Method':'MaxEnt','Distribution':[],
         'Shape':['Spheroid',1.0],'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':1e-6},
         'IPG':{'Niter':100,'Approach':0.8},'Reg':{},},            
         'Unified':{'Levels':[],},            
@@ -1134,6 +1137,7 @@ def UpdateSampleGrid(G2frame,data):
                 copyNames += ['Shift','Transparency','SurfRoughA','SurfRoughB']
         elif 'SASD' in histName:
             histType = 'SASD'
+            copyNames += ['Materials','Thick',]
         if len(addNames):
          copyNames += addNames
         return histType,copyNames
@@ -1189,7 +1193,7 @@ def UpdateSampleGrid(G2frame,data):
     
     def OnSampleCopy(event):
         histType,copyNames = SetCopyNames(histName,
-            addNames=['Omega','Chi','Phi','Gonio. radius','InstrName'])
+            addNames = ['Omega','Chi','Phi','Gonio. radius','InstrName'])
         copyDict = {}
         for parm in copyNames:
             copyDict[parm] = data[parm]
@@ -1352,6 +1356,8 @@ def UpdateSampleGrid(G2frame,data):
                 ['Transparency',u'Sample transparency(1/\xb5eff, cm): ',[10,3]],
                 ['SurfRoughA','Surface roughness A: ',[10,4]],
                 ['SurfRoughB','Surface roughness B: ',[10,4]]]
+    elif 'SASD' in histName:
+        pass
     parms.append(['Omega','Goniometer omega:',[10,3]])
     parms.append(['Chi','Goniometer chi:',[10,3]])
     parms.append(['Phi','Goniometer phi:',[10,3]])
@@ -2229,10 +2235,10 @@ def UpdateSubstanceGrid(G2frame,data):
             if len(Indx[Obj.GetId()]) == 3:
                 name,El,keyId = Indx[Obj.GetId()]
                 try:
-                    value = max(0,int(Obj.GetValue()))
+                    value = max(0,float(Obj.GetValue()))
                 except ValueError:
                     value = 0
-                    Obj.SetValue(str(value))
+                    Obj.SetValue('%.2f'%(value))
                 data['Substances'][name]['Elements'][El][keyId] = value
                 data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
                 data['Substances'][name]['Density'] = \
@@ -2278,7 +2284,7 @@ def UpdateSubstanceGrid(G2frame,data):
                 for El in Elems:
                     elSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+El+': '),
                         0,wx.ALIGN_CENTER_VERTICAL)
-                    num = wx.TextCtrl(G2frame.dataDisplay,value=str(Elems[El]['Num']),style=wx.TE_PROCESS_ENTER)
+                    num = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(Elems[El]['Num']),style=wx.TE_PROCESS_ENTER)
                     Indx[num.GetId()] = [name,El,'Num']
                     num.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
                     num.Bind(wx.EVT_KILL_FOCUS,OnValueChange)

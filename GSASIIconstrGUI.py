@@ -456,8 +456,12 @@ def UpdateConstraints(G2frame,data):
                         var = ph + ":" + hst + ":" + l[2]
                         if var in varbs: continue
                         varbs.append(var)
-            else: # constraints with atoms
-                if l[3] == "all":
+            else: # constraints with atoms or rigid bodies
+                if len(l) == 5: # rigid body parameter
+                    var = ':'.join(l)
+                    if var in varbs: continue
+                    varbs.append(var)
+                elif l[3] == "all":
                     for ph in phlist:
                         key = G2obj.LookupPhaseName(l[0])[0]
                         for hst in hstlist: # should be blank

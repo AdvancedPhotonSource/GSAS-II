@@ -2381,6 +2381,7 @@ class DataFrame(wx.Frame):
         self.PostfillDataMenu()
             
         # Restraints
+        self.RestraintTab = wx.Menu(title='')
         self.RestraintEdit = wx.Menu(title='')
         self.RestraintEdit.Append(id=wxID_RESTSELPHASE, kind=wx.ITEM_NORMAL,text='Select phase',
             help='Select phase')
@@ -2402,6 +2403,7 @@ class DataFrame(wx.Frame):
 
         self.RestraintMenu = wx.MenuBar()
         self.PrefillDataMenu(self.RestraintMenu,helpType='Restraints')
+        self.RestraintMenu.Append(menu=self.RestraintTab, title='Select tab')
         self.RestraintMenu.Append(menu=self.RestraintEdit, title='Edit')
         self.PostfillDataMenu()
             

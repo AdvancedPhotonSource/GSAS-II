@@ -1338,7 +1338,8 @@ class G2VarObj(object):
     Note that :func:`LoadID` should be used to (re)load the current Ids
     before creating or later using the G2VarObj object.
 
-    TODO: This does not handle rigid body variables at present
+    This can store rigid body variables, but does not translate the residue # and
+    body # to/from random Ids
 
     A :class:`G2VarObj` object can be created with a single parameter:
     
@@ -1348,11 +1349,13 @@ class G2VarObj(object):
      * p is the phase number (which may be left blank or may be '*' to indicate all phases); 
      * h is the histogram number (which may be left blank or may be '*' to indicate all histograms); 
      * a is the atom number (which may be left blank in which case the third colon is omitted).
-       The atom number can be specified as '*' if a phase number is specified (not as '*')
+       The atom number can be specified as '*' if a phase number is specified (not as '*').
+       For rigid body variables, specify a will be a string of form "residue:body#"
 
       Alternately a single tuple of form (Phase,Histogram,VarName,AtomID) can be used, where
       Phase, Histogram, and AtomID are None or are ranId values (or one can be '*')
       and VarName is a string. Note that if Phase is '*' then the AtomID is an atom number.
+      For a rigid body variables, AtomID is a string of form "residue:body#".
 
     If four positional arguments are supplied, they are:
 
@@ -1381,11 +1384,15 @@ class G2VarObj(object):
                     self.atom = lst[3]
             else:
                 self.phase = PhaseIdLookup.get(lst[0],[None,None])[1]
-                if len(lst) > 3:
+                if len(lst) == 4:
                     if lst[3] == '*':
                         self.atom = '*'
                     else:
                         self.atom = AtomIdLookup[lst[0]].get(lst[3],[None,None])[1]
+                elif len(lst) == 5:
+                    self.atom = lst[3]+":"+lst[4]
+                else:
+                    raise Exception,"Too many colons in var name "+str(args[0])
 
             if lst[1] == '*':
                 self.histogram = '*'
@@ -1431,7 +1438,9 @@ class G2VarObj(object):
             if self.atom == '*':
                 a = ':*'
             elif self.atom:
-                if ph in AtomRanIdLookup:
+                if ":" in str(self.atom):
+                    a = ":" + str(self.atom)
+                elif ph in AtomRanIdLookup:
                     a = ":" + AtomRanIdLookup[ph].get(self.atom,'?')
                 else:
                     a = ":?"
@@ -1449,12 +1458,17 @@ class G2VarObj(object):
         if self.phase == '*':
             s += "Phases: all; "
             if self.atom is not None:
-                s += "Atom #" + str(self.atom) + "; "
+                if ":" in str(self.atom):
+                    s += "Rigid body" + str(self.atom) + "; "
+                else:
+                    s += "Atom #" + str(self.atom) + "; "
         elif self.phase is not None:
             ph =  _lookup(PhaseRanIdLookup,self.phase)
             s += "Phase: rId=" + str(self.phase) + " (#"+ ph + "); "
             if self.atom == '*':
                 s += "Atoms: all; "
+            elif ":" in self(self.atom):
+                s += "Rigid body" + str(self.atom) + "; "
             elif self.atom is not None:
                 s += "Atom rId=" + str(self.atom)
                 if ph in AtomRanIdLookup:

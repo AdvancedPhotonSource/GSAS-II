@@ -46,6 +46,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         print 'There are no phases to form restraints'
         return
     phasedata = Phases[phaseName]
+    tabIndex = {}
     if phaseName not in data:
         data[phaseName] = {}
     restrData = data[phaseName]
@@ -1776,6 +1777,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         G2frame.dataFrame.SetSize(Size)
             
     def OnPageChanged(event):
+        #print 'OnPageChanged'
         page = event.GetSelection()
         text = G2frame.dataDisplay.GetPageText(page)
         G2frame.dataFrame.RestraintEdit.SetLabel(G2gd.wxID_RESRCHANGEVAL,'Change value')
@@ -1838,7 +1840,20 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
 
     def SetStatusLine(text):
         Status.SetStatusText(text)                                      
-        
+
+    def RaisePage(event):
+        'Respond to a "select tab" menu button'
+        # class PseudoEvent(object):
+        #     def __init__(self,page): self.page = page
+        #     def Skip(self): pass
+        #     def GetSelection(self): return self.page
+        try:
+            i = tabIndex.get(event.GetId())
+            G2frame.dataDisplay.SetSelection(i)
+            #OnPageChanged(PseudoEvent(i))
+        except ValueError:
+            print('Unexpected event in RaisePage')
+
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
         
@@ -1859,24 +1874,93 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotAARestraint, id=G2gd.wxID_AARESTRAINTPLOT)
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     
+    # clear menu and menu pointers
+    tabIndex.clear()
+    tabcount = -1
+    for i in G2frame.dataFrame.RestraintTab.GetMenuItems():
+        G2frame.dataFrame.RestraintTab.DestroyItem(i)        
+
+    txt = 'Bond restraints'
     BondRestr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(BondRestr,'Bond restraints')
+    G2frame.dataDisplay.AddPage(BondRestr,txt)
+    item = G2frame.dataFrame.RestraintTab.Append(
+        id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=txt,
+        help='Select restraint editing tab')
+    G2frame.dataFrame.Bind(wx.EVT_MENU, RaisePage,id=item.GetId())
+    tabcount += 1
+    tabIndex[item.GetId()] = tabcount
+
+    txt = 'Angle restraints'
     AngleRestr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(AngleRestr,'Angle restraints')
+    G2frame.dataDisplay.AddPage(AngleRestr,txt) 
+    item = G2frame.dataFrame.RestraintTab.Append(
+        id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=txt,
+        help='Select restraint editing tab')
+    G2frame.dataFrame.Bind(wx.EVT_MENU, RaisePage,id=item.GetId())
+    tabcount += 1
+    tabIndex[item.GetId()] = tabcount
+   
+    txt = 'Plane restraints'
     PlaneRestr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(PlaneRestr,'Plane restraints')
+    G2frame.dataDisplay.AddPage(PlaneRestr,txt)
+    item = G2frame.dataFrame.RestraintTab.Append(
+        id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=txt,
+        help='Select restraint editing tab')
+    G2frame.dataFrame.Bind(wx.EVT_MENU, RaisePage,id=item.GetId())
+    tabcount += 1
+    tabIndex[item.GetId()] = tabcount
+
+    txt = 'Chiral restraints'
     ChiralRestr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(ChiralRestr,'Chiral restraints')
+    G2frame.dataDisplay.AddPage(ChiralRestr,txt)
+    item = G2frame.dataFrame.RestraintTab.Append(
+        id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=txt,
+        help='Select restraint editing tab')
+    G2frame.dataFrame.Bind(wx.EVT_MENU, RaisePage,id=item.GetId())
+    tabcount += 1
+    tabIndex[item.GetId()] = tabcount
+
     if 'macro' in General['Type']:
+        txt = 'Torsion restraints'
         TorsionRestr = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(TorsionRestr,'Torsion restraints')
+        G2frame.dataDisplay.AddPage(TorsionRestr,txt)
+        item = G2frame.dataFrame.RestraintTab.Append(
+            id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=txt,
+            help='Select restraint editing tab')
+        G2frame.dataFrame.Bind(wx.EVT_MENU, RaisePage,id=item.GetId())
+        tabcount += 1
+        tabIndex[item.GetId()] = tabcount
+
+        txt = 'Ramachandran restraints'
         RamaRestr = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(RamaRestr,'Ramachandran restraints')
+        G2frame.dataDisplay.AddPage(RamaRestr,txt)
+        item = G2frame.dataFrame.RestraintTab.Append(
+            id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=txt,
+            help='Select restraint editing tab')
+        G2frame.dataFrame.Bind(wx.EVT_MENU, RaisePage,id=item.GetId())
+        tabcount += 1
+        tabIndex[item.GetId()] = tabcount
+
+    txt = 'Chem. comp. restraints'
     ChemCompRestr = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(ChemCompRestr,'Chem. comp. restraints')
+    G2frame.dataDisplay.AddPage(ChemCompRestr,txt)
+    item = G2frame.dataFrame.RestraintTab.Append(
+        id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=txt,
+        help='Select restraint editing tab')
+    G2frame.dataFrame.Bind(wx.EVT_MENU, RaisePage,id=item.GetId())
+    tabcount += 1
+    tabIndex[item.GetId()] = tabcount
+    
     if General['SH Texture']['Order']:
+        txt = 'Texture restraints'
         TextureRestr = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(TextureRestr,'Texture restraints')
+        G2frame.dataDisplay.AddPage(TextureRestr,txt)
+        item = G2frame.dataFrame.RestraintTab.Append(
+            id=wx.ID_ANY, kind=wx.ITEM_NORMAL,text=txt,
+            help='Select restraint editing tab')
+        G2frame.dataFrame.Bind(wx.EVT_MENU, RaisePage,id=item.GetId())
+        tabcount += 1
+        tabIndex[item.GetId()] = tabcount
     
     UpdateBondRestr(restrData['Bond'])
 

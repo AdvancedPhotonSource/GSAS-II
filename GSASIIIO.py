@@ -154,12 +154,81 @@ def CheckImageFile(G2frame,imagefile):
         finally:
             dlg.Destroy()
     return imagefile
-        
+
+def EditImageParms(parent,Data,Comments,Image,filename):
+    dlg = wx.Dialog(parent, wx.ID_ANY, 'Edit image parameters',
+                    style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    def onClose(event):
+        dlg.EndModal(wx.ID_OK)
+    mainsizer = wx.BoxSizer(wx.VERTICAL)
+    h,w = Image.shape[:2]
+    mainsizer.Add(wx.StaticText(dlg,wx.ID_ANY,
+                                'File '+str(filename)+'\nImage size: '+str(h)+' x '+str(w)),
+                  0,wx.ALIGN_LEFT|wx.ALL, 2)
+    
+    vsizer = wx.BoxSizer(wx.HORIZONTAL)
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Wavelength (\xC5) '),
+               0,wx.ALIGN_LEFT|wx.ALL, 2)
+    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data,'wavelength')
+    vsizer.Add(wdgt)
+    mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
+
+    vsizer = wx.BoxSizer(wx.HORIZONTAL)
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Pixel size (\xb5m). Width '),
+               0,wx.ALIGN_LEFT|wx.ALL, 2)
+    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data['pixelSize'],0,
+                                 size=(50,-1))
+    vsizer.Add(wdgt)
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Height '),
+               wx.ALIGN_LEFT|wx.ALL, 2)
+    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data['pixelSize'],1,
+                                 size=(50,-1))
+    vsizer.Add(wdgt)
+    mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
+
+    vsizer = wx.BoxSizer(wx.HORIZONTAL)
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Sample to detector (mm) '),
+               0,wx.ALIGN_LEFT|wx.ALL, 2)
+    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data,'distance')
+    vsizer.Add(wdgt)
+    mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
+
+    vsizer = wx.BoxSizer(wx.HORIZONTAL)
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Beam center (pixels). X = '),
+               0,wx.ALIGN_LEFT|wx.ALL, 2)
+    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data['center'],0,
+                                 size=(75,-1))
+    vsizer.Add(wdgt)
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Y = '),
+               wx.ALIGN_LEFT|wx.ALL, 2)
+    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data['center'],1,
+                                 size=(75,-1))
+    vsizer.Add(wdgt)
+    mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
+
+    vsizer = wx.BoxSizer(wx.HORIZONTAL)
+    vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Comments '),
+               0,wx.ALIGN_LEFT|wx.ALL, 2)
+    wdgt = G2gd.ValidatedTxtCtrl(dlg,Comments,0,size=(250,-1))
+    vsizer.Add(wdgt)
+    mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
+
+    btnsizer = wx.StdDialogButtonSizer()
+    OKbtn = wx.Button(dlg, wx.ID_OK, 'Continue')
+    OKbtn.SetDefault()
+    OKbtn.Bind(wx.EVT_BUTTON,onClose)
+    btnsizer.AddButton(OKbtn) # not sure why this is needed
+    btnsizer.Realize()
+    mainsizer.Add(btnsizer, 1, wx.ALIGN_CENTER|wx.ALL|wx.EXPAND, 5)
+    dlg.SetSizer(mainsizer)
+    dlg.CenterOnParent()
+    dlg.ShowModal()
+
 def GetImageData(G2frame,imagefile,imageOnly=False):
     '''Read an image with the file reader keyed by the
     file extension
 
-    :param wx.Frame G2frame: main GSAS-II Frame and data object. Note: not used!
+    :param wx.Frame G2frame: main GSAS-II Frame and data object.
 
     :param str imagefile: name of image file
 
@@ -185,6 +254,16 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
         Comments,Data,Npix,Image = GetGEsumData(imagefile)
     elif ext == '.G2img':
         Comments,Data,Npix,Image = GetG2Image(imagefile)
+    elif ext == '.png':
+        import scipy.misc
+        Image = scipy.misc.imread(imagefile,flatten=True)
+        Npix = Image.size
+        Comments = ['no metadata']
+        Data = {'wavelength': 0.1, 'pixelSize': [200, 200], 'distance': 100.0}
+        Data['size'] = list(Image.shape)
+        Data['center'] = [int(i/2) for i in Image.shape]
+        if not imageOnly:
+            EditImageParms(G2frame,Data,Comments,Image,imagefile)
     if imageOnly:
         if TRANSP:
             return Image.T

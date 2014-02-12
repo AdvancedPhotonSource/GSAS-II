@@ -243,6 +243,17 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
     Comments = []
     if ext == '.tif' or ext == '.tiff':
         Comments,Data,Npix,Image = GetTifData(imagefile)
+        if Npix == 0:
+            print("GetTifData failed to read "+str(filename)+" Trying PIL")
+            import scipy.misc
+            Image = scipy.misc.imread(imagefile,flatten=True)
+            Npix = Image.size
+            Comments = ['no metadata']
+            Data = {'wavelength': 0.1, 'pixelSize': [200, 200], 'distance': 100.0}
+            Data['size'] = list(Image.shape)
+            Data['center'] = [int(i/2) for i in Image.shape]
+            if not imageOnly:
+                EditImageParms(G2frame,Data,Comments,Image,imagefile)
     elif ext == '.edf':
         Comments,Data,Npix,Image = GetEdfData(imagefile)
     elif ext == '.img':

@@ -686,18 +686,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Page.Choice = (' key press','n: log(I) off','l: offset left','r: offset right','o: reset offset',
                     'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
             elif 'SASD' in plottype:
-                Page.Choice = (' key press','n: loglog off','l: offset left','r: offset right',
-                    'd: offset down','u: offset up','o: reset offset','q: toggle S(q) plot',
-                    'c: contour on','s: toggle single plot','+: no selection')
+                Page.Choice = (' key press','c: contour on','n: semilog on',
+                    'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
+                    'q: toggle S(q) plot','s: toggle single plot','+: no selection')
         else:
             if 'PWDR' in plottype:
                 Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
                     'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
                     'q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
             elif 'SASD' in plottype:
-                Page.Choice = (' key press','e: toggle error bars','l: offset left','r: offset right','d: offset down',
-                    'u: offset up','o: reset offset','n: loglog on','c: contour on',
-                    's: toggle single plot','+: no selection')
+                Page.Choice = (' key press','c: contour on','n: loglog on','e: toggle error bars',
+                    'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
+                    'q: toggle S(q) plot','s: toggle single plot','+: no selection')
     Page.keyPress = OnPlotKeyPress
     
     PickId = G2frame.PickId
@@ -884,6 +884,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     else:
                         Plot.plot(Xum,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
+                        Plot.set_yscale("log",nonposy='mask')
+                        Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.)
                     if 'PWDR' in plottype:
                         Plot.plot(X,W,colors[(N+2)%6],picker=False)
                     Plot.plot(X,D,colors[(N+3)%6],picker=False)
@@ -916,6 +918,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         Plot.plot(X,Y,colors[N%6],picker=False)
                     elif 'SASD' in plottype:
                         Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
+                        Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.)
             if G2frame.logPlot:
                 Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.)
     if PickId and not G2frame.Contour:

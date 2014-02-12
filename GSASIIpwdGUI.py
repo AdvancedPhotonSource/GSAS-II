@@ -1296,7 +1296,20 @@ def UpdateSampleGrid(G2frame,data):
             return
         if tc.key == 0 and 'SASD' in histName:          #a kluge!
             G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
-                   
+            
+    def OnMaterial(event):
+        Obj = event.GetEventObject()
+        id,key = Info[Obj.GetId()]
+        if key == 'Name':
+            data['Materials'][id][key] = Obj.GetValue()
+        elif key == 'VolFrac':
+            try:
+                value = min(max(0.,float(Obj.GetValue())),1.)
+            except ValueError:
+                value = data['Materials'][id][key]
+            data['Materials'][id][key] = value
+            data['Materials'][not id][key] = 1.-value
+        wx.CallAfter(UpdateSampleGrid,G2frame,data)
 
     ######## DEBUG #######################################################
     #import GSASIIpwdGUI
@@ -1357,7 +1370,7 @@ def UpdateSampleGrid(G2frame,data):
                 ['SurfRoughA','Surface roughness A: ',[10,4]],
                 ['SurfRoughB','Surface roughness B: ',[10,4]]]
     elif 'SASD' in histName:
-        pass
+        parms.append(['Thick','Sample thickness (cm)',[10,3]])
     parms.append(['Omega','Goniometer omega:',[10,3]])
     parms.append(['Chi','Goniometer chi:',[10,3]])
     parms.append(['Phi','Goniometer phi:',[10,3]])
@@ -1405,6 +1418,28 @@ def UpdateSampleGrid(G2frame,data):
                 0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
             parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,typeHint=float)
         parmSizer.Add(parmVal,1,wx.EXPAND)
+    Info = {}
+    if 'SASD' in histName:
+        Substances = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))
+        for id,item in enumerate(data['Materials']):
+            subst = wx.BoxSizer(wx.HORIZONTAL)
+            subst.Add(wx.StaticText(G2frame.dataDisplay,label=' Material: '),0,wx.ALIGN_CENTER_VERTICAL)
+            matsel = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=Substances['Substances'].keys(),
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Info[matsel.GetId()] = [id,'Name']
+            matsel.Bind(wx.EVT_COMBOBOX,OnMaterial)        
+            subst.Add(matsel,0,wx.ALIGN_CENTER_VERTICAL)
+            subst.Add(wx.StaticText(G2frame.dataDisplay,label=' Volume fraction: '),0,wx.ALIGN_CENTER_VERTICAL)
+            volfrac = wx.TextCtrl(G2frame.dataDisplay,value=str('%.3f'%(item['VolFrac'])),style=wx.TE_PROCESS_ENTER)
+            Info[volfrac.GetId()] = [id,'VolFrac']
+            volfrac.Bind(wx.EVT_TEXT_ENTER,OnMaterial)
+            volfrac.Bind(wx.EVT_KILL_FOCUS,OnMaterial)
+            subst.Add(volfrac,0,wx.ALIGN_CENTER_VERTICAL)
+            parmSizer.Add(subst,0)
+            
+
+        
     for key in ('FreePrm1','FreePrm2','FreePrm3'):
         parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,Controls,key,typeHint=str,
                                         notBlank=False)

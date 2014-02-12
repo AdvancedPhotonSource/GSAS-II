@@ -149,7 +149,10 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
     Sth2 = npsind(Tth/2.0)**2
     Cth2 = 1.-Sth2
     if 'Cylinder' in Geometry:      #Lobanov & Alte da Veiga for 2-theta = 0; beam fully illuminates sample
-        return np.where(MuR <3.0,muRunder3(Sth2),muRover3(Sth2))
+        if MuR <= 3.0:
+            return muRunder3(Sth2)
+        else:
+            return muRover3(Sth2)
     elif 'Bragg' in Geometry:
         return 1.0
     elif 'Fixed' in Geometry: #assumes sample plane is perpendicular to incident beam

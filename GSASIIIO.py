@@ -266,13 +266,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
     elif ext == '.G2img':
         Comments,Data,Npix,Image = GetG2Image(imagefile)
     elif ext == '.png':
-        import scipy.misc
-        Image = scipy.misc.imread(imagefile,flatten=True)
-        Npix = Image.size
-        Comments = ['no metadata']
-        Data = {'wavelength': 0.1, 'pixelSize': [200, 200], 'distance': 100.0}
-        Data['size'] = list(Image.shape)
-        Data['center'] = [int(i/2) for i in Image.shape]
+        Comments,Data,Npix,Image = GetPNGData(imagefile)
         if not imageOnly:
             EditImageParms(G2frame,Data,Comments,Image,imagefile)
     if imageOnly:
@@ -500,6 +494,23 @@ def GetMAR345Data(filename,imageOnly=False):
         return image
     else:
         return head,data,Npix,image
+        
+def GetPNGData(filename,imageOnly=False):
+    '''Read an image in a png format, assumes image is converted from CheMin tif file
+    so default parameters are that machine.
+    '''
+    import scipy.misc
+    Image = scipy.misc.imread(filename,flatten=True)
+    Npix = Image.size
+    Comments = ['no metadata']
+    pixy = list(Image.shape)
+    sizexy = [40,40]
+    Data = {'wavelength': 1.78892, 'pixelSize': sizexy, 'distance': 18.0,'size':pixy}
+    Data['center'] = [pixy[0]*sizexy[0]/1000,pixy[1]*sizexy[1]/2000]
+    if imageOnly:
+        return Image.T
+    else:
+        return Comments,Data,Npix,Image.T
 
 def GetTifData(filename,imageOnly=False):
     '''Read an image in a pseudo-tif format,
@@ -507,6 +518,7 @@ def GetTifData(filename,imageOnly=False):
     incorrectly in some way. 
     '''
     import struct as st
+    import Image as Im
     import array as ar
     import ReadMarCCDFrame as rmf
     File = open(filename,'rb')
@@ -539,9 +551,11 @@ def GetTifData(filename,imageOnly=False):
     File.seek(IFD)                                                  #get number of directory entries
     NED = int(st.unpack(byteOrd+'h',File.read(2))[0])
     IFD = {}
+    nSlice = 1
     for ied in range(NED):
         Tag,Type = st.unpack(byteOrd+'Hh',File.read(4))
         nVal = st.unpack(byteOrd+'i',File.read(4))[0]
+        if DEBUG: print 'Try:',Tag,Type,nVal
         if Type == 1:
             Value = st.unpack(byteOrd+nVal*'b',File.read(nVal))
         elif Type == 2:
@@ -550,6 +564,9 @@ def GetTifData(filename,imageOnly=False):
             Value = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
             x = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
         elif Type == 4:
+            if Tag in [273,279]:
+                nSlice = nVal
+                nVal = 1
             Value = st.unpack(byteOrd+nVal*'i',File.read(nVal*4))
         elif Type == 5:
             Value = st.unpack(byteOrd+nVal*'i',File.read(nVal*4))
@@ -580,6 +597,13 @@ def GetTifData(filename,imageOnly=False):
         center = [marFrame.beamX*marFrame.pixelsizeX*1e-9,marFrame.beamY*marFrame.pixelsizeY*1e-9]
         center = (center[0] != 0 and center[1] != 0) and center or [None,None]
 #print head,tifType,pixy
+    elif nSlice > 1:    #CheMin multislice tif file!
+        tifType = 'CheMin'
+        pixy = [40,40]
+        image = np.array(Im.open(filename))
+        distance = 18.0
+        center = [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/1000]
+        wavelength = 1.78892
     elif 272 in IFD:
         ifd = IFD[272]
         File.seek(ifd[2][0])

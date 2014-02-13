@@ -1558,10 +1558,10 @@ class GSASII(wx.Frame):
                 self.PatternTree.AppendItem(Id,text='Instrument Parameters'),
                 [Iparm1,Iparm2])
             self.PatternTree.SetItemPyData(
+                self.PatternTree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
+            self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Sample Parameters'),
                 rd.Sample)
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Models'),G2pdG.SetDefaultSASDModel())
             self.PatternTree.Expand(Id)

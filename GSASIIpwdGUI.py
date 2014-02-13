@@ -74,7 +74,8 @@ def SetDefaultSample():
         'Omega':0.0,'Chi':0.0,'Phi':0.0,
 #SASD items
         'Materials':[{'Name':'vacuum','VolFrac':1.0,},{'Name':'vacuum','VolFrac':0.0,}],
-        'Thick':1.0,
+        'Thick':1.0,'Contrast':[0.0,0.0],       #contrast & anomalous contrast
+        'Trans':1.0,                            #measured transmission
         }
         
 def SetDefaultSASDModel():
@@ -89,8 +90,7 @@ def SetDefaultSASDModel():
         
 def SetDefaultSubstances():
     'Fills in default items for the SASD Substances dictionary'
-    return {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0}},
-                    'Contrast':0.0}
+    return {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0}}}
                          
 ################################################################################
 #####  Powder Peaks
@@ -1294,8 +1294,10 @@ def UpdateSampleGrid(G2frame,data):
     def AfterChange(invalid,value,tc):
         if invalid:
             return
-        if tc.key == 0 and 'SASD' in histName:          #a kluge!
+        if tc.key == 0 and 'SASD' in histName:          #a kluge for Scale!
             G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+        elif tc.key == 'Thick':
+            wx.CallAfter(UpdateSampleGrid,G2frame,data)            
             
     def OnMaterial(event):
         Obj = event.GetEventObject()
@@ -1354,6 +1356,8 @@ def UpdateSampleGrid(G2frame,data):
     if 'SurfRoughA' not in data and 'PWDR' in histName:
         data['SurfRoughA'] = [0.,False]
         data['SurfRoughB'] = [0.,False]
+    if 'Trans' not in data and 'SASD' in histName:
+        data['Trans'] = 1.0
 #patch end
     
     parms = []
@@ -1370,7 +1374,8 @@ def UpdateSampleGrid(G2frame,data):
                 ['SurfRoughA','Surface roughness A: ',[10,4]],
                 ['SurfRoughB','Surface roughness B: ',[10,4]]]
     elif 'SASD' in histName:
-        parms.append(['Thick','Sample thickness (cm)',[10,3]])
+        parms.append(['Thick','Sample thickness (mm)',[10,3]])
+        parms.append(['Trans','Transmission (meas)',[10,3]])
     parms.append(['Omega','Goniometer omega:',[10,3]])
     parms.append(['Chi','Goniometer chi:',[10,3]])
     parms.append(['Phi','Goniometer phi:',[10,3]])
@@ -1416,28 +1421,10 @@ def UpdateSampleGrid(G2frame,data):
         else:
             parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' '+lbl),
                 0,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-            parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,typeHint=float)
+            parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,
+                typeHint=float,OnLeave=AfterChange)
         parmSizer.Add(parmVal,1,wx.EXPAND)
     Info = {}
-    if 'SASD' in histName:
-        Substances = G2frame.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))
-        for id,item in enumerate(data['Materials']):
-            subst = wx.BoxSizer(wx.HORIZONTAL)
-            subst.Add(wx.StaticText(G2frame.dataDisplay,label=' Material: '),0,wx.ALIGN_CENTER_VERTICAL)
-            matsel = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=Substances['Substances'].keys(),
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Info[matsel.GetId()] = [id,'Name']
-            matsel.Bind(wx.EVT_COMBOBOX,OnMaterial)        
-            subst.Add(matsel,0,wx.ALIGN_CENTER_VERTICAL)
-            subst.Add(wx.StaticText(G2frame.dataDisplay,label=' Volume fraction: '),0,wx.ALIGN_CENTER_VERTICAL)
-            volfrac = wx.TextCtrl(G2frame.dataDisplay,value=str('%.3f'%(item['VolFrac'])),style=wx.TE_PROCESS_ENTER)
-            Info[volfrac.GetId()] = [id,'VolFrac']
-            volfrac.Bind(wx.EVT_TEXT_ENTER,OnMaterial)
-            volfrac.Bind(wx.EVT_KILL_FOCUS,OnMaterial)
-            subst.Add(volfrac,0,wx.ALIGN_CENTER_VERTICAL)
-            parmSizer.Add(subst,0)
-            
 
         
     for key in ('FreePrm1','FreePrm2','FreePrm3'):
@@ -1448,6 +1435,38 @@ def UpdateSampleGrid(G2frame,data):
         parmSizer.Add(parmVal,1,wx.EXPAND)
     mainSizer.Add(parmSizer,1,wx.EXPAND)
     mainSizer.Add((0,5),0)    
+    if 'SASD' in histName:
+        rho = [0.,0.]
+        anomrho = [0.,0.]
+        mu = 0.
+        subSizer = wx.FlexGridSizer(1,4,5,5)
+        Substances = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))
+        for id,item in enumerate(data['Materials']):
+            subSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Material: '),0,wx.ALIGN_CENTER_VERTICAL)
+            matsel = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=Substances['Substances'].keys(),
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Info[matsel.GetId()] = [id,'Name']
+            matsel.Bind(wx.EVT_COMBOBOX,OnMaterial)        
+            subSizer.Add(matsel,0,wx.ALIGN_CENTER_VERTICAL)
+            subSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Volume fraction: '),0,wx.ALIGN_CENTER_VERTICAL)
+            volfrac = wx.TextCtrl(G2frame.dataDisplay,value=str('%.3f'%(item['VolFrac'])),style=wx.TE_PROCESS_ENTER)
+            Info[volfrac.GetId()] = [id,'VolFrac']
+            volfrac.Bind(wx.EVT_TEXT_ENTER,OnMaterial)
+            volfrac.Bind(wx.EVT_KILL_FOCUS,OnMaterial)
+            subSizer.Add(volfrac,0,wx.ALIGN_CENTER_VERTICAL)
+            material = Substances['Substances'][item['Name']]
+            mu += item['VolFrac']*material.get('XAbsorption',0.)
+            rho[id] = material['Scatt density']
+            anomrho[id] = material.get('XAnom density',0.)
+        data['Contrast'] = [(rho[1]-rho[0])**2,(anomrho[1]-anomrho[0])**2]
+        mainSizer.Add(subSizer,0)
+        conSizer = wx.BoxSizer(wx.HORIZONTAL)
+        conSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Contrast: %10.2f '%(data['Contrast'][0])),0,wx.ALIGN_CENTER_VERTICAL)
+        conSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Anom. Contrast: %10.2f '%(data['Contrast'][1])),0,wx.ALIGN_CENTER_VERTICAL)
+        mut =  mu*data['Thick']
+        conSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Transmission (calc): %10.3f  '%(np.exp(-mut))),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(conSizer,0)
     
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)

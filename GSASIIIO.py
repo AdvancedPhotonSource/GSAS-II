@@ -980,7 +980,8 @@ def SaveIntegration(G2frame,PickId,data):
         Sample['Phi'] = data['GonioAngles'][2]
         if 'PWDR' in name:
             parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]    #set polarization for synchrotron radiation!
-        elif 'SASD' in name:    
+        elif 'SASD' in name:
+            Sample['Trans'] = data['SampleAbs'][0]
             parms = ['LXC',data['wavelength'],0.0,Azms[i]]
         Y = G2frame.Integrate[0][i]
         W = 1./Y                    #probably not true
@@ -1013,14 +1014,15 @@ def SaveIntegration(G2frame,PickId,data):
             for item in inst[0]:
                 inst[0][item] = list(inst[0][item])
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Instrument Parameters'),inst)
-            G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
             if 'PWDR' in name:
+                G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
                 G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Peak List'),[])
                 G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Index Peak List'),[])
                 G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Unit Cells List'),[])
                 G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Reflection Lists'),{})
             elif 'SASD' in name:             
                 G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
+                G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
                 G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Models'),G2pdG.SetDefaultSASDModel())
             valuesdict = {
                 'wtFactor':1.0,

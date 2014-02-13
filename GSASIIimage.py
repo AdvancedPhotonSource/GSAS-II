@@ -837,7 +837,8 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
             elif 'q' == data['binType']:
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
-                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz*tad*tabs,numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
+                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz*tad/tabs,
+                    numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
             Nup += 1
             if dlg:
                 dlg.Update(Nup)

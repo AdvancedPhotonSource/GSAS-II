@@ -588,7 +588,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     if mouse.button==3:
                         data[1][1] = max(xy[0],data[1][0])
                 G2frame.PatternTree.SetItemPyData(LimitId,data)
-                G2pdG.UpdateLimitsGrid(G2frame,data)
+                G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
             else:                                                   #picked a limit line
                 G2frame.itemPicked = pick
@@ -632,7 +632,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 data[1][1] = min(data[0][1],data[1][1])
                 G2frame.PatternTree.SetItemPyData(LimitId,data)
                 if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Limits':
-                    G2pdG.UpdateLimitsGrid(G2frame,data)
+                    G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
             elif lineNo > 1:
                 PeakId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                 data = G2frame.PatternTree.GetItemPyData(PeakId)
@@ -659,7 +659,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         G2frame.itemPicked = None    
 
     xylim = []
-    print plottype,G2frame.logPlot
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)

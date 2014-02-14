@@ -132,7 +132,7 @@ def UpdatePeakGrid(G2frame, data):
         for pos,mag in refs:
             data.append(G2mth.setPeakparms(inst,inst2,pos,mag))
         UpdatePeakGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame)        
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')        
     
     def OnUnDo(event):
         DoUnDo()
@@ -179,7 +179,7 @@ def UpdatePeakGrid(G2frame, data):
         finally:
             dlg.Destroy()
         UpdatePeakGrid(G2frame,peaks)
-        G2plt.PlotPatterns(G2frame)
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
     def OnPeakFit(FitPgm,oneCycle=False):
         SaveState()
@@ -208,7 +208,7 @@ def UpdatePeakGrid(G2frame, data):
         finally:
             wx.EndBusyCursor()    
         UpdatePeakGrid(G2frame,peaks)
-        G2plt.PlotPatterns(G2frame)
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')
         print 'finished'
         return
         
@@ -298,7 +298,7 @@ def UpdatePeakGrid(G2frame, data):
                         data[row][col]=True
                     elif key == 78:  #'N'
                         data[row][col]=False
-        G2plt.PlotPatterns(G2frame)
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')
             
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PeakMenu)
     if not G2frame.dataFrame.GetStatusBar():
@@ -630,7 +630,7 @@ def UpdateBackground(G2frame,data):
 #####  Limits
 ################################################################################           
        
-def UpdateLimitsGrid(G2frame, data):
+def UpdateLimitsGrid(G2frame, data,plottype):
     '''respond to selection of PWDR Limits data tree item.
     '''
     if G2frame.dataDisplay:
@@ -642,8 +642,8 @@ def UpdateLimitsGrid(G2frame, data):
             row = G2frame.dataDisplay.GetSelectedRows()[0]
             if row > 1: #can't delete limits!
                 del(data[row])
-                wx.CallAfter(UpdateLimitsGrid,G2frame,data)
-                G2plt.PlotPatterns(G2frame)
+                wx.CallAfter(UpdateLimitsGrid,G2frame,data,plottype)
+                G2plt.PlotPatterns(G2frame,plotType=plottype)
                         
     def RefreshLimitsGrid(event):
         event.StopPropagation()
@@ -660,10 +660,10 @@ def UpdateLimitsGrid(G2frame, data):
                 item[1] = max(item[0],min(old[1],item[1]))
         data = [old,new]+excl
         G2frame.LimitsTable.SetData(data)
-        G2plt.PlotPatterns(G2frame)
+        G2plt.PlotPatterns(G2frame,plotType=plottype)
         
     def OnLimitCopy(event):
-        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
+        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR','SASD',])
         copyList = []
         dlg = wx.MultiChoiceDialog(G2frame, 
             'Copy limits to which histograms?', 'Copy limits', 

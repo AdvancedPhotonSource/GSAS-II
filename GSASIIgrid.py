@@ -4002,10 +4002,11 @@ def MovePatternTreeToGrid(G2frame,item):
         G2plt.PlotPatterns(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Limits':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        datatype = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[2][:4]
         G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
-        G2pdG.UpdateLimitsGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame)
+        G2pdG.UpdateLimitsGrid(G2frame,data,datatype)
+        G2plt.PlotPatterns(G2frame,plotType=datatype)
     elif G2frame.PatternTree.GetItemText(item) == 'Instrument Parameters':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         G2frame.PickId = item
@@ -4018,6 +4019,7 @@ def MovePatternTreeToGrid(G2frame,item):
         G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdateModelsGrid(G2frame,data)
+        G2plt.PlotPatterns(G2frame,plotType='SASD')
     elif G2frame.PatternTree.GetItemText(item) == 'Substances':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         G2frame.PickId = item
@@ -4027,6 +4029,7 @@ def MovePatternTreeToGrid(G2frame,item):
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
+        datatype = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[2][:4]
 
         if 'Temperature' not in data:           #temp fix for old gpx files
             data = {'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],'DisplaceX':[0.0,False],
@@ -4036,7 +4039,7 @@ def MovePatternTreeToGrid(G2frame,item):
             G2frame.PatternTree.SetItemPyData(item,data)
     
         G2pdG.UpdateSampleGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame)
+        G2plt.PlotPatterns(G2frame,plotType=datatype)
     elif G2frame.PatternTree.GetItemText(item) == 'Index Peak List':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         for i in G2frame.ExportPeakList: i.Enable(True)

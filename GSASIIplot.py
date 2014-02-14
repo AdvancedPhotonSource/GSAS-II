@@ -628,6 +628,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     data[id][id2] = xpos
                 if id > 1 and data[id][0] > data[id][1]:
                         data[id].reverse()
+                data[1][0] = max(data[0][0],data[1][0])
+                data[1][1] = min(data[0][1],data[1][1])
                 G2frame.PatternTree.SetItemPyData(LimitId,data)
                 if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Limits':
                     G2pdG.UpdateLimitsGrid(G2frame,data)
@@ -657,6 +659,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         G2frame.itemPicked = None    
 
     xylim = []
+    print plottype,G2frame.logPlot
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -884,8 +887,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     else:
                         Plot.plot(Xum,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
-                        Plot.set_yscale("log",nonposy='mask')
-                        Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.)
+                        if G2frame.logPlot:
+                            Plot.set_yscale("log",nonposy='mask')
+                            Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.)
                     if 'PWDR' in plottype:
                         Plot.plot(X,W,colors[(N+2)%6],picker=False)
                     Plot.plot(X,D,colors[(N+3)%6],picker=False)

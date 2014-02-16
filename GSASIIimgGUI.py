@@ -789,8 +789,8 @@ def UpdateImageControls(G2frame,data,masks):
                 
         def OnNewCalibrant(event):
             data['calibrant'] = calSel.GetValue()
-            data['calibskip'] = calFile.Calibrants[data['calibrant']][2]
-            limits = calFile.Calibrants[data['calibrant']][3]
+            data['calibskip'] = calFile.Calibrants[data['calibrant']][3]
+            limits = calFile.Calibrants[data['calibrant']][4]
             data['calibdmin'],data['pixLimit'],data['cutoff'] = limits
             pixLimit.SetValue(str(limits[1]))
             cutOff.SetValue('%.1f'%(limits[2]))

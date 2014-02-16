@@ -28,6 +28,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIplot as G2plt
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
+import GSASIIspc as G2spc
 import fellipse as fel
 
 # trig functions in degrees
@@ -488,12 +489,19 @@ def ImageRecalibrate(self,data,masks):
         return True    
     skip = data['calibskip']
     dmin = data['calibdmin']
-    Bravais,Cells = calFile.Calibrants[data['calibrant']][:2]
+    Bravais,SGs,Cells = calFile.Calibrants[data['calibrant']][:3]
     HKL = []
-    for bravais,cell in zip(Bravais,Cells):
+    for bravais,sg,cell in zip(Bravais,SGs,Cells):
         A = G2lat.cell2A(cell)
-        hkl = G2lat.GenHBravais(dmin,bravais,A)
-        HKL += hkl
+        if sg:
+            SGData = G2spc.SpcGroup(sg)[1]
+            hkl = G2pwd.getHKLpeak(dmin,SGData,A)
+            for h in hkl: print h
+            HKL += hkl
+        else:
+            hkl = G2lat.GenHBravais(dmin,bravais,A)
+            for h in hkl: print h
+            HKL += hkl
     HKL = G2lat.sortHKLd(HKL,True,False)
     varyList = ['dist','det-X','det-Y','tilt','phi']
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
@@ -592,17 +600,25 @@ def ImageCalibrate(self,data):
     skip = data['calibskip']
     dmin = data['calibdmin']
 #generate reflection set
-    Bravais,Cells = calFile.Calibrants[data['calibrant']][:2]
+    Bravais,SGs,Cells = calFile.Calibrants[data['calibrant']][:3]
     HKL = []
-    for bravais,cell in zip(Bravais,Cells):
+    for bravais,sg,cell in zip(Bravais,SGs,Cells):
         A = G2lat.cell2A(cell)
-        hkl = G2lat.GenHBravais(dmin,bravais,A)[skip:]
-        HKL += hkl
-    HKL = G2lat.sortHKLd(HKL,True,False)
+        if sg:
+            SGData = G2spc.SpcGroup(sg)[1]
+            hkl = G2pwd.getHKLpeak(dmin,SGData,A)
+            for h in hkl: print h
+            HKL += hkl
+        else:
+            hkl = G2lat.GenHBravais(dmin,bravais,A)
+            for h in hkl: print h
+            HKL += hkl
+    HKL = G2lat.sortHKLd(HKL,True,False)[skip:]
     wave = data['wavelength']
 #set up 1st ring
     elcent,phi,radii = ellipse              #from fit of 1st ring
     dsp = HKL[0][3]
+    print '1st ring: try %.4f'%(dsp)
     tth = 2.0*asind(wave/(2.*dsp))
     Ring0 = makeRing(dsp,ellipse,3,cutoff,scalex,scaley,self.ImageZ)
     ttth = nptand(tth)
@@ -625,32 +641,40 @@ def ImageCalibrate(self,data):
     centm = [elcent[0]+zdism*sind(phi),elcent[1]-zdism*cosd(phi)]
 #check get same ellipse parms either way
 #now do next ring; estimate either way & do a FitDetector each way; best fit is correct one
-    dsp = HKL[1][3]
-    tth = 2.0*asind(wave/(2.*dsp))
-    ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
-    print fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1])
-    Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,self.ImageZ)
-    parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
-        'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}
-    varyList = ['dist','det-X','det-Y','tilt','phi']
-    if len(Ringp) > 10:
-        chip = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)
-        tiltp = parmDict['tilt']
-        phip = parmDict['phi']
-        centp = [parmDict['det-X'],parmDict['det-Y']]
-    else:
-        chip = 1e6
-    ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
-    print fmt%('minus ellipse:',ellipsem[0][0],ellipsem[0][1],ellipsem[1],ellipsem[2][0],ellipsem[2][1])
-    Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,self.ImageZ)
-    if len(Ringm) > 10:
-        parmDict['tilt'] *= -1
-        chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)
-        tiltm = parmDict['tilt']
-        phim = parmDict['phi']
-        centm = [parmDict['det-X'],parmDict['det-Y']]
-    else:
-        chim = 1e6
+    fail = True
+    i2 = 1
+    while fail:
+        dsp = HKL[i2][3]
+        print '2nd ring: try %.4f'%(dsp)
+        tth = 2.0*asind(wave/(2.*dsp))
+        ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
+        print fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1])
+        Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,self.ImageZ)
+        parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
+            'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}
+        varyList = ['dist','det-X','det-Y','tilt','phi']
+        if len(Ringp) > 10:
+            chip = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)
+            tiltp = parmDict['tilt']
+            phip = parmDict['phi']
+            centp = [parmDict['det-X'],parmDict['det-Y']]
+            fail = False
+        else:
+            chip = 1e6
+        ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
+        print fmt%('minus ellipse:',ellipsem[0][0],ellipsem[0][1],ellipsem[1],ellipsem[2][0],ellipsem[2][1])
+        Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,self.ImageZ)
+        if len(Ringm) > 10:
+            parmDict['tilt'] *= -1
+            chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)
+            tiltm = parmDict['tilt']
+            phim = parmDict['phi']
+            centm = [parmDict['det-X'],parmDict['det-Y']]
+            fail = False
+        else:
+            chim = 1e6
+        if fail:
+            i2 += 1
     if chip < chim:
         data['tilt'] = tiltp
         data['center'] = centp
@@ -669,8 +693,8 @@ def ImageCalibrate(self,data):
     varyList = ['dist','det-X','det-Y','tilt','phi']
     if data['DetDepthRef']:
         varyList.append('dep')
-    data['rings'] = []
-    data['ellipses'] = []
+#    data['rings'] = []
+#    data['ellipses'] = []
     for i,H in enumerate(HKL):
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))

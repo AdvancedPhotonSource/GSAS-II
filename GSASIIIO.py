@@ -1429,7 +1429,7 @@ class ImportBaseclass(object):
         #print 'created',self.__class__
 
     def ReInitialize(self):
-        'Reinitialize the Reader to initital settings'
+        'Reinitialize the Reader to initial settings'
         self.errors = ''
         self.warnings = ''
         self.repeat = False
@@ -1636,7 +1636,7 @@ class ImportStructFactor(ImportBaseclass):
         is left as initialized (an empty list) it will be initialized as needed later. 
         '''
     def ReInitialize(self):
-        'Reinitialize the Reader to initital settings'
+        'Reinitialize the Reader to initial settings'
         ImportBaseclass.ReInitialize(self)
         self.InitParameters()
         self.InitControls()
@@ -1775,6 +1775,11 @@ class ImportPowderData(ImportBaseclass):
                                             longFormatName,
                                             extensionlist,
                                             strictExtension)
+        self.ReInitialize()
+        
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        ImportBaseclass.ReInitialize(self)
         self.powderentry = ['',None,None] #  (filename,Pos,Bank)
         self.powderdata = [] # Powder dataset
         '''A powder data set is a list with items [x,y,w,yc,yb,yd]:
@@ -1810,6 +1815,11 @@ class ImportSmallAngleData(ImportBaseclass):
             
         ImportBaseclass.__init__(self,formatName,longFormatName,extensionlist,
             strictExtension)
+        self.ReInitialize()
+        
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings'
+        ImportBaseclass.ReInitialize(self)
         self.smallangleentry = ['',None,None] #  (filename,Pos,Bank)
         self.smallangledata = [] # SASD dataset
         '''A small angle data set is a list with items [x,y,w,yc,yd]:

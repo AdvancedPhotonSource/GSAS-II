@@ -1467,11 +1467,10 @@ class GSASII(wx.Frame):
                 kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
             self.ImportMenuId[item.GetId()] = reader
             self.Bind(wx.EVT_MENU, self.OnImportSmallAngle, id=item.GetId())
-        item = submenu.Append(wx.ID_ANY,
-            help='Import small angle data, use file to try to determine format',
-            kind=wx.ITEM_NORMAL,text='guess format from file')
-        self.Bind(wx.EVT_MENU, self.OnImportSmallAngle, id=item.GetId())
-           
+        # item = submenu.Append(wx.ID_ANY,
+        #     help='Import small angle data, use file to try to determine format',
+        #     kind=wx.ITEM_NORMAL,text='guess format from file')
+        # self.Bind(wx.EVT_MENU, self.OnImportSmallAngle, id=item.GetId())
 
     def OnImportSmallAngle(self,event):
         '''Called in response to an Import/Small Angle Data/... menu item

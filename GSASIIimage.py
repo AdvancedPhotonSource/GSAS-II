@@ -496,11 +496,9 @@ def ImageRecalibrate(self,data,masks):
         if sg:
             SGData = G2spc.SpcGroup(sg)[1]
             hkl = G2pwd.getHKLpeak(dmin,SGData,A)
-            for h in hkl: print h
             HKL += hkl
         else:
             hkl = G2lat.GenHBravais(dmin,bravais,A)
-            for h in hkl: print h
             HKL += hkl
     HKL = G2lat.sortHKLd(HKL,True,False)
     varyList = ['dist','det-X','det-Y','tilt','phi']
@@ -512,7 +510,8 @@ def ImageRecalibrate(self,data,masks):
     tam = ma.make_mask_none(self.ImageZ.shape)
     if frame:
         tam = ma.mask_or(tam,MakeFrameMask(data,frame))
-    for iH,H in enumerate(HKL): 
+    for iH,H in enumerate(HKL):
+        print H 
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
         if tth+abs(data['tilt']) > 90.:
@@ -528,7 +527,8 @@ def ImageRecalibrate(self,data,masks):
         elif not Found:         #skipping inner rings, keep looking until ring found 
             continue
         else:                   #no more rings beyond edge of detector
-            break
+            continue
+#            break
     rings = np.concatenate((data['rings']),axis=0)
     if data['DetDepthRef']:
         varyList.append('dep')
@@ -607,11 +607,9 @@ def ImageCalibrate(self,data):
         if sg:
             SGData = G2spc.SpcGroup(sg)[1]
             hkl = G2pwd.getHKLpeak(dmin,SGData,A)
-            for h in hkl: print h
             HKL += hkl
         else:
             hkl = G2lat.GenHBravais(dmin,bravais,A)
-            for h in hkl: print h
             HKL += hkl
     HKL = G2lat.sortHKLd(HKL,True,False)[skip:]
     wave = data['wavelength']
@@ -693,8 +691,8 @@ def ImageCalibrate(self,data):
     varyList = ['dist','det-X','det-Y','tilt','phi']
     if data['DetDepthRef']:
         varyList.append('dep')
-#    data['rings'] = []
-#    data['ellipses'] = []
+    data['rings'] = []
+    data['ellipses'] = []
     for i,H in enumerate(HKL):
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
@@ -722,7 +720,7 @@ def ImageCalibrate(self,data):
 #            G2plt.PlotImage(self,newImage=True)
         else:
             print 'insufficient number of points in this ellipse to fit'
-            break
+#            break
     G2plt.PlotImage(self,newImage=True)
     fullSize = len(self.ImageZ)/scalex
     if 2*radii[1] < .9*fullSize:

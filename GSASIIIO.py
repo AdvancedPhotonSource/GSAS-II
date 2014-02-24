@@ -600,9 +600,9 @@ def GetTifData(filename,imageOnly=False):
     elif nSlice > 1:    #CheMin multislice tif file!
         tifType = 'CheMin'
         pixy = [40,40]
-        image = np.array(Im.open(filename))
+        image = np.flipud(np.array(Im.open(filename)))*10.
         distance = 18.0
-        center = [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/1000]
+        center = [pixy[0]*sizexy[0]/2000,0]     #the CheMin beam stop is here
         wavelength = 1.78892
     elif 272 in IFD:
         ifd = IFD[272]
@@ -619,7 +619,6 @@ def GetTifData(filename,imageOnly=False):
             image = np.array(np.asarray(image),dtype=np.int32)
         else:
             if IFD[258][2][0] == 16:
-                print sizexy
                 tifType = 'GE'
                 pixy = (200,200)
                 File.seek(8)
@@ -627,7 +626,6 @@ def GetTifData(filename,imageOnly=False):
                     print 'Read GE-detector tiff file: ',filename
                 image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 32:
-                print sizexy
                 tifType = 'CHESS'
                 pixy = (200,200)
                 File.seek(8)

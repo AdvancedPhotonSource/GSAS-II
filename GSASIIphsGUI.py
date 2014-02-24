@@ -4880,7 +4880,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return
         HistoNames = Histograms.keys()
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
-        refData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))[PhaseName]
+        refData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,  \
+            PatternId,'Reflection Lists'))[PhaseName]['RefList']
         Inv = data['General']['SGData']['SGInv']
         mult = 0.5
         if Inv:

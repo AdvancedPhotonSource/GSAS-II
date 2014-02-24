@@ -1375,14 +1375,21 @@ class G2VarObj(object):
         self.name = ''
         self.atom = None
         if len(args) == 1 and (type(args[0]) is list or type(args[0]) is tuple) and len(args[0]) == 4:
+            # single arg with 4 values
             self.phase,self.histogram,self.name,self.atom = args[0]
-        elif len(args) == 1 and ':' in args[0]:            
+        elif len(args) == 1 and ':' in args[0]:
+            #parse a string 
             lst = args[0].split(':')
             if lst[0] == '*':
                 self.phase = '*'
                 if len(lst) > 3:
                     self.atom = lst[3]
+                self.histogram = HistIdLookup.get(lst[1],[None,None])[1]
+            elif lst[1] == '*':            
+                self.histogram = '*'
+                self.phase = PhaseIdLookup.get(lst[0],[None,None])[1]
             else:
+                self.histogram = HistIdLookup.get(lst[1],[None,None])[1]
                 self.phase = PhaseIdLookup.get(lst[0],[None,None])[1]
                 if len(lst) == 4:
                     if lst[3] == '*':
@@ -1391,13 +1398,10 @@ class G2VarObj(object):
                         self.atom = AtomIdLookup[lst[0]].get(lst[3],[None,None])[1]
                 elif len(lst) == 5:
                     self.atom = lst[3]+":"+lst[4]
+                elif len(lst) == 3:
+                    pass
                 else:
                     raise Exception,"Too many colons in var name "+str(args[0])
-
-            if lst[1] == '*':
-                self.histogram = '*'
-            else:
-                self.histogram = HistIdLookup.get(lst[1],[None,None])[1]
             self.name = lst[2]
         elif len(args) == 4:
             if args[0] == '*':

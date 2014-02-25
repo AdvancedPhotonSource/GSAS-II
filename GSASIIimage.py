@@ -527,6 +527,7 @@ def ImageRecalibrate(self,data,masks):
         elif not Found:         #skipping inner rings, keep looking until ring found 
             continue
         else:                   #no more rings beyond edge of detector
+            data['ellipses'].append([])
             continue
 #            break
     rings = np.concatenate((data['rings']),axis=0)

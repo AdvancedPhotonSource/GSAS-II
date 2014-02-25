@@ -4828,13 +4828,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         FillPawleyReflectionsGrid()
         
     def OnPawleyEstimate(event):
+        #Algorithm thanks to James Hester
         try:
             Refs = data['Pawley ref']
             Histograms = data['Histograms']
         except KeyError:
             G2frame.ErrorDialog('Pawley estimate','No histograms defined for this phase')
             return
-        HistoNames = Histograms.keys()
+        Vst = 1.0/data['General']['Cell'][7]     #Get volume
+        HistoNames = filter(lambda a:Histograms[a]['Use']==True,Histograms.keys())
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
         xdata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
         Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Instrument Parameters'))[0]
@@ -4842,6 +4844,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         wave = G2mth.getWave(Inst)
         posCorr = Inst['Zero'][1]
         const = 9.e-2/(np.pi*Sample['Gonio. radius'])                  #shifts in microns
+        gconst = 2.35482 # sqrt(8 ln 2)
         
         wx.BeginBusyCursor()
         try:
@@ -4854,14 +4857,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     pos -= const*(Sample['DisplaceX'][0]*cosd(pos)+Sample['DisplaceY'][0]*sind(pos))
                 indx = np.searchsorted(xdata[0],pos)
                 try:
-                    FWHM = max(0.001,G2pwd.getFWHM(pos,Inst))/2.
-                    dx = xdata[0][indx+1]-xdata[0][indx]
-                    ref[6] = FWHM*(xdata[1][indx]-xdata[4][indx])*cosd(pos/2.)**3/dx
+                    FWHM = max(0.001,G2pwd.getFWHM(pos,Inst))/100.0
+                    # We want to estimate Pawley F^2 as a drop-in replacement for F^2 calculated by the structural 
+                    # routines, which use Icorr * F^2 * peak profile, where peak profile has an area of 1.  So
+                    # we multiply the observed peak height by sqrt(8 ln 2)/(FWHM*sqrt(pi)) to determine the value of Icorr*F^2 
+                    # then divide by Icorr to get F^2.
+                    ref[6] = (xdata[1][indx]-xdata[4][indx])*gconst/(FWHM*np.sqrt(np.pi))  #Area of Gaussian is height * FWHM * sqrt(pi)
                     Lorenz = 1./(2.*sind(xdata[0][indx]/2.)**2*cosd(xdata[0][indx]/2.))           #Lorentz correction
                     pola = 1.0
                     if 'X' in Inst['Type']:
                         pola,dIdPola = G2pwd.Polarization(Inst['Polariz.'][1],xdata[0][indx],Inst['Azimuth'][1])
-                    ref[6] /= (Lorenz*pola*ref[3])
+                    else:
+                        pola = 1.0
+                    # Include histo scale and volume in calculation
+                    ref[6] /= (Sample['Scale'][0] * Vst * Lorenz * pola * ref[3])
                 except IndexError:
                     pass
         finally:

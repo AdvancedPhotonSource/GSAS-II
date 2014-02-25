@@ -2263,6 +2263,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         Page.canvas.SetToolTipString('')
         sizexy = Data['size']
         if event.xdata and event.ydata and len(G2frame.ImageZ):                 #avoid out of frame errors
+            Page.canvas.SetToolTipString('%8.2f %8.2fmm'%(event.xdata,event.ydata))
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             item = G2frame.itemPicked
             pixelSize = Data['pixelSize']
@@ -2279,7 +2280,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     if 'line3' in  str(item) or 'line4' in str(item) and not Data['fullIntegrate']:
                         Page.canvas.SetToolTipString('%6d deg'%(azm))
                     elif 'line1' in  str(item) or 'line2' in str(item):
-                        Page.canvas.SetToolTipString('%8.3fdeg'%(tth))                           
+                        Page.canvas.SetToolTipString('%8.3f deg'%(tth))                           
             else:
                 xpos = event.xdata
                 ypos = event.ydata

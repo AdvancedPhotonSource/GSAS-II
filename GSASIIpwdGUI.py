@@ -2148,6 +2148,7 @@ def UpdateSubstanceGrid(G2frame,data):
     
     def OnLoadSubstance(event):
         names = substFile.Substances.keys()
+        names.sort()
         dlg = wx.SingleChoiceDialog(G2frame, 'Which substance?', 'Select substance', names, wx.CHOICEDLG_STYLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:

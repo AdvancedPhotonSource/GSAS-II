@@ -2050,7 +2050,8 @@ class GSASII(wx.Frame):
                             Data['centerAzm'] = False
                             Data['fullIntegrate'] = False
                             Data['setRings'] = False
-                            Data['background image'] = ['',1.0]                            
+                            Data['background image'] = ['',-1.0]                            
+                            Data['dark image'] = ['',-1.0]
                         Data['setDefault'] = False
                         Data['range'] = [(Imin,Imax),[Imin,Imax]]
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)

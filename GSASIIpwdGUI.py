@@ -2184,6 +2184,26 @@ def UpdateSubstanceGrid(G2frame,data):
             data['Substances'][name]['XAbsorption'] = absorb
                          
         UpdateSubstanceGrid(G2frame,data)
+        
+    def OnCopySubstance(event):
+        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['SASD',])
+        copyList = []
+        dlg = wx.MultiChoiceDialog(G2frame, 
+            'Copy substances to which histograms?', 'Copy substances', 
+            histList, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    copyList.append(histList[i])
+                if 'All' in copyList: 
+                    copyList = histList[1:]
+            for item in copyList:
+                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Substances'),
+                    copy.copy(data))
+        finally:
+            dlg.Destroy()        
     
     def OnAddSubstance(event):
         dlg = wx.TextEntryDialog(None,'Enter a name for this substance','Substance Name Entry','New substance',
@@ -2382,7 +2402,8 @@ def UpdateSubstanceGrid(G2frame,data):
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2frame.dataFrame.SetLabel('Substances')
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadSubstance, id=G2gd.wxID_LOADSUBSTANCE)    
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddSubstance, id=G2gd.wxID_ADDSUBSTANCE)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddSubstance, id=G2gd.wxID_ADDSUBSTANCE)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopySubstance, id=G2gd.wxID_COPYSUBSTANCE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteSubstance, id=G2gd.wxID_DELETESUBSTANCE)    
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddElement, id=G2gd.wxID_ELEMENTADD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnDeleteElement, id=G2gd.wxID_ELEMENTDELETE)
@@ -2421,6 +2442,7 @@ def UpdateModelsGrid(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModel, id=G2gd.wxID_MODELFIT)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
+    print data
 
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)

@@ -134,8 +134,8 @@ htmlFirstUse = True
 ] = [wx.NewId() for item in range(1)]
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_ELEMENTADD,wxID_ELEMENTDELETE,wxID_ADDSUBSTANCE,
-    wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,
-] = [wx.NewId() for item in range(7)]
+    wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
+] = [wx.NewId() for item in range(8)]
 
 [ wxID_SELECTPHASE,
 ] = [wx.NewId() for item in range(1)]
@@ -2549,6 +2549,8 @@ class DataFrame(wx.Frame):
             help='Load substance from file')
         self.SubstanceEdit.Append(id=wxID_ADDSUBSTANCE, kind=wx.ITEM_NORMAL,text='Add substance',
             help='Add new substance to list')
+        self.SubstanceEdit.Append(id=wxID_COPYSUBSTANCE, kind=wx.ITEM_NORMAL,text='Copy substances',
+            help='Copy substances')
         self.SubstanceEdit.Append(id=wxID_DELETESUBSTANCE, kind=wx.ITEM_NORMAL,text='Delete substance',
             help='Delete substance from list')            
         self.SubstanceEdit.Append(id=wxID_ELEMENTADD, kind=wx.ITEM_NORMAL,text='Add elements',

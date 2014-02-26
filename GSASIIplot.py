@@ -856,6 +856,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     D = xye[5]-Ymax*G2frame.delOffset
                 elif 'SASD' in plottype:
                     D = xye[4]-Ymax*G2frame.delOffset
+                    Plot.set_yscale("log",nonposy='mask')
+                    Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
@@ -888,7 +890,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
                         if G2frame.logPlot:
                             Plot.set_yscale("log",nonposy='mask')
-                            Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.)
+                            Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                     if 'PWDR' in plottype:
                         Plot.plot(X,W,colors[(N+2)%6],picker=False)
                     Plot.plot(X,D,colors[(N+3)%6],picker=False)
@@ -921,9 +923,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         Plot.plot(X,Y,colors[N%6],picker=False)
                     elif 'SASD' in plottype:
                         Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
-                        Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.)
+                        Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
             if G2frame.logPlot:
-                Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.)
+                Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
     if PickId and not G2frame.Contour:
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         if 'C' in Parms['Type'][0]:
@@ -2307,11 +2309,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if event.key in ['l','p','f','s','a','r']:
                 G2frame.MaskKey = event.key
                 OnStartMask(G2frame)
+                PlotImage(G2frame,newPlot=False)
                 
         elif PickName == 'Stress/Strain':
             if event.key in ['a',]:
                 G2frame.StrainKey = event.key
                 OnStartNewDzero(G2frame)
+                PlotImage(G2frame,newPlot=False)
                 
         elif PickName == 'Image Controls':
             if event.key in ['c',]:
@@ -2326,15 +2330,17 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         print 'move center to: ',Xpos,Ypos
                         Data['center'] = [Xpos,Ypos]
                         G2imG.UpdateImageControls(G2frame,Data,Masks)
+                        PlotImage(G2frame,newPlot=False)
                 finally:
                     dlg.Destroy()
+                return
             elif event.key == 'l':
                 G2frame.logPlot = not G2frame.logPlot
             elif event.key in ['x',]:
                 Data['invert_x'] = not Data['invert_x']
             elif event.key in ['y',]:
                 Data['invert_y'] = not Data['invert_y']
-        PlotImage(G2frame,newPlot=False)
+            PlotImage(G2frame,newPlot=True)
             
     def OnKeyBox(event):
         if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('2D Powder Image'):

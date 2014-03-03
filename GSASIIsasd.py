@@ -54,3 +54,31 @@ npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
     
+###############################################################################
+#### Particle form factors & volumes
+###############################################################################
+
+def SpheroidFF(Q,R,AR):
+    '''
+    '''
+    QR = Q*R
+    if 0.98 < AR < 1.02:
+        return (3./(QR**3))*(np.sin(QR)-(QR*np.cos(QR)))
+        
+    
+def SpheroidVol(R,AR):
+    ''' Compute volume of cylindrically symmetric ellipsoid (spheroid) 
+    - can use numpy arrays for R & AR; will return corresponding numpy array
+    param float R: radius along 2 axes of spheroid
+    param float AR: aspect ratio so 3rd axis = R*AR
+    returns float: volume
+    '''
+    return AR*(4./3.)*np.pi*R**3
+    
+def SizeDistribution(Profile,Limits,Substances,Sample,data):
+    print data['Size']
+#    print Limits
+#    print Substances
+#    print Sample
+#    print Profile
+    

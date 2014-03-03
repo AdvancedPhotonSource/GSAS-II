@@ -55,6 +55,7 @@ import numpy.ma as ma
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)
 BLACK = wx.Colour(0,0,0)
+WACV = wx.ALIGN_CENTER_VERTICAL
 mapDefault = {'MapType':'','RefList':'','Resolution':0.5,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
 # trig functions in degrees
@@ -256,20 +257,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.CallAfter(UpdateGeneral)
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
-            nameSizer.Add(wx.StaticText(General,-1,' Phase name: '),0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(wx.StaticText(General,-1,' Phase name: '),0,WACV)
             NameTxt = wx.TextCtrl(General,-1,value=generalData['Name'],style=wx.TE_PROCESS_ENTER)
             NameTxt.Bind(wx.EVT_TEXT_ENTER,OnPhaseName)
             NameTxt.Bind(wx.EVT_KILL_FOCUS,OnPhaseName)
-            nameSizer.Add(NameTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            nameSizer.Add(wx.StaticText(General,-1,'  Phase type: '),0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(NameTxt,0,WACV)
+            nameSizer.Add(wx.StaticText(General,-1,'  Phase type: '),0,WACV)
             TypeTxt = wx.ComboBox(General,-1,value=generalData['Type'],choices=phaseTypes,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             TypeTxt.Bind(wx.EVT_COMBOBOX, OnPhaseType)
-            nameSizer.Add(TypeTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            nameSizer.Add(wx.StaticText(General,-1,'  Space group: '),0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(TypeTxt,0,WACV)
+            nameSizer.Add(wx.StaticText(General,-1,'  Space group: '),0,WACV)
             SGTxt = wx.TextCtrl(General,-1,value=generalData['SGData']['SpGrp'],style=wx.TE_PROCESS_ENTER)
             SGTxt.Bind(wx.EVT_TEXT_ENTER,OnSpaceGroup)
-            nameSizer.Add(SGTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            nameSizer.Add(SGTxt,0,WACV)
             return nameSizer
             
         def CellSizer():
@@ -382,23 +383,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             cellSizer = wx.FlexGridSizer(2,useGUI[1]+1,5,5)
             if PWDR:
                 cellRef = wx.CheckBox(General,-1,label='Refine unit cell:')
-                cellSizer.Add(cellRef,0,wx.ALIGN_CENTER_VERTICAL)
+                cellSizer.Add(cellRef,0,WACV)
                 cellRef.Bind(wx.EVT_CHECKBOX, OnCellRef)
                 cellRef.SetValue(cell[0])
             cellList = []
             for txt,fmt,ifEdit,Id in useGUI[2]:
-                cellSizer.Add(wx.StaticText(General,label=txt),0,wx.ALIGN_CENTER_VERTICAL)
+                cellSizer.Add(wx.StaticText(General,label=txt),0,WACV)
                 if ifEdit:          #a,b,c,etc.
                     cellVal = wx.TextCtrl(General,value=(fmt%(cell[Id+1])),
                         style=wx.TE_PROCESS_ENTER)
                     cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
                     cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
-                    cellSizer.Add(cellVal,0,wx.ALIGN_CENTER_VERTICAL)
+                    cellSizer.Add(cellVal,0,WACV)
                     cellList.append(cellVal.GetId())
                 else:               #volume
                     volVal = wx.TextCtrl(General,value=(fmt%(cell[7])),style=wx.TE_READONLY)
                     volVal.SetBackgroundColour(VERY_LIGHT_GREY)
-                    cellSizer.Add(volVal,0,wx.ALIGN_CENTER_VERTICAL)
+                    cellSizer.Add(volVal,0,WACV)
             return cellSizer
             
         def ElemSizer():
@@ -416,50 +417,50 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     denSizer[2].SetValue('%.3f'%(mattCoeff))
                 
             elemSizer = wx.FlexGridSizer(8,len(generalData['AtomTypes'])+1,1,1)
-            elemSizer.Add(wx.StaticText(General,label=' Elements'),0,wx.ALIGN_CENTER_VERTICAL)
+            elemSizer.Add(wx.StaticText(General,label=' Elements'),0,WACV)
             for elem in generalData['AtomTypes']:
                 typTxt = wx.TextCtrl(General,value=elem,style=wx.TE_READONLY)
                 typTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(typTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(General,label=' Isotope'),0,wx.ALIGN_CENTER_VERTICAL)
+                elemSizer.Add(typTxt,0,WACV)
+            elemSizer.Add(wx.StaticText(General,label=' Isotope'),0,WACV)
             for elem in generalData['AtomTypes']:
                 choices = generalData['Isotopes'][elem].keys()
                 isoSel = wx.ComboBox(General,-1,value=generalData['Isotope'][elem],choices=choices,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 isoSel.Bind(wx.EVT_COMBOBOX,OnIsotope)
                 Indx[isoSel.GetId()] = elem
-                elemSizer.Add(isoSel,1,wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
-            elemSizer.Add(wx.StaticText(General,label=' No. per cell'),0,wx.ALIGN_CENTER_VERTICAL)
+                elemSizer.Add(isoSel,1,WACV|wx.EXPAND)
+            elemSizer.Add(wx.StaticText(General,label=' No. per cell'),0,WACV)
             for elem in generalData['AtomTypes']:
                 numbTxt = wx.TextCtrl(General,value='%.1f'%(generalData['NoAtoms'][elem]),
                     style=wx.TE_READONLY)
                 numbTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(numbTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(General,label=' Atom weight'),0,wx.ALIGN_CENTER_VERTICAL)
+                elemSizer.Add(numbTxt,0,WACV)
+            elemSizer.Add(wx.StaticText(General,label=' Atom weight'),0,WACV)
             for wt in generalData['AtomMass']:
                 wtTxt = wx.TextCtrl(General,value='%.3f'%(wt),style=wx.TE_READONLY)
                 wtTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(wtTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(General,label=' Bond radii'),0,wx.ALIGN_CENTER_VERTICAL)
+                elemSizer.Add(wtTxt,0,WACV)
+            elemSizer.Add(wx.StaticText(General,label=' Bond radii'),0,WACV)
             for rad in generalData['BondRadii']:
                 bondRadii = wx.TextCtrl(General,value='%.2f'%(rad),style=wx.TE_READONLY)
                 bondRadii.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(bondRadii,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(General,label=' Angle radii'),0,wx.ALIGN_CENTER_VERTICAL)
+                elemSizer.Add(bondRadii,0,WACV)
+            elemSizer.Add(wx.StaticText(General,label=' Angle radii'),0,WACV)
             for rad in generalData['AngleRadii']:
                 elemTxt = wx.TextCtrl(General,value='%.2f'%(rad),style=wx.TE_READONLY)
                 elemTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(elemTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(General,label=' van der Waals radii'),0,wx.ALIGN_CENTER_VERTICAL)
+                elemSizer.Add(elemTxt,0,WACV)
+            elemSizer.Add(wx.StaticText(General,label=' van der Waals radii'),0,WACV)
             for rad in generalData['vdWRadii']:
                 elemTxt = wx.TextCtrl(General,value='%.2f'%(rad),style=wx.TE_READONLY)
                 elemTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-                elemSizer.Add(elemTxt,0,wx.ALIGN_CENTER_VERTICAL)
-            elemSizer.Add(wx.StaticText(General,label=' Default color'),0,wx.ALIGN_CENTER_VERTICAL)
+                elemSizer.Add(elemTxt,0,WACV)
+            elemSizer.Add(wx.StaticText(General,label=' Default color'),0,WACV)
             for R,G,B in generalData['Color']:
                 colorTxt = wx.TextCtrl(General,value='',style=wx.TE_READONLY)
                 colorTxt.SetBackgroundColour(wx.Colour(R,G,B))
-                elemSizer.Add(colorTxt,0,wx.ALIGN_CENTER_VERTICAL)
+                elemSizer.Add(colorTxt,0,WACV)
             return elemSizer
         
         def DenSizer():
@@ -467,17 +468,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mass = G2mth.getMass(generalData)
             density,mattCoeff = G2mth.getDensity(generalData)
             denSizer = wx.BoxSizer(wx.HORIZONTAL)
-            denSizer.Add(wx.StaticText(General,-1,' Density: '),0,wx.ALIGN_CENTER_VERTICAL)
+            denSizer.Add(wx.StaticText(General,-1,' Density: '),0,WACV)
             denTxt = wx.TextCtrl(General,-1,'%.3f'%(density),style=wx.TE_READONLY)
             denTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-            denSizer.Add(denTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            denSizer.Add(denTxt,0,WACV)
             mattTxt = None        
             if generalData['Type'] == 'macromolecular' and mass > 0.0:
                 denSizer.Add(wx.StaticText(General,-1,' Matthews coeff.: '),
-                    0,wx.ALIGN_CENTER_VERTICAL)
+                    0,WACV)
                 mattTxt = wx.TextCtrl(General,-1,'%.3f'%(mattCoeff),style=wx.TE_READONLY)
                 mattTxt.SetBackgroundColour(VERY_LIGHT_GREY)
-                denSizer.Add(mattTxt,0,wx.ALIGN_CENTER_VERTICAL)
+                denSizer.Add(mattTxt,0,WACV)
             return denSizer,denTxt,mattTxt
             
         def PawleySizer():
@@ -504,21 +505,21 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 pawlNegWt.SetValue("%.4f"%(generalData['Pawley neg wt']))          #reset in case of error                
 
             pawleySizer = wx.BoxSizer(wx.HORIZONTAL)
-            pawleySizer.Add(wx.StaticText(General,label=' Pawley controls: '),0,wx.ALIGN_CENTER_VERTICAL)
+            pawleySizer.Add(wx.StaticText(General,label=' Pawley controls: '),0,WACV)
             pawlRef = wx.CheckBox(General,-1,label=' Do Pawley refinement?')
             pawlRef.SetValue(generalData['doPawley'])
             pawlRef.Bind(wx.EVT_CHECKBOX,OnPawleyRef)
-            pawleySizer.Add(pawlRef,0,wx.ALIGN_CENTER_VERTICAL)
-            pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,wx.ALIGN_CENTER_VERTICAL)
+            pawleySizer.Add(pawlRef,0,WACV)
+            pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
             pawlVal = wx.TextCtrl(General,value='%.3f'%(generalData['Pawley dmin']),style=wx.TE_PROCESS_ENTER)
             pawlVal.Bind(wx.EVT_TEXT_ENTER,OnPawleyVal)        
             pawlVal.Bind(wx.EVT_KILL_FOCUS,OnPawleyVal)
-            pawleySizer.Add(pawlVal,0,wx.ALIGN_CENTER_VERTICAL)
-            pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,wx.ALIGN_CENTER_VERTICAL)
+            pawleySizer.Add(pawlVal,0,WACV)
+            pawleySizer.Add(wx.StaticText(General,label=' Pawley neg. wt.: '),0,WACV)
             pawlNegWt = wx.TextCtrl(General,value='%.4f'%(generalData['Pawley neg wt']),style=wx.TE_PROCESS_ENTER)
             pawlNegWt.Bind(wx.EVT_TEXT_ENTER,OnPawleyNegWt)        
             pawlNegWt.Bind(wx.EVT_KILL_FOCUS,OnPawleyNegWt)
-            pawleySizer.Add(pawlNegWt,0,wx.ALIGN_CENTER_VERTICAL)
+            pawleySizer.Add(pawlNegWt,0,WACV)
             return pawleySizer
             
         def MapSizer():
@@ -557,29 +558,29 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                  Map['MapType'] = 'Patterson'
             mapSizer = wx.BoxSizer(wx.VERTICAL)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-            lineSizer.Add(wx.StaticText(General,label=' Fourier map controls: Map type: '),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(wx.StaticText(General,label=' Fourier map controls: Map type: '),0,WACV)
             mapType = wx.ComboBox(General,-1,value=Map['MapType'],choices=mapTypes,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             mapType.Bind(wx.EVT_COMBOBOX,OnMapType)
-            lineSizer.Add(mapType,0,wx.ALIGN_CENTER_VERTICAL)
-            lineSizer.Add(wx.StaticText(General,label=' Reflection set from: '),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(mapType,0,WACV)
+            lineSizer.Add(wx.StaticText(General,label=' Reflection set from: '),0,WACV)
             refList = wx.ComboBox(General,-1,value=Map['RefList'],choices=refList,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             refList.Bind(wx.EVT_COMBOBOX,OnRefList)
-            lineSizer.Add(refList,0,wx.ALIGN_CENTER_VERTICAL)
-            mapSizer.Add(lineSizer,0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(refList,0,WACV)
+            mapSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            line2Sizer.Add(wx.StaticText(General,label=' Resolution: '),0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(General,label=' Resolution: '),0,WACV)
             mapRes =  wx.TextCtrl(General,value='%.2f'%(Map['Resolution']),style=wx.TE_PROCESS_ENTER)
             mapRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
             mapRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
-            line2Sizer.Add(mapRes,0,wx.ALIGN_CENTER_VERTICAL)
-            line2Sizer.Add(wx.StaticText(General,label=' Peak cutoff %: '),0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(mapRes,0,WACV)
+            line2Sizer.Add(wx.StaticText(General,label=' Peak cutoff %: '),0,WACV)
             cutOff =  wx.TextCtrl(General,value='%.1f'%(Map['cutOff']),style=wx.TE_PROCESS_ENTER)
             cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)        
             cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
-            line2Sizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
-            mapSizer.Add(line2Sizer,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(cutOff,0,WACV)
+            mapSizer.Add(line2Sizer,0,WACV)
             return mapSizer
                 
         def FlipSizer():
@@ -625,33 +626,33 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             refList = data['Histograms'].keys()
             flipSizer = wx.BoxSizer(wx.VERTICAL)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-            lineSizer.Add(wx.StaticText(General,label=' Charge flip controls: Reflection set from: '),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(wx.StaticText(General,label=' Charge flip controls: Reflection set from: '),0,WACV)
             refList = wx.ComboBox(General,-1,value=Flip['RefList'],choices=refList,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             refList.Bind(wx.EVT_COMBOBOX,OnRefList)
-            lineSizer.Add(refList,0,wx.ALIGN_CENTER_VERTICAL)
-            lineSizer.Add(wx.StaticText(General,label=' Normalizing element: '),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(refList,0,WACV)
+            lineSizer.Add(wx.StaticText(General,label=' Normalizing element: '),0,WACV)
             normElem = wx.Button(General,label=Flip['Norm element'],style=wx.TE_READONLY)
             normElem.Bind(wx.EVT_BUTTON,OnNormElem)
-            lineSizer.Add(normElem,0,wx.ALIGN_CENTER_VERTICAL)
-            flipSizer.Add(lineSizer,0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(normElem,0,WACV)
+            flipSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            line2Sizer.Add(wx.StaticText(General,label=' Resolution: '),0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(General,label=' Resolution: '),0,WACV)
             flipRes =  wx.TextCtrl(General,value='%.2f'%(Flip['Resolution']),style=wx.TE_PROCESS_ENTER)
             flipRes.Bind(wx.EVT_TEXT_ENTER,OnResVal)        
             flipRes.Bind(wx.EVT_KILL_FOCUS,OnResVal)
-            line2Sizer.Add(flipRes,0,wx.ALIGN_CENTER_VERTICAL)
-            line2Sizer.Add(wx.StaticText(General,label=' k-Factor (0.1-1.2): '),0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(flipRes,0,WACV)
+            line2Sizer.Add(wx.StaticText(General,label=' k-Factor (0.1-1.2): '),0,WACV)
             kFactor =  wx.TextCtrl(General,value='%.3f'%(Flip['k-factor']),style=wx.TE_PROCESS_ENTER)
             kFactor.Bind(wx.EVT_TEXT_ENTER,OnkFactor)        
             kFactor.Bind(wx.EVT_KILL_FOCUS,OnkFactor)
-            line2Sizer.Add(kFactor,0,wx.ALIGN_CENTER_VERTICAL)
-            line2Sizer.Add(wx.StaticText(General,label=' k-Max (>=10.0): '),0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(kFactor,0,WACV)
+            line2Sizer.Add(wx.StaticText(General,label=' k-Max (>=10.0): '),0,WACV)
             kMax = wx.TextCtrl(General,value='%.1f'%(Flip['k-Max']),style=wx.TE_PROCESS_ENTER)
             kMax.Bind(wx.EVT_TEXT_ENTER,OnkMax)        
             kMax.Bind(wx.EVT_KILL_FOCUS,OnkMax)
-            line2Sizer.Add(kMax,0,wx.ALIGN_CENTER_VERTICAL)
-            flipSizer.Add(line2Sizer,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(kMax,0,WACV)
+            flipSizer.Add(line2Sizer,0,WACV)
             return flipSizer
             
         def MCSASizer():
@@ -740,49 +741,49 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     refList.append(item)
             mcsaSizer = wx.BoxSizer(wx.VERTICAL)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-            lineSizer.Add(wx.StaticText(General,label=' Monte Carlo/Simulated Annealing controls: Reflection set from: '),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(wx.StaticText(General,label=' Monte Carlo/Simulated Annealing controls: Reflection set from: '),0,WACV)
             refList = wx.ComboBox(General,-1,value=MCSAdata['Data source'],choices=refList,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             refList.Bind(wx.EVT_COMBOBOX,OnRefList)
-            lineSizer.Add(refList,0,wx.ALIGN_CENTER_VERTICAL)
-            lineSizer.Add(wx.StaticText(General,label=' d-min: '),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(refList,0,WACV)
+            lineSizer.Add(wx.StaticText(General,label=' d-min: '),0,WACV)
             dmin = wx.TextCtrl(General,-1,value='%.3f'%(MCSAdata['dmin']),style=wx.TE_PROCESS_ENTER)
             dmin.Bind(wx.EVT_TEXT_ENTER,OnDmin)        
             dmin.Bind(wx.EVT_KILL_FOCUS,OnDmin)
-            lineSizer.Add(dmin,0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(dmin,0,WACV)
             mcsaSizer.Add(lineSizer)
             mcsaSizer.Add((5,5),)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            line2Sizer.Add(wx.StaticText(General,label=' MC/SA runs: '),0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(wx.StaticText(General,label=' MC/SA runs: '),0,WACV)
             Cchoice = ['1','2','4','8','16','32','64','128','256']
             cycles = wx.ComboBox(General,-1,value=str(MCSAdata.get('Cycles',1)),choices=Cchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             cycles.Bind(wx.EVT_COMBOBOX,OnCycles)        
-            line2Sizer.Add(cycles,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(cycles,0,WACV)
             line2Sizer.Add((5,0),)
             ranStart = wx.CheckBox(General,-1,label=' MC/SA Refine at ')
             ranStart.Bind(wx.EVT_CHECKBOX, OnRanStart)
             ranStart.SetValue(MCSAdata.get('ranStart',False))
-            line2Sizer.Add(ranStart,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(ranStart,0,WACV)
             ranRange = wx.TextCtrl(General,-1,value='%.1f'%(MCSAdata.get('ranRange',0.10)*100),style=wx.TE_PROCESS_ENTER)
             ranRange.Bind(wx.EVT_TEXT_ENTER,OnRanRange)        
             ranRange.Bind(wx.EVT_KILL_FOCUS,OnRanRange)
-            line2Sizer.Add(ranRange,0,wx.ALIGN_CENTER_VERTICAL)
-            line2Sizer.Add(wx.StaticText(General,label='% of ranges. '),0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(ranRange,0,WACV)
+            line2Sizer.Add(wx.StaticText(General,label='% of ranges. '),0,WACV)
 #            autoRan = wx.CheckBox(General,-1,label=' Do auto range reduction? ')
 #            autoRan.Bind(wx.EVT_CHECKBOX, OnAutoRan)
 #            autoRan.SetValue(MCSAdata.get('autoRan',False))
-#            line2Sizer.Add(autoRan,0,wx.ALIGN_CENTER_VERTICAL)
+#            line2Sizer.Add(autoRan,0,WACV)
             mcsaSizer.Add(line2Sizer)
             mcsaSizer.Add((5,5),)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
             Achoice = ['log','fast']                #these work
 #            Achoice = ['log','fast','cauchy','boltzmann']
-            line3Sizer.Add(wx.StaticText(General,label=' MC/SA schedule: '),0,wx.ALIGN_CENTER_VERTICAL)
+            line3Sizer.Add(wx.StaticText(General,label=' MC/SA schedule: '),0,WACV)
             Alist = wx.ComboBox(General,-1,value=MCSAdata['Algorithm'],choices=Achoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Alist.Bind(wx.EVT_COMBOBOX,OnAlist)
-            line3Sizer.Add(Alist,0,wx.ALIGN_CENTER_VERTICAL)
+            line3Sizer.Add(Alist,0,WACV)
             if MCSAdata['Algorithm'] in ['fast','boltzmann','cauchy']:
                 Names = [' A-jump: ',' B-jump: ']
                 parms = 'Jump coeff'
@@ -792,22 +793,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Names = [' quench: ',' m-factor: ',' n-factor: ']
                     parms = 'fast parms'
                 for i,name in enumerate(Names):
-                    line3Sizer.Add(wx.StaticText(General,label=name),0,wx.ALIGN_CENTER_VERTICAL)
+                    line3Sizer.Add(wx.StaticText(General,label=name),0,WACV)
                     Ajump =  wx.TextCtrl(General,-1,value='%.3f'%(MCSAdata[parms][i]),style=wx.TE_PROCESS_ENTER)
                     Ajump.Bind(wx.EVT_TEXT_ENTER,OnAjump)        
                     Ajump.Bind(wx.EVT_KILL_FOCUS,OnAjump)
                     Indx[Ajump.GetId()] = [parms,i]
-                    line3Sizer.Add(Ajump,0,wx.ALIGN_CENTER_VERTICAL)
+                    line3Sizer.Add(Ajump,0,WACV)
             elif 'log' in MCSAdata['Algorithm']:
-                line3Sizer.Add(wx.StaticText(General,label=' slope: '),0,wx.ALIGN_CENTER_VERTICAL)
+                line3Sizer.Add(wx.StaticText(General,label=' slope: '),0,WACV)
                 slope =  wx.TextCtrl(General,-1,value='%.3f'%(MCSAdata['log slope']),style=wx.TE_PROCESS_ENTER)
                 slope.Bind(wx.EVT_TEXT_ENTER,OnSlope)        
                 slope.Bind(wx.EVT_KILL_FOCUS,OnSlope)
-                line3Sizer.Add(slope,0,wx.ALIGN_CENTER_VERTICAL)
+                line3Sizer.Add(slope,0,WACV)
             mcsaSizer.Add(line3Sizer)
             mcsaSizer.Add((5,5),)
             line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
-            line3Sizer.Add(wx.StaticText(General,label=' Annealing schedule: '),0,wx.ALIGN_CENTER_VERTICAL)
+            line3Sizer.Add(wx.StaticText(General,label=' Annealing schedule: '),0,WACV)
             names = [' Start temp: ',' Final temp: ',' No. trials: ']
             fmts = ['%.1f','%.5f','%d']
             for i,[name,fmt] in enumerate(zip(names,fmts)):
@@ -815,12 +816,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     text = fmt%(MCSAdata['Annealing'][i])
                 else:
                     text = 'None'
-                line3Sizer.Add(wx.StaticText(General,label=name),0,wx.ALIGN_CENTER_VERTICAL)
+                line3Sizer.Add(wx.StaticText(General,label=name),0,WACV)
                 anneal =  wx.TextCtrl(General,-1,value=text,style=wx.TE_PROCESS_ENTER)
                 anneal.Bind(wx.EVT_TEXT_ENTER,OnAnneal)        
                 anneal.Bind(wx.EVT_KILL_FOCUS,OnAnneal)
                 Indx[anneal.GetId()] = [i,fmt]
-                line3Sizer.Add(anneal,0,wx.ALIGN_CENTER_VERTICAL)
+                line3Sizer.Add(anneal,0,WACV)
             mcsaSizer.Add(line3Sizer)            
             return mcsaSizer
 
@@ -1727,7 +1728,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                              ISO['IsoModeList'],modeVals,ISO['G2ModeList']):
                 if G2var in constDict:
                     ch = G2gd.HelpButton(panel2,fmtHelp(constDict[G2var],var))
-                    subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+                    subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
                 else:
                     subSizer2.Add((-1,-1))
                 subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
@@ -1761,7 +1762,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                              ISO['OccModeList'],modeVals,ISO['G2OccModeList']):
                 if G2var in constDict:
                     ch = G2gd.HelpButton(panel2,fmtHelp(constDict[G2var],var))
-                    subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+                    subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
                 else:
                     subSizer2.Add((-1,-1))
                 subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,str(lbl)))
@@ -2787,7 +2788,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             cameraPosTxt = wx.StaticText(drawOptions,-1,
                 ' Camera Distance: '+'%.2f'%(drawingData['cameraPos']),name='cameraPos')
             G2frame.dataDisplay.cameraPosTxt = cameraPosTxt
-            slideSizer.Add(cameraPosTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            slideSizer.Add(cameraPosTxt,0,WACV)
             cameraPos = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['cameraPos'],name='cameraSlider')
             cameraPos.SetRange(10,500)
             cameraPos.Bind(wx.EVT_SLIDER, OnCameraPos)
@@ -2795,22 +2796,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             slideSizer.Add(cameraPos,1,wx.EXPAND|wx.RIGHT)
             
             ZclipTxt = wx.StaticText(drawOptions,-1,' Z clipping: '+'%.2fA'%(drawingData['Zclip']*drawingData['cameraPos']/100.))
-            slideSizer.Add(ZclipTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            slideSizer.Add(ZclipTxt,0,WACV)
             Zclip = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['Zclip'])
             Zclip.SetRange(1,99)
             Zclip.Bind(wx.EVT_SLIDER, OnZclip)
             slideSizer.Add(Zclip,1,wx.EXPAND|wx.RIGHT)
             
             ZstepSizer = wx.BoxSizer(wx.HORIZONTAL)
-            ZstepSizer.Add(wx.StaticText(drawOptions,-1,' Z step:'),0,wx.ALIGN_CENTER_VERTICAL)
+            ZstepSizer.Add(wx.StaticText(drawOptions,-1,' Z step:'),0,WACV)
             Zstep = wx.TextCtrl(drawOptions,value='%.2f'%(drawingData['Zstep']),
                 style=wx.TE_PROCESS_ENTER)
             Zstep.Bind(wx.EVT_TEXT_ENTER,OnZstep)
             Zstep.Bind(wx.EVT_KILL_FOCUS,OnZstep)
-            ZstepSizer.Add(Zstep,0,wx.ALIGN_CENTER_VERTICAL)
+            ZstepSizer.Add(Zstep,0,WACV)
             slideSizer.Add(ZstepSizer)
             MoveSizer = wx.BoxSizer(wx.HORIZONTAL)
-            MoveSizer.Add(wx.StaticText(drawOptions,-1,'   Press to step:'),0,wx.ALIGN_CENTER_VERTICAL)
+            MoveSizer.Add(wx.StaticText(drawOptions,-1,'   Press to step:'),0,WACV)
             MoveZ = wx.SpinButton(drawOptions,style=wx.SP_HORIZONTAL,size=wx.Size(100,20))
             MoveZ.SetValue(0)
             MoveZ.SetRange(-1,1)
@@ -2819,26 +2820,26 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             slideSizer.Add(MoveSizer,1,wx.EXPAND|wx.RIGHT)
             
             vdwScaleTxt = wx.StaticText(drawOptions,-1,' van der Waals scale: '+'%.2f'%(drawingData['vdwScale']))
-            slideSizer.Add(vdwScaleTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            slideSizer.Add(vdwScaleTxt,0,WACV)
             vdwScale = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['vdwScale']))
             vdwScale.Bind(wx.EVT_SLIDER, OnVdWScale)
             slideSizer.Add(vdwScale,1,wx.EXPAND|wx.RIGHT)
     
             ellipseProbTxt = wx.StaticText(drawOptions,-1,' Ellipsoid probability: '+'%d%%'%(drawingData['ellipseProb']))
-            slideSizer.Add(ellipseProbTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            slideSizer.Add(ellipseProbTxt,0,WACV)
             ellipseProb = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=drawingData['ellipseProb'])
             ellipseProb.SetRange(1,99)
             ellipseProb.Bind(wx.EVT_SLIDER, OnEllipseProb)
             slideSizer.Add(ellipseProb,1,wx.EXPAND|wx.RIGHT)
     
             ballScaleTxt = wx.StaticText(drawOptions,-1,' Ball scale: '+'%.2f'%(drawingData['ballScale']))
-            slideSizer.Add(ballScaleTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            slideSizer.Add(ballScaleTxt,0,WACV)
             ballScale = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['ballScale']))
             ballScale.Bind(wx.EVT_SLIDER, OnBallScale)
             slideSizer.Add(ballScale,1,wx.EXPAND|wx.RIGHT)
     
             bondRadiusTxt = wx.StaticText(drawOptions,-1,' Bond radius, A: '+'%.2f'%(drawingData['bondRadius']))
-            slideSizer.Add(bondRadiusTxt,0,wx.ALIGN_CENTER_VERTICAL)
+            slideSizer.Add(bondRadiusTxt,0,WACV)
             bondRadius = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['bondRadius']))
             bondRadius.SetRange(1,25)
             bondRadius.Bind(wx.EVT_SLIDER, OnBondRadius)
@@ -2846,13 +2847,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
             if generalData['Map']['rhoMax']:
                 contourLevelTxt = wx.StaticText(drawOptions,-1,' Contour level: '+'%.2f'%(drawingData['contourLevel']*generalData['Map']['rhoMax']))
-                slideSizer.Add(contourLevelTxt,0,wx.ALIGN_CENTER_VERTICAL)
+                slideSizer.Add(contourLevelTxt,0,WACV)
                 contourLevel = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(100*drawingData['contourLevel']))
                 contourLevel.SetRange(1,100)
                 contourLevel.Bind(wx.EVT_SLIDER, OnContourLevel)
                 slideSizer.Add(contourLevel,1,wx.EXPAND|wx.RIGHT)
                 mapSizeTxt = wx.StaticText(drawOptions,-1,' Map radius, A: '+'%.1f'%(drawingData['mapSize']))
-                slideSizer.Add(mapSizeTxt,0,wx.ALIGN_CENTER_VERTICAL)
+                slideSizer.Add(mapSizeTxt,0,WACV)
                 mapSize = wx.Slider(drawOptions,style=wx.SL_HORIZONTAL,value=int(10*drawingData['mapSize']))
                 mapSize.SetRange(1,100)
                 mapSize.Bind(wx.EVT_SLIDER, OnMapSize)
@@ -2922,18 +2923,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                 
             showSizer = wx.BoxSizer(wx.VERTICAL)            
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-            lineSizer.Add(wx.StaticText(drawOptions,-1,' Background color:'),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(wx.StaticText(drawOptions,-1,' Background color:'),0,WACV)
             backColor = wcs.ColourSelect(drawOptions, -1,colour=drawingData['backColor'],size=wx.Size(25,25))
             backColor.Bind(wcs.EVT_COLOURSELECT, OnBackColor)
-            lineSizer.Add(backColor,0,wx.ALIGN_CENTER_VERTICAL)
-            lineSizer.Add(wx.StaticText(drawOptions,-1,' View Dir.:'),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(backColor,0,WACV)
+            lineSizer.Add(wx.StaticText(drawOptions,-1,' View Dir.:'),0,WACV)
             VD = drawingData['viewDir']
             viewDir = wx.TextCtrl(drawOptions,value='%.3f %.3f %.3f'%(VD[0],VD[1],VD[2]),
                 style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewDir')
             viewDir.Bind(wx.EVT_TEXT_ENTER,OnViewDir)
             viewDir.Bind(wx.EVT_KILL_FOCUS,OnViewDir)
             G2frame.dataDisplay.viewDir = viewDir
-            lineSizer.Add(viewDir,0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(viewDir,0,WACV)
             showSizer.Add(lineSizer)
             showSizer.Add((0,5),0)
             
@@ -2941,15 +2942,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             showABC = wx.CheckBox(drawOptions,-1,label=' Show view point?')
             showABC.Bind(wx.EVT_CHECKBOX, OnShowABC)
             showABC.SetValue(drawingData['showABC'])
-            lineSizer.Add(showABC,0,wx.ALIGN_CENTER_VERTICAL)
-            lineSizer.Add(wx.StaticText(drawOptions,-1,' View Point:'),0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(showABC,0,WACV)
+            lineSizer.Add(wx.StaticText(drawOptions,-1,' View Point:'),0,WACV)
             VP = drawingData['viewPoint'][0]
             viewPoint = wx.TextCtrl(drawOptions,value='%.3f %.3f %.3f'%(VP[0],VP[1],VP[2]),
                 style=wx.TE_PROCESS_ENTER,size=wx.Size(140,20),name='viewPoint')
             G2frame.dataDisplay.viewPoint = viewPoint
             viewPoint.Bind(wx.EVT_TEXT_ENTER,OnViewPoint)
             viewPoint.Bind(wx.EVT_KILL_FOCUS,OnViewPoint)
-            lineSizer.Add(viewPoint,0,wx.ALIGN_CENTER_VERTICAL)
+            lineSizer.Add(viewPoint,0,WACV)
             showSizer.Add(lineSizer)
             showSizer.Add((0,5),0)
             
@@ -2958,17 +2959,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             unitCellBox = wx.CheckBox(drawOptions,-1,label=' Show unit cell?')
             unitCellBox.Bind(wx.EVT_CHECKBOX, OnShowUnitCell)
             unitCellBox.SetValue(drawingData['unitCellBox'])
-            line2Sizer.Add(unitCellBox,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(unitCellBox,0,WACV)
     
             showHydrogen = wx.CheckBox(drawOptions,-1,label=' Show hydrogens?')
             showHydrogen.Bind(wx.EVT_CHECKBOX, OnShowHyd)
             showHydrogen.SetValue(drawingData['showHydrogen'])
-            line2Sizer.Add(showHydrogen,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(showHydrogen,0,WACV)
             
             showRB = wx.CheckBox(drawOptions,-1,label=' Show rigid Bodies?')
             showRB.Bind(wx.EVT_CHECKBOX, OnShowRB)
             showRB.SetValue(drawingData['showRigidBodies'])
-            line2Sizer.Add(showRB,0,wx.ALIGN_CENTER_VERTICAL)
+            line2Sizer.Add(showRB,0,WACV)
             
             showSizer.Add(line2Sizer)
             return showSizer
@@ -2995,17 +2996,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.PlotStructure(G2frame,data)
             
             radSizer = wx.BoxSizer(wx.HORIZONTAL)
-            radSizer.Add(wx.StaticText(drawOptions,-1,' Hydrogen radius, A:  '),0,wx.ALIGN_CENTER_VERTICAL)
+            radSizer.Add(wx.StaticText(drawOptions,-1,' Hydrogen radius, A:  '),0,WACV)
             sizeH = wx.TextCtrl(drawOptions,-1,value='%.2f'%(drawingData['sizeH']),size=wx.Size(60,20),style=wx.TE_PROCESS_ENTER)
             sizeH.Bind(wx.EVT_TEXT_ENTER,OnSizeHatoms)
             sizeH.Bind(wx.EVT_KILL_FOCUS,OnSizeHatoms)
-            radSizer.Add(sizeH,0,wx.ALIGN_CENTER_VERTICAL)
+            radSizer.Add(sizeH,0,WACV)
     
-            radSizer.Add(wx.StaticText(drawOptions,-1,' Bond search factor:  '),0,wx.ALIGN_CENTER_VERTICAL)
+            radSizer.Add(wx.StaticText(drawOptions,-1,' Bond search factor:  '),0,WACV)
             radFactor = wx.TextCtrl(drawOptions,value='%.2f'%(drawingData['radiusFactor']),size=wx.Size(60,20),style=wx.TE_PROCESS_ENTER)
             radFactor.Bind(wx.EVT_TEXT_ENTER,OnRadFactor)
             radFactor.Bind(wx.EVT_KILL_FOCUS,OnRadFactor)
-            radSizer.Add(radFactor,0,wx.ALIGN_CENTER_VERTICAL)
+            radSizer.Add(radFactor,0,WACV)
             return radSizer
 
         # UpdateDrawOptions exectable code starts here
@@ -3023,7 +3024,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             drawOptions.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(drawOptions,-1,' Drawing controls:'),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(wx.StaticText(drawOptions,-1,' Drawing controls:'),0,WACV)
         mainSizer.Add((5,5),0)        
         mainSizer.Add(SlopSizer(),0)
         mainSizer.Add((5,5),0)
@@ -3157,85 +3158,85 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Texture.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         titleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        titleSizer.Add(wx.StaticText(Texture,-1,'Spherical harmonics texture data for '+PhaseName+':'),0,wx.ALIGN_CENTER_VERTICAL)
+        titleSizer.Add(wx.StaticText(Texture,-1,'Spherical harmonics texture data for '+PhaseName+':'),0,WACV)
         titleSizer.Add(wx.StaticText(Texture,-1,
             ' Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))),
-            0,wx.ALIGN_CENTER_VERTICAL)
+            0,WACV)
         mainSizer.Add(titleSizer,0)
         mainSizer.Add((0,5),0)
         shSizer = wx.FlexGridSizer(1,6,5,5)
-        shSizer.Add(wx.StaticText(Texture,-1,'Texture model: '),0,wx.ALIGN_CENTER_VERTICAL)
+        shSizer.Add(wx.StaticText(Texture,-1,'Texture model: '),0,WACV)
         shModel = wx.ComboBox(Texture,-1,value=textureData['Model'],choices=shModels,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         shModel.Bind(wx.EVT_COMBOBOX,OnShModel)
-        shSizer.Add(shModel,0,wx.ALIGN_CENTER_VERTICAL)
-        shSizer.Add(wx.StaticText(Texture,-1,'  Harmonic order: '),0,wx.ALIGN_CENTER_VERTICAL)
+        shSizer.Add(shModel,0,WACV)
+        shSizer.Add(wx.StaticText(Texture,-1,'  Harmonic order: '),0,WACV)
         shOrder = wx.ComboBox(Texture,-1,value=str(textureData['Order']),choices=[str(2*i) for i in range(18)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         shOrder.Bind(wx.EVT_COMBOBOX,OnShOrder)
-        shSizer.Add(shOrder,0,wx.ALIGN_CENTER_VERTICAL)
+        shSizer.Add(shOrder,0,WACV)
         shRef = wx.CheckBox(Texture,-1,label=' Refine texture?')
         shRef.SetValue(textureData['SH Coeff'][0])
         shRef.Bind(wx.EVT_CHECKBOX, OnSHRefine)
-        shSizer.Add(shRef,0,wx.ALIGN_CENTER_VERTICAL)
+        shSizer.Add(shRef,0,WACV)
         shShow = wx.CheckBox(Texture,-1,label=' Show coeff.?')
         shShow.SetValue(textureData['SHShow'])
         shShow.Bind(wx.EVT_CHECKBOX, OnSHShow)
-        shSizer.Add(shShow,0,wx.ALIGN_CENTER_VERTICAL)
+        shSizer.Add(shShow,0,WACV)
         mainSizer.Add(shSizer,0,0)
         mainSizer.Add((0,5),0)
         PTSizer = wx.FlexGridSizer(2,4,5,5)
-        PTSizer.Add(wx.StaticText(Texture,-1,' Texture plot type: '),0,wx.ALIGN_CENTER_VERTICAL)
+        PTSizer.Add(wx.StaticText(Texture,-1,' Texture plot type: '),0,WACV)
         choices = ['Axial pole distribution','Pole figure','Inverse pole figure']            
         pfType = wx.ComboBox(Texture,-1,value=str(textureData['PlotType']),choices=choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         pfType.Bind(wx.EVT_COMBOBOX,OnPfType)
-        PTSizer.Add(pfType,0,wx.ALIGN_CENTER_VERTICAL)
+        PTSizer.Add(pfType,0,WACV)
         if 'Axial' not in textureData['PlotType']:
-            PTSizer.Add(wx.StaticText(Texture,-1,' Projection type: '),0,wx.ALIGN_CENTER_VERTICAL)
+            PTSizer.Add(wx.StaticText(Texture,-1,' Projection type: '),0,WACV)
             projSel = wx.ComboBox(Texture,-1,value=G2frame.Projection,choices=['equal area','stereographic','3D display'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             projSel.Bind(wx.EVT_COMBOBOX,OnProjSel)
-            PTSizer.Add(projSel,0,wx.ALIGN_CENTER_VERTICAL)
+            PTSizer.Add(projSel,0,WACV)
         if textureData['PlotType'] in ['Pole figure','Axial pole distribution']:
-            PTSizer.Add(wx.StaticText(Texture,-1,' Pole figure HKL: '),0,wx.ALIGN_CENTER_VERTICAL)
+            PTSizer.Add(wx.StaticText(Texture,-1,' Pole figure HKL: '),0,WACV)
             PH = textureData['PFhkl']
             pfVal = wx.TextCtrl(Texture,-1,'%d %d %d'%(PH[0],PH[1],PH[2]),style=wx.TE_PROCESS_ENTER)
         else:
-            PTSizer.Add(wx.StaticText(Texture,-1,' Inverse pole figure XYZ: '),0,wx.ALIGN_CENTER_VERTICAL)
+            PTSizer.Add(wx.StaticText(Texture,-1,' Inverse pole figure XYZ: '),0,WACV)
             PX = textureData['PFxyz']
             pfVal = wx.TextCtrl(Texture,-1,'%3.1f %3.1f %3.1f'%(PX[0],PX[1],PX[2]),style=wx.TE_PROCESS_ENTER)
         pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
         pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
-        PTSizer.Add(pfVal,0,wx.ALIGN_CENTER_VERTICAL)
+        PTSizer.Add(pfVal,0,WACV)
         if 'Axial' not in textureData['PlotType']:
-            PTSizer.Add(wx.StaticText(Texture,-1,' Color scheme'),0,wx.ALIGN_CENTER_VERTICAL)
+            PTSizer.Add(wx.StaticText(Texture,-1,' Color scheme'),0,WACV)
             choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
             choice.sort()
             colorSel = wx.ComboBox(Texture,-1,value=G2frame.ContourColor,choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             colorSel.Bind(wx.EVT_COMBOBOX,OnColorSel)
-            PTSizer.Add(colorSel,0,wx.ALIGN_CENTER_VERTICAL)        
-        mainSizer.Add(PTSizer,0,wx.ALIGN_CENTER_VERTICAL)
+            PTSizer.Add(colorSel,0,WACV)        
+        mainSizer.Add(PTSizer,0,WACV)
         mainSizer.Add((0,5),0)
         if textureData['SHShow']:
-            mainSizer.Add(wx.StaticText(Texture,-1,'Spherical harmonic coefficients: '),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(wx.StaticText(Texture,-1,'Spherical harmonic coefficients: '),0,WACV)
             mainSizer.Add((0,5),0)
             ODFSizer = wx.FlexGridSizer(2,8,2,2)
             ODFIndx = {}
             ODFkeys = textureData['SH Coeff'][1].keys()
             ODFkeys.sort()
             for item in ODFkeys:
-                ODFSizer.Add(wx.StaticText(Texture,-1,item),0,wx.ALIGN_CENTER_VERTICAL)
+                ODFSizer.Add(wx.StaticText(Texture,-1,item),0,WACV)
                 ODFval = wx.TextCtrl(Texture,wx.ID_ANY,'%8.3f'%(textureData['SH Coeff'][1][item]),style=wx.TE_PROCESS_ENTER)
                 ODFIndx[ODFval.GetId()] = item
                 ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
                 ODFval.Bind(wx.EVT_KILL_FOCUS,OnODFValue)
-                ODFSizer.Add(ODFval,0,wx.ALIGN_CENTER_VERTICAL)
-            mainSizer.Add(ODFSizer,0,wx.ALIGN_CENTER_VERTICAL)
+                ODFSizer.Add(ODFval,0,WACV)
+            mainSizer.Add(ODFSizer,0,WACV)
             mainSizer.Add((0,5),0)
         mainSizer.Add((0,5),0)
-        mainSizer.Add(wx.StaticText(Texture,-1,'Sample orientation angles: '),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(wx.StaticText(Texture,-1,'Sample orientation angles: '),0,WACV)
         mainSizer.Add((0,5),0)
         angSizer = wx.BoxSizer(wx.HORIZONTAL)
         angIndx = {}
@@ -3245,14 +3246,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             angRef.SetValue(textureData[item][0])
             angIndx[angRef.GetId()] = item
             angRef.Bind(wx.EVT_CHECKBOX, OnAngRef)
-            angSizer.Add(angRef,0,wx.ALIGN_CENTER_VERTICAL)
+            angSizer.Add(angRef,0,WACV)
             angVal = wx.TextCtrl(Texture,wx.ID_ANY,'%8.2f'%(textureData[item][1]),style=wx.TE_PROCESS_ENTER)
             valIndx[angVal.GetId()] = item
             angVal.Bind(wx.EVT_TEXT_ENTER,OnAngValue)
             angVal.Bind(wx.EVT_KILL_FOCUS,OnAngValue)
-            angSizer.Add(angVal,0,wx.ALIGN_CENTER_VERTICAL)
+            angSizer.Add(angVal,0,WACV)
             angSizer.Add((5,0),0)
-        mainSizer.Add(angSizer,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(angSizer,0,WACV)
         SetPhaseWindow(G2frame.dataFrame,Texture,mainSizer)
 
 ################################################################################
@@ -3454,7 +3455,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if 'S' in model[0]:
                 names += ['S12','S13','S21','S23','S31','S32','SAA','SBB']
             for i,name in enumerate(names):
-                thermSizer.Add(wx.StaticText(RigidBodies,-1,name+': '),0,wx.ALIGN_CENTER_VERTICAL)
+                thermSizer.Add(wx.StaticText(RigidBodies,-1,name+': '),0,WACV)
                 thermVal = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(model[1][i]),
                     style=wx.TE_PROCESS_ENTER)
                 thermVal.Bind(wx.EVT_TEXT_ENTER,OnThermval)
@@ -3465,7 +3466,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Tcheck.Bind(wx.EVT_CHECKBOX,OnTLSRef)
                 Tcheck.SetValue(model[2][i])
                 Indx[Tcheck.GetId()] = i
-                thermSizer.Add(Tcheck,0,wx.ALIGN_CENTER_VERTICAL)
+                thermSizer.Add(Tcheck,0,WACV)
             return thermSizer
             
         def LocationSizer(RBObj,rbType):
@@ -3523,25 +3524,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Orien,OrienV = G2mth.Q2AVdeg(RBObj['Orient'][0])
             Orien = [Orien,]
             Orien.extend(OrienV/nl.norm(OrienV))
-            topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z:'),0,wx.ALIGN_CENTER_VERTICAL)
+            topSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z:'),0,WACV)
             for ix,x in enumerate(Orig):
                 origX = wx.TextCtrl(RigidBodies,-1,value='%8.5f'%(x),style=wx.TE_PROCESS_ENTER)
                 origX.Bind(wx.EVT_TEXT_ENTER,OnOrigX)
                 origX.Bind(wx.EVT_KILL_FOCUS,OnOrigX)
                 Indx[origX.GetId()] = ix
-                topSizer.Add(origX,0,wx.ALIGN_CENTER_VERTICAL)
+                topSizer.Add(origX,0,WACV)
             topSizer.Add((5,0),)
             Ocheck = wx.CheckBox(RigidBodies,-1,'Refine?')
             Ocheck.Bind(wx.EVT_CHECKBOX,OnOrigRef)
             Ocheck.SetValue(RBObj['Orig'][1])
-            topSizer.Add(Ocheck,0,wx.ALIGN_CENTER_VERTICAL)
-            topSizer.Add(wx.StaticText(RigidBodies,-1,'Rotation angle, vector:'),0,wx.ALIGN_CENTER_VERTICAL)
+            topSizer.Add(Ocheck,0,WACV)
+            topSizer.Add(wx.StaticText(RigidBodies,-1,'Rotation angle, vector:'),0,WACV)
             for ix,x in enumerate(Orien):
                 orien = wx.TextCtrl(RigidBodies,-1,value='%8.4f'%(x),style=wx.TE_PROCESS_ENTER)
                 orien.Bind(wx.EVT_TEXT_ENTER,OnOrien)
                 orien.Bind(wx.EVT_KILL_FOCUS,OnOrien)
                 Indx[orien.GetId()] = ix
-                topSizer.Add(orien,0,wx.ALIGN_CENTER_VERTICAL)
+                topSizer.Add(orien,0,WACV)
             Qcheck = wx.ComboBox(RigidBodies,-1,value='',choices=[' ','A','AV'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Qcheck.Bind(wx.EVT_COMBOBOX,OnOrienRef)
@@ -3589,18 +3590,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             resrbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,-1,
-                'Name: '+RBObj['RBname']+RBObj['numChain']+'   '),0,wx.ALIGN_CENTER_VERTICAL)
+                'Name: '+RBObj['RBname']+RBObj['numChain']+'   '),0,WACV)
             rbId = RBObj['RBId']
             delRB = wx.CheckBox(RigidBodies,-1,'Delete?')
             delRB.Bind(wx.EVT_CHECKBOX,OnDelResRB)
             Indx[delRB.GetId()] = rbId
-            topLine.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
+            topLine.Add(delRB,0,WACV)
             resrbSizer.Add(topLine)
             resrbSizer.Add(LocationSizer(RBObj,'Residue'))
-            resrbSizer.Add(wx.StaticText(RigidBodies,-1,'Torsions:'),0,wx.ALIGN_CENTER_VERTICAL)
+            resrbSizer.Add(wx.StaticText(RigidBodies,-1,'Torsions:'),0,WACV)
             torSizer = wx.FlexGridSizer(1,6,5,5)
             for itors,tors in enumerate(RBObj['Torsions']):
-                torSizer.Add(wx.StaticText(RigidBodies,-1,'Torsion '+'%d'%(itors)),0,wx.ALIGN_CENTER_VERTICAL)
+                torSizer.Add(wx.StaticText(RigidBodies,-1,'Torsion '+'%d'%(itors)),0,WACV)
                 torsTxt = wx.TextCtrl(RigidBodies,-1,value='%.3f'%(tors[0]),style=wx.TE_PROCESS_ENTER)
                 torsTxt.Bind(wx.EVT_TEXT_ENTER,OnTorsion)
                 torsTxt.Bind(wx.EVT_KILL_FOCUS,OnTorsion)
@@ -3610,17 +3611,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 torCheck.Bind(wx.EVT_CHECKBOX,OnTorsionRef)
                 torCheck.SetValue(tors[1])
                 Indx[torCheck.GetId()] = itors
-                torSizer.Add(torCheck,0,wx.ALIGN_CENTER_VERTICAL)
+                torSizer.Add(torCheck,0,WACV)
             resrbSizer.Add(torSizer)
             tchoice = ['None','Uiso','T','TL','TLS']
             thermSizer = wx.BoxSizer(wx.HORIZONTAL)
-            thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,wx.ALIGN_CENTER_VERTICAL)
+            thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,WACV)
             thermSel = wx.ComboBox(RigidBodies,-1,value=RBObj['ThermalMotion'][0],choices=tchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[thermSel.GetId()] = RBObj
             thermSel.Bind(wx.EVT_COMBOBOX,OnThermSel)
-            thermSizer.Add(thermSel,0,wx.ALIGN_CENTER_VERTICAL)
-            thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,wx.ALIGN_CENTER_VERTICAL)
+            thermSizer.Add(thermSel,0,WACV)
+            thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,WACV)
             resrbSizer.Add(thermSizer)
             if RBObj['ThermalMotion'][0] != 'None':
                 resrbSizer.Add(ThermDataSizer(RBObj,'Residue'))
@@ -3644,23 +3645,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             vecrbSizer.Add(wx.StaticText(RigidBodies,-1,120*'-'))
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(RigidBodies,-1,
-                'Name: '+RBObj['RBname']+'   '),0,wx.ALIGN_CENTER_VERTICAL)
+                'Name: '+RBObj['RBname']+'   '),0,WACV)
             rbId = RBObj['RBId']
             delRB = wx.CheckBox(RigidBodies,-1,'Delete?')
             delRB.Bind(wx.EVT_CHECKBOX,OnDelVecRB)
             Indx[delRB.GetId()] = rbId
-            topLine.Add(delRB,0,wx.ALIGN_CENTER_VERTICAL)
+            topLine.Add(delRB,0,WACV)
             vecrbSizer.Add(topLine)
             vecrbSizer.Add(LocationSizer(RBObj,'Vector'))
             tchoice = ['None','Uiso','T','TL','TLS']
             thermSizer = wx.BoxSizer(wx.HORIZONTAL)
-            thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,wx.ALIGN_CENTER_VERTICAL)
+            thermSizer.Add(wx.StaticText(RigidBodies,-1,'Rigid body thermal motion model: '),0,WACV)
             thermSel = wx.ComboBox(RigidBodies,-1,value=RBObj['ThermalMotion'][0],choices=tchoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[thermSel.GetId()] = RBObj
             thermSel.Bind(wx.EVT_COMBOBOX,OnThermSel)
-            thermSizer.Add(thermSel,0,wx.ALIGN_CENTER_VERTICAL)
-            thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,wx.ALIGN_CENTER_VERTICAL)
+            thermSizer.Add(thermSel,0,WACV)
+            thermSizer.Add(wx.StaticText(RigidBodies,-1,' Units: T A^2, L deg^2, S deg-A'),0,WACV)
             vecrbSizer.Add(thermSizer)
             if RBObj['ThermalMotion'][0] != 'None':
                 vecrbSizer.Add(ThermDataSizer(RBObj,'Vector'))
@@ -3683,17 +3684,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if not data['RBModels']:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(RigidBodies,-1,'No rigid body models:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(wx.StaticText(RigidBodies,-1,'No rigid body models:'),0,WACV)
             mainSizer.Add((5,5),0)
         if 'Residue' in data['RBModels']:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(RigidBodies,-1,'Residue rigid bodies:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(wx.StaticText(RigidBodies,-1,'Residue rigid bodies:'),0,WACV)
             mainSizer.Add((5,5),0)
             for RBObj in data['RBModels']['Residue']:
                 mainSizer.Add(ResrbSizer(RBObj))
         if 'Vector' in data['RBModels']:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(RigidBodies,-1,'Vector rigid bodies:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(wx.StaticText(RigidBodies,-1,'Vector rigid bodies:'),0,WACV)
             mainSizer.Add((5,5),0)
             for RBObj in data['RBModels']['Vector']:
                 mainSizer.Add(VecrbSizer(RBObj))
@@ -3940,34 +3941,34 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     refName.append(data['testRBObj']['rbAtTypes'][ref]+str(ref))
                 atNames = data['testRBObj']['atNames']
                 mainSizer.Add(wx.StaticText(RigidBodies,-1,'Locate rigid body : '+rbName),
-                    0,wx.ALIGN_CENTER_VERTICAL)
+                    0,WACV)
                 mainSizer.Add((5,5),0)
                 OriSizer = wx.FlexGridSizer(1,5,5,5)
-                OriSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z: '),0,wx.ALIGN_CENTER_VERTICAL)
+                OriSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z: '),0,WACV)
                 for ix,x in enumerate(Orig):
                     origX = wx.StaticText(RigidBodies,-1,'%10.5f'%(x))
-                    OriSizer.Add(origX,0,wx.ALIGN_CENTER_VERTICAL)
+                    OriSizer.Add(origX,0,WACV)
                     Xsizers.append(origX)
                 OriSizer.Add((5,0),)
                 if len(atomData):
                     choice = atNames[0].keys()
                     choice.sort()
                     data['testRBObj']['Sizers']['Xsizers'] = Xsizers
-                OriSizer.Add(wx.StaticText(RigidBodies,-1,'Orientation quaternion: '),0,wx.ALIGN_CENTER_VERTICAL)
+                OriSizer.Add(wx.StaticText(RigidBodies,-1,'Orientation quaternion: '),0,WACV)
                 for ix,x in enumerate(Orien):
                     orien = wx.StaticText(RigidBodies,-1,'%10.4f'%(x))
-                    OriSizer.Add(orien,0,wx.ALIGN_CENTER_VERTICAL)
+                    OriSizer.Add(orien,0,WACV)
                     Osizers.append(orien)
                 data['testRBObj']['Sizers']['Osizers'] = Osizers
                 mainSizer.Add(OriSizer)
                 mainSizer.Add((5,5),0)
                 RefSizer = wx.FlexGridSizer(1,7,5,5)
                 if len(atomData):
-                    RefSizer.Add(wx.StaticText(RigidBodies,-1,'Location setting: Select match to'),0,wx.ALIGN_CENTER_VERTICAL)
+                    RefSizer.Add(wx.StaticText(RigidBodies,-1,'Location setting: Select match to'),0,WACV)
                     for i in [0,1,2]:
                         choice = ['',]+atNames[i].keys()
                         choice.sort()
-                        RefSizer.Add(wx.StaticText(RigidBodies,-1,' '+refName[i]+': '),0,wx.ALIGN_CENTER_VERTICAL)
+                        RefSizer.Add(wx.StaticText(RigidBodies,-1,' '+refName[i]+': '),0,WACV)
                         atPick = wx.ComboBox(RigidBodies,-1,value='',
                             choices=choice[1:],style=wx.CB_READONLY|wx.CB_DROPDOWN)
                         if i:
@@ -3975,7 +3976,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         else:
                             atPick.Bind(wx.EVT_COMBOBOX, OnAtOrigPick)                            
                         Indx[atPick.GetId()] = i
-                        RefSizer.Add(atPick,0,wx.ALIGN_CENTER_VERTICAL)
+                        RefSizer.Add(atPick,0,WACV)
                 mainSizer.Add(RefSizer)
                 mainSizer.Add((5,5),0)
                 if Torsions:                    
@@ -3988,32 +3989,32 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         torName = ''
                         for item in [seq[0],seq[1],seq[3][0]]:
                             torName += data['testRBObj']['rbAtTypes'][item]+str(item)+' '
-                        TorSizer.Add(wx.StaticText(RigidBodies,-1,'Side chain torsion for rb seq: '+torName),0,wx.ALIGN_CENTER_VERTICAL)
+                        TorSizer.Add(wx.StaticText(RigidBodies,-1,'Side chain torsion for rb seq: '+torName),0,WACV)
                         torSlide = wx.Slider(RigidBodies,style=wx.SL_HORIZONTAL)
                         torSlide.SetRange(0,3600)
                         torSlide.SetValue(int(torsion[0]*10.))
                         torSlide.Bind(wx.EVT_SLIDER, OnTorSlide)
                         TorSizer.Add(torSlide,1,wx.EXPAND|wx.RIGHT)
-                        TorSizer.Add(wx.StaticText(RigidBodies,-1,' Angle: '),0,wx.ALIGN_CENTER_VERTICAL)
+                        TorSizer.Add(wx.StaticText(RigidBodies,-1,' Angle: '),0,WACV)
                         ang = wx.TextCtrl(RigidBodies,-1,value='%8.3f'%(torsion[0]),style=wx.TE_PROCESS_ENTER)
                         ang.Bind(wx.EVT_TEXT_ENTER,OnTorAngle)
                         ang.Bind(wx.EVT_KILL_FOCUS,OnTorAngle)
                         Indx[torSlide.GetId()] = [t,ang]
                         Indx[ang.GetId()] = [t,torSlide]
-                        TorSizer.Add(ang,0,wx.ALIGN_CENTER_VERTICAL)                            
+                        TorSizer.Add(ang,0,WACV)                            
                     mainSizer.Add(TorSizer,1,wx.EXPAND|wx.RIGHT)
                 else:
-                    mainSizer.Add(wx.StaticText(RigidBodies,-1,'No side chain torsions'),0,wx.ALIGN_CENTER_VERTICAL)
+                    mainSizer.Add(wx.StaticText(RigidBodies,-1,'No side chain torsions'),0,WACV)
             else:
-                mainSizer.Add(wx.StaticText(RigidBodies,-1,'Assign rigid body:'),0,wx.ALIGN_CENTER_VERTICAL)
+                mainSizer.Add(wx.StaticText(RigidBodies,-1,'Assign rigid body:'),0,WACV)
                 mainSizer.Add((5,5),0)
                 topSizer = wx.BoxSizer(wx.HORIZONTAL)
-                topSizer.Add(wx.StaticText(RigidBodies,-1,'Select rigid body model'),0,wx.ALIGN_CENTER_VERTICAL)
+                topSizer.Add(wx.StaticText(RigidBodies,-1,'Select rigid body model'),0,WACV)
                 rbSel = wx.ComboBox(RigidBodies,-1,value='',choices=rbNames.keys(),
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 rbSel.Bind(wx.EVT_COMBOBOX, OnRBSel)
                 topSizer.Add((5,5),0)
-                topSizer.Add(rbSel,0,wx.ALIGN_CENTER_VERTICAL)
+                topSizer.Add(rbSel,0,WACV)
                 mainSizer.Add(topSizer)                
                 
             OkBtn = wx.Button(RigidBodies,-1,"Not ready")
@@ -4255,27 +4256,27 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def atomSizer(model):
             
             atomsizer = wx.FlexGridSizer(1,7,5,5)
-            atomsizer.Add(wx.StaticText(MCSA,-1,' Atom: '+model['name']+': '),0,wx.ALIGN_CENTER_VERTICAL)
+            atomsizer.Add(wx.StaticText(MCSA,-1,' Atom: '+model['name']+': '),0,WACV)
             for ix,item in enumerate(['x','y','z']):
                 posRef = wx.CheckBox(MCSA,-1,label=item+': ')
                 posRef.SetValue(model['Pos'][1][ix])
                 posRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                 Indx[posRef.GetId()] = [model,'Pos',ix]
-                atomsizer.Add(posRef,0,wx.ALIGN_CENTER_VERTICAL)
+                atomsizer.Add(posRef,0,WACV)
                 posVal = wx.TextCtrl(MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
                 posVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
                 posVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
                 Indx[posVal.GetId()] = [model,'Pos',ix]
-                atomsizer.Add(posVal,0,wx.ALIGN_CENTER_VERTICAL)
+                atomsizer.Add(posVal,0,WACV)
             atomsizer.Add((5,5),0)
             for ix,item in enumerate(['x','y','z']):
-                atomsizer.Add(wx.StaticText(MCSA,-1,' Range: '),0,wx.ALIGN_CENTER_VERTICAL)
+                atomsizer.Add(wx.StaticText(MCSA,-1,' Range: '),0,WACV)
                 rmin,rmax = model['Pos'][2][ix]
                 posRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[posRange.GetId()] = [model,'Pos',ix]
                 posRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
                 posRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
-                atomsizer.Add(posRange,0,wx.ALIGN_CENTER_VERTICAL)
+                atomsizer.Add(posRange,0,WACV)
             return atomsizer
             
         def rbSizer(model):
@@ -4327,73 +4328,73 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
             rbsizer = wx.BoxSizer(wx.VERTICAL)
             rbsizer1 = wx.FlexGridSizer(1,7,5,5)
-            rbsizer1.Add(wx.StaticText(MCSA,-1,model['Type']+': '+model['name']+': '),0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer1.Add(wx.StaticText(MCSA,-1,model['Type']+': '+model['name']+': '),0,WACV)
             for ix,item in enumerate(['x','y','z']):
                 posRef = wx.CheckBox(MCSA,-1,label=item+': ')
                 posRef.SetValue(model['Pos'][1][ix])
                 posRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                 Indx[posRef.GetId()] = [model,'Pos',ix]
-                rbsizer1.Add(posRef,0,wx.ALIGN_CENTER_VERTICAL)
+                rbsizer1.Add(posRef,0,WACV)
                 posVal = wx.TextCtrl(MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
                 posVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
                 posVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
                 Indx[posVal.GetId()] = [model,'Pos',ix]
-                rbsizer1.Add(posVal,0,wx.ALIGN_CENTER_VERTICAL)
+                rbsizer1.Add(posVal,0,WACV)
             molcent = wx.CheckBox(MCSA,-1,label=' Use mol. center? ')
             molcent.SetValue(model['MolCent'][1])
             molcent.Bind(wx.EVT_CHECKBOX,OnMolCent)
             Indx[molcent.GetId()] = model
-            rbsizer1.Add(molcent,0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer1.Add(molcent,0,WACV)
             for ix,item in enumerate(['x','y','z']):
-                rbsizer1.Add(wx.StaticText(MCSA,-1,' Range: '),0,wx.ALIGN_CENTER_VERTICAL)
+                rbsizer1.Add(wx.StaticText(MCSA,-1,' Range: '),0,WACV)
                 rmin,rmax = model['Pos'][2][ix]
                 posRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[posRange.GetId()] = [model,'Pos',ix]
                 posRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
                 posRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
-                rbsizer1.Add(posRange,0,wx.ALIGN_CENTER_VERTICAL)
+                rbsizer1.Add(posRange,0,WACV)
                 
             rbsizer2 = wx.FlexGridSizer(1,6,5,5)
             Ori = model['Ori'][0]
-            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oa: '),0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oa: '),0,WACV)
             angVal = wx.TextCtrl(MCSA,-1,'%.5f'%(Ori[0]),style=wx.TE_PROCESS_ENTER)
             angVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
             angVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
-            rbsizer2.Add(angVal,0,wx.ALIGN_CENTER_VERTICAL)
-            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oi,Oj,Ok: '),0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer2.Add(angVal,0,WACV)
+            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oi,Oj,Ok: '),0,WACV)
             vecVal = wx.TextCtrl(MCSA,-1,'%.3f %.3f %.3f'%(Ori[1],Ori[2],Ori[3]),style=wx.TE_PROCESS_ENTER)
             vecVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
             vecVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
             Indx[angVal.GetId()] = [model,0,angVal,vecVal]
             Indx[vecVal.GetId()] = [model,1,angVal,vecVal]
-            rbsizer2.Add(vecVal,0,wx.ALIGN_CENTER_VERTICAL)
-            rbsizer2.Add(wx.StaticText(MCSA,-1,' Vary? '),0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer2.Add(vecVal,0,WACV)
+            rbsizer2.Add(wx.StaticText(MCSA,-1,' Vary? '),0,WACV)
             choice = [' ','A','AV']
             orvar = wx.ComboBox(MCSA,-1,value=model['Ovar'],choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             orvar.Bind(wx.EVT_COMBOBOX, OnOrVar)
             Indx[orvar.GetId()] = model
-            rbsizer2.Add(orvar,0,wx.ALIGN_CENTER_VERTICAL)
-            rbsizer2.Add(wx.StaticText(MCSA,-1,' Range: Oa: '),0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer2.Add(orvar,0,WACV)
+            rbsizer2.Add(wx.StaticText(MCSA,-1,' Range: Oa: '),0,WACV)
             Rge = model['Ori'][2]
             angRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(Rge[0][0],Rge[0][1]),style=wx.TE_PROCESS_ENTER)
             Indx[angRange.GetId()] = [model,'Ori',0]
             angRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
             angRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
-            rbsizer2.Add(angRange,0,wx.ALIGN_CENTER_VERTICAL)
-            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oi,Oj,Ok: '),0,wx.ALIGN_CENTER_VERTICAL)
+            rbsizer2.Add(angRange,0,WACV)
+            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oi,Oj,Ok: '),0,WACV)
             for io,item in enumerate(['Oi','Oj','Ok']):
                 rmin,rmax = Rge[io+1]
                 vecRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f '%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[vecRange.GetId()] = [model,'Ori',io+1]
                 vecRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
                 vecRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
-                rbsizer2.Add(vecRange,0,wx.ALIGN_CENTER_VERTICAL)
+                rbsizer2.Add(vecRange,0,WACV)
             rbsizer.Add(rbsizer1)    
             rbsizer.Add(rbsizer2)    
             if model['Type'] == 'Residue':
                 atNames = RBData['Residue'][model['RBId']]['atNames']
-                rbsizer.Add(wx.StaticText(MCSA,-1,'Torsions:'),0,wx.ALIGN_CENTER_VERTICAL)
+                rbsizer.Add(wx.StaticText(MCSA,-1,'Torsions:'),0,WACV)
                 rbsizer3 = wx.FlexGridSizer(1,8,5,5)
                 for it,tor in enumerate(model['Tor'][0]):
                     iBeg,iFin = RBData['Residue'][model['RBId']]['rbSeq'][it][:2]
@@ -4402,19 +4403,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     torRef.SetValue(model['Tor'][1][it])
                     torRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                     Indx[torRef.GetId()] = [model,'Tor',it]
-                    rbsizer3.Add(torRef,0,wx.ALIGN_CENTER_VERTICAL)
+                    rbsizer3.Add(torRef,0,WACV)
                     torVal = wx.TextCtrl(MCSA,-1,'%.4f'%(tor),style=wx.TE_PROCESS_ENTER)
                     torVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
                     torVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
                     Indx[torVal.GetId()] = [model,'Tor',it]
-                    rbsizer3.Add(torVal,0,wx.ALIGN_CENTER_VERTICAL)
-                    rbsizer3.Add(wx.StaticText(MCSA,-1,' Range: '),0,wx.ALIGN_CENTER_VERTICAL)
+                    rbsizer3.Add(torVal,0,WACV)
+                    rbsizer3.Add(wx.StaticText(MCSA,-1,' Range: '),0,WACV)
                     rmin,rmax = model['Tor'][2][it]
                     torRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                     Indx[torRange.GetId()] = [model,'Tor',it]
                     torRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
                     torRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
-                    rbsizer3.Add(torRange,0,wx.ALIGN_CENTER_VERTICAL)
+                    rbsizer3.Add(torRange,0,WACV)
                 rbsizer.Add(rbsizer3)
                 
             return rbsizer
@@ -4462,23 +4463,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             poRef = wx.CheckBox(MCSA,-1,label=' March-Dollase ratio: ')
             poRef.SetValue(POData['Coef'][1])
             poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
-            poSizer.Add(poRef,0,wx.ALIGN_CENTER_VERTICAL)
+            poSizer.Add(poRef,0,WACV)
             poVal = wx.TextCtrl(MCSA,-1,'%.3f'%(POData['Coef'][0]),style=wx.TE_PROCESS_ENTER)
             poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
             poVal.Bind(wx.EVT_KILL_FOCUS,OnPOVal)
-            poSizer.Add(poVal,0,wx.ALIGN_CENTER_VERTICAL)
-            poSizer.Add(wx.StaticText(MCSA,-1,' Range: '),0,wx.ALIGN_CENTER_VERTICAL)
+            poSizer.Add(poVal,0,WACV)
+            poSizer.Add(wx.StaticText(MCSA,-1,' Range: '),0,WACV)
             rmin,rmax = POData['Coef'][2]
             poRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
             poRange.Bind(wx.EVT_TEXT_ENTER,OnPORange)
             poRange.Bind(wx.EVT_KILL_FOCUS,OnPORange)
-            poSizer.Add(poRange,0,wx.ALIGN_CENTER_VERTICAL)                       
-            poSizer.Add(wx.StaticText(MCSA,-1,' Unique axis, H K L: '),0,wx.ALIGN_CENTER_VERTICAL)
+            poSizer.Add(poRange,0,WACV)                       
+            poSizer.Add(wx.StaticText(MCSA,-1,' Unique axis, H K L: '),0,WACV)
             h,k,l = POData['axis']
             poAxis = wx.TextCtrl(MCSA,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
             poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOAxis)
             poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)
-            poSizer.Add(poAxis,0,wx.ALIGN_CENTER_VERTICAL)
+            poSizer.Add(poAxis,0,WACV)
             return poSizer
             
         def ResultsSizer(Results):
@@ -4545,11 +4546,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if not data['MCSA']['Models']:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(MCSA,-1,'No MC/SA models:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(wx.StaticText(MCSA,-1,'No MC/SA models:'),0,WACV)
             mainSizer.Add((5,5),0)
         else:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(MCSA,-1,'MC/SA models:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(wx.StaticText(MCSA,-1,'MC/SA models:'),0,WACV)
             mainSizer.Add((5,5),0)
             for model in data['MCSA']['Models']:
                 Xsize = 500
@@ -4567,11 +4568,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 
         if not data['MCSA']['Results']:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(MCSA,-1,'No MC/SA results:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(wx.StaticText(MCSA,-1,'No MC/SA results:'),0,WACV)
             mainSizer.Add((5,5),0)
         else:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(MCSA,-1,'MC/SA results:'),0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(wx.StaticText(MCSA,-1,'MC/SA results:'),0,WACV)
             mainSizer.Add((5,5),0)
             Results = data['MCSA']['Results']
             mainSizer.Add(ResultsSizer(Results))

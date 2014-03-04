@@ -865,7 +865,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
             Nup += 1
             if dlg:
                 dlg.Update(Nup)
-    NST = np.array(NST)
+    NST = np.array(NST,dtype=np.float)
     H0 = np.divide(H0,NST)
     H0 = np.nan_to_num(H0)
     del NST

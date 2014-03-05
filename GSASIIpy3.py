@@ -38,6 +38,29 @@ def FormulaEval(string):
         return None
     return val
 
+def FormatPadValue(val,maxdigits=None):
+    '''Format a float to fit in ``maxdigits[0]`` spaces with maxdigits[1] after decimal.
+
+    :param float val: number to be formatted.
+
+    :param list maxdigits: the number of digits & places after decimal to be used for display of the
+      number (defaults to [10,2]).
+
+    :returns: a string with exactly maxdigits[0] characters (except under error conditions),
+      but last character will always be a space
+    '''
+    if maxdigits is None:
+        digits = [10,2]
+    else:
+        digits = maxdigits
+    fmt = '{:'+str(digits[0])+'}'
+    s = fmt.format(FormatValue(val,digits))
+    if s[-1] == ' ':
+        return s
+    else:
+        return s+' '
+    
+
 def FormatValue(val,maxdigits=None):
     '''Format a float to fit in ``maxdigits[0]`` spaces with maxdigits[1] after decimal.
 
@@ -46,7 +69,7 @@ def FormatValue(val,maxdigits=None):
     :param list maxdigits: the number of digits & places after decimal to be used for display of the
       number (defaults to [10,2]).
 
-    :returns: a string with <= maxdigits characters (I hope).  
+    :returns: a string with <= maxdigits characters (usually).  
     '''
     if maxdigits is None:
         digits = [10,2]
@@ -77,7 +100,7 @@ def FormatValue(val,maxdigits=None):
         decimals = digits[0] - 1
         fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}"
     try:
-        return fmt.format(val).strip()
+        return fmt.format(float(val)).strip()
     except ValueError as err:
         print 'FormatValue Error with val,maxdigits,fmt=',val,maxdigits,fmt
         return str(val)
@@ -124,7 +147,7 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
         fmt = "{" + (":{:d}.{:d}f".format(maxdigits,decimals))+"}"
         if decimals == 0: fmt += "." # force a decimal place
     try:
-        return fmt.format(val).strip()
+        return fmt.format(float(val)).strip()
     except ValueError as err:
         print 'FormatValue Error with val,maxdigits, sigfigs, fmt=',val, maxdigits,sigfigs, fmt
         return str(val)

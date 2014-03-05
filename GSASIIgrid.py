@@ -3433,8 +3433,8 @@ def UpdateSeqResults(G2frame,data):
     histNames = data['histNames']
        
     def GetSampleParms():
-        sampleParmDict = {'Temperature':300.,'Pressure':1.,
-                          'FreePrm1':0.,'FreePrm2':0.,'FreePrm3':0.,}
+        sampleParmDict = {'Temperature':[],'Pressure':[],
+                          'FreePrm1':[],'FreePrm2':[],'FreePrm3':[],}
         sampleParm = {}
         for name in histNames:
             Id = GetPatternTreeItemId(G2frame,G2frame.root,name)
@@ -3668,7 +3668,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             if 'Nref' in value:
                 mainSizer.Add((5,5),)
                 pfx = value.split('Nref')[0]
-                name = data[0][pfx.split(':')[0]+'::Name']
+                name = data[0].get(pfx.split(':')[0]+'::Name','?')
                 mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' For phase '+name+':'))
                 mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
                     u' Unweighted phase residuals RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '% \
@@ -3846,7 +3846,7 @@ def MovePatternTreeToGrid(G2frame,item):
     G2frame.dataFrame.Raise()            
     G2frame.PickId = 0
     parentID = G2frame.root
-    for i in G2frame.ExportPattern: i.Enable(False)
+    #for i in G2frame.ExportPattern: i.Enable(False)
     defWid = [250,150]
     if item != G2frame.root:
         parentID = G2frame.PatternTree.GetItemParent(item)
@@ -3856,12 +3856,12 @@ def MovePatternTreeToGrid(G2frame,item):
         if G2frame.PatternTree.GetItemText(item) == 'Notebook':
             SetDataMenuBar(G2frame,G2frame.dataFrame.DataNotebookMenu)
             G2frame.PatternId = 0
-            for i in G2frame.ExportPattern: i.Enable(False)
+            #for i in G2frame.ExportPattern: i.Enable(False)
             data = G2frame.PatternTree.GetItemPyData(item)
             UpdateNotebook(G2frame,data)
         elif G2frame.PatternTree.GetItemText(item) == 'Controls':
             G2frame.PatternId = 0
-            for i in G2frame.ExportPattern: i.Enable(False)
+            #for i in G2frame.ExportPattern: i.Enable(False)
             data = G2frame.PatternTree.GetItemPyData(item)
             if not data:           #fill in defaults
                 data = copy.copy(G2obj.DefaultControls)    #least squares controls
@@ -3907,10 +3907,10 @@ def MovePatternTreeToGrid(G2frame,item):
         elif 'PKS' in G2frame.PatternTree.GetItemText(item):
             G2plt.PlotPowderLines(G2frame)
         elif 'PWDR' in G2frame.PatternTree.GetItemText(item):
-            for i in G2frame.ExportPattern: i.Enable(True)
+            #for i in G2frame.ExportPattern: i.Enable(True)
             UpdatePWHKPlot(G2frame,'PWDR',item)
         elif 'SASD' in G2frame.PatternTree.GetItemText(item):
-            for i in G2frame.ExportPattern: i.Enable(True)
+            #for i in G2frame.ExportPattern: i.Enable(True)
             UpdatePWHKPlot(G2frame,'SASD',item)
         elif 'HKLF' in G2frame.PatternTree.GetItemText(item):
             G2frame.Sngl = item

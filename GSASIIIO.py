@@ -1034,63 +1034,63 @@ def SaveIntegration(G2frame,PickId,data):
     G2frame.PatternTree.Expand(Id)
     G2frame.PatternId = Id
             
-def powderFxyeSave(G2frame,exports,powderfile):
-    'Save a powder histogram as a GSAS FXYE file'
-    head,tail = ospath.split(powderfile)
-    name,ext = tail.split('.')
-    for i,export in enumerate(exports):
-        filename = ospath.join(head,name+'-%03d.'%(i)+ext)
-        prmname = filename.strip(ext)+'prm'
-        prm = open(prmname,'w')      #old style GSAS parm file
-        PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
-        Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, \
-            PickId, 'Instrument Parameters'))[0]
-        prm.write( '            123456789012345678901234567890123456789012345678901234567890        '+'\n')
-        prm.write( 'INS   BANK      1                                                               '+'\n')
-        prm.write(('INS   HTYPE   %sR                                                              '+'\n')%(Inst['Type'][0]))
-        if 'Lam1' in Inst:              #Ka1 & Ka2
-            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam1'][0],Inst['Lam2'][0]))
-        elif 'Lam' in Inst:             #single wavelength
-            prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam'][1],0.0))
-        prm.write( 'INS  1 IRAD     0                                                               '+'\n')
-        prm.write( 'INS  1I HEAD                                                                    '+'\n')
-        prm.write( 'INS  1I ITYP    0    0.0000  180.0000         1                                 '+'\n')
-        prm.write(('INS  1DETAZM%10.3f                                                          '+'\n')%(Inst['Azimuth'][0]))
-        prm.write( 'INS  1PRCF1     3    8   0.00100                                                '+'\n')
-        prm.write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['U'][1],Inst['V'][1],Inst['W'][1],0.0))
-        prm.write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['X'][1],Inst['Y'][1],Inst['SH/L'][1]/2.,Inst['SH/L'][1]/2.))
-        prm.close()
-        file = open(filename,'w')
-        print 'save powder pattern to file: ',filename
-        x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
-        file.write(powderfile+'\n')
-        file.write('Instrument parameter file:'+ospath.split(prmname)[1]+'\n')
-        file.write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n'%(len(x),len(x),\
-            100.*x[0],100.*(x[1]-x[0])))
-        s = list(np.sqrt(1./np.array(w)))        
-        XYW = zip(x,y,s)
-        for X,Y,S in XYW:
-            file.write("%15.6g %15.6g %15.6g\n" % (100.*X,Y,max(S,1.0)))
-        file.close()
-        print 'powder pattern file '+filename+' written'
+# def powderFxyeSave(G2frame,exports,powderfile):
+#     'Save a powder histogram as a GSAS FXYE file'
+#     head,tail = ospath.split(powderfile)
+#     name,ext = tail.split('.')
+#     for i,export in enumerate(exports):
+#         filename = ospath.join(head,name+'-%03d.'%(i)+ext)
+#         prmname = filename.strip(ext)+'prm'
+#         prm = open(prmname,'w')      #old style GSAS parm file
+#         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
+#         Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, \
+#             PickId, 'Instrument Parameters'))[0]
+#         prm.write( '            123456789012345678901234567890123456789012345678901234567890        '+'\n')
+#         prm.write( 'INS   BANK      1                                                               '+'\n')
+#         prm.write(('INS   HTYPE   %sR                                                              '+'\n')%(Inst['Type'][0]))
+#         if 'Lam1' in Inst:              #Ka1 & Ka2
+#             prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam1'][0],Inst['Lam2'][0]))
+#         elif 'Lam' in Inst:             #single wavelength
+#             prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam'][1],0.0))
+#         prm.write( 'INS  1 IRAD     0                                                               '+'\n')
+#         prm.write( 'INS  1I HEAD                                                                    '+'\n')
+#         prm.write( 'INS  1I ITYP    0    0.0000  180.0000         1                                 '+'\n')
+#         prm.write(('INS  1DETAZM%10.3f                                                          '+'\n')%(Inst['Azimuth'][0]))
+#         prm.write( 'INS  1PRCF1     3    8   0.00100                                                '+'\n')
+#         prm.write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['U'][1],Inst['V'][1],Inst['W'][1],0.0))
+#         prm.write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['X'][1],Inst['Y'][1],Inst['SH/L'][1]/2.,Inst['SH/L'][1]/2.))
+#         prm.close()
+#         file = open(filename,'w')
+#         print 'save powder pattern to file: ',filename
+#         x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
+#         file.write(powderfile+'\n')
+#         file.write('Instrument parameter file:'+ospath.split(prmname)[1]+'\n')
+#         file.write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n'%(len(x),len(x),\
+#             100.*x[0],100.*(x[1]-x[0])))
+#         s = list(np.sqrt(1./np.array(w)))        
+#         XYW = zip(x,y,s)
+#         for X,Y,S in XYW:
+#             file.write("%15.6g %15.6g %15.6g\n" % (100.*X,Y,max(S,1.0)))
+#         file.close()
+#         print 'powder pattern file '+filename+' written'
         
-def powderXyeSave(G2frame,exports,powderfile):
-    'Save a powder histogram as a Topas XYE file'
-    head,tail = ospath.split(powderfile)
-    name,ext = tail.split('.')
-    for i,export in enumerate(exports):
-        filename = ospath.join(head,name+'-%03d.'%(i)+ext)
-        PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
-        file = open(filename,'w')
-        file.write('#%s\n'%(export))
-        print 'save powder pattern to file: ',filename
-        x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
-        s = list(np.sqrt(1./np.array(w)))        
-        XYW = zip(x,y,s)
-        for X,Y,W in XYW:
-            file.write("%15.6g %15.6g %15.6g\n" % (X,Y,W))
-        file.close()
-        print 'powder pattern file '+filename+' written'
+# def powderXyeSave(G2frame,exports,powderfile):
+#     'Save a powder histogram as a Topas XYE file'
+#     head,tail = ospath.split(powderfile)
+#     name,ext = tail.split('.')
+#     for i,export in enumerate(exports):
+#         filename = ospath.join(head,name+'-%03d.'%(i)+ext)
+#         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
+#         file = open(filename,'w')
+#         file.write('#%s\n'%(export))
+#         print 'save powder pattern to file: ',filename
+#         x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
+#         s = list(np.sqrt(1./np.array(w)))        
+#         XYW = zip(x,y,s)
+#         for X,Y,W in XYW:
+#             file.write("%15.6g %15.6g %15.6g\n" % (X,Y,W))
+#         file.close()
+#         print 'powder pattern file '+filename+' written'
         
 def PDFSave(G2frame,exports):
     'Save a PDF G(r) and S(Q) in column formats'
@@ -1773,6 +1773,7 @@ class ImportPowderData(ImportBaseclass):
                                             longFormatName,
                                             extensionlist,
                                             strictExtension)
+        self.clockWd = None  # used in TOF
         self.ReInitialize()
         
     def ReInitialize(self):
@@ -1792,10 +1793,9 @@ class ImportPowderData(ImportBaseclass):
         self.idstring = ''
         self.Sample = G2pdG.SetDefaultSample()
         self.GSAS = None     # used in TOF
-        self.clockWd = None  # used in TOF
         self.repeat_instparm = True # Should a parm file be
         #                             used for multiple histograms? 
-        self.instparm = None # name hint 
+        self.instparm = None # name hint from file of instparm to use
         self.instfile = '' # full path name to instrument parameter file
         self.instbank = '' # inst parm bank number
         self.instmsg = ''  # a label that gets printed to show
@@ -1876,6 +1876,24 @@ class ExportBaseclass(object):
         '''
         if event:
             self.currentExportType = self.G2frame.ExportLookup.get(event.Id)
+
+    def MakePWDRfilename(self,hist):
+        '''Make a filename root (no extension) from a PWDR histogram name
+
+        :param str hist: the histogram name in data tree (starts with "PWDR ")
+        '''
+        file0 = ''
+        file1 = hist[5:]
+        # replace repeated blanks
+        while file1 != file0:
+            file0 = file1
+            file1 = file0.replace('  ',' ').strip()
+        file0 = file1.replace('Azm= ','A')
+        # if angle has unneeded decimal places on aziumuth, remove them
+        if file0[-3:] == '.00': file0 = file0[:-3]
+        file0 = file0.replace('.','_')
+        file0 = file0.replace(' ','_')
+        return file0
 
     def ExportSelect(self,AskFile=True):
         '''Selects histograms or phases when needed. Sets a default file name.

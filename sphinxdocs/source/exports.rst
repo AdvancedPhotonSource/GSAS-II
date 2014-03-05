@@ -37,3 +37,7 @@ determines if only a single phase, data set, etc. can be exported at a time (whe
 .. automodule:: G2export_CIF
     :members: 
     :synopsis: Export a project in CIF format
+
+.. automodule:: G2export_pwdr
+    :members: 
+    :synopsis: Export powder data in GSAS and Topas formats

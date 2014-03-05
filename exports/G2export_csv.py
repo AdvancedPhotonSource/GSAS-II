@@ -20,13 +20,9 @@ import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
-#import GSASIIgrid as G2gd
-#import GSASIIstrIO as G2stIO
+import GSASIIpy3 as G2py3
+import GSASIIobj as G2obj
 import GSASIImath as G2mth
-#import GSASIIlattice as G2lat
-#import GSASIIspc as G2spc
-#import GSASIIphsGUI as G2pg
-#import GSASIIstrMain as G2stMn
 
 def WriteList(obj,headerItems):
     '''Write a CSV header
@@ -127,7 +123,8 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
             longFormatName = 'Export powder data as comma-separated (csv) file'
             )
         self.exporttype = ['powder']
-        self.multiple = False # only allow one histogram to be selected
+        #self.multiple = False # only allow one histogram to be selected
+        self.multiple = True
 
     def Exporter(self,event=None):
         '''Export a set of powder data as a csv file
@@ -137,23 +134,30 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
         # load all of the tree into a set of dicts
         self.loadTree()
         if self.ExportSelect( # set export parameters
-            AskFile=False # use the default file name
-            ): return 
-        self.OpenFile()
-        hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
-        histblk = self.Histograms[hist]
-        WriteList(self,("x","y_obs","weight","y_calc","y_bkg"))
-        fmt = 2*"{:.3f}," + "{:.5f}," + 2*"{:.3f},"
-        for x,yobs,yw,ycalc,ybkg,obsmcalc in zip(histblk['Data'][0],
-                                                 histblk['Data'][1],
-                                                 histblk['Data'][2],
-                                                 histblk['Data'][3],
-                                                 histblk['Data'][4],
-                                                 histblk['Data'][5],
-                                                 ):
-            self.Write(fmt.format(x,yobs,yw,ycalc,ybkg))
-        self.CloseFile()
-        print(str(hist)+' written to file '+str(self.filename))                        
+            AskFile=False # use the default file name, which is ignored
+            ): return
+        filenamelist = []
+        for hist in self.histnam:
+            fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
+            self.filename = fileroot + self.extension
+            self.OpenFile()
+            histblk = self.Histograms[hist]
+            WriteList(self,("x","y_obs","weight","y_calc","y_bkg"))
+            digitList = 2*((13,3),) + ((13,5),) + 2*((13,3),)
+            for vallist in zip(histblk['Data'][0],
+                           histblk['Data'][1],
+                           histblk['Data'][2],
+                           histblk['Data'][3],
+                           histblk['Data'][4],
+                           #histblk['Data'][5],
+                           ):
+                line = ""
+                for val,digits in zip(vallist,digitList):
+                    if line: line += ','
+                    line += G2py3.FormatValue(val,digits)
+                self.Write(line)
+            self.CloseFile()
+            print('Histogram '+str(hist)+' written to file '+str(self.filename))
 
 class ExportPowderReflCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file of reflections from a powder data set

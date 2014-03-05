@@ -23,6 +23,7 @@ import os.path
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
+import GSASIIpy3 as G2py3
 #import GSASIIgrid as G2gd
 #import GSASIIstrIO as G2stIO
 import GSASIImath as G2mth
@@ -144,19 +145,24 @@ class ExportPowderText(G2IO.ExportBaseclass):
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
-        fmt = 2*"{:12.3f} " + "{:12.5f} " + 2*"{:12.3f} "
-        hfmt = 5*"{:>12s} "
+        hfmt = 5*"{:12s} "
+        digitList = 2*((13,3),) + ((13,5),) + 2*((13,3),)
+        
         self.Write(hfmt.format("x","y_obs","weight","y_calc","y_bkg"))
-        for x,yobs,yw,ycalc,ybkg,obsmcalc in zip(histblk['Data'][0],
-                                                 histblk['Data'][1],
-                                                 histblk['Data'][2],
-                                                 histblk['Data'][3],
-                                                 histblk['Data'][4],
-                                                 histblk['Data'][5],
-                                                 ):
-            self.Write(fmt.format(x,yobs,yw,ycalc,ybkg))
+        for vallist in zip(histblk['Data'][0],
+                           histblk['Data'][1],
+                           histblk['Data'][2],
+                           histblk['Data'][3],
+                           histblk['Data'][4],
+                           #histblk['Data'][5],
+                           ):
+            strg = ''
+            for val,digits in zip(vallist,digitList):
+                strg += G2py3.FormatPadValue(val,digits)
+            self.Write(strg)
         self.CloseFile()
-        print(str(hist)+' written to file '+str(self.filename))                        
+        print(str(hist)+' written to file '+str(self.filename))
+        
 class ExportPowderReflText(G2IO.ExportBaseclass):
     '''Used to create a text file of reflections from a powder data set
 

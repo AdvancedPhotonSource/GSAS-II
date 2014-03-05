@@ -1018,7 +1018,9 @@ class GSASII(wx.Frame):
         bank = rd.powderentry[2]
         numbanks = rd.numbanks
         # is there an instrument parameter file defined for the current data set?
-        if rd.instparm or (lastdatafile == filename and lastIparmfile):
+        # or if this is a read on a set of set of files, use the last one again
+        #if rd.instparm or (lastdatafile == filename and lastIparmfile):
+        if rd.instparm or lastIparmfile:
             if rd.instparm:
                 instfile = os.path.join(os.path.split(filename)[0],
                                     rd.instparm)
@@ -1673,29 +1675,29 @@ class GSASII(wx.Frame):
                     text=obj.formatName)
                 self.Bind(wx.EVT_MENU, obj.Exporter, id=item.GetId())
                 self.ExportLookup[item.GetId()] = typ # lookup table for submenu item
-        #code to debug an Exporter. much is hard-coded below, but code is reloaded before
-        # each use allowing faster development
+                
+        #code to debug an Exporter. hard-coded the routine below, to allow a reload before use
         # def DebugExport(event):
-        #     print 'start reload'
-        #     reload(G2IO)
-        #     import G2export_ASCIImap as dev
-        #     reload(dev)
-        #     dev.ExportMapASCII(self).Exporter(event)
+        #      print 'start reload'
+        #      reload(G2IO)
+        #      import G2export_pwdr as dev
+        #      reload(dev)
+        #      dev.ExportPowderFXYE(self).Exporter(event)
         # item = menu.Append(
         #     wx.ID_ANY,kind=wx.ITEM_NORMAL,
-        #     help="debug exporter",text="test Export")
+        #     help="debug exporter",text="test Export FXYE")
         # self.Bind(wx.EVT_MENU, DebugExport, id=item.GetId())
-        # #self.ExportLookup[item.GetId()] = 'image'
-        # self.ExportLookup[item.GetId()] = 'map'
+        # # #self.ExportLookup[item.GetId()] = 'image'
+        # self.ExportLookup[item.GetId()] = 'powder'
 
     def _Add_ExportMenuItems(self,parent):
-        item = parent.Append(
-            help='Select PWDR item to enable',id=wx.ID_ANY,
-            kind=wx.ITEM_NORMAL,
-            text='Export Powder Patterns...')
-        self.ExportPattern.append(item)
-        item.Enable(False)
-        self.Bind(wx.EVT_MENU, self.OnExportPatterns, id=item.GetId())
+        # item = parent.Append(
+        #     help='Select PWDR item to enable',id=wx.ID_ANY,
+        #     kind=wx.ITEM_NORMAL,
+        #     text='Export Powder Patterns...')
+        # self.ExportPattern.append(item)
+        # item.Enable(False)
+        # self.Bind(wx.EVT_MENU, self.OnExportPatterns, id=item.GetId())
 
         item = parent.Append(
             help='',id=wx.ID_ANY,
@@ -1795,7 +1797,7 @@ class GSASII(wx.Frame):
         self.MakePDF = []
         self.Refine = []
         self.SeqRefine = []
-        self.ExportPattern = []
+        #self.ExportPattern = []
         self.ExportPeakList = []
         self.ExportHKL = []
         self.ExportPDF = []
@@ -2697,39 +2699,39 @@ class GSASII(wx.Frame):
             self.dataFrame.Destroy()
         self.Close()
         
-    def OnExportPatterns(self,event):
-        names = ['All']
-        exports = []
-        item, cookie = self.PatternTree.GetFirstChild(self.root)
-        while item:
-            name = self.PatternTree.GetItemText(item)
-            if 'PWDR' in name:
-                names.append(name)
-            item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-        if names:
-            dlg = wx.MultiChoiceDialog(self,'Select','Powder patterns to export',names)
-            if dlg.ShowModal() == wx.ID_OK:
-                sel = dlg.GetSelections()
-                if sel[0] == 0:
-                    exports = names[1:]
-                else:
-                    for x in sel:
-                        exports.append(names[x])
-            dlg.Destroy()
-        if exports:
-            dlg = wx.FileDialog(self, 'Choose output powder file name', '.', '', 
-                'GSAS fxye file (*.fxye)|*.fxye|xye file (*.xye)|*.xye',
-                wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    powderfile = dlg.GetPath()
-                    powderfile = G2IO.FileDlgFixExt(dlg,powderfile)
-                    if 'fxye' in powderfile:
-                        G2IO.powderFxyeSave(self,exports,powderfile)
-                    else:       #just xye
-                        G2IO.powderXyeSave(self,exports,powderfile)
-            finally:
-                dlg.Destroy()
+    # def OnExportPatterns(self,event):
+    #     names = ['All']
+    #     exports = []
+    #     item, cookie = self.PatternTree.GetFirstChild(self.root)
+    #     while item:
+    #         name = self.PatternTree.GetItemText(item)
+    #         if 'PWDR' in name:
+    #             names.append(name)
+    #         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
+    #     if names:
+    #         dlg = wx.MultiChoiceDialog(self,'Select','Powder patterns to export',names)
+    #         if dlg.ShowModal() == wx.ID_OK:
+    #             sel = dlg.GetSelections()
+    #             if sel[0] == 0:
+    #                 exports = names[1:]
+    #             else:
+    #                 for x in sel:
+    #                     exports.append(names[x])
+    #         dlg.Destroy()
+    #     if exports:
+    #         dlg = wx.FileDialog(self, 'Choose output powder file name', '.', '', 
+    #             'GSAS fxye file (*.fxye)|*.fxye|xye file (*.xye)|*.xye',
+    #             wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+    #         try:
+    #             if dlg.ShowModal() == wx.ID_OK:
+    #                 powderfile = dlg.GetPath()
+    #                 powderfile = G2IO.FileDlgFixExt(dlg,powderfile)
+    #                 if 'fxye' in powderfile:
+    #                     G2IO.powderFxyeSave(self,exports,powderfile)
+    #                 else:       #just xye
+    #                     G2IO.powderXyeSave(self,exports,powderfile)
+    #         finally:
+    #             dlg.Destroy()
         
     def OnExportPeakList(self,event):
         dlg = wx.FileDialog(self, 'Choose output peak list file name', '.', '', 

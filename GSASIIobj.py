@@ -558,12 +558,12 @@ Background                    \           The background is stored as a list wit
 Data                          \           The data consist of a list of 6 np.arrays 
                                           containing in order:
 
-                                           1. the x-postions (two-theta in degrees),
-                                           2. the intensity values (Yobs),
-                                           3. the weights for each Yobs value
-                                           4. the computed intensity values (Ycalc)
-                                           5. the background values
-                                           6. Yobs-Ycalc
+                                           0. the x-postions (two-theta in degrees),
+                                           1. the intensity values (Yobs),
+                                           2. the weights for each Yobs value
+                                           3. the computed intensity values (Ycalc)
+                                           4. the background values
+                                           5. Yobs-Ycalc
 ======================  ===============  ====================================================
 
 Powder Reflection Data Structure

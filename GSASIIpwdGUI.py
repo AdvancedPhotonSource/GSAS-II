@@ -694,7 +694,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     rowLabels = ['original','changed']
     for i in range(len(data)-2):
         rowLabels.append('exclude')
-    Types = 2*[wg.GRID_VALUE_FLOAT+':10,3',]
+    Types = 2*[wg.GRID_VALUE_FLOAT+':12,5',]
     G2frame.LimitsTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Limits')
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LimitMenu)
@@ -2435,8 +2435,8 @@ def UpdateModelsGrid(G2frame,data):
     if 'logBins' not in data['Size']:
         data['Size']['logBins'] = True
     if 'MinMaxDiam' in data['Size']:
-        data['Size']['MinDiam'] = 50
-        data['Size']['MaxDiam'] = 10000
+        data['Size']['MinDiam'] = 50.
+        data['Size']['MaxDiam'] = 10000.
         del data['Size']['MinMaxDiam']
     #end patches
     
@@ -2447,7 +2447,7 @@ def UpdateModelsGrid(G2frame,data):
     def OnFitModel(event):
         print 'fit model for '+data['Current']
         if data['Current'] == 'Size dist.':
-            G2sasd.SizeDistribution(Profile,Limits,Substances,Sample,data)
+            G2sasd.SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data)
         
     def OnSelectFit(event):
         data['Current'] = fitSel.GetValue()
@@ -2465,8 +2465,8 @@ def UpdateModelsGrid(G2frame,data):
         
     def OnCheckBox(event):
         Obj = event.GetEventObject()
-        itemKey,ind = Indx[Obj.GetId()]
-        data[itemKey][ind] = Obj.GetValue()
+        item,ind = Indx[Obj.GetId()]
+        item[ind] = Obj.GetValue()
         
     def OnIntVal(event):
         Obj = event.GetEventObject()
@@ -2517,7 +2517,7 @@ def UpdateModelsGrid(G2frame,data):
         Indx[maxdiam.GetId()] = [data['Size'],'MaxDiam']
         binSizer.Add(maxdiam,0,WACV)
         logbins = wx.CheckBox(G2frame.dataDisplay,label='Log bins?')
-        Indx[logbins.GetId()] = ['Size','logBins']
+        Indx[logbins.GetId()] = [data['Size'],'logBins']
         logbins.SetValue(data['Size']['logBins'])
         logbins.Bind(wx.EVT_CHECKBOX, OnCheckBox)
         binSizer.Add(logbins,0,WACV)
@@ -2525,7 +2525,7 @@ def UpdateModelsGrid(G2frame,data):
         sizeSizer.Add((5,5),0)
         partSizer = wx.BoxSizer(wx.HORIZONTAL)
         partSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Particle description: '),0,WACV)
-        shapes = {'Spheroid':' Aspect ratio: ','Cylinder Diam.':' Diameter ','Cylinder AR':' Aspect ratio: ',
+        shapes = {'Spheroid':' Aspect ratio: ','Cylinder':' Diameter ','Cylinder AR':' Aspect ratio: ',
             'Unified sphere':'','Unified rod':' Diameter: ','Unified rod AR':' Aspect ratio: ',
             'Unified disk':' Thickness: '}
         partsh = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['Shape'][0]),choices=shapes.keys(),
@@ -2573,11 +2573,22 @@ def UpdateModelsGrid(G2frame,data):
         unifSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Unified fit parameters: '),0,WACV)
         return unifSizer
         
+    def OnEsdScale(event):
+        try:
+            value = float(esdScale.GetValue())
+            if value <= 0.:
+                raise ValueError
+        except ValueError:
+            value = 1./np.sqrt(ProfDict['wtFactor'])
+        ProfDict['wtFactor'] = 1./value**2
+        esdScale.SetValue('%.3f'%(value))
+        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+        
     Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
     Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
     Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))
-    Profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
+    ProfDict,Profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[:2]
 
     if G2frame.dataDisplay:
         G2frame.dataFrame.DestroyChildren()
@@ -2597,6 +2608,11 @@ def UpdateModelsGrid(G2frame,data):
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     fitSel.Bind(wx.EVT_COMBOBOX,OnSelectFit)        
     topSizer.Add(fitSel,0,WACV)
+    topSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Error multiplier: '),0,WACV)
+    esdScale = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(1./np.sqrt(ProfDict['wtFactor'])),style=wx.TE_PROCESS_ENTER)
+    esdScale.Bind(wx.EVT_TEXT_ENTER,OnEsdScale)        
+    esdScale.Bind(wx.EVT_KILL_FOCUS,OnEsdScale)
+    topSizer.Add(esdScale,0,WACV)
     mainSizer.Add(topSizer)
     G2gd.HorizontalLine(mainSizer,G2frame.dataDisplay)
     if 'Size' in data['Current']:

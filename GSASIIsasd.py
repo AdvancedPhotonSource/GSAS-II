@@ -56,14 +56,12 @@ npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
     
 ###############################################################################
-#### Particle form factors
+#### Particle form factors & volumes as class definitions
 ###############################################################################
 
 class SASDParticles(object):
-    def __init__(self,Q,name=None,parms=None,parNames=None):
-        self.Q = Q
+    def __init__(self,name=None,parNames=None):
         self.name = name
-        self.Parms = parms
         self.ParmNames = parmNames
         
     def FormFactor():
@@ -75,37 +73,70 @@ class SASDParticles(object):
         return Vol
         
 class Sphere(SASDParticles):
-    def __init__(self,Q,name=None,parms=None,parmNames=None):
-        self.Q = Q
+    def __init__(self,name=None,parmNames=None):
         self.Name = name
         if self.Name == None:
             self.Name = 'Sphere'
-        self.Parms = parms
-        if self.Parms == None:
-            self.Parms = [50.0,]
         self.ParmNames = parmNames
         if self.ParmNames == None:
             self.ParmNames = ['Radius',]
         
-    def FormFactor(self):
+    def FormFactor(self,Q,Parms):
         ''' Compute hard sphere form factor - can use numpy arrays
         param float:Q Q value array (usually in A-1)
         param float:R sphere radius (Usually in A - must match Q-1 units)
         returns float: form factors as array as needed
         '''
-        QR = self.Q*self.Parms[0]
+        QR = Q*Parms[0]
         return (3./(QR**3))*(np.sin(QR)-(QR*np.cos(QR)))
         
-    def Volume(self):
+    def Volume(self,Parms):
         ''' Compute volume of sphere
         - numpy array friendly
         param float:R sphere radius
         returns float: volume
         '''
-        return (4./3.)*np.pi*self.Parms[0]**3
+        return (4./3.)*np.pi*Parms[0]**3
         
-        
+class Spheroid(SASDParticles):
+    def __init__(self,name=None,parmNames=None):
+        self.Name = name
+        if self.Name == None:
+            self.Name = 'Spheroid'
+        self.ParmNames = parmNames
+        if self.ParmNames == None:
+            self.ParmNames = ['Radius','Aspect ratio']
     
+    def FormFactor(self,Q,Parms):
+        ''' Compute form factor of cylindrically symmetric ellipsoid (spheroid) 
+        - can use numpy arrays for R & AR; will return corresponding numpy array
+        param float:Q Q value array (usually in A-1)
+        param float R: radius along 2 axes of spheroid
+        param float AR: aspect ratio so 3rd axis = R*AR
+        returns float: form factors as array as needed
+        '''
+        R,AR = Parms
+        NP = 50
+        if 0.99 < AR < 1.01:
+            return SphereFF(Q,R,0)
+        else:
+            cth = np.linspace(0,1.,NP)
+            Rct = R*np.sqrt(1.+(AR**2-1.)*cth**2)
+            return np.sqrt(np.sum(SphereFF(Q[:,np.newaxis],Rct,0)**2,axis=1)/NP)
+        
+    def Volume(self,Parms):
+        ''' Compute volume of cylindrically symmetric ellipsoid (spheroid) 
+        - numpy array friendly
+        param float R: radius along 2 axes of spheroid
+        param float AR: aspect ratio so radius of 3rd axis = R*AR
+        returns float: volume
+        '''
+        R,AR = Parms
+        return AR*(4./3.)*np.pi*R**3
+        
+###############################################################################
+#### Particle form factors
+###############################################################################
 
 def SphereFF(Q,R,dummy=0):
     ''' Compute hard sphere form factor - can use numpy arrays
@@ -273,7 +304,17 @@ def CylinderARVol(R,AR):
 #### Size distribution
 ###############################################################################
 
-def SizeDistribution(Profile,Limits,Substances,Sample,data):
+def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
+    if data['Size']['logBins']:
+        Bins = np.logspace(np.log10(data['Size']['MinDiam']),np.log10(data['Size']['MaxDiam']),
+            data['Size']['Nbins']+1,True)
+    else:
+        Bins = np.linspace(data['Size']['MinDiam'],data['Size']['MaxDiam'],
+            data['Size']['Nbins']+1,True)
+    Dbins = np.diff(Bins)
+    BinMag = Dbins*np.ones_like(Dbins)
+    print np.sum(BinMag)
+        
     print data['Size']
 #    print Limits
 #    print Substances

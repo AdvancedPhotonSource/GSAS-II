@@ -521,7 +521,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     else:
                         G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
                 if G2frame.itemPicked:
-                    Page.canvas.SetToolTipString('%9.3f'%(xpos))
+                    Page.canvas.SetToolTipString('%9.5f'%(xpos))
                 if G2frame.PickId:
                     found = []
                     if G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List','Reflection Lists'] or \
@@ -538,6 +538,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
 
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' powder pattern first',1)
+                
+    def OnPress(event): #ugh - this removes a matplotlib error for mouse clicks in log plots                  
+        olderr = np.seterr(invalid='ignore')
                                                    
     def OnPick(event):
         if G2frame.itemPicked is not None: return
@@ -552,7 +555,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             difC = Parms['difC'][1]
         PickId = G2frame.PickId
         pick = event.artist
-        mouse = event.mouseevent       
+        mouse = event.mouseevent
         xpos = pick.get_xdata()
         ypos = pick.get_ydata()
         ind = event.ind
@@ -592,6 +595,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
             else:                                                   #picked a limit line
                 G2frame.itemPicked = pick
+        elif G2frame.PatternTree.GetItemText(PickId) == 'Models':
+            if ind.all() != [0]:                                    #picked a data point
+                LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
+                data = G2frame.PatternTree.GetItemPyData(LimitId)
+                if mouse.button==1:
+                    data[1][0] = min(xy[0],data[1][1])
+                if mouse.button==3:
+                    data[1][1] = max(xy[0],data[1][0])
+                G2frame.PatternTree.SetItemPyData(LimitId,data)
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+            else:                                                   #picked a limit line
+                G2frame.itemPicked = pick
         elif G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' or \
             'PWDR' in G2frame.PatternTree.GetItemText(PickId):
             G2frame.itemPicked = pick
@@ -628,8 +643,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     data[id][id2] = xpos
                 if id > 1 and data[id][0] > data[id][1]:
                         data[id].reverse()
-                data[1][0] = max(data[0][0],data[1][0])
-                data[1][1] = min(data[0][1],data[1][1])
+                data[1][0] = min(max(data[0][0],data[1][0]),data[1][1])
+                data[1][1] = max(min(data[0][1],data[1][1]),data[1][0])
                 G2frame.PatternTree.SetItemPyData(LimitId,data)
                 if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Limits':
                     G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
@@ -645,6 +660,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         data[lineNo-2][0] = xpos
                 G2frame.PatternTree.SetItemPyData(PeakId,data)
                 G2pdG.UpdatePeakGrid(G2frame,data)
+        elif G2frame.PatternTree.GetItemText(PickId) in ['Models',] and xpos:
+            lines = []
+            for line in G2frame.Lines: 
+                lines.append(line.get_xdata()[0])
+            try:
+                lineNo = lines.index(G2frame.itemPicked.get_xdata()[0])
+            except ValueError:
+                lineNo = -1
+            if  lineNo in [0,1]:
+                LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits')
+                data = G2frame.PatternTree.GetItemPyData(LimitId)
+                data[1][lineNo] = xpos
+                data[1][0] = min(max(data[0][0],data[1][0]),data[1][1])
+                data[1][1] = max(min(data[0][1],data[1][1]),data[1][0])
+                G2frame.PatternTree.SetItemPyData(LimitId,data)        
         elif (G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' or \
             'PWDR' in G2frame.PatternTree.GetItemText(PickId)) and xpos:
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
@@ -677,6 +707,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
+        Page.canvas.mpl_connect('button_press_event',OnPress)
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.Contour:
@@ -700,8 +731,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Page.Choice = (' key press','c: contour on','n: loglog on','e: toggle error bars',
                     'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                     'q: toggle S(q) plot','s: toggle single plot','+: no selection')
-    Page.keyPress = OnPlotKeyPress
-    
+
+    Page.keyPress = OnPlotKeyPress    
     PickId = G2frame.PickId
     PatternId = G2frame.PatternId
     colors=['b','g','r','c','m','k']
@@ -868,7 +899,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         Plot.set_xscale("log",nonposx='mask')
                         Plot.set_yscale("log",nonposy='mask')
                         if G2frame.ErrorBars:
-                            Plot.errorbar(X,Y,yerr=np.sqrt(1./xye[2]),ecolor=colors[N%6],picker=3.,clip_on=False)
+                            Plot.errorbar(X,Y,yerr=np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
+                                ecolor=colors[N%6],picker=3.,clip_on=False)
                         else:
                             Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
@@ -982,6 +1014,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
+    olderr = np.seterr(invalid='warn') #ugh - this removes a matplotlib error for mouse clicks in log plots                  
 #    G2frame.Pwdr = True
     
 ################################################################################

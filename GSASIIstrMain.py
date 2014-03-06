@@ -283,9 +283,36 @@ def SeqRefine(GPXfile,dlg):
                 item = ':'.join(items)
                 newVaryList[i] = item
             if newVaryList != SeqResult['varyList']:
-                print newVaryList
-                print SeqResult['varyList']
+                #print 'histogram',histogram,len(newVaryList),'variables'
+                #print newVaryList
+                #print 'previous',len(SeqResult['varyList']),'variables'
+                #print SeqResult['varyList']
                 print '**** ERROR - variable list for this histogram does not match previous'
+                print '\ncurrent histogram',histogram,'has',len(newVaryList),'variables'
+                combined = list(set(SeqResult['varyList']+newVaryList))
+                c = [var for var in combined if var not in newVaryList]
+                p = [var for var in combined if var not in SeqResult['varyList']]
+                line = 'Variables in previous but not in current: '
+                if c:
+                    for var in c:
+                        if len(line) > 100:
+                            print line
+                            line = '    '
+                        line += var + ', '
+                else:
+                    line += 'none'
+                print line
+                print '\nPrevious refinement has',len(SeqResult['varyList']),'variables'
+                line = 'Variables in current but not in previous: '
+                if p:
+                    for var in p:
+                        if len(line) > 100:
+                            print line
+                            line = '    '
+                        line += var + ', '
+                else:
+                    line += 'none'
+                print line
                 raise Exception
         parmDict.update(phaseDict)
         parmDict.update(hapDict)
@@ -307,6 +334,7 @@ def SeqRefine(GPXfile,dlg):
         #     raise Exception(' *** Refine aborted ***')
         #print G2mv.VarRemapShow(varyList)
         G2mv.Map2Dict(parmDict,varyList)
+        print 'parmDict:',parmDict ######### show dict just before refinement
         Rvals = {}
         while True:
             begin = time.time()

@@ -69,7 +69,8 @@ def SetPhaseWindow(mainFrame,phasePage,mainSizer):
     phasePage.SetSizer(mainSizer)
     Size = mainSizer.GetMinSize()
     Size[0] += 40
-    Size[1] = max(Size[1],430) + 35
+#    Size[1] = 500
+    Size[1] = min(Size[1]+ 150,500) 
     phasePage.SetSize(Size)
     phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
     mainFrame.setSizePosLeft(Size)

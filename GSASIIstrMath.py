@@ -1403,7 +1403,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         if not Phase['General'].get('doPawley'):
             time0 = time.time()
             StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
-            print 'sf calc time: %.3fs'%(time.time()-time0)
+#            print 'sf calc time: %.3fs'%(time.time()-time0)
         time0 = time.time()
         for iref,refl in enumerate(refDict['RefList']):
             if 'C' in calcControls[hfx+'histType']:
@@ -1443,7 +1443,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             elif 'T' in calcControls[hfx+'histType']:
                 print 'TOF Undefined at present'
                 raise Exception    #no TOF yet
-        print 'profile calc time: %.3fs'%(time.time()-time0)
+#        print 'profile calc time: %.3fs'%(time.time()-time0)
     return yc,yb
     
 def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup):
@@ -1529,7 +1529,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         if not Phase['General'].get('doPawley'):
             time0 = time.time()
             dFdvDict = StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
-            print 'sf-derv time %.3fs'%(time.time()-time0)
+#            print 'sf-derv time %.3fs'%(time.time()-time0)
             ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
         time0 = time.time()
         for iref,refl in enumerate(refDict['RefList']):
@@ -1700,7 +1700,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                         depDerivDict[name][iBeg:iFin] += dFdvDict[name][iref]*corr
                         if Ka2:
                             depDerivDict[name][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
-        print 'profile derv time: %.3fs'%(time.time()-time0)
+#        print 'profile derv time: %.3fs'%(time.time()-time0)
     # now process derivatives in constraints
     G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
     return dMdv

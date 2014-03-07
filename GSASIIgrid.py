@@ -57,6 +57,7 @@ helpMode = 'browser'
 #if sys.platform.lower().startswith('win'): helpMode = 'internal' # need a global control to set this
     
 htmlFirstUse = True
+WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_FOURCALC, wxID_FOURSEARCH, wxID_FOURCLEAR, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, 
     wxID_CHARGEFLIP, wxID_PEAKSUNIQUE, wxID_PEAKSDELETE, wxID_PEAKSDA,
@@ -994,19 +995,19 @@ class SymOpDialog(wx.Dialog):
             choice = ['No','Yes']
             self.force = wx.RadioBox(panel,-1,'Force to unit cell?',choices=choice)
             self.force.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
-            mainSizer.Add(self.force,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(self.force,0,WACV)
         mainSizer.Add((5,5),0)
         if SGData['SGInv']:
             choice = ['No','Yes']
             self.inv = wx.RadioBox(panel,-1,'Choose inversion?',choices=choice)
             self.inv.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
-            mainSizer.Add(self.inv,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(self.inv,0,WACV)
         mainSizer.Add((5,5),0)
         if SGData['SGLatt'] != 'P':
             LattOp = G2spc.Latt2text(SGData['SGLatt']).split(';')
             self.latt = wx.RadioBox(panel,-1,'Choose cell centering?',choices=LattOp)
             self.latt.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
-            mainSizer.Add(self.latt,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(self.latt,0,WACV)
         mainSizer.Add((5,5),0)
         if SGData['SGLaue'] in ['-1','2/m','mmm','4/m','4/mmm']:
             Ncol = 2
@@ -1018,9 +1019,9 @@ class SymOpDialog(wx.Dialog):
         self.oprs = wx.RadioBox(panel,-1,'Choose space group operator?',choices=OpList,
             majorDimension=Ncol)
         self.oprs.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
-        mainSizer.Add(self.oprs,0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(self.oprs,0,WACV)
         mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(panel,-1,"   Choose unit cell?"),0,wx.ALIGN_CENTER_VERTICAL)
+        mainSizer.Add(wx.StaticText(panel,-1,"   Choose unit cell?"),0,WACV)
         mainSizer.Add((5,5),0)
         cellSizer = wx.BoxSizer(wx.HORIZONTAL)
         cellSizer.Add((5,0),0)
@@ -1031,13 +1032,13 @@ class SymOpDialog(wx.Dialog):
             self.cell[-1].SetRange(-3,3)
             self.cell[-1].SetValue(0)
             self.cell[-1].Bind(wx.EVT_SPINCTRL, self.OnOpSelect)
-            cellSizer.Add(self.cell[-1],0,wx.ALIGN_CENTER_VERTICAL)
+            cellSizer.Add(self.cell[-1],0,WACV)
         mainSizer.Add(cellSizer,0,)
         if self.New:
             choice = ['No','Yes']
             self.new = wx.RadioBox(panel,-1,'Generate new positions?',choices=choice)
             self.new.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
-            mainSizer.Add(self.new,0,wx.ALIGN_CENTER_VERTICAL)
+            mainSizer.Add(self.new,0,WACV)
         mainSizer.Add((5,5),0)
 
         OkBtn = wx.Button(panel,-1,"Ok")
@@ -1127,31 +1128,31 @@ class DisAglDialog(wx.Dialog):
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,-1,'Controls for phase '+data['Name']),
-            0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
+            0,WACV|wx.LEFT,10)
         mainSizer.Add((10,10),1)
         
         radiiSizer = wx.FlexGridSizer(2,3,5,5)
-        radiiSizer.Add(wx.StaticText(self.panel,-1,' Type'),0,wx.ALIGN_CENTER_VERTICAL)
-        radiiSizer.Add(wx.StaticText(self.panel,-1,'Bond radii'),0,wx.ALIGN_CENTER_VERTICAL)
-        radiiSizer.Add(wx.StaticText(self.panel,-1,'Angle radii'),0,wx.ALIGN_CENTER_VERTICAL)
+        radiiSizer.Add(wx.StaticText(self.panel,-1,' Type'),0,WACV)
+        radiiSizer.Add(wx.StaticText(self.panel,-1,'Bond radii'),0,WACV)
+        radiiSizer.Add(wx.StaticText(self.panel,-1,'Angle radii'),0,WACV)
         self.objList = {}
         for id,item in enumerate(self.data['AtomTypes']):
-            radiiSizer.Add(wx.StaticText(self.panel,-1,' '+item),0,wx.ALIGN_CENTER_VERTICAL)
+            radiiSizer.Add(wx.StaticText(self.panel,-1,' '+item),0,WACV)
             bRadii = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['BondRadii'][id]),style=wx.TE_PROCESS_ENTER)
             self.objList[bRadii.GetId()] = ['BondRadii',id]
             bRadii.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
             bRadii.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
-            radiiSizer.Add(bRadii,0,wx.ALIGN_CENTER_VERTICAL)
+            radiiSizer.Add(bRadii,0,WACV)
             aRadii = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['AngleRadii'][id]),style=wx.TE_PROCESS_ENTER)
             self.objList[aRadii.GetId()] = ['AngleRadii',id]
             aRadii.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
             aRadii.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
-            radiiSizer.Add(aRadii,0,wx.ALIGN_CENTER_VERTICAL)
+            radiiSizer.Add(aRadii,0,WACV)
         mainSizer.Add(radiiSizer,0,wx.EXPAND)
         factorSizer = wx.FlexGridSizer(2,2,5,5)
         Names = ['Bond','Angle']
         for i,name in enumerate(Names):
-            factorSizer.Add(wx.StaticText(self.panel,-1,name+' search factor'),0,wx.ALIGN_CENTER_VERTICAL)
+            factorSizer.Add(wx.StaticText(self.panel,-1,name+' search factor'),0,WACV)
             bondFact = wx.TextCtrl(self.panel,-1,value='%.3f'%(data['Factors'][i]),style=wx.TE_PROCESS_ENTER)
             self.objList[bondFact.GetId()] = ['Factors',i]
             bondFact.Bind(wx.EVT_TEXT_ENTER,self.OnRadiiVal)
@@ -1786,7 +1787,7 @@ class ShowLSParms(wx.Dialog):
                 subSizer.Add((-1,-1))
             else:                
                 ch = HelpButton(panel,G2obj.fmtVarDescr(name))
-                subSizer.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
+                subSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             subSizer.Add(wx.StaticText(panel,wx.ID_ANY,str(name)))
             if name in varyList:
                 subSizer.Add(wx.StaticText(panel,wx.ID_ANY,'R'))
@@ -3229,6 +3230,12 @@ def UpdateControls(G2frame,data):
         data['FreePrm2'] = 'Sample voltage (V)'
     if 'FreePrm3' not in data:
         data['FreePrm3'] = 'Applied load (MN)'
+    if 'Copy2Next' not in data:
+        data['Copy2Next'] = False
+    if 'Reverse Seq' not in data:
+        data['Reverse Seq'] = False   
+     
+    
     #end patch
 
     def SeqSizer():
@@ -3253,20 +3260,28 @@ def UpdateControls(G2frame,data):
             
         def OnReverse(event):
             data['Reverse Seq'] = reverseSel.GetValue()
+            
+        def OnCopySel(event):
+            data['Copy2Next'] = copySel.GetValue() 
                     
-        seqSizer = wx.BoxSizer(wx.HORIZONTAL)
-        seqSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sequential Refinement Powder Data: '),0,wx.ALIGN_CENTER_VERTICAL)
+        seqSizer = wx.BoxSizer(wx.VERTICAL)
+        dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+        dataSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sequential Refinement Powder Data: '),0,WACV)
         selSeqData = wx.Button(G2frame.dataDisplay,-1,label=' Select data')
         selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
-        seqSizer.Add(selSeqData,0,wx.ALIGN_CENTER_VERTICAL)
-        seqSizer.Add((5,0),0)
-        reverseSel = wx.CheckBox(G2frame.dataDisplay,-1,label=' Reverse order?')
-        reverseSel.Bind(wx.EVT_CHECKBOX,OnReverse)
-        if 'Seq Data' not in data:
-            reverseSel.Enable(False)
-        if 'Reverse Seq' in data:
+        dataSizer.Add(selSeqData,0,WACV)
+        seqSizer.Add(dataSizer,0)
+        if 'Seq Data' in data:
+            selSizer = wx.BoxSizer(wx.HORIZONTAL)
+            reverseSel = wx.CheckBox(G2frame.dataDisplay,-1,label=' Reverse order?')
+            reverseSel.Bind(wx.EVT_CHECKBOX,OnReverse)
             reverseSel.SetValue(data['Reverse Seq'])
-        seqSizer.Add(reverseSel,0,wx.ALIGN_CENTER_VERTICAL)
+            selSizer.Add(reverseSel,0,WACV)
+            copySel =  wx.CheckBox(G2frame.dataDisplay,-1,label=' Copy results to next histogram?')
+            copySel.Bind(wx.EVT_CHECKBOX,OnCopySel)
+            copySel.SetValue(data['Copy2Next'])
+            selSizer.Add(copySel,0,WACV)
+            seqSizer.Add(selSizer,0)
         return seqSizer
         
     def LSSizer():        
@@ -3308,45 +3323,45 @@ def UpdateControls(G2frame,data):
             minSig.SetValue('%.2f'%(value))
 
         LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
-        LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement derivatives: '),0,wx.ALIGN_CENTER_VERTICAL)
+        LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement derivatives: '),0,WACV)
         Choice=['analytic Jacobian','numeric','analytic Hessian']
         derivSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['deriv type'],choices=Choice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         derivSel.SetValue(data['deriv type'])
         derivSel.Bind(wx.EVT_COMBOBOX, OnDerivType)
             
-        LSSizer.Add(derivSel,0,wx.ALIGN_CENTER_VERTICAL)
-        LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min delta-M/M: '),0,wx.ALIGN_CENTER_VERTICAL)
+        LSSizer.Add(derivSel,0,WACV)
+        LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min delta-M/M: '),0,WACV)
         Cnvrg = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2g'%(data['min dM/M']),style=wx.TE_PROCESS_ENTER)
         Cnvrg.Bind(wx.EVT_TEXT_ENTER,OnConvergence)
         Cnvrg.Bind(wx.EVT_KILL_FOCUS,OnConvergence)
-        LSSizer.Add(Cnvrg,0,wx.ALIGN_CENTER_VERTICAL)
+        LSSizer.Add(Cnvrg,0,WACV)
         if 'Hessian' in data['deriv type']:
-            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Max cycles: '),0,wx.ALIGN_CENTER_VERTICAL)
+            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Max cycles: '),0,WACV)
             Choice = ['0','1','2','3','5','10','15','20']
             maxCyc = wx.ComboBox(parent=G2frame.dataDisplay,value=str(data['max cyc']),choices=Choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             maxCyc.SetValue(str(data['max cyc']))
             maxCyc.Bind(wx.EVT_COMBOBOX, OnMaxCycles)
-            LSSizer.Add(maxCyc,0,wx.ALIGN_CENTER_VERTICAL)
+            LSSizer.Add(maxCyc,0,WACV)
         else:
-            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Initial shift factor: '),0,wx.ALIGN_CENTER_VERTICAL)
+            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Initial shift factor: '),0,WACV)
             Factr = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.5f'%(data['shift factor']),style=wx.TE_PROCESS_ENTER)
             Factr.Bind(wx.EVT_TEXT_ENTER,OnFactor)
             Factr.Bind(wx.EVT_KILL_FOCUS,OnFactor)
-            LSSizer.Add(Factr,0,wx.ALIGN_CENTER_VERTICAL)
+            LSSizer.Add(Factr,0,WACV)
         if G2frame.Sngl:
             LSSizer.Add((1,0),)
             LSSizer.Add((1,0),)
             fsqRef = wx.CheckBox(G2frame.dataDisplay,-1,label='Refine HKLF as F^2? ')
             fsqRef.SetValue(data['F**2'])
             fsqRef.Bind(wx.EVT_CHECKBOX,OnFsqRef)
-            LSSizer.Add(fsqRef,0,wx.ALIGN_CENTER_VERTICAL)
-            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label='Min obs/sig (0-5): '),0,wx.ALIGN_CENTER_VERTICAL)
+            LSSizer.Add(fsqRef,0,WACV)
+            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label='Min obs/sig (0-5): '),0,WACV)
             minSig = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(data['minF/sig']),style=wx.TE_PROCESS_ENTER)
             minSig.Bind(wx.EVT_TEXT_ENTER,OnMinSig)
             minSig.Bind(wx.EVT_KILL_FOCUS,OnMinSig)
-            LSSizer.Add(minSig,0,wx.ALIGN_CENTER_VERTICAL)
+            LSSizer.Add(minSig,0,WACV)
         return LSSizer
         
     def AuthSizer():
@@ -3356,11 +3371,11 @@ def UpdateControls(G2frame,data):
 
         Author = data['Author']
         authSizer = wx.BoxSizer(wx.HORIZONTAL)
-        authSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' CIF Author (last, first):'),0,wx.ALIGN_CENTER_VERTICAL)
+        authSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' CIF Author (last, first):'),0,WACV)
         auth = wx.TextCtrl(G2frame.dataDisplay,-1,value=Author,style=wx.TE_PROCESS_ENTER)
         auth.Bind(wx.EVT_TEXT_ENTER,OnAuthor)
         auth.Bind(wx.EVT_KILL_FOCUS,OnAuthor)
-        authSizer.Add(auth,0,wx.ALIGN_CENTER_VERTICAL)
+        authSizer.Add(auth,0,WACV)
         return authSizer
         
         
@@ -3374,7 +3389,7 @@ def UpdateControls(G2frame,data):
     SetDataMenuBar(G2frame,G2frame.dataFrame.ControlsMenu)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement Controls:'),0,wx.ALIGN_CENTER_VERTICAL)    
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement Controls:'),0,WACV)    
     mainSizer.Add(LSSizer())
     mainSizer.Add((5,5),0)
     mainSizer.Add(SeqSizer())
@@ -3639,11 +3654,11 @@ def UpdatePWHKPlot(G2frame,kind,item):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,5),)
     wtSizer = wx.BoxSizer(wx.HORIZONTAL)
-    wtSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Weight factor: '),0,wx.ALIGN_CENTER_VERTICAL)
+    wtSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Weight factor: '),0,WACV)
     wtval = wx.TextCtrl(G2frame.dataDisplay,-1,'%.3f'%(data[0]['wtFactor']),style=wx.TE_PROCESS_ENTER)
     wtval.Bind(wx.EVT_TEXT_ENTER,OnWtFactor)
     wtval.Bind(wx.EVT_KILL_FOCUS,OnWtFactor)
-    wtSizer.Add(wtval,0,wx.ALIGN_CENTER_VERTICAL)
+    wtSizer.Add(wtval,0,WACV)
     mainSizer.Add(wtSizer)
     if data[0].get('Dummy'):
         simSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -3656,10 +3671,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
         lbl += u'\n(Edit range resets observed intensities).'
         lbl = lbl.format(Tmin,Tmax,t,step,num)
         simSizer.Add(wx.StaticText(G2frame.dataDisplay,wx.ID_ANY,lbl),
-                    0,wx.ALIGN_CENTER_VERTICAL)
+                    0,WACV)
         but = wx.Button(G2frame.dataDisplay,wx.ID_ANY,"Edit range")
         but.Bind(wx.EVT_BUTTON,onEditSimRange)
-        simSizer.Add(but,0,wx.ALIGN_CENTER_VERTICAL)
+        simSizer.Add(but,0,WACV)
         mainSizer.Add(simSizer)
     if 'Nobs' in data[0]:
         mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
@@ -3736,10 +3751,10 @@ def UpdateHKLControls(G2frame,data):
     
     scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
     scaleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Scale'),0,
-        wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        WACV|wx.EXPAND)
     scaleSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=1000,minValue=1,
         style=wx.SL_HORIZONTAL,value=int(data['Scale']*10))
-    scaleSizer.Add(scaleSel,1,wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+    scaleSizer.Add(scaleSel,1,wx.EXPAND|wx.RIGHT|WACV)
     scaleSel.SetLineSize(10)
     scaleSel.SetPageSize(10)
     scaleSel.Bind(wx.EVT_SLIDER, OnScaleSlider)
@@ -3748,17 +3763,17 @@ def UpdateHKLControls(G2frame,data):
     
     zoneSizer = wx.BoxSizer(wx.HORIZONTAL)
     zoneSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Zone  '),0,
-        wx.ALIGN_CENTER_VERTICAL)
+        WACV)
     zoneSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['Zone'],choices=['100','010','001'],
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     zoneSel.Bind(wx.EVT_COMBOBOX, OnSelZone)
-    zoneSizer.Add(zoneSel,0,wx.ALIGN_CENTER_VERTICAL)
+    zoneSizer.Add(zoneSel,0,WACV)
     zoneSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Plot type  '),0,
-        wx.ALIGN_CENTER_VERTICAL)        
+        WACV)        
     typeSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['Type'],choices=typeChoices,
         style=wx.CB_READONLY|wx.CB_DROPDOWN)
     typeSel.Bind(wx.EVT_COMBOBOX, OnSelType)
-    zoneSizer.Add(typeSel,0,wx.ALIGN_CENTER_VERTICAL)
+    zoneSizer.Add(typeSel,0,WACV)
     zoneSizer.Add((10,0),0)    
     mainSizer.Add(zoneSizer,0,wx.EXPAND|wx.RIGHT)
     mainSizer.Add((0,10),0)    
@@ -3766,13 +3781,13 @@ def UpdateHKLControls(G2frame,data):
     izone = zones.index(data['Zone'])
     layerSizer = wx.BoxSizer(wx.HORIZONTAL)
     layerSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Layer'),0,
-        wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
+        WACV|wx.EXPAND)
     layerSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=HKLmax[izone],minValue=HKLmin[izone],
         style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS,value=0)
     layerSel.SetLineSize(1)
     layerSel.SetPageSize(1)
     layerSel.Bind(wx.EVT_SLIDER, OnLayerSlider)    
-    layerSizer.Add(layerSel,1,wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL)
+    layerSizer.Add(layerSel,1,wx.EXPAND|wx.RIGHT|WACV)
     layerSizer.Add((10,0),0)    
     mainSizer.Add(layerSizer,1,wx.EXPAND|wx.RIGHT)
 

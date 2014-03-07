@@ -176,71 +176,6 @@ def Refine(GPXfile,dlg):
     Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
         rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
         
-#    G2mv.Map2Dict(parmDict,varyList)
-#    Rvals = {}
-#    while True:
-#        begin = time.time()
-#        values =  np.array(G2stMth.Dict2Values(parmDict, varyList))
-#        Ftol = Controls['min dM/M']
-#        Factor = Controls['shift factor']
-#        maxCyc = Controls['max cyc']
-#        if 'Jacobian' in Controls['deriv type']:            
-#            result = so.leastsq(G2stMth.errRefine,values,Dfun=G2stMth.dervRefine,full_output=True,
-#                ftol=Ftol,col_deriv=True,factor=Factor,
-#                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
-#            ncyc = int(result[2]['nfev']/2)
-#        elif 'Hessian' in Controls['deriv type']:
-#            result = G2mth.HessianLSQ(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,maxcyc=maxCyc,Print=True,
-#                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
-#            ncyc = result[2]['num cyc']+1
-#            Rvals['lamMax'] = result[2]['lamMax']
-#        else:           #'numeric'
-#            result = so.leastsq(G2stMth.errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-#                args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
-#            ncyc = int(result[2]['nfev']/len(varyList))
-##        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
-##        for item in table: print item,table[item]               #useful debug - are things shifting?
-#        runtime = time.time()-begin
-#        Rvals['chisq'] = np.sum(result[2]['fvec']**2)
-#        G2stMth.Values2Dict(parmDict, varyList, result[0])
-#        G2mv.Dict2Map(parmDict,varyList)
-#        Rvals['Nobs'] = Histograms['Nobs']
-#        Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
-#        Rvals['GOF'] = Rvals['chisq']/(Histograms['Nobs']-len(varyList))
-#        print >>printFile,135*'-'
-#        print >>printFile,' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histograms['Nobs'],' Number of parameters: ',len(varyList)
-#        print >>printFile,' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
-#        print >>printFile,' wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
-#        try:
-#            covMatrix = result[1]*Rvals['GOF']
-#            sig = np.sqrt(np.diag(covMatrix))
-#            if np.any(np.isnan(sig)):
-#                print '*** Least squares aborted - some invalid esds possible ***'
-##            table = dict(zip(varyList,zip(values,result[0],(result[0]-values)/sig)))
-##            for item in table: print item,table[item]               #useful debug - are things shifting?
-#            break                   #refinement succeeded - finish up!
-#        except TypeError,FloatingPointError:          #result[1] is None on singular matrix
-#            print '**** Refinement failed - singular matrix ****'
-#            if 'Hessian' in Controls['deriv type']:
-#                num = len(varyList)-1
-#                for i,val in enumerate(np.flipud(result[2]['psing'])):
-#                    if val:
-#                        print 'Removing parameter: ',varyList[num-i]
-#                        del(varyList[num-i])                    
-#            else:
-#                Ipvt = result[2]['ipvt']
-#                for i,ipvt in enumerate(Ipvt):
-#                    if not np.sum(result[2]['fjac'],axis=1)[i]:
-#                        print 'Removing parameter: ',varyList[ipvt-1]
-#                        del(varyList[ipvt-1])
-#                        break
-
-#    print 'dependentParmList: ',G2mv.dependentParmList
-#    print 'arrayList: ',G2mv.arrayList
-#    print 'invarrayList: ',G2mv.invarrayList
-#    print 'indParmList: ',G2mv.indParmList
-#    print 'fixedDict: ',G2mv.fixedDict
-#    print 'test1'
     G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     sigDict = dict(zip(varyList,sig))
     newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
@@ -315,6 +250,8 @@ def SeqRefine(GPXfile,dlg):
             histNames.reverse()
     SeqResult = {'histNames':histNames}
     makeBack = True
+    Histo = {}
+    NewparmDict = {}
     for ihst,histogram in enumerate(histNames):
         ifPrint = False
         if dlg:
@@ -384,6 +321,8 @@ def SeqRefine(GPXfile,dlg):
         parmDict.update(phaseDict)
         parmDict.update(hapDict)
         parmDict.update(histDict)
+        if Controls['Copy2Next']:
+            parmDict.update(NewparmDict)
         G2stIO.GetFprime(calcControls,Histo)
         # do constraint processing
         G2mv.InitVars()    
@@ -409,65 +348,6 @@ def SeqRefine(GPXfile,dlg):
         Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
             rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
             
-#        G2mv.Map2Dict(parmDict,varyList)
-#        print 'parmDict:',parmDict ######### show dict just before refinement
-#        Rvals = {}
-#        while True:
-#            begin = time.time()
-#            values =  np.array(G2stMth.Dict2Values(parmDict,varyList))
-#            Ftol = Controls['min dM/M']
-#            Factor = Controls['shift factor']
-#            maxCyc = Controls['max cyc']
-#
-#            if 'Jacobian' in Controls['deriv type']:            
-#                result = so.leastsq(G2stMth.errRefine,values,Dfun=G2stMth.dervRefine,full_output=True,
-#                    ftol=Ftol,col_deriv=True,factor=Factor,
-#                    args=([Histo,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
-#                ncyc = int(result[2]['nfev']/2)
-#            elif 'Hessian' in Controls['deriv type']:
-#                result = G2mth.HessianLSQ(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,maxcyc=maxCyc,
-#                    args=([Histo,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
-#                ncyc = result[2]['num cyc']+1                           
-#            else:           #'numeric'
-#                result = so.leastsq(G2stMth.errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
-#                    args=([Histo,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
-#                ncyc = int(result[2]['nfev']/len(varyList))
-#
-#            runtime = time.time()-begin
-#            Rvals['chisq'] = np.sum(result[2]['fvec']**2)
-#            G2stMth.Values2Dict(parmDict, varyList, result[0])
-#            G2mv.Dict2Map(parmDict,varyList)
-#            
-#            Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histo['sumwYo'])*100.      #to %
-#            Rvals['GOF'] = Rvals['Rwp']/(Histo['Nobs']-len(varyList))
-#            Rvals['Nobs'] = Histo['Nobs']
-#            print >>printFile,135*'-'
-#            print >>printFile,' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histo['Nobs'],' Number of parameters: ',len(varyList)
-#            print >>printFile,' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
-#            print >>printFile,' wRp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
-#            try:
-#                covMatrix = result[1]*Rvals['GOF']
-#                sig = np.sqrt(np.diag(covMatrix))
-#                if np.any(np.isnan(sig)):
-#                    print '*** Least squares aborted - some invalid esds possible ***'
-#                    ifPrint = True
-#                break                   #refinement succeeded - finish up!
-#            except TypeError:          #result[1] is None on singular matrix
-#                print '**** Refinement failed - singular matrix ****'
-#                if 'Hessian' in Controls['deriv type']:
-#                    num = len(varyList)-1
-#                    for i,val in enumerate(np.flipud(result[2]['psing'])):
-#                        if val:
-#                            print 'Removing parameter: ',varyList[num-i]
-#                            del(varyList[num-i])                    
-#                else:
-#                    Ipvt = result[2]['ipvt']
-#                    for i,ipvt in enumerate(Ipvt):
-#                        if not np.sum(result[2]['fjac'],axis=1)[i]:
-#                            print 'Removing parameter: ',varyList[ipvt-1]
-#                            del(varyList[ipvt-1])
-#                            break
-#    
         G2stMth.GetFobsSq(Histo,Phases,parmDict,calcControls)
         sigDict = dict(zip(varyList,sig))
         newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
@@ -478,12 +358,20 @@ def SeqRefine(GPXfile,dlg):
                    'newCellDict':newCellDict}
         # add the uncertainties into the esd dictionary (sigDict)
         G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
-#??        SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
+#        G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
         G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint,printFile)
         G2stIO.SetHistogramData(parmDict,sigDict,Histo,ifPrint,printFile)
         SeqResult[histogram] = covData
         G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,covData,makeBack)
         makeBack = False
+        NewparmDict = {}
+        if Controls['Copy2Next']:
+            for parm in parmDict:
+                items = parm.split(':',2)
+                if str(ihst) in items[1] and parm in varyList:
+                    items[1] = str(ihst+1)  #not correct! needs to point to next (or prev) histogram
+                    newparm = ':'.join(items)
+                    NewparmDict[newparm] = parmDict[parm]
     G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
     printFile.close()
     print ' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'

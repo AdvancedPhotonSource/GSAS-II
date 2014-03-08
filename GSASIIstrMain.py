@@ -104,9 +104,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                         print 'Removing parameter: ',varyList[ipvt-1]
                         del(varyList[ipvt-1])
                         break
+        G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     return Rvals,result,covMatrix,sig
-
-
 
 def Refine(GPXfile,dlg):
     'Needs a doc string'
@@ -176,7 +175,6 @@ def Refine(GPXfile,dlg):
     Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
         rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
         
-    G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     sigDict = dict(zip(varyList,sig))
     newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
     newAtomDict = G2stMth.ApplyXYZshifts(parmDict,varyList)
@@ -348,7 +346,6 @@ def SeqRefine(GPXfile,dlg):
         Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
             rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
             
-        G2stMth.GetFobsSq(Histo,Phases,parmDict,calcControls)
         sigDict = dict(zip(varyList,sig))
         newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
         newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
@@ -366,12 +363,17 @@ def SeqRefine(GPXfile,dlg):
         makeBack = False
         NewparmDict = {}
         if Controls['Copy2Next']:
-            for parm in parmDict:
-                items = parm.split(':',2)
-                if str(ihst) in items[1] and parm in varyList:
-                    items[1] = str(ihst+1)  #not correct! needs to point to next (or prev) histogram
-                    newparm = ':'.join(items)
-                    NewparmDict[newparm] = parmDict[parm]
+            hId = Histo[histogram]['hId']
+            try:
+                nexthId = Histograms[histNames[ihst+1]]['hId']
+                for parm in parmDict:
+                    items = parm.split(':',2)
+                    if str(hId) in items[1] and parm in varyList:
+                        items[1] = str(nexthId)
+                        newparm = ':'.join(items)
+                        NewparmDict[newparm] = parmDict[parm]
+            except IndexError:
+                pass
     G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
     printFile.close()
     print ' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'

@@ -542,7 +542,7 @@ def ShowBanner(pFile=None):
 
     print >>pFile,80*'*','\n'
 
-def ShowControls(Controls,pFile=None):
+def ShowControls(Controls,pFile=None,SeqRef=False):
     'Print controls information'
     print >>pFile,' Least squares controls:'
     print >>pFile,' Refinement type: ',Controls['deriv type']
@@ -551,6 +551,10 @@ def ShowControls(Controls,pFile=None):
     else:
         print >>pFile,' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
     print >>pFile,' Initial shift factor: ','%.3f'%(Controls['shift factor'])
+    if SeqRef:
+        print >>pFile,' Sequential refinement controls:'
+        print >>pFile,' Copy of histogram results to next: ',Controls['Copy2Next']
+        print >>pFile,' Process histograms in reverse order: ',Controls['Reverse Seq']
     
 def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
     'needs a doc string'

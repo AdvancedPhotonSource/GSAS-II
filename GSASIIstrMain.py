@@ -220,7 +220,7 @@ def SeqRefine(GPXfile,dlg):
     print ' Sequential Refinement'
     G2stIO.ShowBanner(printFile)
     Controls = G2stIO.GetControls(GPXfile)
-    G2stIO.ShowControls(Controls,printFile)            
+    G2stIO.ShowControls(Controls,printFile,SeqRef=True)            
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:

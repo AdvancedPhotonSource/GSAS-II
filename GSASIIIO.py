@@ -2088,7 +2088,7 @@ class ExportBaseclass(object):
             varyList = list(varyList)
         try:
             groups,parmlist = G2mv.GroupConstraints(constDict)
-            G2mv.GenerateConstraints(groups,parmlist,varyList,constDict,fixedList)
+            G2mv.GenerateConstraints(groups,parmlist,varyList,constDict,fixedList,self.parmDict)
         except:
             # this really should not happen
             print ' *** ERROR - constraints are internally inconsistent ***'

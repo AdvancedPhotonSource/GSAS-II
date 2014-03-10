@@ -154,19 +154,13 @@ def Refine(GPXfile,dlg):
     varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
     try:
         groups,parmlist = G2mv.GroupConstraints(constrDict)
-        G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
+        G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict)
     except:
         print ' *** ERROR - your constraints are internally inconsistent ***'
-        errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
-        print 'Errors',errmsg
-        if warnmsg: print 'Warnings',warnmsg
+        #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
+        #print 'Errors',errmsg
+        #if warnmsg: print 'Warnings',warnmsg
         raise Exception(' *** Refine aborted ***')
-    # # check to see which generated parameters are fully varied
-    # msg = G2mv.SetVaryFlags(varyList)
-    # if msg:
-    #     print ' *** ERROR - you have not set the refine flags for constraints consistently! ***'
-    #     print msg
-    #     raise Exception(' *** Refine aborted ***')
     #print G2mv.VarRemapShow(varyList)
     
     ifPrint = True
@@ -217,7 +211,7 @@ def SeqRefine(GPXfile,dlg):
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
     printFile = open(ospath.splitext(GPXfile)[0]+'.lst','w')
-    print ' Sequential Refinement'
+    print 'Starting Sequential Refinement'
     G2stIO.ShowBanner(printFile)
     Controls = G2stIO.GetControls(GPXfile)
     G2stIO.ShowControls(Controls,printFile,SeqRef=True)            
@@ -251,6 +245,7 @@ def SeqRefine(GPXfile,dlg):
     Histo = {}
     NewparmDict = {}
     for ihst,histogram in enumerate(histNames):
+        print('Refining with '+str(histogram))
         ifPrint = False
         if dlg:
             dlg.SetTitle('Residual for histogram '+str(ihst))
@@ -259,8 +254,6 @@ def SeqRefine(GPXfile,dlg):
         calcControls['Natoms'] = Natoms
         calcControls['FFtables'] = FFtables
         calcControls['BLtables'] = BLtables
-        varyList = []
-        parmDict = {}
         Histo = {histogram:Histograms[histogram],}
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,Print=False)
         calcControls.update(controlDict)
@@ -268,6 +261,7 @@ def SeqRefine(GPXfile,dlg):
         calcControls.update(controlDict)
         varyList = rbVary+phaseVary+hapVary+histVary
         if not ihst:
+            # subsequent refinements
             saveVaryList = varyList[:]
             for i,item in enumerate(saveVaryList):
                 items = item.split(':')
@@ -277,6 +271,7 @@ def SeqRefine(GPXfile,dlg):
                 saveVaryList[i] = item
             SeqResult['varyList'] = saveVaryList
         else:
+            # first histogram to refine against
             newVaryList = varyList[:]
             for i,item in enumerate(newVaryList):
                 items = item.split(':')
@@ -285,10 +280,7 @@ def SeqRefine(GPXfile,dlg):
                 item = ':'.join(items)
                 newVaryList[i] = item
             if newVaryList != SeqResult['varyList']:
-                #print 'histogram',histogram,len(newVaryList),'variables'
-                #print newVaryList
-                #print 'previous',len(SeqResult['varyList']),'variables'
-                #print SeqResult['varyList']
+                # variable lists are expected to match between sequential refinements
                 print '**** ERROR - variable list for this histogram does not match previous'
                 print '\ncurrent histogram',histogram,'has',len(newVaryList),'variables'
                 combined = list(set(SeqResult['varyList']+newVaryList))
@@ -316,6 +308,7 @@ def SeqRefine(GPXfile,dlg):
                     line += 'none'
                 print line
                 raise Exception
+        parmDict = {}
         parmDict.update(phaseDict)
         parmDict.update(hapDict)
         parmDict.update(histDict)
@@ -323,22 +316,19 @@ def SeqRefine(GPXfile,dlg):
             parmDict.update(NewparmDict)
         G2stIO.GetFprime(calcControls,Histo)
         # do constraint processing
+        #reload(G2mv) # debug
         G2mv.InitVars()    
         constrDict,fixedList = G2stIO.GetConstraints(GPXfile)
         varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
         try:
             groups,parmlist = G2mv.GroupConstraints(constrDict)
-            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
+            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict)
         except:
             print ' *** ERROR - your constraints are internally inconsistent ***'
+            #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
+            #print 'Errors',errmsg
+            #if warnmsg: print 'Warnings',warnmsg
             raise Exception(' *** Refine aborted ***')
-        # check to see which generated parameters are fully varied
-        # msg = G2mv.SetVaryFlags(varyList)
-        # if msg:
-        #     print ' *** ERROR - you have not set the refine flags for constraints consistently! ***'
-        #     print msg
-        #     raise Exception(' *** Refine aborted ***')
-        #print G2mv.VarRemapShow(varyList)
         
         ifPrint = False
         print >>printFile,'\n Refinement results for histogram: v'+histogram

@@ -84,7 +84,10 @@ A list of parameters that will be varied is specified as input to GenerateConstr
 (varyList). A fixed parameter will simply be removed from this list preventing that
 parameter from being varied. Note that all parameters in a constraint relationship
 must specified as varied (appear in varyList) or none can be varied. This is
-checked in GenerateConstraints (as well as for generated relationships in SetVaryFlags).
+checked in GenerateConstraints. Likewise, if all parameters in a constraint are
+not referenced in a refinement, the constraint is ignored, but if some parameters
+in a constraint group are not referenced in a refinement, but others are this
+constitutes and error. 
 
 * When a new variable is created, the variable is assigned the name associated
   in the constraint definition or it is assigned a default name of form
@@ -507,7 +510,7 @@ def CheckConstraints(varyList,constrDict,fixedList):
                 errmsg += "\n"
     return errmsg,warnmsg
 
-def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
+def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=None):
     '''Takes a list of relationship entries comprising a group of
     constraints and builds the relationship lists and their inverse
     and stores them in global variables Also checks for internal
@@ -544,13 +547,13 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
     
     # process equivalences: make a list of dependent and independent vars
     #    and check for repeated uses (repetition of a parameter as an
-    #    independent var is OK)
+    #    independent var is OK [A=B; A=C], but chaining: [A=B; B=C] is not good)
     indepVarList = []
     depVarList = []
     multdepVarList = []
-    for varlist,mapvars,multarr,invmultarr in zip(
+    for varlist,mapvars,multarr,invmultarr in zip(       # process equivalences
         dependentParmList,indParmList,arrayList,invarrayList):
-        if multarr is None: # do only if an equivalence
+        if multarr is None: # true only if an equivalence
             zeromult = False
             for mv in mapvars:
                 #s = ''
@@ -562,7 +565,13 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
                     if notvaried: notvaried += ', '
                     notvaried += mv
                 if mv not in indepVarList: indepVarList.append(mv)
+                if parmDict is not None and mv not in parmDict:
+                    msg += "\nCannot equivalence to variable "+str(mv)+". Not defined in this refinement"
+                    continue
                 for v,m in zip(varlist,invmultarr):
+                    if parmDict is not None and v not in parmDict:
+                        print "Dropping equivalence for variable "+str(v)+". Not defined in this refinement"
+                        continue
                     if m == 0: zeromult = True
                     if v in varyList:
                         varied += 1
@@ -616,8 +625,14 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
         for rel in group:
             varied = 0
             notvaried = ''
+            unused = 0
+            notused = ''
             for var in constrDict[rel]:
                 if var.startswith('_'): continue
+                if parmDict is not None and var not in parmDict:
+                    unused += 1
+                    if notvaried: notused += ', '
+                    notused += var
                 if var in varyList:
                     varied += 1
                 else:
@@ -626,6 +641,11 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
                 if var in fixedVarList:
                     msg += '\nError: parameter '+var+" is Fixed and used in a constraint:\n\t"
                     msg += _FormatConstraint(constrDict[rel],fixedList[rel])+"\n"
+            #if unused > 0:# and unused != len(VarKeys(constrDict[rel])):
+            if unused > 0 and unused != len(VarKeys(constrDict[rel])):
+                msg += "\nSome (but not all) variables in constraint are not defined:\n\t"
+                msg += _FormatConstraint(constrDict[rel],fixedList[rel])
+                msg += '\nNot used: ' + notused + '\n'
             if varied > 0 and varied != len(VarKeys(constrDict[rel])):
                 msg += "\nNot all variables refined in constraint:\n\t"
                 msg += _FormatConstraint(constrDict[rel],fixedList[rel])
@@ -650,7 +670,10 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
         VaryFree = False
         for rel in group:
             varied = 0
+            unused = 0
             for var in VarKeys(constrDict[rel]):
+                if parmDict is not None and var not in parmDict:
+                    unused += 1                    
                 if var not in varsList: varsList.append(var)
                 if var in varyList: varied += 1
             if fixedList[rel] is not None and varied > 0:
@@ -658,6 +681,12 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
         if len(varlist) < len(group): # too many relationships -- no can do
             msg = 'too many relationships'
             break
+        # Since we checked before, if any variables are unused, then all must be. 
+        # If so, this set of relationships can be ignored
+        if unused:
+            if debug: print('Constraint ignored (all variables undefined)')
+            if debug: print ('    '+_FormatConstraint(constrDict[rel],fixedList[rel]))
+            continue
         # fill in additional degrees of freedom
         try:
             arr = _FillArray(group,constrDict,varlist)
@@ -703,7 +732,10 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList):
             else:
                 unused = False
                 mapvar.append(fixedval)
-        if unused: continue # skip over constraints that do not have a fixed value or a refined variable
+        if unused: # skip over constraints that don't matter (w/o fixed value or any refined variables)
+            if debug: print('Constraint ignored (all variables unrefined)')
+            if debug: print ('   '+_FormatConstraint(constrDict[rel],fixedList[rel]))
+            continue 
         dependentParmList.append(varlist)
         arrayList.append(constrArr)
         invarrayList.append(np.linalg.inv(constrArr))

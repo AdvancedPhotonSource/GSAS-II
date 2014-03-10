@@ -3112,7 +3112,7 @@ class GSASII(wx.Frame):
             G2mv.InitVars()
             constrDict,fixedList,ignored = G2stIO.ProcessConstraints(constList)
             groups,parmlist = G2mv.GroupConstraints(constrDict)
-            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList)
+            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmValDict)
             G2mv.Map2Dict(parmValDict,varyList)
         except:
             pass

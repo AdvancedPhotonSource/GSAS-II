@@ -1396,7 +1396,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         hfx = ':%d:'%(hId)
         SGData = Phase['General']['SGData']
         SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
-        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
+        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]     #Do I want to modify by Dij?
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
@@ -1523,7 +1523,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         pId = Phase['pId']
         pfx = '%d::'%(pId)
         phfx = '%d:%d:'%(pId,hId)
-        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
+        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]     #And modify here by Dij?
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         if not Phase['General'].get('doPawley'):

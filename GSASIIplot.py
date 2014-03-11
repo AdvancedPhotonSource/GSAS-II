@@ -949,12 +949,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     if 'PWDR' in plottype:
                         Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
                     elif 'SASD' in plottype:
-                        Plot.loglog(X,Y,colors[N%6],picker=False,nonposy='mask')
+                        Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
                 else:
                     if 'PWDR' in plottype:
                         Plot.plot(X,Y,colors[N%6],picker=False)
                     elif 'SASD' in plottype:
-                        Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
+                        Plot.loglog(X,Y,colors[N%6],picker=False,nonposy='mask')
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
             if G2frame.logPlot:
                 Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
@@ -1397,6 +1397,47 @@ def PlotStrain(G2frame,data,newPlot=False):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
+        
+################################################################################
+##### PlotSASDSizeDist
+################################################################################
+            
+def PlotSASDSizeDist(G2frame):
+    
+    def OnMotion(event):
+        xpos = event.xdata
+        if xpos:                                        #avoid out of frame mouse position
+            ypos = event.ydata
+            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            try:
+                G2frame.G2plotNB.status.SetStatusText('diameter =%9.5f f(D) =%9.3f'%(ypos,xpos),1)                   
+            except TypeError:
+                G2frame.G2plotNB.status.SetStatusText('Select Strain pattern first',1)
+
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index('Size Distribution')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()          #get a fresh plot after clf()
+    except ValueError:
+        newPlot = True
+        Plot = G2frame.G2plotNB.addMpl('Size Distribution').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Size Distribution')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    Page.Choice = None
+    Page.SetFocus()
+    PatternId = G2frame.PatternId
+    data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Models'))
+    Bins,Dbins,BinMag = data['Size']['Distribution']
+    Plot.set_title('Size Distribution')
+    Plot.set_xlabel(r'$D, \AA$',fontsize=14)
+    Plot.set_ylabel(r'$Volume fraction$',fontsize=14)
+    if data['Size']['logBins']:
+        Plot.set_xscale("log",nonposy='mask')
+        Plot.set_xlim([np.min(2.*Bins)/2.,np.max(2.*Bins)*2.])
+    Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='green')       #plot diameters
+    Page.canvas.draw()
 
 ################################################################################
 ##### PlotPowderLines

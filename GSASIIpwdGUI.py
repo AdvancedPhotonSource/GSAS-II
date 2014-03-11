@@ -2448,6 +2448,8 @@ def UpdateModelsGrid(G2frame,data):
         print 'fit model for '+data['Current']
         if data['Current'] == 'Size dist.':
             G2sasd.SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data)
+            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            G2plt.PlotSASDSizeDist(G2frame)
         
     def OnSelectFit(event):
         data['Current'] = fitSel.GetValue()
@@ -2491,7 +2493,6 @@ def UpdateModelsGrid(G2frame,data):
             data['Size']['Shape'][1] = val
             partprm.SetValue('%.3f'%(val))
             
-        for item in data['Size']: print item,data['Size'][item]
         sizeSizer = wx.BoxSizer(wx.VERTICAL)
         sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Size distribution parameters: '),0,WACV)
         binSizer = wx.FlexGridSizer(1,7,5,5)
@@ -2630,7 +2631,7 @@ def UpdateModelsGrid(G2frame,data):
     backVal.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
     backSizer.Add(backVal,0,WACV)
     backVar = wx.CheckBox(G2frame.dataDisplay,label='Apply?')
-    Indx[backVar.GetId()] = ['Back',1]
+    Indx[backVar.GetId()] = [data['Back'],1]
     backVar.SetValue(data['Back'][1])
     backVar.Bind(wx.EVT_CHECKBOX, OnCheckBox)
     backSizer.Add(backVar,0,WACV)

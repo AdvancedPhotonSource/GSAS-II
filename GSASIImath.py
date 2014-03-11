@@ -3139,7 +3139,7 @@ def makeQuat(A,B,C):
             D *= -1.
     return Q,D
     
-if __name__ == "__main__":
+def annealtests():
     from numpy import cos
     # minimum expected at ~-0.195
     func = lambda x: cos(14.5*x-0.3) + (x+0.2)*x
@@ -3152,3 +3152,7 @@ if __name__ == "__main__":
     print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='cauchy')
     print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='fast')
     print anneal(func,[1.0, 1.0],full_output=1,upper=[3.0, 3.0],lower=[-3.0, -3.0],feps=1e-4,maxiter=2000,schedule='boltzmann')
+
+
+if __name__ == '__main__':
+    annealtests()

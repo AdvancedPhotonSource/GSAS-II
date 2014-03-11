@@ -1100,8 +1100,8 @@ def LookupHistName(hId):
 def fmtVarDescr(varname):
     '''Return a string with a more complete description for a GSAS-II variable 
 
-    :param str name: A full G2 variable name with 2 or 3 or 4
-       colons (<p>:<h>:name[:<a>] or <p>::RBname:<?>:<?>])
+    :param str varname: A full G2 variable name with 2 or 3 or 4
+       colons (<p>:<h>:name[:<a>] or <p>::RBname:<r>:<t>])
        
     :returns: a string with the description
     '''
@@ -1112,7 +1112,7 @@ def VarDescr(varname):
     '''Return two strings with a more complete description for a GSAS-II variable 
 
     :param str name: A full G2 variable name with 2 or 3 or 4
-       colons (<p>:<h>:name[:<a>] or <p>::RBname:<?>:<?>])
+       colons (<p>:<h>:name[:<a>] or <p>::RBname:<r>:<t>])
        
     :returns: (loc,meaning) where loc describes what item the variable is mapped
       (phase, histogram, etc.) and meaning describes what the variable does.

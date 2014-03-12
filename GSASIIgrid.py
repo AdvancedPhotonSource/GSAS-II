@@ -4037,6 +4037,8 @@ def MovePatternTreeToGrid(G2frame,item):
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdateModelsGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame,plotType='SASD')
+        if len(data['Size']['Distribution']):
+            G2plt.PlotSASDSizeDist(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Substances':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         G2frame.PickId = item

@@ -82,8 +82,8 @@ def SpheroidFF(Q,R,args):
         return SphereFF(Q,R,0)
     else:
         cth = np.linspace(0,1.,NP)
-        Rct = R*np.sqrt(1.+(AR**2-1.)*cth**2)
-        return np.sqrt(np.sum(SphereFF(Q[:,np.newaxis],Rct,0)**2,axis=1)/NP)
+        Rct = R[:,np.newaxis]*np.sqrt(1.+(AR**2-1.)*cth**2)
+        return np.sqrt(np.sum(SphereFF(Q[:,np.newaxis],Rct,0)**2,axis=2)/NP)
             
 def CylinderFF(Q,R,args):
     ''' Compute form factor for cylinders - can use numpy arrays
@@ -95,11 +95,13 @@ def CylinderFF(Q,R,args):
     L = args[0]
     NP = 200
     alp = np.linspace(0,np.pi/2.,NP)
-    LBessArg = 0.5*Q[:,np.newaxis]*L*np.cos(alp)
+    LBessArg = 0.5*L*(Q[:,np.newaxis]*np.cos(alp))
     LBess = np.where(LBessArg<1.e-6,1.,np.sin(LBessArg)/LBessArg)
-    SBessArg = Q[:,np.newaxis]*R*np.sin(alp)
+    QR = Q[:,np.newaxis]*R
+    SBessArg = QR[:,:,np.newaxis]*np.sin(alp)
     SBess = np.where(SBessArg<1.e-6,0.5,scsp.jv(1,SBessArg)/SBessArg)
-    return np.sqrt(2.*np.pi*np.sum(np.sin(alp)*(LBess*SBess)**2,axis=1)/NP)
+    LSBess = LBess[:,np.newaxis,:]*SBess
+    return np.sqrt(2.*np.pi*np.sum(np.sin(alp)*LSBess**2,axis=2)/NP)
     
 def CylinderDFF(Q,L,args):
     ''' Compute form factor for cylinders - can use numpy arrays
@@ -124,38 +126,42 @@ def CylinderARFF(Q,R,args):
 def UniSphereFF(Q,R,args=0):
     Rg = np.sqrt(3./5.)*R
     B = 1.62/(Rg**4)    #are we missing *np.pi? 1.62 = 6*(3/5)**2/(4/3) sense?
-    QstV = Q/(scsp.erf(Q*Rg/np.sqrt(6)))**3
-    return np.sqrt(np.exp((-Q**2*Rg**2)/3.)+(B/QstV**4))
+    QstV = Q[:,np.newaxis]/(scsp.erf(Q[:,np.newaxis]*Rg/np.sqrt(6)))**3
+    return np.sqrt(np.exp((-Q[:,np.newaxis]**2*Rg**2)/3.)+(B/QstV**4))
     
-def UniRodFF(Q,R,L):
+def UniRodFF(Q,R,args):
+    L = args[0]
     Rg2 = np.sqrt(R**2/2+L**2/12)
     B2 = np.pi/L
     Rg1 = np.sqrt(3.)*R/2.
     G1 = (2./3.)*R/L
     B1 = 4.*(L+R)/(R**3*L**2)
-    QstV = Q/(scsp.erf(Q*Rg2/np.sqrt(6)))**3
-    FF = np.exp(-Q**2*Rg2**2/3.)+(B2/QstV)*np.exp(-Rg1**2*Q**2/3.)
-    QstV = Q/(scsp.erf(Q*Rg1/np.sqrt(6)))**3
-    FF += G1*np.exp(-Q**2*Rg1**2/3.)+(B1/QstV**4)
+    QstV = Q[:,np.newaxis]/(scsp.erf(Q[:,np.newaxis]*Rg2/np.sqrt(6)))**3
+    FF = np.exp(-Q[:,np.newaxis]**2*Rg2**2/3.)+(B2/QstV)*np.exp(-Rg1**2*Q[:,np.newaxis]**2/3.)
+    QstV = Q[:,np.newaxis]/(scsp.erf(Q[:,np.newaxis]*Rg1/np.sqrt(6)))**3
+    FF += G1*np.exp(-Q[:,np.newaxis]**2*Rg1**2/3.)+(B1/QstV**4)
     return np.sqrt(FF)
     
-def UniRodARFF(Q,R,AR):
-    return UniRodFF(Q,R,AR*R)
+def UniRodARFF(Q,R,args):
+    AR = args[0]
+    return UniRodFF(Q,R,[AR*R,])
     
-def UniDiskFF(Q,R,T):
+def UniDiskFF(Q,R,args):
+    T = args[0]
     Rg2 = np.sqrt(R**2/2.+T**2/12.)
     B2 = 2./R**2
     Rg1 = np.sqrt(3.)*T/2.
     RgC2 = 1.1*Rg1
     G1 = (2./3.)*(T/R)**2
     B1 = 4.*(T+R)/(R**3*T**2)
-    QstV = Q/(scsp.erf(Q*Rg2/np.sqrt(6)))**3
-    FF = np.exp(-Q**2*Rg2**2/3.)+(B2/QstV**2)*np.exp(-RgC2**2*Q**2/3.)
-    QstV = Q/(scsp.erf(Q*Rg1/np.sqrt(6)))**3
-    FF += G1*np.exp(-Q**2*Rg1**2/3.)+(B1/QstV**4)
+    QstV = Q[:,np.newaxis]/(scsp.erf(Q[:,np.newaxis]*Rg2/np.sqrt(6)))**3
+    FF = np.exp(-Q[:,np.newaxis]**2*Rg2**2/3.)+(B2/QstV**2)*np.exp(-RgC2**2*Q[:,np.newaxis]**2/3.)
+    QstV = Q[:,np.newaxis]/(scsp.erf(Q[:,np.newaxis]*Rg1/np.sqrt(6)))**3
+    FF += G1*np.exp(-Q[:,np.newaxis]**2*Rg1**2/3.)+(B1/QstV**4)
     return np.sqrt(FF)
     
-def UniTubeFF(Q,R,L,T):
+def UniTubeFF(Q,R,args):
+    L,T = args[:2]
     Ri = R-T
     DR2 = R**2-Ri**2
     Vt = np.pi*DR2*L
@@ -163,11 +169,11 @@ def UniTubeFF(Q,R,L,T):
     B1 = 4.*np.pi**2*(DR2+L*(R+Ri))/Vt**2
     B2 = np.pi**2*T/Vt
     B3 = np.pi/L
-    QstV = Q/(scsp.erf(Q*Rg3/np.sqrt(6)))**3
-    FF = np.exp(-Q**2*Rg3**2/3.)+(B3/QstV)*np.exp(-Q**2*R**2/3.)
-    QstV = Q/(scsp.erf(Q*R/np.sqrt(6)))**3
-    FF += (B2/QstV**2)*np.exp(-Q**2*T**2/3.)
-    QstV = Q/(scsp.erf(Q*T/np.sqrt(6)))**3
+    QstV = Q[:,np.newaxis]/(scsp.erf(Q[:,np.newaxis]*Rg3/np.sqrt(6)))**3
+    FF = np.exp(-Q[:,np.newaxis]**2*Rg3**2/3.)+(B3/QstV)*np.exp(-Q[:,np.newaxis]**2*R**2/3.)
+    QstV = Q/(scsp.erf(Q[:,np.newaxis]*R/np.sqrt(6)))**3
+    FF += (B2/QstV**2)*np.exp(-Q[:,np.newaxis]**2*T**2/3.)
+    QstV = Q[:,np.newaxis]/(scsp.erf(Q[:,np.newaxis]*T/np.sqrt(6)))**3
     FF += B1/QstV**4
     return np.sqrt(FF)
 
@@ -175,7 +181,7 @@ def UniTubeFF(Q,R,L,T):
 #### Particle volumes
 ###############################################################################
 
-def SphereVol(R,arg=()):
+def SphereVol(R,args=()):
     ''' Compute volume of sphere
     - numpy array friendly
     param float:R sphere radius
@@ -183,43 +189,47 @@ def SphereVol(R,arg=()):
     '''
     return (4./3.)*np.pi*R**3
 
-def SpheroidVol(R,AR):
+def SpheroidVol(R,args):
     ''' Compute volume of cylindrically symmetric ellipsoid (spheroid) 
     - numpy array friendly
     param float R: radius along 2 axes of spheroid
     param float AR: aspect ratio so radius of 3rd axis = R*AR
     returns float: volume
     '''
+    AR = args[0]
     return AR*SphereVol(R)
     
-def CylinderVol(R,L):
+def CylinderVol(R,args):
     ''' Compute cylinder volume for radius & length
     - numpy array friendly
     param float: R diameter (A)
     param float: L length (A)
     returns float:volume (A^3)
     '''
+    L = args[0]
     return np.pi*L*R**2
     
-def CylinderDVol(L,D):
+def CylinderDVol(L,args):
     ''' Compute cylinder volume for length & diameter
     - numpy array friendly
     param float: L half length (A)
     param float: D diameter (A)
     returns float:volume (A^3)
     '''
-    return CylinderVol(D/2.,2.*L)
+    D = args[0]
+    return CylinderVol(D/2.,[2.*L,])
     
-def CylinderARVol(R,AR):
+def CylinderARVol(R,args):
     ''' Compute cylinder volume for radius & aspect ratio = L/D
     - numpy array friendly
     param float: R radius (A)
     param float: AR=L/D=L/2R aspect ratio
     returns float:volume
     '''
-    return CylinderVol(R,2.*R*AR)
+    AR = args[0]
+    return CylinderVol(R,[2.*R*AR,])
     
-def UniSphereVol(R,arg=()):
+def UniSphereVol(R,args=()):
     ''' Compute volume of sphere
     - numpy array friendly
     param float:R sphere radius
@@ -227,22 +237,25 @@ def UniSphereVol(R,arg=()):
     '''
     return SphereVol(R)
     
-def UniRodVol(R,L):
+def UniRodVol(R,args):
     ''' Compute cylinder volume for radius & length
     - numpy array friendly
     param float: R diameter (A)
     param float: L length (A)
     returns float:volume (A^3)
     '''
-    return CylinderVol(R,L)
+    L = args[0]
+    return CylinderVol(R,[L,])
     
-def UniRodARVol(R,AR):
-    return CylinderARVol(R,AR)
+def UniRodARVol(R,args):
+    AR = args[0]
+    return CylinderARVol(R,[AR,])
     
-def UniDiskVol(R,T):
-    return CylinderVol(R,T)
+def UniDiskVol(R,args):
+    T = args[0]
+    return CylinderVol(R,[T,])
     
-def UniTubeVol(R,L,T):
+def UniTubeVol(R,args):
     ''' Compute tube volume for radius, length & wall thickness
     - numpy array friendly
     param float: R diameter (A)
@@ -250,7 +263,8 @@ def UniTubeVol(R,L,T):
     param float: T tube wall thickness (A)
     returns float: volume (A^3) of tube wall
     '''
-    return CylinderVol(R,L)-CylinderVol(R-T,L)
+    L,T = arg[:2]
+    return CylinderVol(R,[L,])-CylinderVol(R-T,[L,])
           
 ################################################################################
 ##### SB-MaxEnt

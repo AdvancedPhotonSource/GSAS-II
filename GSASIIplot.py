@@ -1413,7 +1413,7 @@ def PlotSASDSizeDist(G2frame):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                G2frame.G2plotNB.status.SetStatusText('diameter =%9.5f f(D) =%9.3f'%(ypos,xpos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('diameter =%9.3g f(D) =%9.3f'%(ypos,xpos),1)                   
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select Strain pattern first',1)
 
@@ -1435,7 +1435,7 @@ def PlotSASDSizeDist(G2frame):
     Bins,Dbins,BinMag = data['Size']['Distribution']
     Plot.set_title('Size Distribution')
     Plot.set_xlabel(r'$D, \AA$',fontsize=14)
-    Plot.set_ylabel(r'$Volume fraction$',fontsize=14)
+    Plot.set_ylabel(r'$Volume distribution f(D)$',fontsize=14)
     if data['Size']['logBins']:
         Plot.set_xscale("log",nonposy='mask')
         Plot.set_xlim([np.min(2.*Bins)/2.,np.max(2.*Bins)*2.])

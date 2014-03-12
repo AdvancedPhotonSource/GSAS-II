@@ -104,12 +104,12 @@ def CylinderFF(Q,R,args):
 def CylinderDFF(Q,L,args):
     ''' Compute form factor for cylinders - can use numpy arrays
     param float: Q Q value array (A-1)
-    param float: L cylinder length (A)
-    param float: D cylinder diameter (A)
+    param float: L cylinder half length (A)
+    param float: R cylinder diameter (A)
     returns float: form factor
     '''
-    D = args[0]
-    return CylinderFF(Q,D/2.,L)    
+    R = args[0]
+    return CylinderFF(Q,R,2.*L)    
     
 def CylinderARFF(Q,R,args): 
     ''' Compute form factor for cylinders - can use numpy arrays
@@ -204,11 +204,11 @@ def CylinderVol(R,L):
 def CylinderDVol(L,D):
     ''' Compute cylinder volume for length & diameter
     - numpy array friendly
-    param float: L length (A)
+    param float: L half length (A)
     param float: D diameter (A)
     returns float:volume (A^3)
     '''
-    return CylinderVol(D/2.,L)
+    return CylinderVol(D/2.,2.*L)
     
 def CylinderARVol(R,AR):
     ''' Compute cylinder volume for radius & aspect ratio = L/D
@@ -321,7 +321,7 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
     :returns float[]: :math:`f(r) dr`
     '''
         
-    TEST_LIMIT        = 0.10                    # for convergence
+    TEST_LIMIT        = 0.05                    # for convergence
     CHI_SQR_LIMIT     = 0.01                    # maximum difference in ChiSqr for a solution
     SEARCH_DIRECTIONS = 3                       # <10.  This code requires value = 3
     RESET_STRAYS      = 1                       # was 0.001, correction of stray negative values
@@ -481,7 +481,9 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
                 beta[k] *= math.sqrt (fSum/(blank*w))
         chtarg = ctarg * chisq
         return w, chtarg, loop, a_new, fx, beta
+        
 #MaxEnt_SB starts here    
+
     if image_to_data == None:
         image_to_data = opus
     if data_to_image == None:
@@ -582,26 +584,27 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
         fChange = sum(df)
 
         # calculate the normalized entropy
-        S = -sum((f/fSum) * numpy.log(f/fSum))      # normalized entropy, S&B eq. 1
+        S = sum((f/fSum) * numpy.log(f/fSum))      # normalized entropy, S&B eq. 1
         z = (datum - image_to_data (f, G)) / sigma  # standardized residuals
         chisq = sum(z*z)                            # report this ChiSq
 
         if report:
-            print "%3d/%3d" % ((iter+1), IterMax)
-            print " %5.2lf%% %8lg" % (100*test, S)
+            print " MaxEnt trial/max: %3d/%3d" % ((iter+1), IterMax)
+            print " Residual: %5.2lf%% Entropy: %8lg" % (100*test, S)
             if iter > 0:
                 value = 100*( math.sqrt(chisq/chtarg)-1)
             else:
                 value = 0
-            print " %12.5lg %10.4lf" % ( math.sqrt (chtarg/npt), value )
-            print "%12.6lg %8.2lf\n" % (fSum, 100*fChange/fSum)
+      #      print " %12.5lg %10.4lf" % ( math.sqrt(chtarg/npt), value )
+            print " Function sum: %.6lg Change from last: %.2lf%%\n" % (fSum,100*fChange/fSum)
 
         # See if we have finished our task.
         # do the hardest test first
         if (abs(chisq/chizer-1.0) < CHI_SQR_LIMIT) and  (test < TEST_LIMIT):
-            return f,image_to_data (f, G)     # solution FOUND returns here
-    
-    return f,image_to_data (f, G)       # no solution after IterMax iterations
+            print ' Convergence achieved.'
+            return chisq,f,image_to_data(f, G)     # solution FOUND returns here
+    print ' No convergence! Try increasing Error multiplier.'
+    return chisq,f,image_to_data(f, G)       # no solution after IterMax iterations
 
     
 ################################################################################
@@ -657,7 +660,7 @@ def test_MaxEnt_SB(report=True):
     qVec, I, dI = readTextData(test_data_file)
     G = G_matrix(qVec,r,rhosq,SphereFF,SphereVol,args=())
     
-    f_dr,Ic = MaxEnt_SB(I - bkg, dI*errFac, b, IterMax, G, report=report)
+    chisq,f_dr,Ic = MaxEnt_SB(I - bkg, dI*errFac, b, IterMax, G, report=report)
     if f_dr is None:
         print "no solution"
         return
@@ -697,16 +700,17 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
     Qmin = Limits[1][0]
     Qmax = Limits[1][1]
     Contrast = Sample['Contrast'][1]
+    wtFactor = ProfDict['wtFactor']
     Ibeg = np.searchsorted(Q,Qmin)
     Ifin = np.searchsorted(Q,Qmax)
     if Back[1]:
         Ib = Back[0]
         Ic[Ibeg:Ifin] = Back[0]
     Gmat = G_matrix(Q[Ibeg:Ifin],Bins,Contrast,shapes[Shape][0],shapes[Shape][1],args=Parms)
-    BinMag,Ic[Ibeg:Ifin] = MaxEnt_SB(Io[Ibeg:Ifin]-Back[0],1./np.sqrt(wt[Ibeg:Ifin]),BinsBack,
-        data['Size']['MaxEnt']['Niter'],Gmat)
-    print BinMag.shape
-    data['Size']['Distribution'] = [Bins,Dbins,BinMag]
-    print np.sum(BinMag)
+    chisq,BinMag,Ic[Ibeg:Ifin] = MaxEnt_SB(Io[Ibeg:Ifin]-Back[0],1./np.sqrt(wtFactor*wt[Ibeg:Ifin]),BinsBack,
+        data['Size']['MaxEnt']['Niter'],Gmat,report=True)
+    print ' Final chi^2: %.3f'%(chisq)
+    Vols = shapes[Shape][1](Bins,Parms)
+    data['Size']['Distribution'] = [Bins,Dbins,BinMag/(2.*Dbins)]
         
     

@@ -698,6 +698,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError:
+        if plottype == 'SASD':
+            G2frame.logPlot = True
+            G2frame.ErrorBars = True
         newPlot = True
         G2frame.Cmax = 1.0
         Plot = G2frame.G2plotNB.addMpl('Powder Patterns').gca()

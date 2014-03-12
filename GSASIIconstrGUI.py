@@ -230,6 +230,8 @@ def UpdateConstraints(G2frame,data):
         G2frame.ErrorDialog('Constraint Error','You must run least squares at least once before setting constraints\n'+ \
             'We suggest you refine scale factor first')
         return
+
+    # create a list of the phase variables
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2stIO.GetPhaseData(Phases,rbIds=rbIds,Print=False)
     phaseList = []
     for item in phaseDict:
@@ -250,23 +252,45 @@ def UpdateConstraints(G2frame,data):
         else:
             phaseAtNames[item] = ''
             phaseAtTypes[item] = ''
-            
+             
+    # create a list of the hist*phase variables; include wildcards here
     hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False)
     hapList = [i for i in hapDict.keys() if i.split(':')[2] not in ('Type',)]
     hapList.sort()
+    wildList = [] # list of variables with "*" for histogram number
+    for i in hapList:
+        s = i.split(':')
+        if s[1] == "": continue
+        s[1] = '*'
+        sj = ':'.join(s)
+        if sj not in wildList: wildList.append(sj)
+    #wildList.sort() # unneeded
+    hapList += wildList
     histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
     histList = []
     for item in histDict:
-        if item.split(':')[2] not in ['Omega','Type','Chi','Phi','Azimuth','Gonio. radius','Lam1','Lam2','Back']:
+        if item.split(':')[2] not in ['Omega','Type','Chi','Phi',
+                                      'Azimuth','Gonio. radius',
+                                      'Lam1','Lam2','Back','Temperature','Pressure',
+                                      'FreePrm1','FreePrm2','FreePrm3',
+                                      ]:
             histList.append(item)
     histList.sort()
+    wildList = []
+    # for i in histList: # any reason to have this for hist constraints?
+    #     s = i.split(':')
+    #     if s[1] == "": continue
+    #     s[1] = '*'
+    #     sj = ':'.join(s)
+    #     if sj not in wildList: wildList.append(sj)
+    # histList += wildList
     Indx = {}
     G2frame.Page = [0,'phs']
         
     def FindEquivVarb(name,nameList):
         'Creates a list of variables appropriate to constrain with name'
         outList = []
-        phlist = []
+        #phlist = []
         items = name.split(':')
         namelist = [items[2],]
         if 'dA' in name:
@@ -283,11 +307,17 @@ def UpdateConstraints(G2frame,data):
                 namelist = [rbfx+'S12',rbfx+'S13',rbfx+'S21',rbfx+'S23',rbfx+'S31',rbfx+'S32',rbfx+'SAA',rbfx+'SBB']
             if 'U' in name:
                 namelist = [rbfx+'U',]
+
         for item in nameList:
             keys = item.split(':')
-            if keys[0] not in phlist:
-                phlist.append(keys[0])
-            if keys[2] in namelist and item != name:
+            #if keys[0] not in phlist:
+            #    phlist.append(keys[0])
+            if items[1] == '*' and keys[2] in namelist: # wildcard -- select only sequential options
+                keys[1] = '*'
+                mitem = ':'.join(keys)
+                if mitem == name: continue
+                if mitem not in outList: outList.append(mitem)
+            elif keys[2] in namelist and item != name:
                 outList.append(item)
         return outList
         
@@ -324,7 +354,9 @@ def UpdateConstraints(G2frame,data):
         else:
             phaselbl = ['']
         histlist = [l[1]]
-        if l[1]:
+        if l[1] == '*':
+            pass
+        elif l[1]:
             histlbl = ['histogram #'+l[1]]
             if len(Histograms) > 1:
                 histlist += ['all']
@@ -344,7 +376,9 @@ def UpdateConstraints(G2frame,data):
             nam = var.split(":")[2]
             if nam not in nameList: nameList += [nam]
         # add "wild-card" names to the list of variables
-        if page[1] == 'phs':
+        if l[1] == '*':
+            pass
+        elif page[1] == 'phs':
             if 'RB' in FrstVarb.name:
                 pass
             elif FrstVarb.atom is None:

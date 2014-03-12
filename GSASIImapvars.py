@@ -415,7 +415,7 @@ def CheckConstraints(varyList,constrDict,fixedList):
             notvaried = ''
             for var in constrDict[rel]:
                 if var.startswith('_'): continue
-                if not re.match('[0-9]*:[0-9]*:',var):
+                if not re.match('[0-9]*:[0-9\*]*:',var):
                     warnmsg += "\nVariable "+str(var)+" does not begin with a ':'"
                 if var in varyList:
                     varied += 1
@@ -510,7 +510,7 @@ def CheckConstraints(varyList,constrDict,fixedList):
                 errmsg += "\n"
     return errmsg,warnmsg
 
-def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=None):
+def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=None,SeqHist=None):
     '''Takes a list of relationship entries comprising a group of
     constraints and builds the relationship lists and their inverse
     and stores them in global variables Also checks for internal
@@ -534,8 +534,12 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
       dict in constrDict. Values are either strings that can be converted to
       floats, float values or None if the constraint defines a new parameter.
       
-    :param dict constrDict: a list of dicts defining relationships/constraints.
+    :param dict parmDict: a dict containing all parameters defined in current
+      refinement.
 
+    :param int SeqHist: number of current histogram, when used in a sequential
+      refinement. None (default) otherwise. Wildcard variable names are
+      set to the current histogram, when found if not None.
     '''
     global dependentParmList,arrayList,invarrayList,indParmList,consNum
     msg = ''
@@ -629,6 +633,11 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
             notused = ''
             for var in constrDict[rel]:
                 if var.startswith('_'): continue
+                if var.split(':')[1] == '*' and SeqHist is not None:
+                    # convert wildcard var to current histogram
+                    sv = var.split(':')
+                    sv[1] = str(SeqHist)
+                    var = ':'.join(sv)
                 if parmDict is not None and var not in parmDict:
                     unused += 1
                     if notvaried: notused += ', '
@@ -672,6 +681,11 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
             varied = 0
             unused = 0
             for var in VarKeys(constrDict[rel]):
+                if var.split(':')[1] == '*' and SeqHist is not None:
+                    # convert wildcard var to current histogram
+                    sv = var.split(':')
+                    sv[1] = str(SeqHist)
+                    var = ':'.join(sv)
                 if parmDict is not None and var not in parmDict:
                     unused += 1                    
                 if var not in varsList: varsList.append(var)

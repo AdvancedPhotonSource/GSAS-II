@@ -322,13 +322,14 @@ def SeqRefine(GPXfile,dlg):
         varyListStart = tuple(varyList) # save the original varyList before dependent vars are removed
         try:
             groups,parmlist = G2mv.GroupConstraints(constrDict)
-            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict)
+            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
         except:
             print ' *** ERROR - your constraints are internally inconsistent ***'
             #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
             #print 'Errors',errmsg
             #if warnmsg: print 'Warnings',warnmsg
             raise Exception(' *** Refine aborted ***')
+        print G2mv.VarRemapShow(varyList)
         
         ifPrint = False
         print >>printFile,'\n Refinement results for histogram: v'+histogram

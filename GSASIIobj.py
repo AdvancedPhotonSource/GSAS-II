@@ -1127,8 +1127,14 @@ def VarDescr(varname):
 
     s = ""
     if l[0] is not None and l[1] is not None: # HAP: keep short
-        lbl = ShortPhaseNames.get(l[0],'? #'+str(l[0]))
-        hlbl = ShortHistNames.get(l[1],'? #'+str(l[1]))
+        if l[0] == '*':
+            lbl = 'all'
+        else:
+            lbl = ShortPhaseNames.get(l[0],'? #'+str(l[0]))
+        if l[1] == '*':
+            hlbl = 'all'
+        else:
+            hlbl = ShortHistNames.get(l[1],'? #'+str(l[1]))
         if hlbl[:4] == 'HKLF':
             hlbl = 'Xtl='+hlbl[5:]
         elif hlbl[:4] == 'PWDR':
@@ -1146,9 +1152,13 @@ def VarDescr(varname):
         except KeyError:
             albl = 'Atom?'
         s = "Atom "+str(albl)+" in "+str(lbl)
+    elif l[0] == '*':
+        s = "All phases "
     elif l[0] is not None:
         lbl = ShortPhaseNames.get(l[0],'phase?')
         s = "Phase "+str(lbl)
+    elif l[1] == '*':
+        s = 'All hists'
     elif l[1] is not None:
         hlbl = ShortHistNames.get(l[1],'? #'+str(l[1]))
         if hlbl[:4] == 'HKLF':

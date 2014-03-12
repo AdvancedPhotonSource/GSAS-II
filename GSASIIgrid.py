@@ -1420,7 +1420,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title),1,wx.ALL|wx.EXPAND,0)
+        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,30)),1,wx.ALL|wx.EXPAND,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
@@ -1428,7 +1428,7 @@ class G2MultiChoiceDialog(wx.Dialog):
             self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
             self.filterBox.Bind(wx.EVT_CHAR,self.onChar)
             self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
-        topSizer.Add(self.filterBox,0,wx.ALL,0)
+            topSizer.Add(self.filterBox,0,wx.ALL,0)
         Sizer.Add(topSizer,0,wx.ALL|wx.EXPAND,8)
         self.clb = wx.CheckListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
         if monoFont:

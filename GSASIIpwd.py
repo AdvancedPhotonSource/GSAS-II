@@ -580,10 +580,10 @@ def getBackground(pfx,parmDict,bakType,xdata):
     iD = 0
     while True:
         try:
-            pkP = parmDict[pfx+'BkPkpos:'+str(iD)]
-            pkI = parmDict[pfx+'BkPkint:'+str(iD)]
-            pkS = parmDict[pfx+'BkPksig:'+str(iD)]
-            pkG = parmDict[pfx+'BkPkgam:'+str(iD)]
+            pkP = parmDict[pfx+'BkPkpos;'+str(iD)]
+            pkI = parmDict[pfx+'BkPkint;'+str(iD)]
+            pkS = parmDict[pfx+'BkPksig;'+str(iD)]
+            pkG = parmDict[pfx+'BkPkgam;'+str(iD)]
             shl = 0.002
             Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,shl)
             iBeg = np.searchsorted(xdata,pkP-fmin)
@@ -674,10 +674,10 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
     iD = 0
     while True:
         try:
-            pkP = parmDict[pfx+'BkPkpos:'+str(iD)]
-            pkI = parmDict[pfx+'BkPkint:'+str(iD)]
-            pkS = parmDict[pfx+'BkPksig:'+str(iD)]
-            pkG = parmDict[pfx+'BkPkgam:'+str(iD)]
+            pkP = parmDict[pfx+'BkPkpos;'+str(iD)]
+            pkI = parmDict[pfx+'BkPkint;'+str(iD)]
+            pkS = parmDict[pfx+'BkPksig;'+str(iD)]
+            pkG = parmDict[pfx+'BkPkgam;'+str(iD)]
             shl = 0.002
             Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,shl)
             iBeg = np.searchsorted(xdata,pkP-fmin)

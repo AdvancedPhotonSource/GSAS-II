@@ -104,7 +104,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                         print 'Removing parameter: ',varyList[ipvt-1]
                         del(varyList[ipvt-1])
                         break
-        G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
+    G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
     return Rvals,result,covMatrix,sig
 
 def Refine(GPXfile,dlg):
@@ -168,7 +168,6 @@ def Refine(GPXfile,dlg):
     print >>printFile,135*'-'
     Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
         rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
-        
     sigDict = dict(zip(varyList,sig))
     newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
     newAtomDict = G2stMth.ApplyXYZshifts(parmDict,varyList)

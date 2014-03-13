@@ -902,7 +902,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         Plot.set_xscale("log",nonposx='mask')
                         Plot.set_yscale("log",nonposy='mask')
                         if G2frame.ErrorBars:
-                            Plot.errorbar(X,Y,yerr=np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
+                            Plot.errorbar(X,Y,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
                                 ecolor=colors[N%6],picker=3.,clip_on=False)
                         else:
                             Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)

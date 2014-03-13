@@ -878,7 +878,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])
     else:
         H1 = LRazm
-    H0 /= npcosd(H2[:-1])           #**2?
+    H0 /= npcosd(H2[:-1])           #**2? I don't think so, **1 is right for powders
     if data['Oblique'][1]:
         H0 /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
     if 'SASD' in data['type'] and data['PolaVal'][1]:

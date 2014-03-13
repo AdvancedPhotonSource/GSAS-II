@@ -105,8 +105,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(7)]
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY,wxID_SAMPLECOPY, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
-    wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,
-] = [wx.NewId() for item in range(8)]
+    wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,
+] = [wx.NewId() for item in range(9)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
     wxID_INSTSAVE,
@@ -2472,6 +2472,8 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.SampleMenu,helpType='Sample Parameters')
         self.SampleEdit = wx.Menu(title='')
         self.SampleMenu.Append(menu=self.SampleEdit, title='Command')
+        self.SetScale = self.SampleEdit.Append(id=wxID_SETSCALE, kind=wx.ITEM_NORMAL,text='Set scale',
+            help='Set scale by matching to another histogram')
         self.SampleEdit.Append(id=wxID_SAMPLELOAD, kind=wx.ITEM_NORMAL,text='Load',
             help='Load sample parameters from file')
         self.SampleEdit.Append(id=wxID_SAMPLESAVE, kind=wx.ITEM_NORMAL,text='Save',
@@ -2481,6 +2483,7 @@ class DataFrame(wx.Frame):
         self.SampleEdit.Append(id=wxID_SAMPLEFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
             help='Copy sample parameter refinement flags to other histograms')
         self.PostfillDataMenu()
+        self.SetScale.Enable(False)
 
         # PDR / Peak List
         self.PeakMenu = wx.MenuBar()

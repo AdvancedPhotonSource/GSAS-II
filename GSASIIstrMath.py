@@ -1496,8 +1496,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     names = [hfx+'BkPkpos',hfx+'BkPkint',hfx+'BkPksig',hfx+'BkPkgam']
     for name in varylist:
         if 'BkPk' in name:
-            id = int(name.split(':')[-1])
-            parm = name[:int(name.rindex(':'))]
+            id = int(name.split(';')[-1])
+            parm = name[:int(name.rindex(';'))]
             ip = names.index(parm)
             dMdv[varylist.index(name)] = dMdpk[4*id+ip]
     cw = np.diff(x)

@@ -2189,8 +2189,8 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         peakDict = {}
         peakList = []
         for i in range(DebyePeaks['nPeaks']):
-            peakNames = [':'+str(hId)+':BkPkpos:'+str(i),':'+str(hId)+ \
-                ':BkPkint:'+str(i),':'+str(hId)+':BkPksig:'+str(i),':'+str(hId)+':BkPkgam:'+str(i)]
+            peakNames = [':'+str(hId)+':BkPkpos;'+str(i),':'+str(hId)+ \
+                ':BkPkint;'+str(i),':'+str(hId)+':BkPksig;'+str(i),':'+str(hId)+':BkPkgam;'+str(i)]
             peakDict.update(dict(zip(peakNames,DebyePeaks['peaksList'][i][::2])))
             peakList += zip(peakNames,DebyePeaks['peaksList'][i][1::2])
         peakVary = []
@@ -2403,8 +2403,8 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
                         backSig[lenBack+3*i+j] = sigDict[name]            
         if DebyePeaks['nPeaks']:
             for i in range(DebyePeaks['nPeaks']):
-                names = [pfx+'BkPkpos:'+str(i),pfx+'BkPkint:'+str(i),
-                    pfx+'BkPksig:'+str(i),pfx+'BkPkgam:'+str(i)]
+                names = [pfx+'BkPkpos;'+str(i),pfx+'BkPkint;'+str(i),
+                    pfx+'BkPksig;'+str(i),pfx+'BkPkgam;'+str(i)]
                 for j,name in enumerate(names):
                     DebyePeaks['peaksList'][i][2*j] = parmDict[name]
                     if name in sigDict:

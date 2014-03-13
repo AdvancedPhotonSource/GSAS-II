@@ -690,6 +690,23 @@ if __name__ == '__main__':
     tests()
     
 ###############################################################################
+#### SASD Utilities
+###############################################################################
+
+def SetScale(Data,refData):
+    Profile,Limits,Sample = Data
+    refProfile,refLimits,refSample = refData
+    x,y = Profile[:2]
+    rx,ry = refProfile[:2]
+    Beg = np.max([rx[0],x[0],Limits[1][0],refLimits[1][0]])
+    Fin = np.min([rx[-1],x[-1],Limits[1][1],refLimits[1][1]])
+    iBeg = np.searchsorted(x,Beg)
+    iFin = np.searchsorted(x,Fin)
+    sum = np.sum(y[iBeg:iFin])
+    refsum = np.sum(np.interp(x[iBeg:iFin],rx,ry,0,0))
+    Sample['Scale'][0] = refSample['Scale'][0]*refsum/sum
+    
+###############################################################################
 #### Size distribution
 ###############################################################################
 
@@ -721,7 +738,8 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
         Ib = Back[0]
         Ic[Ibeg:Ifin] = Back[0]
     Gmat = G_matrix(Q[Ibeg:Ifin],Bins,Contrast,shapes[Shape][0],shapes[Shape][1],args=Parms)
-    chisq,BinMag,Ic[Ibeg:Ifin] = MaxEnt_SB(Io[Ibeg:Ifin]-Back[0],1./np.sqrt(wtFactor*wt[Ibeg:Ifin]),BinsBack,
+    chisq,BinMag,Ic[Ibeg:Ifin] = MaxEnt_SB(Sample['Scale'][0]*Io[Ibeg:Ifin]-Back[0],
+        Sample['Scale'][0]/np.sqrt(wtFactor*wt[Ibeg:Ifin]),BinsBack,
         data['Size']['MaxEnt']['Niter'],Gmat,report=True)
     print ' Final chi^2: %.3f'%(chisq)
     Vols = shapes[Shape][1](Bins,Parms)

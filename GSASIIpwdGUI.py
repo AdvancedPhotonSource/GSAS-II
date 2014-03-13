@@ -1128,6 +1128,7 @@ def UpdateSampleGrid(G2frame,data):
     '''respond to selection of PWDR/SASD Sample Parameters
     data tree item.
     '''
+                                                        
     def SetCopyNames(histName,addNames=[]):
         copyNames = ['Scale',]
         dataType = data['Type']
@@ -1165,7 +1166,7 @@ def UpdateSampleGrid(G2frame,data):
                 File.close()
         finally:
             dlg.Destroy()
-                                                        
+            
     def OnSampleLoad(event):
         '''Loads sample parameters from a G2 .samprm file
         in response to the Sample Parameters-Operations/Load menu
@@ -1194,6 +1195,36 @@ def UpdateSampleGrid(G2frame,data):
         finally:
             dlg.Destroy()
     
+    def OnSetScale(event):
+        histList = []
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        while item:
+            name = G2frame.PatternTree.GetItemText(item)
+            if 'SASD' in name and name != histName:
+                histList.append(name)
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+        if not len(histList):      #nothing to copy to!
+            return
+        dlg = wx.SingleChoiceDialog(G2frame,'Select reference histogram for scaling',
+            'Reference histogram',histList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                refHist = histList[sel]
+        finally:
+            dlg.Destroy()
+        Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
+        Profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
+        Data = [Profile,Limits,data]
+        refId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,refHist)
+        refSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,refId, 'Sample Parameters'))
+        refLimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,refId, 'Limits'))
+        refProfile = G2frame.PatternTree.GetItemPyData(refId)[1]
+        refData = [refProfile,refLimits,refSample]
+        G2sasd.SetScale(Data,refData)
+        UpdateSampleGrid(G2frame,data)       
+        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+        
     def OnSampleCopy(event):
         histType,copyNames = SetCopyNames(histName,
             addNames = ['Omega','Chi','Phi','Gonio. radius','InstrName'])
@@ -1326,10 +1357,13 @@ def UpdateSampleGrid(G2frame,data):
         G2frame.dataFrame.Clear()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.SampleMenu)
     G2frame.dataFrame.SetLabel('Sample Parameters')
+    G2frame.Bind(wx.EVT_MENU, OnSetScale, id=G2gd.wxID_SETSCALE)
     G2frame.Bind(wx.EVT_MENU, OnSampleCopy, id=G2gd.wxID_SAMPLECOPY)
     G2frame.Bind(wx.EVT_MENU, OnSampleFlagCopy, id=G2gd.wxID_SAMPLEFLAGCOPY)
     G2frame.Bind(wx.EVT_MENU, OnSampleSave, id=G2gd.wxID_SAMPLESAVE)
     G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2gd.wxID_SAMPLELOAD)
+    if 'SASD' in histName:
+        G2frame.dataFrame.SetScale.Enable(True)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()    
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)

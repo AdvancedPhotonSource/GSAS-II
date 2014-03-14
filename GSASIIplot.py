@@ -1413,7 +1413,7 @@ def PlotSASDSizeDist(G2frame):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                G2frame.G2plotNB.status.SetStatusText('diameter =%9.3g f(D) =%9.3f'%(ypos,xpos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('diameter =%9.3f f(D) =%9.3g'%(xpos,ypos),1)                   
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select Strain pattern first',1)
 

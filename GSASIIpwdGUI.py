@@ -84,7 +84,7 @@ def SetDefaultSASDModel():
     'Fills in default items for the SASD Models dictionary'    
     return {'Back':[0.0,False],'Size':{'MinDiam':50,'MaxDiam':10000,'Nbins':100,
         'logBins':True,'Method':'MaxEnt','Distribution':[],
-        'Shape':['Spheroid',1.0],'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':-6},
+        'Shape':['Spheroid',1.0],'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':-3},
         'IPG':{'Niter':100,'Approach':0.8},'Reg':{},},            
         'Unified':{'Levels':[],},            
         'Particle':{'Levels':[],},

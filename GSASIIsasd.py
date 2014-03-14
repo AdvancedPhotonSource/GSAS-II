@@ -732,13 +732,13 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
     wtFactor = ProfDict['wtFactor']
     Ibeg = np.searchsorted(Q,Qmin)
     Ifin = np.searchsorted(Q,Qmax)
-    if Back[1]:
-        Ib = Back[0]
-        Ic[Ibeg:Ifin] = Back[0]
     Gmat = G_matrix(Q[Ibeg:Ifin],Bins,Contrast,shapes[Shape][0],shapes[Shape][1],args=Parms)
     chisq,BinMag,Ic[Ibeg:Ifin] = MaxEnt_SB(Scale*Io[Ibeg:Ifin]-Back[0],
         Scale/np.sqrt(wtFactor*wt[Ibeg:Ifin]),BinsBack,
         data['Size']['MaxEnt']['Niter'],Gmat,report=True)
+    if Back[1]:
+        Ib = Back[0]
+        Ic[Ibeg:Ifin] += Back[0]
     print ' Final chi^2: %.3f'%(chisq)
     Vols = shapes[Shape][1](Bins,Parms)
     data['Size']['Distribution'] = [Bins,Dbins,BinMag/(2.*Dbins)]

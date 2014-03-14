@@ -84,7 +84,7 @@ def SetDefaultSASDModel():
     'Fills in default items for the SASD Models dictionary'    
     return {'Back':[0.0,False],'Size':{'MinDiam':50,'MaxDiam':10000,'Nbins':100,
         'logBins':True,'Method':'MaxEnt','Distribution':[],
-        'Shape':['Spheroid',1.0],'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':1e-6},
+        'Shape':['Spheroid',1.0],'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':-6},
         'IPG':{'Niter':100,'Approach':0.8},'Reg':{},},            
         'Unified':{'Levels':[],},            
         'Particle':{'Levels':[],},
@@ -2472,6 +2472,8 @@ def UpdateModelsGrid(G2frame,data):
         data['Size']['MinDiam'] = 50.
         data['Size']['MaxDiam'] = 10000.
         del data['Size']['MinMaxDiam']
+    if isinstance(data['Size']['MaxEnt']['Sky'],float):
+        data['Size']['MaxEnt']['Sky'] = -3
     #end patches
     
     def OnCopyModel(event):
@@ -2506,9 +2508,16 @@ def UpdateModelsGrid(G2frame,data):
         
     def OnIntVal(event):
         Obj = event.GetEventObject()
-        item,ind = Indx[Obj.GetId()]
-        item[ind] = int(Obj.GetValue())
-        
+        item,ind,minVal = Indx[Obj.GetId()]
+        try:
+            value = int(Obj.GetValue())
+            if value <= minVal:
+                raise ValueError
+        except ValueError:
+            value = item[ind]
+            Obj.SetValue(str(value))
+        item[ind] = value
+
     def SizeSizer():
         
         def OnShape(event):
@@ -2534,7 +2543,7 @@ def UpdateModelsGrid(G2frame,data):
         bins = ['50','100','150','200']
         nbins = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['Nbins']),choices=bins,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        Indx[nbins.GetId()] = [data['Size'],'Nbins']
+        Indx[nbins.GetId()] = [data['Size'],'Nbins',0]
         nbins.Bind(wx.EVT_COMBOBOX,OnIntVal)        
         binSizer.Add(nbins,0,WACV)
         binSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min diam.: '),0,WACV)
@@ -2542,14 +2551,14 @@ def UpdateModelsGrid(G2frame,data):
         mindiam = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['MinDiam']),choices=minDias,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         mindiam.Bind(wx.EVT_COMBOBOX,OnIntVal)        
-        Indx[mindiam.GetId()] = [data['Size'],'MinDiam']
+        Indx[mindiam.GetId()] = [data['Size'],'MinDiam',0]
         binSizer.Add(mindiam,0,WACV)
         binSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Max diam.: '),0,WACV)
         maxDias = [str(1000*(i+1)) for i in range(10)]
         maxdiam = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['MaxDiam']),choices=maxDias,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            style=wx.CB_DROPDOWN)
         maxdiam.Bind(wx.EVT_COMBOBOX,OnIntVal)        
-        Indx[maxdiam.GetId()] = [data['Size'],'MaxDiam']
+        Indx[maxdiam.GetId()] = [data['Size'],'MaxDiam',0]
         binSizer.Add(maxdiam,0,WACV)
         logbins = wx.CheckBox(G2frame.dataDisplay,label='Log bins?')
         Indx[logbins.GetId()] = [data['Size'],'logBins']
@@ -2588,10 +2597,17 @@ def UpdateModelsGrid(G2frame,data):
         Method = data['Size']['Method']
         iter = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size'][Method]['Niter']),choices=iters,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        Indx[iter.GetId()] = [data['Size'][Method],'Niter']
+        Indx[iter.GetId()] = [data['Size'][Method],'Niter',0]
         iter.Bind(wx.EVT_COMBOBOX,OnIntVal)
         fitSizer.Add(iter,0,WACV)
-        
+        if 'MaxEnt' in data['Size']['Method']:
+            fitSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Log floor factor: '),0,WACV)
+            floors = [str(-i) for i in range(9)]
+            floor = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['MaxEnt']['Sky']),choices=floors,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[floor.GetId()] = [data['Size']['MaxEnt'],'Sky',-10]
+            floor.Bind(wx.EVT_COMBOBOX,OnIntVal)
+            fitSizer.Add(floor,0,WACV)
         sizeSizer.Add(fitSizer,0)
 
         return sizeSizer
@@ -2659,8 +2675,8 @@ def UpdateModelsGrid(G2frame,data):
     G2gd.HorizontalLine(mainSizer,G2frame.dataDisplay)    
     backSizer = wx.BoxSizer(wx.HORIZONTAL)
     backSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Background:'),0,WACV)
-    backVal = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(data['Back'][0]),style=wx.TE_PROCESS_ENTER)
-    Indx[backVal.GetId()] = ['Back',0,'%.3f']
+    backVal = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(data['Back'][0]),style=wx.TE_PROCESS_ENTER)
+    Indx[backVal.GetId()] = ['Back',0,'%.3g']
     backVal.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
     backVal.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
     backSizer.Add(backVal,0,WACV)

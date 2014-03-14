@@ -12,6 +12,7 @@
 # $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIsasd.py $
 # $Id: GSASIIsasd.py 1186 2014-01-09 17:09:53Z vondreele $
 ########### SVN repository information ###################
+import os
 import sys
 import math
 import time
@@ -282,7 +283,7 @@ def G_matrix(q,r,contrast,FFfxn,Volfxn,args=()):
     '''
     FF = FFfxn(q,r,args)
     Vol = Volfxn(r,args)
-    return 1.e-4*(contrast*Vol*FF**2)     #10^-20 vs 10^-24
+    return 1.e-4*(contrast*Vol*FF**2).T     #10^-20 vs 10^-24
     
 '''
 sbmaxent
@@ -310,11 +311,6 @@ References:
    J APPL CRYST 21 (1988) 891 - 897.
 
 '''
-
-import os
-import sys
-import math
-import numpy
 
 class MaxEntException(Exception): 
     '''Any exception from this module'''
@@ -344,9 +340,9 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
     MAX_MOVE_LOOPS    = 500                     # for no solution in routine: move, 
     MOVE_PASSES       = 0.001                   # convergence test in routine: move
 
-    def opus (data, G):
+    def tropus (data, G):
         '''
-        opus: transform data-space -> solution-space:  [G] * data
+        tropus: transform data-space -> solution-space:  [G] * data
         
         default definition, caller can use this definition or provide an alternative
         
@@ -356,9 +352,9 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
         '''
         return G.dot(data)
 
-    def tropus (image, G):
+    def opus (image, G):
         '''
-        tropus: transform solution-space -> data-space:  [G]^tr * image
+        opus: transform solution-space -> data-space:  [G]^tr * image
         
         default definition, caller can use this definition or provide an alternative
         
@@ -366,7 +362,7 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
         :param float[M][N] G: transformation matrix, ndarray of shape (M,N)
         :returns float[M]: calculated data, ndarray of shape (M)
         '''
-        return G.transpose().dot(image)
+        return np.dot(G.T,image)    #G.transpose().dot(image)
 
     def Dist(s2, beta):
         '''measure the distance of this possible solution'''
@@ -401,8 +397,8 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
         :returns: new vector beta
         '''
         n = b.shape[0]
-        fl = numpy.ndarray((n, n))*0
-        bl = numpy.ndarray((n))*0
+        fl = np.zeros((n,n))
+        bl = np.zeros_like(b)
         
         #print_arr("ChoSol: a", a)
         #print_vec("ChoSol: b", b)
@@ -442,7 +438,7 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
         #print_vec("ChoSol: bl", bl)
     
         # last, compute beta from bl and fl
-        beta = numpy.ndarray((n))
+        beta = np.empty((n))
         beta[-1] = bl[-1] / fl[-1][-1]
         for i in (1, 0):
             z = 0.0
@@ -510,13 +506,13 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
     # the convention used in the FORTRAN version
     # to enable parts of them to be passed as
     # as vectors to "image_to_data" and "data_to_image".
-    xi      = 0*numpy.ndarray((SEARCH_DIRECTIONS, n))
-    eta     = 0*numpy.ndarray((SEARCH_DIRECTIONS, npt))
-    beta    = 0*numpy.ndarray((SEARCH_DIRECTIONS))
-    # s1      = 0*numpy.ndarray((SEARCH_DIRECTIONS))
-    # c1      = 0*numpy.ndarray((SEARCH_DIRECTIONS))
-    s2      = 0*numpy.ndarray((SEARCH_DIRECTIONS, SEARCH_DIRECTIONS))
-    c2      = 0*numpy.ndarray((SEARCH_DIRECTIONS, SEARCH_DIRECTIONS))
+    xi      = np.zeros((SEARCH_DIRECTIONS, n))
+    eta     = np.zeros((SEARCH_DIRECTIONS, npt))
+    beta    = np.zeros((SEARCH_DIRECTIONS))
+    # s1      = np.zeros((SEARCH_DIRECTIONS))
+    # c1      = np.zeros((SEARCH_DIRECTIONS))
+    s2      = np.zeros((SEARCH_DIRECTIONS, SEARCH_DIRECTIONS))
+    c2      = np.zeros((SEARCH_DIRECTIONS, SEARCH_DIRECTIONS))
 
     # TODO: replace blank (scalar) with base (vector)
     blank = sum(base) / len(base)   # use the average value of base
@@ -532,7 +528,7 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
         ox = -2 * z / sigma                        # gradient of Chi^2
 
         cgrad = data_to_image (ox, G)              # cgrad[i] = del(C)/del(f[i]), SB eq. 8
-        sgrad = -numpy.log(f/base) / (blank*math.exp (1.0))  # sgrad[i] = del(S)/del(f[i])
+        sgrad = -np.log(f/base) / (blank*math.exp (1.0))  # sgrad[i] = del(S)/del(f[i])
         snorm = math.sqrt(sum(f * sgrad*sgrad))    # entropy term, SB eq. 22
         cnorm = math.sqrt(sum(f * cgrad*cgrad))    # ChiSqr term, SB eq. 22
         tnorm = sum(f * sgrad * cgrad)             # norm for gradient term TEST 
@@ -598,7 +594,7 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
         fChange = sum(df)
 
         # calculate the normalized entropy
-        S = sum((f/fSum) * numpy.log(f/fSum))      # normalized entropy, S&B eq. 1
+        S = sum((f/fSum) * np.log(f/fSum))      # normalized entropy, S&B eq. 1
         z = (datum - image_to_data (f, G)) / sigma  # standardized residuals
         chisq = sum(z*z)                            # report this ChiSq
 
@@ -653,9 +649,9 @@ def test_MaxEnt_SB(report=True):
         buf = [line.split() for line in open(filename, 'r').readlines()]
         M = len(buf)
         buf = zip(*buf)         # transpose rows and columns
-        q  = numpy.array(buf[0], dtype=numpy.float64)
-        I  = numpy.array(buf[1], dtype=numpy.float64)
-        dI = numpy.array(buf[2], dtype=numpy.float64)
+        q  = np.array(buf[0], dtype=np.float64)
+        I  = np.array(buf[1], dtype=np.float64)
+        dI = np.array(buf[2], dtype=np.float64)
         return q, I, dI
     print "MaxEnt_SB: "
     test_data_file = os.path.join( 'testinp', 'test.sas')
@@ -666,10 +662,10 @@ def test_MaxEnt_SB(report=True):
     IterMax = 40
     errFac = 1.05
     
-    r    = numpy.logspace(math.log10(dMin), math.log10(dMax), nRadii)/2
+    r    = np.logspace(math.log10(dMin), math.log10(dMax), nRadii)/2
     dr   = r * (r[1]/r[0] - 1)          # step size
-    f_dr = numpy.ndarray((nRadii)) * 0  # volume fraction histogram
-    b    = numpy.ndarray((nRadii)) * 0 + defaultDistLevel  # MaxEnt "sky background"
+    f_dr = np.ndarray((nRadii)) * 0  # volume fraction histogram
+    b    = np.ndarray((nRadii)) * 0 + defaultDistLevel  # MaxEnt "sky background"
     
     qVec, I, dI = readTextData(test_data_file)
     G = G_matrix(qVec,r,rhosq,SphereFF,SphereVol,args=())
@@ -725,12 +721,14 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
             data['Size']['Nbins']+1,True)/2.        #make radii
     Dbins = np.diff(Bins)
     Bins = Bins[:-1]+Dbins/2.
-    BinsBack = np.ones_like(Bins)*1.e-6
+    Contrast = Sample['Contrast'][1]
+    Scale = Sample['Scale'][0]
+    Sky = 10**data['Size']['MaxEnt']['Sky']
+    BinsBack = np.ones_like(Bins)*Sky*Scale/Contrast #How about *Scale/Contrast?
     Back = data['Back']
     Q,Io,wt,Ic,Ib = Profile[:5]
     Qmin = Limits[1][0]
     Qmax = Limits[1][1]
-    Contrast = Sample['Contrast'][1]
     wtFactor = ProfDict['wtFactor']
     Ibeg = np.searchsorted(Q,Qmin)
     Ifin = np.searchsorted(Q,Qmax)
@@ -738,8 +736,8 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
         Ib = Back[0]
         Ic[Ibeg:Ifin] = Back[0]
     Gmat = G_matrix(Q[Ibeg:Ifin],Bins,Contrast,shapes[Shape][0],shapes[Shape][1],args=Parms)
-    chisq,BinMag,Ic[Ibeg:Ifin] = MaxEnt_SB(Sample['Scale'][0]*Io[Ibeg:Ifin]-Back[0],
-        Sample['Scale'][0]/np.sqrt(wtFactor*wt[Ibeg:Ifin]),BinsBack,
+    chisq,BinMag,Ic[Ibeg:Ifin] = MaxEnt_SB(Scale*Io[Ibeg:Ifin]-Back[0],
+        Scale/np.sqrt(wtFactor*wt[Ibeg:Ifin]),BinsBack,
         data['Size']['MaxEnt']['Niter'],Gmat,report=True)
     print ' Final chi^2: %.3f'%(chisq)
     Vols = shapes[Shape][1](Bins,Parms)

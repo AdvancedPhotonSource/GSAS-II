@@ -85,7 +85,7 @@ def SetDefaultSASDModel():
     return {'Back':[0.0,False],'Size':{'MinDiam':50,'MaxDiam':10000,'Nbins':100,
         'logBins':True,'Method':'MaxEnt','Distribution':[],
         'Shape':['Spheroid',1.0],'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':-3},
-        'IPG':{'Niter':100,'Approach':0.8},'Reg':{},},            
+        'IPG':{'Niter':100,'Approach':0.8,'Power':-1},'Reg':{},},            
         'Unified':{'Levels':[],},            
         'Particle':{'Levels':[],},
         'Current':'Size dist.',
@@ -2474,6 +2474,8 @@ def UpdateModelsGrid(G2frame,data):
         del data['Size']['MinMaxDiam']
     if isinstance(data['Size']['MaxEnt']['Sky'],float):
         data['Size']['MaxEnt']['Sky'] = -3
+    if 'Power' not in data['Size']['IPG']:
+        data['Size']['IPG']['Power'] = -1
     #end patches
     
     def OnCopyModel(event):
@@ -2482,6 +2484,11 @@ def UpdateModelsGrid(G2frame,data):
         
     def OnFitModel(event):
         print 'fit model for '+data['Current']
+        if not any(Sample['Contrast']):
+            G2frame.ErrorDialog('No contrast; your sample is a vacuum!',
+                'You need to define a scattering substance!\n'+    \
+                ' Do Substances and then Sample parameters')
+            return
         if data['Current'] == 'Size dist.':
             G2sasd.SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data)
             G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
@@ -2500,6 +2507,9 @@ def UpdateModelsGrid(G2frame,data):
             value = 0.0
         Obj.SetValue(fmt%(value))
         data[itemKey][ind] = value
+        if itemKey == 'Back':
+            Profile[4][:] = value
+        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         
     def OnCheckBox(event):
         Obj = event.GetEventObject()
@@ -2586,7 +2596,7 @@ def UpdateModelsGrid(G2frame,data):
         sizeSizer.Add(partSizer,0)
         sizeSizer.Add((5,5),0)
         fitSizer = wx.BoxSizer(wx.HORIZONTAL)
-        methods = ['MaxEnt','IPG',]
+        methods = ['MaxEnt',]   #'IPG',]
         fitSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Fitting method: '),0,WACV)
         method = wx.ComboBox(G2frame.dataDisplay,value=data['Size']['Method'],choices=methods,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -2608,6 +2618,14 @@ def UpdateModelsGrid(G2frame,data):
             Indx[floor.GetId()] = [data['Size']['MaxEnt'],'Sky',-10]
             floor.Bind(wx.EVT_COMBOBOX,OnIntVal)
             fitSizer.Add(floor,0,WACV)
+        elif 'IPG' in data['Size']['Method']:
+            fitSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Q power weight (-1 for sigma): '),0,WACV)
+            choices = ['-1','0','1','2','3','4']
+            power = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['IPG']['Power']),choices=choices,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[power.GetId()] = [data['Size']['IPG'],'Power',-2]
+            power.Bind(wx.EVT_COMBOBOX,OnIntVal)
+            fitSizer.Add(power,0,WACV)
         sizeSizer.Add(fitSizer,0)
 
         return sizeSizer
@@ -2667,6 +2685,10 @@ def UpdateModelsGrid(G2frame,data):
     mainSizer.Add(topSizer)
     G2gd.HorizontalLine(mainSizer,G2frame.dataDisplay)
     if 'Size' in data['Current']:
+        if 'MaxEnt' in data['Size']['Method']:
+            Status.SetStatusText('Size distribution by Maximum entropy')
+        elif 'IPG' in data['Size']['Method']:
+            Status.SetStatusText('Size distribution by Interior-Point Gradient')
         mainSizer.Add(SizeSizer())        
     elif 'Particle' in data['Current']:
         mainSizer.Add(PartSizer())
@@ -2680,7 +2702,7 @@ def UpdateModelsGrid(G2frame,data):
     backVal.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
     backVal.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
     backSizer.Add(backVal,0,WACV)
-    backVar = wx.CheckBox(G2frame.dataDisplay,label='Apply?')
+    backVar = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
     Indx[backVar.GetId()] = [data['Back'],1]
     backVar.SetValue(data['Back'][1])
     backVar.Bind(wx.EVT_CHECKBOX, OnCheckBox)

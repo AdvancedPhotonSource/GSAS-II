@@ -62,8 +62,9 @@ npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
 
 def SphereFF(Q,R,args=()):
     ''' Compute hard sphere form factor - can use numpy arrays
-    param float:Q Q value array (usually in A-1)
-    param float:R sphere radius (Usually in A - must match Q-1 units)
+    param float Q: Q value array (usually in A-1)
+    param float R: sphere radius (Usually in A - must match Q-1 units)
+    param array args: ignored
     returns float: form factors as array as needed
     '''
     QR = Q[:,np.newaxis]*R
@@ -72,9 +73,9 @@ def SphereFF(Q,R,args=()):
 def SpheroidFF(Q,R,args):
     ''' Compute form factor of cylindrically symmetric ellipsoid (spheroid) 
     - can use numpy arrays for R & AR; will return corresponding numpy array
-    param float:Q Q value array (usually in A-1)
+    param float Q : Q value array (usually in A-1)
     param float R: radius along 2 axes of spheroid
-    param float AR: aspect ratio so 3rd axis = R*AR
+    param array args: [float AR]: aspect ratio so 3rd axis = R*AR
     returns float: form factors as array as needed
     '''
     NP = 50
@@ -88,9 +89,9 @@ def SpheroidFF(Q,R,args):
             
 def CylinderFF(Q,R,args):
     ''' Compute form factor for cylinders - can use numpy arrays
-    param float: Q Q value array (A-1)
-    param float: R cylinder radius (A)
-    param float: L cylinder length (A)
+    param float Q: Q value array (A-1)
+    param float R: cylinder radius (A)
+    param array args: [float L]: cylinder length (A)
     returns float: form factor
     '''
     L = args[0]
@@ -106,9 +107,9 @@ def CylinderFF(Q,R,args):
     
 def CylinderDFF(Q,L,args):
     ''' Compute form factor for cylinders - can use numpy arrays
-    param float: Q Q value array (A-1)
-    param float: L cylinder half length (A)
-    param float: R cylinder diameter (A)
+    param float Q: Q value array (A-1)
+    param float L: cylinder half length (A)
+    param array args: [float R]: cylinder radius (A)
     returns float: form factor
     '''
     R = args[0]
@@ -116,21 +117,33 @@ def CylinderDFF(Q,L,args):
     
 def CylinderARFF(Q,R,args): 
     ''' Compute form factor for cylinders - can use numpy arrays
-    param float: Q Q value array (A-1)
-    param float: R cylinder radius (A)
-    param float: AR cylinder aspect ratio = L/D = L/2R
+    param float Q: Q value array (A-1)
+    param float R: cylinder radius (A)
+    param array args: [float AR]: cylinder aspect ratio = L/D = L/2R
     returns float: form factor
     '''
     AR = args[0]
     return CylinderFF(Q,R,2.*R*AR)    
     
 def UniSphereFF(Q,R,args=0):
+    ''' Compute form factor for unified sphere - can use numpy arrays
+    param float Q: Q value array (A-1)
+    param float R: cylinder radius (A)
+    param array args: ignored
+    returns float: form factor
+    '''
     Rg = np.sqrt(3./5.)*R
-    B = 1.62/(Rg**4)    #are we missing *np.pi? 1.62 = 6*(3/5)**2/(4/3) sense?
+    B = np.pi*1.62/(Rg**4)    #are we missing *np.pi? 1.62 = 6*(3/5)**2/(4/3) sense?
     QstV = Q[:,np.newaxis]/(scsp.erf(Q[:,np.newaxis]*Rg/np.sqrt(6)))**3
     return np.sqrt(np.exp((-Q[:,np.newaxis]**2*Rg**2)/3.)+(B/QstV**4))
     
 def UniRodFF(Q,R,args):
+    ''' Compute form factor for unified rod - can use numpy arrays
+    param float Q: Q value array (A-1)
+    param float R: cylinder radius (A)
+    param array args: [float R]: cylinder radius (A)
+    returns float: form factor
+    '''
     L = args[0]
     Rg2 = np.sqrt(R**2/2+L**2/12)
     B2 = np.pi/L
@@ -144,10 +157,22 @@ def UniRodFF(Q,R,args):
     return np.sqrt(FF)
     
 def UniRodARFF(Q,R,args):
+    ''' Compute form factor for unified rod of fixed aspect ratio - can use numpy arrays
+    param float Q: Q value array (A-1)
+    param float R: cylinder radius (A)
+    param array args: [float AR]: cylinder aspect ratio = L/D = L/2R
+    returns float: form factor
+    '''
     AR = args[0]
     return UniRodFF(Q,R,[AR*R,])
     
 def UniDiskFF(Q,R,args):
+    ''' Compute form factor for unified disk - can use numpy arrays
+    param float Q: Q value array (A-1)
+    param float R: cylinder radius (A)
+    param array args: [float T]: disk thickness (A)
+    returns float: form factor
+    '''
     T = args[0]
     Rg2 = np.sqrt(R**2/2.+T**2/12.)
     B2 = 2./R**2
@@ -162,6 +187,12 @@ def UniDiskFF(Q,R,args):
     return np.sqrt(FF)
     
 def UniTubeFF(Q,R,args):
+    ''' Compute form factor for unified disk - can use numpy arrays
+    param float Q: Q value array (A-1)
+    param float R: cylinder radius (A)
+    param array args: [float L,T]: tube length & wall thickness(A)
+    returns float: form factor
+    '''
     L,T = args[:2]
     Ri = R-T
     DR2 = R**2-Ri**2
@@ -185,7 +216,8 @@ def UniTubeFF(Q,R,args):
 def SphereVol(R,args=()):
     ''' Compute volume of sphere
     - numpy array friendly
-    param float:R sphere radius
+    param float R: sphere radius
+    param array args: ignored
     returns float: volume
     '''
     return (4./3.)*np.pi*R**3
@@ -194,7 +226,7 @@ def SpheroidVol(R,args):
     ''' Compute volume of cylindrically symmetric ellipsoid (spheroid) 
     - numpy array friendly
     param float R: radius along 2 axes of spheroid
-    param float AR: aspect ratio so radius of 3rd axis = R*AR
+    param array args: [float AR]: aspect ratio so radius of 3rd axis = R*AR
     returns float: volume
     '''
     AR = args[0]
@@ -203,8 +235,8 @@ def SpheroidVol(R,args):
 def CylinderVol(R,args):
     ''' Compute cylinder volume for radius & length
     - numpy array friendly
-    param float: R diameter (A)
-    param float: L length (A)
+    param float R: diameter (A)
+    param array args: [float L]: length (A)
     returns float:volume (A^3)
     '''
     L = args[0]
@@ -214,7 +246,7 @@ def CylinderDVol(L,args):
     ''' Compute cylinder volume for length & diameter
     - numpy array friendly
     param float: L half length (A)
-    param float: D diameter (A)
+    param array args: [float D]: diameter (A)
     returns float:volume (A^3)
     '''
     D = args[0]
@@ -224,7 +256,7 @@ def CylinderARVol(R,args):
     ''' Compute cylinder volume for radius & aspect ratio = L/D
     - numpy array friendly
     param float: R radius (A)
-    param float: AR=L/D=L/2R aspect ratio
+    param array args: [float AR]: =L/D=L/2R aspect ratio
     returns float:volume
     '''
     AR = args[0]
@@ -233,7 +265,8 @@ def CylinderARVol(R,args):
 def UniSphereVol(R,args=()):
     ''' Compute volume of sphere
     - numpy array friendly
-    param float:R sphere radius
+    param float R: sphere radius
+    param array args: ignored
     returns float: volume
     '''
     return SphereVol(R)
@@ -241,27 +274,38 @@ def UniSphereVol(R,args=()):
 def UniRodVol(R,args):
     ''' Compute cylinder volume for radius & length
     - numpy array friendly
-    param float: R diameter (A)
-    param float: L length (A)
+    param float R: diameter (A)
+    param array args: [float L]: length (A)
     returns float:volume (A^3)
     '''
     L = args[0]
     return CylinderVol(R,[L,])
     
 def UniRodARVol(R,args):
+    ''' Compute rod volume for radius & aspect ratio
+    - numpy array friendly
+    param float R: diameter (A)
+    param array args: [float AR]: =L/D=L/2R aspect ratio
+    returns float:volume (A^3)
+    '''
     AR = args[0]
     return CylinderARVol(R,[AR,])
     
 def UniDiskVol(R,args):
+    ''' Compute disk volume for radius & thickness
+    - numpy array friendly
+    param float R: diameter (A)
+    param array args: [float T]: thickness
+    returns float:volume (A^3)
+    '''
     T = args[0]
     return CylinderVol(R,[T,])
     
 def UniTubeVol(R,args):
     ''' Compute tube volume for radius, length & wall thickness
     - numpy array friendly
-    param float: R diameter (A)
-    param float: L length (A)
-    param float: T tube wall thickness (A)
+    param float R: diameter (A)
+    param array args: [float L,T]: tube length & wall thickness(A)
     returns float: volume (A^3) of tube wall
     '''
     L,T = arg[:2]
@@ -316,15 +360,15 @@ class MaxEntException(Exception):
     '''Any exception from this module'''
     pass
 
-def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=None, report=False):
+def MaxEnt_SB(datum, sigma, G, base, IterMax, image_to_data=None, data_to_image=None, report=False):
     '''
     do the complete Maximum Entropy algorithm of Skilling and Bryan
     
     :param float datum[]:
     :param float sigma[]:
+    :param float[][] G: transformation matrix
     :param float base[]:
     :param int IterMax:
-    :param float[][] G: transformation matrix
     :param obj image_to_data: opus function (defaults to opus)
     :param obj data_to_image: tropus function (defaults to tropus)
     
@@ -617,6 +661,129 @@ def MaxEnt_SB(datum, sigma, base, IterMax, G, image_to_data=None, data_to_image=
     return chisq,f,image_to_data(f, G)       # no solution after IterMax iterations
 
     
+###############################################################################
+#### IPG/TNNLS Routines
+###############################################################################
+
+def IPG(datum,sigma,G,Bins,Dbins,IterMax,Qvec=[],approach=0.8,Power=-1,report=False):
+    ''' An implementation of the Interior-Point Gradient method of 
+    Michael Merritt & Yin Zhang, Technical Report TR04-08, Dept. of Comp. and 
+    Appl. Math., Rice Univ., Houston, Texas 77005, U.S.A. found on the web at
+    http://www.caam.rice.edu/caam/trs/2004/TR04-08.pdf
+    Problem addressed: Total Non-Negative Least Squares (TNNLS)
+    :param float datum[]:
+    :param float sigma[]:
+    :param float[][] G: transformation matrix
+    :param int IterMax:
+    :param float Qvec: data positions for Power = 0-4
+    :param float approach: 0.8 default fitting parameter
+    :param int Power: 0-4 for Q^Power weighting, -1 to use input sigma
+    
+    '''
+    if Power < 0: 
+        GmatE = G/sigma[:np.newaxis]
+        IntE = datum/sigma
+        pwr = 0
+        QvecP = np.ones_like(datum)
+    else:
+        GmatE = G[:]
+        IntE = datum[:]
+        pwr = Power
+        QvecP = Qvec**pwr
+    Amat = GmatE*QvecP[:np.newaxis]
+    AAmat = np.inner(Amat,Amat)
+    Bvec = datum*QvecP
+    Xw = np.ones_like(Bins)*1.e-6
+    calc = np.dot(G.T,Xw)
+    nIter = 0
+    err = 10.
+    while (nIter<IterMax) and (err > 1.):
+        #Step 1 in M&Z paper:
+        Qk = np.dot(AAmat,Xw)-np.dot(Amat,Bvec)
+        Dk = Xw/np.dot(AAmat,Xw)
+        Pk = -Dk*Qk
+        #Step 2 in M&Z paper:
+        alpSt = -np.dot(Pk,Qk)/np.dot(Pk,np.dot(AAmat,Pk))
+        alpWv = -Xw/Pk
+        AkSt = [np.where(Pk[i]<0,np.min((approach*alpWv[i],alpSt)),Pk[i]) for i in range(Pk.shape[0])]
+        #Step 3 in M&Z paper:
+        shift = AkSt*Pk
+        print np.sum(shift**2)
+        Xw += shift
+        #done IPG; now results
+        nIter += 1
+        calc = np.dot(G.T,Xw)
+        chisq = np.sum(((datum-calc)/sigma)**2)
+        err = chisq/len(datum)
+        if report:
+            print ' Iteration: %d, chisq: %.3g'%(nIter,chisq)
+    return chisq,Xw,calc
+
+###############################################################################
+#### SASD Utilities
+###############################################################################
+
+def SetScale(Data,refData):
+    Profile,Limits,Sample = Data
+    refProfile,refLimits,refSample = refData
+    x,y = Profile[:2]
+    rx,ry = refProfile[:2]
+    Beg = np.max([rx[0],x[0],Limits[1][0],refLimits[1][0]])
+    Fin = np.min([rx[-1],x[-1],Limits[1][1],refLimits[1][1]])
+    iBeg = np.searchsorted(x,Beg)
+    iFin = np.searchsorted(x,Fin)
+    sum = np.sum(y[iBeg:iFin])
+    refsum = np.sum(np.interp(x[iBeg:iFin],rx,ry,0,0))
+    Sample['Scale'][0] = refSample['Scale'][0]*refsum/sum
+    
+###############################################################################
+#### Size distribution
+###############################################################################
+
+def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
+    shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],
+        'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
+        'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
+        'Unified disk':[UniDiskFF,UniDiskVol]}
+    Shape = data['Size']['Shape'][0]
+    Parms = data['Size']['Shape'][1:]
+    if data['Size']['logBins']:
+        Bins = np.logspace(np.log10(data['Size']['MinDiam']),np.log10(data['Size']['MaxDiam']),
+            data['Size']['Nbins']+1,True)/2.        #make radii
+    else:
+        Bins = np.linspace(data['Size']['MinDiam'],data['Size']['MaxDiam'],
+            data['Size']['Nbins']+1,True)/2.        #make radii
+    Dbins = np.diff(Bins)
+    Bins = Bins[:-1]+Dbins/2.
+    Contrast = Sample['Contrast'][1]
+    Scale = Sample['Scale'][0]
+    Sky = 10**data['Size']['MaxEnt']['Sky']
+    BinsBack = np.ones_like(Bins)*Sky*Scale/Contrast #How about *Scale/Contrast?
+    Back = data['Back']
+    Q,Io,wt,Ic,Ib = Profile
+    Qmin = Limits[1][0]
+    Qmax = Limits[1][1]
+    wtFactor = ProfDict['wtFactor']
+    Ibeg = np.searchsorted(Q,Qmin)
+    Ifin = np.searchsorted(Q,Qmax)
+    BinMag = np.zeros_like(Bins)
+    Ic[:] = 0.
+    Gmat = G_matrix(Q[Ibeg:Ifin],Bins,Contrast,shapes[Shape][0],shapes[Shape][1],args=Parms)
+    if 'MaxEnt' == data['Size']['Method']:
+        chisq,BinMag,Ic[Ibeg:Ifin] = MaxEnt_SB(Scale*Io[Ibeg:Ifin]-Back[0],
+            Scale/np.sqrt(wtFactor*wt[Ibeg:Ifin]),Gmat,BinsBack,
+            data['Size']['MaxEnt']['Niter'],report=True)
+    elif 'IPG' == data['Size']['Method']:
+        chisq,BinMag,Ic[Ibeg:Ifin] = IPG(Scale*Io[Ibeg:Ifin]-Back[0],Scale/np.sqrt(wtFactor*wt[Ibeg:Ifin]),
+            Gmat,Bins,Dbins,data['Size']['IPG']['Niter'],Q[Ibeg:Ifin],approach=0.8,
+            Power=data['Size']['IPG']['Power'],report=True)
+    Ib[:] = Back[0]
+    Ic[Ibeg:Ifin] += Back[0]
+    print ' Final chi^2: %.3f'%(chisq)
+    Vols = shapes[Shape][1](Bins,Parms)
+    data['Size']['Distribution'] = [Bins,Dbins,BinMag/(2.*Dbins)]
+        
+    
 ################################################################################
 #### MaxEnt testing stuff
 ################################################################################
@@ -684,63 +851,4 @@ def tests():
 
 if __name__ == '__main__':
     tests()
-    
-###############################################################################
-#### SASD Utilities
-###############################################################################
 
-def SetScale(Data,refData):
-    Profile,Limits,Sample = Data
-    refProfile,refLimits,refSample = refData
-    x,y = Profile[:2]
-    rx,ry = refProfile[:2]
-    Beg = np.max([rx[0],x[0],Limits[1][0],refLimits[1][0]])
-    Fin = np.min([rx[-1],x[-1],Limits[1][1],refLimits[1][1]])
-    iBeg = np.searchsorted(x,Beg)
-    iFin = np.searchsorted(x,Fin)
-    sum = np.sum(y[iBeg:iFin])
-    refsum = np.sum(np.interp(x[iBeg:iFin],rx,ry,0,0))
-    Sample['Scale'][0] = refSample['Scale'][0]*refsum/sum
-    
-###############################################################################
-#### Size distribution
-###############################################################################
-
-def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
-    shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],
-        'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
-        'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
-        'Unified disk':[UniDiskFF,UniDiskVol]}
-    Shape = data['Size']['Shape'][0]
-    Parms = data['Size']['Shape'][1:]
-    if data['Size']['logBins']:
-        Bins = np.logspace(np.log10(data['Size']['MinDiam']),np.log10(data['Size']['MaxDiam']),
-            data['Size']['Nbins']+1,True)/2.        #make radii
-    else:
-        Bins = np.linspace(data['Size']['MinDiam'],data['Size']['MaxDiam'],
-            data['Size']['Nbins']+1,True)/2.        #make radii
-    Dbins = np.diff(Bins)
-    Bins = Bins[:-1]+Dbins/2.
-    Contrast = Sample['Contrast'][1]
-    Scale = Sample['Scale'][0]
-    Sky = 10**data['Size']['MaxEnt']['Sky']
-    BinsBack = np.ones_like(Bins)*Sky*Scale/Contrast #How about *Scale/Contrast?
-    Back = data['Back']
-    Q,Io,wt,Ic,Ib = Profile[:5]
-    Qmin = Limits[1][0]
-    Qmax = Limits[1][1]
-    wtFactor = ProfDict['wtFactor']
-    Ibeg = np.searchsorted(Q,Qmin)
-    Ifin = np.searchsorted(Q,Qmax)
-    Gmat = G_matrix(Q[Ibeg:Ifin],Bins,Contrast,shapes[Shape][0],shapes[Shape][1],args=Parms)
-    chisq,BinMag,Ic[Ibeg:Ifin] = MaxEnt_SB(Scale*Io[Ibeg:Ifin]-Back[0],
-        Scale/np.sqrt(wtFactor*wt[Ibeg:Ifin]),BinsBack,
-        data['Size']['MaxEnt']['Niter'],Gmat,report=True)
-    if Back[1]:
-        Ib = Back[0]
-        Ic[Ibeg:Ifin] += Back[0]
-    print ' Final chi^2: %.3f'%(chisq)
-    Vols = shapes[Shape][1](Bins,Parms)
-    data['Size']['Distribution'] = [Bins,Dbins,BinMag/(2.*Dbins)]
-        
-    

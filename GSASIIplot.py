@@ -889,7 +889,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     W = xye[4]+offset*N
                     D = xye[5]-Ymax*G2frame.delOffset
                 elif 'SASD' in plottype:
-                    D = xye[4]-Ymax*G2frame.delOffset
+                    D = xye[4]
                     Plot.set_yscale("log",nonposy='mask')
                     Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                 if G2frame.logPlot:
@@ -906,6 +906,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                                 ecolor=colors[N%6],picker=3.,clip_on=False)
                         else:
                             Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
+                        Plot.plot(X,D,colors[(N+1)%6],picker=False)
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
                 elif G2frame.Weight and 'PWDR' in plottype:
                     DY = xye[1]*np.sqrt(xye[2])

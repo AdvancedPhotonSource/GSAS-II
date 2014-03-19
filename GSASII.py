@@ -58,7 +58,7 @@ except ImportError:
     print('OpenGL has been installed. Please restart GSAS-II')
     print('*******************************************************')         
     sys.exit()
-
+    
 # load the GSAS routines
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -3266,6 +3266,15 @@ class GSASIImain(wx.App):
     '''
     def OnInit(self):
         '''Called automatically when the app is created.'''
+        if '2.7' not in sys.version[:5]:
+            dlg = wx.MessageDialog(None, 
+                'GSAS-II requires Python 2.7.x\n Yours is '+sys.version[:5],
+                'Python version error',  wx.OK)
+            try:
+                result = dlg.ShowModal()
+            finally:
+                dlg.Destroy()
+            sys.exit()
         self.main = GSASII(None)
         self.main.Show()
         self.SetTopWindow(self.main)

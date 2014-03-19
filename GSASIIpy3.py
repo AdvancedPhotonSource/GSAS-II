@@ -144,8 +144,10 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
         fmt = "{" + (":{:d}.{:d}f".format(maxdigits,decimals))+"}"
     else: # larger numbers, remove decimal places
         decimals = sigfigs - 1 - int(np.log10(abs(val)))
-        fmt = "{" + (":{:d}.{:d}f".format(maxdigits,decimals))+"}"
-        if decimals == 0: fmt += "." # force a decimal place
+        if decimals <= 0: 
+            fmt = "{" + (":{:d}.0f".format(maxdigits))+"}."
+        else:
+            fmt = "{" + (":{:d}.{:d}f".format(maxdigits,decimals))+"}"
     try:
         return fmt.format(float(val)).strip()
     except ValueError as err:
@@ -159,3 +161,5 @@ if __name__ == '__main__':
         print FormatSigFigs(1.23456789e-9*i),1.23456789e-9*i
     for i in (1,10,100,1000,10000,100000,1000000,10000000,100000000):
         print FormatSigFigs(1.23456789e9/i),1.23456789e9/i
+
+    print FormatSigFigs(200,10,3)

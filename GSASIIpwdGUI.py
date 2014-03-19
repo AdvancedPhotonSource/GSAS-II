@@ -2596,7 +2596,7 @@ def UpdateModelsGrid(G2frame,data):
         sizeSizer.Add(partSizer,0)
         sizeSizer.Add((5,5),0)
         fitSizer = wx.BoxSizer(wx.HORIZONTAL)
-        methods = ['MaxEnt',]   #'IPG',]
+        methods = ['MaxEnt','IPG',]
         fitSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Fitting method: '),0,WACV)
         method = wx.ComboBox(G2frame.dataDisplay,value=data['Size']['Method'],choices=methods,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)

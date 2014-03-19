@@ -692,23 +692,22 @@ def IPG(datum,sigma,G,Bins,Dbins,IterMax,Qvec=[],approach=0.8,Power=-1,report=Fa
         QvecP = Qvec**pwr
     Amat = GmatE*QvecP[:np.newaxis]
     AAmat = np.inner(Amat,Amat)
-    Bvec = datum*QvecP
-    Xw = np.ones_like(Bins)*1.e-6
+    Bvec = IntE*QvecP
+    Xw = np.ones_like(Bins)*1.e-32
     calc = np.dot(G.T,Xw)
     nIter = 0
     err = 10.
     while (nIter<IterMax) and (err > 1.):
         #Step 1 in M&Z paper:
-        Qk = np.dot(AAmat,Xw)-np.dot(Amat,Bvec)
-        Dk = Xw/np.dot(AAmat,Xw)
+        Qk = np.inner(AAmat,Xw)-np.inner(Amat,Bvec)
+        Dk = Xw/np.inner(AAmat,Xw)
         Pk = -Dk*Qk
         #Step 2 in M&Z paper:
-        alpSt = -np.dot(Pk,Qk)/np.dot(Pk,np.dot(AAmat,Pk))
+        alpSt = -np.inner(Pk,Qk)/np.inner(Pk,np.inner(AAmat,Pk))
         alpWv = -Xw/Pk
-        AkSt = [np.where(Pk[i]<0,np.min((approach*alpWv[i],alpSt)),Pk[i]) for i in range(Pk.shape[0])]
+        AkSt = [np.where(Pk[i]<0,np.min((approach*alpWv[i],alpSt)),alpSt) for i in range(Pk.shape[0])]
         #Step 3 in M&Z paper:
         shift = AkSt*Pk
-        print np.sum(shift**2)
         Xw += shift
         #done IPG; now results
         nIter += 1
@@ -716,7 +715,7 @@ def IPG(datum,sigma,G,Bins,Dbins,IterMax,Qvec=[],approach=0.8,Power=-1,report=Fa
         chisq = np.sum(((datum-calc)/sigma)**2)
         err = chisq/len(datum)
         if report:
-            print ' Iteration: %d, chisq: %.3g'%(nIter,chisq)
+            print ' Iteration: %d, chisq: %.3g, sum(shift^2): %.3g'%(nIter,chisq,np.sum(shift**2))
     return chisq,Xw,calc
 
 ###############################################################################
@@ -758,7 +757,7 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
     Contrast = Sample['Contrast'][1]
     Scale = Sample['Scale'][0]
     Sky = 10**data['Size']['MaxEnt']['Sky']
-    BinsBack = np.ones_like(Bins)*Sky*Scale/Contrast #How about *Scale/Contrast?
+    BinsBack = np.ones_like(Bins)*Sky*Scale/Contrast
     Back = data['Back']
     Q,Io,wt,Ic,Ib = Profile
     Qmin = Limits[1][0]

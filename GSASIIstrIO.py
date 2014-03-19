@@ -577,7 +577,7 @@ def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
                     eqvDict[varyI].append(varyJ) 
             elif SGLaue in ['3R','3mR']:
                 isum = ih**2+ik**2+il**2
-                jsum = jh**2+jk**2*jl**2
+                jsum = jh**2+jk**2+jl**2
                 isum2 = ih*ik+ih*il+ik*il
                 jsum2 = jh*jk+jh*jl+jk*jl
                 if isum == jsum and isum2 == jsum2:

@@ -166,21 +166,15 @@ def UpdateDData(G2frame,DData,data):
         copyDict = {}
         for name in copyNames: 
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
-        keyList = ['All',]+UseList.keys()
+        keyList = sorted(UseList.keys())
         if UseList:
-            copyList = []
-            dlg = wx.MultiChoiceDialog(G2frame, 
-                'Copy parameters to which histograms?', 'Copy parameters', 
-                keyList, wx.CHOICEDLG_STYLE)
+            dlg = G2gd.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
+                'Copy parameters to which histograms?', 
+                keyList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetSelections()
-                    for i in result: 
-                        copyList.append(keyList[i])
-                    if 'All' in copyList: 
-                        copyList = keyList[1:]
-                    for item in copyList:
-                        UseList[item].update(copy.deepcopy(copyDict))
+                    for sel in dlg.GetSelections():
+                        UseList[keyList[sel]].update(copy.deepcopy(copyDict))
                     wx.CallAfter(UpdateDData,G2frame,DData,data)
             finally:
                 dlg.Destroy()
@@ -209,21 +203,16 @@ def UpdateDData(G2frame,DData,data):
                 copyDict[name] = {}
                 for bab in babNames:
                     copyDict[name][bab] = sourceDict[name][bab][1]                       
-        keyList = ['All',]+UseList.keys()
+        keyList = sorted(UseList.keys())
         if UseList:
-            copyList = []
-            dlg = wx.MultiChoiceDialog(G2frame, 
-                'Copy parameters to which histograms?', 'Copy parameters', 
-                keyList, wx.CHOICEDLG_STYLE)
+            dlg = G2gd.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
+                'Copy parameters to which histograms?', 
+                keyList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetSelections()
-                    for i in result: 
-                        copyList.append(keyList[i])
-                    if 'All' in copyList: 
-                        copyList = keyList[1:]
-                    for item in copyList:
-                        UseList[item]                            
+                    for sel in dlg.GetSelections():
+                        item = keyList[sel]
+                        UseList[item]
                         for name in copyNames:
                             if name in ['Scale','Extinction','HStrain']:
                                 UseList[item][name][1] = copy.copy(copyDict[name])
@@ -245,8 +234,7 @@ def UpdateDData(G2frame,DData,data):
                     wx.CallAfter(UpdateDData,G2frame,DData,data)
             finally:
                 dlg.Destroy()
-        
-        
+                
     def OnLGmixRef(event):
         Obj = event.GetEventObject()
         hist,name = Indx[Obj.GetId()]

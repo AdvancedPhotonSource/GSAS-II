@@ -1403,8 +1403,9 @@ class G2MultiChoiceDialog(wx.Dialog):
                    'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
                    }
         options.update(kw)
-        self.ChoiceList = ChoiceList
-        self.filterlist = range(len(self.ChoiceList))
+        self.ChoiceList = ChoiceList # list of choices (list of str values)
+        self.Selections = len(self.ChoiceList) * [False,] # selection status for each choice (list of bools)
+        self.filterlist = range(len(self.ChoiceList)) # list of the choice numbers that have been filtered (list of int indices)
         if options['style'] & wx.OK:
             useOK = True
             options['style'] ^= wx.OK
@@ -1435,7 +1436,6 @@ class G2MultiChoiceDialog(wx.Dialog):
             font1 = wx.Font(self.clb.GetFont().GetPointSize(),
                             wx.MODERN, wx.NORMAL, wx.NORMAL, False)
             self.clb.SetFont(font1)
-        self.numchoices = len(ChoiceList)
         Sizer.Add(self.clb,1,wx.LEFT|wx.RIGHT|wx.EXPAND,10)
         Sizer.Add((-1,10))
         # set/toggle buttons
@@ -1466,13 +1466,35 @@ class G2MultiChoiceDialog(wx.Dialog):
         self.SetSizer(Sizer)
     def GetSelections(self):
         'Returns a list of the indices for the selected choices'
-        return [self.filterlist[i] for i in range(self.numchoices) if self.clb.IsChecked(i)]
+        # update self.Selections with settings for displayed items
+        for i in range(len(self.filterlist)):
+            self.Selections[self.filterlist[i]] = self.clb.IsChecked(i)
+        # return all selections, shown or hidden
+        return [i for i in range(len(self.Selections)) if self.Selections[i]]
+    def SetSelections(self,selList):
+        '''Sets the selection indices in selList as selected. Resets any previous
+        selections for compatibility with wx.MultiChoiceDialog. Note that
+        the state for only the filtered items is shown.
+
+        :param list selList: indices of items to be selected. These indices
+          are referenced to the order in self.ChoiceList
+        '''
+        self.Selections = len(self.ChoiceList) * [False,] # reset selections
+        for sel in selList:
+            self.Selections[sel] = True
+        self._ShowSelections()
+
+    def _ShowSelections(self):
+        'Show the selection state for displayed items'
+        self.clb.SetChecked(
+            [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
+            ) # Note anything previously checked will be cleared.
     def _SetAll(self,event):
-        'Set all choices on'
-        self.clb.SetChecked(range(self.numchoices))
+        'Set all viewed choices on'
+        self.clb.SetChecked(range(len(self.filterlist)))
     def _ToggleAll(self,event):
-        'flip the state of all choices'
-        for i in range(self.numchoices):
+        'flip the state of all viewed choices'
+        for i in range(len(self.filterlist)):
             self.clb.Check(i,not self.clb.IsChecked(i))
     def onChar(self,event):
         self.OKbtn.Enable(False)
@@ -1483,6 +1505,7 @@ class G2MultiChoiceDialog(wx.Dialog):
     def Filter(self,event):
         if self.timer.IsRunning():
             self.timer.Stop()
+        self.GetSelections() # record current selections
         txt = self.filterBox.GetValue()
         self.clb.Clear()
         self.Update()
@@ -1498,6 +1521,7 @@ class G2MultiChoiceDialog(wx.Dialog):
             self.filterlist = range(len(self.ChoiceList))
             ChoiceList = self.ChoiceList
         self.clb.AppendItems(ChoiceList)
+        self._ShowSelections()
         self.OKbtn.Enable(True)
 
 ################################################################################
@@ -1562,7 +1586,6 @@ class G2SingleChoiceDialog(wx.Dialog):
             font1 = wx.Font(self.clb.GetFont().GetPointSize(),
                             wx.MODERN, wx.NORMAL, wx.NORMAL, False)
             self.clb.SetFont(font1)
-        self.numchoices = len(ChoiceList)
         Sizer.Add(self.clb,1,wx.LEFT|wx.RIGHT|wx.EXPAND,10)
         Sizer.Add((-1,10))
         # OK/Cancel buttons
@@ -3244,22 +3267,24 @@ def UpdateControls(G2frame,data):
     def SeqSizer():
         
         def OnSelectData(event):
-            choices = ['All',]+GetPatternTreeDataNames(G2frame,['PWDR',])
+            choices = GetPatternTreeDataNames(G2frame,['PWDR',])
             sel = []
             if 'Seq Data' in data:
                 for item in data['Seq Data']:
                     sel.append(choices.index(item))
-            names = []
-            dlg = wx.MultiChoiceDialog(G2frame,'Select data:','Sequential refinement',choices)
+                sel = [choices.index(item) for item in data['Seq Data']]
+            dlg = G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential refinement',
+                                      'Select dataset to include',
+                                      choices)
             dlg.SetSelections(sel)
+            names = []
             if dlg.ShowModal() == wx.ID_OK:
-                sel = dlg.GetSelections()
-                for i in sel: names.append(choices[i])
-                if 'All' in names:
-                    names = choices[1:]
+                for sel in dlg.GetSelections():
+                    names.append(choices[sel])
                 data['Seq Data'] = names                
+                G2frame.EnableSeqRefineMenu()
             dlg.Destroy()
-            reverseSel.Enable(True)
+            wx.CallAfter(UpdateControls,G2frame,data)
             
         def OnReverse(event):
             data['Reverse Seq'] = reverseSel.GetValue()
@@ -3269,12 +3294,19 @@ def UpdateControls(G2frame,data):
                     
         seqSizer = wx.BoxSizer(wx.VERTICAL)
         dataSizer = wx.BoxSizer(wx.HORIZONTAL)
-        dataSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sequential Refinement Powder Data: '),0,WACV)
+        dataSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Sequential Refinement: '),0,WACV)
         selSeqData = wx.Button(G2frame.dataDisplay,-1,label=' Select data')
         selSeqData.Bind(wx.EVT_BUTTON,OnSelectData)
         dataSizer.Add(selSeqData,0,WACV)
+        SeqData = data.get('Seq Data',[])
+        if not SeqData:
+            lbl = ' (no powder data selected)'
+        else:
+            lbl = ' ('+str(len(SeqData))+' dataset(s) selected)'
+
+        dataSizer.Add(wx.StaticText(G2frame.dataDisplay,label=lbl),0,WACV)
         seqSizer.Add(dataSizer,0)
-        if 'Seq Data' in data:
+        if SeqData:
             selSizer = wx.BoxSizer(wx.HORIZONTAL)
             reverseSel = wx.CheckBox(G2frame.dataDisplay,-1,label=' Reverse order?')
             reverseSel.Bind(wx.EVT_CHECKBOX,OnReverse)
@@ -3827,7 +3859,7 @@ def GetPatternTreeItemId(G2frame, parentId, itemText):
     return 0                
 
 def MovePatternTreeToGrid(G2frame,item):
-    '''Needs a doc string
+    '''Called from GSASII.OnPatternTreeSelChanged when a item is selected on the tree 
     '''
     
 #    print G2frame.PatternTree.GetItemText(item)
@@ -3885,7 +3917,7 @@ def MovePatternTreeToGrid(G2frame,item):
                 data = copy.copy(G2obj.DefaultControls)    #least squares controls
                 G2frame.PatternTree.SetItemPyData(item,data)                             
             for i in G2frame.Refine: i.Enable(True)
-            for i in G2frame.SeqRefine: i.Enable(True)
+            G2frame.EnableSeqRefineMenu()
             UpdateControls(G2frame,data)
         elif G2frame.PatternTree.GetItemText(item) == 'Sequential results':
             data = G2frame.PatternTree.GetItemPyData(item)
@@ -4129,38 +4161,63 @@ def HorizontalLine(sizer,parent):
     sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
 
 if __name__ == '__main__':
-    # test ScrolledMultiEditor
     app = wx.PySimpleApp()
     frm = wx.Frame(None) # create a frame
     frm.Show(True)
-    Data1 = {
-        'Order':1,
-        'omega':'string',
-        'chi':2.0,
-        'phi':'',
-        }
-    elemlst = sorted(Data1.keys())
-    postlbl = sorted(Data1.keys())
-    dictlst = len(elemlst)*[Data1,]
 
-    Data2 = list(range(100))
-    elemlst += range(2,6)
-    postlbl += range(2,6)
-    dictlst += len(range(2,6))*[Data2,]
+    # # test ScrolledMultiEditor
+    # Data1 = {
+    #     'Order':1,
+    #     'omega':'string',
+    #     'chi':2.0,
+    #     'phi':'',
+    #     }
+    # elemlst = sorted(Data1.keys())
+    # postlbl = sorted(Data1.keys())
+    # dictlst = len(elemlst)*[Data1,]
 
-    prelbl = range(len(elemlst))
-    postlbl[1] = "a very long label for the 2nd item to force a horiz. scrollbar"
-    header="""This is a longer\nmultiline and perhaps silly header"""
-    dlg = ScrolledMultiEditor(frm,dictlst,elemlst,prelbl,postlbl,
-                              header=header,CopyButton=True)
-    print Data1
+    # Data2 = list(range(100))
+    # elemlst += range(2,6)
+    # postlbl += range(2,6)
+    # dictlst += len(range(2,6))*[Data2,]
+
+    # prelbl = range(len(elemlst))
+    # postlbl[1] = "a very long label for the 2nd item to force a horiz. scrollbar"
+    # header="""This is a longer\nmultiline and perhaps silly header"""
+    # dlg = ScrolledMultiEditor(frm,dictlst,elemlst,prelbl,postlbl,
+    #                           header=header,CopyButton=True)
+    # print Data1
+    # if dlg.ShowModal() == wx.ID_OK:
+    #     for d,k in zip(dictlst,elemlst):
+    #         print k,d[k]
+    # dlg.Destroy()
+    # if CallScrolledMultiEditor(frm,dictlst,elemlst,prelbl,postlbl,
+    #                            header=header):
+    #     for d,k in zip(dictlst,elemlst):
+    #         print k,d[k]
+
+    choices = []
+    for i in range(21):
+        choices.append("option_"+str(i))
+    dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
+                              'Select dataset to include',
+                              choices)
+    sel = range(2,11,2)
+    dlg.SetSelections(sel)
+    dlg.SetSelections((1,5))
     if dlg.ShowModal() == wx.ID_OK:
-        for d,k in zip(dictlst,elemlst):
-            print k,d[k]
-    dlg.Destroy()
-    if CallScrolledMultiEditor(frm,dictlst,elemlst,prelbl,postlbl,
-                               header=header):
-        for d,k in zip(dictlst,elemlst):
-            print k,d[k]
+        for sel in dlg.GetSelections():
+            print sel,choices[sel]
 
-#app.MainLoop()
+    # dlg = wx.MultiChoiceDialog(frm, 'Sequential refinement',
+    #                           'Select dataset to include',
+    #                           choices)
+    # sel = range(2,11,2)
+    # dlg.SetSelections(sel)
+    # dlg.SetSelections((1,5))
+    # if dlg.ShowModal() == wx.ID_OK:
+    #     for sel in dlg.GetSelections():
+    #         print sel,choices[sel]
+
+
+    #app.MainLoop()

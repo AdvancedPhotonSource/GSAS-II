@@ -201,7 +201,7 @@ class GSASII(wx.Frame):
         else:
             state = False
         item.Enable(state)
-        self.SeqRefine.append(item)
+        self.SeqRefine.append(item) # save menu obj for use in self.EnableSeqRefineMenu
         self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=item.GetId())
         
     def _init_Imports(self):
@@ -263,6 +263,16 @@ class GSASII(wx.Frame):
                 print 'Import_'+errprefix+': Error importing file '+str(filename)
                 pass
             if fp: fp.close()
+
+    def EnableSeqRefineMenu(self):
+        '''Enable or disable the sequential refinement menu items based on the
+        contents of the Controls 'Seq Data' item (if present)
+        '''
+        controls = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Controls'))
+        if controls.get('Seq Data'):
+            for i in self.SeqRefine: i.Enable(True)
+        else:
+            for i in self.SeqRefine: i.Enable(False)
 
     def OnImportGeneric(self,reader,readerlist,label,multiple=False,usedRanIdList=[]):
         '''Used to import Phases, powder dataset or single
@@ -1796,7 +1806,7 @@ class GSASII(wx.Frame):
         #initialize Menu item objects (these contain lists of menu items that are enabled or disabled)
         self.MakePDF = []
         self.Refine = []
-        self.SeqRefine = []
+        self.SeqRefine = [] # pointer(s) to Sequential Refinement menu objects
         #self.ExportPattern = []
         self.ExportPeakList = []
         self.ExportHKL = []
@@ -1900,7 +1910,8 @@ class GSASII(wx.Frame):
                 G2IO.ProjFileOpen(self)
                 self.PatternTree.Expand(self.root)
                 for item in self.Refine: item.Enable(True)
-                for item in self.SeqRefine: item.Enable(True)
+                self.EnableSeqRefineMenu()
+
             except:
                 print 'Error opening file',arg[1]
 
@@ -2628,7 +2639,7 @@ class GSASII(wx.Frame):
                 data = self.PatternTree.GetItemPyData(item)
                 if data:
                     for item in self.Refine: item.Enable(True)
-                    for item in self.SeqRefine: item.Enable(True)
+                    self.EnableSeqRefineMenu()
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
         if Id:
             self.PatternTree.SelectItem(Id)

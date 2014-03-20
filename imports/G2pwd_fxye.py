@@ -329,9 +329,8 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         self.powderentry[2] = selblk+1 # bank number
         self.idstring = ospath.basename(filename) + ' Bank '+str(selblk+1)
         self.numbanks=len(Banks)
-        # scan comments for temperature
-        Temperature = 300
-        Radius = 200
+        # scan comments for temperature & radius
+        Temperature = 300.
         for S in self.comments:
             if 'Temp' in S.split('=')[0]:
                 try:
@@ -340,11 +339,10 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                     pass
             elif 'Gonio' in S.split('=')[0]:
                 try:
-                    Radius = float(S.split('=')[1])
+                    self.Sample['Gonio. radius'] = float(S.split('=')[1])
                 except:
                     pass
         self.Sample['Temperature'] = Temperature
-        self.Sample['Gonio. radius'] = Radius
         return True        
 
 def sfloat(S):

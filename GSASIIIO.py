@@ -1570,7 +1570,7 @@ class ImportBaseclass(object):
 class ImportPhase(ImportBaseclass):
     '''Defines a base class for the reading of files with coordinates
 
-    Objects constructed that subclass this (in import/G2phase_*.py) will be used
+    Objects constructed that subclass this (in import/G2phase_*.py etc.) will be used
     in :meth:`GSASII.GSASII.OnImportPhase`. 
     See :ref:`Writing a Import Routine<Import_Routines>`
     for an explanation on how to use this class. 
@@ -1705,6 +1705,9 @@ class ImportStructFactor(ImportBaseclass):
 ######################################################################
 class ImportPowderData(ImportBaseclass):
     '''Defines a base class for the reading of files with powder data.
+
+    Objects constructed that subclass this (in import/G2pwd_*.py etc.) will be used
+    in :meth:`GSASII.GSASII.OnImportPowder`. 
     See :ref:`Writing a Import Routine<Import_Routines>`
     for an explanation on how to use this class. 
     '''

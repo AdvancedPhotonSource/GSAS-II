@@ -180,7 +180,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       type of int, float, str or unicode; the TextCrtl will be initialized
       from this value.
       
-    :param list [nDig,nPlc]: number of digits & places after decimal to use
+    :param list nDig: number of digits & places ([nDig,nPlc]) after decimal to use
       for display of float. Alternately, None can be specified which causes
       numbers to be displayed with approximately 5 significant figures
       (Default=None).
@@ -401,14 +401,20 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.result[self.key] = val
 
     def _onLoseFocus(self,event):
-        if self.evaluated: self.EvaluateExpression()
+        if self.evaluated:
+            self.EvaluateExpression()
+        elif self.result is not None: # show formatted result, as Bob wants
+            self.SetValue(self.result[self.key])
         if self.OnLeave: self.OnLeave(invalid=self.invalid,
                                       value=self.result[self.key],
                                       tc=self,
                                       **self.OnLeaveArgs)
 
     def _onLeaveWindow(self,event):
-        if self.evaluated: self.EvaluateExpression()
+        if self.evaluated:
+            self.EvaluateExpression()
+        elif self.result is not None: # show formatted result, as Bob wants
+            self.SetValue(self.result[self.key])
 
     def EvaluateExpression(self):
         '''Show the computed value when an expression is entered to the TextCtrl
@@ -4165,7 +4171,9 @@ if __name__ == '__main__':
     frm = wx.Frame(None) # create a frame
     frm.Show(True)
 
-    # # test ScrolledMultiEditor
+    #======================================================================
+    # test ScrolledMultiEditor
+    #======================================================================
     # Data1 = {
     #     'Order':1,
     #     'omega':'string',
@@ -4196,19 +4204,25 @@ if __name__ == '__main__':
     #     for d,k in zip(dictlst,elemlst):
     #         print k,d[k]
 
-    choices = []
-    for i in range(21):
-        choices.append("option_"+str(i))
-    dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
-                              'Select dataset to include',
-                              choices)
-    sel = range(2,11,2)
-    dlg.SetSelections(sel)
-    dlg.SetSelections((1,5))
-    if dlg.ShowModal() == wx.ID_OK:
-        for sel in dlg.GetSelections():
-            print sel,choices[sel]
-
+    #======================================================================
+    # test G2MultiChoiceDialog
+    #======================================================================
+    # choices = []
+    # for i in range(21):
+    #     choices.append("option_"+str(i))
+    # dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
+    #                           'Select dataset to include',
+    #                           choices)
+    # sel = range(2,11,2)
+    # dlg.SetSelections(sel)
+    # dlg.SetSelections((1,5))
+    # if dlg.ShowModal() == wx.ID_OK:
+    #     for sel in dlg.GetSelections():
+    #         print sel,choices[sel]
+    
+    #======================================================================
+    # test wx.MultiChoiceDialog
+    #======================================================================
     # dlg = wx.MultiChoiceDialog(frm, 'Sequential refinement',
     #                           'Select dataset to include',
     #                           choices)
@@ -4219,5 +4233,16 @@ if __name__ == '__main__':
     #     for sel in dlg.GetSelections():
     #         print sel,choices[sel]
 
+    pnl = wx.Panel(frm)
+    siz = wx.BoxSizer(wx.HORIZONTAL)
 
-    #app.MainLoop()
+    td = {'Goni':200.,'a':1}
+    txt = ValidatedTxtCtrl(pnl,td,'Goni')
+    siz.Add(txt)
+    txt = ValidatedTxtCtrl(pnl,td,'a')
+    siz.Add(txt)
+
+    pnl.SetSizer(siz)
+    siz.Fit(frm)
+    app.MainLoop()
+    print td

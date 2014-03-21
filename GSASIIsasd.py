@@ -759,7 +759,7 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
     Sky = 10**data['Size']['MaxEnt']['Sky']
     BinsBack = np.ones_like(Bins)*Sky*Scale/Contrast
     Back = data['Back']
-    Q,Io,wt,Ic,Ib = Profile
+    Q,Io,wt,Ic,Ib = Profile[:5]
     Qmin = Limits[1][0]
     Qmax = Limits[1][1]
     wtFactor = ProfDict['wtFactor']

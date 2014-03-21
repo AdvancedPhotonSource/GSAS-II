@@ -703,12 +703,15 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
     G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2gd.wxID_ADDEXCLREGION)    
     G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)
-    G2frame.dataDisplay.SetTable(G2frame.LimitsTable, True)
+    G2frame.dataDisplay.SetTable(G2frame.LimitsTable, True)    
+    G2frame.dataDisplay.SetCellStyle(0,0,VERY_LIGHT_GREY,True)
+    G2frame.dataDisplay.SetCellStyle(0,1,VERY_LIGHT_GREY,True)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshLimitsGrid)                
     G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([230,260])
+                                
     
 ################################################################################
 #####  Instrument parameters
@@ -2525,7 +2528,7 @@ def UpdateModelsGrid(G2frame,data):
                 raise ValueError
         except ValueError:
             value = item[ind]
-            Obj.SetValue(str(value))
+        Obj.SetValue(str(value))
         item[ind] = value
 
     def SizeSizer():
@@ -2559,15 +2562,17 @@ def UpdateModelsGrid(G2frame,data):
         binSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min diam.: '),0,WACV)
         minDias = ['10','25','50','100','150','200']
         mindiam = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['MinDiam']),choices=minDias,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        mindiam.Bind(wx.EVT_COMBOBOX,OnIntVal)        
+            style=wx.CB_DROPDOWN)
+        mindiam.Bind(wx.EVT_TEXT_ENTER,OnIntVal)        
+        mindiam.Bind(wx.EVT_KILL_FOCUS,OnIntVal)
         Indx[mindiam.GetId()] = [data['Size'],'MinDiam',0]
         binSizer.Add(mindiam,0,WACV)
         binSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Max diam.: '),0,WACV)
         maxDias = [str(1000*(i+1)) for i in range(10)]
         maxdiam = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['MaxDiam']),choices=maxDias,
             style=wx.CB_DROPDOWN)
-        maxdiam.Bind(wx.EVT_COMBOBOX,OnIntVal)        
+        maxdiam.Bind(wx.EVT_TEXT_ENTER,OnIntVal)        
+        maxdiam.Bind(wx.EVT_KILL_FOCUS,OnIntVal)
         Indx[maxdiam.GetId()] = [data['Size'],'MaxDiam',0]
         binSizer.Add(maxdiam,0,WACV)
         logbins = wx.CheckBox(G2frame.dataDisplay,label='Log bins?')

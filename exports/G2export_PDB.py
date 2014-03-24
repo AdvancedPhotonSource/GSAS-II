@@ -126,21 +126,19 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.ExportSelect(AskFile=True):    # set export parameters
-            return 
+        if self.ExportSelect():    # set export parameters; ask for file name
+            return
+        filename = self.filename
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info
             General = phasedict['General']
             if General['Type'] != 'macromolecular':
-                print 'not macromolecular phase'
-                return
+                print 'phase '+str(phasenam)+' not macromolecular, skipping'
+                continue
             i = self.Phases[phasenam]['pId']
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
-                nam,ext = os.path.splitext(self.filename)
-                fil = nam+"_"+str(i)+ext
-            else:
-                fil = self.filename
-            fp = self.OpenFile(fil)
+                self.filename = os.path.splitext(filename)[1] + "_" + str(i) + self.extension
+            fp = self.OpenFile()
             Atoms = phasedict['Atoms']
             cx,ct,cs,cia = General['AtomPtrs']
             seqList = {}
@@ -198,7 +196,7 @@ class ExportPhasePDB(G2IO.ExportBaseclass):
             self.Write(fmt.format(*vals))
             self.Write('END')
             self.CloseFile()
-            print('Phase '+str(phasenam)+' written to file '+str(fil))
+            print('Phase '+str(phasenam)+' written to PDB file '+str(self.fullpath))
 
 class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
     '''Used to create a Cartesian XYZ file for a phase
@@ -224,22 +222,20 @@ class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.ExportSelect(AskFile=True):    # set export parameters
-            return 
+        if self.ExportSelect():    # set export parameters; ask for file name
+            return
+        filename = self.filename
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info
             General = phasedict['General']
             i = self.Phases[phasenam]['pId']
-            if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
-                nam,ext = os.path.splitext(self.filename)
-                fil = nam+"_"+str(i)+ext
-            else:
-                fil = self.filename
-            fp = self.OpenFile(fil)
             Atoms = phasedict['Atoms']
             if not len(Atoms):
                 print('**** ERROR - Phase '+str(phasenam)+' has no atoms! ****')
-                return
+                continue
+            if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
+                self.filename = os.path.splitext(filename)[1] + "_" + str(i) + self.extension
+            fp = self.OpenFile()
             cx,ct,cs,cia = General['AtomPtrs']
             Cell = General['Cell'][1:7]
             A,B = G2lat.cell2AB(Cell)
@@ -250,5 +246,5 @@ class ExportPhaseCartXYZ(G2IO.ExportBaseclass):
                 xyz = np.inner(A,np.array(atom[cx:cx+3]))
                 self.Write(fmt.format(atom[ct],*xyz))
             self.CloseFile()
-            print('Phase '+str(phasenam)+' written to file '+str(fil))
+            print('Phase '+str(phasenam)+' written to XYZ file '+str(self.fullpath))
     

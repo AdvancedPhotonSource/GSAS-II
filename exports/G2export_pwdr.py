@@ -37,6 +37,30 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
         self.exporttype = ['powder']
         self.multiple = True
 
+    def WriteInstFile(self,hist,Inst):
+        '''Write an instrument parameter file
+        '''
+        prmname = os.path.splitext(self.filename)[0] + '.prm'
+        prmname = os.path.join(self.dirname,prmname)
+        self.OpenFile(prmname)
+        self.Write( '            123456789012345678901234567890123456789012345678901234567890        ')
+        self.Write( 'INS   BANK      1                                                               ')
+        self.Write(('INS   HTYPE   %sR                                                              ')%(Inst['Type'][0]))
+        if 'Lam1' in Inst:              #Ka1 & Ka2
+            self.Write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   ')%(Inst['Lam1'][0],Inst['Lam2'][0]))
+        elif 'Lam' in Inst:             #single wavelength
+            self.Write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   ')%(Inst['Lam'][1],0.0))
+        self.Write( 'INS  1 IRAD     0                                                               ')
+        self.Write( 'INS  1I HEAD                                                                    ')
+        self.Write( 'INS  1I ITYP    0    0.0000  180.0000         1                                 ')
+        self.Write(('INS  1DETAZM%10.3f                                                          ')%(Inst['Azimuth'][0]))
+        self.Write( 'INS  1PRCF1     3    8   0.00100                                                ')
+        self.Write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   ')%(Inst['U'][1],Inst['V'][1],Inst['W'][1],0.0))
+        self.Write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   ')%(Inst['X'][1],Inst['Y'][1],Inst['SH/L'][1]/2.,Inst['SH/L'][1]/2.))
+        self.CloseFile()
+        print('Parameters from '+str(hist)+' written to file '+str(prmname))
+        return prmname
+
     def Exporter(self,event=None):
         '''Export one or more sets of powder data as FXYE file(s)
         '''
@@ -45,37 +69,23 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
         # load all of the tree into a set of dicts
         self.loadTree()
         if self.ExportSelect( # set export parameters
-            AskFile=False # use the default file name, which is ignored
+            AskFile='single' # get a file name/directory to save in
             ): return
         filenamelist = []
         for hist in self.histnam:
-            fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
-            # create an instrument parameter file
-            self.filename = fileroot + '.prm'
-            self.OpenFile()
+            if len(self.histnam) > 1:
+                # multiple files: create a unique name from the histogram
+                fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
+                # create an instrument parameter file
+                self.filename = os.path.join(self.dirname,fileroot + self.extension)
+            else:
+                # use the supplied name, but force the extension
+                self.filename= os.path.splitext(self.filename)[0] + self.extension
+                
             histblk = self.Histograms[hist]
-            Inst = histblk['Instrument Parameters'][0]
-            self.Write( '            123456789012345678901234567890123456789012345678901234567890        ')
-            self.Write( 'INS   BANK      1                                                               ')
-            self.Write(('INS   HTYPE   %sR                                                              ')%(Inst['Type'][0]))
-            if 'Lam1' in Inst:              #Ka1 & Ka2
-                self.Write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   ')%(Inst['Lam1'][0],Inst['Lam2'][0]))
-            elif 'Lam' in Inst:             #single wavelength
-                self.Write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   ')%(Inst['Lam'][1],0.0))
-            self.Write( 'INS  1 IRAD     0                                                               ')
-            self.Write( 'INS  1I HEAD                                                                    ')
-            self.Write( 'INS  1I ITYP    0    0.0000  180.0000         1                                 ')
-            self.Write(('INS  1DETAZM%10.3f                                                          ')%(Inst['Azimuth'][0]))
-            self.Write( 'INS  1PRCF1     3    8   0.00100                                                ')
-            self.Write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   ')%(Inst['U'][1],Inst['V'][1],Inst['W'][1],0.0))
-            self.Write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   ')%(Inst['X'][1],Inst['Y'][1],Inst['SH/L'][1]/2.,Inst['SH/L'][1]/2.))
-            self.CloseFile()
-            print('Parameters from '+str(hist)+' written to file '+str(self.filename))
-            prmname = self.filename
+            prmname = self.WriteInstFile(hist,histblk['Instrument Parameters'][0])
             
-            self.filename = fileroot + self.extension
             self.OpenFile()
-            histblk = self.Histograms[hist]
             self.Write(hist[5:])
             self.Write('Instrument parameter file:'+os.path.split(prmname)[1])
             x = 100*np.array(histblk['Data'][0])
@@ -94,7 +104,7 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
                     line += G2py3.FormatPadValue(val,(15,6))
                 self.Write(line)
             self.CloseFile()
-            print('Histogram '+str(hist)+' written to file '+str(self.filename))
+            print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
 
 
 class ExportPowderXYE(G2IO.ExportBaseclass):
@@ -120,13 +130,19 @@ class ExportPowderXYE(G2IO.ExportBaseclass):
         # load all of the tree into a set of dicts
         self.loadTree()
         if self.ExportSelect( # set export parameters
-            AskFile=False # use the default file name, which is ignored
+            AskFile='single' # get a file name/directory to save in
             ): return
         filenamelist = []
         for hist in self.histnam:
-            fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
-            
-            self.filename = fileroot + self.extension
+            if len(self.histnam) > 1:
+                # multiple files: create a unique name from the histogram
+                fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
+                # create an instrument parameter file
+                self.filename = os.path.join(self.dirname,fileroot + self.extension)
+            else:
+                # use the supplied name, but force the extension
+                self.filename= os.path.splitext(self.filename)[0] + self.extension
+
             self.OpenFile()
             histblk = self.Histograms[hist]
             self.Write('# '+hist[5:])
@@ -141,4 +157,4 @@ class ExportPowderXYE(G2IO.ExportBaseclass):
                     line += G2py3.FormatPadValue(val,(15,6))
                 self.Write(line)
             self.CloseFile()
-            print('Histogram '+str(hist)+' written to file '+str(self.filename))
+            print('Histogram '+str(hist)+' written to file '+str(self.fullpath))

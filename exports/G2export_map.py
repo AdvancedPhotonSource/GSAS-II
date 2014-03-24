@@ -52,16 +52,18 @@ class ExportMapASCII(G2IO.ExportBaseclass):
         self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
-        if self.ExportSelect( # set export parameters
-            AskFile=True          # prompt the user for a file name
-            ): return 
+        if self.ExportSelect(): return  # set export parameters, get file name
+        filename = self.filename
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             rho = phasedict['General']['Map'].get('rho',[])
             if not len(rho):
-                return
-            print self.filename
-            self.OpenFile(self.filename)
+                print "There is no map for phase "+str(phasenam)
+                continue
+            if len(self.phasenam) > 1: # if more than one filename is written, add a phase # -- not in use yet
+                i = self.Phases[phasenam]['pId']
+                self.filename = os.path.splitext(filename)[1] + "_" + mapData['MapType'] + str(i) + self.extension
+            self.OpenFile()
             self.Write("Map of Phase "+str(phasenam)+" from "+str(self.G2frame.GSASprojectfile))
             # get cell parameters & print them
             cellList,cellSig = self.GetCell(phasenam)
@@ -73,9 +75,8 @@ class ExportMapASCII(G2IO.ExportBaseclass):
                 for j in range(ny):
                     for k in range(nz):
                         self.Write(str(rho[i,j,k]))
-            print('map from Phase '+str(phasenam)+' written to file '+str(self.filename))
             self.CloseFile()
-            return
+            print('map from Phase '+str(phasenam)+' written to file '+str(self.fullpath))
 
 class ExportMapCCP4(G2IO.ExportBaseclass):
     '''Used to create a text file for a phase
@@ -93,19 +94,6 @@ class ExportMapCCP4(G2IO.ExportBaseclass):
         self.multiple = False 
 
     # Tools for file writing. 
-    def OpenFile(self,fil=None):
-        '''Open the output file as binary
-
-        :param str fil: The name of the file to open. If None (default)
-          the name defaults to self.filename.
-        :returns: the file object opened by the routine which is also
-          saved as self.fp
-        '''
-        if not fil:
-            fil = self.filename
-        self.fp = open(fil,'wb')
-        return self.fp
-        
     def Write(self,data,dtype):
         import struct
         '''write a block of output
@@ -121,21 +109,22 @@ class ExportMapCCP4(G2IO.ExportBaseclass):
         self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
-        if self.ExportSelect( # set export parameters
-            AskFile=False     # I'll make the file name
-            ): return 
+        if self.ExportSelect(): return  # set export parameters, get file name
+        filename = self.filename
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info 
             mapData = phasedict['General']['Map']
             rho = mapData.get('rho',[])
             
             if not len(rho):
-                return
+                print "There is no map for phase "+str(phasenam)
+                continue
+            if len(self.phasenam) > 1: # if more than one filename is written, add a phase # -- not in use yet
+                i = self.Phases[phasenam]['pId']
+                self.filename = os.path.splitext(filename)[1] + "_" + mapData['MapType'] + str(i) + self.extension
             cell = phasedict['General']['Cell'][1:7]
             nx,ny,nz = rho.shape
-            filename,ext = os.path.splitext(self.filename)
-            self.filename = filename+'_'+phasenam+'_'+mapData['MapType']+ext
-            self.OpenFile(self.filename)
+            self.OpenFile(mode='wb')
             for n in rho.shape: self.Write(n,'i')  #nX,nY,nZ
             self.Write(2,'i')           #mode=2 float map
             for i in [0,0,0]: self.Write(i,'i')    #1st position on x,y,z
@@ -155,6 +144,5 @@ class ExportMapCCP4(G2IO.ExportBaseclass):
                 self.Write(0,'i')
             for x in rho.flatten('F'):
                 self.Write(x,'f')
-            print('map from Phase '+str(phasenam)+' written to file '+str(self.filename))
             self.CloseFile()
-            return
+            print('map from Phase '+str(phasenam)+' written to file '+str(self.fullpath))

@@ -42,10 +42,15 @@ class ExportImagePNG(G2IO.ExportBaseclass):
         self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
-        if self.ExportSelect(False): return
+        if self.ExportSelect(): return # select one image; ask for a file name
         # process the selected image(s) (at present only one image)
         for i in sorted(self.histnam): 
+            filename = os.path.join(
+                self.dirname,
+                os.path.splitext(self.filename)[0] + self.extension
+                )
             imgFile = self.Histograms[i].get('Data',(None,None))
             Comments,Data,Npix,Image = G2IO.GetImageData(self.G2frame,imgFile)
-            scipy.misc.imsave(self.filename,Image)
-            print('Image '+str(imgFile)+' written to file '+str(self.filename))                   
+            scipy.misc.imsave(filename,Image)
+            print('Image '+str(imgFile)+' written to file '+str(filename))
+            

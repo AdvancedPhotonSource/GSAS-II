@@ -56,10 +56,8 @@ class ExportPhaseText(G2IO.ExportBaseclass):
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.ExportSelect( # set export parameters
-            AskFile=True     # prompt the user for a file name
-            ): return 
-        self.OpenFile(self.filename)
+        if self.ExportSelect(): return # set export parameters; prompt for file name
+        self.OpenFile()
         # if more than one format is selected, put them into a single file
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info            
@@ -113,7 +111,7 @@ class ExportPhaseText(G2IO.ExportBaseclass):
                     for val,sig in td:
                         vals.append(G2mth.ValEsd(val,sig))
                     self.Write(fmt.format(*vals))
-            print('Phase '+str(phasenam)+' written to file '+str(self.filename))                        
+            print('Phase '+str(phasenam)+' written to file '+str(self.fullpath))
         self.CloseFile()
 
 class ExportPowderText(G2IO.ExportBaseclass):
@@ -139,8 +137,7 @@ class ExportPowderText(G2IO.ExportBaseclass):
         # load all of the tree into a set of dicts
         self.loadTree()
         if self.ExportSelect( # set export parameters
-            AskFile=False # use the default file name
-            #AskFile=True
+            AskFile='default' # base name on the GPX file name
             ): return 
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
@@ -161,7 +158,7 @@ class ExportPowderText(G2IO.ExportBaseclass):
                 strg += G2py3.FormatPadValue(val,digits)
             self.Write(strg)
         self.CloseFile()
-        print(str(hist)+' written to file '+str(self.filename))
+        print(str(hist)+' written to file '+str(self.fullpath))
         
 class ExportPowderReflText(G2IO.ExportBaseclass):
     '''Used to create a text file of reflections from a powder data set
@@ -185,8 +182,7 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
         # load all of the tree into a set of dicts
         self.loadTree()
         if self.ExportSelect( # set export parameters
-            AskFile=False # use the default file name
-            #AskFile=True
+            AskFile='default' # base name on the GPX file name
             ): return 
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
@@ -204,7 +200,7 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
                 ) in histblk['Reflection Lists'][phasenam]['RefList']:
                 self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult))
         self.CloseFile()
-        print(str(hist)+'reflections written to file '+str(self.filename))                        
+        print(str(hist)+'reflections written to file '+str(self.fullpath))                        
 
 class ExportSingleText(G2IO.ExportBaseclass):
     '''Used to create a text file with single crystal reflection data
@@ -229,8 +225,7 @@ class ExportSingleText(G2IO.ExportBaseclass):
         # load all of the tree into a set of dicts
         self.loadTree()
         if self.ExportSelect( # set export parameters
-            AskFile=False # use the default file name
-            #AskFile=True
+            AskFile='default' # base name on the GPX file name
             ): return 
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
@@ -246,5 +241,5 @@ class ExportSingleText(G2IO.ExportBaseclass):
             ) in histblk['Data']['RefList']:
             self.Write(fmt.format(hklfmt.format(h,k,l),dsp,Fobs,sigFobs,Fcalc,phase,mult))
         self.CloseFile()
-        print(str(hist)+' written to file '+str(self.filename))                        
+        print(str(hist)+' written to file '+str(self.fullpath))                        
 

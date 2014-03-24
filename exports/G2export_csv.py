@@ -60,10 +60,8 @@ class ExportPhaseCSV(G2IO.ExportBaseclass):
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.ExportSelect( # set export parameters
-            AskFile=True     # prompt the user for a file name
-            ): return 
-        self.OpenFile(self.filename)
+        if self.ExportSelect(): return # set export parameters; get file name
+        self.OpenFile()
         # if more than one format is selected, put them into a single file
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info            
@@ -107,7 +105,7 @@ class ExportPhaseCSV(G2IO.ExportBaseclass):
                         line += G2mth.ValEsd(val,-abs(sig))
                         line += ","
                 self.Write(line)
-            print('Phase '+str(phasenam)+' written to file '+str(self.filename))                        
+            print('Phase '+str(phasenam)+' written to file '+str(self.fullpath))
         self.CloseFile()
 
 class ExportPowderCSV(G2IO.ExportBaseclass):
@@ -134,12 +132,15 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
         # load all of the tree into a set of dicts
         self.loadTree()
         if self.ExportSelect( # set export parameters
-            AskFile=False # use the default file name, which is ignored
+            AskFile='single' # get a file name/directory to save in
             ): return
         filenamelist = []
         for hist in self.histnam:
-            fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
-            self.filename = fileroot + self.extension
+            if len(self.histnam) > 1:
+                # multiple files: create a unique name from the histogram
+                fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
+                # create an instrument parameter file
+                self.filename = os.path.join(self.dirname,fileroot + self.extension)
             self.OpenFile()
             histblk = self.Histograms[hist]
             WriteList(self,("x","y_obs","weight","y_calc","y_bkg"))
@@ -157,7 +158,7 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
                     line += G2py3.FormatValue(val,digits)
                 self.Write(line)
             self.CloseFile()
-            print('Histogram '+str(hist)+' written to file '+str(self.filename))
+            print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
 
 class ExportPowderReflCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file of reflections from a powder data set
@@ -180,9 +181,7 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
         self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
-        if self.ExportSelect( # set export parameters
-            AskFile=False # use the default file name
-            ): return 
+        if self.ExportSelect(): return  # set export parameters, get file name
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
@@ -200,7 +199,7 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                 ) in histblk['Reflection Lists'][phasenam]['RefList']:
                 self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,i))
         self.CloseFile()
-        print(str(hist)+'reflections written to file '+str(self.filename))
+        print(str(hist)+'reflections written to file '+str(self.fullpath))
 
 class ExportSingleCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file with single crystal reflection data
@@ -224,9 +223,7 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
         self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
-        if self.ExportSelect( # set export parameters
-            AskFile=False # use the default file name
-            ): return 
+        if self.ExportSelect(): return  # set export parameters, get file name
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
@@ -237,7 +234,7 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
             ) in histblk['Data']['RefList']:
             self.Write(fmt.format(h,k,l,dsp,Fobs,sigFobs,Fcalc,phase,mult))
         self.CloseFile()
-        print(str(hist)+' written to file '+str(self.filename))                        
+        print(str(hist)+' written to file '+str(self.fullname))                        
 
 class ExportStrainCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file with single crystal reflection data
@@ -261,9 +258,7 @@ class ExportStrainCSV(G2IO.ExportBaseclass):
         self.InitExport(event)
         # load all of the tree into a set of dicts
         self.loadTree()
-        if self.ExportSelect( # set export parameters
-            AskFile=True # use the default file name
-            ): return 
+        if self.ExportSelect(): return  # set export parameters, get file name
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
@@ -282,5 +277,4 @@ class ExportStrainCSV(G2IO.ExportBaseclass):
             for dat in ring.T:
                 self.Write(fmt2.format(dat[1],dat[0],dat[2]))            
         self.CloseFile()
-        print(str(hist)+' written to file '+str(self.filename))                        
-
+        print(str(hist)+' written to file '+str(self.fullpath))

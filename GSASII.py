@@ -1861,6 +1861,7 @@ class GSASII(wx.Frame):
         self.oldFocus = None
         self.GSASprojectfile = ''
         self.dirname = os.path.expanduser('~')       #start in the users home directory by default; may be meaningless
+        self.exportDir = None  # the last directory used for exports, if any.
         self.undofile = ''
         self.TreeItemDelete = False
         self.Offset = [0.0,0.0]

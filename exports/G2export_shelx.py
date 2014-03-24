@@ -48,17 +48,14 @@ class ExportPhaseShelx(G2IO.ExportBaseclass):
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.ExportSelect(  # set export parameters
-            AskFile=True): return 
+        if self.ExportSelect(): return  # set export parameters; 
+        filename = self.filename
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             i = self.Phases[phasenam]['pId']
             if len(self.phasenam) > 1: # if more than one filename is included, add a phase #
-                nam,ext = os.path.splitext(self.filename)
-                fil = nam+"_"+str(i)+ext
-            else:
-                fil = self.filename
-            fp = self.OpenFile(fil)
+                self.filename = os.path.splitext(filename)[1] + "_" + str(i) + self.extension
+            fp = self.OpenFile()
             # title line
             self.Write("TITL from "+str(self.G2frame.GSASprojectfile)+", phase "+str(phasenam))
             # get & write cell parameters
@@ -123,4 +120,4 @@ class ExportPhaseShelx(G2IO.ExportBaseclass):
                 self.Write(l)
             self.Write('END')
             self.CloseFile()
-            print('Phase '+str(phasenam)+' written to file '+str(fil))
+            print('Phase '+str(phasenam)+' written to file '+str(self.fullpath))

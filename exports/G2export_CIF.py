@@ -73,18 +73,6 @@ class ExportCIF(G2IO.ExportBaseclass):
         '''
 
 #***** define functions for export method =======================================
-        def openCIF(filnam):
-            'opens the output file'
-            if DEBUG:
-                self.fp = sys.stdout
-            else:
-                self.fp = open(filnam,'w')
-
-        def closeCIF():
-            'close the output file'
-            if not DEBUG:
-                self.fp.close()
-            
         def WriteCIFitem(name,value=''):
             '''Write CIF data items to the file. Formats values as needed.
             Also used without a value for loops, comments, loop headers, etc.
@@ -1565,8 +1553,10 @@ class ExportCIF(G2IO.ExportBaseclass):
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.ExportSelect(AskFile=(self.mode=='simple')):    # set export parameters
-            return 
+        if self.mode=='simple':
+            if self.ExportSelect('ask'): return
+        else:
+            if self.ExportSelect('default'): return
         # Someday: get restraint & constraint info
         #restraintDict = self.OverallParms.get('Restraints',{})
         #for i in  self.OverallParms['Constraints']:
@@ -1718,7 +1708,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         # Start writing the CIF - single block
         #======================================================================
         print('Writing CIF output to file '+str(self.filename)+"...")
-        openCIF(self.filename)
+        self.OpenFile()
         if self.currentExportType == 'single' or self.currentExportType == 'powder':
             #======Data only CIF (powder/xtal) ====================================
             hist = self.histnam[0]
@@ -1910,8 +1900,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                 dlg.Destroy()
 
         WriteCIFitem('#--' + 15*'eof--' + '#')
-        closeCIF()
+        self.CloseFile()
         print("...export completed")
+        print('file '+str(self.fullpath))
         # end of CIF export
 
 class ExportPhaseCIF(ExportCIF):

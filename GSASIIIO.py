@@ -1839,7 +1839,13 @@ class ImportSmallAngleData(ImportBaseclass):
         self.instdict = {} # place items here that will be transferred to the instrument parameters
 ######################################################################
 class ExportBaseclass(object):
-    '''Defines a base class for the exporting of GSAS-II results
+    '''Defines a base class for the exporting of GSAS-II results.
+
+    This class is subclassed in the various exports/G2export_*.py files. Those files
+    are imported in :meth:`GSASII.GSASII._init_Exports` which defines the
+    appropriate menu items for each one and the .Exporter method is called
+    directly from the menu item.
+    
     '''
     def __init__(self,
                  G2frame,
@@ -1866,7 +1872,9 @@ class ExportBaseclass(object):
         # updated in ExportSelect (when used):
         self.phasenam = None # a list of selected phases
         self.histnam = None # a list of selected histograms
-        self.filename = None # name of file to be written
+        self.filename = None # name of file to be written (single export) or template (multiple files)
+        self.dirname = '' # name of directory where file(s) will be written
+        self.fullpath = '' # name of file being written -- full path
         
         # items that should be defined in a subclass of this class
         self.exporttype = []  # defines the type(s) of exports that the class can handle.
@@ -1875,8 +1883,11 @@ class ExportBaseclass(object):
         # self.multiple is ignored for "project" exports
 
     def InitExport(self,event):
-        '''Determines the type of menu that called the Exporter.
+        '''Determines the type of menu that called the Exporter and
+        misc initialization. 
         '''
+        self.filename = None # name of file to be written (single export)
+        self.dirname = '' # name of file to be written (multiple export)
         if event:
             self.currentExportType = self.G2frame.ExportLookup.get(event.Id)
 
@@ -1898,14 +1909,38 @@ class ExportBaseclass(object):
         file0 = file0.replace(' ','_')
         return file0
 
-    def ExportSelect(self,AskFile=True):
-        '''Selects histograms or phases when needed. Sets a default file name.
+    def ExportSelect(self,AskFile='ask'):
+        '''Selects histograms or phases when needed. Sets a default file name when
+        requested in self.filename; always sets a default directory in self.dirname.
 
-        :param bool AskFile: if AskFile is True (default) get the name of the file
-          in a dialog
+        :param bool AskFile: Determines how this routine processes getting a
+          location to store the current export(s).
+          * if AskFile is 'ask' (default option), get the name of the file to be written;
+            self.filename and self.dirname are always set. In the case where
+            multiple files must be generated, the export routine should do this
+            based on self.filename as a template.
+          * if AskFile is 'dir', get the name of the directory to be used;
+            self.filename is not used, but self.dirname is always set. The export routine
+            will always generate the file name.
+          * if AskFile is 'single', get only the name of the directory to be used when
+            multiple items will be written (as multiple files) are used
+            *or* a complete file name is requested when a single file
+            name is selected. self.dirname is always set and self.filename used
+            only when a single file is selected.
+          * if AskFile is 'default', creates a name of the file to be used from
+            the name of the project (.gpx) file. If the project has not been saved,
+            then the name of file is requested.
+            self.filename and self.dirname are always set. In the case where
+            multiple file names must be generated, the export routine should do this
+            based on self.filename.
+          * if AskFile is 'default-dir', sets self.dirname from the project (.gpx)
+            file. If the project has not been saved, then a directory is requested.
+            self.filename is not used.
+
         :returns: True in case of an error
         '''
         
+        numselected = 1
         if self.currentExportType == 'phase':
             if len(self.Phases) == 0:
                 self.G2frame.ErrorDialog(
@@ -1920,11 +1955,13 @@ class ExportBaseclass(object):
                 if phasenum is None: return True
                 self.phasenam = [choices[i] for i in phasenum]
                 if not self.phasenam: return True
+                numselected = len(self.phasenam)
             else:
                 choices = sorted(self.Phases.keys())
                 phasenum = G2gd.ItemSelector(choices,self.G2frame)
                 if phasenum is None: return True
                 self.phasenam = [choices[phasenum]]
+                numselected = len(self.phasenam)
         elif self.currentExportType == 'single':
             if len(self.xtalDict) == 0:
                 self.G2frame.ErrorDialog(
@@ -1938,11 +1975,13 @@ class ExportBaseclass(object):
                 hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
                 if not hnum: return True
                 self.histnam = [choices[i] for i in hnum]
+                numselected = len(self.histnam)
             else:
                 choices = sorted(self.xtalDict.values())
                 hnum = G2gd.ItemSelector(choices,self.G2frame)
                 if hnum is None: return True
                 self.histnam = [choices[hnum]]
+                numselected = len(self.histnam)
         elif self.currentExportType == 'powder':
             if len(self.powderDict) == 0:
                 self.G2frame.ErrorDialog(
@@ -1956,11 +1995,13 @@ class ExportBaseclass(object):
                 hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
                 if not hnum: return True
                 self.histnam = [choices[i] for i in hnum]
+                numselected = len(self.histnam)
             else:
                 choices = sorted(self.powderDict.values())
                 hnum = G2gd.ItemSelector(choices,self.G2frame)
                 if hnum is None: return True
                 self.histnam = [choices[hnum]]
+                numselected = len(self.histnam)
         elif self.currentExportType == 'image':
             if len(self.Histograms) == 0:
                 self.G2frame.ErrorDialog(
@@ -1978,6 +2019,7 @@ class ExportBaseclass(object):
                 else:
                     if hnum is None: return True
                     self.histnam = [choices[hnum]]
+                numselected = len(self.histnam)
         if self.currentExportType == 'map':
             # search for phases with maps
             mapPhases = []
@@ -2010,26 +2052,27 @@ class ExportBaseclass(object):
                 else:
                     if phasenum is None: return True
                     self.phasenam = [mapPhases[phasenum]]
+            numselected = len(self.phasenam)
 
-        if AskFile:
-            self.filename = self.askSaveFile()
+        # items selected, now set self.dirname and usually self.filename 
+        if AskFile == 'ask' or (AskFile == 'single' and numselected == 1) or (
+            AskFile == 'default' and not self.G2frame.GSASprojectfile
+            ):
+            filename = self.askSaveFile()
+            if not filename: return True
+            self.dirname,self.filename = os.path.split(filename)
+        elif AskFile == 'dir' or AskFile == 'single' or (
+            AskFile == 'default-dir' and not self.G2frame.GSASprojectfile
+            ):
+            self.dirname = self.askSaveDirectory()
+            if not self.dirname: return True
+        elif AskFile == 'default-dir' or AskFile == 'default':
+            self.dirname,self.filename = os.path.split(
+                os.path.splitext(self.G2frame.GSASprojectfile)[0] + self.extension
+                )
         else:
-            self.filename = self.defaultSaveFile()
-        if not self.filename: return True
+            raise Exception('This should not happen!')
         
-    # def SetupExport(self,event,AskFile=True):
-    #     '''Determines the type of menu that called the Exporter. Selects histograms
-    #     or phases when needed. Better to replace with individual calls to 
-    #     self.InitExport() and self.ExportSelect() so that the former can be called prior
-    #     to self.LoadTree()
-
-    #     :param bool AskFile: if AskFile is True (default) get the name of the file
-    #       in a dialog
-    #     :returns: True in case of an error
-    #     '''
-    #     self.ExportInit(event)
-    #     return self.ExportSelect(AskFile)
-                    
     def loadParmDict(self):
         '''Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update
         refined values to those from the last cycle and set the uncertainties for the
@@ -2226,7 +2269,7 @@ class ExportBaseclass(object):
     def askSaveFile(self):
         '''Ask the user to supply a file name
 
-        :returns: a file name (str)
+        :returns: a file name (str) or None if Cancel is pressed
         '''
         defnam = os.path.splitext(
             os.path.split(self.G2frame.GSASprojectfile)[1]
@@ -2247,19 +2290,53 @@ class ExportBaseclass(object):
             dlg.Destroy()
         return filename
 
+    def askSaveDirectory(self):
+        '''Ask the user to supply a directory name. Path name is used as the
+        starting point for the next export path search. 
+
+        :returns: a directory name (str) or None if Cancel is pressed
+        '''
+        if self.G2frame.exportDir:
+            startdir = self.G2frame.exportDir
+        elif self.G2frame.GSASprojectfile:
+            startdir = os.path.split(self.G2frame.GSASprojectfile)[0]
+        elif self.G2frame.dirname:
+            startdir = self.G2frame.dirname
+        else:
+            startdir = ''
+        dlg = wx.DirDialog(
+            self.G2frame, 'Input directory where file(s) will be written', startdir,
+            wx.DD_DEFAULT_STYLE)
+        dlg.CenterOnParent()
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                self.G2frame.exportDir = filename
+            else:
+                filename = None
+        finally:
+            dlg.Destroy()
+        return filename
+
     # Tools for file writing. 
-    def OpenFile(self,fil=None):
+    def OpenFile(self,fil=None,mode='w'):
         '''Open the output file
 
         :param str fil: The name of the file to open. If None (default)
-          the name defaults to self.filename.
+          the name defaults to self.dirname + self.filename.
+          If an extension is supplied, it is not overridded,
+          but if not, the default extension is used. 
         :returns: the file object opened by the routine which is also
           saved as self.fp
         '''
         if not fil:
-            fil = self.filename
-        self.fp = open(fil,'w')
+            if not os.path.splitext(self.filename)[1]:
+                self.filename += self.extension
+            fil = os.path.join(self.dirname,self.filename)
+        self.fullpath = fil
+        self.fp = open(fil,mode)
         return self.fp
+
     def Write(self,line):
         '''write a line of output, attaching a line-end character
 

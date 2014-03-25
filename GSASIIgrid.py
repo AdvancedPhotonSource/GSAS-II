@@ -261,7 +261,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                                           CIFinput=CIFinput),
                 **kw)
             if val is not None:
-                self.SetValue(val)
+                self._setValue(val)
             else: # no default is invalid for a number
                 self.invalid = True
                 self._IndicateValidity()
@@ -276,7 +276,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                                           CIFinput=CIFinput),
                 **kw)
             if val is not None:
-                self.SetValue(val)
+                self._setValue(val)
             else:
                 self.invalid = True
                 self._IndicateValidity()
@@ -308,6 +308,11 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.Bind(wx.EVT_KILL_FOCUS, self._onLoseFocus)
 
     def SetValue(self,val):
+        if self.result is not None: # note that this bypasses formatting
+            self.result[self.key] = val
+        self._setValue(val)
+
+    def _setValue(self,val):
         self.invalid = False
         if self.type is int:
             try:
@@ -404,7 +409,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         if self.evaluated:
             self.EvaluateExpression()
         elif self.result is not None: # show formatted result, as Bob wants
-            self.SetValue(self.result[self.key])
+            self._setValue(self.result[self.key])
         if self.OnLeave: self.OnLeave(invalid=self.invalid,
                                       value=self.result[self.key],
                                       tc=self,
@@ -414,7 +419,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         if self.evaluated:
             self.EvaluateExpression()
         elif self.result is not None: # show formatted result, as Bob wants
-            self.SetValue(self.result[self.key])
+            self._setValue(self.result[self.key])
 
     def EvaluateExpression(self):
         '''Show the computed value when an expression is entered to the TextCtrl
@@ -425,7 +430,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         if self.invalid: return # don't substitute for an invalid expression
         if not self.evaluated: return # true when an expression is evaluated
         if self.result is not None: # retrieve the stored result
-            self.SetValue(self.result[self.key])
+            self._setValue(self.result[self.key])
         self.evaluated = False # expression has been recast as value, reset flag
         
 class NumberValidator(wx.PyValidator):
@@ -1470,6 +1475,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         Sizer.Add((-1,20))
         # OK done, let's get outa here
         self.SetSizer(Sizer)
+        self.CenterOnParent()
     def GetSelections(self):
         'Returns a list of the indices for the selected choices'
         # update self.Selections with settings for displayed items

@@ -782,6 +782,28 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
     Vols = shapes[Shape][1](Bins,Parms)
     data['Size']['Distribution'] = [Bins,Dbins,BinMag/(2.*Dbins)]
         
+################################################################################
+#### Unified fit
+################################################################################
+
+def UnifiedFit(Profile,ProfDict,Limits,Substances,Sample,data):
+    print 'do unified fit'
+    
+def UnifiedFxn(Q,G,Rg,B,Rgcf,P,SQfxn,args=[]):
+    termA = G*np.exp(-((Q*Rg)**2)/3.)
+    termB = B*np.exp(-((Q*Rgcf)**2)/3.)
+    termC = (scsp.erf(Q*Rg/np.sqrt(6))**3/Q)**P
+    return SQfxn(Q,args)*termA+(termB*termC)
+    
+
+
+################################################################################
+#### Modelling
+################################################################################
+
+def ModelFit(Profile,ProfDict,Limits,Substances,Sample,data):
+    print 'do model fit'
+            
     
 ################################################################################
 #### MaxEnt testing stuff

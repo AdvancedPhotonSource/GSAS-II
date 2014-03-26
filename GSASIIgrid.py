@@ -134,9 +134,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_SAVESEQSEL,
 ] = [wx.NewId() for item in range(1)]
 
-[ wxID_MODELCOPY,wxID_MODELFIT,wxID_ELEMENTADD,wxID_ELEMENTDELETE,wxID_ADDSUBSTANCE,
-    wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
-] = [wx.NewId() for item in range(8)]
+[ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
+    wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
+] = [wx.NewId() for item in range(9)]
 
 [ wxID_SELECTPHASE,
 ] = [wx.NewId() for item in range(1)]
@@ -303,7 +303,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                              ") type: "+str(type(val)))
         # When the mouse is moved away or the widget loses focus,
         # display the last saved value, if an expression
-        self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
+#        self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow) #leads to weird behavior
         self.Bind(wx.EVT_TEXT_ENTER, self._onLoseFocus)
         self.Bind(wx.EVT_KILL_FOCUS, self._onLoseFocus)
 
@@ -2603,6 +2603,8 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.ModelMenu,helpType='Models')
         self.ModelEdit = wx.Menu(title='')
         self.ModelMenu.Append(menu=self.ModelEdit, title='Models')
+        self.ModelEdit.Append(id=wxID_MODELADD,kind=wx.ITEM_NORMAL,text='Add',
+            help='Add new term to model')
         self.ModelEdit.Append(id=wxID_MODELFIT, kind=wx.ITEM_NORMAL,text='Fit',
             help='Fit model parameters to data')
         self.ModelEdit.Append(id=wxID_MODELCOPY, kind=wx.ITEM_NORMAL,text='Copy',

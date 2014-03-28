@@ -99,6 +99,158 @@ def SetDefaultSASDModel():
 def SetDefaultSubstances():
     'Fills in default items for the SASD Substances dictionary'
     return {'Substances':{'vacuum':{'Elements':{},'Volume':1.0,'Density':0.0,'Scatt density':0.0}}}
+
+def GetHistsLikeSelected(G2frame):
+    '''Get the histograms that match the current selected one:
+    The histogram prefix and data type (PXC etc.), the number of
+    wavelengths and the instrument geometry (Debye-Scherrer etc.) 
+    must all match. The current histogram is not included in the list. 
+
+    :param wx.Frame G2frame: pointer to main GSAS-II data tree
+    '''
+    histList = []
+    inst,inst2 = G2frame.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(
+            G2frame,G2frame.PatternId, 'Instrument Parameters')
+        )
+    hType = inst['Type'][0]
+    if 'Lam1' in inst:
+        hLam = 2
+    elif 'Lam' in inst:
+        hLam = 1
+    else:
+        hLam = 0
+    sample = G2frame.PatternTree.GetItemPyData(
+        G2gd.GetPatternTreeItemId(
+            G2frame,G2frame.PatternId, 'Sample Parameters')
+        )
+    hGeom = sample.get('Type')
+    hstName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    hPrefix = hstName.split()[0]+' '
+    # cycle through tree looking for items that match the above
+    item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)        
+    while item:
+        name = G2frame.PatternTree.GetItemText(item)
+        if name.startswith(hPrefix) and name != hstName:
+            cGeom,cType,cLam, = '?','?',-1
+            subitem, subcookie = G2frame.PatternTree.GetFirstChild(item)
+            while subitem:
+                subname = G2frame.PatternTree.GetItemText(subitem)
+                if subname == 'Sample Parameters':
+                    sample = G2frame.PatternTree.GetItemPyData(subitem)
+                    cGeom = sample.get('Type')
+                elif subname == 'Instrument Parameters':
+                    inst,inst2 = G2frame.PatternTree.GetItemPyData(subitem)
+                    cType = inst['Type'][0]
+                    if 'Lam1' in inst:
+                        cLam = 2
+                    elif 'Lam' in inst:
+                        cLam = 1
+                    else:
+                        cLam = 0
+                subitem, subcookie = G2frame.PatternTree.GetNextChild(item, subcookie)
+            if cLam == hLam and cType == hType and cGeom == hGeom:
+                if name not in histList: histList.append(name)
+        item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+    return histList
+
+def SetCopyNames(histName,dataType,addNames=[]):
+    '''Determine the items in the sample parameters that should be copied,
+    depending on the histogram type and the instrument type.
+    '''
+    copyNames = ['Scale',]
+    histType = 'HKLF'
+    if 'PWDR' in histName:
+        histType = 'PWDR'
+        if 'Debye' in dataType:
+            copyNames += ['DisplaceX','DisplaceY','Absorption']
+        else:       #Bragg-Brentano
+            copyNames += ['Shift','Transparency','SurfRoughA','SurfRoughB']
+    elif 'SASD' in histName:
+        histType = 'SASD'
+        copyNames += ['Materials','Thick',]
+    if len(addNames):
+        copyNames += addNames
+    return histType,copyNames
+
+def CopySelectedHistItems(G2frame):
+    '''Global copy: Copy items from current histogram to others.
+    This is called from the menubar and is available only when the top histogram tree entry
+    is selected.
+    '''
+    hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    histList = GetHistsLikeSelected(G2frame)
+    if not histList:
+        G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+        return
+    choices = ['Limits','Background','Instrument Parameters','Sample Parameters']
+    dlg = G2gd.G2MultiChoiceDialog(
+        G2frame.dataFrame, 
+        'Copy which histogram sections from\n'+str(hst[5:]),
+        'Select copy sections', choices, filterBox=False)
+    dlg.SetSelections(range(len(choices)))
+    if dlg.ShowModal() == wx.ID_OK:
+        sections = dlg.GetSelections()
+    else:
+        sections = []
+    if not sections: return
+    
+    dlg = G2gd.G2MultiChoiceDialog(
+        G2frame.dataFrame, 
+        'Copy parameters from\n'+str(hst[5:])+' to...',
+        'Copy parameters', histList)
+    results = []
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            results = dlg.GetSelections()
+    finally:
+        dlg.Destroy()
+    copyList = []
+    for i in results: 
+        copyList.append(histList[i])
+
+    if 0 in sections: # Limits
+        data = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Limits'))
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            G2frame.PatternTree.SetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),
+                copy.deepcopy(data))
+    if 1 in sections:  # Background
+        data = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Background'))
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            G2frame.PatternTree.SetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),
+                copy.deepcopy(data))
+    if 2 in sections:  # Instrument Parameters
+        # for now all items in Inst. parms are copied
+        data,data1 = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(
+                G2frame,G2frame.PatternId,'Instrument Parameters'))
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters')
+                )[0].update(copy.deepcopy(data))
+            G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters')
+                )[1].update(copy.deepcopy(data1))
+    if 3 in sections:  # Sample Parameters
+        data = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(
+                G2frame,G2frame.PatternId,'Sample Parameters'))
+        # selects items to be copied
+        histType,copyNames = SetCopyNames(hst,data['Type'],
+            addNames = ['Omega','Chi','Phi','Gonio. radius','InstrName'])
+        copyDict = {parm:data[parm] for parm in copyNames}
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters')
+                ).update(copy.deepcopy(copyDict))
                          
 ################################################################################
 #####  Powder Peaks
@@ -386,51 +538,55 @@ def UpdateBackground(G2frame,data):
             PKflags = []
             for term in backDict['peaksList']:
                 PKflags.append(term[1::2])            
-        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Copy bkg ref. flags from\n'+str(hst[5:])+' to...',
+            'Copy flags', histList)
         copyList = []
-        dlg = wx.MultiChoiceDialog(G2frame, 
-            'Copy refinement flags to which histograms?', 'Copy flags', 
-            histList, wx.CHOICEDLG_STYLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                result = dlg.GetSelections()
-                for i in result: 
+                for i in dlg.GetSelections(): 
                     copyList.append(histList[i])
-                if 'All' in copyList: 
-                    copyList = histList[1:]
-            for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                backData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'))
-                backData[0][1] = copy.copy(flag)
-                bkDict = backData[-1]
-                if bkDict['nDebye'] == backDict['nDebye']:
-                    for i,term in enumerate(bkDict['debyeTerms']):
-                        term[1::2] = copy.copy(DBflags[i])
-                if bkDict['nPeaks'] == backDict['nPeaks']:
-                    for i,term in enumerate(bkDict['peaksList']):
-                        term[1::2] = copy.copy(PKflags[i])                    
         finally:
             dlg.Destroy()
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            backData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'))
+            backData[0][1] = copy.copy(flag)
+            bkDict = backData[-1]
+            if bkDict['nDebye'] == backDict['nDebye']:
+                for i,term in enumerate(bkDict['debyeTerms']):
+                    term[1::2] = copy.copy(DBflags[i])
+            if bkDict['nPeaks'] == backDict['nPeaks']:
+                for i,term in enumerate(bkDict['peaksList']):
+                    term[1::2] = copy.copy(PKflags[i])                    
             
     def OnBackCopy(event):
-        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
         copyList = []
-        dlg = wx.MultiChoiceDialog(G2frame, 
-            'Copy parameters to which histograms?', 'Copy parameters', 
-            histList, wx.CHOICEDLG_STYLE)
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Copy bkg params from\n'+str(hst[5:])+' to...',
+            'Copy parameters', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                result = dlg.GetSelections()
-                for i in result: 
+                for i in dlg.GetSelections():
                     copyList.append(histList[i])
-                if 'All' in copyList: 
-                    copyList = histList[1:]
-            for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),
-                    copy.copy(data))
         finally:
             dlg.Destroy()
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            G2frame.PatternTree.SetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),copy.copy(data))
         
     def BackSizer():
         
@@ -671,22 +827,23 @@ def UpdateLimitsGrid(G2frame, data,plottype):
         G2plt.PlotPatterns(G2frame,plotType=plottype)
         
     def OnLimitCopy(event):
-        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR','SASD',])
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
         copyList = []
-        dlg = wx.MultiChoiceDialog(G2frame, 
-            'Copy limits to which histograms?', 'Copy limits', 
-            histList, wx.CHOICEDLG_STYLE)
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Copy limits from\n'+str(hst[5:])+' to...',
+            'Copy limits', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                result = dlg.GetSelections()
-                for i in result: 
-                    copyList.append(histList[i])
-                if 'All' in copyList: 
-                    copyList = histList[1:]
-            for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),
-                    copy.copy(data))
+                for i in dlg.GetSelections(): 
+                    item = histList[i]
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                    G2frame.PatternTree.SetItemPyData(
+                        G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),copy.copy(data))
         finally:
             dlg.Destroy()
             
@@ -843,58 +1000,60 @@ def UpdateInstrumentGrid(G2frame,data):
         G2plt.PlotPeakWidths(G2frame)
         
     def OnInstFlagCopy(event):
-        histName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
         keys = data.keys()
         flags = dict(zip(keys,[data[key][2] for key in keys]))
         instType = data['Type'][0]
-        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
         copyList = []
-        dlg = wx.MultiChoiceDialog(G2frame, 
-            'Copy refinement flags from\n'+histName, 'Copy refinement flags', 
-            histList, wx.CHOICEDLG_STYLE)
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Copy inst ref. flags from\n'+hst[5:],
+            'Copy refinement flags', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                result = dlg.GetSelections()
-                for i in result: 
+                for i in dlg.GetSelections():
                     copyList.append(histList[i])
-                if 'All' in copyList: 
-                    copyList = histList[1:]
-            for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
-                if len(data) == len(instData) and instType == instData['Type'][0]:   #don't mix data types or lam & lam1/lam2 parms!
-                    for item in instData:
-                        instData[item][2] = copy.copy(flags[item])
-                else:
-                    print item+' not copied - instrument parameters not commensurate'
         finally:
             dlg.Destroy()
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+            if len(data) == len(instData) and instType == instData['Type'][0]:   #don't mix data types or lam & lam1/lam2 parms!
+                for item in instData:
+                    instData[item][2] = copy.copy(flags[item])
+            else:
+                print item+' not copied - instrument parameters not commensurate'
         
     def OnInstCopy(event):
         #need fix for dictionary
-        histName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['PWDR',])
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
         copyList = []
         instType = data['Type'][0]
-        dlg = wx.MultiChoiceDialog(G2frame, 
-            'Copy parameters from\n'+histName, 'Copy parameters', 
-            histList, wx.CHOICEDLG_STYLE)
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Copy inst params from\n'+hst,
+            'Copy parameters', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                result = dlg.GetSelections()
-                for i in result: 
+                for i in dlg.GetSelections(): 
                     copyList.append(histList[i])
-                if 'All' in copyList: 
-                    copyList = histList[1:]
-            for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
-                if len(data) == len(instData) and instType == instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
-                    instData.update(data)
-                else:
-                    print item+' not copied - instrument parameters not commensurate'
         finally:
             dlg.Destroy()
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+            if len(data) == len(instData) and instType == instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
+                instData.update(data)
+            else:
+                print item+' not copied - instrument parameters not commensurate'
         
     def OnWaveChange(event):
         if 'Lam' in insVal:
@@ -1136,24 +1295,7 @@ def UpdateSampleGrid(G2frame,data):
     '''respond to selection of PWDR/SASD Sample Parameters
     data tree item.
     '''
-                                                        
-    def SetCopyNames(histName,addNames=[]):
-        copyNames = ['Scale',]
-        dataType = data['Type']
-        histType = 'HKLF'
-        if 'PWDR' in histName:
-            histType = 'PWDR'
-            if 'Debye' in dataType:
-                copyNames += ['DisplaceX','DisplaceY','Absorption']
-            else:       #Bragg-Brentano
-                copyNames += ['Shift','Transparency','SurfRoughA','SurfRoughB']
-        elif 'SASD' in histName:
-            histType = 'SASD'
-            copyNames += ['Materials','Thick',]
-        if len(addNames):
-         copyNames += addNames
-        return histType,copyNames
-        
+
     def OnSampleSave(event):
         '''Respond to the Sample Parameters Operations/Save menu
         item: writes current parameters to a .samprm file
@@ -1234,86 +1376,54 @@ def UpdateSampleGrid(G2frame,data):
         G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         
     def OnSampleCopy(event):
-        histType,copyNames = SetCopyNames(histName,
+        histType,copyNames = SetCopyNames(histName,data['Type'],
             addNames = ['Omega','Chi','Phi','Gonio. radius','InstrName'])
         copyDict = {}
         for parm in copyNames:
             copyDict[parm] = data[parm]
-        histList = ['All '+histType,]
-        AllList = {}
-        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-        while item:
-            name = G2frame.PatternTree.GetItemText(item)
-            if histType in name and name != histName:
-                allname = name.split(' Azm=')[0]
-                if allname in AllList:
-                    AllList[allname] += 1
-                else:
-                    AllList[allname] = 1
-                histList.append(name)
-            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-        if len(histList) == 1:      #nothing to copy to!
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
-        nAll = 0
-        AllNames = AllList.keys()
-        AllNames.sort()
-        for allname in AllNames:
-            if AllList[allname] > 1:
-                histList.insert(1+nAll,'All '+allname)
-                nAll += 1
-        copyList = []
-        dlg = wx.MultiChoiceDialog(G2frame,'Copy parameters from\n'+histName,
-            'Copy parameters',histList,wx.CHOICEDLG_STYLE)
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame,
+            'Copy sample params from\n'+str(hst[5:])+' to...',
+            'Copy sample parameters', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelections()
                 for i in result: 
-                    copyList.append(histList[i])
-                for allname in AllList:
-                    if 'All '+allname in copyList:
-                        copyList = []
-                        for name in histList:
-                            if name.split(' Azm=')[0] == allname:
-                                copyList.append(name)
-                        break       #only one All allowed
-                if 'All '+histType in copyList: 
-                    copyList = histList[1+nAll:]
-            for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
-                sampleData.update(copy.deepcopy(copyDict))
+                    item = histList[i]
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                    sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+                    sampleData.update(copy.deepcopy(copyDict))
         finally:
             dlg.Destroy()
 
     def OnSampleFlagCopy(event):
-        histType,copyNames = SetCopyNames(histName)
+        histType,copyNames = SetCopyNames(histName,data['Type'])
         flagDict = {}
         for parm in copyNames:
             flagDict[parm] = data[parm][1]
-        histList = ['All '+histType,]
-        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-        while item:
-            name = G2frame.PatternTree.GetItemText(item)
-            if histType in name and name != histName:
-                histList.append(name)
-            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-        if len(histList) == 1:      #nothing to copy to!
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
-        copyList = []
-        dlg = wx.MultiChoiceDialog(G2frame,'Copy parameters from\n'+histName,
-            'Copy refinement flags',histList,wx.CHOICEDLG_STYLE)
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Copy sample ref. flags from\n'+str(hst[5:])+' to...',
+            'Copy sample flags', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelections()
                 for i in result: 
-                    copyList.append(histList[i])
-                if 'All '+histType in copyList: 
-                    copyList = histList[1:]
-            for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
-                for name in copyNames:
-                    sampleData[name][1] = copy.copy(flagDict[name])
+                    item = histList[i]
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                    sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+                    for name in copyNames:
+                        sampleData[name][1] = copy.copy(flagDict[name])
         finally:
             dlg.Destroy()
 
@@ -2231,24 +2341,26 @@ def UpdateSubstanceGrid(G2frame,data):
         UpdateSubstanceGrid(G2frame,data)
         
     def OnCopySubstance(event):
-        histList = ['All',]+G2gd.GetPatternTreeDataNames(G2frame,['SASD',])
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
         copyList = []
-        dlg = wx.MultiChoiceDialog(G2frame, 
-            'Copy substances to which histograms?', 'Copy substances', 
-            histList, wx.CHOICEDLG_STYLE)
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Copy substances from\n'+hst[5:]+' to...',
+            'Copy substances', histList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                result = dlg.GetSelections()
-                for i in result: 
+                for i in dlg.GetSelections(): 
                     copyList.append(histList[i])
-                if 'All' in copyList: 
-                    copyList = histList[1:]
-            for item in copyList:
-                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Substances'),
-                    copy.copy(data))
         finally:
             dlg.Destroy()        
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Substances'),
+                copy.copy(data))
     
     def OnAddSubstance(event):
         dlg = wx.TextEntryDialog(None,'Enter a name for this substance','Substance Name Entry','New substance',

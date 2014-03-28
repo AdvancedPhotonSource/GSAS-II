@@ -65,8 +65,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_SINGLEMCSA
 ] = [wx.NewId() for item in range(15)]
 
-[ wxID_PWDRADD, wxID_HKLFADD,wxID_PWDANALYSIS,wxID_DATADELETE,
-] = [wx.NewId() for item in range(4)]
+[ wxID_PWDRADD, wxID_HKLFADD, wxID_PWDANALYSIS, wxID_PWDCOPY, wxID_DATADELETE,
+] = [wx.NewId() for item in range(5)]
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
@@ -1432,7 +1432,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,30)),1,wx.ALL|wx.EXPAND,1)
+        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),1,wx.ALL|wx.EXPAND,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
@@ -2452,12 +2452,14 @@ class DataFrame(wx.Frame):
             help='Save selected sequential refinement results')
         self.PostfillDataMenu()
             
-        # PDR
-        self.ErrorMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.ErrorMenu,helpType='PWD Analysis',helpLbl='Powder Fit Error Analysis')
+        # Powder 
+        self.HistMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.HistMenu,helpType='PWD Analysis',helpLbl='Powder Fit Error Analysis')
         self.ErrorAnal = wx.Menu(title='')
-        self.ErrorMenu.Append(menu=self.ErrorAnal,title='Analysis')
-        self.ErrorAnal.Append(id=wxID_PWDANALYSIS,kind=wx.ITEM_NORMAL,text='Analyze',
+        self.HistMenu.Append(menu=self.ErrorAnal,title='Commands')
+        self.ErrorAnal.Append(id=wxID_PWDANALYSIS,kind=wx.ITEM_NORMAL,text='Error Analysis',
+            help='Error analysis on powder pattern')
+        self.ErrorAnal.Append(id=wxID_PWDCOPY,kind=wx.ITEM_NORMAL,text='Copy params',
             help='Error analysis on powder pattern')
         self.PostfillDataMenu()
             
@@ -3681,6 +3683,12 @@ def UpdatePWHKPlot(G2frame,kind,item):
             val = data[0]['wtFactor']
         data[0]['wtFactor'] = val
         wtval.SetValue('%.3f'%(val))
+
+    def onCopySelectedItems(event):
+        '''Respond to menu item to copy multiple sections from a histogram.
+        Need this here to pass on the G2frame object. 
+        '''
+        G2pdG.CopySelectedHistItems(G2frame)
            
     data = G2frame.PatternTree.GetItemPyData(item)
 #patches
@@ -3696,8 +3704,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #end patches
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
-    SetDataMenuBar(G2frame,G2frame.dataFrame.ErrorMenu)
-    G2frame.dataFrame.Bind(wx.EVT_MENU,OnErrorAnalysis, id=wxID_PWDANALYSIS)
+    SetDataMenuBar(G2frame,G2frame.dataFrame.HistMenu)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=wxID_PWDANALYSIS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, onCopySelectedItems, id=wxID_PWDCOPY)
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     
     mainSizer = wx.BoxSizer(wx.VERTICAL)

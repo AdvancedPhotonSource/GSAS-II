@@ -310,6 +310,103 @@ def UniTubeVol(R,args):
     '''
     L,T = arg[:2]
     return CylinderVol(R,[L,])-CylinderVol(R-T,[L,])
+    
+################################################################################
+#### Distribution functions & their cumulative fxns
+################################################################################
+
+def LogNormalDist(x,pos,scale,shape):
+    ''' Standard LogNormal distribution - numpy friendly on x axis
+    ref: http://www.itl.nist.gov/div898/handbook/index.htm 1.3.6.6.9
+    param float x: independent axis (can be numpy array)
+    param float pos: location of distribution
+    param float scale: width of distribution (m)
+    param float shape: shape - (sigma of log(LogNormal))
+    returns float: LogNormal distribution
+    '''
+    return np.exp(-np.log((x-pos)/scale)**2/(2.*shape**2))/(np.sqrt(2.*np.pi)*(x-pos)*shape)
+    
+def GaussDist(x,pos,scale,shape):
+    ''' Standard Normal distribution - numpy friendly on x axis
+    param float x: independent axis (can be numpy array)
+    param float pos: location of distribution
+    param float scale: width of distribution (sigma)
+    param float shape: not used
+    returns float: Normal distribution
+    '''
+    return (1./scale*np.sqrt(2.*np.pi))*np.exp(-(x-pos)**2/(2.*scale**2))
+    
+def LSWDist(x,pos,scale,shape):
+    ''' Lifshitz-Slyozov-Wagner Ostwald ripening distribution - numpy friendly on x axis
+    ref: 
+    param float x: independent axis (can be numpy array)
+    param float pos: location of distribution
+    param float scale: not used
+    param float shape: not used
+    returns float: LSW distribution    
+    '''
+    redX = x/pos
+    result = (81.*2**(-5/3.))*(redX**2*np.exp(-redX/(1.5-redX)))/((1.5-redX)**(11/3.)*(3.-redX)**(7/3.))
+    return result/pos
+    
+def SchulzZimmDist(x,pos,scale,shape):
+    ''' Schulz-Zimm macromolecule distribution - numpy friendly on x axis
+    ref: http://goldbook.iupac.org/S05502.html
+    param float x: independent axis (can be numpy array)
+    param float pos: location of distribution
+    param float scale: width of distribution (sigma)
+    param float shape: not used
+    returns float: Schulz-Zimm distribution
+    '''
+    b = (2.*pos/scale)**2
+    a = b/pos
+    if b<70:    #why bother?
+        return (a**(b+1.))*x**b*np.exp(-a*x)/scsp.gamma(b+1.)
+    else:
+        return np.exp((b+1.)*np.log(a)-spsc.gammaln(b+1.)+b*np.log(x)-(a*x))
+           
+def LogNormalCume(x,pos,scale,shape):
+    ''' Standard LogNormal cumulative distribution - numpy friendly on x axis
+    ref: http://www.itl.nist.gov/div898/handbook/index.htm 1.3.6.6.9
+    param float x: independent axis (can be numpy array)
+    param float pos: location of distribution
+    param float scale: width of distribution (sigma)
+    param float shape: shape parameter
+    returns float: LogNormal cumulative distribution
+    '''
+    return scsp.erf(np.log((x-pos)/shape)/(np.sqrt(2.)*scale)+1.)/2.
+    
+def GaussCume(x,pos,scale,shape):
+    ''' Standard Normal cumulative distribution - numpy friendly on x axis
+    param float x: independent axis (can be numpy array)
+    param float pos: location of distribution
+    param float scale: width of distribution (sigma)
+    param float shape: not used
+    returns float: Normal cumulative distribution
+    '''
+    return scsp.erf((x-pos)/(np.sqrt(2.)*scale)+1.)/2.
+    
+def LSWCume(x,pos,scale,shape):
+    ''' Lifshitz-Slyozov-Wagner Ostwald ripening cumulative distribution - numpy friendly on x axis
+    param float x: independent axis (can be numpy array)
+    param float pos: location of distribution
+    param float scale: not used
+    param float shape: not used
+    returns float: LSW cumulative distribution
+    '''
+    nP = int(np.ceil(x/30+30))
+    return []
+    
+def SchulzZimmCume(x,pos,scale,shape):
+    ''' Schulz-Zimm cumulative distribution - numpy friendly on x axis
+    param float x: independent axis (can be numpy array)
+    param float pos: location of distribution
+    param float scale: width of distribution (sigma)
+    param float shape: not used
+    returns float: Normal distribution
+    '''
+    return []
+    
           
 ################################################################################
 ##### SB-MaxEnt
@@ -803,6 +900,9 @@ def UnifiedFxn(Q,G,Rg,B,Rgcf,P,SQfxn,args=[]):
 
 def ModelFit(Profile,ProfDict,Limits,Substances,Sample,data):
     print 'do model fit'
+    
+def ModelFxn(Q,G,parmDict,SQfxn,args=[]):
+    return SQfxn(Q,args)
             
     
 ################################################################################

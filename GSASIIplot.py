@@ -2505,7 +2505,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     x0,y0 = polygon[0]
                     polygon.append([x0,y0])
                     G2frame.MaskKey = ''
-                    G2frame.G2plotNB.status.SetFields(['','Polygon closed - RB drag a vertex to change shape'])
+                    G2frame.G2plotNB.status.SetFields(['','Polygon closed - RB vertex drag to move, LB vertex drag to insert'])
                 else:
                     G2frame.G2plotNB.status.SetFields(['','New polygon point: %.1f,%.1f'%(Xpos,Ypos)])
                     polygon.append([Xpos,Ypos])
@@ -2515,7 +2515,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     x0,y0 = frame[0]
                     frame.append([x0,y0])
                     G2frame.MaskKey = ''
-                    G2frame.G2plotNB.status.SetFields(['','Frame closed - RB drag a vertex to change shape'])
+                    G2frame.G2plotNB.status.SetFields(['','Frame closed - RB vertex drag to move, LB vertex drag to insert'])
                 else:
                     G2frame.G2plotNB.status.SetFields(['','New frame point: %.1f,%.1f'%(Xpos,Ypos)])
                     frame.append([Xpos,Ypos])
@@ -2606,19 +2606,27 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                                 arcs[aN][1][0] = int(G2img.GetAzm(Xpos,Ypos,Data))
                             else:
                                 arcs[aN][1][1] = int(G2img.GetAzm(Xpos,Ypos,Data))
-                    for poly in G2frame.polyList:   #merging points problem here & how can we insert a point?
+                    for poly in G2frame.polyList:   #merging points problem here?
                         if Obj == poly[0]:
                             ind = G2frame.itemPicked.contains(G2frame.mousePicked)[1]['ind'][0]
                             oldPos = np.array([G2frame.mousePicked.xdata,G2frame.mousePicked.ydata])
                             pN = poly[1]
                             for i,xy in enumerate(polygons[pN]):
                                 if np.allclose(np.array([xy]),oldPos,atol=1.0):
-                                    polygons[pN][i] = Xpos,Ypos
+                                    if event.button == 1:
+                                        polygons[pN][i] = Xpos,Ypos
+                                    elif event.button == 3:
+                                        polygons[pN].insert(i,[Xpos,Ypos])
+                                        break
                     if frame:
                         oldPos = np.array([G2frame.mousePicked.xdata,G2frame.mousePicked.ydata])
                         for i,xy in enumerate(frame):
                             if np.allclose(np.array([xy]),oldPos,atol=1.0):
-                                frame[i] = Xpos,Ypos
+                                if event.button == 1:
+                                    frame[i] = Xpos,Ypos
+                                elif event.button == 3:
+                                    frame.insert(i,[Xpos,Ypos])
+                                    break
                     G2imG.UpdateMasks(G2frame,Masks)
 #                else:                  #keep for future debugging
 #                    print str(G2frame.itemPicked),event.xdata,event.ydata,event.button

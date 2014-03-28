@@ -417,7 +417,7 @@ def UpdateImageControls(G2frame,data,masks):
                 data['wavelength'] = wave
             except ValueError:
                 pass
-            waveSel.SetValue("%6.5f" % (data['wavelength']))          #reset in case of error
+            waveSel.SetValue("%7.5f" % (data['wavelength']))          #reset in case of error
             
         def OnDetDepthRef(event):
             data['DetDepthRef'] = penSel.GetValue()
@@ -436,19 +436,19 @@ def UpdateImageControls(G2frame,data,masks):
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Beam center X,Y'),0,
             wx.ALIGN_CENTER_VERTICAL)
         cent = data['center']
-        centText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%8.3f,%8.3f" % (cent[0],cent[1])),style=wx.TE_READONLY)
+        centText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%7.2f,%7.2f" % (cent[0],cent[1])),style=wx.TE_READONLY)
         centText.SetBackgroundColour(VERY_LIGHT_GREY)
         calibSizer.Add(centText,0,wx.ALIGN_CENTER_VERTICAL)        
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Wavelength'),0,
             wx.ALIGN_CENTER_VERTICAL)
-        waveSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%6.5f" % (data['wavelength'])),
+        waveSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%7.5f" % (data['wavelength'])),
             style=wx.TE_PROCESS_ENTER)
         waveSel.Bind(wx.EVT_TEXT_ENTER,OnWavelength)
         waveSel.Bind(wx.EVT_KILL_FOCUS,OnWavelength)
         calibSizer.Add(waveSel,0,wx.ALIGN_CENTER_VERTICAL)             
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Distance'),0,
             wx.ALIGN_CENTER_VERTICAL)
-        distSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%8.3f"%(data['distance'])),style=wx.TE_READONLY)
+        distSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%8.2f"%(data['distance'])),style=wx.TE_READONLY)
         distSel.SetBackgroundColour(VERY_LIGHT_GREY)
         calibSizer.Add(distSel,0,wx.ALIGN_CENTER_VERTICAL)
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Tilt angle'),0,

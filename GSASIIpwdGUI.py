@@ -84,7 +84,35 @@ def SetDefaultSample():
         'Thick':1.0,'Contrast':[0.0,0.0],       #contrast & anomalous contrast
         'Trans':1.0,                            #measured transmission
         }
-        
+def SetupSampleLabels(histName,dataType):
+    '''Setup a list of labels and number formatting for use in
+    labeling sample parameters.
+    :param str histName: Name of histogram, ("PWDR ...")
+    :param str dataType: 
+    '''
+    parms = []
+    parms.append(['Scale','Histogram scale factor: ',[10,4]])
+    parms.append(['Gonio. radius','Goniometer radius (mm): ',[10,3]])
+    if 'PWDR' in histName:
+        if dataType == 'Debye-Scherrer':
+            parms += [['DisplaceX',u'Sample X displ. perp. to beam (\xb5m): ',[10,3]],
+                ['DisplaceY',u'Sample Y displ. || to beam (\xb5m): ',[10,3]],
+                ['Absorption',u'Sample absorption (\xb5\xb7r): ',[10,4]],]
+        elif dataType == 'Bragg-Brentano':
+            parms += [['Shift',u'Sample displacement(\xb5m): ',[10,4]],
+                ['Transparency',u'Sample transparency(1/\xb5eff, cm): ',[10,3]],
+                ['SurfRoughA','Surface roughness A: ',[10,4]],
+                ['SurfRoughB','Surface roughness B: ',[10,4]]]
+    elif 'SASD' in histName:
+        parms.append(['Thick','Sample thickness (mm)',[10,3]])
+        parms.append(['Trans','Transmission (meas)',[10,3]])
+    parms.append(['Omega','Goniometer omega:',[10,3]])
+    parms.append(['Chi','Goniometer chi:',[10,3]])
+    parms.append(['Phi','Goniometer phi:',[10,3]])
+    parms.append(['Temperature','Sample temperature (K): ',[10,3]])
+    parms.append(['Pressure','Sample pressure (MPa): ',[10,3]])
+    return parms
+
 def SetDefaultSASDModel():
     'Fills in default items for the SASD Models dictionary'    
     return {'Back':[0.0,False],'Size':{'MinDiam':50,'MaxDiam':10000,'Nbins':100,
@@ -189,11 +217,10 @@ def CopySelectedHistItems(G2frame):
         'Copy which histogram sections from\n'+str(hst[5:]),
         'Select copy sections', choices, filterBox=False)
     dlg.SetSelections(range(len(choices)))
+    choiceList = []
     if dlg.ShowModal() == wx.ID_OK:
-        sections = dlg.GetSelections()
-    else:
-        sections = []
-    if not sections: return
+        choiceList = [choices[i] for i in dlg.GetSelections()]
+    if not choiceList: return
     
     dlg = G2gd.G2MultiChoiceDialog(
         G2frame.dataFrame, 
@@ -209,7 +236,7 @@ def CopySelectedHistItems(G2frame):
     for i in results: 
         copyList.append(histList[i])
 
-    if 0 in sections: # Limits
+    if 'Limits' in choiceList: # Limits
         data = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Limits'))
         for item in copyList:
@@ -217,7 +244,7 @@ def CopySelectedHistItems(G2frame):
             G2frame.PatternTree.SetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,Id,'Limits'),
                 copy.deepcopy(data))
-    if 1 in sections:  # Background
+    if 'Background' in choiceList:  # Background
         data = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Background'))
         for item in copyList:
@@ -225,7 +252,7 @@ def CopySelectedHistItems(G2frame):
             G2frame.PatternTree.SetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),
                 copy.deepcopy(data))
-    if 2 in sections:  # Instrument Parameters
+    if 'Instrument Parameters' in choiceList:  # Instrument Parameters
         # for now all items in Inst. parms are copied
         data,data1 = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(
@@ -238,7 +265,7 @@ def CopySelectedHistItems(G2frame):
             G2frame.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters')
                 )[1].update(copy.deepcopy(data1))
-    if 3 in sections:  # Sample Parameters
+    if 'Sample Parameters' in choiceList:  # Sample Parameters
         data = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(
                 G2frame,G2frame.PatternId,'Sample Parameters'))
@@ -546,7 +573,7 @@ def UpdateBackground(G2frame,data):
         dlg = G2gd.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy bkg ref. flags from\n'+str(hst[5:])+' to...',
-            'Copy flags', histList)
+            'Copy bkg flags', histList)
         copyList = []
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -1401,6 +1428,62 @@ def UpdateSampleGrid(G2frame,data):
         finally:
             dlg.Destroy()
 
+    def OnSampleCopySelected(event):
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        Controls = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
+        # Assemble a list of item labels
+        TextTable = {key:label for key,label,dig in
+                     SetupSampleLabels(hst,data.get('Type'))
+                     }
+        # get flexible labels
+        TextTable.update({
+            key:Controls[key] for key in Controls if key.startswith('FreePrm')
+            })
+        # add a few extra
+        TextTable.update({
+            'Type':'Diffractometer type',
+            'InstrName':'Instrument Name',
+            })
+        # Assemble a list of dict entries that would be labeled in the Sample
+        # params data window (drop ranId and items not used).
+        keyList = [i for i in data.keys() if i in TextTable]
+        keyText = [TextTable[i] for i in keyList]
+        # sort both lists together, ordered by keyText
+        keyText, keyList = zip(*sorted(zip(keyText,keyList))) # sort lists 
+        selectedKeys = []
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame,
+            'Select which sample parameters\nto copy',
+            'Select sample parameters', keyText)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                selectedKeys = [keyList[i] for i in dlg.GetSelections()]
+        finally:
+            dlg.Destroy()
+        if not selectedKeys: return # nothing to copy
+        copyDict = {}
+        for parm in selectedKeys:
+            copyDict[parm] = data[parm]
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame,
+            'Copy sample params from\n'+str(hst[5:])+' to...',
+            'Copy sample parameters', histList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    item = histList[i]
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                    sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+                    sampleData.update(copy.deepcopy(copyDict))
+        finally:
+            dlg.Destroy()
+
     def OnSampleFlagCopy(event):
         histType,copyNames = SetCopyNames(histName,data['Type'])
         flagDict = {}
@@ -1477,6 +1560,7 @@ def UpdateSampleGrid(G2frame,data):
     G2frame.dataFrame.SetLabel('Sample Parameters')
     G2frame.Bind(wx.EVT_MENU, OnSetScale, id=G2gd.wxID_SETSCALE)
     G2frame.Bind(wx.EVT_MENU, OnSampleCopy, id=G2gd.wxID_SAMPLECOPY)
+    G2frame.Bind(wx.EVT_MENU, OnSampleCopySelected, id=G2gd.wxID_SAMPLECOPYSOME)
     G2frame.Bind(wx.EVT_MENU, OnSampleFlagCopy, id=G2gd.wxID_SAMPLEFLAGCOPY)
     G2frame.Bind(wx.EVT_MENU, OnSampleSave, id=G2gd.wxID_SAMPLESAVE)
     G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2gd.wxID_SAMPLELOAD)
@@ -1515,28 +1599,7 @@ def UpdateSampleGrid(G2frame,data):
         data['Trans'] = 1.0
 #patch end
     
-    parms = []
-    parms.append(['Scale','Histogram scale factor: ',[10,4]])
-    parms.append(['Gonio. radius','Goniometer radius (mm): ',[10,3]])
-    if 'PWDR' in histName:
-        if data['Type'] == 'Debye-Scherrer':
-            parms += [['DisplaceX',u'Sample X displ. perp. to beam (\xb5m): ',[10,3]],
-                ['DisplaceY',u'Sample Y displ. || to beam (\xb5m): ',[10,3]],
-                ['Absorption',u'Sample absorption (\xb5\xb7r): ',[10,4]],]
-        elif data['Type'] == 'Bragg-Brentano':
-            parms += [['Shift',u'Sample displacement(\xb5m): ',[10,4]],
-                ['Transparency',u'Sample transparency(1/\xb5eff, cm): ',[10,3]],
-                ['SurfRoughA','Surface roughness A: ',[10,4]],
-                ['SurfRoughB','Surface roughness B: ',[10,4]]]
-    elif 'SASD' in histName:
-        parms.append(['Thick','Sample thickness (mm)',[10,3]])
-        parms.append(['Trans','Transmission (meas)',[10,3]])
-    parms.append(['Omega','Goniometer omega:',[10,3]])
-    parms.append(['Chi','Goniometer chi:',[10,3]])
-    parms.append(['Phi','Goniometer phi:',[10,3]])
-    parms.append(['Temperature','Sample temperature (K): ',[10,3]])
-    parms.append(['Pressure','Sample pressure (MPa): ',[10,3]])
-                
+    parms = SetupSampleLabels(histName,data.get('Type'))
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add((-1,-1),1,wx.EXPAND,1)

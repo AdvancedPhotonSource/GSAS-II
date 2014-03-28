@@ -104,9 +104,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_STRSTAALLFIT,wxID_UPDATEDZERO,
 ] = [wx.NewId() for item in range(7)]
 
-[ wxID_BACKCOPY,wxID_LIMITCOPY,wxID_SAMPLECOPY, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
+[ wxID_BACKCOPY,wxID_LIMITCOPY, wxID_SAMPLECOPY, wxID_SAMPLECOPYSOME, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
     wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,
-] = [wx.NewId() for item in range(9)]
+] = [wx.NewId() for item in range(10)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
     wxID_INSTSAVE,
@@ -1432,15 +1432,15 @@ class G2MultiChoiceDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),1,wx.ALL|wx.EXPAND,1)
+        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),1,wx.ALL|wx.EXPAND|WACV,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
-            topSizer.Add(wx.StaticText(self,wx.ID_ANY,'Filter: '),0,wx.ALL,1)
+            topSizer.Add(wx.StaticText(self,wx.ID_ANY,'Name \nFilter: '),0,wx.ALL|WACV,1)
             self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
             self.filterBox.Bind(wx.EVT_CHAR,self.onChar)
             self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
-            topSizer.Add(self.filterBox,0,wx.ALL,0)
+            topSizer.Add(self.filterBox,0,wx.ALL|WACV,0)
         Sizer.Add(topSizer,0,wx.ALL|wx.EXPAND,8)
         self.clb = wx.CheckListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
         if monoFont:
@@ -2516,7 +2516,9 @@ class DataFrame(wx.Frame):
         self.SampleEdit.Append(id=wxID_SAMPLESAVE, kind=wx.ITEM_NORMAL,text='Save',
             help='Save sample parameters to file')
         self.SampleEdit.Append(id=wxID_SAMPLECOPY, kind=wx.ITEM_NORMAL,text='Copy',
-            help='Copy refinable sample parameters to other histograms')
+            help='Copy refinable and most other sample parameters to other histograms')
+        self.SampleEdit.Append(id=wxID_SAMPLECOPYSOME, kind=wx.ITEM_NORMAL,text='Copy selected...',
+            help='Copy selected sample parameters to other histograms')
         self.SampleEdit.Append(id=wxID_SAMPLEFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
             help='Copy sample parameter refinement flags to other histograms')
         self.PostfillDataMenu()

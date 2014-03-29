@@ -2505,7 +2505,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     x0,y0 = polygon[0]
                     polygon.append([x0,y0])
                     G2frame.MaskKey = ''
-                    G2frame.G2plotNB.status.SetFields(['','Polygon closed - RB vertex drag to move, LB vertex drag to insert'])
+                    G2frame.G2plotNB.status.SetFields(['','Polygon closed'])
                 else:
                     G2frame.G2plotNB.status.SetFields(['','New polygon point: %.1f,%.1f'%(Xpos,Ypos)])
                     polygon.append([Xpos,Ypos])
@@ -2515,7 +2515,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     x0,y0 = frame[0]
                     frame.append([x0,y0])
                     G2frame.MaskKey = ''
-                    G2frame.G2plotNB.status.SetFields(['','Frame closed - RB vertex drag to move, LB vertex drag to insert'])
+                    G2frame.G2plotNB.status.SetFields(['','Frame closed'])
                 else:
                     G2frame.G2plotNB.status.SetFields(['','New frame point: %.1f,%.1f'%(Xpos,Ypos)])
                     frame.append([Xpos,Ypos])

@@ -31,6 +31,7 @@ import GSASIIgrid as G2gd
 import numpy as np
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
+WACV = wx.ALIGN_CENTER_VERTICAL
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -311,26 +312,23 @@ def UpdateImageControls(G2frame,data,masks):
             G2plt.PlotExposedImage(G2frame,event=event)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)
-        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Type of image data: '),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Type of image data: '),0,WACV)
         typeSel = wx.ComboBox(parent=G2frame.dataDisplay,value=typeDict[data['type']],choices=typeList,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         typeSel.SetValue(data['type'])
         typeSel.Bind(wx.EVT_COMBOBOX, OnDataType)
-        comboSizer.Add(typeSel,0,wx.ALIGN_CENTER_VERTICAL)
-        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Color bar '),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(typeSel,0,WACV)
+        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Color bar '),0,WACV)
         colSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['color'],choices=colorList,
             style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
         colSel.Bind(wx.EVT_COMBOBOX, OnNewColorBar)
-        comboSizer.Add(colSel,0,wx.ALIGN_CENTER_VERTICAL)
-        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Azimuth offset '),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(colSel,0,WACV)
+        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Azimuth offset '),0,WACV)
         azmthOff = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.2f" % (data['azmthOff'])),
             style=wx.TE_PROCESS_ENTER)
         azmthOff.Bind(wx.EVT_TEXT_ENTER,OnAzmthOff)
         azmthOff.Bind(wx.EVT_KILL_FOCUS,OnAzmthOff)
-        comboSizer.Add(azmthOff,0,wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(azmthOff,0,WACV)
         return comboSizer
         
     def MaxSizer():
@@ -385,8 +383,7 @@ def UpdateImageControls(G2frame,data,masks):
         sqrtDeltZero = math.sqrt(data['range'][0][1]-max(0.0,data['range'][0][0]))
         DeltOne = data['range'][1][1]-max(0.0,data['range'][0][0])
         sqrtDeltOne = math.sqrt(DeltOne)
-        maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max intensity'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max intensity'),0,WACV)
         maxSel = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
             value=int(100*sqrtDeltOne/sqrtDeltZero))
         maxSizer.Add(maxSel,1,wx.EXPAND)
@@ -394,9 +391,8 @@ def UpdateImageControls(G2frame,data,masks):
         maxVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.0f'%(data['range'][1][1]))
         maxVal.Bind(wx.EVT_TEXT_ENTER,OnMaxVal)    
         maxVal.Bind(wx.EVT_KILL_FOCUS,OnMaxVal)
-        maxSizer.Add(maxVal,0,wx.ALIGN_CENTER_VERTICAL)    
-        maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min intensity'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        maxSizer.Add(maxVal,0,WACV)    
+        maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min intensity'),0,WACV)
         minSel = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
             value=int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
         maxSizer.Add(minSel,1,wx.EXPAND)
@@ -404,7 +400,7 @@ def UpdateImageControls(G2frame,data,masks):
         minVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.0f'%(data['range'][1][0]))
         minVal.Bind(wx.EVT_TEXT_ENTER,OnMinVal)    
         minVal.Bind(wx.EVT_KILL_FOCUS,OnMinVal)
-        maxSizer.Add(minVal,0,wx.ALIGN_CENTER_VERTICAL)
+        maxSizer.Add(minVal,0,WACV)
         return maxSizer
         
     def CalibCoeffSizer():
@@ -430,47 +426,41 @@ def UpdateImageControls(G2frame,data,masks):
             penVal.SetValue("%6.3f" % (data['DetDepth']))          #reset in case of error                      
             
         calibSizer = wx.FlexGridSizer(5,2,5,5)
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibration coefficients'),0,
-            wx.ALIGN_CENTER_VERTICAL)    
+        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibration coefficients'),0,WACV)    
         calibSizer.Add((5,0),0)        
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Beam center X,Y'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Beam center X,Y'),0,WACV)
         cent = data['center']
         centText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%7.2f,%7.2f" % (cent[0],cent[1])),style=wx.TE_READONLY)
         centText.SetBackgroundColour(VERY_LIGHT_GREY)
-        calibSizer.Add(centText,0,wx.ALIGN_CENTER_VERTICAL)        
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Wavelength'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        calibSizer.Add(centText,0,WACV)        
+        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Wavelength'),0,WACV)
         waveSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%7.5f" % (data['wavelength'])),
             style=wx.TE_PROCESS_ENTER)
         waveSel.Bind(wx.EVT_TEXT_ENTER,OnWavelength)
         waveSel.Bind(wx.EVT_KILL_FOCUS,OnWavelength)
-        calibSizer.Add(waveSel,0,wx.ALIGN_CENTER_VERTICAL)             
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Distance'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        calibSizer.Add(waveSel,0,WACV)             
+        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Distance'),0,WACV)
         distSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%8.2f"%(data['distance'])),style=wx.TE_READONLY)
         distSel.SetBackgroundColour(VERY_LIGHT_GREY)
-        calibSizer.Add(distSel,0,wx.ALIGN_CENTER_VERTICAL)
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Tilt angle'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        calibSizer.Add(distSel,0,WACV)
+        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Tilt angle'),0,WACV)
         tiltSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%9.3f"%(data['tilt'])),style=wx.TE_READONLY)
         tiltSel.SetBackgroundColour(VERY_LIGHT_GREY)
-        calibSizer.Add(tiltSel,0,wx.ALIGN_CENTER_VERTICAL)
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Tilt rotation'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        calibSizer.Add(tiltSel,0,WACV)
+        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Tilt rotation'),0,WACV)
         rotSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%9.3f"%(data['rotation'])),style=wx.TE_READONLY)
         rotSel.SetBackgroundColour(VERY_LIGHT_GREY)
-        calibSizer.Add(rotSel,0,wx.ALIGN_CENTER_VERTICAL)
+        calibSizer.Add(rotSel,0,WACV)
         if 'PWDR' in data['type']:
             penSel = wx.CheckBox(parent=G2frame.dataDisplay,label='Penetration?')
-            calibSizer.Add(penSel,0,wx.ALIGN_CENTER_VERTICAL)
+            calibSizer.Add(penSel,0,WACV)
             penSel.Bind(wx.EVT_CHECKBOX, OnDetDepthRef)
             penSel.SetValue(data['DetDepthRef'])
             penVal = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%6.5f" % (data['DetDepth'])),
                 style=wx.TE_PROCESS_ENTER)
             penVal.Bind(wx.EVT_TEXT_ENTER,OnDetDepth)
             penVal.Bind(wx.EVT_KILL_FOCUS,OnDetDepth)
-            calibSizer.Add(penVal,0,wx.ALIGN_CENTER_VERTICAL)             
+            calibSizer.Add(penVal,0,WACV)             
         
         return calibSizer
     
@@ -611,43 +601,39 @@ def UpdateImageControls(G2frame,data,masks):
             polaVal.SetValue('%.3f'%(data['PolaVal'][0]))
                            
         dataSizer = wx.FlexGridSizer(5,2,5,3)
-        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Integration coefficients'),0,
-            wx.ALIGN_CENTER_VERTICAL)    
+        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Integration coefficients'),0,WACV)    
         dataSizer.Add((5,0),0)
         if 'PWDR' in data['type']:
             binChoice = ['2-theta','q']
         elif 'SASD' in data['type']:
             binChoice = ['q','log(q)']
-        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Bin style: Constant step bins in'),0,
-            wx.ALIGN_CENTER_VERTICAL)            
+        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Bin style: Constant step bins in'),0,WACV)            
         binSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['binType'],choices=binChoice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
         binSel.Bind(wx.EVT_COMBOBOX, OnNewBinType)
-        dataSizer.Add(binSel,0,wx.ALIGN_CENTER_VERTICAL)
-        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Inner/Outer 2-theta'),0,
-            wx.ALIGN_CENTER_VERTICAL)            
+        dataSizer.Add(binSel,0,WACV)
+        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Inner/Outer 2-theta'),0,WACV)            
         IOtth = data['IOtth']
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         G2frame.InnerTth = wx.TextCtrl(parent=G2frame.dataDisplay,
             value=("%8.3f" % (IOtth[0])),style=wx.TE_PROCESS_ENTER)
         G2frame.InnerTth.Bind(wx.EVT_TEXT_ENTER,OnIOtth)
         G2frame.InnerTth.Bind(wx.EVT_KILL_FOCUS,OnIOtth)
-        littleSizer.Add(G2frame.InnerTth,0,wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(G2frame.InnerTth,0,WACV)
         G2frame.OuterTth = wx.TextCtrl(parent=G2frame.dataDisplay,
             value=("%8.2f" % (IOtth[1])),style=wx.TE_PROCESS_ENTER)
         G2frame.OuterTth.Bind(wx.EVT_TEXT_ENTER,OnIOtth)
         G2frame.OuterTth.Bind(wx.EVT_KILL_FOCUS,OnIOtth)
-        littleSizer.Add(G2frame.OuterTth,0,wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(G2frame.OuterTth,0,WACV)
         dataSizer.Add(littleSizer,0,)
-        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Start/End azimuth'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Start/End azimuth'),0,WACV)
         LRazim = data['LRazimuth']
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         G2frame.Lazim = wx.TextCtrl(parent=G2frame.dataDisplay,
             value=("%6d" % (LRazim[0])),style=wx.TE_PROCESS_ENTER)
         G2frame.Lazim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
         G2frame.Lazim.Bind(wx.EVT_KILL_FOCUS,OnLRazim)
-        littleSizer.Add(G2frame.Lazim,0,wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(G2frame.Lazim,0,WACV)
         G2frame.Razim = wx.TextCtrl(parent=G2frame.dataDisplay,
             value=("%6d" % (LRazim[1])),style=wx.TE_PROCESS_ENTER)
         G2frame.Razim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
@@ -656,78 +642,73 @@ def UpdateImageControls(G2frame,data,masks):
             G2frame.Razim.Enable(False)
             G2frame.Razim.SetBackgroundColour(VERY_LIGHT_GREY)
             G2frame.Razim.SetValue("%6d" % (LRazim[0]+360))
-        littleSizer.Add(G2frame.Razim,0,wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(G2frame.Razim,0,WACV)
         dataSizer.Add(littleSizer,0,)
-        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' No. 2-theta/azimuth bins'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' No. 2-theta/azimuth bins'),0,WACV)
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         outChan = wx.TextCtrl(parent=G2frame.dataDisplay,value=str(data['outChannels']),style=wx.TE_PROCESS_ENTER)
         outChan.Bind(wx.EVT_TEXT_ENTER,OnNumOutChans)
         outChan.Bind(wx.EVT_KILL_FOCUS,OnNumOutChans)
-        littleSizer.Add(outChan,0,wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(outChan,0,WACV)
         outAzim = wx.TextCtrl(parent=G2frame.dataDisplay,value=str(data['outAzimuths']),style=wx.TE_PROCESS_ENTER)
         outAzim.Bind(wx.EVT_TEXT_ENTER,OnNumOutAzms)
         outAzim.Bind(wx.EVT_KILL_FOCUS,OnNumOutAzms)
-        littleSizer.Add(outAzim,0,wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(outAzim,0,WACV)
         dataSizer.Add(littleSizer,0,)
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         samabs = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply sample absorption?')
-        dataSizer.Add(samabs,0,wx.ALIGN_CENTER_VERTICAL)
+        dataSizer.Add(samabs,0,WACV)
         samabs.Bind(wx.EVT_CHECKBOX, OnSamAbs)
         samabs.SetValue(data['SampleAbs'][1])
         if 'PWDR' in data['type']:
-            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='mu/R (0.00-2.0) '),0,
-                wx.ALIGN_CENTER_VERTICAL)
+            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='mu/R (0.00-2.0) '),0,WACV)
         elif 'SASD' in data['type']:
-            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='transmission '),0,
-                wx.ALIGN_CENTER_VERTICAL)
+            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='transmission '),0,WACV)
         samabsVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['SampleAbs'][0]),style=wx.TE_PROCESS_ENTER)            
         samabsVal.Bind(wx.EVT_TEXT_ENTER,OnSamAbsVal)
         samabsVal.Bind(wx.EVT_KILL_FOCUS,OnSamAbsVal)
-        littleSizer.Add(samabsVal,0,wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(samabsVal,0,WACV)
         dataSizer.Add(littleSizer,0,)
         if 'PWDR' in data['type']:
             littleSizer = wx.BoxSizer(wx.HORIZONTAL)
             oblique = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply detector absorption?')
-            dataSizer.Add(oblique,0,wx.ALIGN_CENTER_VERTICAL)
+            dataSizer.Add(oblique,0,WACV)
             oblique.Bind(wx.EVT_CHECKBOX, OnOblique)
             oblique.SetValue(data['Oblique'][1])
-            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Value (0.01-0.99)  '),0,
-                wx.ALIGN_CENTER_VERTICAL)
+            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Value (0.01-0.99)  '),0,WACV)
             obliqVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['Oblique'][0]),style=wx.TE_PROCESS_ENTER)
             obliqVal.Bind(wx.EVT_TEXT_ENTER,OnObliqVal)
             obliqVal.Bind(wx.EVT_KILL_FOCUS,OnObliqVal)
-            littleSizer.Add(obliqVal,0,wx.ALIGN_CENTER_VERTICAL)
+            littleSizer.Add(obliqVal,0,WACV)
             dataSizer.Add(littleSizer,0,)
         if 'SASD' in data['type']:
             littleSizer = wx.BoxSizer(wx.HORIZONTAL)
             setPolariz = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply polarization?')
-            dataSizer.Add(setPolariz,0,wx.ALIGN_CENTER_VERTICAL)
+            dataSizer.Add(setPolariz,0,WACV)
             setPolariz.Bind(wx.EVT_CHECKBOX, OnApplyPola)
             setPolariz.SetValue(data['PolaVal'][1])
-            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Value (0.001-0.999)  '),0,
-                wx.ALIGN_CENTER_VERTICAL)
+            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Value (0.001-0.999)  '),0,WACV)
             polaVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['PolaVal'][0]),
                 style=wx.TE_PROCESS_ENTER)
             polaVal.Bind(wx.EVT_TEXT_ENTER,OnPolaVal)
             polaVal.Bind(wx.EVT_KILL_FOCUS,OnPolaVal)
-            littleSizer.Add(polaVal,0,wx.ALIGN_CENTER_VERTICAL)
+            littleSizer.Add(polaVal,0,WACV)
             dataSizer.Add(littleSizer,0,)
         
         showLines = wx.CheckBox(parent=G2frame.dataDisplay,label='Show integration limits?')
-        dataSizer.Add(showLines,0,wx.ALIGN_CENTER_VERTICAL)
+        dataSizer.Add(showLines,0,WACV)
         showLines.Bind(wx.EVT_CHECKBOX, OnShowLines)
         showLines.SetValue(data['showLines'])
         fullIntegrate = wx.CheckBox(parent=G2frame.dataDisplay,label='Do full integration?')
-        dataSizer.Add(fullIntegrate,0,wx.ALIGN_CENTER_VERTICAL)
+        dataSizer.Add(fullIntegrate,0,WACV)
         fullIntegrate.Bind(wx.EVT_CHECKBOX, OnFullIntegrate)
         fullIntegrate.SetValue(data['fullIntegrate'])
         setDefault = wx.CheckBox(parent=G2frame.dataDisplay,label='Use as default for all images?')
-        dataSizer.Add(setDefault,0,wx.ALIGN_CENTER_VERTICAL)
+        dataSizer.Add(setDefault,0,WACV)
         setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)
         setDefault.SetValue(data['setDefault'])
         centerAzm = wx.CheckBox(parent=G2frame.dataDisplay,label='Azimuth at bin center?')
-        dataSizer.Add(centerAzm,0,wx.ALIGN_CENTER_VERTICAL)
+        dataSizer.Add(centerAzm,0,WACV)
         centerAzm.Bind(wx.EVT_CHECKBOX, OnCenterAzm)
         centerAzm.SetValue(data['centerAzm'])
         return dataSizer
@@ -758,31 +739,31 @@ def UpdateImageControls(G2frame,data,masks):
         
         backSizer = wx.FlexGridSizer(1,4,5,5)
 
-        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Dark image'),0,wx.ALIGN_CENTER_VERTICAL)
+        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Dark image'),0,WACV)
         Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
         darkImage = wx.ComboBox(parent=G2frame.dataDisplay,value=data['dark image'][0],choices=Choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         darkImage.Bind(wx.EVT_COMBOBOX,OnDarkImage)
         backSizer.Add(darkImage)
-        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' multiplier'),0,wx.ALIGN_CENTER_VERTICAL)
+        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' multiplier'),0,WACV)
         darkMult =  wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (data['dark image'][1])),
             style=wx.TE_PROCESS_ENTER)
         darkMult.Bind(wx.EVT_TEXT_ENTER,OnDarkMult)
         darkMult.Bind(wx.EVT_KILL_FOCUS,OnDarkMult)
-        backSizer.Add(darkMult,0,wx.ALIGN_CENTER_VERTICAL)
+        backSizer.Add(darkMult,0,WACV)
 
-        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background image'),0,wx.ALIGN_CENTER_VERTICAL)
+        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background image'),0,WACV)
         Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
         backImage = wx.ComboBox(parent=G2frame.dataDisplay,value=data['background image'][0],choices=Choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         backImage.Bind(wx.EVT_COMBOBOX,OnBackImage)
         backSizer.Add(backImage)
-        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' multiplier'),0,wx.ALIGN_CENTER_VERTICAL)
+        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' multiplier'),0,WACV)
         backMult =  wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (data['background image'][1])),
             style=wx.TE_PROCESS_ENTER)
         backMult.Bind(wx.EVT_TEXT_ENTER,OnBackMult)
         backMult.Bind(wx.EVT_KILL_FOCUS,OnBackMult)
-        backSizer.Add(backMult,0,wx.ALIGN_CENTER_VERTICAL)
+        backSizer.Add(backMult,0,WACV)
         return backSizer
                         
     def CalibSizer():
@@ -832,50 +813,45 @@ def UpdateImageControls(G2frame,data,masks):
     
         calibSizer = wx.FlexGridSizer(2,3,5,5)
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)    
-        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibrant '),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibrant '),0,WACV)
         calSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['calibrant'],choices=calList,
             style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
         calSel.Bind(wx.EVT_COMBOBOX, OnNewCalibrant)
-        comboSizer.Add(calSel,0,wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(calSel,0,WACV)
         calibSizer.Add(comboSizer,0)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)    
-        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calib lines to skip   '),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calib lines to skip   '),0,WACV)
         calibSkip  = wx.ComboBox(parent=G2frame.dataDisplay,value=str(data['calibskip']),choices=[str(i) for i in range(25)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         calibSkip.Bind(wx.EVT_COMBOBOX, OnCalibSkip)
-        comboSizer.Add(calibSkip,0,wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(calibSkip,0,WACV)
         calibSizer.Add(comboSizer,0)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)        
-        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min calib d-spacing '),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min calib d-spacing '),0,WACV)
         calibDmin = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.2f" % (data['calibdmin'])),
             style=wx.TE_PROCESS_ENTER)
         calibDmin.Bind(wx.EVT_TEXT_ENTER,OnCalibDmin)
         calibDmin.Bind(wx.EVT_KILL_FOCUS,OnCalibDmin)
-        comboSizer.Add(calibDmin,0,wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(calibDmin,0,WACV)
         calibSizer.Add(comboSizer,0)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)
-        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min ring I/Ib '),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Min ring I/Ib '),0,WACV)
         cutOff = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.1f" % (data['cutoff'])),
             style=wx.TE_PROCESS_ENTER)
         cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
         cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
-        comboSizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(cutOff,0,WACV)
         calibSizer.Add(comboSizer,0)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)
-        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Pixel search range '),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Pixel search range '),0,WACV)
         pixLimit = wx.ComboBox(parent=G2frame.dataDisplay,value=str(data['pixLimit']),choices=['1','2','5','10','15','20'],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         pixLimit.Bind(wx.EVT_COMBOBOX, OnPixLimit)
-        comboSizer.Add(pixLimit,0,wx.ALIGN_CENTER_VERTICAL)
+        comboSizer.Add(pixLimit,0,WACV)
         calibSizer.Add(comboSizer,0)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -902,15 +878,15 @@ def UpdateImageControls(G2frame,data,masks):
         
         gonioSizer = wx.BoxSizer(wx.HORIZONTAL)
         names = ['Omega','Chi','Phi']
-        gonioSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'Sample goniometer angles: '),0,wx.ALIGN_CENTER_VERTICAL)
+        gonioSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'Sample goniometer angles: '),0,WACV)
         for i,name in enumerate(names):
-            gonioSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,name),0,wx.ALIGN_CENTER_VERTICAL)
+            gonioSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,name),0,WACV)
             angle = wx.TextCtrl(G2frame.dataDisplay,-1,value='%8.2f'%(data['GonioAngles'][i]),
                 style=wx.TE_PROCESS_ENTER)
             angle.Bind(wx.EVT_TEXT_ENTER,OnGonioAngle)
             angle.Bind(wx.EVT_KILL_FOCUS,OnGonioAngle)
             ValObj[angle.GetId()] = i
-            gonioSizer.Add(angle,0,wx.ALIGN_CENTER_VERTICAL)
+            gonioSizer.Add(angle,0,WACV)
         return gonioSizer
         
 # Image Controls main code             
@@ -967,12 +943,11 @@ def UpdateImageControls(G2frame,data,masks):
     mainSizer.Add(DataSizer,0)
     mainSizer.Add((5,5),0)            
     mainSizer.Add(BackSizer(),0)
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibration controls:'),0,
-        wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibration controls:'),0,WACV)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(CalibSizer(),0,wx.ALIGN_CENTER_VERTICAL)
+    mainSizer.Add(CalibSizer(),0,WACV)
     mainSizer.Add((5,5),0)
-    mainSizer.Add(GonioSizer(),0,wx.ALIGN_CENTER_VERTICAL)   
+    mainSizer.Add(GonioSizer(),0,WACV)   
         
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
@@ -1211,39 +1186,34 @@ def UpdateMasks(G2frame,data):
     arcs = data['Arcs']                 #radius, start/end azimuth, thickness
     
     littleSizer = wx.FlexGridSizer(2,3,0,5)
-    littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Lower/Upper limits '),0,
-        wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Lower/Upper limits '),0,WACV)
     Text = wx.TextCtrl(G2frame.dataDisplay,value=("%8d" % (thresh[0][0])),style=wx.TE_READONLY)
-    littleSizer.Add(Text,0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(Text,0,WACV)
     Text.SetBackgroundColour(VERY_LIGHT_GREY)
     Text = wx.TextCtrl(G2frame.dataDisplay,value=("%8d" % (thresh[0][1])),style=wx.TE_READONLY)
-    littleSizer.Add(Text,0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(Text,0,WACV)
     Text.SetBackgroundColour(VERY_LIGHT_GREY)
-    littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Lower/Upper thresholds '),
-        0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Lower/Upper thresholds '),0,WACV)
     lowerThreshold = wx.TextCtrl(parent=G2frame.dataDisplay,
         value=("%8d" % (thresh[1][0])),style=wx.TE_PROCESS_ENTER)
     lowerThreshold.Bind(wx.EVT_TEXT_ENTER,OnThreshold)
     lowerThreshold.Bind(wx.EVT_KILL_FOCUS,OnThreshold)
-    littleSizer.Add(lowerThreshold,0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(lowerThreshold,0,WACV)
     upperThreshold = wx.TextCtrl(parent=G2frame.dataDisplay,
         value=("%8d" % (thresh[1][1])),style=wx.TE_PROCESS_ENTER)
     upperThreshold.Bind(wx.EVT_TEXT_ENTER,OnThreshold)
     upperThreshold.Bind(wx.EVT_KILL_FOCUS,OnThreshold)
-    littleSizer.Add(upperThreshold,0,wx.ALIGN_CENTER_VERTICAL)
+    littleSizer.Add(upperThreshold,0,WACV)
     mainSizer.Add(littleSizer,0,)
     spotIds = []
     delSpotId = []
     if spots:
         littleSizer = wx.FlexGridSizer(len(spots)+2,3,0,5)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Spot masks:'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Spot masks:'),0,WACV)
         littleSizer.Add((5,0),0)
         littleSizer.Add((5,0),0)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' position, mm'),0,
-            wx.ALIGN_CENTER_VERTICAL)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' diameter, mm'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' position, mm'),0,WACV)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' diameter, mm'),0,WACV)
         littleSizer.Add((5,0),0)
         for spot in spots:
             if spot:
@@ -1251,31 +1221,28 @@ def UpdateMasks(G2frame,data):
                 spotText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.2f,%.2f" % (x,y)),
                     style=wx.TE_READONLY)
                 spotText.SetBackgroundColour(VERY_LIGHT_GREY)
-                littleSizer.Add(spotText,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(spotText,0,WACV)
                 spotText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
                 spotDiameter = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.2f" % (d)),
                     style=wx.TE_PROCESS_ENTER)
-                littleSizer.Add(spotDiameter,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(spotDiameter,0,WACV)
                 spotDiameter.Bind(wx.EVT_TEXT_ENTER,OnSpotDiameter)
                 spotDiameter.Bind(wx.EVT_KILL_FOCUS,OnSpotDiameter)
                 spotIds.append(spotDiameter.GetId())
                 spotDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
                 spotDelete.Bind(wx.EVT_CHECKBOX,OnDeleteSpot)
                 delSpotId.append(spotDelete)
-                littleSizer.Add(spotDelete,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(spotDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     ringIds = []
     delRingId = []
     if rings:
         littleSizer = wx.FlexGridSizer(len(rings)+2,3,0,5)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Ring masks:'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Ring masks:'),0,WACV)
         littleSizer.Add((5,0),0)
         littleSizer.Add((5,0),0)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' 2-theta,deg'),0,
-            wx.ALIGN_CENTER_VERTICAL)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' thickness, deg'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' 2-theta,deg'),0,WACV)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' thickness, deg'),0,WACV)
         littleSizer.Add((5,0),0)
         for ring in rings:
             if ring:
@@ -1284,33 +1251,29 @@ def UpdateMasks(G2frame,data):
                     style=wx.TE_READONLY)
                 ringText.SetBackgroundColour(VERY_LIGHT_GREY)
                 ringText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
-                littleSizer.Add(ringText,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(ringText,0,WACV)
                 ringThick = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (thick)),
                     style=wx.TE_PROCESS_ENTER)
-                littleSizer.Add(ringThick,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(ringThick,0,WACV)
                 ringThick.Bind(wx.EVT_TEXT_ENTER,OnRingThickness)
                 ringThick.Bind(wx.EVT_KILL_FOCUS,OnRingThickness)
                 ringIds.append(ringThick.GetId())
                 ringDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
                 ringDelete.Bind(wx.EVT_CHECKBOX,OnDeleteRing)
                 delRingId.append(ringDelete)
-                littleSizer.Add(ringDelete,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(ringDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     arcIds = []
     delArcId = []
     if arcs:
         littleSizer = wx.FlexGridSizer(len(rings)+2,4,0,5)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Arc masks:'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Arc masks:'),0,WACV)
         littleSizer.Add((5,0),0)
         littleSizer.Add((5,0),0)
         littleSizer.Add((5,0),0)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' 2-theta,deg'),0,
-            wx.ALIGN_CENTER_VERTICAL)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' azimuth, deg'),0,
-            wx.ALIGN_CENTER_VERTICAL)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' thickness, deg'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' 2-theta,deg'),0,WACV)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' azimuth, deg'),0,WACV)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' thickness, deg'),0,WACV)
         littleSizer.Add((5,0),0)
         for arc in arcs:
             if arc:
@@ -1319,30 +1282,29 @@ def UpdateMasks(G2frame,data):
                     style=wx.TE_READONLY)
                 arcText.SetBackgroundColour(VERY_LIGHT_GREY)
                 arcText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
-                littleSizer.Add(arcText,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(arcText,0,WACV)
                 azmText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%d,%d" % (azimuth[0],azimuth[1])),
                     style=wx.TE_READONLY)
                 azmText.SetBackgroundColour(VERY_LIGHT_GREY)
                 azmText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
-                littleSizer.Add(azmText,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(azmText,0,WACV)
                 arcThick = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.3f" % (thick)),
                     style=wx.TE_PROCESS_ENTER)
-                littleSizer.Add(arcThick,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(arcThick,0,WACV)
                 arcThick.Bind(wx.EVT_TEXT_ENTER,OnArcThickness)
                 arcThick.Bind(wx.EVT_KILL_FOCUS,OnArcThickness)
                 arcIds.append(arcThick.GetId())
                 arcDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
                 arcDelete.Bind(wx.EVT_CHECKBOX,OnDeleteArc)
                 delArcId.append(arcDelete)
-                littleSizer.Add(arcDelete,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(arcDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     polyIds = []
     delPolyId = []
     delFrameId = []
     if polygons:
         littleSizer = wx.FlexGridSizer(len(polygons)+2,2,0,5)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Polygon masks:'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Polygon masks:'),0,WACV)
         littleSizer.Add((5,0),0)
         for polygon in polygons:
             if polygon:
@@ -1350,27 +1312,30 @@ def UpdateMasks(G2frame,data):
                 for x,y in polygon:
                     polyList.append("%.2f, %.2f"%(x,y))
                 polyText = wx.ComboBox(G2frame.dataDisplay,value=polyList[0],choices=polyList,style=wx.CB_READONLY)
-                littleSizer.Add(polyText,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(polyText,0,WACV)
                 polyDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
                 polyDelete.Bind(wx.EVT_CHECKBOX,OnDeletePoly)
                 delPolyId.append(polyDelete)
-                littleSizer.Add(polyDelete,0,wx.ALIGN_CENTER_VERTICAL)
+                littleSizer.Add(polyDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     if frame:
         littleSizer = wx.FlexGridSizer(3,2,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Frame mask:'),0,
-            wx.ALIGN_CENTER_VERTICAL)
+            WACV)
         littleSizer.Add((5,0),0)
         frameList = []
         for x,y in frame:
             frameList.append("%.2f, %.2f"%(x,y))
         frameText = wx.ComboBox(G2frame.dataDisplay,value=frameList[0],choices=frameList,style=wx.CB_READONLY)
-        littleSizer.Add(frameText,0,wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(frameText,0,WACV)
         frameDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
         frameDelete.Bind(wx.EVT_CHECKBOX,OnDeleteFrame)
         delFrameId.append(frameDelete)
-        littleSizer.Add(frameDelete,0,wx.ALIGN_CENTER_VERTICAL)
+        littleSizer.Add(frameDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
+    if (frame or polygons):
+        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,
+            label=' For frame and polygons: on plot RB vertex drag to move, LB vertex drag to insert'),0,WACV)
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
@@ -1528,23 +1493,23 @@ def UpdateStressStrain(G2frame,data):
             samZ.SetValue("%.3f" % (data['Sample z']))
                 
         samSizer = wx.BoxSizer(wx.HORIZONTAL)
-        samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Strain type: '),0,wx.ALIGN_CENTER_VERTICAL)
+        samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Strain type: '),0,WACV)
         strType = wx.ComboBox(G2frame.dataDisplay,value=data['Type'],choices=['True','Conventional'],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         strType.SetValue(data['Type'])
         strType.Bind(wx.EVT_COMBOBOX, OnStrainType)
-        samSizer.Add(strType,0,wx.ALIGN_CENTER_VERTICAL)
+        samSizer.Add(strType,0,WACV)
         
-        samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample phi: '),0,wx.ALIGN_CENTER_VERTICAL)
+        samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample phi: '),0,WACV)
         samPhi = wx.TextCtrl(G2frame.dataDisplay,-1,value=("%.3f" % (data['Sample phi'])),
             style=wx.TE_PROCESS_ENTER)
-        samSizer.Add(samPhi,0,wx.ALIGN_CENTER_VERTICAL)
+        samSizer.Add(samPhi,0,WACV)
         samPhi.Bind(wx.EVT_TEXT_ENTER,OnSamPhi)
         samPhi.Bind(wx.EVT_KILL_FOCUS,OnSamPhi)
-        samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample delta-z(mm): '),0,wx.ALIGN_CENTER_VERTICAL)
+        samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample delta-z(mm): '),0,WACV)
         samZ = wx.TextCtrl(G2frame.dataDisplay,-1,value=("%.3f" % (data['Sample z'])),
             style=wx.TE_PROCESS_ENTER)
-        samSizer.Add(samZ,0,wx.ALIGN_CENTER_VERTICAL)
+        samSizer.Add(samZ,0,WACV)
         samZ.Bind(wx.EVT_TEXT_ENTER,OnSamZ)
         samZ.Bind(wx.EVT_KILL_FOCUS,OnSamZ)
         return samSizer
@@ -1600,47 +1565,42 @@ def UpdateStressStrain(G2frame,data):
         delIndx = []    
         dzeroSizer = wx.FlexGridSizer(1,8,5,5)
         for id,dzero in enumerate(data['d-zero']):
-            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero #%d: '%(id))),
-                0,wx.ALIGN_CENTER_VERTICAL)
+            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero #%d: '%(id))),0,WACV)
             dZero = wx.TextCtrl(G2frame.dataDisplay,-1,value=('%.5f'%(dzero['Dset'])),
                 style=wx.TE_PROCESS_ENTER)
-            dzeroSizer.Add(dZero,0,wx.ALIGN_CENTER_VERTICAL)
+            dzeroSizer.Add(dZero,0,WACV)
             dZero.Bind(wx.EVT_TEXT_ENTER,OnDzero)
             dZero.Bind(wx.EVT_KILL_FOCUS,OnDzero)
             Indx[dZero.GetId()] = id
-            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero ave: %.5f'%(dzero['Dcalc']))),
-                0,wx.ALIGN_CENTER_VERTICAL)
+            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero ave: %.5f'%(dzero['Dcalc']))),0,WACV)
                 
-            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min ring I/Ib '),0,
-                wx.ALIGN_CENTER_VERTICAL)
+            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Min ring I/Ib '),0,WACV)
             cutOff = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.1f" % (dzero['cutoff'])),
                 style=wx.TE_PROCESS_ENTER)
             cutOff.Bind(wx.EVT_TEXT_ENTER,OnCutOff)
             cutOff.Bind(wx.EVT_KILL_FOCUS,OnCutOff)
             Indx[cutOff.GetId()] = id
-            dzeroSizer.Add(cutOff,0,wx.ALIGN_CENTER_VERTICAL)
+            dzeroSizer.Add(cutOff,0,WACV)
         
-            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Pixel search range '),0,
-                wx.ALIGN_CENTER_VERTICAL)
+            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Pixel search range '),0,WACV)
             pixLimit = wx.ComboBox(parent=G2frame.dataDisplay,value=str(dzero['pixLimit']),choices=['1','2','5','10','15','20'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             pixLimit.Bind(wx.EVT_COMBOBOX, OnPixLimit)
             Indx[pixLimit.GetId()] = id
-            dzeroSizer.Add(pixLimit,0,wx.ALIGN_CENTER_VERTICAL)                
+            dzeroSizer.Add(pixLimit,0,WACV)                
                 
             dzeroDelete = wx.CheckBox(parent=G2frame.dataDisplay,label='delete?')
             dzeroDelete.Bind(wx.EVT_CHECKBOX,OnDeleteDzero)
             delIndx.append(dzeroDelete)
-            dzeroSizer.Add(dzeroDelete,0,wx.ALIGN_CENTER_VERTICAL)
+            dzeroSizer.Add(dzeroDelete,0,WACV)
             
-            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' Strain tensor:')),
-                wx.ALIGN_CENTER_VERTICAL)
+            dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' Strain tensor:')),WACV)
             names = ['e11','e12','e22']
             for i in range(3):
-                dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=names[i]),0,wx.ALIGN_CENTER_VERTICAL)
+                dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=names[i]),0,WACV)
                 tensorElem = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(dzero['Emat'][i]),style=wx.TE_READONLY)
                 tensorElem.SetBackgroundColour(VERY_LIGHT_GREY)
-                dzeroSizer.Add(tensorElem,0,wx.ALIGN_CENTER_VERTICAL)
+                dzeroSizer.Add(tensorElem,0,WACV)
             dzeroSizer.Add((5,5),0)             
         return dzeroSizer
         

@@ -903,8 +903,45 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,data):
     
 def ModelFxn(Q,G,parmDict,SQfxn,args=[]):
     return SQfxn(Q,args)
-            
     
+def MakeDiamDist(DistName,nPoints,prec,pos,scale,shape):
+    
+    DistFuncs = {'Gauss':[GaussCume,0.02*scale,pos],
+        'LogNormal':[LogNormalCume,0.02*scale,pos],
+        'LSW':[LSWCume,0.3*pos,pos],
+        'Schulz-Zimm':[SchulzZimmCume,
+        4*np.sqrt(np.exp(shape**2)*(np.exp(shape**2)-1),pos+scale/np.exp(shape**2))]}
+    
+    step,mode = DistFuncs[DistName][1:]        
+    minXP = 1.  # min cutoff at least 1A
+    temp = mode
+    while True:     #stepwise search for min cutoff
+        temp -= step
+        temp = min(temp,minXP)
+        result = eval(DistFuncs[DistName][0](temp,pos,scale,shape))
+        if (result <= prec) or (temp<=minXP):
+            break
+    startX = temp
+    StartCumTgt = prec
+    if startX == minXP:
+        StartCumTgt = eval(DistFuncs[DistName][0](startX,pos,scale,shape))
+    maxXP = 1.e15   #very high max cutoff (could be 10^5)
+    temp = mode
+    while True:     #stepwise search for max cutoff
+        temp += step
+        temp = max(temp,maxXP)
+        result = eval(DistFuncs[DistName][0](temp,pos,scale,shape))
+        if (result >= 1.-prec) or (temp>=maxXP):
+            break
+    endX = temp
+    
+    #special one for "Power Law" (future) - see p 27 of IRL2_NLSQCalc.ipf for code
+    
+    Diam = np.array([startX+i*(endX-startX/(3*nPoints-1)) for i in range(3*nPoints)])
+    TCW = eval(DistFuncs[DistName][1](Diam,pos,scale,shape))
+    CumeTgts = np.array([StartCumTgt+i*(1-prec-StartCumTgt)/(nPoints-1) for i in range(nPoints)])
+    return np.interp(CumeTgts,Diam,TCW,0,0)
+
 ################################################################################
 #### MaxEnt testing stuff
 ################################################################################

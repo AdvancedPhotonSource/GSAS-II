@@ -138,8 +138,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
 ] = [wx.NewId() for item in range(9)]
 
-[ wxID_SELECTPHASE,
-] = [wx.NewId() for item in range(1)]
+[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,
+] = [wx.NewId() for item in range(2)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
@@ -2581,6 +2581,8 @@ class DataFrame(wx.Frame):
         self.ReflMenu.Append(menu=self.ReflEdit, title='Reflection List')
         self.SelectPhase = self.ReflEdit.Append(help='Select phase for reflection list',id=wxID_SELECTPHASE, 
             kind=wx.ITEM_NORMAL,text='Select phase')
+#        self.ReflMenu.Append(id=wxID_PWDHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot HKLs',
+#            help='Plot HKLs from powder pattern')      #can't work yet; no HKL Plot Controls!
         self.PostfillDataMenu()
         
         #SASD & REFL/ Substance editor

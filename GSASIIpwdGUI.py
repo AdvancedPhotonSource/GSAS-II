@@ -2311,6 +2311,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             finally:
                 dlg.Destroy()
             G2plt.PlotPatterns(G2frame)
+            
+        def OnPlotHKL(event):
+            PlotSngl(self,newPlot=True)           #this isn't going to work; no HKL plot controls! 
         
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
@@ -2323,6 +2326,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()    
         G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
+        G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)   #not work yet
         G2frame.dataFrame.SelectPhase.Enable(False)
         if len(data) > 1:
             G2frame.dataFrame.SelectPhase.Enable(True)
@@ -2666,13 +2670,20 @@ def UpdateModelsGrid(G2frame,data):
         
     def OnAddModel(event):
         if data['Current'] == 'Particle fit':
-            data['Particle']['Levels'].append({'Selected':'Volume',
-                'Controls':{'FormFact':'Sphere','DistType':'LogNormal','Material':'vacuum','FFargs':{}},
-                'LogNormal':{'Volume':[0.05,False],'MinSize':[10.,False],'Mean':[100.,False],'StdDev':[10.,False]},
-                'Gaussian':{'Volume':[0.05,False],'Mean':[100.,False],'StdDev':[10.,False],},
-                'LSW':{'Volume':[0.05,False],'Position':[100.0,False],},
-                'Schulz-Zimm':{'Volume':[0.05,False],'Mean':[100.,False],'StdDev':[10.,False],}
+            data['Particle']['Levels'].append({'Model':'Size Distr.',
+                'Controls':{'FormFact':'Sphere','DistType':'LogNormal','Material':'vacuum',
+                    'FFargs':{},'NumPoints':50,'Cutoff':0.01,'AutoDist':True,'logR':True,
+                    'RgCutoff':0,'k-Factor':1,'StrFact':'Dilute','Blink':False},
+                'LogNormal':{'Volume':[0.05,False],'MinSize':[10.,False],'Mean':[1000.,False],'StdDev':[0.5,False]},
+                'Gaussian':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
+                'LSW':{'Volume':[0.05,False],'Mean':[1000.0,False],},
+                'Schulz-Zimm':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
+                'Unified':{'G':[100,False],'Rg':[100,False],'B':[1,False],'P':[4,False],},
+                'Bragg':[{'PkType':'psVoigt','PkInt':[100,False],'PkPos':[0.1,False],
+                    'PkSig':[0.01,False],'PkGam':[0.01,False],'PkSkew':[1.,False],},],
                 })
+            G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
                     
         elif data['Current'] == 'Unified fit':
             data['Unified']['Levels'].append({'Type':'Guinier','GuinScale':[100,False],'RadGyr':[100,False],
@@ -2847,10 +2858,17 @@ def UpdateModelsGrid(G2frame,data):
             'UniRod':{'Length':[100.,False]},'UniRodAR':{'Aspect ratio':[1.0,False]},
             'UniDisk':{'Thickness':[100.,False]},
             'UniTube':{'Length':[100.,False],'Thickness':[10.,False]},}
-
+                
+        def RefreshPlots(Rbins=[],Dist=[]):
+            PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
+            if 'Powder' in PlotText:
+                G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            elif 'Size' in PlotText:
+                G2plt.PlotSASDSizeDist(G2frame,Rbins,Dist)
+                
         def OnValue(event):
             Obj = event.GetEventObject()
-            item,parm,selected,sldrObj = Indx[Obj.GetId()]
+            item,parm,sldrObj = Indx[Obj.GetId()]
             try:
                 value = float(Obj.GetValue())
                 if value <= 0.:
@@ -2859,20 +2877,11 @@ def UpdateModelsGrid(G2frame,data):
                 value = item[0]
             item[0] = value
             Obj.SetValue('%.3g'%(value))
-            if parm == selected: 
-                sldrObj.SetRange(1000.*(np.log10(value)-2),1000.*(np.log10(value)+2))
-                sldrObj.SetValue(1000.*np.log10(value))
+            sldrObj.SetRange(1000.*(np.log10(value)-2),1000.*(np.log10(value)+2))
+            sldrObj.SetValue(1000.*np.log10(value))
+            Rbins,Dist = G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            RefreshPlots(Rbins,Dist)
             
-        def AfterChange(invalid,value,tc):
-            if invalid:
-                return
-            parm,selected,sldrObj = Indx[tc.GetId()]
-            print 'Change',parm,value            
-            if parm == selected: 
-                sldrObj.SetRange(1000.*(np.log10(value)-2),1000.*(np.log10(value)+2))
-                sldrObj.SetValue(1000.*np.log10(value))
-            #want to update function & plot it here
-                
         def OnSelect(event):
             Obj = event.GetEventObject()
             item,key = Indx[Obj.GetId()]
@@ -2881,27 +2890,62 @@ def UpdateModelsGrid(G2frame,data):
                 if 'FormFact' in key:
                     item['FFargs'] = ffChoices[Obj.GetValue()]
                 wx.CallAfter(UpdateModelsGrid,G2frame,data)
+                Rbins,Dist = G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+                RefreshPlots(Rbins,Dist)
             
         def OnDelLevel(event):
             Obj = event.GetEventObject()
             item = Indx[Obj.GetId()]
             del data['Particle']['Levels'][item]
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
+            Rbins,Dist = G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            RefreshPlots(Rbins,Dist)
             
-        def OnRadio(event):
-            Obj = event.GetEventObject()
-            parm,item,key,sldrObj,parmObj = Indx[Obj.GetId()]
-            Indx[sldrObj.GetId()][2] = parmObj
-            item[key] = Obj.GetLabel()
-            value = parm[0]
-            sldrObj.SetRange(1000.*(np.log10(value)-2),1000.*(np.log10(value)+2))
-            sldrObj.SetValue(1000.*np.log10(value))
-            
-        def OnSlider(event):
+        def OnParmSlider(event):
             Obj = event.GetEventObject()
             item,key,pvObj = Indx[Obj.GetId()]
             item[key] = 10.**float(Obj.GetValue()/1000.)
             pvObj.SetValue('%.3g'%(item[key]))
+            Rbins,Dist = G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            RefreshPlots(Rbins,Dist)
+            
+        def SizeSizer():
+            sizeSizer = wx.FlexGridSizer(0,4,5,5)
+            sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Material: '),0,WACV)
+            matSel = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['Material'],
+                choices=Substances['Substances'].keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[matSel.GetId()] = [level['Controls'],'Material']
+            matSel.Bind(wx.EVT_COMBOBOX,OnSelect)        
+            sizeSizer.Add(matSel,0,WACV) #do neutron test here?
+            rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
+            contrast = rho**2-rhoMat**2
+            sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Resonant X-ray contrast: '),0,WACV)
+            sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label='  %.2f 10%scm%s'%(contrast,Pwr20,Pwrm4)),0,WACV)
+            sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Form Factor: '),0,WACV)
+            ffChoice = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['FormFact'],choices=ffChoices.keys(),
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[ffChoice.GetId()] = [level['Controls'],'FormFact']
+            ffChoice.Bind(wx.EVT_COMBOBOX,OnSelect)
+            sizeSizer.Add(ffChoice,0,WACV)
+            sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Distribution: '),0,WACV)
+            Distchoice = ['LogNormal','Gaussian','LSW','Schulz-Zimm']
+            distChoice = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['DistType'],choices=Distchoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[distChoice.GetId()] = [level['Controls'],'DistType']
+            distChoice.Bind(wx.EVT_COMBOBOX,OnSelect)
+            sizeSizer.Add(distChoice,0,WACV)
+            sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Num. radii: '),0,WACV)
+            radii = ['25','50','75','100','200']
+            nRadii = wx.ComboBox(G2frame.dataDisplay,value=str(level['Controls']['NumPoints']),choices=radii,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[nRadii.GetId()] = [level['Controls'],'NumPoints']
+            nRadii.Bind(wx.EVT_COMBOBOX,OnSelect)
+            sizeSizer.Add(nRadii,0,WACV)
+            sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' R dist. cutoff: '),0,WACV)
+            rCutoff = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,level['Controls'],'Cutoff',
+                min=0.001,max=0.1,typeHint=float)
+            sizeSizer.Add(rCutoff,0,WACV)
+            return sizeSizer
             
         Indx = {}
         partSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2916,7 +2960,7 @@ def UpdateModelsGrid(G2frame,data):
         topSizer.Add(matsel,0,WACV)
         topSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Volume fraction: '),0,WACV)
         volfrac = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data['Particle']['Matrix']['VolFrac'],0,
-                typeHint=float,OnLeave=AfterChange)
+                typeHint=float)
         topSizer.Add(volfrac,0,WACV)
         volVar = wx.CheckBox(G2frame.dataDisplay,label=' Refine?')
         volVar.SetValue(data['Particle']['Matrix']['VolFrac'][1])
@@ -2927,100 +2971,72 @@ def UpdateModelsGrid(G2frame,data):
         for ilev,level in enumerate(data['Particle']['Levels']):
             G2gd.HorizontalLine(partSizer,G2frame.dataDisplay)
             topLevel = wx.BoxSizer(wx.HORIZONTAL)
-            topLevel.Add(wx.StaticText(G2frame.dataDisplay,label=' Model level %d:           '%(ilev)),0,WACV)
+            topLevel.Add(wx.StaticText(G2frame.dataDisplay,label=' Model level %d: '%(ilev)),0,WACV)
+            modelChoice = ['Size Distr.','Unified','Bragg peak']
+            model = wx.ComboBox(G2frame.dataDisplay,value=level['Model'],choices=modelChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[model.GetId()] = [level,'Model']
+            model.Bind(wx.EVT_COMBOBOX,OnSelect)
+            topLevel.Add(model,0,WACV)
             delBtn = wx.Button(G2frame.dataDisplay,label=' Delete?')
             Indx[delBtn.GetId()] = ilev
             delBtn.Bind(wx.EVT_BUTTON,OnDelLevel)
             topLevel.Add(delBtn,0,WACV)
             partSizer.Add(topLevel,0)
-            ctrlSizer = wx.FlexGridSizer(0,4,5,5)
-            ctrlSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Form Factor: '),0,WACV)
-            ffChoice = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['FormFact'],choices=ffChoices.keys(),
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Indx[ffChoice.GetId()] = [level['Controls'],'FormFact']
-            ffChoice.Bind(wx.EVT_COMBOBOX,OnSelect)
-            ctrlSizer.Add(ffChoice,0,WACV)
-            ctrlSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Distribution: '),0,WACV)
-            Distchoice = ['LogNormal','Gaussian','LSW','Schulz-Zimm']   
-            distChoice = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['DistType'],choices=Distchoice,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Indx[distChoice.GetId()] = [level['Controls'],'DistType']
-            distChoice.Bind(wx.EVT_COMBOBOX,OnSelect)
-            ctrlSizer.Add(distChoice,0,WACV)
-            ctrlSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Material: '),0,WACV)
-            matSel = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['Material'],
-                choices=Substances['Substances'].keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Indx[matSel.GetId()] = [level['Controls'],'Material']
-            matSel.Bind(wx.EVT_COMBOBOX,OnSelect)        
-            ctrlSizer.Add(matSel,0,WACV) #do neutron test here?
-            rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
-            contrast = rho**2-rhoMat**2
-            ctrlSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Resonant X-ray contrast: '),0,WACV)
-            ctrlSizer.Add(wx.StaticText(G2frame.dataDisplay,label='  %.2f 10%scm%s'%(contrast,Pwr20,Pwrm4)),0,WACV)
+            if 'Size' in level['Model']:
+                partSizer.Add(SizeSizer())
             
-            partSizer.Add(ctrlSizer,0)
             lvlSizer = wx.BoxSizer(wx.HORIZONTAL)
-            parmSizer = wx.FlexGridSizer(0,3,5,5)
+            parmSizer = wx.FlexGridSizer(1,3,5,5)
+            parmSizer.AddGrowableCol(2,1)
+            parmSizer.SetFlexibleDirection(wx.HORIZONTAL)
             Parms = level[level['Controls']['DistType']]
             FFargs = level['Controls']['FFargs']
-            parm = level['Selected']
-            value = np.log10(Parms[parm][0])
-            valMinMax = [value-2,value+2]
-            valueSldr = wx.Slider(parent=G2frame.dataDisplay,minValue=1000.*valMinMax[0],
-                maxValue=1000.*valMinMax[1],style=wx.SL_VERTICAL|wx.SL_INVERSE,value=1000.*value)
-            sldrId = valueSldr.GetId()
             for iparm,parm in enumerate(list(Parms)):
-                if not iparm:
-                    radio = wx.RadioButton(G2frame.dataDisplay,label=parm,style=wx.RB_GROUP)
-                else:
-                    radio = wx.RadioButton(G2frame.dataDisplay,label=parm)
-                Indx[radio.GetId()] = [Parms[parm],level,'Selected',valueSldr]
-                radio.Bind(wx.EVT_RADIOBUTTON,OnRadio)
-                parmSizer.Add(radio,0,WACV)
+                parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? '+parm) 
+                parmVar.SetValue(Parms[parm][1])
+                parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
+                parmSizer.Add(parmVar,0,WACV)
                 parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(Parms[parm][0]),
                     style=wx.TE_PROCESS_ENTER)
                 parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
                 parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
 #                parmValue = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,Parms[parm],0,
 #                    typeHint=float,OnLeave=AfterChange)
-                Indx[parmValue.GetId()] = [Parms[parm],parm,level['Selected'],valueSldr]
-                Indx[radio.GetId()].append(parmValue)
-                if parm == level['Selected']:
-                    radio.SetValue(True)
-                    pvObj = parmValue
                 parmSizer.Add(parmValue,0,WACV)
-                parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine?') 
-                parmVar.SetValue(Parms[parm][1])
-                Indx[parmVar.GetId()] = [Parms[parm],1]
+                value = np.log10(Parms[parm][0])
+                valMinMax = [value-2,value+2]
+                parmSldr = wx.Slider(G2frame.dataDisplay,minValue=1000.*valMinMax[0],
+                    maxValue=1000.*valMinMax[1],value=1000.*value)
+                Indx[parmVar.GetId()] = [Parms[parm],parm]
+                Indx[parmValue.GetId()] = [Parms[parm],0,parmSldr]
+                Indx[parmSldr.GetId()] = [Parms[parm],0,parmValue]
+                parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
+                parmSizer.Add(parmSldr,1,wx.EXPAND)
+            for parm in list(FFargs):
+                parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? '+parm) 
+                parmVar.SetValue(FFargs[parm][1])
+                Indx[parmVar.GetId()] = [FFargs[parm],1]
                 parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
                 parmSizer.Add(parmVar,0,WACV)
-            for parm in list(FFargs):
-                radio = wx.RadioButton(G2frame.dataDisplay,label=parm)
-                Indx[radio.GetId()] = [FFargs[parm],level,'Selected',valueSldr]
-                radio.Bind(wx.EVT_RADIOBUTTON,OnRadio)
-                parmSizer.Add(radio,0,WACV)
                 parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(FFargs[parm][0]),
                     style=wx.TE_PROCESS_ENTER)
                 parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
                 parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
 #                parmValue = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,FFargs[parm],0,
 #                    typeHint=float,OnLeave=AfterChange)
-                Indx[parmValue.GetId()] = [FFargs[parm],parm,level['Selected'],valueSldr]
-                Indx[radio.GetId()].append(parmValue)
-                if parm == level['Selected']:
-                    radio.SetValue(True)
-                    pvObj = parmValue
                 parmSizer.Add(parmValue,0,WACV)
-                parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine?') 
-                parmVar.SetValue(FFargs[parm][1])
-                Indx[parmVar.GetId()] = [FFargs[parm],1]
-                parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
-                parmSizer.Add(parmVar,0,WACV)
-            lvlSizer.Add(parmSizer,0,)
-            Indx[sldrId] = [Parms[level['Selected']],0,pvObj]
-            valueSldr.Bind(wx.EVT_SCROLL,OnSlider)
-            lvlSizer.Add(valueSldr,1,wx.EXPAND)
-            partSizer.Add(lvlSizer,0,)
+                value = np.log10(FFargs[parm][0])
+                valMinMax = [value-2,value+2]
+                parmSldr = wx.Slider(G2frame.dataDisplay,minValue=1000.*valMinMax[0],
+                    maxValue=1000.*valMinMax[1],value=1000.*value)
+                Indx[parmVar.GetId()] = [Parms[parm],parm]
+                Indx[parmValue.GetId()] = [Parms[parm],0,parmSldr]
+                Indx[parmSldr.GetId()] = [FFargs[parm],0,parmValue]
+                parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
+                parmSizer.Add(parmSldr,1,wx.EXPAND)
+            lvlSizer.Add(parmSizer,1,wx.EXPAND)
+            partSizer.Add(lvlSizer,1,wx.EXPAND)
         return partSizer
         
     def UnifSizer():
@@ -3079,7 +3095,7 @@ def UpdateModelsGrid(G2frame,data):
             Status.SetStatusText('Size distribution by Interior-Point Gradient')
         mainSizer.Add(SizeSizer())        
     elif 'Particle' in data['Current']:
-        mainSizer.Add(PartSizer())
+        mainSizer.Add(PartSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
     elif 'Unified' in data['Current']:
         mainSizer.Add(UnifSizer())
     G2gd.HorizontalLine(mainSizer,G2frame.dataDisplay)    

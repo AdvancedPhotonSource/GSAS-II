@@ -1414,7 +1414,14 @@ def PlotStrain(G2frame,data,newPlot=False):
 ##### PlotSASDSizeDist
 ################################################################################
             
-def PlotSASDSizeDist(G2frame):
+def PlotSASDSizeDist(G2frame,Rbins=[],Dist=[]):
+    
+    def OnPageChanged(event):
+        PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
+        if 'Powder' in PlotText:
+            PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+        elif 'Size' in PlotText:
+            PlotSASDSizeDist(G2frame,Rbins,Dist)
     
     def OnMotion(event):
         xpos = event.xdata
@@ -1434,6 +1441,7 @@ def PlotSASDSizeDist(G2frame):
     except ValueError:
         newPlot = True
         Plot = G2frame.G2plotNB.addMpl('Size Distribution').gca()
+        G2frame.G2plotNB.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED,OnPageChanged)
         plotNum = G2frame.G2plotNB.plotList.index('Size Distribution')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
@@ -1448,7 +1456,10 @@ def PlotSASDSizeDist(G2frame):
     if data['Size']['logBins']:
         Plot.set_xscale("log",nonposy='mask')
         Plot.set_xlim([np.min(2.*Bins)/2.,np.max(2.*Bins)*2.])
-    Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='green')       #plot diameters
+    Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='white')       #plot diameters
+    if len(Rbins):
+        for i in range(len(Rbins)):
+            Plot.plot(2.*Rbins[i],Dist[i])       #plot diameters
     Page.canvas.draw()
 
 ################################################################################

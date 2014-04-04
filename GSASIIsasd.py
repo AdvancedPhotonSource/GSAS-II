@@ -97,12 +97,13 @@ def CylinderFF(Q,R,args):
     L = args[0]
     NP = 200
     alp = np.linspace(0,np.pi/2.,NP)
-    LBessArg = 0.5*L*(Q[:,np.newaxis]*np.cos(alp))
+    QL = Q[:,np.newaxis]*L
+    LBessArg = 0.5*QL[:,:,np.newaxis]**np.cos(alp)
     LBess = np.where(LBessArg<1.e-6,1.,np.sin(LBessArg)/LBessArg)
     QR = Q[:,np.newaxis]*R
     SBessArg = QR[:,:,np.newaxis]*np.sin(alp)
     SBess = np.where(SBessArg<1.e-6,0.5,scsp.jv(1,SBessArg)/SBessArg)
-    LSBess = LBess[:,np.newaxis,:]*SBess
+    LSBess = LBess*SBess
     return np.sqrt(2.*np.pi*np.sum(np.sin(alp)*LSBess**2,axis=2)/NP)
     
 def CylinderDFF(Q,L,args):
@@ -113,7 +114,7 @@ def CylinderDFF(Q,L,args):
     returns float: form factor
     '''
     R = args[0]
-    return CylinderFF(Q,R,2.*L)    
+    return CylinderFF(Q,R,args=[2.*L])    
     
 def CylinderARFF(Q,R,args): 
     ''' Compute form factor for cylinders - can use numpy arrays
@@ -123,7 +124,7 @@ def CylinderARFF(Q,R,args):
     returns float: form factor
     '''
     AR = args[0]
-    return CylinderFF(Q,R,2.*R*AR)    
+    return CylinderFF(Q,R,args=[2.*R*AR])    
     
 def UniSphereFF(Q,R,args=0):
     ''' Compute form factor for unified sphere - can use numpy arrays
@@ -164,7 +165,7 @@ def UniRodARFF(Q,R,args):
     returns float: form factor
     '''
     AR = args[0]
-    return UniRodFF(Q,R,[AR*R,])
+    return UniRodFF(Q,R,args=[AR*R,])
     
 def UniDiskFF(Q,R,args):
     ''' Compute form factor for unified disk - can use numpy arrays
@@ -203,7 +204,7 @@ def UniTubeFF(Q,R,args):
     B3 = np.pi/L
     QstV = Q[:,np.newaxis]/(scsp.erf(Q[:,np.newaxis]*Rg3/np.sqrt(6)))**3
     FF = np.exp(-Q[:,np.newaxis]**2*Rg3**2/3.)+(B3/QstV)*np.exp(-Q[:,np.newaxis]**2*R**2/3.)
-    QstV = Q/(scsp.erf(Q[:,np.newaxis]*R/np.sqrt(6)))**3
+    QstV = Q[:,np.newaxis]/(scsp.erf(Q[:,np.newaxis]*R/np.sqrt(6)))**3
     FF += (B2/QstV**2)*np.exp(-Q[:,np.newaxis]**2*T**2/3.)
     QstV = Q[:,np.newaxis]/(scsp.erf(Q[:,np.newaxis]*T/np.sqrt(6)))**3
     FF += B1/QstV**4
@@ -315,7 +316,7 @@ def UniTubeVol(R,args):
 #### Distribution functions & their cumulative fxns
 ################################################################################
 
-def LogNormalDist(x,pos,scale,shape):
+def LogNormalDist(x,pos,args):
     ''' Standard LogNormal distribution - numpy friendly on x axis
     ref: http://www.itl.nist.gov/div898/handbook/index.htm 1.3.6.6.9
     param float x: independent axis (can be numpy array)
@@ -324,9 +325,10 @@ def LogNormalDist(x,pos,scale,shape):
     param float shape: shape - (sigma of log(LogNormal))
     returns float: LogNormal distribution
     '''
+    scale,shape = args
     return np.exp(-np.log((x-pos)/scale)**2/(2.*shape**2))/(np.sqrt(2.*np.pi)*(x-pos)*shape)
     
-def GaussDist(x,pos,scale,shape):
+def GaussDist(x,pos,args):
     ''' Standard Normal distribution - numpy friendly on x axis
     param float x: independent axis (can be numpy array)
     param float pos: location of distribution
@@ -334,9 +336,10 @@ def GaussDist(x,pos,scale,shape):
     param float shape: not used
     returns float: Normal distribution
     '''
-    return (1./scale*np.sqrt(2.*np.pi))*np.exp(-(x-pos)**2/(2.*scale**2))
+    scale = args[0]
+    return (1./(scale*np.sqrt(2.*np.pi)))*np.exp(-(x-pos)**2/(2.*scale**2))
     
-def LSWDist(x,pos,scale,shape):
+def LSWDist(x,pos,args=[]):
     ''' Lifshitz-Slyozov-Wagner Ostwald ripening distribution - numpy friendly on x axis
     ref: 
     param float x: independent axis (can be numpy array)
@@ -347,9 +350,10 @@ def LSWDist(x,pos,scale,shape):
     '''
     redX = x/pos
     result = (81.*2**(-5/3.))*(redX**2*np.exp(-redX/(1.5-redX)))/((1.5-redX)**(11/3.)*(3.-redX)**(7/3.))
-    return result/pos
     
-def SchulzZimmDist(x,pos,scale,shape):
+    return np.nan_to_num(result/pos)
+    
+def SchulzZimmDist(x,pos,args):
     ''' Schulz-Zimm macromolecule distribution - numpy friendly on x axis
     ref: http://goldbook.iupac.org/S05502.html
     param float x: independent axis (can be numpy array)
@@ -358,14 +362,15 @@ def SchulzZimmDist(x,pos,scale,shape):
     param float shape: not used
     returns float: Schulz-Zimm distribution
     '''
+    scale = args[0]
     b = (2.*pos/scale)**2
     a = b/pos
     if b<70:    #why bother?
         return (a**(b+1.))*x**b*np.exp(-a*x)/scsp.gamma(b+1.)
     else:
-        return np.exp((b+1.)*np.log(a)-spsc.gammaln(b+1.)+b*np.log(x)-(a*x))
+        return np.exp((b+1.)*np.log(a)-scsp.gammaln(b+1.)+b*np.log(x)-(a*x))
            
-def LogNormalCume(x,pos,scale,shape):
+def LogNormalCume(x,pos,args):
     ''' Standard LogNormal cumulative distribution - numpy friendly on x axis
     ref: http://www.itl.nist.gov/div898/handbook/index.htm 1.3.6.6.9
     param float x: independent axis (can be numpy array)
@@ -374,9 +379,11 @@ def LogNormalCume(x,pos,scale,shape):
     param float shape: shape parameter
     returns float: LogNormal cumulative distribution
     '''
-    return scsp.erf(np.log((x-pos)/shape)/(np.sqrt(2.)*scale)+1.)/2.
+    scale,shape = args
+    lredX = np.log((x-pos)/scale)
+    return (scsp.erf((lredX/shape)/np.sqrt(2.))+1.)/2.
     
-def GaussCume(x,pos,scale,shape):
+def GaussCume(x,pos,args):
     ''' Standard Normal cumulative distribution - numpy friendly on x axis
     param float x: independent axis (can be numpy array)
     param float pos: location of distribution
@@ -384,9 +391,11 @@ def GaussCume(x,pos,scale,shape):
     param float shape: not used
     returns float: Normal cumulative distribution
     '''
-    return scsp.erf((x-pos)/(np.sqrt(2.)*scale)+1.)/2.
+    scale = args[0]
+    redX = (x-pos)/scale
+    return (scsp.erf(redX/np.sqrt(2.))+1.)/2.
     
-def LSWCume(x,pos,scale,shape):
+def LSWCume(x,pos,args=[]):
     ''' Lifshitz-Slyozov-Wagner Ostwald ripening cumulative distribution - numpy friendly on x axis
     param float x: independent axis (can be numpy array)
     param float pos: location of distribution
@@ -394,10 +403,15 @@ def LSWCume(x,pos,scale,shape):
     param float shape: not used
     returns float: LSW cumulative distribution
     '''
-    nP = int(np.ceil(x/30+30))
-    return []
+    nP = 500
+    xMin,xMax = [0.,2.*pos]
+    X = np.linspace(xMin,xMax,nP,True)
+    fxn = LSWDist(X,pos)
+    mat = np.outer(np.ones(nP),fxn)
+    cume = np.sum(np.tril(mat),axis=1)/np.sum(fxn)
+    return np.interp(x,X,cume,0,1)
     
-def SchulzZimmCume(x,pos,scale,shape):
+def SchulzZimmCume(x,pos,args):
     ''' Schulz-Zimm cumulative distribution - numpy friendly on x axis
     param float x: independent axis (can be numpy array)
     param float pos: location of distribution
@@ -405,6 +419,16 @@ def SchulzZimmCume(x,pos,scale,shape):
     param float shape: not used
     returns float: Normal distribution
     '''
+    scale = args[0]
+    nP = 500
+    xMin = np.max([0.,pos-4.*scale])
+    xMax = np.min([pos+4.*scale,1.e5])
+    X = np.linspace(xMin,xMax,nP,True)
+    fxn = LSWDist(X,pos)
+    mat = np.outer(np.ones(nP),fxn)
+    cume = np.sum(np.tril(mat),axis=1)/np.sum(fxn)
+    return np.interp(x,X,cume,0,1)
+    
     return []
     
           
@@ -901,46 +925,95 @@ def UnifiedFxn(Q,G,Rg,B,Rgcf,P,SQfxn,args=[]):
 def ModelFit(Profile,ProfDict,Limits,Substances,Sample,data):
     print 'do model fit'
     
-def ModelFxn(Q,G,parmDict,SQfxn,args=[]):
-    return SQfxn(Q,args)
+def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
+    shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],
+        'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
+        'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
+        'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol]}
+    partData = sasdData['Particle']
+    rhoMat = Substances['Substances'][partData['Matrix']['Name']].get('XAnom density',0.0)
+    matFrac = partData['Matrix']['VolFrac'] #[value,flag]        
+    Scale = Sample['Scale']     #[value,flag]
+    Back = sasdData['Back']
+    Q,Io,wt,Ic,Ib = Profile[:5]
+    Qmin = Limits[1][0]
+    Qmax = Limits[1][1]
+    wtFactor = ProfDict['wtFactor']
+    Ibeg = np.searchsorted(Q,Qmin)
+    Ifin = np.searchsorted(Q,Qmax)
+    Ib[:] = Back[0]
+    Ic[:] = 0
+    Ic[Ibeg:Ifin] += Back[0]
+    Rbins = []
+    Dist = []
+    for level in partData['Levels']:
+        controls = level['Controls']
+        FFfxn = shapes[controls['FormFact']][0]
+        Volfxn = shapes[controls['FormFact']][1]
+        FFargs = []
+        for item in ['Aspect ratio','Length','Thickness','Diameter',]:
+            if item in controls['FFargs']: 
+                FFargs.append(controls['FFargs'][item][0])
+        distFxn = controls['DistType']
+        rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
+        contrast = rho**2-rhoMat**2
+        parmDict = level[controls['DistType']]
+        rBins,dist = MakeDiamDist(controls['DistType'],controls['NumPoints'],controls['Cutoff'],parmDict)
+        Gmat = G_matrix(Q[Ibeg:Ifin],rBins,contrast,FFfxn,Volfxn,FFargs)
+        dist *= level[distFxn]['Volume'][0]
+        Ic[Ibeg:Ifin] += np.dot(Gmat.T,dist)*100.
+        Rbins.append(rBins)
+        Dist.append(dist)
+        
+    return Rbins,Dist
+             
     
-def MakeDiamDist(DistName,nPoints,prec,pos,scale,shape):
+def MakeDiamDist(DistName,nPoints,cutoff,parmDict):
     
-    DistFuncs = {'Gauss':[GaussCume,0.02*scale,pos],
-        'LogNormal':[LogNormalCume,0.02*scale,pos],
-        'LSW':[LSWCume,0.3*pos,pos],
-        'Schulz-Zimm':[SchulzZimmCume,
-        4*np.sqrt(np.exp(shape**2)*(np.exp(shape**2)-1),pos+scale/np.exp(shape**2))]}
-    
-    step,mode = DistFuncs[DistName][1:]        
-    minXP = 1.  # min cutoff at least 1A
-    temp = mode
-    while True:     #stepwise search for min cutoff
-        temp -= step
-        temp = min(temp,minXP)
-        result = eval(DistFuncs[DistName][0](temp,pos,scale,shape))
-        if (result <= prec) or (temp<=minXP):
-            break
-    startX = temp
-    StartCumTgt = prec
-    if startX == minXP:
-        StartCumTgt = eval(DistFuncs[DistName][0](startX,pos,scale,shape))
-    maxXP = 1.e15   #very high max cutoff (could be 10^5)
-    temp = mode
-    while True:     #stepwise search for max cutoff
-        temp += step
-        temp = max(temp,maxXP)
-        result = eval(DistFuncs[DistName][0](temp,pos,scale,shape))
-        if (result >= 1.-prec) or (temp>=maxXP):
-            break
-    endX = temp
-    
-    #special one for "Power Law" (future) - see p 27 of IRL2_NLSQCalc.ipf for code
-    
-    Diam = np.array([startX+i*(endX-startX/(3*nPoints-1)) for i in range(3*nPoints)])
-    TCW = eval(DistFuncs[DistName][1](Diam,pos,scale,shape))
-    CumeTgts = np.array([StartCumTgt+i*(1-prec-StartCumTgt)/(nPoints-1) for i in range(nPoints)])
-    return np.interp(CumeTgts,Diam,TCW,0,0)
+    if 'LogNormal' in DistName:
+        distFxn = 'LogNormalDist'
+        cumeFxn = 'LogNormalCume'
+        pos = parmDict['MinSize'][0]
+        args = [parmDict['Mean'][0],parmDict['StdDev'][0]]
+        step = 4.*np.sqrt(np.exp(parmDict['StdDev'][0]**2)*(np.exp(parmDict['StdDev'][0]**2)-1.))
+        mode = parmDict['MinSize'][0]+parmDict['Mean'][0]/np.exp(parmDict['StdDev'][0]**2)
+        minX = 1. #pos
+        maxX = 1.e4 #np.min([mode+nPoints*step*40,1.e5])
+    elif 'Gauss' in DistName:
+        distFxn = 'GaussDist'
+        cumeFxn = 'GaussCume'
+        pos = parmDict['Mean'][0]
+        args = [parmDict['StdDev'][0]]
+        step = 0.02*parmDict['StdDev'][0]
+        mode = parmDict['Mean'][0]
+        minX = np.max([mode-4.*parmDict['StdDev'][0],1.])
+        maxX = np.min([mode+4.*parmDict['StdDev'][0],1.e5])
+    elif 'LSW' in DistName:
+        distFxn = 'LSWDist'
+        cumeFxn = 'LSWCume'
+        pos = parmDict['Mean'][0]
+        args = []
+        minX,maxX = [0.,2.*pos]
+    elif 'Schulz' in DistName:
+        distFxn = 'SchulzZimmDist'
+        cumeFxn = 'SchulzZimmCume'
+        pos = parmDict['Mean'][0]
+        args = [parmDict['StdDev'][0]]
+        minX = np.max([1.,pos-4.*parmDict['StdDev'][0]])
+        maxX = np.min([pos+4.*parmDict['StdDev'][0],1.e5])
+    nP = 500
+    X = np.linspace(minX,maxX,nP,True)
+    cume = eval(cumeFxn+'(X,pos,args)')
+    Imin = np.searchsorted(cume,cutoff)
+    Imax = np.min([np.searchsorted(cume,1-cutoff),nP-1])
+    startX =  X[Imin]
+    endX = X[Imax]
+#    Diam = np.linspace(startX,endX,3*nPoints,True)
+    Diam = np.logspace(0.,5.,500,True)
+    TCW = eval(cumeFxn+'(Diam,pos,args)')
+    CumeTgts = np.linspace(cutoff,(1.-cutoff),nPoints,True)
+    rBins = np.interp(CumeTgts,TCW,Diam,0,0)
+    return rBins,eval(distFxn+'(rBins,pos,args)')
 
 ################################################################################
 #### MaxEnt testing stuff

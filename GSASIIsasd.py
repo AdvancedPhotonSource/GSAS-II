@@ -25,6 +25,7 @@ import scipy.special as scsp
 import scipy.interpolate as si
 import scipy.stats as st
 import scipy.optimize as so
+#import pdb
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 1186 $")
@@ -930,6 +931,7 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
         'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
         'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
         'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol]}
+#    pdb.set_trace()
     partData = sasdData['Particle']
     rhoMat = Substances['Substances'][partData['Matrix']['Name']].get('XAnom density',0.0)
     matFrac = partData['Matrix']['VolFrac'] #[value,flag]        
@@ -958,15 +960,13 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
         rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
         contrast = rho**2-rhoMat**2
         parmDict = level[controls['DistType']]
-        rBins,dist = MakeDiamDist(controls['DistType'],controls['NumPoints'],controls['Cutoff'],parmDict)
-        Gmat = G_matrix(Q[Ibeg:Ifin],rBins,contrast,FFfxn,Volfxn,FFargs)
+        rBins,dBins,dist = MakeDiamDist(controls['DistType'],controls['NumPoints'],controls['Cutoff'],parmDict)
+        Gmat = 2.*G_matrix(Q[Ibeg:Ifin],rBins,contrast,FFfxn,Volfxn,FFargs).T*dBins
         dist *= level[distFxn]['Volume'][0]
-        Ic[Ibeg:Ifin] += np.dot(Gmat.T,dist)*100.
+        Ic[Ibeg:Ifin] += np.dot(Gmat,dist)
         Rbins.append(rBins)
         Dist.append(dist)
-        
     return Rbins,Dist
-             
     
 def MakeDiamDist(DistName,nPoints,cutoff,parmDict):
     
@@ -1011,9 +1011,11 @@ def MakeDiamDist(DistName,nPoints,cutoff,parmDict):
 #    Diam = np.linspace(startX,endX,3*nPoints,True)
     Diam = np.logspace(0.,5.,500,True)
     TCW = eval(cumeFxn+'(Diam,pos,args)')
-    CumeTgts = np.linspace(cutoff,(1.-cutoff),nPoints,True)
+    CumeTgts = np.linspace(cutoff,(1.-cutoff),nPoints+1,True)
     rBins = np.interp(CumeTgts,TCW,Diam,0,0)
-    return rBins,eval(distFxn+'(rBins,pos,args)')
+    dBins = np.diff(rBins)
+    rBins = rBins[:-1]+dBins/2.
+    return rBins,dBins,eval(distFxn+'(rBins,pos,args)')
 
 ################################################################################
 #### MaxEnt testing stuff

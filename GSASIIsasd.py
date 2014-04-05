@@ -1002,14 +1002,7 @@ def MakeDiamDist(DistName,nPoints,cutoff,parmDict):
         minX = np.max([1.,pos-4.*parmDict['StdDev'][0]])
         maxX = np.min([pos+4.*parmDict['StdDev'][0],1.e5])
     nP = 500
-    X = np.linspace(minX,maxX,nP,True)
-    cume = eval(cumeFxn+'(X,pos,args)')
-    Imin = np.searchsorted(cume,cutoff)
-    Imax = np.min([np.searchsorted(cume,1-cutoff),nP-1])
-    startX =  X[Imin]
-    endX = X[Imax]
-#    Diam = np.linspace(startX,endX,3*nPoints,True)
-    Diam = np.logspace(0.,5.,500,True)
+    Diam = np.logspace(0.,5.,nP,True)
     TCW = eval(cumeFxn+'(Diam,pos,args)')
     CumeTgts = np.linspace(cutoff,(1.-cutoff),nPoints+1,True)
     rBins = np.interp(CumeTgts,TCW,Diam,0,0)

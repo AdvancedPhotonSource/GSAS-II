@@ -2853,18 +2853,18 @@ def UpdateModelsGrid(G2frame,data):
     def PartSizer():
         
         ffChoices = {'Sphere':{},'Spheroid':{'Aspect ratio':[1.0,False]},
-            'Cylinder':{'Length':[100.,False]},'CylinderD':{'Diameter':[100.,False]},
-            'CylinderAR':{'Aspect ratio':[1.0,False]},'UniSphere':{},
-            'UniRod':{'Length':[100.,False]},'UniRodAR':{'Aspect ratio':[1.0,False]},
-            'UniDisk':{'Thickness':[100.,False]},
-            'UniTube':{'Length':[100.,False],'Thickness':[10.,False]},}
+            'Cylinder':{'Length':[100.,False]},'Cylinder diam':{'Diameter':[100.,False]},
+            'Cylinder AR':{'Aspect ratio':[1.0,False]},'Unified sphere':{},
+            'Unified rod':{'Length':[100.,False]},'Unified rod AR':{'Aspect ratio':[1.0,False]},
+            'Unified disk':{'Thickness':[100.,False]},
+            'Unified tube':{'Length':[100.,False],'Thickness':[10.,False]},}
                 
-        def RefreshPlots(Rbins=[],Dist=[]):
+        def RefreshPlots():
             PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
             if 'Powder' in PlotText:
                 G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
             elif 'Size' in PlotText:
-                G2plt.PlotSASDSizeDist(G2frame,Rbins,Dist)
+                G2plt.PlotSASDSizeDist(G2frame)
                 
         def OnValue(event):
             Obj = event.GetEventObject()
@@ -2879,8 +2879,8 @@ def UpdateModelsGrid(G2frame,data):
             Obj.SetValue('%.3g'%(value))
             sldrObj.SetRange(1000.*(np.log10(value)-2),1000.*(np.log10(value)+2))
             sldrObj.SetValue(1000.*np.log10(value))
-            Rbins,Dist = G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
-            RefreshPlots(Rbins,Dist)
+            G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            RefreshPlots()
             
         def OnSelect(event):
             Obj = event.GetEventObject()
@@ -2889,25 +2889,25 @@ def UpdateModelsGrid(G2frame,data):
             if 'Refine' not in Obj.GetLabel():
                 if 'FormFact' in key:
                     item['FFargs'] = ffChoices[Obj.GetValue()]
+                G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+                RefreshPlots()
                 wx.CallAfter(UpdateModelsGrid,G2frame,data)
-                Rbins,Dist = G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
-                RefreshPlots(Rbins,Dist)
             
         def OnDelLevel(event):
             Obj = event.GetEventObject()
             item = Indx[Obj.GetId()]
             del data['Particle']['Levels'][item]
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
-            Rbins,Dist = G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
-            RefreshPlots(Rbins,Dist)
+            G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            RefreshPlots()
             
         def OnParmSlider(event):
             Obj = event.GetEventObject()
             item,key,pvObj = Indx[Obj.GetId()]
             item[key] = 10.**float(Obj.GetValue()/1000.)
             pvObj.SetValue('%.3g'%(item[key]))
-            Rbins,Dist = G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
-            RefreshPlots(Rbins,Dist)
+            G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            RefreshPlots()
             
         def SizeSizer():
             sizeSizer = wx.FlexGridSizer(0,4,5,5)
@@ -2993,7 +2993,7 @@ def UpdateModelsGrid(G2frame,data):
             Parms = level[level['Controls']['DistType']]
             FFargs = level['Controls']['FFargs']
             for iparm,parm in enumerate(list(Parms)):
-                parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? '+parm) 
+                parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? Dist '+parm) 
                 parmVar.SetValue(Parms[parm][1])
                 parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
                 parmSizer.Add(parmVar,0,WACV)
@@ -3014,7 +3014,7 @@ def UpdateModelsGrid(G2frame,data):
                 parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
                 parmSizer.Add(parmSldr,1,wx.EXPAND)
             for parm in list(FFargs):
-                parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? '+parm) 
+                parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? FF '+parm) 
                 parmVar.SetValue(FFargs[parm][1])
                 Indx[parmVar.GetId()] = [FFargs[parm],1]
                 parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
@@ -3030,8 +3030,8 @@ def UpdateModelsGrid(G2frame,data):
                 valMinMax = [value-2,value+2]
                 parmSldr = wx.Slider(G2frame.dataDisplay,minValue=1000.*valMinMax[0],
                     maxValue=1000.*valMinMax[1],value=1000.*value)
-                Indx[parmVar.GetId()] = [Parms[parm],parm]
-                Indx[parmValue.GetId()] = [Parms[parm],0,parmSldr]
+                Indx[parmVar.GetId()] = [FFargs[parm],parm]
+                Indx[parmValue.GetId()] = [FFargs[parm],0,parmSldr]
                 Indx[parmSldr.GetId()] = [FFargs[parm],0,parmValue]
                 parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
                 parmSizer.Add(parmSldr,1,wx.EXPAND)

@@ -1414,14 +1414,14 @@ def PlotStrain(G2frame,data,newPlot=False):
 ##### PlotSASDSizeDist
 ################################################################################
             
-def PlotSASDSizeDist(G2frame,Rbins=[],Dist=[]):
+def PlotSASDSizeDist(G2frame):
     
     def OnPageChanged(event):
         PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
         if 'Powder' in PlotText:
             PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         elif 'Size' in PlotText:
-            PlotSASDSizeDist(G2frame,Rbins,Dist)
+            PlotSASDSizeDist(G2frame)
     
     def OnMotion(event):
         xpos = event.xdata

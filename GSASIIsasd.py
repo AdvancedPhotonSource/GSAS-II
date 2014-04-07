@@ -166,7 +166,7 @@ def UniRodARFF(Q,R,args):
     returns float: form factor
     '''
     AR = args[0]
-    return UniRodFF(Q,R,args=[AR*R,])
+    return UniRodFF(Q,R,args=[2.*AR*R,])
     
 def UniDiskFF(Q,R,args):
     ''' Compute form factor for unified disk - can use numpy arrays
@@ -312,7 +312,7 @@ def UniTubeVol(R,args):
     param array args: [float L,T]: tube length & wall thickness(A)
     returns float: volume (A^3) of tube wall
     '''
-    L,T = arg[:2]
+    L,T = args[:2]
     return CylinderVol(R,[L,])-CylinderVol(R-T,[L,])
     
 ################################################################################
@@ -867,7 +867,8 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
     shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],
         'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
         'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
-        'Unified disk':[UniDiskFF,UniDiskVol]}
+        'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol],
+        'Cylinder diam':[CylinderDFF,CylinderDVol]}
     Shape = data['Size']['Shape'][0]
     Parms = data['Size']['Shape'][1:]
     if data['Size']['logBins']:
@@ -932,7 +933,8 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
     shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],
         'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
         'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
-        'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol]}
+        'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol],
+        'Unified tube':[UniTubeFF,UniTubeVol],'Cylinder diam':[CylinderDFF,CylinderDVol]}
 #    pdb.set_trace()
     partData = sasdData['Particle']
     rhoMat = Substances['Substances'][partData['Matrix']['Name']].get('XAnom density',0.0)
@@ -969,7 +971,6 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
         Rbins.append(rBins)
         Dist.append(dist)
     sasdData['Size Calc'] = [Rbins,Dist]
-    return Rbins,Dist
     
 def MakeDiamDist(DistName,nPoints,cutoff,parmDict):
     

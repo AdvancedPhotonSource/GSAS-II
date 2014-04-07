@@ -1457,7 +1457,8 @@ def PlotSASDSizeDist(G2frame,Rbins=[],Dist=[]):
         Plot.set_xscale("log",nonposy='mask')
         Plot.set_xlim([np.min(2.*Bins)/2.,np.max(2.*Bins)*2.])
     Plot.bar(2.*Bins-Dbins,BinMag,2.*Dbins,facecolor='white')       #plot diameters
-    if len(Rbins):
+    if 'Size Calc' in data:
+        Rbins,Dist = data['Size Calc']
         for i in range(len(Rbins)):
             Plot.plot(2.*Rbins[i],Dist[i])       #plot diameters
     Page.canvas.draw()

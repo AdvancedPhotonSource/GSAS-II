@@ -189,7 +189,9 @@ def UniDiskFF(Q,R,args):
     return np.sqrt(FF)
     
 def UniTubeFF(Q,R,args):
-    ''' Compute form factor for unified disk - can use numpy arrays
+    ''' Compute form factor for unified tube - can use numpy arrays
+    assumes that core of tube is same as the matrix/solvent so contrast
+    is from tube wall vs matrix
     param float Q: Q value array (A-1)
     param float R: cylinder radius (A)
     param array args: [float L,T]: tube length & wall thickness(A)
@@ -966,6 +968,7 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
         Ic[Ibeg:Ifin] += np.dot(Gmat,dist)
         Rbins.append(rBins)
         Dist.append(dist)
+    sasdData['Size Calc'] = [Rbins,Dist]
     return Rbins,Dist
     
 def MakeDiamDist(DistName,nPoints,cutoff,parmDict):

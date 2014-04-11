@@ -35,7 +35,7 @@ import GSASIIElem as G2elem
 import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
 import GSASIImath as G2mth
-import pypowder as pyd
+import GSASIIpwd as G2pwd
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -908,21 +908,6 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
     data['Size']['Distribution'] = [Bins,Dbins,BinMag/(2.*Dbins)]
         
 ################################################################################
-#### Unified fit
-################################################################################
-
-def UnifiedFit(Profile,ProfDict,Limits,Substances,Sample,data):
-    print 'do unified fit'
-    
-def UnifiedFxn(Q,G,Rg,B,Rgcf,P,SQfxn,args=[]):
-    termA = G*np.exp(-((Q*Rg)**2)/3.)
-    termB = B*np.exp(-((Q*Rgcf)**2)/3.)
-    termC = (scsp.erf(Q*Rg/np.sqrt(6))**3/Q)**P
-    return SQfxn(Q,args)*termA+(termB*termC)
-    
-
-
-################################################################################
 #### Modelling
 ################################################################################
 
@@ -954,22 +939,62 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
     Dist = []
     for level in partData['Levels']:
         controls = level['Controls']
-        FFfxn = shapes[controls['FormFact']][0]
-        Volfxn = shapes[controls['FormFact']][1]
-        FFargs = []
-        for item in ['Aspect ratio','Length','Thickness','Diameter',]:
-            if item in controls['FFargs']: 
-                FFargs.append(controls['FFargs'][item][0])
         distFxn = controls['DistType']
-        rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
-        contrast = rho**2-rhoMat**2
-        parmDict = level[controls['DistType']]
-        rBins,dBins,dist = MakeDiamDist(controls['DistType'],controls['NumPoints'],controls['Cutoff'],parmDict)
-        Gmat = 2.*G_matrix(Q[Ibeg:Ifin],rBins,contrast,FFfxn,Volfxn,FFargs).T*dBins
-        dist *= level[distFxn]['Volume'][0]
-        Ic[Ibeg:Ifin] += np.dot(Gmat,dist)
-        Rbins.append(rBins)
-        Dist.append(dist)
+        if distFxn in ['LogNormal','Gaussian','LSW','Schulz-Zimm']:
+            FFfxn = shapes[controls['FormFact']][0]
+            Volfxn = shapes[controls['FormFact']][1]
+            FFargs = []
+            for item in ['Aspect ratio','Length','Thickness','Diameter',]:
+                if item in controls['FFargs']: 
+                    FFargs.append(controls['FFargs'][item][0])
+            rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
+            contrast = rho**2-rhoMat**2
+            parmDict = level[controls['DistType']]
+            rBins,dBins,dist = MakeDiamDist(controls['DistType'],controls['NumPoints'],controls['Cutoff'],parmDict)
+            Gmat = G_matrix(Q[Ibeg:Ifin],rBins,contrast,FFfxn,Volfxn,FFargs).T
+            dist *= level[distFxn]['Volume'][0]
+            Ic[Ibeg:Ifin] += np.dot(Gmat,dist)
+            Rbins.append(rBins)
+            Dist.append(dist/(4.*dBins))
+        elif 'Unified' in distFxn:
+            rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
+            parmDict = level[controls['DistType']]
+            Rg,G,B,P = parmDict['Rg'][0],parmDict['G'][0],parmDict['B'][0],parmDict['P'][0]
+            Qstar = Q[Ibeg:Ifin]/(scsp.erf(Q[Ibeg:Ifin]*Rg/np.sqrt(6)))**3
+            Guin = G*np.exp(-(Q[Ibeg:Ifin]*Rg)**2/3)
+            Porod = (B/Qstar**P)
+            Ic[Ibeg:Ifin] += Guin+Porod
+            Rbins.append([])
+            Dist.append([])
+        elif 'Porod' in distFxn:
+            rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
+            parmDict = level[controls['DistType']]
+            B,P,Rgco = parmDict['B'][0],parmDict['P'][0],parmDict['Cutoff'][0]
+            Porod = (B/Q[Ibeg:Ifin]**P)*np.exp(-(Q[Ibeg:Ifin]*Rgco)**2/3)
+            Ic[Ibeg:Ifin] += Porod
+            Rbins.append([])
+            Dist.append([])
+        elif 'Mono' in distFxn:
+            FFfxn = shapes[controls['FormFact']][0]
+            Volfxn = shapes[controls['FormFact']][1]
+            FFargs = []
+            for item in ['Aspect ratio','Length','Thickness','Diameter',]:
+                if item in controls['FFargs']: 
+                    FFargs.append(controls['FFargs'][item][0])
+            rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
+            contrast = rho**2-rhoMat**2
+            R = level[controls['DistType']]['Radius'][0]
+            Gmat = G_matrix(Q[Ibeg:Ifin],R,contrast,FFfxn,Volfxn,FFargs)             
+            Ic[Ibeg:Ifin] += Gmat[0]*level[distFxn]['Volume'][0]
+            Rbins.append([])
+            Dist.append([])
+        elif 'Bragg' in distFxn:
+            parmDict = level[controls['DistType']]
+            Ic[Ibeg:Ifin] += parmDict['PkInt'][0]*G2pwd.getPsVoigt(parmDict['PkPos'][0],
+                parmDict['PkSig'][0],parmDict['PkGam'][0],Q[Ibeg:Ifin])
+            Rbins.append([])
+            Dist.append([])
+            
     sasdData['Size Calc'] = [Rbins,Dist]
     
 def MakeDiamDist(DistName,nPoints,cutoff,parmDict):

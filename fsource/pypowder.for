@@ -59,6 +59,57 @@ Cf2py depend(NPTS) SLPART
       RETURN
       END
 
+      SUBROUTINE PYPSVOIGT(NPTS,DTT,SIG,GAM,PRFUNC)
+C DTT in degrees
+C RETURNS FUNCTION ONLY
+Cf2py intent(in) NPTS
+Cf2py intent(in) DTT
+cf2py depend(NPTS) DTT
+Cf2py intent(in) SIG
+Cf2py intent(in) GAM
+Cf2py intent(out) PRFUNC
+Cf2py depend(NPTS) PRFUNC
+
+      REAL*4 DTT(0:NPTS-1),PRFUNC(0:NPTS-1)
+      REAL*4 SIG,GAM
+      INTEGER*4 NPTS,I
+      DO I=0,NPTS-1
+        CALL PSVOIGT(DTT(I)*100.,SIG,GAM,
+     1    PRFUNC(I),DPRDT,SIGPART,GAMPART)
+      END DO
+      RETURN
+      END
+
+      SUBROUTINE PYDPSVOIGT(NPTS,DTT,SIG,GAM,PRFUNC,
+     1  DPRDT,SIGPART,GAMPART)
+C DTT in degrees
+C RETURNS FUNCTION & DERIVATIVES
+Cf2py intent(in) NPTS
+Cf2py intent(in) DTT
+cf2py depend(NPTS) DTT
+Cf2py intent(in) SIG
+Cf2py intent(in) GAM
+Cf2py intent(out) PRFUNC
+Cf2py depend(NPTS) PRFUNC
+Cf2py intent(out) DPRDT
+Cf2py depend(NPTS) DPRDT
+Cf2py intent(out) SIGPART
+Cf2py depend(NPTS) SIGPART
+Cf2py intent(out) GAMPART
+Cf2py depend(NPTS) GAMPART
+
+      INTEGER*4 NPTS
+      REAL*4 SIG,GAM
+      REAL*4 DTT(0:NPTS-1),DPRDT(0:NPTS-1),SIGPART(0:NPTS-1),
+     1  GAMPART(0:NPTS-1),PRFUNC(0:NPTS-1)
+      DO I=0,NPTS-1
+        CALL PSVOIGT(DTT(I)*100.,SIG,GAM,
+     1    PRFUNC(I),DPRDT(I),SIGPART(I),GAMPART(I))
+        DPRDT(I) = DPRDT(I)*100.
+      END DO
+      RETURN
+      END
+
       SUBROUTINE PYPSVFCJO(NPTS,DTT,TTHETA,SIG,GAM,SPH,PRFUNC)
 C DTT in degrees
 C TTHETA in degrees

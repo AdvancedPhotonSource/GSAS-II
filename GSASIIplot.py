@@ -1460,7 +1460,8 @@ def PlotSASDSizeDist(G2frame):
     if 'Size Calc' in data:
         Rbins,Dist = data['Size Calc']
         for i in range(len(Rbins)):
-            Plot.plot(2.*Rbins[i],Dist[i])       #plot diameters
+            if len(Rbins[i]):
+                Plot.plot(2.*Rbins[i],Dist[i])       #plot diameters
     Page.canvas.draw()
 
 ################################################################################

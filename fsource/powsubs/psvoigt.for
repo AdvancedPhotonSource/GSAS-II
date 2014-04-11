@@ -85,7 +85,8 @@
 
       SUBROUTINE PSVOIGT2(DX,SIG,GAM,FUNC,DFDX,DFDS,DFDG)
 
-!PURPOSE: Compute function & derivatives pseudovoigt
+!PURPOSE: Compute function & derivatives pseudovoigt - unfinished; 
+!   no derivatives
 !pseudo Voigt W.I.F. David, J. Appl. Cryst. 19, 63-64 (1986)
 
       INCLUDE       '../INCLDS/COPYRIGT.FOR' 
@@ -159,6 +160,8 @@
       EX = MAX(-20.0,-0.5*DX**2/SIGP)
       TG = STOFW*EXP(EX)/(SQ2PI*FWHM)
       FUNC = ETAL*TL+ETAG*TG
+        
+! Unfinished - no derivatives
 
       RETURN
       END

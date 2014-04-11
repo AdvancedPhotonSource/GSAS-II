@@ -712,6 +712,20 @@ def getdFCJVoigt3(pos,sig,gam,shl,xdata):
     sumDf = np.sum(Df)
     return Df,dFdp,dFds,dFdg,dFdsh
 
+def getPsVoigt(pos,sig,gam,xdata):
+    'needs a doc string'
+    
+    Df = pyd.pypsvoigt(len(xdata),xdata-pos,sig,gam)
+    Df /= np.sum(Df)
+    return Df
+
+def getdPsVoigt(pos,sig,gam,xdata):
+    'needs a doc string'
+    
+    Df,dFdp,dFds,dFdg = pyd.pydpsvoigt(len(xdata),xdata-pos,sig,gam)
+    sumDf = np.sum(Df)
+    return Df,dFdp,dFds,dFdg
+
 def getEpsVoigt(pos,alp,bet,sig,gam,xdata):
     'needs a doc string'
     Df = pyd.pyepsvoigt(len(xdata),xdata-pos,alp,bet,sig,gam)

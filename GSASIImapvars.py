@@ -555,6 +555,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
     indepVarList = []
     depVarList = []
     multdepVarList = []
+    translateTable = {} # lookup table for wildcard referenced variables
     for varlist,mapvars,multarr,invmultarr in zip(       # process equivalences
         dependentParmList,indParmList,arrayList,invarrayList):
         if multarr is None: # true only if an equivalence
@@ -634,10 +635,11 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
             for var in constrDict[rel]:
                 if var.startswith('_'): continue
                 if var.split(':')[1] == '*' and SeqHist is not None:
-                    # convert wildcard var to current histogram
+                    # convert wildcard var to reference current histogram; save translation in table
                     sv = var.split(':')
                     sv[1] = str(SeqHist)
-                    var = ':'.join(sv)
+                    translateTable[var] = ':'.join(sv)
+                    var = translateTable[var]
                 if parmDict is not None and var not in parmDict:
                     unused += 1
                     if notvaried: notused += ', '
@@ -681,11 +683,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
             varied = 0
             unused = 0
             for var in VarKeys(constrDict[rel]):
-                if var.split(':')[1] == '*' and SeqHist is not None:
-                    # convert wildcard var to current histogram
-                    sv = var.split(':')
-                    sv[1] = str(SeqHist)
-                    var = ':'.join(sv)
+                var = translateTable.get(var,var) # replace wildcards
                 if parmDict is not None and var not in parmDict:
                     unused += 1                    
                 if var not in varsList: varsList.append(var)
@@ -750,7 +748,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
             if debug: print('Constraint ignored (all variables unrefined)')
             if debug: print ('   '+_FormatConstraint(constrDict[rel],fixedList[rel]))
             continue 
-        dependentParmList.append(varlist)
+        dependentParmList.append([translateTable.get(var,var) for var in varlist])
         arrayList.append(constrArr)
         invarrayList.append(np.linalg.inv(constrArr))
         indParmList.append(mapvar)

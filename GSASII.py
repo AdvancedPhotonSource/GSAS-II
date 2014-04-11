@@ -424,7 +424,9 @@ class GSASII(wx.Frame):
                         dlg.Destroy()
                     if result == wx.ID_NO: return []
                             
-                self.lastimport = filename
+                self.lastimport = filename # this is probably not what I want to do -- it saves only the
+                # last name in a series. See rd.readfilename for a better name.
+                
                 # try the file first with Readers that specify the
                 # file's extension and later with ones that merely allow it
                 errorReport = ''
@@ -458,6 +460,7 @@ class GSASII(wx.Frame):
                             rd.errors += "\n  Unhandled read exception: "+str(detail)
                             rd.errors += "\n  Traceback info:\n"+str(traceback.format_exc())
                         if flag: # this read succeeded
+                            rd.readfilename = filename
                             rd_list.append(copy.deepcopy(rd)) # save the result before it is written over
                             if rd.repeat:
                                 repeat = True
@@ -1188,7 +1191,7 @@ class GSASII(wx.Frame):
             # make new histogram names unique
             HistName = G2obj.MakeUniqueLabel(HistName,PWDRlist)
             print 'Read powder data '+str(HistName)+ \
-                ' from file '+str(self.lastimport) + \
+                ' from file '+str(rd.readfilename) + \
                 ' with parameters from '+str(rd.instmsg)
             # data are read, now store them in the tree
             Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)

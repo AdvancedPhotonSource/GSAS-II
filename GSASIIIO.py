@@ -1310,8 +1310,8 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
     elif multipleselect:
         # select one or more from a from list
         choices = [i.filename for i in zinfo]
-        dlg = wx.MultiChoiceDialog(parent,'Select file(s) to extract from zip file'+str(filename),
-            'Choose file(s)',choices,wx.CHOICEDLG_STYLE,)
+        dlg = G2gd.G2MultiChoiceDialog(parent,'Select file(s) to extract from zip file '+str(filename),
+            'Choose file(s)',choices)
         if dlg.ShowModal() == wx.ID_OK:
             zlist = dlg.GetSelections()
         else:
@@ -1408,6 +1408,7 @@ class ImportBaseclass(object):
         # more than one data block
         self.repeat = False
         self.repeatcount = 0
+        self.readfilename = '?'
         #print 'created',self.__class__
 
     def ReInitialize(self):
@@ -1416,6 +1417,7 @@ class ImportBaseclass(object):
         self.warnings = ''
         self.repeat = False
         self.repeatcount = 0
+        self.readfilename = '?'
 
     def BlockSelector(self, ChoiceList, ParentFrame=None,
                       title='Select a block',

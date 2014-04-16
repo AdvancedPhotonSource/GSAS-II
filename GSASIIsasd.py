@@ -859,6 +859,9 @@ def SetScale(Data,refData):
     refsum = np.sum(np.interp(x[iBeg:iFin],rx,ry,0,0))
     Sample['Scale'][0] = refSample['Scale'][0]*refsum/sum
     
+def Bestimate(G,Rg,P):
+    return (G*P/Rg**P)*np.exp(scsp.gammaln(P/2))
+    
 ###############################################################################
 #### Size distribution
 ###############################################################################
@@ -1008,10 +1011,11 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                 dist *= parmDict[cid+'Volume']
                 Ic += np.dot(Gmat,dist)
             elif 'Unified' in Type:
-                Rg,G,B,P = parmDict[cid+'Rg'],parmDict[cid+'G'],parmDict[cid+'B'],parmDict[cid+'P']
+                Rg,G,B,P,Rgco = parmDict[cid+'Rg'],parmDict[cid+'G'],parmDict[cid+'B'], \
+                    parmDict[cid+'P'],parmDict[cid+'Cutoff']
                 Qstar = Q/(scsp.erf(Q*Rg/np.sqrt(6)))**3
                 Guin = G*np.exp(-(Q*Rg)**2/3)
-                Porod = (B/Qstar**P)
+                Porod = (B/Qstar**P)*np.exp(-(Q*Rgco)**2/3)
                 Ic += Guin+Porod
             elif 'Porod' in Type:
                 B,P,Rgco = parmDict[cid+'B'],parmDict[cid+'P'],parmDict[cid+'Cutoff']
@@ -1103,10 +1107,11 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
             Dist.append(dist/(4.*dBins))
         elif 'Unified' in distFxn:
             parmDict = level[controls['DistType']]
-            Rg,G,B,P = parmDict['Rg'][0],parmDict['G'][0],parmDict['B'][0],parmDict['P'][0]
+            Rg,G,B,P,Rgco = parmDict['Rg'][0],parmDict['G'][0],parmDict['B'][0],    \
+                parmDict['P'][0],parmDict['Cutoff'][0]
             Qstar = Q[Ibeg:Ifin]/(scsp.erf(Q[Ibeg:Ifin]*Rg/np.sqrt(6)))**3
             Guin = G*np.exp(-(Q[Ibeg:Ifin]*Rg)**2/3)
-            Porod = (B/Qstar**P)
+            Porod = (B/Qstar**P)*np.exp(-(Q[Ibeg:Ifin]*Rgco)**2/3)
             Ic[Ibeg:Ifin] += Guin+Porod
             Rbins.append([])
             Dist.append([])

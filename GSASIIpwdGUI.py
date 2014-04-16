@@ -2676,8 +2676,8 @@ def UpdateModelsGrid(G2frame,data):
                 'Gaussian':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
                 'LSW':{'Volume':[0.05,False],'Mean':[1000.0,False],},
                 'Schulz-Zimm':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
-                'Unified':{'G':[100,False],'Rg':[100,False],'B':[1.e-4,False],'P':[4,False],},
-                'Porod':{'B':[1.e-4,False],'P':[4,False],'Cutoff':[100,False]},
+                'Unified':{'G':[100,False],'Rg':[100,False],'B':[1.e-4,False],'P':[4,False],'Cutoff':[1e-5,False],},
+                'Porod':{'B':[1.e-4,False],'P':[4,False]},
                 'Monodisperse':{'Volume':[0.05,False],'Radius':[100,False],},   #OK for spheres
                 'Bragg':{'PkInt':[100,False],'PkPos':[0.2,False],
                     'PkSig':[10,False],'PkGam':[10,False],},        #reeasonable 31A peak
@@ -3004,7 +3004,10 @@ def UpdateModelsGrid(G2frame,data):
                 rCutoff = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,level['Controls'],'Cutoff',
                     min=0.001,max=0.1,typeHint=float)
                 sizeSizer.Add(rCutoff,0,WACV)
-#            elif level['Controls']['DistType']  in ['Unified','Porod',]: 
+            elif level['Controls']['DistType']  in ['Unified',]:
+                Parms = level['Unified']
+                Best = G2sasd.Bestimate(Parms['G'][0],Parms['Rg'][0],Parms['P'][0])
+                sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Estimated Dist B: %12.4g'%(Best)),0,WACV)
             return sizeSizer
             
         Indx = {}
@@ -3049,10 +3052,14 @@ def UpdateModelsGrid(G2frame,data):
                 'PkInt','PkPos','PkSig','PkGam',]
             for parm in parmOrder:
                 if parm in Parms:
-                    parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? Dist '+parm) 
-                    parmVar.SetValue(Parms[parm][1])
-                    parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
-                    parmSizer.Add(parmVar,0,WACV)
+                    if parm == 'MinSize':
+                        parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Dist '+parm),0,wx.ALIGN_CENTER)
+                    else:
+                        parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? Dist '+parm) 
+                        parmVar.SetValue(Parms[parm][1])
+                        parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
+                        parmSizer.Add(parmVar,0,WACV)
+                        Indx[parmVar.GetId()] = [Parms[parm],1]
                     parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(Parms[parm][0]),
                         style=wx.TE_PROCESS_ENTER)
                     parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
@@ -3066,7 +3073,6 @@ def UpdateModelsGrid(G2frame,data):
                         valMinMax = [value-1,value+1]
                     parmSldr = wx.Slider(G2frame.dataDisplay,minValue=1000.*valMinMax[0],
                         maxValue=1000.*valMinMax[1],value=1000.*value)
-                    Indx[parmVar.GetId()] = [Parms[parm],1]
                     Indx[parmValue.GetId()] = [Parms,parm,0,parmSldr]
                     Indx[parmSldr.GetId()] = [Parms,parm,0,parmValue]
                     parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)

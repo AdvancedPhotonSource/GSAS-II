@@ -1117,7 +1117,6 @@ def SetBackgroundParms(Background):
             
 def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,controls=None,dlg=None):
     'needs a doc string'
-    
         
     def GetBackgroundParms(parmList,Background):
         iBak = 0

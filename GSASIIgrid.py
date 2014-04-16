@@ -136,7 +136,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
-] = [wx.NewId() for item in range(9)]
+    wxID_MODELUNDO,
+] = [wx.NewId() for item in range(10)]
 
 [ wxID_SELECTPHASE,wxID_PWDHKLPLOT,
 ] = [wx.NewId() for item in range(2)]
@@ -2613,6 +2614,9 @@ class DataFrame(wx.Frame):
             help='Add new term to model')
         self.ModelEdit.Append(id=wxID_MODELFIT, kind=wx.ITEM_NORMAL,text='Fit',
             help='Fit model parameters to data')
+        self.SasdUndo = self.ModelEdit.Append(id=wxID_MODELUNDO, kind=wx.ITEM_NORMAL,text='Undo',
+            help='Undo model fit')
+        self.SasdUndo.Enable(False)            
         self.ModelEdit.Append(id=wxID_MODELCOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy model parameters to other histograms')
         self.PostfillDataMenu()

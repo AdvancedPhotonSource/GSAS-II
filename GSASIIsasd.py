@@ -911,8 +911,150 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
 #### Modelling
 ################################################################################
 
-def ModelFit(Profile,ProfDict,Limits,Substances,Sample,data):
-    print 'do model fit'
+def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
+    shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],
+        'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
+        'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
+        'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol],
+        'Unified tube':[UniTubeFF,UniTubeVol],'Cylinder diam':[CylinderDFF,CylinderDVol]}
+
+    def GetModelParms():
+        parmDict = {}
+        varyList = []
+        values = []
+        levelTypes = []
+        Back = Model['Back']
+        if Back[1]:
+            varyList += ['Back',]
+            values.append(Back[0])
+        parmDict['Back'] = Back[0]
+        partData = Model['Particle']
+        parmDict['Matrix density'] = Substances['Substances'][partData['Matrix']['Name']].get('XAnom density',0.0)
+        for i,level in enumerate(partData['Levels']):
+            cid = str(i)+':'
+            controls = level['Controls']
+            Type = controls['DistType']
+            levelTypes.append(Type)
+            if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm','Monodisperse']:
+                if Type not in ['Monodosperse',]:
+                    parmDict[cid+'NumPoints'] = controls['NumPoints']
+                    parmDict[cid+'Cutoff'] = controls['Cutoff']
+                parmDict[cid+'FormFact'] = shapes[controls['FormFact']][0]
+                parmDict[cid+'FFVolume'] = shapes[controls['FormFact']][1]
+                parmDict[cid+'XAnom density'] = Substances['Substances'][controls['Material']].get('XAnom density',0.0)
+                for item in ['Aspect ratio','Length','Thickness','Diameter',]:
+                    if item in controls['FFargs']:
+                        parmDict[cid+item] = controls['FFargs'][item][0]
+                        if controls['FFargs'][item][1]:
+                            varyList.append(cid+item)
+                            values.append(controls['FFargs'][item][0])
+            distDict = controls['DistType']
+            for item in level[distDict]:
+                parmDict[cid+item] = level[distDict][item][0]
+                if level[distDict][item][1]:
+                    values.append(level[distDict][item][0])
+                    varyList.append(cid+item)
+        return levelTypes,parmDict,varyList,values
+        
+    def SetModelParms():
+        print ' Refined parameters:'
+        if 'Back' in varyList:
+            Model['Back'][0] = parmDict['Back']
+            print '  %15s %15.4f esd: %15.4g'%('Background:',parmDict['Back'],sigDict['Back'])
+        partData = Model['Particle']
+        for i,level in enumerate(partData['Levels']):
+            Type = level['Controls']['DistType']
+            print ' Component %d: Type: %s:'%(i,Type)
+            cid = str(i)+':'
+            controls = level['Controls']
+            Type = controls['DistType']
+            if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm','Monodisperse']:
+                for item in ['Aspect ratio','Length','Thickness','Diameter',]:
+                    if cid+item in varyList:
+                        controls['FFargs'][item][0] = parmDict[cid+item]
+                        print ' %15s: %15.4g esd: %15.4g'%(cid+item,parmDict[cid+item],sigDict[cid+item])
+            distDict = controls['DistType']
+            for item in level[distDict]:
+                if cid+item in varyList:
+                    level[distDict][item][0] = parmDict[cid+item]
+                    print ' %15s: %15.4g esd: %15.4g'%(cid+item,parmDict[cid+item],sigDict[cid+item])
+                    
+    def calcSASD(values,Q,Io,wt,levelTypes,parmDict,varyList):
+        parmDict.update(zip(varyList,values))
+        M = np.sqrt(wt)*(getSASD(Q,levelTypes,parmDict)-Io)
+        return M
+        
+    def getSASD(Q,levelTypes,parmDict):
+        Ic = np.ones_like(Q)
+        Ic *= parmDict['Back']
+        rhoMat = parmDict['Matrix density']
+        for i,Type in enumerate(levelTypes):
+            cid = str(i)+':'
+            if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm']:
+                FFfxn = parmDict[cid+'FormFact']
+                Volfxn = parmDict[cid+'FFVolume']
+                FFargs = []
+                for item in [cid+'Aspect ratio',cid+'Length',cid+'Thickness',cid+'Diameter',]:
+                    if item in parmDict: 
+                        FFargs.append(parmDict[item])
+                distDict = {}
+                for item in [cid+'Volume',cid+'Mean',cid+'StdDev',cid+'MinSize',]:
+                    if item in parmDict:
+                        distDict[item.split(':')[1]] = parmDict[item]
+                rho = parmDict[cid+'XAnom density']
+                contrast = rho**2-rhoMat**2
+                rBins,dBins,dist = MakeDiamDist(Type,parmDict[cid+'NumPoints'],parmDict[cid+'Cutoff'],distDict)
+                Gmat = G_matrix(Q,rBins,contrast,FFfxn,Volfxn,FFargs).T
+                dist *= parmDict[cid+'Volume']
+                Ic += np.dot(Gmat,dist)
+            elif 'Unified' in Type:
+                Rg,G,B,P = parmDict[cid+'Rg'],parmDict[cid+'G'],parmDict[cid+'B'],parmDict[cid+'P']
+                Qstar = Q/(scsp.erf(Q*Rg/np.sqrt(6)))**3
+                Guin = G*np.exp(-(Q*Rg)**2/3)
+                Porod = (B/Qstar**P)
+                Ic += Guin+Porod
+            elif 'Porod' in Type:
+                B,P,Rgco = parmDict[cid+'B'],parmDict[cid+'P'],parmDict[cid+'Cutoff']
+                Porod = (B/Q**P)*np.exp(-(Q*Rgco)**2/3)
+                Ic += Porod
+            elif 'Mono' in Type:
+                FFfxn = parmDict[cid+'FormFact']
+                Volfxn = parmDict[cid+'FormFact']
+                FFargs = []
+                for item in [cid+'Aspect ratio',cid+'Length',cid+'Thickness',cid+'Diameter',]:
+                    if item in parmDict: 
+                        FFargs.append(parmDict[item])
+                rho = parmDict[cid+'XAnom density']
+                contrast = rho**2-rhoMat**2
+                R = parmDict[cid+'Radius']
+                Gmat = G_matrix(Q,R,contrast,FFfxn,Volfxn,FFargs)             
+                Ic += Gmat[0]*parmDict[cid+'Volume']
+            elif 'Bragg' in distFxn:
+                Ic += parmDict[cid+'PkInt']*G2pwd.getPsVoigt(parmDict[cid+'PkPos'],
+                    parmDict[cid+'PkSig'],parmDict[cid+'PkGam'],Q)
+        return Ic
+        
+    Q,Io,wt,Ic,Ib = Profile[:5]
+    Qmin = Limits[1][0]
+    Qmax = Limits[1][1]
+    wtFactor = ProfDict['wtFactor']
+    Ibeg = np.searchsorted(Q,Qmin)
+    Ifin = np.searchsorted(Q,Qmax)
+    Ic[:] = 0
+    levelTypes,parmDict,varyList,values = GetModelParms()
+    result = so.leastsq(calcSASD,values,full_output=True,   #ftol=Ftol,
+        args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],levelTypes,parmDict,varyList))
+    ncyc = int(result[2]['nfev']/2)
+    chisq = np.sum(result[2]['fvec']**2)
+    Rwp = np.sqrt(chisq/np.sum(wt[Ibeg:Ifin]*Io[Ibeg:Ifin]**2))*100.      #to %
+    GOF = chisq/(Ifin-Ibeg-len(varyList))       #reduced chi^2
+    parmDict.update(zip(varyList,result[0]))
+    Ic[Ibeg:Ifin] = getSASD(Q[Ibeg:Ifin],levelTypes,parmDict)
+    sigDict = dict(zip(varyList,np.sqrt(np.diag(result[1])*GOF)))
+    print ' Results of small angle data modelling fit:'
+    print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',Ifin-Ibeg,' Number of parameters: ',len(varyList)
+    print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
+    SetModelParms()
     
 def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
     shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],
@@ -950,14 +1092,16 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
             rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
             contrast = rho**2-rhoMat**2
             parmDict = level[controls['DistType']]
-            rBins,dBins,dist = MakeDiamDist(controls['DistType'],controls['NumPoints'],controls['Cutoff'],parmDict)
+            distDict = {}
+            for item in parmDict:
+                distDict[item] = parmDict[item][0]
+            rBins,dBins,dist = MakeDiamDist(controls['DistType'],controls['NumPoints'],controls['Cutoff'],distDict)
             Gmat = G_matrix(Q[Ibeg:Ifin],rBins,contrast,FFfxn,Volfxn,FFargs).T
             dist *= level[distFxn]['Volume'][0]
             Ic[Ibeg:Ifin] += np.dot(Gmat,dist)
             Rbins.append(rBins)
             Dist.append(dist/(4.*dBins))
         elif 'Unified' in distFxn:
-            rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
             parmDict = level[controls['DistType']]
             Rg,G,B,P = parmDict['Rg'][0],parmDict['G'][0],parmDict['B'][0],parmDict['P'][0]
             Qstar = Q[Ibeg:Ifin]/(scsp.erf(Q[Ibeg:Ifin]*Rg/np.sqrt(6)))**3
@@ -967,7 +1111,6 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
             Rbins.append([])
             Dist.append([])
         elif 'Porod' in distFxn:
-            rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
             parmDict = level[controls['DistType']]
             B,P,Rgco = parmDict['B'][0],parmDict['P'][0],parmDict['Cutoff'][0]
             Porod = (B/Q[Ibeg:Ifin]**P)*np.exp(-(Q[Ibeg:Ifin]*Rgco)**2/3)
@@ -993,43 +1136,42 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
             Ic[Ibeg:Ifin] += parmDict['PkInt'][0]*G2pwd.getPsVoigt(parmDict['PkPos'][0],
                 parmDict['PkSig'][0],parmDict['PkGam'][0],Q[Ibeg:Ifin])
             Rbins.append([])
-            Dist.append([])
-            
+            Dist.append([])            
     sasdData['Size Calc'] = [Rbins,Dist]
     
-def MakeDiamDist(DistName,nPoints,cutoff,parmDict):
+def MakeDiamDist(DistName,nPoints,cutoff,distDict):
     
     if 'LogNormal' in DistName:
         distFxn = 'LogNormalDist'
         cumeFxn = 'LogNormalCume'
-        pos = parmDict['MinSize'][0]
-        args = [parmDict['Mean'][0],parmDict['StdDev'][0]]
-        step = 4.*np.sqrt(np.exp(parmDict['StdDev'][0]**2)*(np.exp(parmDict['StdDev'][0]**2)-1.))
-        mode = parmDict['MinSize'][0]+parmDict['Mean'][0]/np.exp(parmDict['StdDev'][0]**2)
+        pos = distDict['MinSize']
+        args = [distDict['Mean'],distDict['StdDev']]
+        step = 4.*np.sqrt(np.exp(distDict['StdDev']**2)*(np.exp(distDict['StdDev']**2)-1.))
+        mode = distDict['MinSize']+distDict['Mean']/np.exp(distDict['StdDev']**2)
         minX = 1. #pos
         maxX = 1.e4 #np.min([mode+nPoints*step*40,1.e5])
     elif 'Gauss' in DistName:
         distFxn = 'GaussDist'
         cumeFxn = 'GaussCume'
-        pos = parmDict['Mean'][0]
-        args = [parmDict['StdDev'][0]]
-        step = 0.02*parmDict['StdDev'][0]
-        mode = parmDict['Mean'][0]
-        minX = np.max([mode-4.*parmDict['StdDev'][0],1.])
-        maxX = np.min([mode+4.*parmDict['StdDev'][0],1.e5])
+        pos = distDict['Mean']
+        args = [distDict['StdDev']]
+        step = 0.02*distDict['StdDev']
+        mode = distDict['Mean']
+        minX = np.max([mode-4.*distDict['StdDev'],1.])
+        maxX = np.min([mode+4.*distDict['StdDev'],1.e5])
     elif 'LSW' in DistName:
         distFxn = 'LSWDist'
         cumeFxn = 'LSWCume'
-        pos = parmDict['Mean'][0]
+        pos = distDict['Mean']
         args = []
         minX,maxX = [0.,2.*pos]
     elif 'Schulz' in DistName:
         distFxn = 'SchulzZimmDist'
         cumeFxn = 'SchulzZimmCume'
-        pos = parmDict['Mean'][0]
-        args = [parmDict['StdDev'][0]]
-        minX = np.max([1.,pos-4.*parmDict['StdDev'][0]])
-        maxX = np.min([pos+4.*parmDict['StdDev'][0],1.e5])
+        pos = distDict['Mean']
+        args = [distDict['StdDev']]
+        minX = np.max([1.,pos-4.*distDict['StdDev']])
+        maxX = np.min([pos+4.*distDict['StdDev'],1.e5])
     nP = 500
     Diam = np.logspace(0.,5.,nP,True)
     TCW = eval(cumeFxn+'(Diam,pos,args)')

@@ -1399,7 +1399,7 @@ def UpdateSampleGrid(G2frame,data):
         refData = [refProfile,refLimits,refSample]
         G2sasd.SetScale(Data,refData)
         UpdateSampleGrid(G2frame,data)       
-        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
         
     def OnSampleCopy(event):
         histType,copyNames = SetCopyNames(histName,data['Type'],
@@ -2663,10 +2663,6 @@ def UpdateModelsGrid(G2frame,data):
         data['Particle']['Matrix'] = {'Name':'vacuum','VolFrac':[0.0,False]}
     #end patches
     
-    def OnCopyModel(event):
-        print 'copy model'
-        print data
-        
     def OnAddModel(event):
         if data['Current'] == 'Particle fit':
             material = 'vacuum'
@@ -2676,7 +2672,7 @@ def UpdateModelsGrid(G2frame,data):
                 'Controls':{'FormFact':'Sphere','DistType':'LogNormal','Material':material,
                     'FFargs':{},'NumPoints':50,'Cutoff':0.01,'AutoDist':True,'logR':True,
                     'StrFact':'Dilute'},
-                'LogNormal':{'Volume':[0.05,False],'MinSize':[10.,False],'Mean':[1000.,False],'StdDev':[0.5,False]},
+                'LogNormal':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[0.5,False],'MinSize':[10.,False],},
                 'Gaussian':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
                 'LSW':{'Volume':[0.05,False],'Mean':[1000.0,False],},
                 'Schulz-Zimm':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
@@ -2691,8 +2687,11 @@ def UpdateModelsGrid(G2frame,data):
                     
         wx.CallAfter(UpdateModelsGrid,G2frame,data)
         
+    def OnCopyModel(event):
+        print 'copy model'
+        print data
+        
     def OnFitModel(event):
-        print 'fit model for '+data['Current']
         if not any(Sample['Contrast']):
             G2frame.ErrorDialog('No contrast; your sample is a vacuum!',
                 'You need to define a scattering substance!\n'+    \
@@ -2704,9 +2703,45 @@ def UpdateModelsGrid(G2frame,data):
             G2plt.PlotSASDSizeDist(G2frame)
             
         elif data['Current'] == 'Particle fit':
+            SaveState()
             G2sasd.ModelFit(Profile,ProfDict,Limits,Substances,Sample,data)
             G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
+    def OnUnDo(event):
+        DoUnDo()
+        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+            G2frame.PatternId,'Models'))
+        G2frame.dataFrame.SasdUndo.Enable(False)
+        UpdateModelsGrid(G2frame,data)
+        G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+
+    def DoUnDo():
+        print 'Undo last refinement'
+        file = open(G2frame.undosasd,'rb')
+        PatternId = G2frame.PatternId
+        for item in ['Models']:
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item),cPickle.load(file))
+            if G2frame.dataDisplay.GetName() == item:
+                if item == 'Background':
+                    UpdateBackground(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
+                elif item == 'Instrument Parameters':
+                    UpdateInstrumentGrid(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
+                elif item == 'Peak List':
+                    UpdatePeakGrid(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
+            print item,' recovered'
+        file.close()
+        
+    def SaveState():
+        G2frame.undosasd = os.path.join(G2frame.dirname,'GSASIIsasd.save')
+        file = open(G2frame.undosasd,'wb')
+        PatternId = G2frame.PatternId
+        for item in ['Models']:
+            cPickle.dump(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,item)),file,1)
+        file.close()
+        G2frame.dataFrame.SasdUndo.Enable(True)
+        
     def OnSelectFit(event):
         data['Current'] = fitSel.GetValue()
         wx.CallAfter(UpdateModelsGrid,G2frame,data)
@@ -2722,7 +2757,7 @@ def UpdateModelsGrid(G2frame,data):
         data[itemKey][ind] = value
         if itemKey == 'Back':
             Profile[4][:] = value
-        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
         
     def OnCheckBox(event):
         Obj = event.GetEventObject()
@@ -2866,23 +2901,26 @@ def UpdateModelsGrid(G2frame,data):
         def RefreshPlots():
             PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
             if 'Powder' in PlotText:
-                G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+                G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
             elif 'Size' in PlotText:
                 G2plt.PlotSASDSizeDist(G2frame)
                 
         def OnValue(event):
             Obj = event.GetEventObject()
-            item,parm,sldrObj = Indx[Obj.GetId()]
+            item,key,id,sldrObj = Indx[Obj.GetId()]
             try:
                 value = float(Obj.GetValue())
                 if value <= 0.:
                     raise ValueError
             except ValueError:
-                value = item[0]
-            item[0] = value
+                value = item[key][id]
+            item[key][id] = value
             Obj.SetValue('%.3g'%(value))
-            sldrObj.SetRange(1000.*(np.log10(value)-2),1000.*(np.log10(value)+2))
-            sldrObj.SetValue(1000.*np.log10(value))
+            if key == 'P':
+                sldrObj.SetValue(1000.*value)
+            else:
+                sldrObj.SetRange(1000.*(np.log10(value)-2),1000.*(np.log10(value)+2))
+                sldrObj.SetValue(1000.*np.log10(value))
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
             RefreshPlots()
             
@@ -2907,11 +2945,14 @@ def UpdateModelsGrid(G2frame,data):
             
         def OnParmSlider(event):
             Obj = event.GetEventObject()
-            item,key,pvObj = Indx[Obj.GetId()]
+            item,key,id,pvObj = Indx[Obj.GetId()]
             slide = Obj.GetValue()
-            value = 10.**float(slide/1000.)
-            item[key] = value
-            pvObj.SetValue('%.3g'%(item[key]))
+            if key == 'P':
+                value = float(slide/1000.)
+            else:
+                value = 10.**float(slide/1000.)
+            item[key][id] = value
+            pvObj.SetValue('%.3g'%(item[key][id]))
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
             RefreshPlots()
             
@@ -3004,53 +3045,64 @@ def UpdateModelsGrid(G2frame,data):
             parmSizer.SetFlexibleDirection(wx.HORIZONTAL)
             Parms = level[level['Controls']['DistType']]
             FFargs = level['Controls']['FFargs']
-            for iparm,parm in enumerate(list(Parms)):
-                parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? Dist '+parm) 
-                parmVar.SetValue(Parms[parm][1])
-                parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
-                parmSizer.Add(parmVar,0,WACV)
-                parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(Parms[parm][0]),
-                    style=wx.TE_PROCESS_ENTER)
-                parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
-                parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
-                parmSizer.Add(parmValue,0,WACV)
-                value = np.log10(Parms[parm][0])
-                valMinMax = [value-1,value+1]
-                parmSldr = wx.Slider(G2frame.dataDisplay,minValue=1000.*valMinMax[0],
-                    maxValue=1000.*valMinMax[1],value=1000.*value)
-                Indx[parmVar.GetId()] = [Parms[parm],parm]
-                Indx[parmValue.GetId()] = [Parms[parm],0,parmSldr]
-                Indx[parmSldr.GetId()] = [Parms[parm],0,parmValue]
-                parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
-                parmSizer.Add(parmSldr,1,wx.EXPAND)
-                center = wx.CheckBox(G2frame.dataDisplay,label='Center? ')
-                Indx[center.GetId()] = [parmSldr,value]
-                center.Bind(wx.EVT_CHECKBOX,OnCenterSlider)
-                parmSizer.Add(center,0,WACV)
-            for parm in list(FFargs):
-                parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? FF '+parm) 
-                parmVar.SetValue(FFargs[parm][1])
-                Indx[parmVar.GetId()] = [FFargs[parm],1]
-                parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
-                parmSizer.Add(parmVar,0,WACV)
-                parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(FFargs[parm][0]),
-                    style=wx.TE_PROCESS_ENTER)
-                parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
-                parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
-                parmSizer.Add(parmValue,0,WACV)
-                value = np.log10(FFargs[parm][0])
-                valMinMax = [value-1,value+1]
-                parmSldr = wx.Slider(G2frame.dataDisplay,minValue=1000.*valMinMax[0],
-                    maxValue=1000.*valMinMax[1],value=1000.*value)
-                Indx[parmVar.GetId()] = [FFargs[parm],parm]
-                Indx[parmValue.GetId()] = [FFargs[parm],0,parmSldr]
-                Indx[parmSldr.GetId()] = [FFargs[parm],0,parmValue]
-                parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
-                parmSizer.Add(parmSldr,1,wx.EXPAND)
-                center = wx.CheckBox(G2frame.dataDisplay,label='Center? ')
-                Indx[center.GetId()] = [parmSldr,value]
-                center.Bind(wx.EVT_CHECKBOX,OnCenterSlider)
-                parmSizer.Add(center,0,WACV)
+            parmOrder = ['Volume','Mean','StdDev','MinSize','G','Rg','B','P','Cutoff',
+                'PkInt','PkPos','PkSig','PkGam',]
+            for parm in parmOrder:
+                if parm in Parms:
+                    parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? Dist '+parm) 
+                    parmVar.SetValue(Parms[parm][1])
+                    parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
+                    parmSizer.Add(parmVar,0,WACV)
+                    parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(Parms[parm][0]),
+                        style=wx.TE_PROCESS_ENTER)
+                    parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
+                    parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
+                    parmSizer.Add(parmValue,0,WACV)
+                    if parm == 'P':
+                        value = Parms[parm][0]
+                        valMinMax = [0.1,4.2]
+                    else:
+                        value = np.log10(Parms[parm][0])
+                        valMinMax = [value-1,value+1]
+                    parmSldr = wx.Slider(G2frame.dataDisplay,minValue=1000.*valMinMax[0],
+                        maxValue=1000.*valMinMax[1],value=1000.*value)
+                    Indx[parmVar.GetId()] = [Parms[parm],1]
+                    Indx[parmValue.GetId()] = [Parms,parm,0,parmSldr]
+                    Indx[parmSldr.GetId()] = [Parms,parm,0,parmValue]
+                    parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
+                    parmSizer.Add(parmSldr,1,wx.EXPAND)
+                    if parm == 'P':
+                        parmSizer.Add((5,5),)
+                    else:
+                        center = wx.CheckBox(G2frame.dataDisplay,label='Center? ')
+                        Indx[center.GetId()] = [parmSldr,value]
+                        center.Bind(wx.EVT_CHECKBOX,OnCenterSlider)
+                        parmSizer.Add(center,0,WACV)
+            if level['Controls']['DistType'] not in ['Bragg']:
+                for parm in list(FFargs):
+                    parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? FF '+parm) 
+                    parmVar.SetValue(FFargs[parm][1])
+                    Indx[parmVar.GetId()] = [FFargs[parm],1]
+                    parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
+                    parmSizer.Add(parmVar,0,WACV)
+                    parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(FFargs[parm][0]),
+                        style=wx.TE_PROCESS_ENTER)
+                    parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
+                    parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
+                    parmSizer.Add(parmValue,0,WACV)
+                    value = np.log10(FFargs[parm][0])
+                    valMinMax = [value-1,value+1]
+                    parmSldr = wx.Slider(G2frame.dataDisplay,minValue=1000.*valMinMax[0],
+                        maxValue=1000.*valMinMax[1],value=1000.*value)
+                    Indx[parmVar.GetId()] = [FFargs[parm],1]
+                    Indx[parmValue.GetId()] = [FFargs[parm],0,parmSldr]
+                    Indx[parmSldr.GetId()] = [FFargs,parm,0,parmValue]
+                    parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
+                    parmSizer.Add(parmSldr,1,wx.EXPAND)
+                    center = wx.CheckBox(G2frame.dataDisplay,label='Center? ')
+                    Indx[center.GetId()] = [parmSldr,value]
+                    center.Bind(wx.EVT_CHECKBOX,OnCenterSlider)
+                    parmSizer.Add(center,0,WACV)
             lvlSizer.Add(parmSizer,1,wx.EXPAND)
             partSizer.Add(lvlSizer,1,wx.EXPAND)
         return partSizer
@@ -3081,6 +3133,7 @@ def UpdateModelsGrid(G2frame,data):
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModel, id=G2gd.wxID_MODELFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_MODELUNDO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddModel, id=G2gd.wxID_MODELADD)
     Indx = {}
     mainSizer = wx.BoxSizer(wx.VERTICAL)

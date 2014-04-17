@@ -2710,12 +2710,12 @@ def UpdateModelsGrid(G2frame,data):
                 copy.deepcopy(data))
         
     def OnFitModel(event):
-        if not any(Sample['Contrast']):
-            G2frame.ErrorDialog('No contrast; your sample is a vacuum!',
-                'You need to define a scattering substance!\n'+    \
-                ' Do Substances and then Sample parameters')
-            return
         if data['Current'] == 'Size dist.':
+            if not any(Sample['Contrast']):
+                G2frame.ErrorDialog('No contrast; your sample is a vacuum!',
+                    'You need to define a scattering substance!\n'+    \
+                    ' Do Substances and then Sample parameters')
+                return
             G2sasd.SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data)
             G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
             G2plt.PlotSASDSizeDist(G2frame)
@@ -2919,7 +2919,7 @@ def UpdateModelsGrid(G2frame,data):
         def RefreshPlots():
             PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
             if 'Powder' in PlotText:
-                G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+                G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
             elif 'Size' in PlotText:
                 G2plt.PlotSASDSizeDist(G2frame)
                 

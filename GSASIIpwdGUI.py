@@ -2677,7 +2677,7 @@ def UpdateModelsGrid(G2frame,data):
                 'LSW':{'Volume':[0.05,False],'Mean':[1000.0,False],},
                 'Schulz-Zimm':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
                 'Unified':{'G':[100,False],'Rg':[100,False],'B':[1.e-4,False],'P':[4,False],'Cutoff':[1e-5,False],},
-                'Porod':{'B':[1.e-4,False],'P':[4,False]},
+                'Porod':{'B':[1.e-4,False],'P':[4,False],'Cutoff':[1e-5,False],},
                 'Monodisperse':{'Volume':[0.05,False],'Radius':[100,False],},   #OK for spheres
                 'Bragg':{'PkInt':[100,False],'PkPos':[0.2,False],
                     'PkSig':[10,False],'PkGam':[10,False],},        #reeasonable 31A peak
@@ -2688,8 +2688,26 @@ def UpdateModelsGrid(G2frame,data):
         wx.CallAfter(UpdateModelsGrid,G2frame,data)
         
     def OnCopyModel(event):
-        print 'copy model'
-        print data
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
+        copyList = []
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Copy models from\n'+hst[5:]+' to...',
+            'Copy models', histList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for i in dlg.GetSelections(): 
+                    copyList.append(histList[i])
+        finally:
+            dlg.Destroy()        
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Models'),
+                copy.deepcopy(data))
         
     def OnFitModel(event):
         if not any(Sample['Contrast']):
@@ -2901,7 +2919,7 @@ def UpdateModelsGrid(G2frame,data):
         def RefreshPlots():
             PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
             if 'Powder' in PlotText:
-                G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
+                G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
             elif 'Size' in PlotText:
                 G2plt.PlotSASDSizeDist(G2frame)
                 

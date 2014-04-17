@@ -688,7 +688,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         PlotPatterns(G2frame,plotType=plottype)
         G2frame.itemPicked = None    
 
-    xylim = []
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -711,7 +710,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
         Page.canvas.mpl_connect('button_press_event',OnPress)
-    Page.SetFocus()
+    if plottype == 'PWDR':  # avoids a very nasty clash with KILL_FOCUS in SASD TextCtrl?
+        Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.Contour:
         Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
@@ -1021,7 +1021,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
         Plot.set_ylim(xylim[1])
-        xylim = []
+#        xylim = []
         Page.toolbar.push_current()
         Page.toolbar.draw()
     else:

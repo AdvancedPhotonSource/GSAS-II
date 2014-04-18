@@ -91,6 +91,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
             
     """
                 
+    ifConverged = False
+    deltaChi2 = -10.
     x0 = np.array(x0, ndmin=1)      #might be redundant?
     n = len(x0)
     if type(args) != type(()):
@@ -140,9 +142,13 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
                 print 'ouch #3 chisq1 ',chisq1,' stuck > chisq0 ',chisq0
                 break
         lamMax = max(lamMax,lam)
+        deltaChi2 = (chisq0-chisq1)/chisq0
         if Print:
-            print ' Cycle: %d, Time: %.2fs, Chi**2: %.3g, Lambda: %.3g'%(icycle,time.time()-time0,chisq1,lam)
-        if (chisq0-chisq1)/chisq0 < ftol:
+            print ' Cycle: %d, Time: %.2fs, Chi**2: %.3g, Lambda: %.3g,  Delta: %.3g'%(
+                icycle,time.time()-time0,chisq1,lam,deltaChi2)
+        if deltaChi2 < ftol:
+            ifConverged = True
+            if Print: print "converged"
             break
         icycle += 1
     else:       #after last cycle or if zero cycles
@@ -154,7 +160,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
         Amatlam = Amat*(One+Lam)/Anorm              #scale Amat to Marquardt array        
     try:
         Bmat = nl.inv(Amatlam)*(One+Lam)/Anorm      #rescale Bmat to Marquardt array
-        return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[]}]
+        return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[], 'Converged': ifConverged, 'DelChi2':deltaChi2}]
     except nl.LinAlgError:
         print 'ouch #2 linear algebra error in LS'
         psing = []

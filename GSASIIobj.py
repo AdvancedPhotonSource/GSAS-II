@@ -1221,6 +1221,8 @@ def CompileVarDesc():
     '''
     if reVarDesc: return # already done
     for key,value in {
+        # ambiguous, alas:
+        'Scale' : 'Phase or Histogram scale factor',
         # Phase vars (p::<var>)
         'A([0-5])' : 'Reciprocal metric tensor component \\1',
         'Vol' : 'Unit cell volume',
@@ -1235,7 +1237,6 @@ def CompileVarDesc():
         'Extinction' : 'Extinction coef.',
         'MD' : 'March-Dollase coef.',
         'Mustrain;.*' : 'Microstrain coef.',
-        'Scale' : 'Phase scale factor',
         'Size;.*' : 'Crystallite size value',
         'eA' : '?',
         #Histogram vars (:h:<var>)
@@ -1244,7 +1245,6 @@ def CompileVarDesc():
         'Lam' : 'Wavelength',
         'Polariz\.' : 'Polarization correction',
         'SH/L' : 'FCJ peak asymmetry correction',
-        'Scale' : 'Histogram scale factor',
         '([UVW])' : 'Gaussian instrument broadening \\1',
         '([XY])' : 'Cauchy instrument broadening \\1',
         'Zero' : 'Debye-Scherrer zero correction',

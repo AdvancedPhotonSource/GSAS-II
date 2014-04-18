@@ -2248,13 +2248,13 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
 ##### PlotSeq
 ################################################################################
             
-def PlotSeq(G2frame,SeqData,SeqSig,SeqNames,sampleParm):
-    'needs a doc string'
-    
-    def OnKeyPress(event):
-        if event.key == 's' and sampleParm:
-            G2frame.xAxis = not G2frame.xAxis
-            Draw(False)
+def PlotSeq(G2frame,SeqData,SeqSig,SeqNames):
+    '''Plot a result from a sequential refinement
+    '''    
+    # def OnKeyPress(event):
+    #     if event.key == 's' and sampleParm:
+    #         G2frame.xAxis = not G2frame.xAxis
+    #         Draw(False)
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Sequential refinement')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -2266,24 +2266,28 @@ def PlotSeq(G2frame,SeqData,SeqSig,SeqNames,sampleParm):
         Plot = G2frame.G2plotNB.addMpl('Sequential refinement').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Sequential refinement')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+        #Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         G2frame.xAxis = False
-    Page.Choice = ['s to toggle x-axis = sample environment parameter']
-    Page.keyPress = OnKeyPress
+    Page.Choice = []
+    #Page.Choice = ['s to toggle x-axis = sample environment parameter']
+    #Page.keyPress = OnKeyPress
         
     def Draw(newPlot):
         Page.SetFocus()
-        G2frame.G2plotNB.status.SetFields(['','press '])
+        #G2frame.G2plotNB.status.SetFields(['','press '])
         if len(SeqData):
             Plot.clear()
-            if G2frame.xAxis:    
-                xName = sampleParm.keys()[0]
-                X = sampleParm[xName]
-            else:
-                X = np.arange(0,len(SeqData[0]),1)
-                xName = 'Data sequence number'
+            # if G2frame.xAxis:    
+            #     xName = sampleParm.keys()[0]
+            #     X = sampleParm[xName]
+            # else:
+            X = np.arange(0,len(SeqData[0]),1)
+            xName = 'Data sequence number'
             for Y,sig,name in zip(SeqData,SeqSig,SeqNames):
-                Plot.errorbar(X,Y,yerr=sig,label=name)        
+                if sig:
+                    Plot.errorbar(X,Y,yerr=sig,label=name)
+                else:
+                    Plot.errorbar(X,Y,label=name)
             Plot.legend(loc='best')
             Plot.set_ylabel('Parameter values')
             Plot.set_xlabel(xName)

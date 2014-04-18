@@ -45,6 +45,7 @@ DEBUG = False
 
 def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
     calcControls,pawleyLookup,ifPrint,printFile,dlg):
+    'Core optimization routines, shared between SeqRefine and Refine'
 #    print 'current',varyList
 #    for item in parmDict: print item,parmDict[item] ######### show dict just before refinement
     G2mv.Map2Dict(parmDict,varyList)
@@ -72,6 +73,8 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
 #        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
 #        for item in table: print item,table[item]               #useful debug - are things shifting?
         runtime = time.time()-begin
+        Rvals['converged'] = result[2].get('Converged')
+        Rvals['DelChi2'] = result[2].get('DelChi2',-1.)
         Rvals['chisq'] = np.sum(result[2]['fvec']**2)
         G2stMth.Values2Dict(parmDict, varyList, result[0])
         G2mv.Dict2Map(parmDict,varyList)
@@ -108,7 +111,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     return Rvals,result,covMatrix,sig
 
 def Refine(GPXfile,dlg):
-    'Needs a doc string'
+    'Global refinement -- refines to minimize against all histograms'
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
@@ -205,7 +208,9 @@ def Refine(GPXfile,dlg):
         return Rvals['Rwp']
 
 def SeqRefine(GPXfile,dlg):
-    'Needs a doc string'
+    '''Perform a sequential refinement -- cycles through all selected histgrams,
+    one at a time
+    '''
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
@@ -328,22 +333,28 @@ def SeqRefine(GPXfile,dlg):
             #print 'Errors',errmsg
             #if warnmsg: print 'Warnings',warnmsg
             raise Exception(' *** Refine aborted ***')
-        print G2mv.VarRemapShow(varyList)
+        #print G2mv.VarRemapShow(varyList)
         
         ifPrint = False
         print >>printFile,'\n Refinement results for histogram: v'+histogram
         print >>printFile,135*'-'
         Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
             rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
-            
+
+        # add the uncertainties into the esd dictionary (sigDict)
         sigDict = dict(zip(varyList,sig))
+        # the uncertainties for dependent constrained parms into the esd dict
+        sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
+
+        # a dict with values & esds for dependent (constrained) parameters
+        depParmDict = {i:(parmDict[i],sigDict[i]) for i in varyListStart
+                       if i not in varyList}
         newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
         newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
         covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
                    'varyListStart':varyListStart,
                    'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,
-                   'newCellDict':newCellDict}
-        # add the uncertainties into the esd dictionary (sigDict)
+                   'newCellDict':newCellDict,'depParmDict':depParmDict}
         G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
 #        G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
         G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint,printFile)

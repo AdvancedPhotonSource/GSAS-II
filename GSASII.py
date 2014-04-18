@@ -3139,6 +3139,19 @@ class GSASII(wx.Frame):
         '''Perform a refinement.
         Called from the Calculate/Refine menu.
         '''        
+        Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
+        if Id:
+            dlg = wx.MessageDialog(
+                self,
+                'Your last refinement was sequential. Continue with "Refine", removing previous sequential results?',
+                'Remove sequential results?',wx.OK|wx.CANCEL)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.PatternTree.Delete(Id)
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+
         self.OnFileSave(event)
         # check that constraints are OK here
         errmsg, warnmsg = G2stIO.CheckConstraints(self.GSASprojectfile)

@@ -4055,16 +4055,16 @@ def UpdateHKLControls(G2frame,data):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
     
-    scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
-    scaleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Scale'),0,
-        WACV|wx.EXPAND)
-    scaleSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=1000,minValue=1,
-        style=wx.SL_HORIZONTAL,value=int(data['Scale']*10))
-    scaleSizer.Add(scaleSel,1,wx.EXPAND|wx.RIGHT|WACV)
-    scaleSel.SetLineSize(10)
-    scaleSel.SetPageSize(10)
-    scaleSel.Bind(wx.EVT_SLIDER, OnScaleSlider)
-    mainSizer.Add(scaleSizer,0,wx.EXPAND|wx.RIGHT)
+#    scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
+#    scaleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Scale'),0,
+#        WACV|wx.EXPAND)
+#    scaleSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=1000,minValue=1,
+#        style=wx.SL_HORIZONTAL,value=int(data['Scale']*10))
+#    scaleSizer.Add(scaleSel,1,wx.EXPAND|wx.RIGHT|WACV)
+#    scaleSel.SetLineSize(10)
+#    scaleSel.SetPageSize(10)
+#    scaleSel.Bind(wx.EVT_SLIDER, OnScaleSlider)
+##    mainSizer.Add(scaleSizer,0,wx.EXPAND|wx.RIGHT)
     mainSizer.Add((0,10),0)    
     
     zoneSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4084,18 +4084,18 @@ def UpdateHKLControls(G2frame,data):
     mainSizer.Add(zoneSizer,0,wx.EXPAND|wx.RIGHT)
     mainSizer.Add((0,10),0)    
         
-    izone = zones.index(data['Zone'])
-    layerSizer = wx.BoxSizer(wx.HORIZONTAL)
-    layerSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Layer'),0,
-        WACV|wx.EXPAND)
-    layerSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=HKLmax[izone],minValue=HKLmin[izone],
-        style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS,value=0)
-    layerSel.SetLineSize(1)
-    layerSel.SetPageSize(1)
-    layerSel.Bind(wx.EVT_SLIDER, OnLayerSlider)    
-    layerSizer.Add(layerSel,1,wx.EXPAND|wx.RIGHT|WACV)
-    layerSizer.Add((10,0),0)    
-    mainSizer.Add(layerSizer,1,wx.EXPAND|wx.RIGHT)
+#    izone = zones.index(data['Zone'])
+#    layerSizer = wx.BoxSizer(wx.HORIZONTAL)
+#    layerSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Layer'),0,
+#        WACV|wx.EXPAND)
+#    layerSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=HKLmax[izone],minValue=HKLmin[izone],
+#        style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS,value=0)
+#    layerSel.SetLineSize(1)
+#    layerSel.SetPageSize(1)
+#    layerSel.Bind(wx.EVT_SLIDER, OnLayerSlider)    
+#    layerSizer.Add(layerSel,1,wx.EXPAND|wx.RIGHT|WACV)
+#    layerSizer.Add((10,0),0)    
+#    mainSizer.Add(layerSizer,1,wx.EXPAND|wx.RIGHT)
 
         
     mainSizer.Layout()    

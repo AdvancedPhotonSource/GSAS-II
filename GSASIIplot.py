@@ -238,14 +238,15 @@ class GSASIItoolbar(Toolbar):
 ##### PlotSngl
 ################################################################################
             
-def PlotSngl(self,newPlot=False,Data=None,hklRef=None,Title=''):
+def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     '''Single crystal structure factor plotting package - displays zone of reflections as rings proportional
         to F, F**2, etc. as requested
     '''
     from matplotlib.patches import Circle,CirclePolygon
     global HKL,HKLF
 
-    def OnPlotKeyPress(event):
+    def OnSCKeyPress(event):
+        i = zones.index(Data['Zone'])
         newPlot = False
         if event.key == 'h':
             Data['Zone'] = '100'
@@ -258,12 +259,12 @@ def PlotSngl(self,newPlot=False,Data=None,hklRef=None,Title=''):
         elif event.key == 'd':
             Data['Scale'] /= 1.1
         elif event.key == '+':
-            Data['Layer'] += 1
+            Data['Layer'] = min(Data['Layer']+1,HKLmax[i])
         elif event.key == '-':
-            Data['Layer'] -= 1
+            Data['Layer'] = max(Data['Layer']-1,HKLmin[i])
         elif event.key == '0':
             Data['Layer'] = 0
-        PlotSngl(self,False,Data,hklRef,Title)
+        PlotSngl(G2frame,False,Data,hklRef,Title)
 
     def OnSCMotion(event):
         xpos = event.xdata
@@ -278,7 +279,8 @@ def PlotSngl(self,newPlot=False,Data=None,hklRef=None,Title=''):
             elif '001' in Data['Zone']:
                 HKLtxt = '(%3d,%3d,%3d)'%(xpos,ypos,zpos)
             Page.canvas.SetToolTipString(HKLtxt)
-            self.G2plotNB.status.SetFields(['HKL = '+HKLtxt,''])
+            G2frame.G2plotNB.status.SetStatusText('HKL = '+HKLtxt,0)
+            G2frame.G2plotNB.status.SetStatusText('Use K-box to set plot controls',1)
                 
     def OnSCPick(event):
         zpos = Data['Layer']
@@ -296,35 +298,38 @@ def PlotSngl(self,newPlot=False,Data=None,hklRef=None,Title=''):
         hklf = HKLF[np.where(np.all(HKL-hkl == [0,0,0],axis=1))]
         if len(hklf):
             Fosq,sig,Fcsq = hklf[0]
-            HKLtxt = '(%3d,%3d,%3d %.2f %.3f %.2f %.2f)'%(h,k,l,Fosq,sig,Fcsq,(Fosq-Fcsq)/(scale*sig))
-            self.G2plotNB.status.SetFields(['','HKL, Fosq, sig, Fcsq, delFsq/sig = '+HKLtxt])
+            HKLtxt = '( %.2f %.3f %.2f %.2f)'%(Fosq,sig,Fcsq,(Fosq-Fcsq)/(scale*sig))
+            G2frame.G2plotNB.status.SetStatusText('Fosq, sig, Fcsq, delFsq/sig = '+HKLtxt,1)
                                  
     try:
-        plotNum = self.G2plotNB.plotList.index('Structure Factors')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        plotNum = G2frame.G2plotNB.plotList.index('Structure Factors')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
             Plot = Page.figure.gca()          #get previous powder plot & get limits
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError:
-        Plot = self.G2plotNB.addMpl('Structure Factors').gca()
-        plotNum = self.G2plotNB.plotList.index('Structure Factors')
-        Page = self.G2plotNB.nb.GetPage(plotNum)
+        Plot = G2frame.G2plotNB.addMpl('Structure Factors').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Structure Factors')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('pick_event', OnSCPick)
         Page.canvas.mpl_connect('motion_notify_event', OnSCMotion)
-        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
-    Page.Choice = (' key press','u: increase scale','d: decrease scale',
-        'h: select 100 zone','k: select 010 zone','l: select 001 zone',
-        '+: increase index','-: decrease index','0: zero layer',)
+        Page.canvas.mpl_connect('key_press_event', OnSCKeyPress)
+        Page.keyPress = OnSCKeyPress
+        Page.Choice = (' key press','u: increase scale','d: decrease scale',
+            'h: select 100 zone','k: select 010 zone','l: select 001 zone',
+            '+: increase index','-: decrease index','0: zero layer',)
     Page.SetFocus()
     
+    G2frame.G2plotNB.status.SetStatusText('Use K-box to set plot controls',1)
     Plot.set_aspect(aspect='equal')
-    if self.Sngl:
-        HKLref = self.PatternTree.GetItemPyData(self.Sngl)[1]['RefList']
-        Data = self.PatternTree.GetItemPyData( 
-            G2gd.GetPatternTreeItemId(self,self.Sngl, 'HKL Plot Controls'))
-        Title = self.PatternTree.GetItemText(self.Sngl)[5:]
+    Name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    if 'HKLF' in Name:
+        HKLref = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]['RefList']
+        Data = G2frame.PatternTree.GetItemPyData( 
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'HKL Plot Controls'))
+        Title = Name[5:]
     else:
         HKLref = hklRef
     
@@ -345,7 +350,7 @@ def PlotSngl(self,newPlot=False,Data=None,hklRef=None,Title=''):
     time0 = time.time()
     for refl in HKLref:
         H = np.array(refl[:3])
-        if self.Sngl:
+        if 'HKLF' in Name:
             Fosq,sig,Fcsq = refl[5:8]
         else:
             Fosq,sig,Fcsq = refl[8],1.0,refl[9]
@@ -402,18 +407,17 @@ def PlotSngl(self,newPlot=False,Data=None,hklRef=None,Title=''):
     HKLF = np.array(HKLF)
     Plot.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=12)
     Plot.set_ylabel(ylabel[izone],fontsize=12)
-    Plot.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
-    Plot.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
-    Page.canvas.draw()
-#    if not newPlot:
-#        Page.toolbar.push_current()
-#        Plot.set_xlim(xylim[0])
-#        Plot.set_ylim(xylim[1])
+    if not newPlot:
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
 #        xylim = []
-#        Page.toolbar.push_current()
-#        Page.toolbar.draw()
-#    else:
-#        Page.canvas.draw()
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
+    else:
+        Plot.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
+        Plot.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
+        Page.canvas.draw()
        
 ################################################################################
 ##### PlotPatterns

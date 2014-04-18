@@ -2312,11 +2312,11 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             G2plt.PlotPatterns(G2frame)
             
         def OnPlotHKL(event):
-            controls = {'Type' : 'Fo','ifFc' : True,    # 
-                'HKLmax' : [np.max(refList.T[0]),np.max(refList.T[1]),np.max(refList.T[2])],
-                'HKLmin' : [np.min(refList.T[0]),np.min(refList.T[1]),np.min(refList.T[2])],
-                'FoMax' : np.sqrt(np.max(refList.T[8])),
-                'Zone' : '001','Layer' : 0,'Scale' : 1.0,}
+            FoMax = np.max(refList.T[8])
+            controls = {'Type' : 'Fo','ifFc' : True,     
+                'HKLmax' : [int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))],
+                'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],
+                'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,}
             G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
     if G2frame.dataDisplay:

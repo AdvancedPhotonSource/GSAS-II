@@ -238,12 +238,32 @@ class GSASIItoolbar(Toolbar):
 ##### PlotSngl
 ################################################################################
             
-def PlotSngl(self,newPlot=False):
+def PlotSngl(self,newPlot=False,Data=None,hklRef=None,Title=''):
     '''Single crystal structure factor plotting package - displays zone of reflections as rings proportional
         to F, F**2, etc. as requested
     '''
     from matplotlib.patches import Circle,CirclePolygon
     global HKL,HKLF
+
+    def OnPlotKeyPress(event):
+        newPlot = False
+        if event.key == 'h':
+            Data['Zone'] = '100'
+        elif event.key == 'k':
+            Data['Zone'] = '010'
+        elif event.key == 'l':
+            Data['Zone'] = '001'
+        elif event.key == 'u':
+            Data['Scale'] *= 1.1
+        elif event.key == 'd':
+            Data['Scale'] /= 1.1
+        elif event.key == '+':
+            Data['Layer'] += 1
+        elif event.key == '-':
+            Data['Layer'] -= 1
+        elif event.key == '0':
+            Data['Layer'] = 0
+        PlotSngl(self,False,Data,hklRef,Title)
 
     def OnSCMotion(event):
         xpos = event.xdata
@@ -286,7 +306,6 @@ def PlotSngl(self,newPlot=False):
             Plot = Page.figure.gca()          #get previous powder plot & get limits
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
-        Page.Choice = None
         Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError:
         Plot = self.G2plotNB.addMpl('Structure Factors').gca()
@@ -294,13 +313,21 @@ def PlotSngl(self,newPlot=False):
         Page = self.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('pick_event', OnSCPick)
         Page.canvas.mpl_connect('motion_notify_event', OnSCMotion)
-    Page.Choice = None
+        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
+    Page.Choice = (' key press','u: increase scale','d: decrease scale',
+        'h: select 100 zone','k: select 010 zone','l: select 001 zone',
+        '+: increase index','-: decrease index','0: zero layer',)
     Page.SetFocus()
     
     Plot.set_aspect(aspect='equal')
-    HKLref = self.PatternTree.GetItemPyData(self.Sngl)[1]['RefList']
-    Data = self.PatternTree.GetItemPyData( 
-        G2gd.GetPatternTreeItemId(self,self.Sngl, 'HKL Plot Controls'))
+    if self.Sngl:
+        HKLref = self.PatternTree.GetItemPyData(self.Sngl)[1]['RefList']
+        Data = self.PatternTree.GetItemPyData( 
+            G2gd.GetPatternTreeItemId(self,self.Sngl, 'HKL Plot Controls'))
+        Title = self.PatternTree.GetItemText(self.Sngl)[5:]
+    else:
+        HKLref = hklRef
+    
     Type = Data['Type']            
     scale = Data['Scale']
     HKLmax = Data['HKLmax']
@@ -312,13 +339,16 @@ def PlotSngl(self,newPlot=False):
     zones = ['100','010','001']
     pzone = [[1,2],[0,2],[0,1]]
     izone = zones.index(Data['Zone'])
-    Plot.set_title(self.PatternTree.GetItemText(self.Sngl)[5:])
+    Plot.set_title(Title)
     HKL = []
     HKLF = []
     time0 = time.time()
     for refl in HKLref:
         H = np.array(refl[:3])
-        Fosq,sig,Fcsq = refl[5:8]
+        if self.Sngl:
+            Fosq,sig,Fcsq = refl[5:8]
+        else:
+            Fosq,sig,Fcsq = refl[8],1.0,refl[9]
         HKL.append(H)
         HKLF.append([Fosq,sig,Fcsq])
         if H[izone] == Data['Layer']:

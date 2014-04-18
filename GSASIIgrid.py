@@ -2591,8 +2591,8 @@ class DataFrame(wx.Frame):
         self.ReflMenu.Append(menu=self.ReflEdit, title='Reflection List')
         self.SelectPhase = self.ReflEdit.Append(help='Select phase for reflection list',id=wxID_SELECTPHASE, 
             kind=wx.ITEM_NORMAL,text='Select phase')
-#        self.ReflMenu.Append(id=wxID_PWDHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot HKLs',
-#            help='Plot HKLs from powder pattern')      #can't work yet; no HKL Plot Controls!
+        self.ReflEdit.Append(id=wxID_PWDHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot HKLs',
+            help='Plot HKLs from powder pattern')
         self.PostfillDataMenu()
         
         #SASD & REFL/ Substance editor

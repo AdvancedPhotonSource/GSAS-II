@@ -1638,7 +1638,6 @@ class ImportStructFactor(ImportBaseclass):
             'Zone' : '001',
             'Layer' : 0,
             'Scale' : 1.0,
-            'log-lin' : 'lin',
             }
 
     def InitParameters(self):

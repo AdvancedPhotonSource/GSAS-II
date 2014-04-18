@@ -2247,14 +2247,28 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
 ################################################################################
 ##### PlotSeq
 ################################################################################
-            
-def PlotSeq(G2frame,SeqData,SeqSig,SeqNames):
+def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX):
     '''Plot a result from a sequential refinement
-    '''    
-    # def OnKeyPress(event):
-    #     if event.key == 's' and sampleParm:
-    #         G2frame.xAxis = not G2frame.xAxis
-    #         Draw(False)
+
+    :param wx.Frame G2frame: The main GSAS-II tree "window"
+    :param list ColumnList: list of int values corresponding to columns
+      selected as y values
+    :param function TableGet: a function that takes a column number
+      as argument and returns the column label, the values and there ESDs (or None)
+    :param function SelectX: a function that returns a selected column
+      number (or None) as the X-axis selection
+    '''
+    G2frame.seqYaxisList = ColumnList
+    G2frame.seqTableGet = TableGet
+    G2frame.seqXselect = SelectX
+    try:
+        G2frame.seqXaxis
+    except:
+        G2frame.seqXaxis = None
+    def OnKeyPress(event):
+        if event.key == 's':
+            G2frame.seqXaxis = G2frame.seqXselect()
+            Draw()
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Sequential refinement')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -2266,34 +2280,31 @@ def PlotSeq(G2frame,SeqData,SeqSig,SeqNames):
         Plot = G2frame.G2plotNB.addMpl('Sequential refinement').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Sequential refinement')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-        #Page.canvas.mpl_connect('key_press_event', OnKeyPress)
-        G2frame.xAxis = False
-    Page.Choice = []
-    #Page.Choice = ['s to toggle x-axis = sample environment parameter']
-    #Page.keyPress = OnKeyPress
+        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+    Page.Choice = ['s to select plot x-axis']
+    Page.keyPress = OnKeyPress
         
-    def Draw(newPlot):
+    def Draw():
         Page.SetFocus()
-        #G2frame.G2plotNB.status.SetFields(['','press '])
-        if len(SeqData):
-            Plot.clear()
-            # if G2frame.xAxis:    
-            #     xName = sampleParm.keys()[0]
-            #     X = sampleParm[xName]
-            # else:
-            X = np.arange(0,len(SeqData[0]),1)
+        G2frame.G2plotNB.status.SetFields(['press s to select X axis'])
+        Plot.clear()
+        if G2frame.seqXaxis is not None:    
+            xName,X,Xsig = G2frame.seqTableGet(G2frame.seqXaxis)
+        else:
+            X = np.arange(0,G2frame.SeqTable.GetNumberRows(),1)
             xName = 'Data sequence number'
-            for Y,sig,name in zip(SeqData,SeqSig,SeqNames):
-                if sig:
-                    Plot.errorbar(X,Y,yerr=sig,label=name)
-                else:
-                    Plot.errorbar(X,Y,label=name)
-            Plot.legend(loc='best')
-            Plot.set_ylabel('Parameter values')
-            Plot.set_xlabel(xName)
-            Page.canvas.draw()            
-    Draw(True)
-            
+        for col in G2frame.seqYaxisList:
+            name,Y,sig = G2frame.seqTableGet(col)
+            if sig:
+                Plot.errorbar(X,Y,yerr=sig,label=name)
+            else:
+                Plot.errorbar(X,Y,label=name)
+        Plot.legend(loc='best')
+        Plot.set_ylabel('Parameter values')
+        Plot.set_xlabel(xName)
+        Page.canvas.draw()            
+    Draw()
+                
 ################################################################################
 ##### PlotExposedImage & PlotImage
 ################################################################################

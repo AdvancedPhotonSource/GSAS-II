@@ -1434,7 +1434,9 @@ class G2MultiChoiceDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),1,wx.ALL|wx.EXPAND|WACV,1)
+        topSizer.Add(
+            wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
+            1,wx.ALL|wx.EXPAND|WACV,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
@@ -1583,7 +1585,9 @@ class G2SingleChoiceDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title),1,wx.ALL|wx.EXPAND,0)
+        topSizer.Add(
+            wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
+            1,wx.ALL|wx.EXPAND|WACV,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
@@ -3506,7 +3510,7 @@ def UpdateSeqResults(G2frame,data):
               * 'covMatrix' - covariance matrix from individual refinement
               * 'title' - histogram name; same as dict item name
               * 'newAtomDict' - new atom parameters after shifts applied
-              * 'newCellDict' - new cell parameters after shifts to A0-A5 applied'
+              * 'newCellDict' - refined cell parameters after shifts to A0-A5 from Dij terms applied'
     """
 
     def GetSampleParms():
@@ -3527,44 +3531,42 @@ def UpdateSeqResults(G2frame,data):
                 sampleParm[item] = sampleParmDict[item]            
         return sampleParm
 
-    def GetColumnVals(col):
-        'returns lists of values and errors (or None) for each column in the table'
-        return colList[col],colSigs[col]
+    def GetColumnInfo(col):
+        '''returns column label, lists of values and errors (or None) for each column in the table.
+        label is reformatted from Unicode to MatPlotLib
+        '''
+        plotName = plotSpCharFix(G2frame.SeqTable.GetColLabelValue(col))
+        return plotName,colList[col],colSigs[col]
             
     def PlotSelect(event):
         'Plots a row (covariance) or column on double-click'
         cols = G2frame.dataDisplay.GetSelectedCols()
         rows = G2frame.dataDisplay.GetSelectedRows()
         if cols:
-            for col in cols:
-                plotName = plotSpCharFix(G2frame.SeqTable.GetColLabelValue(col))
-                data,sigs = GetColumnVals(col)
-                G2plt.PlotSeq(G2frame,[data],[sigs],[plotName])
-                break # stop after 1st
+            G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
         elif rows:
             name = histNames[rows[0]]       #only does 1st one selected
             G2plt.PlotCovariance(G2frame,data[name])
-
+        else:
+            G2frame.ErrorDialog(
+                'Select row or columns',
+                'Nothing selected in table. Click on column or row label(s) to plot. N.B. Grid selection can be a bit funky.'
+                )
+            
     def OnPlotSelSeq(event):
-        'plot the selected columns from menu command'
+        'plot the selected columns or row from menu command'
         cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
-        print cols
-        nrows = G2frame.SeqTable.GetNumberRows()
-        if not cols:
+        rows = G2frame.dataDisplay.GetSelectedRows()
+        if cols:
+            G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
+        elif rows:
+            name = histNames[rows[0]]       #only does 1st one selected
+            G2plt.PlotCovariance(G2frame,data[name])
+        else:
             G2frame.ErrorDialog(
                 'Select columns',
-                'No columns selected in table. Click on column labels to select fields for output.'
+                'No columns or rows selected in table. Click on row or column labels to select fields for plotting.'
                 )
-            return
-        #saveNames = [G2frame.SeqTable.GetRowLabelValue(r) for r in range(nrows)]
-        saveData = []
-        saveSigs = []
-        plotNames = [plotSpCharFix(G2frame.SeqTable.GetColLabelValue(col)) for col in cols]
-        for col in cols:
-            vals,sigs = GetColumnVals(col)
-            saveData.append(vals)
-            saveSigs.append(sigs)
-        G2plt.PlotSeq(G2frame,saveData,saveSigs,plotNames)
             
     def OnSaveSelSeqCSV(event):
         'export the selected columns to a .csv file from menu command'
@@ -3625,7 +3627,7 @@ def UpdateSeqResults(G2frame,data):
         saveSigs = {}
         havesig = []
         for col in cols:
-            vals,sigs = GetColumnVals(col)
+            name,vals,sigs = GetColumnInfo(col)
             saveData[col] = vals
             if sigs:
                 havesig.append(col)
@@ -3661,10 +3663,12 @@ def UpdateSeqResults(G2frame,data):
         [['2/m'+'c'],(0,1,2,5)],
         [['-1'],(0,1,2,3,4,5)],
         ]
-    def striphist(var):
+    # cell labels
+    cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03b3') # unicode a,b,c,alpha,beta,gamma
+    def striphist(var,insChar=''):
         'strip a histogram number from a var name'
         sv = var.split(':')
-        sv[1] = ''
+        sv[1] = insChar
         return ':'.join(sv)
     def plotSpCharFix(lbl):
         'Change selected unicode characters to their matplotlib equivalent'
@@ -3676,7 +3680,24 @@ def UpdateSeqResults(G2frame,data):
             ]:
             lbl = lbl.replace(u,p)
         return lbl
-
+    
+    def SelectXaxis():
+        'returns a selected column number (or None) as the X-axis selection'
+        ncols = G2frame.SeqTable.GetNumberCols()
+        colNames = [G2frame.SeqTable.GetColLabelValue(r) for r in range(ncols)]
+        dlg = G2SingleChoiceDialog(
+            G2frame.dataDisplay,
+            'Select x-axis parameter for plot or Cancel for sequence number',
+            'Select X-axis',
+            colNames)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                col = dlg.GetSelection()
+            else:
+                col = None
+        finally:
+            dlg.Destroy()
+        return col
     #======================================================================
     # start processing sequential results here
     if not data:
@@ -3705,8 +3726,6 @@ def UpdateSeqResults(G2frame,data):
             Dlookup[item] = newCellDict[item][0]
 
     # get unit cell & symmetry for all phases
-    cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03b3') # unicode a,b,c,alpha,beta,gamma
-    #cellUlbl = ('a','b','c',r'$\alpha$',r'$\beta$',r'$\gamma$') # matplotlib a,b,c,alpha,beta,gamma
     Phases = G2frame.GetPhaseData()
     Alist = {}
     SGdata = {}
@@ -3745,16 +3764,18 @@ def UpdateSeqResults(G2frame,data):
     colSigs += [None]
     colLabels += ['Rwp']
     Types += [wg.GRID_VALUE_FLOAT,]
-    # add Converged flag
+    # add % change in Chi^2 in last cycle
     colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
     colSigs += [None]
     colLabels += [u'\u0394\u03C7\u00B2 (%)']
     Types += [wg.GRID_VALUE_FLOAT,]
 
+    # adds checkbox for converged (Bob wants to change color of previous instead)
     # colList += [[data[name]['Rvals']['converged'] for name in histNames]]
     # colSigs += [None]
     # colLabels += ['Cnvg']
     # Types += [wg.GRID_VALUE_BOOL,]
+
     # add sample parameters
     for key in sampleParms:
         colList += [sampleParms[key]]
@@ -3799,20 +3820,20 @@ def UpdateSeqResults(G2frame,data):
     colSigs += zip(*[data[name]['sig'] for name in histNames])
     
     # process the dependent constrained variables, removing histogram numbers if needed
+    # from parameter label
     depValDict = {}
     depSigDict = {}
     for name in histNames:
         for var in data[name].get('depParmDict',{}):
             val,sig = data[name]['depParmDict'][var]
-            sv = var.split(':')
-            if sv[1] != '': sv[1] = '*'
-            svar = ':'.join(sv)
+            svar = striphist(var,'*')
             if svar not in depValDict:
                depValDict[svar] = [val]
                depSigDict[svar] = [sig]
             else:
                depValDict[svar].append(val)
                depSigDict[svar].append(sig)
+               
     # add the dependent constrained variables
     for var in sorted(depValDict):
         if len(depValDict[var]) != len(histNames): continue
@@ -3830,6 +3851,7 @@ def UpdateSeqResults(G2frame,data):
     rowList = [c for c in zip(*colList)]     # convert from columns to rows
     G2frame.SeqTable = Table(rowList,colLabels=colLabels,rowLabels=histNames,types=Types)
 
+    # old Table contents generator, keep for comparison for right now.
     # Rwps = [data[name]['Rvals']['Rwp'] for name in histNames]
     # seqList = [[Rwps[i],]+list(data[name]['variables']) for i,name in enumerate(histNames)]
     # for i,item in enumerate(seqList):
@@ -3850,6 +3872,7 @@ def UpdateSeqResults(G2frame,data):
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(True)
     G2frame.dataFrame.setSizePosLeft([700,350])
+
 ################################################################################
 #####  Main PWDR panel
 ################################################################################           

@@ -1023,7 +1023,7 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                 Ic += Porod
             elif 'Mono' in Type:
                 FFfxn = parmDict[cid+'FormFact']
-                Volfxn = parmDict[cid+'FormFact']
+                Volfxn = parmDict[cid+'FFVolume']
                 FFargs = []
                 for item in [cid+'Aspect ratio',cid+'Length',cid+'Thickness',cid+'Diameter',]:
                     if item in parmDict: 
@@ -1054,11 +1054,16 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
     GOF = chisq/(Ifin-Ibeg-len(varyList))       #reduced chi^2
     parmDict.update(zip(varyList,result[0]))
     Ic[Ibeg:Ifin] = getSASD(Q[Ibeg:Ifin],levelTypes,parmDict)
-    sigDict = dict(zip(varyList,np.sqrt(np.diag(result[1])*GOF)))
-    print ' Results of small angle data modelling fit:'
-    print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',Ifin-Ibeg,' Number of parameters: ',len(varyList)
-    print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
-    SetModelParms()
+    try:
+        sigDict = dict(zip(varyList,np.sqrt(np.diag(result[1])*GOF)))
+        print ' Results of small angle data modelling fit:'
+        print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',Ifin-Ibeg,' Number of parameters: ',len(varyList)
+        print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
+        SetModelParms()
+        return True
+    except ValueError:
+        return False
+        
     
 def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
     shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],

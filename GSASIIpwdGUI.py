@@ -2663,6 +2663,13 @@ def UpdateModelsGrid(G2frame,data):
         data['Particle']['Matrix'] = {'Name':'vacuum','VolFrac':[0.0,False]}
     #end patches
     
+    def RefreshPlots(newPlot=False):
+        PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
+        if 'Powder' in PlotText:
+            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=newPlot)
+        elif 'Size' in PlotText:
+            G2plt.PlotSASDSizeDist(G2frame)
+                
     def OnAddModel(event):
         if data['Current'] == 'Particle fit':
             material = 'vacuum'
@@ -2683,7 +2690,7 @@ def UpdateModelsGrid(G2frame,data):
                     'PkSig':[10,False],'PkGam':[10,False],},        #reeasonable 31A peak
                 })
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
-            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            RefreshPlots(True)
                     
         wx.CallAfter(UpdateModelsGrid,G2frame,data)
         
@@ -2717,13 +2724,16 @@ def UpdateModelsGrid(G2frame,data):
                     ' Do Substances and then Sample parameters')
                 return
             G2sasd.SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data)
-            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
-            G2plt.PlotSASDSizeDist(G2frame)
+            RefreshPlots(True)
             
         elif data['Current'] == 'Particle fit':
             SaveState()
-            G2sasd.ModelFit(Profile,ProfDict,Limits,Substances,Sample,data)
-            G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+            if not G2sasd.ModelFit(Profile,ProfDict,Limits,Substances,Sample,data):
+                G2frame.ErrorDialog('Failed refinement',
+                    'You need to rethink your selection of parameters\n'+    \
+                    ' Model restored to previous version')
+            G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            RefreshPlots(True)
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
     def OnUnDo(event):
@@ -2733,22 +2743,14 @@ def UpdateModelsGrid(G2frame,data):
         G2frame.dataFrame.SasdUndo.Enable(False)
         UpdateModelsGrid(G2frame,data)
         G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
-        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+        RefreshPlots(True)
 
     def DoUnDo():
         print 'Undo last refinement'
         file = open(G2frame.undosasd,'rb')
         PatternId = G2frame.PatternId
-        for item in ['Models']:
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item),cPickle.load(file))
-            if G2frame.dataDisplay.GetName() == item:
-                if item == 'Background':
-                    UpdateBackground(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
-                elif item == 'Instrument Parameters':
-                    UpdateInstrumentGrid(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
-                elif item == 'Peak List':
-                    UpdatePeakGrid(G2frame,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, item)))
-            print item,' recovered'
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Models'),cPickle.load(file))
+        print ' Models recovered'
         file.close()
         
     def SaveState():
@@ -2775,7 +2777,7 @@ def UpdateModelsGrid(G2frame,data):
         data[itemKey][ind] = value
         if itemKey == 'Back':
             Profile[4][:] = value
-        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
+        RefreshPlots()
         
     def OnCheckBox(event):
         Obj = event.GetEventObject()
@@ -2916,13 +2918,6 @@ def UpdateModelsGrid(G2frame,data):
         ffMonoChoices = ['Sphere','Spheroid','Cylinder','Cylinder AR',
             ]
                   
-        def RefreshPlots():
-            PlotText = G2frame.G2plotNB.nb.GetPageText(G2frame.G2plotNB.nb.GetSelection())
-            if 'Powder' in PlotText:
-                G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
-            elif 'Size' in PlotText:
-                G2plt.PlotSASDSizeDist(G2frame)
-                
         def OnValue(event):
             Obj = event.GetEventObject()
             item,key,id,sldrObj = Indx[Obj.GetId()]
@@ -3066,7 +3061,7 @@ def UpdateModelsGrid(G2frame,data):
             parmSizer.SetFlexibleDirection(wx.HORIZONTAL)
             Parms = level[level['Controls']['DistType']]
             FFargs = level['Controls']['FFargs']
-            parmOrder = ['Volume','Mean','StdDev','MinSize','G','Rg','B','P','Cutoff',
+            parmOrder = ['Volume','Radius','Mean','StdDev','MinSize','G','Rg','B','P','Cutoff',
                 'PkInt','PkPos','PkSig','PkGam',]
             for parm in parmOrder:
                 if parm in Parms:
@@ -3140,7 +3135,7 @@ def UpdateModelsGrid(G2frame,data):
             value = 1./np.sqrt(ProfDict['wtFactor'])
         ProfDict['wtFactor'] = 1./value**2
         esdScale.SetValue('%.3f'%(value))
-        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
+        RefreshPlots(True)
         
     Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
     Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))

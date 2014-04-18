@@ -2637,7 +2637,7 @@ class GSASII(wx.Frame):
         item, cookie = self.PatternTree.GetFirstChild(self.root)
         while item and not Id:
             name = self.PatternTree.GetItemText(item)
-            if name[:4] in ['PWDR','HKLF','IMG ','PDF ']:
+            if name[:4] in ['PWDR','HKLF','IMG ','PDF ','SASD',]:
                 Id = item
             elif name == 'Controls':
                 data = self.PatternTree.GetItemPyData(item)

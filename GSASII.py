@@ -738,7 +738,7 @@ class GSASII(wx.Frame):
                 self.PatternTree.AppendItem(Id,text='Reflection List'),[])  #dummy entry for GUI use
             self.PatternTree.SelectItem(Id)
             self.PatternTree.Expand(Id)
-            self.Sngl = Id
+            self.Sngl = True
             newHistList.append(HistName)
 
         if not newHistList: return # somehow, no new histograms
@@ -1901,7 +1901,7 @@ class GSASII(wx.Frame):
         self.ImageZ = []
         self.Integrate = 0
         self.imageDefault = {}
-        self.Sngl = 0
+        self.Sngl = False
         self.ifGetRing = False
         self.MaskKey = ''           #trigger for making image masks
         self.StrainKey = ''         #ditto for new strain d-zeros

@@ -2682,17 +2682,17 @@ def UpdateModelsGrid(G2frame,data):
                 material = data['Particle']['Levels'][-1]['Controls']['Material']
             data['Particle']['Levels'].append({
                 'Controls':{'FormFact':'Sphere','DistType':'LogNormal','Material':material,
-                    'FFargs':{},'NumPoints':50,'Cutoff':0.01,'AutoDist':True,'logR':True,
-                    'StrFact':'Dilute'},
+                    'FFargs':{},'NumPoints':50,'Cutoff':0.01,
+                    'SlitSmear':[0.0,False],'StrFact':'Dilute'},    #last 2 not used - future?
                 'LogNormal':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[0.5,False],'MinSize':[10.,False],},
                 'Gaussian':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
                 'LSW':{'Volume':[0.05,False],'Mean':[1000.0,False],},
                 'Schulz-Zimm':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
-                'Unified':{'G':[100,False],'Rg':[100,False],'B':[1.e-4,False],'P':[4,False],'Cutoff':[1e-5,False],},
+                'Unified':{'G':[1.e3,False],'Rg':[100,False],'B':[1.e-5,False],'P':[4,False],'Cutoff':[1e-5,False],},
                 'Porod':{'B':[1.e-4,False],'P':[4,False],'Cutoff':[1e-5,False],},
                 'Monodisperse':{'Volume':[0.05,False],'Radius':[100,False],},   #OK for spheres
                 'Bragg':{'PkInt':[100,False],'PkPos':[0.2,False],
-                    'PkSig':[10,False],'PkGam':[10,False],},        #reeasonable 31A peak
+                    'PkSig':[10,False],'PkGam':[10,False],},        #reasonable 31A peak
                 })
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
             RefreshPlots(True)
@@ -2720,6 +2720,9 @@ def UpdateModelsGrid(G2frame,data):
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Models'),
                 copy.deepcopy(data))
+                
+    def OnFitModelAll(event):
+        event.Skip()
         
     def OnFitModel(event):
         if data['Current'] == 'Size dist.':
@@ -3157,6 +3160,7 @@ def UpdateModelsGrid(G2frame,data):
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModel, id=G2gd.wxID_MODELFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModelAll, id=G2gd.wxID_MODELFITALL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_MODELUNDO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddModel, id=G2gd.wxID_MODELADD)
     Indx = {}

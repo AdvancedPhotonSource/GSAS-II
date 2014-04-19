@@ -244,16 +244,20 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     '''
     from matplotlib.patches import Circle,CirclePolygon
     global HKL,HKLF
-
+    
     def OnSCKeyPress(event):
         i = zones.index(Data['Zone'])
         newPlot = False
+        typeChoice = {'1':'|DFsq|>sig','3':'|DFsq|>3sig','w':'|DFsq|/sig','f':'Fo','s':'Fosq'}
         if event.key == 'h':
             Data['Zone'] = '100'
+            newPlot = True
         elif event.key == 'k':
             Data['Zone'] = '010'
+            newPlot = True
         elif event.key == 'l':
             Data['Zone'] = '001'
+            newPlot = True
         elif event.key == 'u':
             Data['Scale'] *= 1.1
         elif event.key == 'd':
@@ -264,7 +268,10 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             Data['Layer'] = max(Data['Layer']-1,HKLmin[i])
         elif event.key == '0':
             Data['Layer'] = 0
-        PlotSngl(G2frame,False,Data,hklRef,Title)
+        elif event.key in typeChoice and 'HKLF' in Name:
+            Data['Type'] = typeChoice[event.key]            
+            newPlot = True
+        PlotSngl(G2frame,newPlot,Data,hklRef,Title)
 
     def OnSCMotion(event):
         xpos = event.xdata
@@ -282,25 +289,30 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             G2frame.G2plotNB.status.SetStatusText('HKL = '+HKLtxt,0)
             G2frame.G2plotNB.status.SetStatusText('Use K-box to set plot controls',1)
                 
-    def OnSCPick(event):
+    def OnSCPress(event):
         zpos = Data['Layer']
-        pos = event.artist.center
-        if '100' in Data['Zone']:
-            Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(zpos,pos[0],pos[1]))
-            hkl = np.array([zpos,pos[0],pos[1]])
-        elif '010' in Data['Zone']:
-            Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],zpos,pos[1]))
-            hkl = np.array([pos[0],zpos,pos[1]])
-        elif '001' in Data['Zone']:
-            Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],pos[1],zpos))
-            hkl = np.array([pos[0],pos[1],zpos])
-        h,k,l = hkl
-        hklf = HKLF[np.where(np.all(HKL-hkl == [0,0,0],axis=1))]
-        if len(hklf):
-            Fosq,sig,Fcsq = hklf[0]
-            HKLtxt = '( %.2f %.3f %.2f %.2f)'%(Fosq,sig,Fcsq,(Fosq-Fcsq)/(scale*sig))
-            G2frame.G2plotNB.status.SetStatusText('Fosq, sig, Fcsq, delFsq/sig = '+HKLtxt,1)
+        xpos = event.xdata
+        if xpos:
+            pos = int(round(event.xdata)),int(round(event.ydata))
+            if '100' in Data['Zone']:
+                Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(zpos,pos[0],pos[1]))
+                hkl = np.array([zpos,pos[0],pos[1]])
+            elif '010' in Data['Zone']:
+                Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],zpos,pos[1]))
+                hkl = np.array([pos[0],zpos,pos[1]])
+            elif '001' in Data['Zone']:
+                Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],pos[1],zpos))
+                hkl = np.array([pos[0],pos[1],zpos])
+            h,k,l = hkl
+            hklf = HKLF[np.where(np.all(HKL-hkl == [0,0,0],axis=1))]
+            if len(hklf):
+                Fosq,sig,Fcsq = hklf[0]
+                HKLtxt = '( %.2f %.3f %.2f %.2f)'%(Fosq,sig,Fcsq,(Fosq-Fcsq)/(scale*sig))
+                G2frame.G2plotNB.status.SetStatusText('Fosq, sig, Fcsq, delFsq/sig = '+HKLtxt,1)
                                  
+    Name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    if not Title:
+        Title = Name
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Structure Factors')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -313,25 +325,24 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         Plot = G2frame.G2plotNB.addMpl('Structure Factors').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Structure Factors')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-        Page.canvas.mpl_connect('pick_event', OnSCPick)
+        Page.canvas.mpl_connect('button_press_event', OnSCPress)
         Page.canvas.mpl_connect('motion_notify_event', OnSCMotion)
         Page.canvas.mpl_connect('key_press_event', OnSCKeyPress)
         Page.keyPress = OnSCKeyPress
-        Page.Choice = (' key press','u: increase scale','d: decrease scale',
-            'h: select 100 zone','k: select 010 zone','l: select 001 zone',
-            '+: increase index','-: decrease index','0: zero layer',)
+        if 'HKLF' in Name:
+            Page.Choice = (' key press','u: increase scale','d: decrease scale',
+                'f: select Fo','s: select Fosq','w: select |DFsq|/sig',
+                '1: select |DFsq|>sig','3 select |DFsq|>3sig',
+                'h: select 100 zone','k: select 010 zone','l: select 001 zone',
+                '+: increase index','-: decrease index','0: zero layer',)
+        else:    
+            Page.Choice = (' key press','u: increase scale','d: decrease scale',
+                'h: select 100 zone','k: select 010 zone','l: select 001 zone',
+                '+: increase index','-: decrease index','0: zero layer',)
     Page.SetFocus()
     
     G2frame.G2plotNB.status.SetStatusText('Use K-box to set plot controls',1)
     Plot.set_aspect(aspect='equal')
-    Name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-    if 'HKLF' in Name:
-        HKLref = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]['RefList']
-        Data = G2frame.PatternTree.GetItemPyData( 
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'HKL Plot Controls'))
-        Title = Name[5:]
-    else:
-        HKLref = hklRef
     
     Type = Data['Type']            
     scale = Data['Scale']
@@ -344,11 +355,11 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     zones = ['100','010','001']
     pzone = [[1,2],[0,2],[0,1]]
     izone = zones.index(Data['Zone'])
-    Plot.set_title(Title)
+    Plot.set_title(Data['Type']+' '+Title)
     HKL = []
     HKLF = []
     time0 = time.time()
-    for refl in HKLref:
+    for refl in hklRef:
         H = np.array(refl[:3])
         if 'HKLF' in Name:
             Fosq,sig,Fcsq = refl[5:8]
@@ -369,33 +380,31 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 C = abs(A-B)
             elif Type == '|DFsq|/sig':
                 if sig > 0.:
-                    A = scale*(Fosq-Fcsq)/(sig)
+                    A = (Fosq-Fcsq)/(3*sig)
                 B = 0
             elif Type == '|DFsq|>sig':
                 if sig > 0.:
-                    A = (Fosq-Fcsq)/sig
+                    A = (Fosq-Fcsq)/(3*sig)
                 if abs(A) < 1.0: A = 0
-                A *= scale
                 B = 0                    
             elif Type == '|DFsq|>3sig':
                 if sig > 0.:
-                    A = (Fosq-Fcsq)/sig
+                    A = (Fosq-Fcsq)/(3*sig)
                 if abs(A) < 3.0: A = 0
-                A *= scale
                 B = 0                    
             xy = (H[pzone[izone][0]],H[pzone[izone][1]])
             if Type in ['|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']:
                 if A > 0.0:
-                    Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
+                    Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w'))
                 else:
-                    Plot.add_artist(Circle(xy,radius=-A,ec='r',fc='w',picker=3))
+                    Plot.add_artist(Circle(xy,radius=-A,ec='r',fc='w'))
             else:
                 if A > 0.0 and A > B:
-                    Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
+                    Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w'))
                 if B:
                     Plot.add_artist(Circle(xy,radius=B,ec='b',fc='w'))
                     if A < B:
-                        Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=3))
+                        Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w'))
                     radius = C
                     if radius > 0:
                         if A > B:

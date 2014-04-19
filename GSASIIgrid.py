@@ -139,8 +139,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
-    wxID_MODELUNDO,
-] = [wx.NewId() for item in range(10)]
+    wxID_MODELUNDO,wxID_MODELFITALL,
+] = [wx.NewId() for item in range(11)]
 
 [ wxID_SELECTPHASE,wxID_PWDHKLPLOT,
 ] = [wx.NewId() for item in range(2)]
@@ -2639,6 +2639,8 @@ class DataFrame(wx.Frame):
         self.SasdUndo = self.ModelEdit.Append(id=wxID_MODELUNDO, kind=wx.ITEM_NORMAL,text='Undo',
             help='Undo model fit')
         self.SasdUndo.Enable(False)            
+        self.ModelEdit.Append(id=wxID_MODELFITALL, kind=wx.ITEM_NORMAL,text='Fit all',
+            help='Fit model parameters to all SASD data')
         self.ModelEdit.Append(id=wxID_MODELCOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy model parameters to other histograms')
         self.PostfillDataMenu()
@@ -4111,103 +4113,14 @@ def UpdatePWHKPlot(G2frame,kind,item):
     elif kind == 'SASD':
         G2plt.PlotPatterns(G2frame,plotType=kind,newPlot=True)
     elif kind == 'HKLF':
-        G2plt.PlotSngl(G2frame,newPlot=True)
+        refList = data[1]['RefList']
+        FoMax = np.max(refList.T[5])
+        controls = {'Type' : 'Fo','ifFc' : True,     
+            'HKLmax' : [int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))],
+            'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],
+            'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,}
+        G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList)
                  
-################################################################################
-#####  HKLF controls
-################################################################################           
-       
-def UpdateHKLControls(G2frame,data):
-    '''Needs a doc string
-    '''
-    
-    def OnScaleSlider(event):
-        scale = int(scaleSel.GetValue())/1000.
-        scaleSel.SetValue(int(scale*1000.))
-        data['Scale'] = scale*1.
-        G2plt.PlotSngl(G2frame)
-        
-    def OnLayerSlider(event):
-        layer = layerSel.GetValue()
-        data['Layer'] = layer
-        G2plt.PlotSngl(G2frame)
-        
-    def OnSelZone(event):
-        data['Zone'] = zoneSel.GetValue()
-        izone = zones.index(data['Zone'])
-        layerSel.SetRange(maxValue=HKLmax[izone],minValue=HKLmin[izone])
-        G2plt.PlotSngl(G2frame,newPlot=True)
-        
-    def OnSelType(event):
-        data['Type'] = typeSel.GetValue()
-        G2plt.PlotSngl(G2frame)
-        
-    def SetStatusLine():
-        Status.SetStatusText("")
-                                      
-    if G2frame.dataDisplay:
-        G2frame.dataDisplay.Destroy()
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
-    SetStatusLine()
-    zones = ['100','010','001']
-    HKLmax = data['HKLmax']
-    HKLmin = data['HKLmin']
-    typeChoices = ['Fosq','Fo','|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-    SetDataMenuBar(G2frame)
-    G2frame.dataFrame.SetTitle('HKL Plot Controls')
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add((5,10),0)
-    
-#    scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
-#    scaleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Scale'),0,
-#        WACV|wx.EXPAND)
-#    scaleSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=1000,minValue=1,
-#        style=wx.SL_HORIZONTAL,value=int(data['Scale']*10))
-#    scaleSizer.Add(scaleSel,1,wx.EXPAND|wx.RIGHT|WACV)
-#    scaleSel.SetLineSize(10)
-#    scaleSel.SetPageSize(10)
-#    scaleSel.Bind(wx.EVT_SLIDER, OnScaleSlider)
-##    mainSizer.Add(scaleSizer,0,wx.EXPAND|wx.RIGHT)
-    mainSizer.Add((0,10),0)    
-    
-    zoneSizer = wx.BoxSizer(wx.HORIZONTAL)
-    zoneSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Zone  '),0,
-        WACV)
-    zoneSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['Zone'],choices=['100','010','001'],
-        style=wx.CB_READONLY|wx.CB_DROPDOWN)
-    zoneSel.Bind(wx.EVT_COMBOBOX, OnSelZone)
-    zoneSizer.Add(zoneSel,0,WACV)
-    zoneSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Plot type  '),0,
-        WACV)        
-    typeSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['Type'],choices=typeChoices,
-        style=wx.CB_READONLY|wx.CB_DROPDOWN)
-    typeSel.Bind(wx.EVT_COMBOBOX, OnSelType)
-    zoneSizer.Add(typeSel,0,WACV)
-    zoneSizer.Add((10,0),0)    
-    mainSizer.Add(zoneSizer,0,wx.EXPAND|wx.RIGHT)
-    mainSizer.Add((0,10),0)    
-        
-#    izone = zones.index(data['Zone'])
-#    layerSizer = wx.BoxSizer(wx.HORIZONTAL)
-#    layerSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Layer'),0,
-#        WACV|wx.EXPAND)
-#    layerSel = wx.Slider(parent=G2frame.dataDisplay,maxValue=HKLmax[izone],minValue=HKLmin[izone],
-#        style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS,value=0)
-#    layerSel.SetLineSize(1)
-#    layerSel.SetPageSize(1)
-#    layerSel.Bind(wx.EVT_SLIDER, OnLayerSlider)    
-#    layerSizer.Add(layerSel,1,wx.EXPAND|wx.RIGHT|WACV)
-#    layerSizer.Add((10,0),0)    
-#    mainSizer.Add(layerSizer,1,wx.EXPAND|wx.RIGHT)
-
-        
-    mainSizer.Layout()    
-    G2frame.dataDisplay.SetSizer(mainSizer)
-    G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
-    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
-
 ################################################################################
 #####  Pattern tree routines
 ################################################################################           
@@ -4339,7 +4252,7 @@ def MovePatternTreeToGrid(G2frame,item):
             #for i in G2frame.ExportPattern: i.Enable(True)
             UpdatePWHKPlot(G2frame,'SASD',item)
         elif 'HKLF' in G2frame.PatternTree.GetItemText(item):
-            G2frame.Sngl = item
+            G2frame.Sngl = True
             UpdatePWHKPlot(G2frame,'HKLF',item)
         elif 'PDF' in G2frame.PatternTree.GetItemText(item):
             G2frame.PatternId = item
@@ -4399,12 +4312,6 @@ def MovePatternTreeToGrid(G2frame,item):
         G2imG.UpdateStressStrain(G2frame,data)
         G2plt.PlotImage(G2frame)
         G2plt.PlotStrain(G2frame,data,newPlot=True)
-    elif G2frame.PatternTree.GetItemText(item) == 'HKL Plot Controls':
-        G2frame.PickId = item
-        G2frame.Sngl = G2frame.PatternTree.GetItemParent(item)
-        data = G2frame.PatternTree.GetItemPyData(item)
-        UpdateHKLControls(G2frame,data)
-        G2plt.PlotSngl(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'PDF Controls':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         for i in G2frame.ExportPDF: i.Enable(True)

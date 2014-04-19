@@ -363,18 +363,18 @@ def SeqRefine(GPXfile,dlg):
         G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,covData,makeBack)
         makeBack = False
         NewparmDict = {}
-        if Controls['Copy2Next']:
-            hId = Histo[histogram]['hId']
-            try:
-                nexthId = Histograms[histNames[ihst+1]]['hId']
-                for parm in parmDict:
-                    items = parm.split(':',2)
-                    if str(hId) in items[1] and parm in varyList:
-                        items[1] = str(nexthId)
-                        newparm = ':'.join(items)
-                        NewparmDict[newparm] = parmDict[parm]
-            except IndexError:
-                pass
+        # make dict of varied parameters in current histogram, renamed to
+        # next histogram, for use in next refinement. 
+        if Controls['Copy2Next'] and ihst < len(histNames)-1:
+            hId = Histo[histogram]['hId'] # current histogram
+            nexthId = Histograms[histNames[ihst+1]]['hId']
+            for parm in set(list(varyList)+list(varyListStart)):
+                items = parm.split(':')
+                if len(items) < 3: continue
+                if str(hId) in items[1]:
+                    items[1] = str(nexthId)
+                    newparm = ':'.join(items)
+                    NewparmDict[newparm] = parmDict[parm]
     G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
     printFile.close()
     print ' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'

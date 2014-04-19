@@ -515,6 +515,9 @@ def SetSeqResult(GPXfile,Histograms,SeqResult):
         datum = data[0]
         if datum[0] == 'Sequential results':
             data[0][1] = SeqResult
+        # reset the Copy Next flag, since it should not be needed twice in a row
+        if datum[0] == 'Controls':
+            data[0][1]['Copy2Next'] = False
         try:
             histogram = Histograms[datum[0]]
             data[0][1][1] = list(histogram['Data'])

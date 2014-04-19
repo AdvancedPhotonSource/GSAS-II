@@ -1118,9 +1118,15 @@ def VarDescr(varname):
       (phase, histogram, etc.) and meaning describes what the variable does.
     '''
     
+    # special handling for parameter names without a colons
+    # for now, assume self-defining
+    if varname.find(':') == -1:
+        return "Global",varname
+        
     l = getVarDescr(varname)
     if not l:
-        return "invalid variable name ("+str(varname)+")!"
+        #return ("invalid variable name ("+str(varname)+")!"),""
+        return "invalid variable name!",""
 
     if not l[-1]:
         l[-1] = "(variable needs a definition!)"
@@ -1142,6 +1148,9 @@ def VarDescr(varname):
         else:
             hlbl = 'Hist='+hlbl
         s = "Ph="+str(lbl)+" * "+str(hlbl)
+    elif l[2] == 'Back': # background parameters are "special", alas
+        s = 'Hist='+ShortHistNames.get(l[1],'? #'+str(l[1]))
+        l[-1] += ' #'+str(l[3])
     elif l[4] is not None: # rigid body parameter
         lbl = ShortPhaseNames.get(l[0],'phase?')
         s = "Res #"+str(l[3])+" body #"+str(l[4])+" in "+str(lbl)
@@ -1221,6 +1230,11 @@ def CompileVarDesc():
     '''
     if reVarDesc: return # already done
     for key,value in {
+        # derived or other sequential vars
+        '([abc])$' : 'Lattice parameter, \\1, from Ai and Djk', # N.B. '$' prevents match if any characters follow
+        u'\u03B1' : u'Lattice parameter, \u03B1, from Ai and Djk',
+        u'\u03B2' : u'Lattice parameter, \u03B2, from Ai and Djk',
+        u'\u03B3' : u'Lattice parameter, \u03B3, from Ai and Djk',
         # ambiguous, alas:
         'Scale' : 'Phase or Histogram scale factor',
         # Phase vars (p::<var>)
@@ -1232,6 +1246,11 @@ def CompileVarDesc():
         'AU([123][123])':'Atomic anisotropic displacement parameter U\\1',
         'Afrac': 'Atomic occupancy parameter',
         # Hist & Phase (HAP) vars (p:h:<var>)
+        'Back': 'Background term',
+        'BkPkint;(.*)':'Background peak #\\1 intensity',
+        'BkPkpos;(.*)':'Background peak #\\1 position',
+        'BkPksig;(.*)':'Background peak #\\1 Gaussian width',
+        'BkPkgam;(.*)':'Background peak #\\1 Cauchy width',
         'Bab([AU])': 'Babinet solvent scattering coef. \\1',
         'D([123][123])' : 'Anisotropic strain coef. \\1',
         'Extinction' : 'Extinction coef.',
@@ -1257,6 +1276,7 @@ def CompileVarDesc():
         'RBRTr;.*' : 'Residue rigid body torsion parameter',
         'RBR([TLS])([123AB][123AB])' : 'Residue rigid body group disp. param.',
         # Global vars (::<var>)
+        'constr([0-9]*)' : 'Parameter from constraint',
         }.items():
         VarDesc[key] = value
         reVarDesc[re.compile(key)] = value

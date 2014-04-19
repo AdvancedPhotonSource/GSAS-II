@@ -42,6 +42,7 @@ import GSASIIconstrGUI as G2cnstG
 import GSASIIrestrGUI as G2restG
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
+import GSASIIexprGUI as G2exG
 
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -133,7 +134,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(9)]
 
 [ wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_PLOTSEQSEL,
-] = [wx.NewId() for item in range(3)]
+  wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,
+] = [wx.NewId() for item in range(6)]
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
@@ -2460,6 +2462,17 @@ class DataFrame(wx.Frame):
             help='Save selected sequential refinement results as a CSV spreadsheet file')
         self.SequentialFile.Append(id=wxID_PLOTSEQSEL, kind=wx.ITEM_NORMAL,text='Plot selected',
             help='Plot selected sequential refinement results')
+        self.SequentialPvars = wx.Menu(title='')
+        self.SequentialMenu.Append(menu=self.SequentialPvars, title='Pseudo Vars')
+        self.SequentialPvars.Append(
+            id=wxADDSEQVAR, kind=wx.ITEM_NORMAL,text='Add',
+            help='Add a new pseudo-variable')
+        self.SequentialPvars.Append(
+            id=wxDELSEQVAR, kind=wx.ITEM_NORMAL,text='Delete',
+            help='Delete an existing pseudo-variable')
+        self.SequentialPvars.Append(
+            id=wxEDITSEQVAR, kind=wx.ITEM_NORMAL,text='Edit',
+            help='Edit an existing pseudo-variable')
         self.PostfillDataMenu()
             
         # Powder 
@@ -2960,8 +2973,10 @@ class DataFrame(wx.Frame):
     # end of GSAS-II menu definitions
         
     def _init_ctrls(self, parent,name=None,size=None,pos=None):
-        wx.Frame.__init__(self,parent=parent,
-            style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX | wx.FRAME_FLOAT_ON_PARENT ,
+        wx.Frame.__init__(
+            self,parent=parent,
+            #style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX | wx.FRAME_FLOAT_ON_PARENT ,
+            style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX,
             size=size,pos=pos,title='GSAS-II data display')
         self._init_menus()
         if name:
@@ -3486,10 +3501,10 @@ def UpdateComments(G2frame,data):
     G2frame.dataFrame.setSizePosLeft([400,250])
             
 ################################################################################
-#####  Sequential Results
+#####  Display of Sequential Results
 ################################################################################           
        
-def UpdateSeqResults(G2frame,data):
+def UpdateSeqResults(G2frame,data,prevSize=None):
     """
     Called when the Sequential Results data tree entry is selected
     to show results from a sequential refinement.
@@ -3664,7 +3679,7 @@ def UpdateSeqResults(G2frame,data):
         [['-1'],(0,1,2,3,4,5)],
         ]
     # cell labels
-    cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03b3') # unicode a,b,c,alpha,beta,gamma
+    cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03B3') # unicode a,b,c,alpha,beta,gamma
     def striphist(var,insChar=''):
         'strip a histogram number from a var name'
         sv = var.split(':')
@@ -3675,7 +3690,7 @@ def UpdateSeqResults(G2frame,data):
         for u,p in [
             (u'\u03B1',r'$\alpha$'),
             (u'\u03B2',r'$\beta$'),
-            (u'\u03b3',r'$\gamma$'),
+            (u'\u03B3',r'$\gamma$'),
             (u'\u0394\u03C7',r'$\Delta\chi$'),
             ]:
             lbl = lbl.replace(u,p)
@@ -3698,17 +3713,78 @@ def UpdateSeqResults(G2frame,data):
         finally:
             dlg.Destroy()
         return col
+    
+    def EnableSeqExpressionMenus():
+        'Enables or disables the PseudoVar menu items that require existing defs'
+        if Controls['SeqPseudoVars']:
+            val = True
+        else:
+            val = False
+        G2frame.dataFrame.SequentialPvars.Enable(wxDELSEQVAR,val)
+        G2frame.dataFrame.SequentialPvars.Enable(wxEDITSEQVAR,val)
+
+    def DelSeqExpression(event):
+        'Ask the user to select expression to delete'
+        choices = Controls['SeqPseudoVars'].keys()
+        selected = ItemSelector(
+            choices,G2frame.dataFrame,
+            multiple=True,
+            title='Select expressions to remove',
+            header='Delete expression')
+        for item in selected:
+            del Controls['SeqPseudoVars'][choices[item]]
+        if selected:
+            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+
+    def EditSeqExpression(event):
+        'Edit an existing expression'
+        choices = Controls['SeqPseudoVars'].keys()
+        selected = ItemSelector(
+            choices,G2frame.dataFrame,
+            multiple=False,
+            title='Select an expression to edit',
+            header='Edit expression')
+        if selected is not None:
+            dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,parmDict,
+                                         Controls['SeqPseudoVars'][choices[selected]],
+                                         header='Edit this expression formula',
+                                         fit=False)
+            newobj = dlg.Show(True)
+            if newobj:
+                calcobj = G2obj.ExpressionCalcObj(newobj)
+                del Controls['SeqPseudoVars'][choices[selected]]
+                Controls['SeqPseudoVars'][calcobj.eObj.expression] = newobj
+                UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+        
+    def AddNewSeqExpression(event):
+        'Create a new expression'
+        parmDict = dict(zip(colLabels,zip(*colList)[0]))
+        dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,parmDict,
+                                     header='Enter an expression formula here',
+                                     fit=False)
+        obj = dlg.Show(True)
+        dlg.Destroy()
+        if obj:
+            calcobj = G2obj.ExpressionCalcObj(obj)
+            Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
+            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+
     #======================================================================
     # start processing sequential results here
     if not data:
         print 'No sequential refinement results'
         return
+    Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    Controls = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Controls'))
+    if 'SeqPseudoVars' not in Controls: # create a place to store Pseudo Vars, if needed
+        Controls['SeqPseudoVars'] = {}
     histNames = data['histNames']
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
         Status.SetStatusText("Select column to export; Double click on column to plot data; on row for Covariance")
+    sampleParms = GetSampleParms()
     # make dict of varied atom coords keyed by absolute position
     newAtomDict = data[histNames[0]]['newAtomDict'] # dict with atom positions; relative & absolute
     # Possible error: the next might need to be data[histNames[0]]['varyList']
@@ -3726,7 +3802,6 @@ def UpdateSeqResults(G2frame,data):
             Dlookup[item] = newCellDict[item][0]
 
     # get unit cell & symmetry for all phases
-    Phases = G2frame.GetPhaseData()
     Alist = {}
     SGdata = {}
     covData = {}
@@ -3746,14 +3821,18 @@ def UpdateSeqResults(G2frame,data):
         else: # should not happen
             uniqCellParms[pId] = range(6)
 
-    sampleParms = GetSampleParms()
     SetDataMenuBar(G2frame,G2frame.dataFrame.SequentialMenu)
     G2frame.dataFrame.SetLabel('Sequential refinement results')
     G2frame.dataFrame.CreateStatusBar()
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=wxID_SAVESEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeqCSV, id=wxID_SAVESEQSELCSV)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotSelSeq, id=wxID_PLOTSEQSEL)
-    # build up the table one column at a time
+    G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewSeqExpression, id=wxADDSEQVAR)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, DelSeqExpression, id=wxDELSEQVAR)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, EditSeqExpression, id=wxEDITSEQVAR)
+    EnableSeqExpressionMenus()
+
+    # build up the data table one column at a time
     colList = []
     colSigs = []
     colLabels = []
@@ -3769,6 +3848,7 @@ def UpdateSeqResults(G2frame,data):
     colSigs += [None]
     colLabels += [u'\u0394\u03C7\u00B2 (%)']
     Types += [wg.GRID_VALUE_FLOAT,]
+    deltaChiCol = len(colLabels)-1
 
     # adds checkbox for converged (Bob wants to change color of previous instead)
     # colList += [[data[name]['Rvals']['converged'] for name in histNames]]
@@ -3847,6 +3927,19 @@ def UpdateSeqResults(G2frame,data):
     Types += len(atomList)*[wg.GRID_VALUE_FLOAT]
     for parm in atomList:
         colList += [[data[name]['newAtomDict'][atomList[parm]][1] for name in histNames]]
+    # add Pseudovars
+    for exp in Controls['SeqPseudoVars']:
+        obj = Controls['SeqPseudoVars'][exp]
+        calcobj = G2obj.ExpressionCalcObj(obj)
+        valList = []
+        for row in zip(*colList):
+            parmDict = dict(zip(colLabels,row))
+            calcobj.SetupCalc(parmDict)
+            valList.append(calcobj.EvalExpression())
+        colList += [valList]
+        colSigs += [None]
+        colLabels += [exp]
+        Types += [wg.GRID_VALUE_FLOAT,]
 
     rowList = [c for c in zip(*colList)]     # convert from columns to rows
     G2frame.SeqTable = Table(rowList,colLabels=colLabels,rowLabels=histNames,types=Types)
@@ -3864,15 +3957,27 @@ def UpdateSeqResults(G2frame,data):
     #              )+1)*[wg.GRID_VALUE_FLOAT,]
     # G2frame.SeqTable = Table(seqList,colLabels=colLabels,rowLabels=histNames,types=Types
     #                         )
+    
     G2frame.dataDisplay = GSGrid(parent=G2frame.dataFrame)
+    # colSigs += [None]
+    # colLabels += ['Cnvg']
+    # Types += [wg.GRID_VALUE_BOOL,]
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
     G2frame.dataDisplay.EnableEditing(False)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PlotSelect)
     G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(True)
-    G2frame.dataFrame.setSizePosLeft([700,350])
-
+    if prevSize:
+        G2frame.dataDisplay.SetSize(prevSize)
+    else:
+        G2frame.dataFrame.setSizePosLeft([700,350])
+    # highlight unconverged shifts 
+    for row,name in enumerate(histNames):
+        if not data[name]['Rvals']['converged']:
+            G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Color(255,255,0))
+        # colList += [[data[name]['Rvals']['converged'] for name in histNames]]
+    
 ################################################################################
 #####  Main PWDR panel
 ################################################################################           

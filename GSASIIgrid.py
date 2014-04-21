@@ -3825,7 +3825,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     SetDataMenuBar(G2frame,G2frame.dataFrame.SequentialMenu)
     G2frame.dataFrame.SetLabel('Sequential refinement results')
-    G2frame.dataFrame.CreateStatusBar()
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+        Status.SetStatusText('')
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=wxID_SAVESEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeqCSV, id=wxID_SAVESEQSELCSV)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotSelSeq, id=wxID_PLOTSEQSEL)
@@ -3976,7 +3978,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.dataFrame.setSizePosLeft([700,350])
     # highlight unconverged shifts 
     for row,name in enumerate(histNames):
-        if not data[name]['Rvals']['converged']:
+        deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
+        if deltaChi > 10.:
+            G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Color(255,0,0))
+        elif deltaChi > 1.0:
             G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Color(255,255,0))
         # colList += [[data[name]['Rvals']['converged'] for name in histNames]]
     

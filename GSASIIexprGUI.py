@@ -413,7 +413,7 @@ class ExpressionDialog(wx.Dialog):
             self.varName[v] = str(v)
             self.varValue[v] = self.varValue.get(v,0.0)
         else:
-            var = self.SelectG2var(sel)
+            var = self.SelectG2var(sel,v)
             if not var:
                 del self.varSelect[v]
                 sel = event.GetEventObject().GetSelection()
@@ -423,7 +423,7 @@ class ExpressionDialog(wx.Dialog):
         self.varStep[v] = self.varStep.get(v,0.0001)
         self.OnValidate(None)
 
-    def SelectG2var(self,sel):
+    def SelectG2var(self,sel,var):
         '''Offer a selection of a GSAS-II variable. 
 
         :param int sel: Determines the type of variable to be selected.
@@ -443,8 +443,10 @@ class ExpressionDialog(wx.Dialog):
         fmt = u"{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in self.parmLists[sel]]
 
-        dlg = G2gd.G2SingleChoiceDialog(self,'Select GSAS-II variable:','Select variable',
-                                        varListlbl,monoFont=True)
+        dlg = G2gd.G2SingleChoiceDialog(
+            self,'Select GSAS-II variable for '+str(var)+':',
+            'Select variable',
+            varListlbl,monoFont=True)
         dlg.SetSize((625,250))
         dlg.CenterOnParent()
         var = None

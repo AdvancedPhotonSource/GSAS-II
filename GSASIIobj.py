@@ -1854,7 +1854,7 @@ class ExpressionCalcObj(object):
                 break
             try: # check if values are in lists
                 val = parmDict[key][0]
-            except TypeError:
+            except (TypeError,IndexError):
                 parmsInList = False
             break
             

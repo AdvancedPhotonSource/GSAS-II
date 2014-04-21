@@ -265,7 +265,7 @@ def SeqRefine(GPXfile,dlg):
         calcControls.update(controlDict)
         varyList = rbVary+phaseVary+hapVary+histVary
         if not ihst:
-            # subsequent refinements
+            # save the initial vary list, but without histogram numbers on parameters
             saveVaryList = varyList[:]
             for i,item in enumerate(saveVaryList):
                 items = item.split(':')
@@ -274,44 +274,7 @@ def SeqRefine(GPXfile,dlg):
                 item = ':'.join(items)
                 saveVaryList[i] = item
             SeqResult['varyList'] = saveVaryList
-        else:
-            # first histogram to refine against
-            newVaryList = varyList[:]
-            for i,item in enumerate(newVaryList):
-                items = item.split(':')
-                if items[1]:
-                    items[1] = ''
-                item = ':'.join(items)
-                newVaryList[i] = item
-            if newVaryList != SeqResult['varyList']:
-                # variable lists are expected to match between sequential refinements
-                print '**** ERROR - variable list for this histogram does not match previous'
-                print '\ncurrent histogram',histogram,'has',len(newVaryList),'variables'
-                combined = list(set(SeqResult['varyList']+newVaryList))
-                c = [var for var in combined if var not in newVaryList]
-                p = [var for var in combined if var not in SeqResult['varyList']]
-                line = 'Variables in previous but not in current: '
-                if c:
-                    for var in c:
-                        if len(line) > 100:
-                            print line
-                            line = '    '
-                        line += var + ', '
-                else:
-                    line += 'none'
-                print line
-                print '\nPrevious refinement has',len(SeqResult['varyList']),'variables'
-                line = 'Variables in current but not in previous: '
-                if p:
-                    for var in p:
-                        if len(line) > 100:
-                            print line
-                            line = '    '
-                        line += var + ', '
-                else:
-                    line += 'none'
-                print line
-                raise Exception
+        origvaryList = varyList[:]
         parmDict = {}
         parmDict.update(phaseDict)
         parmDict.update(hapDict)
@@ -334,6 +297,53 @@ def SeqRefine(GPXfile,dlg):
             #if warnmsg: print 'Warnings',warnmsg
             raise Exception(' *** Refine aborted ***')
         #print G2mv.VarRemapShow(varyList)
+        if not ihst:
+            # first histogram to refine against
+            firstVaryList = []
+            for item in varyList:
+                items = item.split(':')
+                if items[1]:
+                    items[1] = ''
+                item = ':'.join(items)
+                firstVaryList.append(item)
+            newVaryList = firstVaryList
+        else:
+            newVaryList = []
+            for item in varyList:
+                items = item.split(':')
+                if items[1]:
+                    items[1] = ''
+                item = ':'.join(items)
+                newVaryList.append(item)
+        if newVaryList != firstVaryList:
+            # variable lists are expected to match between sequential refinements
+            print '**** ERROR - variable list for this histogram does not match previous'
+            print '\ncurrent histogram',histogram,'has',len(newVaryList),'variables'
+            combined = list(set(firstVaryList+newVaryList))
+            c = [var for var in combined if var not in newVaryList]
+            p = [var for var in combined if var not in firstVaryList]
+            line = 'Variables in previous but not in current: '
+            if c:
+                for var in c:
+                    if len(line) > 100:
+                        print line
+                        line = '    '
+                    line += var + ', '
+            else:
+                line += 'none'
+            print line
+            print '\nPrevious refinement has',len(firstVaryList),'variables'
+            line = 'Variables in current but not in previous: '
+            if p:
+                for var in p:
+                    if len(line) > 100:
+                        print line
+                        line = '    '
+                    line += var + ', '
+            else:
+                line += 'none'
+            print line
+            raise Exception
         
         ifPrint = False
         print >>printFile,'\n Refinement results for histogram: v'+histogram
@@ -341,6 +351,8 @@ def SeqRefine(GPXfile,dlg):
         Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
             rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
 
+        print '  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f'%(
+            Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'],Rvals['DelChi2'])
         # add the uncertainties into the esd dictionary (sigDict)
         sigDict = dict(zip(varyList,sig))
         # the uncertainties for dependent constrained parms into the esd dict

@@ -2722,7 +2722,17 @@ def UpdateModelsGrid(G2frame,data):
                 copy.deepcopy(data))
                 
     def OnFitModelAll(event):
-        event.Skip()
+        choices = GetPatternTreeDataNames(G2frame,['SASD',])
+        sel = []
+        dlg = G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential SASD refinement',
+             'Select dataset to include',choices)
+        dlg.SetSelections(sel)
+        names = []
+        if dlg.ShowModal() == wx.ID_OK:
+            for sel in dlg.GetSelections():
+                names.append(choices[sel])
+        dlg.Destroy()
+        for name in names: print name
         
     def OnFitModel(event):
         if data['Current'] == 'Size dist.':

@@ -2308,6 +2308,14 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX):
         G2frame.seqXaxis
     except:
         G2frame.seqXaxis = None
+
+    def OnMotion(event):
+        if event.xdata and event.ydata:                 #avoid out of frame errors
+            xpos = event.xdata
+            ypos = event.ydata
+            msg = '%5.3f %.6g'%(xpos,ypos)
+            Page.canvas.SetToolTipString(msg)
+
     def OnKeyPress(event):
         if event.key == 's':
             G2frame.seqXaxis = G2frame.seqXselect()
@@ -2324,6 +2332,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX):
         plotNum = G2frame.G2plotNB.plotList.index('Sequential refinement')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     Page.Choice = ['s to select plot x-axis']
     Page.keyPress = OnKeyPress
         
@@ -2341,7 +2350,8 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX):
             if sig:
                 Plot.errorbar(X,Y,yerr=sig,label=name)
             else:
-                Plot.errorbar(X,Y,label=name)
+                Plot.plot(X,Y)
+                Plot.plot(X,Y,'o',label=name)
         Plot.legend(loc='best')
         Plot.set_ylabel('Parameter values')
         Plot.set_xlabel(xName)

@@ -190,7 +190,7 @@ def GetAtomInfo(El):
                     if isoName == '   ':
                         isoName = 'Nat. Abund.'              #natural abundance
                     if S[76:78] in ['LS','BW']:     #special anomalous scattering length info
-                        St = [S[10:19],S[19:25],S[25:31],S[31:38],S[38:44],S[44:50],
+                        St = [S[19:25],S[25:31],S[31:38],S[38:44],S[44:50],
                             S[50:56],S[56:62],S[62:68],S[68:74],]
                         Vals = []
                         for item in St:

@@ -2639,8 +2639,8 @@ class DataFrame(wx.Frame):
         self.SasdUndo = self.ModelEdit.Append(id=wxID_MODELUNDO, kind=wx.ITEM_NORMAL,text='Undo',
             help='Undo model fit')
         self.SasdUndo.Enable(False)            
-        self.ModelEdit.Append(id=wxID_MODELFITALL, kind=wx.ITEM_NORMAL,text='Fit all',
-            help='Fit model parameters to all SASD data')
+        self.ModelEdit.Append(id=wxID_MODELFITALL, kind=wx.ITEM_NORMAL,text='Sequential fit',
+            help='Sequential fit of model parameters to all SASD data')
         self.ModelEdit.Append(id=wxID_MODELCOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy model parameters to other histograms')
         self.PostfillDataMenu()
@@ -4252,10 +4252,12 @@ def MovePatternTreeToGrid(G2frame,item):
             G2plt.PlotPowderLines(G2frame)
         elif 'PWDR' in G2frame.PatternTree.GetItemText(item):
             #for i in G2frame.ExportPattern: i.Enable(True)
-            UpdatePWHKPlot(G2frame,'PWDR',item)
+            if G2frame.EnablePlot:
+                UpdatePWHKPlot(G2frame,'PWDR',item)
         elif 'SASD' in G2frame.PatternTree.GetItemText(item):
             #for i in G2frame.ExportPattern: i.Enable(True)
-            UpdatePWHKPlot(G2frame,'SASD',item)
+            if G2frame.EnablePlot:
+                UpdatePWHKPlot(G2frame,'SASD',item)
         elif 'HKLF' in G2frame.PatternTree.GetItemText(item):
             G2frame.Sngl = True
             UpdatePWHKPlot(G2frame,'HKLF',item)

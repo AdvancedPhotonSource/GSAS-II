@@ -1180,6 +1180,7 @@ class GSASII(wx.Frame):
         lastIparmfile = ''
         lastdatafile = ''
         newHistList = []
+        self.EnablePlot = False
         for rd in rdlist:
             # get instrument parameters for each dataset
             Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
@@ -1253,9 +1254,11 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Reflection Lists'),
                 {})
+            newHistList.append(HistName)
+        else:
+            self.EnablePlot = True
             self.PatternTree.Expand(Id)
             self.PatternTree.SelectItem(Id)
-            newHistList.append(HistName)
             
         if not newHistList: return # somehow, no new histograms
         # make a list of phase names
@@ -1521,6 +1524,7 @@ class GSASII(wx.Frame):
         Iparm = None
         lastdatafile = ''
         newHistList = []
+        self.EnablePlot = False
         for rd in rdlist:
             lastdatafile = rd.smallangleentry[0]
             HistName = rd.idstring
@@ -1578,9 +1582,11 @@ class GSASII(wx.Frame):
                 rd.Sample)
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Models'),G2pdG.SetDefaultSASDModel())
+            newHistList.append(HistName)
+        else:
+            self.EnablePlot = True
             self.PatternTree.Expand(Id)
             self.PatternTree.SelectItem(Id)
-            newHistList.append(HistName)
             
         if not newHistList: return # somehow, no new histograms
         return # success
@@ -1905,6 +1911,7 @@ class GSASII(wx.Frame):
         self.ifGetRing = False
         self.MaskKey = ''           #trigger for making image masks
         self.StrainKey = ''         #ditto for new strain d-zeros
+        self.EnablePlot = True
         arg = sys.argv
         if len(arg) > 1:
             self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
@@ -2079,7 +2086,7 @@ class GSASII(wx.Frame):
                         self.PatternTree.SetItemPyData(Id,[Npix,imagefile])
                         self.PickId = Id
                         self.Image = Id
-                os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
+                os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!                
                 self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))             #show last one
         finally:
             path = dlg.GetDirectory()           # to get Mac/Linux to change directory!

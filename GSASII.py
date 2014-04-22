@@ -2602,6 +2602,7 @@ class GSASII(wx.Frame):
         '''
         result = wx.ID_OK
         Id = 0
+        self.EnablePlot = False
         if self.PatternTree.GetChildrenCount(self.root,False):
             if self.dataFrame:
                 self.dataFrame.Clear() 
@@ -2653,6 +2654,7 @@ class GSASII(wx.Frame):
                     self.EnableSeqRefineMenu()
             item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
         if Id:
+            self.EnablePlot = True
             self.PatternTree.SelectItem(Id)
         self.CheckNotebook()
         os.chdir(self.dirname)           # to get Mac/Linux to change directory!

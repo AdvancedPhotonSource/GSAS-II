@@ -1014,9 +1014,7 @@ def SaveIntegration(G2frame,PickId,data):
         G2frame.PatternTree.SetItemPyData(
             Id,[valuesdict,
                 [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
-    G2frame.PatternTree.SelectItem(Id)
-    G2frame.PatternTree.Expand(Id)
-    G2frame.PatternId = Id
+        return Id
             
 # def powderFxyeSave(G2frame,exports,powderfile):
 #     'Save a powder histogram as a GSAS FXYE file'

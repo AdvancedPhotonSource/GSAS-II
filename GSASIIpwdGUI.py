@@ -2721,10 +2721,45 @@ def UpdateModelsGrid(G2frame,data):
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Models'),
                 copy.deepcopy(data))
                 
+    def OnCopyFlags(event):
+        thisModel = copy.deepcopy(data)
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Copy sample ref. flags from\n'+str(hst[5:])+' to...',
+            'Copy sample flags', histList)
+        distChoice = ['LogNormal','Gaussian','LSW','Schulz-Zimm','Bragg','Unified',
+            'Porod','Monodisperse',]
+        parmOrder = ['Volume','Radius','Mean','StdDev','G','Rg','B','P',
+            'Cutoff','PkInt','PkPos','PkSig','PkGam',]
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    item = histList[i]
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                    newModel = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Models'))
+                    newModel['Back'][1] = copy.copy(thisModel['Back'][1])
+                    for ilev,level in enumerate(newModel['Particle']['Levels']):
+                        for form in level:
+                            if form in distChoice:
+                                thisForm = thisModel['Particle']['Levels'][ilev][form]                               
+                                for item in parmOrder:
+                                    if item in thisForm:
+                                       level[form][item][1] = copy.copy(thisForm[item][1])
+        finally:
+            dlg.Destroy()
+
+        
+                
     def OnFitModelAll(event):
-        choices = GetPatternTreeDataNames(G2frame,['SASD',])
+        choices = G2gd.GetPatternTreeDataNames(G2frame,['SASD',])
         sel = []
-        dlg = G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential SASD refinement',
+        dlg = G2gd.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential SASD refinement',
              'Select dataset to include',choices)
         dlg.SetSelections(sel)
         names = []
@@ -2732,7 +2767,47 @@ def UpdateModelsGrid(G2frame,data):
             for sel in dlg.GetSelections():
                 names.append(choices[sel])
         dlg.Destroy()
-        for name in names: print name
+        SeqResult = {'histNames':names}
+        dlg = wx.ProgressDialog('SASD Sequential fit','Data set name = '+names[0],len(names), 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+        wx.BeginBusyCursor()
+        try:
+            for i,name in enumerate(names):
+                print ' Sequential fit for ',name
+                GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
+                if not GoOn:
+                    break
+                Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                IProfDict,IProfile = G2frame.PatternTree.GetItemPyData(Id)[:2]
+                IModel = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Models'))
+                ISample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Sample Parameters'))
+                ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Limits'))
+                IInst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Instrument Parameters'))
+                ISubstances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Substances'))
+                IfOK,result,varyList,sig,Rvals,covMatrix = G2sasd.ModelFit(IProfile,IProfDict,ILimits,ISubstances,ISample,IModel)
+                if not IfOK:
+                    G2frame.ErrorDialog('Failed sequential refinement for data '+name,
+                        'You need to rethink your selection of parameters\n'+    \
+                        ' Model restored to previous version for'+name)
+                    SeqResult['histNames'] = names[:i]
+                    dlg.Destroy()
+                    break
+                
+                G2sasd.ModelFxn(IProfile,IProfDict,ILimits,ISubstances,ISample,IModel)
+                SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
+                    'covMatrix':covMatrix,'title':name}
+            else:
+                dlg.Destroy()
+                print ' ***** Small angle sequential refinement successful *****'
+        finally:
+            wx.EndBusyCursor()    
+        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Small Angle Sequential results')
+        if Id:
+            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        else:
+            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Small Angle Sequential results')
+            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        G2frame.PatternTree.SelectItem(Id)
         
     def OnFitModel(event):
         if data['Current'] == 'Size dist.':
@@ -2746,7 +2821,7 @@ def UpdateModelsGrid(G2frame,data):
             
         elif data['Current'] == 'Particle fit':
             SaveState()
-            if not G2sasd.ModelFit(Profile,ProfDict,Limits,Substances,Sample,data):
+            if not G2sasd.ModelFit(Profile,ProfDict,Limits,Substances,Sample,data)[0]:
                 G2frame.ErrorDialog('Failed refinement',
                     'You need to rethink your selection of parameters\n'+    \
                     ' Model restored to previous version')
@@ -3169,6 +3244,7 @@ def UpdateModelsGrid(G2frame,data):
     G2frame.dataFrame.SetLabel('Modelling')
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyModel, id=G2gd.wxID_MODELCOPY)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyFlags, id=G2gd.wxID_MODELCOPYFLAGS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModel, id=G2gd.wxID_MODELFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitModelAll, id=G2gd.wxID_MODELFITALL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_MODELUNDO)

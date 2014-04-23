@@ -84,6 +84,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         print >>printFile,' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histograms['Nobs'],' Number of parameters: ',len(varyList)
         print >>printFile,' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
         print >>printFile,' wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF'])
+        IfOK = True
         try:
             covMatrix = result[1]*Rvals['GOF']
             sig = np.sqrt(np.diag(covMatrix))
@@ -93,6 +94,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
 #            for item in table: print item,table[item]               #useful debug - are things shifting?
             break                   #refinement succeeded - finish up!
         except TypeError,FloatingPointError:          #result[1] is None on singular matrix
+            IfOK = False
             print '**** Refinement failed - singular matrix ****'
             if 'Hessian' in Controls['deriv type']:
                 num = len(varyList)-1
@@ -108,7 +110,7 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
                         del(varyList[ipvt-1])
                         break
     G2stMth.GetFobsSq(Histograms,Phases,parmDict,calcControls)
-    return Rvals,result,covMatrix,sig
+    return IfOK,Rvals,result,covMatrix,sig
 
 def Refine(GPXfile,dlg):
     'Global refinement -- refines to minimize against all histograms'
@@ -169,7 +171,7 @@ def Refine(GPXfile,dlg):
     ifPrint = True
     print >>printFile,'\n Refinement results:'
     print >>printFile,135*'-'
-    Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
+    IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histograms,Phases,restraintDict,
         rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
     sigDict = dict(zip(varyList,sig))
     newCellDict = G2stMth.GetNewCellParms(parmDict,varyList)
@@ -222,7 +224,7 @@ def SeqRefine(GPXfile,dlg):
     restraintDict = G2stIO.GetRestraints(GPXfile)
     Histograms,Phases = G2stIO.GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
-        print ' *** ERROR - you have no histograms to refine! ***'
+        print ' *** ERROR - you have no phases to refine! ***'
         print ' *** Refine aborted ***'
         raise Exception
     if not Histograms:
@@ -348,7 +350,7 @@ def SeqRefine(GPXfile,dlg):
         ifPrint = False
         print >>printFile,'\n Refinement results for histogram: v'+histogram
         print >>printFile,135*'-'
-        Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
+        IfOK,Rvals,result,covMatrix,sig = RefineCore(Controls,Histo,Phases,restraintDict,
             rigidbodyDict,parmDict,varyList,calcControls,pawleyLookup,ifPrint,printFile,dlg)
 
         print '  wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f, last delta chi = %.4f'%(

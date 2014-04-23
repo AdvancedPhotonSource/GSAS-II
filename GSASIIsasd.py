@@ -922,6 +922,8 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
         'Unified tube':[UniTubeFF,UniTubeVol],'Cylinder diam':[CylinderDFF,CylinderDVol]}
 
     def GetModelParms():
+        parmOrder = ['Volume','Radius','Mean','StdDev','MinSize','G','Rg','B','P','Cutoff',
+            'PkInt','PkPos','PkSig','PkGam',]
         parmDict = {}
         varyList = []
         values = []
@@ -952,11 +954,12 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                             varyList.append(cid+item)
                             values.append(controls['FFargs'][item][0])
             distDict = controls['DistType']
-            for item in level[distDict]:
-                parmDict[cid+item] = level[distDict][item][0]
-                if level[distDict][item][1]:
-                    values.append(level[distDict][item][0])
-                    varyList.append(cid+item)
+            for item in parmOrder:
+                if item in level[distDict]:
+                    parmDict[cid+item] = level[distDict][item][0]
+                    if level[distDict][item][1]:
+                        values.append(level[distDict][item][0])
+                        varyList.append(cid+item)
         return levelTypes,parmDict,varyList,values
         
     def SetModelParms():
@@ -1050,20 +1053,22 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
         args=(Q[Ibeg:Ifin],Io[Ibeg:Ifin],wtFactor*wt[Ibeg:Ifin],levelTypes,parmDict,varyList))
     ncyc = int(result[2]['nfev']/2)
     chisq = np.sum(result[2]['fvec']**2)
-    Rwp = np.sqrt(chisq/np.sum(wt[Ibeg:Ifin]*Io[Ibeg:Ifin]**2))*100.      #to %
-    GOF = chisq/(Ifin-Ibeg-len(varyList))       #reduced chi^2
+    Rvals = {}
+    Rvals['Rwp'] = np.sqrt(chisq/np.sum(wt[Ibeg:Ifin]*Io[Ibeg:Ifin]**2))*100.      #to %
+    Rvals['GOF'] = chisq/(Ifin-Ibeg-len(varyList))       #reduced chi^2
     parmDict.update(zip(varyList,result[0]))
     Ic[Ibeg:Ifin] = getSASD(Q[Ibeg:Ifin],levelTypes,parmDict)
     try:
-        sigDict = dict(zip(varyList,np.sqrt(np.diag(result[1])*GOF)))
+        sig = np.sqrt(np.diag(result[1])*Rvals['GOF'])
+        sigDict = dict(zip(varyList,sig))
         print ' Results of small angle data modelling fit:'
         print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',Ifin-Ibeg,' Number of parameters: ',len(varyList)
-        print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
+        print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
         SetModelParms()
-        return True
+        covMatrix = result[1]*Rvals['GOF']
+        return True,result,varyList,sig,Rvals,covMatrix
     except ValueError:
-        return False
-        
+        return False,0,0,0,0,0
     
 def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
     shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],

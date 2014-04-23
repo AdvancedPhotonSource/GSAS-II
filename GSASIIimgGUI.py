@@ -113,7 +113,10 @@ def UpdateImageControls(G2frame,data,masks):
                 sumImg += backImage*backScale
             G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,dlg)
     #        G2plt.PlotIntegration(G2frame,newPlot=True)
-            G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
+            Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
+            G2frame.PatternId = Id
+            G2frame.PatternTree.SelectItem(Id)
+            G2frame.PatternTree.Expand(Id)
         finally:
             dlg.Destroy()
         for item in G2frame.MakePDF: item.Enable(True)
@@ -140,6 +143,7 @@ def UpdateImageControls(G2frame,data,masks):
                     if result[0][0]:                    #the 'All IMG' is True
                         result = TextList[1:]
                         for item in result: item[0] = True
+                    G2frame.EnablePlot = False
                     for item in result:
                         ifintegrate,name,id = item
                         if ifintegrate:
@@ -176,9 +180,15 @@ def UpdateImageControls(G2frame,data,masks):
                                 else:
                                     G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
 #                               G2plt.PlotIntegration(G2frame,newPlot=True,event=event)
-                                G2IO.SaveIntegration(G2frame,Id,Data)
+                                pId = G2IO.SaveIntegration(G2frame,Id,Data)
                             finally:
                                 dlgp.Destroy()
+                    else:
+                        G2frame.EnablePlot = True
+                        G2frame.PatternTree.SelectItem(pId)
+                        G2frame.PatternTree.Expand(pId)
+                        G2frame.PatternId = pId
+                        
             finally:
                 dlg.Destroy()
         

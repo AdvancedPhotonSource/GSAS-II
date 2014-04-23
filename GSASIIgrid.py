@@ -134,13 +134,15 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(9)]
 
 [ wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_PLOTSEQSEL,
-  wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,
-] = [wx.NewId() for item in range(6)]
+    wxID_SAVESASDSEQSEL,wxID_SAVESASDSEQSELCSV,wxID_PLOTSASDSEQSEL,
+    wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,
+    wxADDSASDSEQVAR,wxDELSASDSEQVAR,wxEDITSASDSEQVAR,
+] = [wx.NewId() for item in range(12)]
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
-    wxID_MODELUNDO,wxID_MODELFITALL,
-] = [wx.NewId() for item in range(11)]
+    wxID_MODELUNDO,wxID_MODELFITALL,wxID_MODELCOPYFLAGS,
+] = [wx.NewId() for item in range(12)]
 
 [ wxID_SELECTPHASE,wxID_PWDHKLPLOT,
 ] = [wx.NewId() for item in range(2)]
@@ -2475,6 +2477,30 @@ class DataFrame(wx.Frame):
             help='Edit an existing pseudo-variable')
         self.PostfillDataMenu()
             
+        # Sequential SASD results
+        self.SequentialSASDMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.SequentialSASDMenu,helpType='Sequential',helpLbl='Sequential SASD Refinement')
+        self.SequentialSASDFile = wx.Menu(title='')
+        self.SequentialSASDMenu.Append(menu=self.SequentialSASDFile, title='Selected Cols')
+        self.SequentialSASDFile.Append(id=wxID_SAVESASDSEQSEL, kind=wx.ITEM_NORMAL,text='Save as text',
+            help='Save selected sequential SASD refinement results as a text file')
+        self.SequentialSASDFile.Append(id=wxID_SAVESASDSEQSELCSV, kind=wx.ITEM_NORMAL,text='Save as CSV',
+            help='Save selected sequential SASD refinement results as a CSV spreadsheet file')
+        self.SequentialSASDFile.Append(id=wxID_PLOTSASDSEQSEL, kind=wx.ITEM_NORMAL,text='Plot selected',
+            help='Plot selected sequential SASD refinement results')
+#        self.SequentialPvars = wx.Menu(title='')
+#        self.SequentialMenu.Append(menu=self.SequentialPvars, title='Pseudo Vars')
+#        self.SequentialPvars.Append(
+#            id=wxADDSEQVAR, kind=wx.ITEM_NORMAL,text='Add',
+#            help='Add a new pseudo-variable')
+#        self.SequentialPvars.Append(
+#            id=wxDELSEQVAR, kind=wx.ITEM_NORMAL,text='Delete',
+#            help='Delete an existing pseudo-variable')
+#        self.SequentialPvars.Append(
+#            id=wxEDITSEQVAR, kind=wx.ITEM_NORMAL,text='Edit',
+#            help='Edit an existing pseudo-variable')
+        self.PostfillDataMenu()
+            
         # Powder 
         self.HistMenu = wx.MenuBar()
         self.PrefillDataMenu(self.HistMenu,helpType='PWD Analysis',helpLbl='Powder Fit Error Analysis')
@@ -2643,6 +2669,8 @@ class DataFrame(wx.Frame):
             help='Sequential fit of model parameters to all SASD data')
         self.ModelEdit.Append(id=wxID_MODELCOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy model parameters to other histograms')
+        self.ModelEdit.Append(id=wxID_MODELCOPYFLAGS, kind=wx.ITEM_NORMAL,text='Copy flags',
+            help='Copy model refinement flags to other histograms')
         self.PostfillDataMenu()
         
         # IMG / Image Controls
@@ -3669,6 +3697,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 SeqFile.close()
         finally:
             dlg.Destroy()
+            
     # lookup table for unique cell parameters by symmetry
     cellGUIlist = [
         [['m3','m3m'],(0,)],
@@ -3682,11 +3711,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         ]
     # cell labels
     cellUlbl = ('a','b','c',u'\u03B1',u'\u03B2',u'\u03B3') # unicode a,b,c,alpha,beta,gamma
+    
     def striphist(var,insChar=''):
         'strip a histogram number from a var name'
         sv = var.split(':')
         sv[1] = insChar
         return ':'.join(sv)
+        
     def plotSpCharFix(lbl):
         'Change selected unicode characters to their matplotlib equivalent'
         for u,p in [
@@ -3846,7 +3877,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     colList += [[data[name]['Rvals']['Rwp'] for name in histNames]]
     colSigs += [None]
     colLabels += ['Rwp']
-    Types += [wg.GRID_VALUE_FLOAT,]
+    Types += [wg.GRID_VALUE_FLOAT+':10,3',]
     # add % change in Chi^2 in last cycle
     colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
     colSigs += [None]
@@ -3984,6 +4015,164 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         elif deltaChi > 1.0:
             G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Color(255,255,0))
         # colList += [[data[name]['Rvals']['converged'] for name in histNames]]
+        
+def UpdateSASDSeqResults(G2frame,data,prevSize=None):
+    
+    def GetColumnInfo(col):
+        '''returns column label, lists of values and errors (or None) for each column in the table.
+        label is reformatted from Unicode to MatPlotLib
+        '''
+        plotName = plotSpCharFix(G2frame.SeqTable.GetColLabelValue(col))
+        collist = [float(i) for i in colList[col]] 
+        return plotName,collist,colSigs[col]
+            
+    def GetSampleParms():
+        '''Make a dictionary of the sample parameters are not the same over the
+        refinement series.
+        '''
+        sampleParmDict = {'Temperature':[],'Pressure':[],
+                          'FreePrm1':[],'FreePrm2':[],'FreePrm3':[],}
+        sampleParm = {}
+        for name in histNames:
+            Id = GetPatternTreeItemId(G2frame,G2frame.root,name)
+            sampleData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+            for item in sampleParmDict:
+                sampleParmDict[item].append(sampleData[item])
+        for item in sampleParmDict:
+            frstValue = sampleParmDict[item][0]
+            if np.any(np.array(sampleParmDict[item])-frstValue):
+                sampleParm[item] = sampleParmDict[item]            
+        return sampleParm
+
+    def PlotSelect(event):
+        'Plots a row (covariance) or column on double-click'
+        cols = G2frame.dataDisplay.GetSelectedCols()
+        rows = G2frame.dataDisplay.GetSelectedRows()
+        if cols:
+            G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
+        elif rows:
+            name = histNames[rows[0]]       #only does 1st one selected
+            G2plt.PlotCovariance(G2frame,data[name])
+        else:
+            G2frame.ErrorDialog(
+                'Select row or columns',
+                'Nothing selected in table. Click on column or row label(s) to plot. N.B. Grid selection can be a bit funky.'
+                )
+
+    def SelectXaxis():
+        'returns a selected column number (or None) as the X-axis selection'
+        ncols = G2frame.SeqTable.GetNumberCols()
+        colNames = [G2frame.SeqTable.GetColLabelValue(r) for r in range(ncols)]
+        dlg = G2SingleChoiceDialog(
+            G2frame.dataDisplay,
+            'Select x-axis parameter for plot or Cancel for sequence number',
+            'Select X-axis',
+            colNames)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                col = dlg.GetSelection()
+            else:
+                col = None
+        finally:
+            dlg.Destroy()
+        return col
+    
+    def plotSpCharFix(lbl):
+        'Change selected unicode characters to their matplotlib equivalent'
+        for u,p in [
+            (u'\u03B1',r'$\alpha$'),
+            (u'\u03B2',r'$\beta$'),
+            (u'\u03B3',r'$\gamma$'),
+            (u'\u0394\u03C7',r'$\Delta\chi$'),
+            ]:
+            lbl = lbl.replace(u,p)
+        return lbl
+    
+    def OnPlotSelSeq(event):
+        'plot the selected columns or row from menu command'
+        cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
+        rows = G2frame.dataDisplay.GetSelectedRows()
+        if cols:
+            G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
+        elif rows:
+            name = histNames[rows[0]]       #only does 1st one selected
+            G2plt.PlotCovariance(G2frame,data[name])
+        else:
+            G2frame.ErrorDialog(
+                'Select columns',
+                'No columns or rows selected in table. Click on row or column labels to select fields for plotting.'
+                )
+            
+    histNames = data['histNames']
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+        Status.SetStatusText("Select column to export; Double click on column to plot data; on row for Covariance")
+
+    G2frame.dataFrame.SetLabel('Sequential SASD refinement results')
+    if not G2frame.dataFrame.GetStatusBar():
+        Status = G2frame.dataFrame.CreateStatusBar()
+        Status.SetStatusText('')
+#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=wxID_SAVESASDSEQSEL)
+#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeqCSV, id=wxID_SAVESASDSEQSELCSV)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotSelSeq, id=wxID_PLOTSASDSEQSEL)
+#    G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewSeqExpression, id=wxADDSEQVAR)
+#    G2frame.dataFrame.Bind(wx.EVT_MENU, DelSeqExpression, id=wxDELSEQVAR)
+#    G2frame.dataFrame.Bind(wx.EVT_MENU, EditSeqExpression, id=wxEDITSEQVAR)
+#    EnableSeqExpressionMenus()
+    # build up the data table one column at a time
+    colList = []
+    colSigs = []
+    colLabels = []
+    Types = []
+    nRows = len(histNames)
+    # add Rwp values
+    colList += [[data[name]['Rvals']['Rwp'] for name in histNames]]
+    colSigs += [None]
+    colLabels += ['Rwp']
+    Types += [wg.GRID_VALUE_FLOAT+':10,3',]
+    # add sample parameters
+    sampleParms = GetSampleParms()
+    for key in sampleParms:
+        colList += [sampleParms[key]]
+        colSigs += [None]
+        colLabels += [key]
+        Types += [wg.GRID_VALUE_FLOAT+':10,3',]
+    # add the variables that were refined; change from rows to columns
+    collist = zip(*[data[name]['variables'] for name in histNames])
+    colText = [['%12.5g'%collist[j][i] for i in range(len(collist[0]))] for j in range(len(collist))]
+    colList += colText
+    colLabels += data[histNames[0]]['varyList']
+    Types += len(data[histNames[0]]['varyList'])*[wg.GRID_VALUE_STRING]
+    colSigs += zip(*[data[name]['sig'] for name in histNames])
+#    # add Pseudovars
+#    for exp in Controls['SeqPseudoVars']:
+#        obj = Controls['SeqPseudoVars'][exp]
+#        calcobj = G2obj.ExpressionCalcObj(obj)
+#        valList = []
+#        for row in zip(*colList):
+#            parmDict = dict(zip(colLabels,row))
+#            calcobj.SetupCalc(parmDict)
+#            valList.append(calcobj.EvalExpression())
+#        colList += [valList]
+#        colSigs += [None]
+#        colLabels += [exp]
+#        Types += [wg.GRID_VALUE_FLOAT,]
+
+    rowList = [c for c in zip(*colList)]     # convert from columns to rows
+    G2frame.SeqTable = Table(rowList,colLabels=colLabels,rowLabels=histNames,types=Types)
+    G2frame.dataDisplay = GSGrid(parent=G2frame.dataFrame)
+    G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
+    G2frame.dataDisplay.EnableEditing(False)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PlotSelect)
+    G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
+    G2frame.dataDisplay.SetMargins(0,0)
+    G2frame.dataDisplay.AutoSizeColumns(True)
+    if prevSize:
+        G2frame.dataDisplay.SetSize(prevSize)
+    else:
+        G2frame.dataFrame.setSizePosLeft([700,350])
     
 ################################################################################
 #####  Main PWDR panel
@@ -4215,7 +4404,10 @@ def MovePatternTreeToGrid(G2frame,item):
             UpdateControls(G2frame,data)
         elif G2frame.PatternTree.GetItemText(item) == 'Sequential results':
             data = G2frame.PatternTree.GetItemPyData(item)
-            UpdateSeqResults(G2frame,data)            
+            UpdateSeqResults(G2frame,data)
+        elif G2frame.PatternTree.GetItemText(item) == 'Small Angle Sequential results':
+            data = G2frame.PatternTree.GetItemPyData(item)
+            UpdateSASDSeqResults(G2frame,data)
         elif G2frame.PatternTree.GetItemText(item) == 'Covariance':
             data = G2frame.PatternTree.GetItemPyData(item)
             G2frame.dataFrame.setSizePosLeft(defWid)

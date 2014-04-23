@@ -3192,12 +3192,12 @@ class GSASII(wx.Frame):
             Rw = G2stMn.Refine(self.GSASprojectfile,dlg)
         finally:
             dlg.Destroy()
-        oldId =  self.PatternTree.GetSelection()
+        oldId =  self.PatternTree.GetSelection()        #retain current selection
         oldName = self.PatternTree.GetItemText(oldId)
         parentId = self.PatternTree.GetItemParent(oldId)
         parentName = ''
         if parentId:
-            parentName = self.PatternTree.GetItemText(parentId)
+            parentName = self.PatternTree.GetItemText(parentId)     #find the current data tree name
         dlg = wx.MessageDialog(self,'Load new result?','Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -3270,20 +3270,8 @@ class GSASII(wx.Frame):
                 if self.G2plotNB.plotList:
                     self.G2plotNB.clear()
                 G2IO.ProjFileOpen(self)
-                # (BHT) what does this next section of code do?
-                #item, cookie = self.PatternTree.GetFirstChild(self.root)
-                #while item and not Id:
-                #    name = self.PatternTree.GetItemText(item)
-                #    if name[:4] in ['PWDR','HKLF']:
-                #        Id = item
-                #    item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-                #if Id:
-                #    self.PatternTree.SelectItem(Id)
-
-                # Open the sequential results tree entry
                 Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
                 self.PatternTree.SelectItem(Id)
-                G2gd.MovePatternTreeToGrid(self,Id)
 
         finally:
             dlg.Destroy()

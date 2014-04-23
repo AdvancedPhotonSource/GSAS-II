@@ -2043,7 +2043,7 @@ def PlotCovariance(G2frame,Data):
     xvar = np.outer(sig,np.ones_like(sig))
     covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
     title = ' for\n'+Data['title']
-    newAtomDict = Data['newAtomDict']
+    newAtomDict = Data.get('newAtomDict',{})
     
 
     def OnPlotKeyPress(event):

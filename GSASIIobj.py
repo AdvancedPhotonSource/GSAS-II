@@ -1778,6 +1778,7 @@ class ExpressionObj(object):
             exprast = ast.parse(expr)
         except SyntaxError as err:
             s = ''
+            import traceback
             for i in traceback.format_exc().splitlines()[-3:-1]:
                 if s: s += "\n"
                 s += str(i)

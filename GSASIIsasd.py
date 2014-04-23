@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 *GSASII small angle calculation module*
-==================================
+========================================
 
 '''
 ########### SVN repository information ###################

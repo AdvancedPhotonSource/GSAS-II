@@ -52,11 +52,11 @@
   <h1>Source code for GSASIImapvars</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-11-28 21:16:02 -0600 (Thu, 28 Nov 2013) $</span>
+<span class="c"># $Date: 2014-04-11 14:31:29 -0500 (Fri, 11 Apr 2014) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1160 $</span>
+<span class="c"># $Revision: 1276 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImapvars.py $</span>
-<span class="c"># $Id: GSASIImapvars.py 1160 2013-11-29 03:16:02Z toby $</span>
+<span class="c"># $Id: GSASIImapvars.py 1276 2014-04-11 19:31:29Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">*GSASIImapvars: Parameter constraints*</span>
@@ -136,7 +136,10 @@
 <span class="sd">(varyList). A fixed parameter will simply be removed from this list preventing that</span>
 <span class="sd">parameter from being varied. Note that all parameters in a constraint relationship</span>
 <span class="sd">must specified as varied (appear in varyList) or none can be varied. This is</span>
-<span class="sd">checked in GenerateConstraints (as well as for generated relationships in SetVaryFlags).</span>
+<span class="sd">checked in GenerateConstraints. Likewise, if all parameters in a constraint are</span>
+<span class="sd">not referenced in a refinement, the constraint is ignored, but if some parameters</span>
+<span class="sd">in a constraint group are not referenced in a refinement, but others are this</span>
+<span class="sd">constitutes and error. </span>
 
 <span class="sd">* When a new variable is created, the variable is assigned the name associated</span>
 <span class="sd">  in the constraint definition or it is assigned a default name of form</span>
@@ -259,7 +262,7 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1160 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1276 $&quot;</span><span class="p">)</span>
 <span class="c"># data used for constraints; </span>
 <span class="n">debug</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># turns on printing as constraint input is processed</span>
 <span class="c"># note that constraints are stored listed by contraint groups, where each constraint</span>
@@ -464,7 +467,7 @@
             <span class="n">notvaried</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
             <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span> <span class="k">continue</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;[0-9]*:[0-9]*:&#39;</span><span class="p">,</span><span class="n">var</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;[0-9]*:[0-9\*]*:&#39;</span><span class="p">,</span><span class="n">var</span><span class="p">):</span>
                     <span class="n">warnmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Variable &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; does not begin with a &#39;:&#39;&quot;</span>
                 <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varyList</span><span class="p">:</span>
                     <span class="n">varied</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -559,7 +562,7 @@
                 <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
     <span class="k">return</span> <span class="n">errmsg</span><span class="p">,</span><span class="n">warnmsg</span>
 </div>
-<div class="viewcode-block" id="GenerateConstraints"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.GenerateConstraints">[docs]</a><span class="k">def</span> <span class="nf">GenerateConstraints</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span><span class="n">parmlist</span><span class="p">,</span><span class="n">varyList</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">fixedList</span><span class="p">):</span>
+<div class="viewcode-block" id="GenerateConstraints"><a class="viewcode-back" href="../GSASIImapvars.html#GSASIImapvars.GenerateConstraints">[docs]</a><span class="k">def</span> <span class="nf">GenerateConstraints</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span><span class="n">parmlist</span><span class="p">,</span><span class="n">varyList</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">fixedList</span><span class="p">,</span><span class="n">parmDict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">SeqHist</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Takes a list of relationship entries comprising a group of</span>
 <span class="sd">    constraints and builds the relationship lists and their inverse</span>
 <span class="sd">    and stores them in global variables Also checks for internal</span>
@@ -583,8 +586,12 @@
 <span class="sd">      dict in constrDict. Values are either strings that can be converted to</span>
 <span class="sd">      floats, float values or None if the constraint defines a new parameter.</span>
 <span class="sd">      </span>
-<span class="sd">    :param dict constrDict: a list of dicts defining relationships/constraints.</span>
+<span class="sd">    :param dict parmDict: a dict containing all parameters defined in current</span>
+<span class="sd">      refinement.</span>
 
+<span class="sd">    :param int SeqHist: number of current histogram, when used in a sequential</span>
+<span class="sd">      refinement. None (default) otherwise. Wildcard variable names are</span>
+<span class="sd">      set to the current histogram, when found if not None.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">global</span> <span class="n">dependentParmList</span><span class="p">,</span><span class="n">arrayList</span><span class="p">,</span><span class="n">invarrayList</span><span class="p">,</span><span class="n">indParmList</span><span class="p">,</span><span class="n">consNum</span>
     <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
@@ -596,13 +603,14 @@
     
     <span class="c"># process equivalences: make a list of dependent and independent vars</span>
     <span class="c">#    and check for repeated uses (repetition of a parameter as an</span>
-    <span class="c">#    independent var is OK)</span>
+    <span class="c">#    independent var is OK [A=B; A=C], but chaining: [A=B; B=C] is not good)</span>
     <span class="n">indepVarList</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">depVarList</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">multdepVarList</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">varlist</span><span class="p">,</span><span class="n">mapvars</span><span class="p">,</span><span class="n">multarr</span><span class="p">,</span><span class="n">invmultarr</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+    <span class="n">translateTable</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># lookup table for wildcard referenced variables</span>
+    <span class="k">for</span> <span class="n">varlist</span><span class="p">,</span><span class="n">mapvars</span><span class="p">,</span><span class="n">multarr</span><span class="p">,</span><span class="n">invmultarr</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>       <span class="c"># process equivalences</span>
         <span class="n">dependentParmList</span><span class="p">,</span><span class="n">indParmList</span><span class="p">,</span><span class="n">arrayList</span><span class="p">,</span><span class="n">invarrayList</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">multarr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># do only if an equivalence</span>
+        <span class="k">if</span> <span class="n">multarr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># true only if an equivalence</span>
             <span class="n">zeromult</span> <span class="o">=</span> <span class="bp">False</span>
             <span class="k">for</span> <span class="n">mv</span> <span class="ow">in</span> <span class="n">mapvars</span><span class="p">:</span>
                 <span class="c">#s = &#39;&#39;</span>
@@ -614,7 +622,13 @@
                     <span class="k">if</span> <span class="n">notvaried</span><span class="p">:</span> <span class="n">notvaried</span> <span class="o">+=</span> <span class="s">&#39;, &#39;</span>
                     <span class="n">notvaried</span> <span class="o">+=</span> <span class="n">mv</span>
                 <span class="k">if</span> <span class="n">mv</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">indepVarList</span><span class="p">:</span> <span class="n">indepVarList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mv</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">parmDict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">mv</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">:</span>
+                    <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Cannot equivalence to variable &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">mv</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;. Not defined in this refinement&quot;</span>
+                    <span class="k">continue</span>
                 <span class="k">for</span> <span class="n">v</span><span class="p">,</span><span class="n">m</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">varlist</span><span class="p">,</span><span class="n">invmultarr</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">parmDict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">:</span>
+                        <span class="k">print</span> <span class="s">&quot;Dropping equivalence for variable &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;. Not defined in this refinement&quot;</span>
+                        <span class="k">continue</span>
                     <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="n">zeromult</span> <span class="o">=</span> <span class="bp">True</span>
                     <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">varyList</span><span class="p">:</span>
                         <span class="n">varied</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -668,8 +682,20 @@
         <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
             <span class="n">varied</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">notvaried</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+            <span class="n">unused</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">notused</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
             <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span> <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span> <span class="ow">and</span> <span class="n">SeqHist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="c"># convert wildcard var to reference current histogram; save translation in table</span>
+                    <span class="n">sv</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span>
+                    <span class="n">sv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">SeqHist</span><span class="p">)</span>
+                    <span class="n">translateTable</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sv</span><span class="p">)</span>
+                    <span class="n">var</span> <span class="o">=</span> <span class="n">translateTable</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">parmDict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">:</span>
+                    <span class="n">unused</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">notvaried</span><span class="p">:</span> <span class="n">notused</span> <span class="o">+=</span> <span class="s">&#39;, &#39;</span>
+                    <span class="n">notused</span> <span class="o">+=</span> <span class="n">var</span>
                 <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varyList</span><span class="p">:</span>
                     <span class="n">varied</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -678,6 +704,11 @@
                 <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">fixedVarList</span><span class="p">:</span>
                     <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Error: parameter &#39;</span><span class="o">+</span><span class="n">var</span><span class="o">+</span><span class="s">&quot; is Fixed and used in a constraint:</span><span class="se">\n\t</span><span class="s">&quot;</span>
                     <span class="n">msg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+            <span class="c">#if unused &gt; 0:# and unused != len(VarKeys(constrDict[rel])):</span>
+            <span class="k">if</span> <span class="n">unused</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">unused</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">VarKeys</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">])):</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Some (but not all) variables in constraint are not defined:</span><span class="se">\n\t</span><span class="s">&quot;</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">Not used: &#39;</span> <span class="o">+</span> <span class="n">notused</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
             <span class="k">if</span> <span class="n">varied</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">varied</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">VarKeys</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">])):</span>
                 <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">Not all variables refined in constraint:</span><span class="se">\n\t</span><span class="s">&quot;</span>
                 <span class="n">msg</span> <span class="o">+=</span> <span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">])</span>
@@ -702,7 +733,11 @@
         <span class="n">VaryFree</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
             <span class="n">varied</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">unused</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">VarKeys</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">]):</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="n">translateTable</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">var</span><span class="p">,</span><span class="n">var</span><span class="p">)</span> <span class="c"># replace wildcards</span>
+                <span class="k">if</span> <span class="n">parmDict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">:</span>
+                    <span class="n">unused</span> <span class="o">+=</span> <span class="mi">1</span>                    
                 <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">varsList</span><span class="p">:</span> <span class="n">varsList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varyList</span><span class="p">:</span> <span class="n">varied</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">varied</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -710,6 +745,12 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">varlist</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">):</span> <span class="c"># too many relationships -- no can do</span>
             <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;too many relationships&#39;</span>
             <span class="k">break</span>
+        <span class="c"># Since we checked before, if any variables are unused, then all must be. </span>
+        <span class="c"># If so, this set of relationships can be ignored</span>
+        <span class="k">if</span> <span class="n">unused</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span><span class="p">(</span><span class="s">&#39;Constraint ignored (all variables undefined)&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span> <span class="p">(</span><span class="s">&#39;    &#39;</span><span class="o">+</span><span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">]))</span>
+            <span class="k">continue</span>
         <span class="c"># fill in additional degrees of freedom</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">arr</span> <span class="o">=</span> <span class="n">_FillArray</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">varlist</span><span class="p">)</span>
@@ -755,8 +796,11 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">unused</span> <span class="o">=</span> <span class="bp">False</span>
                 <span class="n">mapvar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fixedval</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">unused</span><span class="p">:</span> <span class="k">continue</span> <span class="c"># skip over constraints that do not have a fixed value or a refined variable</span>
-        <span class="n">dependentParmList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">varlist</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">unused</span><span class="p">:</span> <span class="c"># skip over constraints that don&#39;t matter (w/o fixed value or any refined variables)</span>
+            <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span><span class="p">(</span><span class="s">&#39;Constraint ignored (all variables unrefined)&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span> <span class="p">(</span><span class="s">&#39;   &#39;</span><span class="o">+</span><span class="n">_FormatConstraint</span><span class="p">(</span><span class="n">constrDict</span><span class="p">[</span><span class="n">rel</span><span class="p">],</span><span class="n">fixedList</span><span class="p">[</span><span class="n">rel</span><span class="p">]))</span>
+            <span class="k">continue</span> 
+        <span class="n">dependentParmList</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">translateTable</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">var</span><span class="p">,</span><span class="n">var</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varlist</span><span class="p">])</span>
         <span class="n">arrayList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">constrArr</span><span class="p">)</span>
         <span class="n">invarrayList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">constrArr</span><span class="p">))</span>
         <span class="n">indParmList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mapvar</span><span class="p">)</span>

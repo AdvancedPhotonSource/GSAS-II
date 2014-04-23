@@ -77,6 +77,13 @@ data tree items</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="GSASII.GSASII.EnableSeqRefineMenu">
+<tt class="descclassname">GSASII.</tt><tt class="descname">EnableSeqRefineMenu</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.EnableSeqRefineMenu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.EnableSeqRefineMenu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable or disable the sequential refinement menu items based on the
+contents of the Controls &#8216;Seq Data&#8217; item (if present)</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASII.GSASII.ErrorDialog">
 <tt class="descclassname">GSASII.</tt><tt class="descname">ErrorDialog</tt><big>(</big><em>title</em>, <em>message</em>, <em>parent=None</em>, <em>wtype=4</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.ErrorDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.ErrorDialog" title="Permalink to this definition">¶</a></dt>
 <dd><p>Display an error message</p>
@@ -412,6 +419,17 @@ where all appropriate formats will be tried.</p>
 <tt class="descclassname">GSASII.</tt><tt class="descname">OnImportSfact</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnImportSfact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnImportSfact" title="Permalink to this definition">¶</a></dt>
 <dd><p>Called in response to an Import/Structure Factor/... menu item
 to read single crystal datasets. 
+dict self.ImportMenuId is used to look up the specific
+reader item associated with the menu item, which will be
+None for the last menu item, which is the &#8220;guess&#8221; option
+where all appropriate formats will be tried.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASII.GSASII.OnImportSmallAngle">
+<tt class="descclassname">GSASII.</tt><tt class="descname">OnImportSmallAngle</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASII.html#GSASII.OnImportSmallAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASII.GSASII.OnImportSmallAngle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called in response to an Import/Small Angle Data/... menu item
+to read a small angle diffraction data set. 
 dict self.ImportMenuId is used to look up the specific
 reader item associated with the menu item, which will be
 None for the last menu item, which is the &#8220;guess&#8221; option

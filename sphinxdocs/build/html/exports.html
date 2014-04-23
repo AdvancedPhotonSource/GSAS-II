@@ -236,6 +236,26 @@ GSAS-II data export to a spreadsheet program, etc.</p>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="G2export_csv.ExportStrainCSV">
+<em class="property">class </em><tt class="descclassname">G2export_csv.</tt><tt class="descname">ExportStrainCSV</tt><big>(</big><em>G2frame</em><big>)</big><a class="reference internal" href="_modules/G2export_csv.html#ExportStrainCSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2export_csv.ExportStrainCSV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to create a csv file with single crystal reflection data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; reference to main GSAS-II frame</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="G2export_csv.ExportStrainCSV.Exporter">
+<tt class="descname">Exporter</tt><big>(</big><em>event=None</em><big>)</big><a class="reference internal" href="_modules/G2export_csv.html#ExportStrainCSV.Exporter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2export_csv.ExportStrainCSV.Exporter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export a set of single crystal data as a csv file</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="G2export_csv.WriteList">
 <tt class="descclassname">G2export_csv.</tt><tt class="descname">WriteList</tt><big>(</big><em>obj</em>, <em>headerItems</em><big>)</big><a class="reference internal" href="_modules/G2export_csv.html#WriteList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2export_csv.WriteList" title="Permalink to this definition">¶</a></dt>
@@ -369,24 +389,6 @@ is used by COOT (<a class="reference internal" href="#G2export_map.ExportMapCCP4
 <dt id="G2export_map.ExportMapCCP4.Exporter">
 <tt class="descname">Exporter</tt><big>(</big><em>event=None</em><big>)</big><a class="reference internal" href="_modules/G2export_map.html#ExportMapCCP4.Exporter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2export_map.ExportMapCCP4.Exporter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Export a map as a text file</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="G2export_map.ExportMapCCP4.OpenFile">
-<tt class="descname">OpenFile</tt><big>(</big><em>fil=None</em><big>)</big><a class="reference internal" href="_modules/G2export_map.html#ExportMapCCP4.OpenFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2export_map.ExportMapCCP4.OpenFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Open the output file as binary</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fil</strong> (<em>str</em>) &#8211; The name of the file to open. If None (default)
-the name defaults to self.filename.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the file object opened by the routine which is also
-saved as self.fp</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 </dd></dl>
@@ -766,6 +768,56 @@ Defaults to &#8216;Template&#8217;</li>
 </dd></dl>
 
 </div>
+<span class="target" id="module-G2export_pwdr"></span><div class="section" id="module-g2export-pwdr-export-powder-input-files">
+<h2><em>Module G2export_pwdr: Export powder input files</em><a class="headerlink" href="#module-g2export-pwdr-export-powder-input-files" title="Permalink to this headline">¶</a></h2>
+<p>Creates files used by GSAS (FXYE) &amp; TOPAS (XYE) as input</p>
+<dl class="class">
+<dt id="G2export_pwdr.ExportPowderFXYE">
+<em class="property">class </em><tt class="descclassname">G2export_pwdr.</tt><tt class="descname">ExportPowderFXYE</tt><big>(</big><em>G2frame</em><big>)</big><a class="reference internal" href="_modules/G2export_pwdr.html#ExportPowderFXYE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2export_pwdr.ExportPowderFXYE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to create a FXYE file for a powder data set</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; reference to main GSAS-II frame</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="G2export_pwdr.ExportPowderFXYE.Exporter">
+<tt class="descname">Exporter</tt><big>(</big><em>event=None</em><big>)</big><a class="reference internal" href="_modules/G2export_pwdr.html#ExportPowderFXYE.Exporter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2export_pwdr.ExportPowderFXYE.Exporter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export one or more sets of powder data as FXYE file(s)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2export_pwdr.ExportPowderFXYE.WriteInstFile">
+<tt class="descname">WriteInstFile</tt><big>(</big><em>hist</em>, <em>Inst</em><big>)</big><a class="reference internal" href="_modules/G2export_pwdr.html#ExportPowderFXYE.WriteInstFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2export_pwdr.ExportPowderFXYE.WriteInstFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write an instrument parameter file</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="G2export_pwdr.ExportPowderXYE">
+<em class="property">class </em><tt class="descclassname">G2export_pwdr.</tt><tt class="descname">ExportPowderXYE</tt><big>(</big><em>G2frame</em><big>)</big><a class="reference internal" href="_modules/G2export_pwdr.html#ExportPowderXYE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2export_pwdr.ExportPowderXYE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to create a Topas XYE file for a powder data set</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; reference to main GSAS-II frame</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="G2export_pwdr.ExportPowderXYE.Exporter">
+<tt class="descname">Exporter</tt><big>(</big><em>event=None</em><big>)</big><a class="reference internal" href="_modules/G2export_pwdr.html#ExportPowderXYE.Exporter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2export_pwdr.ExportPowderXYE.Exporter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export one or more sets of powder data as XYE file(s)</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -787,6 +839,7 @@ Defaults to &#8216;Template&#8217;</li>
 <li><a class="reference internal" href="#module-g2export-map-map-export"><em>Module G2export_map: Map export</em></a></li>
 <li><a class="reference internal" href="#module-g2export-shelx-examples"><em>Module G2export_shelx: Examples</em></a></li>
 <li><a class="reference internal" href="#module-g2export-cif-cif-exports"><em>Module G2export_CIF: CIF Exports</em></a></li>
+<li><a class="reference internal" href="#module-g2export-pwdr-export-powder-input-files"><em>Module G2export_pwdr: Export powder input files</em></a></li>
 </ul>
 </li>
 </ul>

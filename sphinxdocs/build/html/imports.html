@@ -59,9 +59,11 @@ or <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPowderData
 derived from <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportBaseclass" title="GSASIIIO.ImportBaseclass"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportBaseclass</span></tt></a>)
 to implement import of
 a phase, a single crystal or a powder dataset, respectively.
-Module file names (<cite>G2phase_</cite>, <cite>G2pwd_</cite> and <cite>G2sfact_</cite>) are used to
+Module file names (<cite>G2phase_</cite>, <cite>G2pwd_</cite> and <cite>G2sfact_</cite>, etc.) are used to
 determine which menu an import routine should be placed into. (N.B. this
 was an unnecessary choice; this could be done from the class used.)</p>
+<p>This list may not include all currently defined formats, since modules
+may be loaded from anywhere in the path.</p>
 <div class="section" id="writing-an-import-routine">
 <h2>Writing an Import Routine<a class="headerlink" href="#writing-an-import-routine" title="Permalink to this headline">¶</a></h2>
 <p id="import-routines">When writing a import routine, one should create a new class derived
@@ -205,8 +207,8 @@ to give the user information on what went wrong during the reading.</p>
 </div>
 </div>
 </div>
-<div class="section" id="currently-defined-phase-import-routines">
-<h2>Currently Defined Phase Import Routines<a class="headerlink" href="#currently-defined-phase-import-routines" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="phase-import-routines">
+<h2>Phase Import Routines<a class="headerlink" href="#phase-import-routines" title="Permalink to this headline">¶</a></h2>
 <p>Phase import routines are classes derived from
 <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPhase" title="GSASIIIO.ImportPhase"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPhase</span></tt></a>.
 They must be found in files named <cite>G2phase*.py</cite> that are in the Python path
@@ -310,8 +312,8 @@ added to the phase entry and constraints are generated.</p>
 
 </div>
 </div>
-<div class="section" id="currently-defined-powder-data-import-routines">
-<h2>Currently Defined Powder Data Import Routines<a class="headerlink" href="#currently-defined-powder-data-import-routines" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="powder-data-import-routines">
+<h2>Powder Data Import Routines<a class="headerlink" href="#powder-data-import-routines" title="Permalink to this headline">¶</a></h2>
 <p>Powder data import routines are classes derived from
 <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportPowderData" title="GSASIIIO.ImportPowderData"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportPowderData</span></tt></a>.
 They must be found in files named <cite>G2pwd*.py</cite> that are in the Python path
@@ -424,8 +426,8 @@ If multiple datasets are requested, use self.repeat and buffer caching.</p>
 
 </div>
 </div>
-<div class="section" id="currently-defined-single-crystal-data-import-routines">
-<h2>Currently Defined Single Crystal Data Import Routines<a class="headerlink" href="#currently-defined-single-crystal-data-import-routines" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="single-crystal-data-import-routines">
+<h2>Single Crystal Data Import Routines<a class="headerlink" href="#single-crystal-data-import-routines" title="Permalink to this headline">¶</a></h2>
 <p>Single crystal data import routines are classes derived from
 , <a class="reference internal" href="GSASIIGUIr.html#GSASIIIO.ImportStructFactor" title="GSASIIIO.ImportStructFactor"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportStructFactor</span></tt></a>.
 They must be found in files named <cite>G2sfact*.py</cite> that are in the Python path
@@ -502,6 +504,67 @@ If multiple datasets are requested, use self.repeat and buffer caching.</p>
 
 </div>
 </div>
+<div class="section" id="small-angle-scattering-data-import-routines">
+<h2>Small Angle Scattering Data Import Routines<a class="headerlink" href="#small-angle-scattering-data-import-routines" title="Permalink to this headline">¶</a></h2>
+<p>Small angle scattering data import routines are classes derived from
+, <tt class="xref py py-class docutils literal"><span class="pre">GSASIIIO.ImportSmallAngle</span></tt>.
+They must be found in files named <cite>G2sad*.py</cite> that are in the Python path
+and the class must override the <tt class="docutils literal"><span class="pre">__init__</span></tt> method and add a <tt class="docutils literal"><span class="pre">Reader</span></tt> method.
+The distributed routines are:</p>
+<span class="target" id="module-G2sad_xye"></span><div class="section" id="module-g2sad-xye-read-small-angle-data">
+<h3><em>Module G2sad_xye: read small angle data</em><a class="headerlink" href="#module-g2sad-xye-read-small-angle-data" title="Permalink to this headline">¶</a></h3>
+<p>Routines to read in small angle data from an .xye type file, with
+two-theta or Q steps.</p>
+<dl class="class">
+<dt id="G2sad_xye.txt_CWNeutronReaderClass">
+<em class="property">class </em><tt class="descclassname">G2sad_xye.</tt><tt class="descname">txt_CWNeutronReaderClass</tt><a class="reference internal" href="_modules/G2sad_xye.html#txt_CWNeutronReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sad_xye.txt_CWNeutronReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import neutron CW q SAXD data from a .nsad or .ndat file</p>
+<dl class="method">
+<dt id="G2sad_xye.txt_CWNeutronReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2sad_xye.html#txt_CWNeutronReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sad_xye.txt_CWNeutronReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Look through the file for expected types of lines in a valid q-step file</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="G2sad_xye.txt_XRayReaderClass">
+<em class="property">class </em><tt class="descclassname">G2sad_xye.</tt><tt class="descname">txt_XRayReaderClass</tt><a class="reference internal" href="_modules/G2sad_xye.html#txt_XRayReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sad_xye.txt_XRayReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import X-ray q SAXD data from a .xsad or .xdat file</p>
+<dl class="method">
+<dt id="G2sad_xye.txt_XRayReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2sad_xye.html#txt_XRayReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sad_xye.txt_XRayReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Look through the file for expected types of lines in a valid q-step file</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="G2sad_xye.txt_nmCWNeutronReaderClass">
+<em class="property">class </em><tt class="descclassname">G2sad_xye.</tt><tt class="descname">txt_nmCWNeutronReaderClass</tt><a class="reference internal" href="_modules/G2sad_xye.html#txt_nmCWNeutronReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sad_xye.txt_nmCWNeutronReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import neutron CW q in nm-1 SAXD data from a .nsad or .ndat file</p>
+<dl class="method">
+<dt id="G2sad_xye.txt_nmCWNeutronReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2sad_xye.html#txt_nmCWNeutronReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sad_xye.txt_nmCWNeutronReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Look through the file for expected types of lines in a valid q-step file</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="G2sad_xye.txt_nmXRayReaderClass">
+<em class="property">class </em><tt class="descclassname">G2sad_xye.</tt><tt class="descname">txt_nmXRayReaderClass</tt><a class="reference internal" href="_modules/G2sad_xye.html#txt_nmXRayReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sad_xye.txt_nmXRayReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import X-ray q SAXD data from a .xsad or .xdat file, q in nm-1</p>
+<dl class="method">
+<dt id="G2sad_xye.txt_nmXRayReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2sad_xye.html#txt_nmXRayReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sad_xye.txt_nmXRayReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Look through the file for expected types of lines in a valid q-step file</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
 </div>
 
 
@@ -533,22 +596,26 @@ If multiple datasets are requested, use self.repeat and buffer caching.</p>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#currently-defined-phase-import-routines">Currently Defined Phase Import Routines</a><ul>
+<li><a class="reference internal" href="#phase-import-routines">Phase Import Routines</a><ul>
 <li><a class="reference internal" href="#module-g2phase-pdb-and-exp"><em>Module G2phase: PDB and .EXP</em></a></li>
 <li><a class="reference internal" href="#module-g2phase-gpx-import-phase-from-gsas-ii-project"><em>Module G2phase_GPX: Import phase from GSAS-II project</em></a></li>
 <li><a class="reference internal" href="#module-g2phase-cif-coordinates-from-cif"><em>Module G2phase_CIF: Coordinates from CIF</em></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#currently-defined-powder-data-import-routines">Currently Defined Powder Data Import Routines</a><ul>
+<li><a class="reference internal" href="#powder-data-import-routines">Powder Data Import Routines</a><ul>
 <li><a class="reference internal" href="#module-g2pwd-gpx-gsas-ii-projects"><em>Module G2pwd_GPX: GSAS-II projects</em></a></li>
 <li><a class="reference internal" href="#module-g2pwd-fxye-gsas-data-files"><em>Module G2pwd_fxye: GSAS data files</em></a></li>
 <li><a class="reference internal" href="#module-g2pwd-xye-topas-xye-data"><em>Module G2pwd_xye: Topas .xye data</em></a></li>
 <li><a class="reference internal" href="#module-g2pwd-cif-cif-powder-data"><em>Module G2pwd_CIF: CIF powder data</em></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#currently-defined-single-crystal-data-import-routines">Currently Defined Single Crystal Data Import Routines</a><ul>
+<li><a class="reference internal" href="#single-crystal-data-import-routines">Single Crystal Data Import Routines</a><ul>
 <li><a class="reference internal" href="#module-g2sfact-simple-hkl-import"><em>Module G2sfact: simple HKL import</em></a></li>
 <li><a class="reference internal" href="#module-g2sfact-cif-cif-import"><em>Module G2sfact_CIF: CIF import</em></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#small-angle-scattering-data-import-routines">Small Angle Scattering Data Import Routines</a><ul>
+<li><a class="reference internal" href="#module-g2sad-xye-read-small-angle-data"><em>Module G2sad_xye: read small angle data</em></a></li>
 </ul>
 </li>
 </ul>

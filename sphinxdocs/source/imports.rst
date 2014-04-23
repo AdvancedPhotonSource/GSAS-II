@@ -7,9 +7,12 @@ or :class:`GSASIIIO.ImportPowderData` (which are in turn
 derived from :class:`GSASIIIO.ImportBaseclass`)
 to implement import of 
 a phase, a single crystal or a powder dataset, respectively. 
-Module file names (`G2phase_`, `G2pwd_` and `G2sfact_`) are used to
+Module file names (`G2phase_`, `G2pwd_` and `G2sfact_`, etc.) are used to
 determine which menu an import routine should be placed into. (N.B. this
 was an unnecessary choice; this could be done from the class used.)
+
+This list may not include all currently defined formats, since modules
+may be loaded from anywhere in the path. 
 
 Writing an Import Routine
 --------------------------
@@ -168,7 +171,7 @@ If the file cannot be read by this class,  the routine should
 return False. Preferably one will also place text in `self.errors` 
 to give the user information on what went wrong during the reading.
 
-Currently Defined Phase Import Routines
+Phase Import Routines
 ----------------------------------------
 Phase import routines are classes derived from
 :class:`GSASIIIO.ImportPhase`.  
@@ -189,7 +192,7 @@ The distributed routines are:
     :members: 
     :synopsis: Reads phase information from a CIF
 
-Currently Defined Powder Data Import Routines
+Powder Data Import Routines
 ---------------------------------------------
 Powder data import routines are classes derived from
 :class:`GSASIIIO.ImportPowderData`. 
@@ -213,7 +216,7 @@ The distributed routines are:
     :members: 
     :synopsis: Reads powder data from a CIF
 
-Currently Defined Single Crystal Data Import Routines
+Single Crystal Data Import Routines
 -----------------------------------------------------
 Single crystal data import routines are classes derived from
 , :class:`GSASIIIO.ImportStructFactor`.
@@ -228,3 +231,16 @@ The distributed routines are:
 .. automodule:: G2sfact_CIF
     :members: 
     :synopsis: Reads single crystal data from CIF files
+
+
+Small Angle Scattering Data Import Routines
+-----------------------------------------------------
+Small angle scattering data import routines are classes derived from
+, :class:`GSASIIIO.ImportSmallAngle`.
+They must be found in files named `G2sad*.py` that are in the Python path
+and the class must override the ``__init__`` method and add a ``Reader`` method.
+The distributed routines are:
+
+.. automodule:: G2sad_xye
+    :members: 
+    :synopsis: Reads small angle scattering data from simple files

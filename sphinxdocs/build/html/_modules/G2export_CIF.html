@@ -53,11 +53,11 @@
 <span class="c">#!/usr/bin/env python</span>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-29 16:46:45 -0500 (Tue, 29 Oct 2013) $</span>
+<span class="c"># $Date: 2014-03-24 17:22:41 -0500 (Mon, 24 Mar 2014) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1130 $</span>
+<span class="c"># $Revision: 1261 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_CIF.py $</span>
-<span class="c"># $Id: G2export_CIF.py 1130 2013-10-29 21:46:45Z toby $</span>
+<span class="c"># $Id: G2export_CIF.py 1261 2014-03-24 22:22:41Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*Module G2export_CIF: CIF Exports*</span>
@@ -88,7 +88,7 @@
 <span class="kn">import</span> <span class="nn">wx.lib.scrolledpanel</span> <span class="kn">as</span> <span class="nn">wxscroll</span>
 <span class="kn">import</span> <span class="nn">wx.lib.resizewidget</span> <span class="kn">as</span> <span class="nn">rw</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1130 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1261 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIstrIO</span> <span class="kn">as</span> <span class="nn">G2stIO</span>
@@ -125,18 +125,6 @@
 <span class="sd">        &#39;&#39;&#39;</span>
 
 <span class="c">#***** define functions for export method =======================================</span>
-        <span class="k">def</span> <span class="nf">openCIF</span><span class="p">(</span><span class="n">filnam</span><span class="p">):</span>
-            <span class="s">&#39;opens the output file&#39;</span>
-            <span class="k">if</span> <span class="n">DEBUG</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">fp</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">fp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filnam</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
-
-        <span class="k">def</span> <span class="nf">closeCIF</span><span class="p">():</span>
-            <span class="s">&#39;close the output file&#39;</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">DEBUG</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-            
         <span class="k">def</span> <span class="nf">WriteCIFitem</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">value</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
             <span class="sd">&#39;&#39;&#39;Write CIF data items to the file. Formats values as needed.</span>
 <span class="sd">            Also used without a value for loops, comments, loop headers, etc.</span>
@@ -1617,8 +1605,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">loadTree</span><span class="p">()</span>
         <span class="c"># create a dict with refined values and their uncertainties</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loadParmDict</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">(</span><span class="n">AskFile</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="o">==</span><span class="s">&#39;simple&#39;</span><span class="p">)):</span>    <span class="c"># set export parameters</span>
-            <span class="k">return</span> 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="o">==</span><span class="s">&#39;simple&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">(</span><span class="s">&#39;ask&#39;</span><span class="p">):</span> <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">(</span><span class="s">&#39;default&#39;</span><span class="p">):</span> <span class="k">return</span>
         <span class="c"># Someday: get restraint &amp; constraint info</span>
         <span class="c">#restraintDict = self.OverallParms.get(&#39;Restraints&#39;,{})</span>
         <span class="c">#for i in  self.OverallParms[&#39;Constraints&#39;]:</span>
@@ -1770,7 +1760,7 @@
         <span class="c"># Start writing the CIF - single block</span>
         <span class="c">#======================================================================</span>
         <span class="k">print</span><span class="p">(</span><span class="s">&#39;Writing CIF output to file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;...&quot;</span><span class="p">)</span>
-        <span class="n">openCIF</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;single&#39;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">currentExportType</span> <span class="o">==</span> <span class="s">&#39;powder&#39;</span><span class="p">:</span>
             <span class="c">#======Data only CIF (powder/xtal) ====================================</span>
             <span class="n">hist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">histnam</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1962,8 +1952,9 @@
                 <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
 
         <span class="n">WriteCIFitem</span><span class="p">(</span><span class="s">&#39;#--&#39;</span> <span class="o">+</span> <span class="mi">15</span><span class="o">*</span><span class="s">&#39;eof--&#39;</span> <span class="o">+</span> <span class="s">&#39;#&#39;</span><span class="p">)</span>
-        <span class="n">closeCIF</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CloseFile</span><span class="p">()</span>
         <span class="k">print</span><span class="p">(</span><span class="s">&quot;...export completed&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&#39;file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullpath</span><span class="p">))</span>
         <span class="c"># end of CIF export</span>
 </div></div>
 <div class="viewcode-block" id="ExportPhaseCIF"><a class="viewcode-back" href="../exports.html#G2export_CIF.ExportPhaseCIF">[docs]</a><span class="k">class</span> <span class="nc">ExportPhaseCIF</span><span class="p">(</span><span class="n">ExportCIF</span><span class="p">):</span>

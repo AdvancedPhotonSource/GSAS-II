@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIImath - major mathematics routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-11-16 08:13:44 -0600 (Sat, 16 Nov 2013) $</span>
-<span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1146 $</span>
+<span class="c"># $Date: 2014-04-18 10:22:29 -0500 (Fri, 18 Apr 2014) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 1282 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $</span>
-<span class="c"># $Id: GSASIImath.py 1146 2013-11-16 14:13:44Z vondreele $</span>
+<span class="c"># $Id: GSASIImath.py 1282 2014-04-18 15:22:29Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIImath: computation module*</span>
@@ -78,7 +78,7 @@
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1146 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1282 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIElem</span> <span class="kn">as</span> <span class="nn">G2el</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
@@ -143,6 +143,8 @@
 <span class="sd">            </span>
 <span class="sd">    &quot;&quot;&quot;</span>
                 
+    <span class="n">ifConverged</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">deltaChi2</span> <span class="o">=</span> <span class="o">-</span><span class="mf">10.</span>
     <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">ndmin</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>      <span class="c">#might be redundant?</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x0</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">type</span><span class="p">(()):</span>
@@ -192,9 +194,13 @@
                 <span class="k">print</span> <span class="s">&#39;ouch #3 chisq1 &#39;</span><span class="p">,</span><span class="n">chisq1</span><span class="p">,</span><span class="s">&#39; stuck &gt; chisq0 &#39;</span><span class="p">,</span><span class="n">chisq0</span>
                 <span class="k">break</span>
         <span class="n">lamMax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">lamMax</span><span class="p">,</span><span class="n">lam</span><span class="p">)</span>
+        <span class="n">deltaChi2</span> <span class="o">=</span> <span class="p">(</span><span class="n">chisq0</span><span class="o">-</span><span class="n">chisq1</span><span class="p">)</span><span class="o">/</span><span class="n">chisq0</span>
         <span class="k">if</span> <span class="n">Print</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39; Cycle: </span><span class="si">%d</span><span class="s">, Time: </span><span class="si">%.2f</span><span class="s">s, Chi**2: </span><span class="si">%.3g</span><span class="s">, Lambda: </span><span class="si">%.3g</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">icycle</span><span class="p">,</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">time0</span><span class="p">,</span><span class="n">chisq1</span><span class="p">,</span><span class="n">lam</span><span class="p">)</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">chisq0</span><span class="o">-</span><span class="n">chisq1</span><span class="p">)</span><span class="o">/</span><span class="n">chisq0</span> <span class="o">&lt;</span> <span class="n">ftol</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39; Cycle: </span><span class="si">%d</span><span class="s">, Time: </span><span class="si">%.2f</span><span class="s">s, Chi**2: </span><span class="si">%.3g</span><span class="s">, Lambda: </span><span class="si">%.3g</span><span class="s">,  Delta: </span><span class="si">%.3g</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span>
+                <span class="n">icycle</span><span class="p">,</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">time0</span><span class="p">,</span><span class="n">chisq1</span><span class="p">,</span><span class="n">lam</span><span class="p">,</span><span class="n">deltaChi2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">deltaChi2</span> <span class="o">&lt;</span> <span class="n">ftol</span><span class="p">:</span>
+            <span class="n">ifConverged</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">if</span> <span class="n">Print</span><span class="p">:</span> <span class="k">print</span> <span class="s">&quot;converged&quot;</span>
             <span class="k">break</span>
         <span class="n">icycle</span> <span class="o">+=</span> <span class="mi">1</span>
     <span class="k">else</span><span class="p">:</span>       <span class="c">#after last cycle or if zero cycles</span>
@@ -203,11 +209,10 @@
         <span class="n">Yvec</span><span class="p">,</span><span class="n">Amat</span> <span class="o">=</span> <span class="n">Hess</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
         <span class="n">Adiag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">Amat</span><span class="p">))</span>
         <span class="n">Anorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">Adiag</span><span class="p">,</span><span class="n">Adiag</span><span class="p">)</span>
-        <span class="n">Amat</span> <span class="o">/=</span> <span class="n">Anorm</span>
         <span class="n">Amatlam</span> <span class="o">=</span> <span class="n">Amat</span><span class="o">*</span><span class="p">(</span><span class="n">One</span><span class="o">+</span><span class="n">Lam</span><span class="p">)</span><span class="o">/</span><span class="n">Anorm</span>              <span class="c">#scale Amat to Marquardt array        </span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">Bmat</span> <span class="o">=</span> <span class="n">nl</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Amatlam</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">One</span><span class="o">+</span><span class="n">Lam</span><span class="p">)</span><span class="o">/</span><span class="n">Anorm</span>      <span class="c">#rescale Bmat to Marquardt array</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">x0</span><span class="p">,</span><span class="n">Bmat</span><span class="p">,{</span><span class="s">&#39;num cyc&#39;</span><span class="p">:</span><span class="n">icycle</span><span class="p">,</span><span class="s">&#39;fvec&#39;</span><span class="p">:</span><span class="n">M</span><span class="p">,</span><span class="s">&#39;nfev&#39;</span><span class="p">:</span><span class="n">nfev</span><span class="p">,</span><span class="s">&#39;lamMax&#39;</span><span class="p">:</span><span class="n">lamMax</span><span class="p">,</span><span class="s">&#39;psing&#39;</span><span class="p">:[]}]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">x0</span><span class="p">,</span><span class="n">Bmat</span><span class="p">,{</span><span class="s">&#39;num cyc&#39;</span><span class="p">:</span><span class="n">icycle</span><span class="p">,</span><span class="s">&#39;fvec&#39;</span><span class="p">:</span><span class="n">M</span><span class="p">,</span><span class="s">&#39;nfev&#39;</span><span class="p">:</span><span class="n">nfev</span><span class="p">,</span><span class="s">&#39;lamMax&#39;</span><span class="p">:</span><span class="n">lamMax</span><span class="p">,</span><span class="s">&#39;psing&#39;</span><span class="p">:[],</span> <span class="s">&#39;Converged&#39;</span><span class="p">:</span> <span class="n">ifConverged</span><span class="p">,</span> <span class="s">&#39;DelChi2&#39;</span><span class="p">:</span><span class="n">deltaChi2</span><span class="p">}]</span>
     <span class="k">except</span> <span class="n">nl</span><span class="o">.</span><span class="n">LinAlgError</span><span class="p">:</span>
         <span class="k">print</span> <span class="s">&#39;ouch #2 linear algebra error in LS&#39;</span>
         <span class="n">psing</span> <span class="o">=</span> <span class="p">[]</span>
@@ -592,25 +597,24 @@
     <span class="k">return</span> <span class="n">SHCoeff</span>
         </div>
 <div class="viewcode-block" id="getMass"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getMass">[docs]</a><span class="k">def</span> <span class="nf">getMass</span><span class="p">(</span><span class="n">generalData</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;Computes mass of unit cell contents</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param dict generalData: The General dictionary in Phase</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: float mass: Crystal unit cell mass in AMU.</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="s">&#39;Computes mass of unit cell contents&#39;</span>
     <span class="n">mass</span> <span class="o">=</span> <span class="mf">0.</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">elem</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">generalData</span><span class="p">[</span><span class="s">&#39;AtomTypes&#39;</span><span class="p">]):</span>
         <span class="n">mass</span> <span class="o">+=</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;NoAtoms&#39;</span><span class="p">][</span><span class="n">elem</span><span class="p">]</span><span class="o">*</span><span class="n">generalData</span><span class="p">[</span><span class="s">&#39;AtomMass&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">mass</span>    
 </div>
 <div class="viewcode-block" id="getDensity"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getDensity">[docs]</a><span class="k">def</span> <span class="nf">getDensity</span><span class="p">(</span><span class="n">generalData</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;calculate crystal structure density</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param dict generalData: The General dictionary in Phase</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: float density: crystal density in gm/cm^3</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">mass</span> <span class="o">=</span> <span class="n">getMass</span><span class="p">(</span><span class="n">generalData</span><span class="p">)</span>
@@ -619,22 +623,132 @@
     <span class="k">return</span> <span class="n">density</span><span class="p">,</span><span class="n">Volume</span><span class="o">/</span><span class="n">mass</span>
     </div>
 <div class="viewcode-block" id="getWave"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getWave">[docs]</a><span class="k">def</span> <span class="nf">getWave</span><span class="p">(</span><span class="n">Parms</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;returns wavelength from Instrument parameters dictionary</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param dict Parms: Instrument parameters;</span>
+<span class="sd">        must contain:</span>
+<span class="sd">        Lam: single wavelength</span>
+<span class="sd">        or</span>
+<span class="sd">        Lam1: Ka1 radiation wavelength</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: float wave: wavelength</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Parms</span><span class="p">[</span><span class="s">&#39;Lam&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Parms</span><span class="p">[</span><span class="s">&#39;Lam1&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        </div>
+<div class="viewcode-block" id="El2Mass"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.El2Mass">[docs]</a><span class="k">def</span> <span class="nf">El2Mass</span><span class="p">(</span><span class="n">Elements</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;compute molecular weight from Elements </span>
+<span class="sd">    </span>
+<span class="sd">    :param dict Elements: elements in molecular formula; </span>
+<span class="sd">        each must contain </span>
+<span class="sd">        Num: number of atoms in formula</span>
+<span class="sd">        Mass: at. wt. </span>
+<span class="sd">    </span>
+<span class="sd">    :returns: float mass: molecular weight.</span>
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">mass</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">Elements</span><span class="p">:</span>
+        <span class="n">mass</span> <span class="o">+=</span> <span class="n">Elements</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="s">&#39;Num&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">Elements</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="s">&#39;Mass&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">mass</span>
+        </div>
+<div class="viewcode-block" id="Den2Vol"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.Den2Vol">[docs]</a><span class="k">def</span> <span class="nf">Den2Vol</span><span class="p">(</span><span class="n">Elements</span><span class="p">,</span><span class="n">density</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;converts density to molecular volume</span>
+<span class="sd">    </span>
+<span class="sd">    :param dict Elements: elements in molecular formula; </span>
+<span class="sd">        each must contain </span>
+<span class="sd">        Num: number of atoms in formula</span>
+<span class="sd">        Mass: at. wt. </span>
+<span class="sd">    :param float density: material density in gm/cm^3</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: float volume: molecular volume in A^3 </span>
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">El2Mass</span><span class="p">(</span><span class="n">Elements</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">density</span><span class="o">*</span><span class="mf">0.6022137</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="Vol2Den"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.Vol2Den">[docs]</a><span class="k">def</span> <span class="nf">Vol2Den</span><span class="p">(</span><span class="n">Elements</span><span class="p">,</span><span class="n">volume</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;converts volume to density</span>
+<span class="sd">    </span>
+<span class="sd">    :param dict Elements: elements in molecular formula; </span>
+<span class="sd">        each must contain </span>
+<span class="sd">        Num: number of atoms in formula</span>
+<span class="sd">        Mass: at. wt. </span>
+<span class="sd">    :param float volume: molecular volume in A^3</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: float density: material density in gm/cm^3</span>
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">El2Mass</span><span class="p">(</span><span class="n">Elements</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">volume</span><span class="o">*</span><span class="mf">0.6022137</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="El2EstVol"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.El2EstVol">[docs]</a><span class="k">def</span> <span class="nf">El2EstVol</span><span class="p">(</span><span class="n">Elements</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Estimate volume from molecular formula; assumes atom volume = 10A^3</span>
+<span class="sd">    </span>
+<span class="sd">    :param dict Elements: elements in molecular formula; </span>
+<span class="sd">        each must contain </span>
+<span class="sd">        Num: number of atoms in formula</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: float volume: estimate of molecular volume in A^3</span>
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">vol</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">Elements</span><span class="p">:</span>
+        <span class="n">vol</span> <span class="o">+=</span> <span class="mf">10.</span><span class="o">*</span><span class="n">Elements</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="s">&#39;Num&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">vol</span>
+    </div>
+<div class="viewcode-block" id="XScattDen"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.XScattDen">[docs]</a><span class="k">def</span> <span class="nf">XScattDen</span><span class="p">(</span><span class="n">Elements</span><span class="p">,</span><span class="n">vol</span><span class="p">,</span><span class="n">wave</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Estimate X-ray scattering density from molecular formula &amp; volume;</span>
+<span class="sd">    ignores valence, but includes anomalous effects</span>
+<span class="sd">    </span>
+<span class="sd">    :param dict Elements: elements in molecular formula; </span>
+<span class="sd">        each element must contain </span>
+<span class="sd">        Num: number of atoms in formula</span>
+<span class="sd">        Z: atomic number</span>
+<span class="sd">    :param float vol: molecular volume in A^3</span>
+<span class="sd">    :param float wave: optional wavelength in A</span>
+<span class="sd">    </span>
+<span class="sd">    :returns: float rho: scattering density in 10^10cm^-2; </span>
+<span class="sd">        if wave &gt; 0 the includes f&#39; contribution</span>
+<span class="sd">    :returns: float mu: if wave&gt;0 absorption coeff in cm^-1 ; otherwise 0</span>
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">wave</span><span class="p">:</span>
+        <span class="n">Xanom</span> <span class="o">=</span> <span class="n">XAnomAbs</span><span class="p">(</span><span class="n">Elements</span><span class="p">,</span><span class="n">wave</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">Elements</span><span class="p">:</span>
+        <span class="n">f0</span> <span class="o">=</span> <span class="n">Elements</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="s">&#39;Z&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">wave</span><span class="p">:</span>
+            <span class="n">f0</span> <span class="o">+=</span> <span class="n">Xanom</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">mu</span> <span class="o">+=</span> <span class="n">Xanom</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">Elements</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="s">&#39;Num&#39;</span><span class="p">]</span>
+        <span class="n">rho</span> <span class="o">+=</span> <span class="n">Elements</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="s">&#39;Num&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">f0</span>
+    <span class="k">return</span> <span class="mf">28.179</span><span class="o">*</span><span class="n">rho</span><span class="o">/</span><span class="n">vol</span><span class="p">,</span><span class="mf">0.1</span><span class="o">*</span><span class="n">mu</span><span class="o">/</span><span class="n">vol</span>
+    </div>
+<div class="viewcode-block" id="wavekE"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.wavekE">[docs]</a><span class="k">def</span> <span class="nf">wavekE</span><span class="p">(</span><span class="n">wavekE</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Convert wavelength to energy &amp; vise versa</span>
+<span class="sd">    </span>
+<span class="sd">    :param float waveKe:wavelength in A or energy in kE</span>
+<span class="sd">    </span>
+<span class="sd">    :returns float waveKe:the other one</span>
+<span class="sd">    </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="mf">12.397639</span><span class="o">/</span><span class="n">wavekE</span>
+        </div>
+<span class="k">def</span> <span class="nf">XAnomAbs</span><span class="p">(</span><span class="n">Elements</span><span class="p">,</span><span class="n">wave</span><span class="p">):</span>
+    <span class="n">kE</span> <span class="o">=</span> <span class="n">wavekE</span><span class="p">(</span><span class="n">wave</span><span class="p">)</span>
+    <span class="n">Xanom</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">Elements</span><span class="p">:</span>
+        <span class="n">Orbs</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">GetXsectionCoeff</span><span class="p">(</span><span class="n">El</span><span class="p">)</span>
+        <span class="n">Xanom</span><span class="p">[</span><span class="n">El</span><span class="p">]</span> <span class="o">=</span> <span class="n">G2el</span><span class="o">.</span><span class="n">FPcalc</span><span class="p">(</span><span class="n">Orbs</span><span class="p">,</span> <span class="n">kE</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Xanom</span>
+    
     
 <span class="c">################################################################################</span>
 <span class="c">##### distance, angle, planes, torsion stuff stuff</span>
 <span class="c">################################################################################</span>
-</div>
+
 <div class="viewcode-block" id="getSyXYZ"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getSyXYZ">[docs]</a><span class="k">def</span> <span class="nf">getSyXYZ</span><span class="p">(</span><span class="n">XYZ</span><span class="p">,</span><span class="n">ops</span><span class="p">,</span><span class="n">SGData</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;default doc string</span>
 <span class="sd">    </span>
@@ -2748,11 +2862,9 @@
         <span class="n">MDval</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="s">&#39;0:MDval&#39;</span><span class="p">]</span>                             <span class="c">#get March-Dollase coeff</span>
         <span class="n">HX2pi</span> <span class="o">=</span> <span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">allX</span><span class="p">,</span><span class="n">refList</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>           <span class="c">#form 2piHX for every H,X pair</span>
         <span class="n">Aterm</span> <span class="o">=</span> <span class="n">refList</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">allFF</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">HX2pi</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>    <span class="c">#compute real part for all H</span>
-        <span class="k">if</span> <span class="n">ifInv</span><span class="p">:</span>
-            <span class="n">refList</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">Aterm</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">Bterm</span> <span class="o">=</span> <span class="n">refList</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">allFF</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">HX2pi</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>    <span class="c">#imaginary part for all H</span>
-            <span class="n">refList</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">Aterm</span><span class="o">+</span><span class="n">Bterm</span>
+        <span class="n">refList</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">Aterm</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ifInv</span><span class="p">:</span>
+            <span class="n">refList</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">+=</span> <span class="n">refList</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">allFF</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">HX2pi</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>    <span class="c">#imaginary part for all H</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cosTable</span><span class="p">):</span>        <span class="c">#apply MD correction</span>
             <span class="n">refList</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">MDval</span><span class="o">/</span><span class="p">(</span><span class="n">cosTable</span><span class="o">*</span><span class="p">(</span><span class="n">MDval</span><span class="o">**</span><span class="mi">3</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span><span class="o">+</span><span class="mf">1.</span><span class="p">))</span><span class="o">**</span><span class="mi">3</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">cosTable</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">sumFcsq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">refList</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
@@ -3085,7 +3197,7 @@
             <span class="n">D</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.</span>
     <span class="k">return</span> <span class="n">Q</span><span class="p">,</span><span class="n">D</span>
     </div>
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">annealtests</span><span class="p">():</span>
     <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">cos</span>
     <span class="c"># minimum expected at ~-0.195</span>
     <span class="n">func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">cos</span><span class="p">(</span><span class="mf">14.5</span><span class="o">*</span><span class="n">x</span><span class="o">-</span><span class="mf">0.3</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="mf">0.2</span><span class="p">)</span><span class="o">*</span><span class="n">x</span>
@@ -3098,6 +3210,10 @@
     <span class="k">print</span> <span class="n">anneal</span><span class="p">(</span><span class="n">func</span><span class="p">,[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span><span class="n">full_output</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">upper</span><span class="o">=</span><span class="p">[</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">],</span><span class="n">lower</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.0</span><span class="p">],</span><span class="n">feps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span><span class="n">schedule</span><span class="o">=</span><span class="s">&#39;cauchy&#39;</span><span class="p">)</span>
     <span class="k">print</span> <span class="n">anneal</span><span class="p">(</span><span class="n">func</span><span class="p">,[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span><span class="n">full_output</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">upper</span><span class="o">=</span><span class="p">[</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">],</span><span class="n">lower</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.0</span><span class="p">],</span><span class="n">feps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span><span class="n">schedule</span><span class="o">=</span><span class="s">&#39;fast&#39;</span><span class="p">)</span>
     <span class="k">print</span> <span class="n">anneal</span><span class="p">(</span><span class="n">func</span><span class="p">,[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">],</span><span class="n">full_output</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">upper</span><span class="o">=</span><span class="p">[</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">],</span><span class="n">lower</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.0</span><span class="p">],</span><span class="n">feps</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span><span class="n">schedule</span><span class="o">=</span><span class="s">&#39;boltzmann&#39;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">annealtests</span><span class="p">()</span>
 </pre></div>
 
           </div>

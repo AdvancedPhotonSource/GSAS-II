@@ -52,11 +52,11 @@
   <h1>Source code for G2pwd_fxye</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-12-16 10:43:01 -0600 (Mon, 16 Dec 2013) $</span>
+<span class="c"># $Date: 2014-03-20 17:05:51 -0500 (Thu, 20 Mar 2014) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1168 $</span>
+<span class="c"># $Revision: 1259 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/imports/G2pwd_fxye.py $</span>
-<span class="c"># $Id: G2pwd_fxye.py 1168 2013-12-16 16:43:01Z toby $</span>
+<span class="c"># $Id: G2pwd_fxye.py 1259 2014-03-20 22:05:51Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*Module G2pwd_fxye: GSAS data files*</span>
@@ -70,7 +70,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1168 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1259 $&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="GSAS_ReaderClass"><a class="viewcode-back" href="../imports.html#G2pwd_fxye.GSAS_ReaderClass">[docs]</a><span class="k">class</span> <span class="nc">GSAS_ReaderClass</span><span class="p">(</span><span class="n">G2IO</span><span class="o">.</span><span class="n">ImportPowderData</span><span class="p">):</span>
     <span class="s">&#39;Routines to import powder data from a GSAS files&#39;</span>
@@ -381,9 +381,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">powderentry</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">selblk</span><span class="o">+</span><span class="mi">1</span> <span class="c"># bank number</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idstring</span> <span class="o">=</span> <span class="n">ospath</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39; Bank &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">selblk</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">numbanks</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">Banks</span><span class="p">)</span>
-        <span class="c"># scan comments for temperature</span>
-        <span class="n">Temperature</span> <span class="o">=</span> <span class="mi">300</span>
-        <span class="n">Radius</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="c"># scan comments for temperature &amp; radius</span>
+        <span class="n">Temperature</span> <span class="o">=</span> <span class="mf">300.</span>
         <span class="k">for</span> <span class="n">S</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">comments</span><span class="p">:</span>
             <span class="k">if</span> <span class="s">&#39;Temp&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
                 <span class="k">try</span><span class="p">:</span>
@@ -392,11 +391,10 @@
                     <span class="k">pass</span>
             <span class="k">elif</span> <span class="s">&#39;Gonio&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="n">Radius</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Gonio. radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;=&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
                 <span class="k">except</span><span class="p">:</span>
                     <span class="k">pass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Temperature</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Gonio. radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Radius</span>
         <span class="k">return</span> <span class="bp">True</span>        
 </div></div>
 <div class="viewcode-block" id="sfloat"><a class="viewcode-back" href="../imports.html#G2pwd_fxye.sfloat">[docs]</a><span class="k">def</span> <span class="nf">sfloat</span><span class="p">(</span><span class="n">S</span><span class="p">):</span>

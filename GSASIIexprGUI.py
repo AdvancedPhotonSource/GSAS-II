@@ -33,7 +33,9 @@ import GSASIIobj as G2obj
 #==========================================================================
 class ExpressionDialog(wx.Dialog):
     '''A wx.Dialog that allows a user to input an arbitrary expression
-    to be minimized. To do this, the user assigns a new (free) or
+    to be evaluated and possibly minimized.
+
+    To do this, the user assigns a new (free) or existing
     GSAS-II parameter to each parameter label used in the expression.
     The free parameters can optionally be designated to be refined. 
     For example, is an expression is used such as::
@@ -61,8 +63,8 @@ class ExpressionDialog(wx.Dialog):
     :param str header: String placed at top of dialog to tell the user
       what they will do here; default is "Enter restraint expression here"
     :param bool fit: determines if the expression will be used in fitting (default=True).
-      If set to False, derivate step values and refinement flags, as well as
-      Free parameters are not shown.
+      If set to False, derivate step values and refinement flags are not shown
+      and Free parameters are not offered as an assignment option.
     '''
     def __init__(self, parent, parmDict, exprObj=None,
                  header='Enter restraint expression here',
@@ -215,13 +217,13 @@ class ExpressionDialog(wx.Dialog):
 
     def OnChar(self,event):
         '''Called as each character is entered. Cancels any running timer
-        and starts a new one. The timer causes a check of syntax after 3 seconds
+        and starts a new one. The timer causes a check of syntax after 2 seconds
         without input.
         Disables the OK button until a validity check is complete.
         '''
         if self.timer.IsRunning():
             self.timer.Stop()
-        self.timer.Start(3000,oneShot=True)
+        self.timer.Start(2000,oneShot=True)
         self.OKbtn.Disable()
         event.Skip()
         return
@@ -369,7 +371,7 @@ class ExpressionDialog(wx.Dialog):
                 GridSiz.Add(wid,0,wx.ALIGN_LEFT,0)
 
             # step
-            if self.varSelect.get(v) is None or not self.fit:
+            if self.varSelect.get(v) != 0 or not self.fit:
                 wid = (-1,-1)
             else:
             #if self.varSelect.get(v) == 0:
@@ -378,7 +380,7 @@ class ExpressionDialog(wx.Dialog):
                                             size=(50,-1))
             GridSiz.Add(wid,0,wx.ALIGN_LEFT|wx.EXPAND,0)
 
-            # show a refine flag for Free Vars
+            # show a refine flag for Free Vars only
             if self.varSelect.get(v) == 0 and self.fit:
                 self.varRefflag[v] = self.varRefflag.get(v,True)
                 wid = G2gd.G2CheckBox(self.varbox,'',self.varRefflag,v)

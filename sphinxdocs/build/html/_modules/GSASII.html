@@ -54,11 +54,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASII</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-01-02 14:18:25 -0600 (Thu, 02 Jan 2014) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1181 $</span>
+<span class="c"># $Date: 2014-04-22 09:41:32 -0500 (Tue, 22 Apr 2014) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 1296 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASII.py $</span>
-<span class="c"># $Id: GSASII.py 1181 2014-01-02 20:18:25Z toby $</span>
+<span class="c"># $Id: GSASII.py 1296 2014-04-22 14:41:32Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSAS-II Main Module*</span>
@@ -110,10 +110,10 @@
     <span class="k">print</span><span class="p">(</span><span class="s">&#39;OpenGL has been installed. Please restart GSAS-II&#39;</span><span class="p">)</span>
     <span class="k">print</span><span class="p">(</span><span class="s">&#39;*******************************************************&#39;</span><span class="p">)</span>         
     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
-
+    
 <span class="c"># load the GSAS routines</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1181 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1296 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIplot</span> <span class="kn">as</span> <span class="nn">G2plt</span>
@@ -253,7 +253,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">state</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="n">item</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">SeqRefine</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SeqRefine</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="c"># save menu obj for use in self.EnableSeqRefineMenu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnSeqRefine</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
         
     <span class="k">def</span> <span class="nf">_init_Imports</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -267,6 +267,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_Import_routines</span><span class="p">(</span><span class="s">&#39;sfact&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">ImportSfactReaderlist</span><span class="p">,</span><span class="s">&#39;Struct_Factor&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ImportPowderReaderlist</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_Import_routines</span><span class="p">(</span><span class="s">&#39;pwd&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">ImportPowderReaderlist</span><span class="p">,</span><span class="s">&#39;Powder_Data&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ImportSmallAngleReaderlist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_Import_routines</span><span class="p">(</span><span class="s">&#39;sad&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">ImportSmallAngleReaderlist</span><span class="p">,</span><span class="s">&#39;SmallAngle_Data&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ImportMenuId</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">_init_Import_routines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">prefix</span><span class="p">,</span><span class="n">readerlist</span><span class="p">,</span><span class="n">errprefix</span><span class="p">):</span>
@@ -307,13 +309,23 @@
                             <span class="n">reader</span> <span class="o">=</span> <span class="n">clss</span><span class="p">[</span><span class="mi">1</span><span class="p">]()</span> <span class="c"># create an import instance</span>
                             <span class="n">readerlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-                <span class="k">print</span> <span class="s">&#39;Import_&#39;</span><span class="o">+</span><span class="n">errprefix</span><span class="o">+</span><span class="s">&#39;: Attribute Error&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s">&#39;Import_&#39;</span><span class="o">+</span><span class="n">errprefix</span><span class="o">+</span><span class="s">&#39;: Attribute Error &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
                 <span class="k">pass</span>
             <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-                <span class="k">print</span> <span class="s">&#39;Import_&#39;</span><span class="o">+</span><span class="n">errprefix</span><span class="o">+</span><span class="s">&#39;: Error importing file&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s">&#39;Import_&#39;</span><span class="o">+</span><span class="n">errprefix</span><span class="o">+</span><span class="s">&#39;: Error importing file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
                 <span class="k">pass</span>
             <span class="k">if</span> <span class="n">fp</span><span class="p">:</span> <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
+<div class="viewcode-block" id="GSASII.EnableSeqRefineMenu"><a class="viewcode-back" href="../GSASII.html#GSASII.GSASII.EnableSeqRefineMenu">[docs]</a>    <span class="k">def</span> <span class="nf">EnableSeqRefineMenu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Enable or disable the sequential refinement menu items based on the</span>
+<span class="sd">        contents of the Controls &#39;Seq Data&#39; item (if present)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">controls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s">&#39;Controls&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">controls</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Seq Data&#39;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">SeqRefine</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">SeqRefine</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+</div>
 <div class="viewcode-block" id="GSASII.OnImportGeneric"><a class="viewcode-back" href="../GSASII.html#GSASII.GSASII.OnImportGeneric">[docs]</a>    <span class="k">def</span> <span class="nf">OnImportGeneric</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">reader</span><span class="p">,</span><span class="n">readerlist</span><span class="p">,</span><span class="n">label</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">usedRanIdList</span><span class="o">=</span><span class="p">[]):</span>
         <span class="sd">&#39;&#39;&#39;Used to import Phases, powder dataset or single</span>
 <span class="sd">        crystal datasets (structure factor tables) using reader objects</span>
@@ -464,7 +476,9 @@
                         <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
                     <span class="k">if</span> <span class="n">result</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_NO</span><span class="p">:</span> <span class="k">return</span> <span class="p">[]</span>
                             
-                <span class="bp">self</span><span class="o">.</span><span class="n">lastimport</span> <span class="o">=</span> <span class="n">filename</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lastimport</span> <span class="o">=</span> <span class="n">filename</span> <span class="c"># this is probably not what I want to do -- it saves only the</span>
+                <span class="c"># last name in a series. See rd.readfilename for a better name.</span>
+                
                 <span class="c"># try the file first with Readers that specify the</span>
                 <span class="c"># file&#39;s extension and later with ones that merely allow it</span>
                 <span class="n">errorReport</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
@@ -498,6 +512,7 @@
                             <span class="n">rd</span><span class="o">.</span><span class="n">errors</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">  Unhandled read exception: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span>
                             <span class="n">rd</span><span class="o">.</span><span class="n">errors</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">  Traceback info:</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
                         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span> <span class="c"># this read succeeded</span>
+                            <span class="n">rd</span><span class="o">.</span><span class="n">readfilename</span> <span class="o">=</span> <span class="n">filename</span>
                             <span class="n">rd_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">rd</span><span class="p">))</span> <span class="c"># save the result before it is written over</span>
                             <span class="k">if</span> <span class="n">rd</span><span class="o">.</span><span class="n">repeat</span><span class="p">:</span>
                                 <span class="n">repeat</span> <span class="o">=</span> <span class="bp">True</span>
@@ -775,7 +790,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Reflection List&#39;</span><span class="p">),[])</span>  <span class="c">#dummy entry for GUI use</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">Expand</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">Sngl</span> <span class="o">=</span> <span class="n">Id</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Sngl</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="n">newHistList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HistName</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">newHistList</span><span class="p">:</span> <span class="k">return</span> <span class="c"># somehow, no new histograms</span>
@@ -1068,7 +1083,9 @@
         <span class="n">bank</span> <span class="o">=</span> <span class="n">rd</span><span class="o">.</span><span class="n">powderentry</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
         <span class="n">numbanks</span> <span class="o">=</span> <span class="n">rd</span><span class="o">.</span><span class="n">numbanks</span>
         <span class="c"># is there an instrument parameter file defined for the current data set?</span>
-        <span class="k">if</span> <span class="n">rd</span><span class="o">.</span><span class="n">instparm</span> <span class="ow">or</span> <span class="p">(</span><span class="n">lastdatafile</span> <span class="o">==</span> <span class="n">filename</span> <span class="ow">and</span> <span class="n">lastIparmfile</span><span class="p">):</span>
+        <span class="c"># or if this is a read on a set of set of files, use the last one again</span>
+        <span class="c">#if rd.instparm or (lastdatafile == filename and lastIparmfile):</span>
+        <span class="k">if</span> <span class="n">rd</span><span class="o">.</span><span class="n">instparm</span> <span class="ow">or</span> <span class="n">lastIparmfile</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">rd</span><span class="o">.</span><span class="n">instparm</span><span class="p">:</span>
                 <span class="n">instfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
                                     <span class="n">rd</span><span class="o">.</span><span class="n">instparm</span><span class="p">)</span>
@@ -1215,6 +1232,7 @@
         <span class="n">lastIparmfile</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="n">lastdatafile</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="n">newHistList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EnablePlot</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">for</span> <span class="n">rd</span> <span class="ow">in</span> <span class="n">rdlist</span><span class="p">:</span>
             <span class="c"># get instrument parameters for each dataset</span>
             <span class="n">Iparm1</span><span class="p">,</span><span class="n">Iparm2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GetPowderIparm</span><span class="p">(</span><span class="n">rd</span><span class="p">,</span> <span class="n">Iparm</span><span class="p">,</span> <span class="n">lastIparmfile</span><span class="p">,</span> <span class="n">lastdatafile</span><span class="p">)</span>
@@ -1226,7 +1244,7 @@
             <span class="c"># make new histogram names unique</span>
             <span class="n">HistName</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">MakeUniqueLabel</span><span class="p">(</span><span class="n">HistName</span><span class="p">,</span><span class="n">PWDRlist</span><span class="p">)</span>
             <span class="k">print</span> <span class="s">&#39;Read powder data &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">HistName</span><span class="p">)</span><span class="o">+</span> \
-                <span class="s">&#39; from file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lastimport</span><span class="p">)</span> <span class="o">+</span> \
+                <span class="s">&#39; from file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">rd</span><span class="o">.</span><span class="n">readfilename</span><span class="p">)</span> <span class="o">+</span> \
                 <span class="s">&#39; with parameters from &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">rd</span><span class="o">.</span><span class="n">instmsg</span><span class="p">)</span>
             <span class="c"># data are read, now store them in the tree</span>
             <span class="n">Id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">HistName</span><span class="p">)</span>
@@ -1288,9 +1306,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">),</span>
                 <span class="p">{})</span>
+            <span class="n">newHistList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HistName</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">EnablePlot</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">Expand</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
-            <span class="n">newHistList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HistName</span><span class="p">)</span>
             
         <span class="k">if</span> <span class="ow">not</span> <span class="n">newHistList</span><span class="p">:</span> <span class="k">return</span> <span class="c"># somehow, no new histograms</span>
         <span class="c"># make a list of phase names</span>
@@ -1506,6 +1526,123 @@
             <span class="n">refList</span><span class="p">[</span><span class="n">generalData</span><span class="p">[</span><span class="s">&#39;Name&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">return</span> <span class="c"># success</span>
 </div>
+    <span class="k">def</span> <span class="nf">_Add_ImportMenu_smallangle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;configure the Small Angle Data menus accord to the readers found in _init_Imports</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">submenu</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="p">()</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">AppendMenu</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="s">&#39;Small Angle Data&#39;</span><span class="p">,</span>
+            <span class="n">submenu</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&#39;Import small angle data&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">reader</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ImportSmallAngleReaderlist</span><span class="p">:</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="n">submenu</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="n">help</span><span class="o">=</span><span class="n">reader</span><span class="o">.</span><span class="n">longFormatName</span><span class="p">,</span>
+                <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;from &#39;</span><span class="o">+</span><span class="n">reader</span><span class="o">.</span><span class="n">formatName</span><span class="o">+</span><span class="s">&#39; file&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ImportMenuId</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">reader</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnImportSmallAngle</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+        <span class="c"># item = submenu.Append(wx.ID_ANY,</span>
+        <span class="c">#     help=&#39;Import small angle data, use file to try to determine format&#39;,</span>
+        <span class="c">#     kind=wx.ITEM_NORMAL,text=&#39;guess format from file&#39;)</span>
+        <span class="c"># self.Bind(wx.EVT_MENU, self.OnImportSmallAngle, id=item.GetId())</span>
+
+<div class="viewcode-block" id="GSASII.OnImportSmallAngle"><a class="viewcode-back" href="../GSASII.html#GSASII.GSASII.OnImportSmallAngle">[docs]</a>    <span class="k">def</span> <span class="nf">OnImportSmallAngle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Called in response to an Import/Small Angle Data/... menu item</span>
+<span class="sd">        to read a small angle diffraction data set. </span>
+<span class="sd">        dict self.ImportMenuId is used to look up the specific</span>
+<span class="sd">        reader item associated with the menu item, which will be</span>
+<span class="sd">        None for the last menu item, which is the &quot;guess&quot; option</span>
+<span class="sd">        where all appropriate formats will be tried.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        
+        <span class="k">def</span> <span class="nf">GetSASDIparm</span><span class="p">(</span><span class="n">reader</span><span class="p">):</span>
+            <span class="n">parm</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">instdict</span>
+            <span class="n">Iparm</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;Type&#39;</span><span class="p">:[</span><span class="n">parm</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">],</span><span class="n">parm</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">],</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;Lam&#39;</span><span class="p">:[</span><span class="n">parm</span><span class="p">[</span><span class="s">&#39;wave&#39;</span><span class="p">],</span>
+                <span class="n">parm</span><span class="p">[</span><span class="s">&#39;wave&#39;</span><span class="p">],</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;Azimuth&#39;</span><span class="p">:[</span><span class="mf">0.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mi">0</span><span class="p">]}</span>           
+            <span class="k">return</span> <span class="n">Iparm</span><span class="p">,{}</span>
+            
+        <span class="c"># get a list of existing histograms</span>
+        <span class="n">SASDlist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetCount</span><span class="p">():</span>
+            <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">item</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;SASD &#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SASDlist</span><span class="p">:</span>
+                    <span class="n">SASDlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
+        <span class="c"># look up which format was requested</span>
+        <span class="n">reqrdr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ImportMenuId</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>  
+        <span class="n">rdlist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnImportGeneric</span><span class="p">(</span>
+            <span class="n">reqrdr</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">ImportSmallAngleReaderlist</span><span class="p">,</span><span class="s">&#39;Small Angle Data&#39;</span><span class="p">,</span><span class="n">multiple</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rdlist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CheckNotebook</span><span class="p">()</span>
+        <span class="n">Iparm</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">lastdatafile</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="n">newHistList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EnablePlot</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">for</span> <span class="n">rd</span> <span class="ow">in</span> <span class="n">rdlist</span><span class="p">:</span>
+            <span class="n">lastdatafile</span> <span class="o">=</span> <span class="n">rd</span><span class="o">.</span><span class="n">smallangleentry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">HistName</span> <span class="o">=</span> <span class="n">rd</span><span class="o">.</span><span class="n">idstring</span>
+            <span class="n">HistName</span> <span class="o">=</span> <span class="s">&#39;SASD &#39;</span><span class="o">+</span><span class="n">HistName</span>
+            <span class="c"># make new histogram names unique</span>
+            <span class="n">HistName</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">MakeUniqueLabel</span><span class="p">(</span><span class="n">HistName</span><span class="p">,</span><span class="n">SASDlist</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&#39;Read small angle data &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">HistName</span><span class="p">)</span><span class="o">+</span> \
+                <span class="s">&#39; from file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lastimport</span><span class="p">)</span>
+            <span class="c"># data are read, now store them in the tree</span>
+            <span class="n">Id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">HistName</span><span class="p">)</span>
+            <span class="n">Iparm1</span><span class="p">,</span><span class="n">Iparm2</span> <span class="o">=</span> <span class="n">GetSASDIparm</span><span class="p">(</span><span class="n">rd</span><span class="p">)</span>
+<span class="c">#            if &#39;T&#39; in Iparm1[&#39;Type&#39;][0]:</span>
+<span class="c">#                if not rd.clockWd and rd.GSAS:</span>
+<span class="c">#                    rd.powderdata[0] *= 100.        #put back the CW centideg correction</span>
+<span class="c">#                cw = np.diff(rd.powderdata[0])</span>
+<span class="c">#                rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.</span>
+<span class="c">#                rd.powderdata[1] = rd.powderdata[1][:-1]/cw</span>
+<span class="c">#                rd.powderdata[2] = rd.powderdata[2][:-1]*cw**2  #1/var=w at this point</span>
+<span class="c">#                if &#39;Itype&#39; in Iparm2:</span>
+<span class="c">#                    Ibeg = np.searchsorted(rd.powderdata[0],Iparm2[&#39;Tminmax&#39;][0])</span>
+<span class="c">#                    Ifin = np.searchsorted(rd.powderdata[0],Iparm2[&#39;Tminmax&#39;][1])</span>
+<span class="c">#                    rd.powderdata[0] = rd.powderdata[0][Ibeg:Ifin]</span>
+<span class="c">#                    YI,WYI = G2pwd.calcIncident(Iparm2,rd.powderdata[0])</span>
+<span class="c">#                    rd.powderdata[1] = rd.powderdata[1][Ibeg:Ifin]/YI</span>
+<span class="c">#                    var = 1./rd.powderdata[2][Ibeg:Ifin]</span>
+<span class="c">#                    var += WYI*rd.powderdata[1]**2</span>
+<span class="c">#                    var /= YI**2</span>
+<span class="c">#                    rd.powderdata[2] = 1./var</span>
+<span class="c">#                rd.powderdata[3] = np.zeros_like(rd.powderdata[0])                                        </span>
+<span class="c">#                rd.powderdata[4] = np.zeros_like(rd.powderdata[0])                                        </span>
+<span class="c">#                rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        </span>
+            <span class="n">Tmin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">rd</span><span class="o">.</span><span class="n">smallangledata</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">Tmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">rd</span><span class="o">.</span><span class="n">smallangledata</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">valuesdict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s">&#39;wtFactor&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span>
+                <span class="s">&#39;Dummy&#39;</span><span class="p">:</span><span class="bp">False</span><span class="p">,</span>
+                <span class="s">&#39;ranId&#39;</span><span class="p">:</span><span class="n">ran</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">sys</span><span class="o">.</span><span class="n">maxint</span><span class="p">),</span>
+                <span class="p">}</span>
+            <span class="n">rd</span><span class="o">.</span><span class="n">Sample</span><span class="p">[</span><span class="s">&#39;ranId&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">valuesdict</span><span class="p">[</span><span class="s">&#39;ranId&#39;</span><span class="p">]</span> <span class="c"># this should be removed someday</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Id</span><span class="p">,[</span><span class="n">valuesdict</span><span class="p">,</span><span class="n">rd</span><span class="o">.</span><span class="n">smallangledata</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Comments&#39;</span><span class="p">),</span>
+                <span class="n">rd</span><span class="o">.</span><span class="n">comments</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Limits&#39;</span><span class="p">),</span>
+                <span class="p">[(</span><span class="n">Tmin</span><span class="p">,</span><span class="n">Tmax</span><span class="p">),[</span><span class="n">Tmin</span><span class="p">,</span><span class="n">Tmax</span><span class="p">]])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternId</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">Id</span><span class="p">,</span><span class="s">&#39;Limits&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Instrument Parameters&#39;</span><span class="p">),</span>
+                <span class="p">[</span><span class="n">Iparm1</span><span class="p">,</span><span class="n">Iparm2</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Substances&#39;</span><span class="p">),</span><span class="n">G2pdG</span><span class="o">.</span><span class="n">SetDefaultSubstances</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Sample Parameters&#39;</span><span class="p">),</span>
+                <span class="n">rd</span><span class="o">.</span><span class="n">Sample</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Models&#39;</span><span class="p">),</span><span class="n">G2pdG</span><span class="o">.</span><span class="n">SetDefaultSASDModel</span><span class="p">())</span>
+            <span class="n">newHistList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">HistName</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">EnablePlot</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">Expand</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">newHistList</span><span class="p">:</span> <span class="k">return</span> <span class="c"># somehow, no new histograms</span>
+        <span class="k">return</span> <span class="c"># success</span>
+</div>
     <span class="k">def</span> <span class="nf">_init_Exports</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">menu</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Find exporter routines and add them into menus</span>
 <span class="sd">        &#39;&#39;&#39;</span>
@@ -1532,8 +1669,8 @@
 
         <span class="n">imagemenu</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="p">()</span>
         <span class="n">item</span> <span class="o">=</span> <span class="n">menu</span><span class="o">.</span><span class="n">AppendMenu</span><span class="p">(</span>
-            <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="s">&#39;Images as&#39;</span><span class="p">,</span>
-            <span class="n">imagemenu</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&#39;Export powder image(s)&#39;</span><span class="p">)</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="s">&#39;Image data as&#39;</span><span class="p">,</span>
+            <span class="n">imagemenu</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&#39;Export powder image(s) data&#39;</span><span class="p">)</span>
 
         <span class="n">mapmenu</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Menu</span><span class="p">()</span>
         <span class="n">item</span> <span class="o">=</span> <span class="n">menu</span><span class="o">.</span><span class="n">AppendMenu</span><span class="p">(</span>
@@ -1609,29 +1746,29 @@
                     <span class="n">text</span><span class="o">=</span><span class="n">obj</span><span class="o">.</span><span class="n">formatName</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">Exporter</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">ExportLookup</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">typ</span> <span class="c"># lookup table for submenu item</span>
-        <span class="c">#code to debug an Exporter. much is hard-coded below, but code is reloaded before</span>
-        <span class="c"># each use allowing faster development</span>
+                
+        <span class="c">#code to debug an Exporter. hard-coded the routine below, to allow a reload before use</span>
         <span class="c"># def DebugExport(event):</span>
-        <span class="c">#     print &#39;start reload&#39;</span>
-        <span class="c">#     reload(G2IO)</span>
-        <span class="c">#     import G2export_ASCIImap as dev</span>
-        <span class="c">#     reload(dev)</span>
-        <span class="c">#     dev.ExportMapASCII(self).Exporter(event)</span>
+        <span class="c">#      print &#39;start reload&#39;</span>
+        <span class="c">#      reload(G2IO)</span>
+        <span class="c">#      import G2export_pwdr as dev</span>
+        <span class="c">#      reload(dev)</span>
+        <span class="c">#      dev.ExportPowderFXYE(self).Exporter(event)</span>
         <span class="c"># item = menu.Append(</span>
         <span class="c">#     wx.ID_ANY,kind=wx.ITEM_NORMAL,</span>
-        <span class="c">#     help=&quot;debug exporter&quot;,text=&quot;test Export&quot;)</span>
+        <span class="c">#     help=&quot;debug exporter&quot;,text=&quot;test Export FXYE&quot;)</span>
         <span class="c"># self.Bind(wx.EVT_MENU, DebugExport, id=item.GetId())</span>
-        <span class="c"># #self.ExportLookup[item.GetId()] = &#39;image&#39;</span>
-        <span class="c"># self.ExportLookup[item.GetId()] = &#39;map&#39;</span>
+        <span class="c"># # #self.ExportLookup[item.GetId()] = &#39;image&#39;</span>
+        <span class="c"># self.ExportLookup[item.GetId()] = &#39;powder&#39;</span>
 
     <span class="k">def</span> <span class="nf">_Add_ExportMenuItems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parent</span><span class="p">):</span>
-        <span class="n">item</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
-            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select PWDR item to enable&#39;</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
-            <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span>
-            <span class="n">text</span><span class="o">=</span><span class="s">&#39;Export Powder Patterns...&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ExportPattern</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-        <span class="n">item</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnExportPatterns</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+        <span class="c"># item = parent.Append(</span>
+        <span class="c">#     help=&#39;Select PWDR item to enable&#39;,id=wx.ID_ANY,</span>
+        <span class="c">#     kind=wx.ITEM_NORMAL,</span>
+        <span class="c">#     text=&#39;Export Powder Patterns...&#39;)</span>
+        <span class="c"># self.ExportPattern.append(item)</span>
+        <span class="c"># item.Enable(False)</span>
+        <span class="c"># self.Bind(wx.EVT_MENU, self.OnExportPatterns, id=item.GetId())</span>
 
         <span class="n">item</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
             <span class="n">help</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
@@ -1675,6 +1812,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_Add_ImportMenu_Phase</span><span class="p">(</span><span class="n">Import</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_Add_ImportMenu_powder</span><span class="p">(</span><span class="n">Import</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_Add_ImportMenu_Sfact</span><span class="p">(</span><span class="n">Import</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_Add_ImportMenu_smallangle</span><span class="p">(</span><span class="n">Import</span><span class="p">)</span>
         <span class="c">#======================================================================</span>
         <span class="c"># Code to help develop/debug an importer, much is hard-coded below</span>
         <span class="c"># but module is reloaded before each use, allowing faster testing</span>
@@ -1729,8 +1867,8 @@
         <span class="c">#initialize Menu item objects (these contain lists of menu items that are enabled or disabled)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">MakePDF</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Refine</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">SeqRefine</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ExportPattern</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SeqRefine</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># pointer(s) to Sequential Refinement menu objects</span>
+        <span class="c">#self.ExportPattern = []</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ExportPeakList</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ExportHKL</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ExportPDF</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1784,6 +1922,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">oldFocus</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">GSASprojectfile</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s">&#39;~&#39;</span><span class="p">)</span>       <span class="c">#start in the users home directory by default; may be meaningless</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exportDir</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c"># the last directory used for exports, if any.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">undofile</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">TreeItemDelete</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Offset</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">]</span>
@@ -1808,6 +1947,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Projection</span> <span class="o">=</span> <span class="s">&#39;equal area&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logPlot</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">qPlot</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sqPlot</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ErrorBars</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Contour</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Legend</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">SinglePlot</span> <span class="o">=</span> <span class="bp">False</span>
@@ -1818,9 +1959,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ImageZ</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Integrate</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">imageDefault</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Sngl</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Sngl</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ifGetRing</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">MaskKey</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>           <span class="c">#trigger for making image masks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">StrainKey</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>         <span class="c">#ditto for new strain d-zeros</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EnablePlot</span> <span class="o">=</span> <span class="bp">True</span>
         <span class="n">arg</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">GSASprojectfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">arg</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;.gpx&#39;</span>
@@ -1830,7 +1973,8 @@
                 <span class="n">G2IO</span><span class="o">.</span><span class="n">ProjFileOpen</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">Expand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Refine</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">SeqRefine</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">EnableSeqRefineMenu</span><span class="p">()</span>
+
             <span class="k">except</span><span class="p">:</span>
                 <span class="k">print</span> <span class="s">&#39;Error opening file&#39;</span><span class="p">,</span><span class="n">arg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
@@ -1913,14 +2057,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">CheckNotebook</span><span class="p">()</span>
         <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">FileDialog</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="s">&#39;Choose image files&#39;</span><span class="p">,</span> <span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span>
-            <span class="s">&#39;Any image file (*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img)|&#39;</span>
-            <span class="s">&#39;*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img;*.zip|&#39;</span>
+            <span class="s">&#39;Any supported image file (*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img;*.png)|&#39;</span>
+            <span class="s">&#39;*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img;*.G2img;*.png;*.zip|&#39;</span>
             <span class="s">&#39;European detector file (*.edf)|*.edf|&#39;</span>
             <span class="s">&#39;Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|&#39;</span>
             <span class="s">&#39;MAR file (*.mar*)|*.mar*|&#39;</span>
             <span class="s">&#39;GE Image (*.avg;*.sum)|*.avg;*.sum|&#39;</span>
             <span class="s">&#39;ADSC Image (*.img)|*.img|&#39;</span>
             <span class="s">&#39;GSAS-II Image (*.G2img)|*.G2img|&#39;</span>
+            <span class="s">&#39;Portable Network Graphics image (*.png)|*.png|&#39;</span>
             <span class="s">&#39;Zip archive (*.zip)|*.zip|&#39;</span>
             <span class="s">&#39;All files (*.*)|*.*&#39;</span><span class="p">,</span>
             <span class="n">wx</span><span class="o">.</span><span class="n">OPEN</span> <span class="o">|</span> <span class="n">wx</span><span class="o">.</span><span class="n">MULTIPLE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CHANGE_DIR</span><span class="p">)</span>
@@ -1981,7 +2126,8 @@
                             <span class="n">Data</span><span class="p">[</span><span class="s">&#39;centerAzm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
                             <span class="n">Data</span><span class="p">[</span><span class="s">&#39;fullIntegrate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
                             <span class="n">Data</span><span class="p">[</span><span class="s">&#39;setRings&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
-                            <span class="n">Data</span><span class="p">[</span><span class="s">&#39;background image&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="mf">1.0</span><span class="p">]</span>                            
+                            <span class="n">Data</span><span class="p">[</span><span class="s">&#39;background image&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="o">-</span><span class="mf">1.0</span><span class="p">]</span>                            
+                            <span class="n">Data</span><span class="p">[</span><span class="s">&#39;dark image&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="o">-</span><span class="mf">1.0</span><span class="p">]</span>
                         <span class="n">Data</span><span class="p">[</span><span class="s">&#39;setDefault&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
                         <span class="n">Data</span><span class="p">[</span><span class="s">&#39;range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[(</span><span class="n">Imin</span><span class="p">,</span><span class="n">Imax</span><span class="p">),[</span><span class="n">Imin</span><span class="p">,</span><span class="n">Imax</span><span class="p">]]</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Image Controls&#39;</span><span class="p">),</span><span class="n">Data</span><span class="p">)</span>
@@ -1992,7 +2138,7 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">Id</span><span class="p">,[</span><span class="n">Npix</span><span class="p">,</span><span class="n">imagefile</span><span class="p">])</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">PickId</span> <span class="o">=</span> <span class="n">Id</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">Image</span> <span class="o">=</span> <span class="n">Id</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">dlg</span><span class="o">.</span><span class="n">GetDirectory</span><span class="p">())</span>           <span class="c"># to get Mac/Linux to change directory!</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">dlg</span><span class="o">.</span><span class="n">GetDirectory</span><span class="p">())</span>           <span class="c"># to get Mac/Linux to change directory!                </span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">Id</span><span class="p">,</span><span class="s">&#39;Image Controls&#39;</span><span class="p">))</span>             <span class="c">#show last one</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="n">path</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetDirectory</span><span class="p">()</span>           <span class="c"># to get Mac/Linux to change directory!</span>
@@ -2452,6 +2598,7 @@
         <span class="n">DelList</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">DelItemList</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">ifPWDR</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">ifSASD</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="n">ifIMG</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="n">ifHKLF</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="n">ifPDF</span> <span class="o">=</span> <span class="bp">False</span>
@@ -2462,12 +2609,14 @@
                 <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;Notebook&#39;</span><span class="p">,</span><span class="s">&#39;Controls&#39;</span><span class="p">,</span><span class="s">&#39;Covariance&#39;</span><span class="p">,</span><span class="s">&#39;Constraints&#39;</span><span class="p">,</span>
                     <span class="s">&#39;Restraints&#39;</span><span class="p">,</span><span class="s">&#39;Phases&#39;</span><span class="p">,</span><span class="s">&#39;Rigid bodies&#39;</span><span class="p">]:</span>
                     <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span> <span class="n">ifPWDR</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="k">if</span> <span class="s">&#39;SASD&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span> <span class="n">ifSASD</span> <span class="o">=</span> <span class="bp">True</span>
                     <span class="k">if</span> <span class="s">&#39;IMG&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span> <span class="n">ifIMG</span> <span class="o">=</span> <span class="bp">True</span>
                     <span class="k">if</span> <span class="s">&#39;HKLF&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span> <span class="n">ifHKLF</span> <span class="o">=</span> <span class="bp">True</span>
                     <span class="k">if</span> <span class="s">&#39;PDF&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span> <span class="n">ifPDF</span> <span class="o">=</span> <span class="bp">True</span>
                     <span class="n">TextList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
                 <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">ifPWDR</span><span class="p">:</span> <span class="n">TextList</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;All PWDR&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ifSASD</span><span class="p">:</span> <span class="n">TextList</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;All SASD&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">ifIMG</span><span class="p">:</span> <span class="n">TextList</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;All IMG&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">ifHKLF</span><span class="p">:</span> <span class="n">TextList</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;All HKLF&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">ifPDF</span><span class="p">:</span> <span class="n">TextList</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s">&#39;All PDF&#39;</span><span class="p">)</span>                
@@ -2480,6 +2629,8 @@
                         <span class="n">DelList</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">TextList</span> <span class="k">if</span> <span class="n">item</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">!=</span> <span class="s">&#39;All&#39;</span><span class="p">]</span>
                     <span class="k">elif</span> <span class="s">&#39;All PWDR&#39;</span> <span class="ow">in</span> <span class="n">DelList</span><span class="p">:</span>
                         <span class="n">DelList</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">TextList</span> <span class="k">if</span> <span class="n">item</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;PWDR&#39;</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="s">&#39;All SASD&#39;</span> <span class="ow">in</span> <span class="n">DelList</span><span class="p">:</span>
+                        <span class="n">DelList</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">TextList</span> <span class="k">if</span> <span class="n">item</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;SASD&#39;</span><span class="p">]</span>
                     <span class="k">elif</span> <span class="s">&#39;All IMG&#39;</span> <span class="ow">in</span> <span class="n">DelList</span><span class="p">:</span>
                         <span class="n">DelList</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">TextList</span> <span class="k">if</span> <span class="n">item</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;IMG&#39;</span><span class="p">]</span>
                     <span class="k">elif</span> <span class="s">&#39;All HKLF&#39;</span> <span class="ow">in</span> <span class="n">DelList</span><span class="p">:</span>
@@ -2503,6 +2654,7 @@
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span>
         <span class="n">Id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EnablePlot</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetChildrenCount</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span><span class="bp">False</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataFrame</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span> 
@@ -2545,15 +2697,16 @@
         <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
         <span class="k">while</span> <span class="n">item</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">Id</span><span class="p">:</span>
             <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">name</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;PWDR&#39;</span><span class="p">,</span><span class="s">&#39;HKLF&#39;</span><span class="p">,</span><span class="s">&#39;IMG &#39;</span><span class="p">,</span><span class="s">&#39;PDF &#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">name</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;PWDR&#39;</span><span class="p">,</span><span class="s">&#39;HKLF&#39;</span><span class="p">,</span><span class="s">&#39;IMG &#39;</span><span class="p">,</span><span class="s">&#39;PDF &#39;</span><span class="p">,</span><span class="s">&#39;SASD&#39;</span><span class="p">,]:</span>
                 <span class="n">Id</span> <span class="o">=</span> <span class="n">item</span>
             <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;Controls&#39;</span><span class="p">:</span>
                 <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemPyData</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Refine</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">SeqRefine</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">EnableSeqRefineMenu</span><span class="p">()</span>
             <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">Id</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">EnablePlot</span> <span class="o">=</span> <span class="bp">True</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">CheckNotebook</span><span class="p">()</span>
         <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirname</span><span class="p">)</span>           <span class="c"># to get Mac/Linux to change directory!</span>
@@ -2621,41 +2774,41 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Clear</span><span class="p">()</span> 
             <span class="bp">self</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Close</span><span class="p">()</span>
-        </div>
-    <span class="k">def</span> <span class="nf">OnExportPatterns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
-        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;All&#39;</span><span class="p">]</span>
-        <span class="n">exports</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
-        <span class="k">while</span> <span class="n">item</span><span class="p">:</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-            <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">names</span><span class="p">:</span>
-            <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">MultiChoiceDialog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s">&#39;Select&#39;</span><span class="p">,</span><span class="s">&#39;Powder patterns to export&#39;</span><span class="p">,</span><span class="n">names</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
-                <span class="n">sel</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetSelections</span><span class="p">()</span>
-                <span class="k">if</span> <span class="n">sel</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">exports</span> <span class="o">=</span> <span class="n">names</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sel</span><span class="p">:</span>
-                        <span class="n">exports</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">names</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
-            <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">exports</span><span class="p">:</span>
-            <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">FileDialog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;Choose output powder file name&#39;</span><span class="p">,</span> <span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> 
-                <span class="s">&#39;GSAS fxye file (*.fxye)|*.fxye|xye file (*.xye)|*.xye&#39;</span><span class="p">,</span>
-                <span class="n">wx</span><span class="o">.</span><span class="n">FD_SAVE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">FD_OVERWRITE_PROMPT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CHANGE_DIR</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
-                    <span class="n">powderfile</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetPath</span><span class="p">()</span>
-                    <span class="n">powderfile</span> <span class="o">=</span> <span class="n">G2IO</span><span class="o">.</span><span class="n">FileDlgFixExt</span><span class="p">(</span><span class="n">dlg</span><span class="p">,</span><span class="n">powderfile</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="s">&#39;fxye&#39;</span> <span class="ow">in</span> <span class="n">powderfile</span><span class="p">:</span>
-                        <span class="n">G2IO</span><span class="o">.</span><span class="n">powderFxyeSave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exports</span><span class="p">,</span><span class="n">powderfile</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>       <span class="c">#just xye</span>
-                        <span class="n">G2IO</span><span class="o">.</span><span class="n">powderXyeSave</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exports</span><span class="p">,</span><span class="n">powderfile</span><span class="p">)</span>
-            <span class="k">finally</span><span class="p">:</span>
-                <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
         
+    <span class="c"># def OnExportPatterns(self,event):</span>
+    <span class="c">#     names = [&#39;All&#39;]</span>
+    <span class="c">#     exports = []</span>
+    <span class="c">#     item, cookie = self.PatternTree.GetFirstChild(self.root)</span>
+    <span class="c">#     while item:</span>
+    <span class="c">#         name = self.PatternTree.GetItemText(item)</span>
+    <span class="c">#         if &#39;PWDR&#39; in name:</span>
+    <span class="c">#             names.append(name)</span>
+    <span class="c">#         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)</span>
+    <span class="c">#     if names:</span>
+    <span class="c">#         dlg = wx.MultiChoiceDialog(self,&#39;Select&#39;,&#39;Powder patterns to export&#39;,names)</span>
+    <span class="c">#         if dlg.ShowModal() == wx.ID_OK:</span>
+    <span class="c">#             sel = dlg.GetSelections()</span>
+    <span class="c">#             if sel[0] == 0:</span>
+    <span class="c">#                 exports = names[1:]</span>
+    <span class="c">#             else:</span>
+    <span class="c">#                 for x in sel:</span>
+    <span class="c">#                     exports.append(names[x])</span>
+    <span class="c">#         dlg.Destroy()</span>
+    <span class="c">#     if exports:</span>
+    <span class="c">#         dlg = wx.FileDialog(self, &#39;Choose output powder file name&#39;, &#39;.&#39;, &#39;&#39;, </span>
+    <span class="c">#             &#39;GSAS fxye file (*.fxye)|*.fxye|xye file (*.xye)|*.xye&#39;,</span>
+    <span class="c">#             wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)</span>
+    <span class="c">#         try:</span>
+    <span class="c">#             if dlg.ShowModal() == wx.ID_OK:</span>
+    <span class="c">#                 powderfile = dlg.GetPath()</span>
+    <span class="c">#                 powderfile = G2IO.FileDlgFixExt(dlg,powderfile)</span>
+    <span class="c">#                 if &#39;fxye&#39; in powderfile:</span>
+    <span class="c">#                     G2IO.powderFxyeSave(self,exports,powderfile)</span>
+    <span class="c">#                 else:       #just xye</span>
+    <span class="c">#                     G2IO.powderXyeSave(self,exports,powderfile)</span>
+    <span class="c">#         finally:</span>
+    <span class="c">#             dlg.Destroy()</span>
+        </div>
     <span class="k">def</span> <span class="nf">OnExportPeakList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
         <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">FileDialog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;Choose output peak list file name&#39;</span><span class="p">,</span> <span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> 
             <span class="s">&#39;(*.*)|*.*&#39;</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">FD_SAVE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">FD_OVERWRITE_PROMPT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CHANGE_DIR</span><span class="p">)</span>
@@ -3035,7 +3188,7 @@
             <span class="n">G2mv</span><span class="o">.</span><span class="n">InitVars</span><span class="p">()</span>
             <span class="n">constrDict</span><span class="p">,</span><span class="n">fixedList</span><span class="p">,</span><span class="n">ignored</span> <span class="o">=</span> <span class="n">G2stIO</span><span class="o">.</span><span class="n">ProcessConstraints</span><span class="p">(</span><span class="n">constList</span><span class="p">)</span>
             <span class="n">groups</span><span class="p">,</span><span class="n">parmlist</span> <span class="o">=</span> <span class="n">G2mv</span><span class="o">.</span><span class="n">GroupConstraints</span><span class="p">(</span><span class="n">constrDict</span><span class="p">)</span>
-            <span class="n">G2mv</span><span class="o">.</span><span class="n">GenerateConstraints</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span><span class="n">parmlist</span><span class="p">,</span><span class="n">varyList</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">fixedList</span><span class="p">)</span>
+            <span class="n">G2mv</span><span class="o">.</span><span class="n">GenerateConstraints</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span><span class="n">parmlist</span><span class="p">,</span><span class="n">varyList</span><span class="p">,</span><span class="n">constrDict</span><span class="p">,</span><span class="n">fixedList</span><span class="p">,</span><span class="n">parmValDict</span><span class="p">)</span>
             <span class="n">G2mv</span><span class="o">.</span><span class="n">Map2Dict</span><span class="p">(</span><span class="n">parmValDict</span><span class="p">,</span><span class="n">varyList</span><span class="p">)</span>
         <span class="k">except</span><span class="p">:</span>
             <span class="k">pass</span>
@@ -3047,6 +3200,19 @@
         <span class="sd">&#39;&#39;&#39;Perform a refinement.</span>
 <span class="sd">        Called from the Calculate/Refine menu.</span>
 <span class="sd">        &#39;&#39;&#39;</span>        
+        <span class="n">Id</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span><span class="s">&#39;Sequential results&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">Id</span><span class="p">:</span>
+            <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">MessageDialog</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="s">&#39;Your last refinement was sequential. Continue with &quot;Refine&quot;, removing previous sequential results?&#39;</span><span class="p">,</span>
+                <span class="s">&#39;Remove sequential results?&#39;</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CANCEL</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">Delete</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
+                <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+                <span class="k">return</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">OnFileSave</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
         <span class="c"># check that constraints are OK here</span>
         <span class="n">errmsg</span><span class="p">,</span> <span class="n">warnmsg</span> <span class="o">=</span> <span class="n">G2stIO</span><span class="o">.</span><span class="n">CheckConstraints</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GSASprojectfile</span><span class="p">)</span>
@@ -3156,14 +3322,21 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">G2plotNB</span><span class="o">.</span><span class="n">plotList</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">G2plotNB</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
                 <span class="n">G2IO</span><span class="o">.</span><span class="n">ProjFileOpen</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-                <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
-                <span class="k">while</span> <span class="n">item</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">Id</span><span class="p">:</span>
-                    <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">name</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;PWDR&#39;</span><span class="p">,</span><span class="s">&#39;HKLF&#39;</span><span class="p">]:</span>
-                        <span class="n">Id</span> <span class="o">=</span> <span class="n">item</span>
-                    <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>                
-                <span class="k">if</span> <span class="n">Id</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
+                <span class="c"># (BHT) what does this next section of code do?</span>
+                <span class="c">#item, cookie = self.PatternTree.GetFirstChild(self.root)</span>
+                <span class="c">#while item and not Id:</span>
+                <span class="c">#    name = self.PatternTree.GetItemText(item)</span>
+                <span class="c">#    if name[:4] in [&#39;PWDR&#39;,&#39;HKLF&#39;]:</span>
+                <span class="c">#        Id = item</span>
+                <span class="c">#    item, cookie = self.PatternTree.GetNextChild(self.root, cookie)</span>
+                <span class="c">#if Id:</span>
+                <span class="c">#    self.PatternTree.SelectItem(Id)</span>
+
+                <span class="c"># Open the sequential results tree entry</span>
+                <span class="n">Id</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GetPatternTreeItemId</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span><span class="s">&#39;Sequential results&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
+                <span class="n">G2gd</span><span class="o">.</span><span class="n">MovePatternTreeToGrid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">Id</span><span class="p">)</span>
+
         <span class="k">finally</span><span class="p">:</span>
             <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
         </div>
@@ -3189,6 +3362,15 @@
 <span class="sd">    &#39;&#39;&#39;</span>
 <div class="viewcode-block" id="GSASIImain.OnInit"><a class="viewcode-back" href="../GSASII.html#GSASII.GSASIImain.OnInit">[docs]</a>    <span class="k">def</span> <span class="nf">OnInit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Called automatically when the app is created.&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="s">&#39;2.7&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">[:</span><span class="mi">5</span><span class="p">]:</span>
+            <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">MessageDialog</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> 
+                <span class="s">&#39;GSAS-II requires Python 2.7.x</span><span class="se">\n</span><span class="s"> Yours is &#39;</span><span class="o">+</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">[:</span><span class="mi">5</span><span class="p">],</span>
+                <span class="s">&#39;Python version error&#39;</span><span class="p">,</span>  <span class="n">wx</span><span class="o">.</span><span class="n">OK</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">main</span> <span class="o">=</span> <span class="n">GSASII</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">Show</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">SetTopWindow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">main</span><span class="p">)</span>

@@ -115,7 +115,10 @@ global variables. Each generated parameter is named sequentially using paramPref
 (varyList). A fixed parameter will simply be removed from this list preventing that
 parameter from being varied. Note that all parameters in a constraint relationship
 must specified as varied (appear in varyList) or none can be varied. This is
-checked in GenerateConstraints (as well as for generated relationships in SetVaryFlags).</p>
+checked in GenerateConstraints. Likewise, if all parameters in a constraint are
+not referenced in a refinement, the constraint is ignored, but if some parameters
+in a constraint group are not referenced in a refinement, but others are this
+constitutes and error.</p>
 <ul class="simple">
 <li>When a new variable is created, the variable is assigned the name associated
 in the constraint definition or it is assigned a default name of form
@@ -308,7 +311,7 @@ which do not cause any problems.</li>
 
 <dl class="function">
 <dt id="GSASIImapvars.GenerateConstraints">
-<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">GenerateConstraints</tt><big>(</big><em>groups</em>, <em>parmlist</em>, <em>varyList</em>, <em>constrDict</em>, <em>fixedList</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#GenerateConstraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.GenerateConstraints" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIImapvars.</tt><tt class="descname">GenerateConstraints</tt><big>(</big><em>groups</em>, <em>parmlist</em>, <em>varyList</em>, <em>constrDict</em>, <em>fixedList</em>, <em>parmDict=None</em>, <em>SeqHist=None</em><big>)</big><a class="reference internal" href="_modules/GSASIImapvars.html#GenerateConstraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImapvars.GenerateConstraints" title="Permalink to this definition">¶</a></dt>
 <dd><p>Takes a list of relationship entries comprising a group of
 constraints and builds the relationship lists and their inverse
 and stores them in global variables Also checks for internal
@@ -331,7 +334,11 @@ contained in each group, created in <a class="reference internal" href="#GSASIIm
 <li><strong>fixedList</strong> (<em>list</em>) &#8211; a list of values specifying a fixed value for each
 dict in constrDict. Values are either strings that can be converted to
 floats, float values or None if the constraint defines a new parameter.</li>
-<li><strong>constrDict</strong> &#8211; a list of dicts defining relationships/constraints.</li>
+<li><strong>parmDict</strong> (<em>dict</em>) &#8211; a dict containing all parameters defined in current
+refinement.</li>
+<li><strong>SeqHist</strong> (<em>int</em>) &#8211; number of current histogram, when used in a sequential
+refinement. None (default) otherwise. Wildcard variable names are
+set to the current histogram, when found if not None.</li>
 </ul>
 </td>
 </tr>

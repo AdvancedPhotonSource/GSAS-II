@@ -134,10 +134,11 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(9)]
 
 [ wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_PLOTSEQSEL,
-    wxID_SAVESASDSEQSEL,wxID_SAVESASDSEQSELCSV,wxID_PLOTSASDSEQSEL,
-    wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,
-    wxADDSASDSEQVAR,wxDELSASDSEQVAR,wxEDITSASDSEQVAR,
-] = [wx.NewId() for item in range(12)]
+  wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,
+  wxADDPARFIT,wxDELPARFIT,wxEDITPARFIT,wxDOPARFIT,
+  wxID_SAVESASDSEQSEL,wxID_SAVESASDSEQSELCSV,wxID_PLOTSASDSEQSEL,
+  wxADDSASDSEQVAR,wxDELSASDSEQVAR,wxEDITSASDSEQVAR,
+] = [wx.NewId() for item in range(16)]
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
@@ -2475,6 +2476,21 @@ class DataFrame(wx.Frame):
         self.SequentialPvars.Append(
             id=wxEDITSEQVAR, kind=wx.ITEM_NORMAL,text='Edit',
             help='Edit an existing pseudo-variable')
+
+        self.SequentialPfit = wx.Menu(title='')
+        self.SequentialMenu.Append(menu=self.SequentialPfit, title='Parametric Fit')
+        self.SequentialPfit.Append(
+            id=wxADDPARFIT, kind=wx.ITEM_NORMAL,text='Add function',
+            help='Add a new function to minimize')
+        self.SequentialPfit.Append(
+            id=wxDELPARFIT, kind=wx.ITEM_NORMAL,text='Delete function',
+            help='Delete a function for parametric minimization')
+        self.SequentialPfit.Append(
+            id=wxEDITPARFIT, kind=wx.ITEM_NORMAL,text='Edit function',
+            help='Edit an existing parametric minimization function')
+        self.SequentialPfit.Append(
+            id=wxDOPARFIT, kind=wx.ITEM_NORMAL,text='Fit to function(s)',
+            help='Perform a parametric minimization')
         self.PostfillDataMenu()
             
         # Sequential SASD results
@@ -3764,6 +3780,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             multiple=True,
             title='Select expressions to remove',
             header='Delete expression')
+        if selected is None: return
         for item in selected:
             del Controls['SeqPseudoVars'][choices[item]]
         if selected:
@@ -3772,15 +3789,19 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     def EditSeqExpression(event):
         'Edit an existing expression'
         choices = Controls['SeqPseudoVars'].keys()
-        selected = ItemSelector(
-            choices,G2frame.dataFrame,
-            multiple=False,
-            title='Select an expression to edit',
-            header='Edit expression')
+        parmDict = dict(zip(colLabels,zip(*colList)[0]))
+        if len(choices) == 1:
+            selected = [0]
+        else:
+            selected = ItemSelector(
+                choices,G2frame.dataFrame,
+                multiple=False,
+                title='Select an expression to edit',
+                header='Edit expression')
         if selected is not None:
             dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,parmDict,
                                          Controls['SeqPseudoVars'][choices[selected]],
-                                         header='Edit this expression formula',
+                                         header="Edit this expression's formula",
                                          fit=False)
             newobj = dlg.Show(True)
             if newobj:
@@ -3793,7 +3814,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         'Create a new expression'
         parmDict = dict(zip(colLabels,zip(*colList)[0]))
         dlg = G2exG.ExpressionDialog(G2frame.dataDisplay,parmDict,
-                                     header='Enter an expression formula here',
+                                     header='Enter an expression here',
                                      fit=False)
         obj = dlg.Show(True)
         dlg.Destroy()
@@ -3801,6 +3822,77 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             calcobj = G2obj.ExpressionCalcObj(obj)
             Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+
+    def EnableParFitFxnMenus():
+        'Enables or disables the Parametric Fit menu items that require existing defs'
+        if Controls['SeqParFitFxns']:
+            val = True
+        else:
+            val = False
+        G2frame.dataFrame.SequentialPfit.Enable(wxADDPARFIT,val) # TODO: remove when testing
+        G2frame.dataFrame.SequentialPfit.Enable(wxDELPARFIT,val)
+        G2frame.dataFrame.SequentialPfit.Enable(wxEDITPARFIT,val)
+        G2frame.dataFrame.SequentialPfit.Enable(wxDOPARFIT,val)
+
+    def DelParFitFxn(event):
+        'Ask the user to select function to delete'
+        choices = Controls['SeqParFitFxns'].keys()
+        selected = ItemSelector(
+            choices,G2frame.dataFrame,
+            multiple=True,
+            title='Select functions to remove',
+            header='Delete function')
+        if selected is None: return
+        for item in selected:
+            del Controls['SeqParFitFxns'][choices[item]]
+        EnableParFitFxnMenus()
+        
+    def EditParFitFxn(event):
+        'Edit an existing function'
+        choices = Controls['SeqParFitFxns'].keys()
+        parmDict = dict(zip(colLabels,zip(*colList)[0]))
+        if len(choices) == 1:
+            selected = [0]
+        else:
+            selected = ItemSelector(
+                choices,G2frame.dataFrame,
+                multiple=False,
+                title='Select a function to edit',
+                header='Edit function')
+        if selected is not None:
+            dlg = G2exG.ExpressionDialog(
+                G2frame.dataDisplay,parmDict,
+                Controls['SeqParFitFxns'][choices[selected]],
+                header="Edit this minimization function's formula")
+            newobj = dlg.Show(True)
+            if newobj:
+                calcobj = G2obj.ExpressionCalcObj(newobj)
+                del Controls['SeqParFitFxns'][choices[selected]]
+                Controls['SeqParFitFxns'][calcobj.eObj.expression] = newobj
+            EnableParFitFxnMenus()
+
+    def AddNewParFitFxn(event):
+        'Create a new expression'
+        parmDict = dict(zip(colLabels,zip(*colList)[0]))
+        dlg = G2exG.ExpressionDialog(
+            G2frame.dataDisplay,parmDict,
+            header='Enter a function to minimize in the parametric fit')
+        obj = dlg.Show(True)
+        dlg.Destroy()
+        if obj:
+            calcobj = G2obj.ExpressionCalcObj(obj)
+            Controls['SeqParFitFxns'][calcobj.eObj.expression] = obj
+            EnableParFitFxnMenus()
+
+    def DoParFit(event):
+        print 'This is the future home for the parametric fit minimizer'
+        for expr in Controls['SeqParFitFxns']:
+            print expr
+            obj = Controls['SeqParFitFxns'][expr]
+            calcobj = G2obj.ExpressionCalcObj(obj)
+            for row in zip(*colList):
+                parmDict = dict(zip(colLabels,row))
+
 
     #======================================================================
     # start processing sequential results here
@@ -3811,6 +3903,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     Controls = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Controls'))
     if 'SeqPseudoVars' not in Controls: # create a place to store Pseudo Vars, if needed
         Controls['SeqPseudoVars'] = {}
+    if 'SeqParFitFxns' not in Controls: # create a place to store Parametric Fit functions, if needed
+        Controls['SeqParFitFxns'] = {}
     histNames = data['histNames']
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
@@ -3865,7 +3959,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewSeqExpression, id=wxADDSEQVAR)
     G2frame.dataFrame.Bind(wx.EVT_MENU, DelSeqExpression, id=wxDELSEQVAR)
     G2frame.dataFrame.Bind(wx.EVT_MENU, EditSeqExpression, id=wxEDITSEQVAR)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewParFitFxn, id=wxADDPARFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, DelParFitFxn, id=wxDELPARFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, EditParFitFxn, id=wxEDITPARFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, DoParFit, id=wxDOPARFIT)
     EnableSeqExpressionMenus()
+    EnableParFitFxnMenus()
 
     # build up the data table one column at a time
     colList = []

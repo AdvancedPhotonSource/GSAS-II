@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIobj - data objects for GSAS-II</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-01-02 14:18:25 -0600 (Thu, 02 Jan 2014) $</span>
+<span class="c"># $Date: 2014-04-21 15:38:39 -0500 (Mon, 21 Apr 2014) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1181 $</span>
+<span class="c"># $Revision: 1294 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIobj.py $</span>
-<span class="c"># $Id: GSASIIobj.py 1181 2014-01-02 20:18:25Z toby $</span>
+<span class="c"># $Id: GSASIIobj.py 1294 2014-04-21 20:38:39Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
@@ -610,12 +610,12 @@
 <span class="sd">Data                          \           The data consist of a list of 6 np.arrays </span>
 <span class="sd">                                          containing in order:</span>
 
-<span class="sd">                                           1. the x-postions (two-theta in degrees),</span>
-<span class="sd">                                           2. the intensity values (Yobs),</span>
-<span class="sd">                                           3. the weights for each Yobs value</span>
-<span class="sd">                                           4. the computed intensity values (Ycalc)</span>
-<span class="sd">                                           5. the background values</span>
-<span class="sd">                                           6. Yobs-Ycalc</span>
+<span class="sd">                                           0. the x-postions (two-theta in degrees),</span>
+<span class="sd">                                           1. the intensity values (Yobs),</span>
+<span class="sd">                                           2. the weights for each Yobs value</span>
+<span class="sd">                                           3. the computed intensity values (Ycalc)</span>
+<span class="sd">                                           4. the background values</span>
+<span class="sd">                                           5. Yobs-Ycalc</span>
 <span class="sd">======================  ===============  ====================================================</span>
 
 <span class="sd">Powder Reflection Data Structure</span>
@@ -845,17 +845,20 @@
 <span class="sd">                                                </span>
 <span class="sd">Stress/Strain               Sample phi          (float) Sample rotation about vertical axis.</span>
 <span class="sd">\                           Sample z            (float) Sample translation from the calibration sample position (for Sample phi = 0)</span>
-<span class="sd">\                           strain              (list: 3x3 array of float) The strain tensor coefficients [[&#39; e11&#39;,&#39;e12&#39;,&#39;e13&#39;],[&#39; e21&#39;,&#39;e22&#39;,&#39;e23&#39;],[&#39; e31&#39;,&#39;e32&#39;,&#39;e33&#39;]].</span>
 <span class="sd">                                                These will be restricted by space group symmetry; result of strain fit refinement.</span>
 <span class="sd">\                           Type                (str) &#39;True&#39; or &#39;Conventional&#39;: The strain model used for the calculation.</span>
-<span class="sd">\                           d-zero              (list:dict) Each item is for a diffraction ring on the image; all items are from the same phase and are used to determine the strain tensor.</span>
+<span class="sd">\                           d-zero              (list:dict) Each item is for a diffraction ring on the image; all items are from the same phase </span>
+<span class="sd">                                                and are used to determine the strain tensor.</span>
 <span class="sd">                                                The dictionary items are:</span>
 <span class="sd">                                                &#39;Dset&#39;: (float) True d-spacing for the diffraction ring; entered by the user.</span>
-<span class="sd">                                                &#39;Dcalc&#39;: (float) d-spacing...</span>
+<span class="sd">                                                &#39;Dcalc&#39;: (float) Average calculated d-spacing determined from strain coeff.</span>
+<span class="sd">                                                &#39;Emat&#39;: (list: float) The strain tensor elements e11, e12 &amp; e22 (e21=e12, rest are 0)</span>
+<span class="sd">                                                &#39;Esig&#39;: (list: float) Esds for Emat from fitting.</span>
 <span class="sd">                                                &#39;pixLimit&#39;: (int) Search range to find highest point on ring for each data point</span>
 <span class="sd">                                                &#39;cutoff&#39;: (float) I/Ib cutoff for searching.</span>
-<span class="sd">                                                &#39;ImxyObs&#39;: (list:lists) [[X],[Y]] observed points to be used for strain calculations.</span>
-<span class="sd">                                                &#39;ImxyCalc&#39;:(list:lists) [[X],[Y]] calculated points based on refined strain.                                           </span>
+<span class="sd">                                                &#39;ImxyObs&#39;: (list: lists) [[X],[Y]] observed points to be used for strain calculations.</span>
+<span class="sd">                                                &#39;ImtaObs&#39;: (list: lists) [[d],[azm]] transformed via detector calibration from ImxyObs.</span>
+<span class="sd">                                                &#39;ImtaCalc&#39;: (list: lists [[d],[azm]] calculated d-spacing &amp; azimuth from fit.</span>
 <span class="sd">                                                </span>
 <span class="sd">======================  ======================  ====================================================</span>
 
@@ -884,12 +887,15 @@
 <span class="sd">----------------------</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">imp</span>
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1181 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1294 $&quot;</span><span class="p">)</span>
 
 <span class="n">DefaultControls</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s">&#39;deriv type&#39;</span><span class="p">:</span><span class="s">&#39;analytic Hessian&#39;</span><span class="p">,</span>    <span class="c">#default controls</span>
@@ -1146,42 +1152,74 @@
 <div class="viewcode-block" id="fmtVarDescr"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.fmtVarDescr">[docs]</a><span class="k">def</span> <span class="nf">fmtVarDescr</span><span class="p">(</span><span class="n">varname</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Return a string with a more complete description for a GSAS-II variable </span>
 
-<span class="sd">    TODO: This will not handle rigid body parameters yet</span>
-
-<span class="sd">    :param str name: A full G2 variable name with 2 or 3</span>
-<span class="sd">       colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;])</span>
+<span class="sd">    :param str varname: A full G2 variable name with 2 or 3 or 4</span>
+<span class="sd">       colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;] or &lt;p&gt;::RBname:&lt;r&gt;:&lt;t&gt;])</span>
 <span class="sd">       </span>
 <span class="sd">    :returns: a string with the description</span>
 <span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">s</span><span class="p">,</span><span class="n">l</span> <span class="o">=</span> <span class="n">VarDescr</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">+</span><span class="s">&quot;: &quot;</span><span class="o">+</span><span class="n">l</span>
+</div>
+<div class="viewcode-block" id="VarDescr"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.VarDescr">[docs]</a><span class="k">def</span> <span class="nf">VarDescr</span><span class="p">(</span><span class="n">varname</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Return two strings with a more complete description for a GSAS-II variable </span>
+
+<span class="sd">    :param str name: A full G2 variable name with 2 or 3 or 4</span>
+<span class="sd">       colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;] or &lt;p&gt;::RBname:&lt;r&gt;:&lt;t&gt;])</span>
+<span class="sd">       </span>
+<span class="sd">    :returns: (loc,meaning) where loc describes what item the variable is mapped</span>
+<span class="sd">      (phase, histogram, etc.) and meaning describes what the variable does.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     
+    <span class="c"># special handling for parameter names without a colons</span>
+    <span class="c"># for now, assume self-defining</span>
+    <span class="k">if</span> <span class="n">varname</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s">&quot;Global&quot;</span><span class="p">,</span><span class="n">varname</span>
+        
     <span class="n">l</span> <span class="o">=</span> <span class="n">getVarDescr</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">l</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s">&quot;invalid variable name (&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;)!&quot;</span>
+        <span class="c">#return (&quot;invalid variable name (&quot;+str(varname)+&quot;)!&quot;),&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&quot;invalid variable name!&quot;</span><span class="p">,</span><span class="s">&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">]:</span>
-        <span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;(variable needs a definition!)&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;(variable needs a definition!)&quot;</span>
 
     <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
     <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># HAP: keep short</span>
-        <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
-        <span class="n">hlbl</span> <span class="o">=</span> <span class="n">ShortHistNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+            <span class="n">lbl</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+            <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hlbl</span> <span class="o">=</span> <span class="n">ShortHistNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
         <span class="k">if</span> <span class="n">hlbl</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;HKLF&#39;</span><span class="p">:</span>
             <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Xtl=&#39;</span><span class="o">+</span><span class="n">hlbl</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
         <span class="k">elif</span> <span class="n">hlbl</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;PWDR&#39;</span><span class="p">:</span>
             <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Pwd=&#39;</span><span class="o">+</span><span class="n">hlbl</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Hist=&#39;</span><span class="o">+</span><span class="n">hlbl</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Ph=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; * &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">hlbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;: &quot;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Ph=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; * &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">hlbl</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Back&#39;</span><span class="p">:</span> <span class="c"># background parameters are &quot;special&quot;, alas</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;Hist=&#39;</span><span class="o">+</span><span class="n">ShortHistNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39; #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># rigid body parameter</span>
+        <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;phase?&#39;</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Res #&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">+</span><span class="s">&quot; body #&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span><span class="o">+</span><span class="s">&quot; in &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># atom parameter, </span>
         <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;phase?&#39;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">albl</span> <span class="o">=</span> <span class="n">LookupAtomLabel</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="n">albl</span> <span class="o">=</span> <span class="s">&#39;Atom?&#39;</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Atom &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">albl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; in &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;: &quot;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Atom &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">albl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; in &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;All phases &quot;</span>
     <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;phase?&#39;</span><span class="p">)</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Phase &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;: &quot;</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Phase &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;All hists&#39;</span>
     <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">hlbl</span> <span class="o">=</span> <span class="n">ShortHistNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
         <span class="k">if</span> <span class="n">hlbl</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;HKLF&#39;</span><span class="p">:</span>
@@ -1190,20 +1228,19 @@
             <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Pwd=&#39;</span><span class="o">+</span><span class="n">hlbl</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Hist=&#39;</span><span class="o">+</span><span class="n">hlbl</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hlbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;: &quot;</span>    
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hlbl</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="p">:</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;Global: &#39;</span>
-    <span class="n">s</span> <span class="o">+=</span> <span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">s</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;Global&#39;</span>
+    <span class="k">return</span> <span class="n">s</span><span class="p">,</span><span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="getVarDescr"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.getVarDescr">[docs]</a><span class="k">def</span> <span class="nf">getVarDescr</span><span class="p">(</span><span class="n">varname</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Return a short description for a GSAS-II variable </span>
 
-<span class="sd">    :param str name: A full G2 variable name with 2 or 3</span>
-<span class="sd">       colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;])</span>
+<span class="sd">    :param str name: A full G2 variable name with 2 or 3 or 4</span>
+<span class="sd">       colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a1&gt;][:&lt;a2&gt;])</span>
 <span class="sd">      </span>
-<span class="sd">    :returns: a five element list as [`p`,`h`,`name`,`a`,`description`],</span>
-<span class="sd">      where `p`, `h`, `a` are str values or `None`, for the phase number,</span>
+<span class="sd">    :returns: a six element list as [`p`,`h`,`name`,`a1`,`a2`,`description`],</span>
+<span class="sd">      where `p`, `h`, `a1`, `a2` are str values or `None`, for the phase number,</span>
 <span class="sd">      the histogram number and the atom number; `name` will always be</span>
 <span class="sd">      an str; and `description` is str or `None`.</span>
 <span class="sd">      If the variable name is incorrectly formed (for example, wrong</span>
@@ -1211,10 +1248,12 @@
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">l</span> <span class="o">=</span> <span class="n">varname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">l</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
         <span class="n">l</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">5</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">None</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
             <span class="n">l</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
     <span class="n">l</span> <span class="o">+=</span> <span class="p">[</span><span class="n">getDescr</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">2</span><span class="p">])]</span>
@@ -1241,24 +1280,34 @@
 <span class="sd">    in the value when used.</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="kn">import</span> <span class="nn">re</span>
     <span class="k">if</span> <span class="n">reVarDesc</span><span class="p">:</span> <span class="k">return</span> <span class="c"># already done</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="p">{</span>
+        <span class="c"># derived or other sequential vars</span>
+        <span class="s">&#39;([abc])$&#39;</span> <span class="p">:</span> <span class="s">&#39;Lattice parameter, </span><span class="se">\\</span><span class="s">1, from Ai and Djk&#39;</span><span class="p">,</span> <span class="c"># N.B. &#39;$&#39; prevents match if any characters follow</span>
+        <span class="s">u&#39;</span><span class="se">\u03B1</span><span class="s">&#39;</span> <span class="p">:</span> <span class="s">u&#39;Lattice parameter, </span><span class="se">\u03B1</span><span class="s">, from Ai and Djk&#39;</span><span class="p">,</span>
+        <span class="s">u&#39;</span><span class="se">\u03B2</span><span class="s">&#39;</span> <span class="p">:</span> <span class="s">u&#39;Lattice parameter, </span><span class="se">\u03B2</span><span class="s">, from Ai and Djk&#39;</span><span class="p">,</span>
+        <span class="s">u&#39;</span><span class="se">\u03B3</span><span class="s">&#39;</span> <span class="p">:</span> <span class="s">u&#39;Lattice parameter, </span><span class="se">\u03B3</span><span class="s">, from Ai and Djk&#39;</span><span class="p">,</span>
+        <span class="c"># ambiguous, alas:</span>
+        <span class="s">&#39;Scale&#39;</span> <span class="p">:</span> <span class="s">&#39;Phase or Histogram scale factor&#39;</span><span class="p">,</span>
         <span class="c"># Phase vars (p::&lt;var&gt;)</span>
         <span class="s">&#39;A([0-5])&#39;</span> <span class="p">:</span> <span class="s">&#39;Reciprocal metric tensor component </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
-        <span class="s">&#39;Vol&#39;</span> <span class="p">:</span> <span class="s">&#39;Unit cell volume????&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Vol&#39;</span> <span class="p">:</span> <span class="s">&#39;Unit cell volume&#39;</span><span class="p">,</span>
         <span class="c"># Atom vars (p::&lt;var&gt;:a)</span>
         <span class="s">&#39;dA([xyz])&#39;</span> <span class="p">:</span> <span class="s">&#39;change to atomic position </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;AUiso&#39;</span><span class="p">:</span><span class="s">&#39;Atomic isotropic displacement parameter&#39;</span><span class="p">,</span>
         <span class="s">&#39;AU([123][123])&#39;</span><span class="p">:</span><span class="s">&#39;Atomic anisotropic displacement parameter U</span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;Afrac&#39;</span><span class="p">:</span> <span class="s">&#39;Atomic occupancy parameter&#39;</span><span class="p">,</span>
         <span class="c"># Hist &amp; Phase (HAP) vars (p:h:&lt;var&gt;)</span>
+        <span class="s">&#39;Back&#39;</span><span class="p">:</span> <span class="s">&#39;Background term&#39;</span><span class="p">,</span>
+        <span class="s">&#39;BkPkint;(.*)&#39;</span><span class="p">:</span><span class="s">&#39;Background peak #</span><span class="se">\\</span><span class="s">1 intensity&#39;</span><span class="p">,</span>
+        <span class="s">&#39;BkPkpos;(.*)&#39;</span><span class="p">:</span><span class="s">&#39;Background peak #</span><span class="se">\\</span><span class="s">1 position&#39;</span><span class="p">,</span>
+        <span class="s">&#39;BkPksig;(.*)&#39;</span><span class="p">:</span><span class="s">&#39;Background peak #</span><span class="se">\\</span><span class="s">1 Gaussian width&#39;</span><span class="p">,</span>
+        <span class="s">&#39;BkPkgam;(.*)&#39;</span><span class="p">:</span><span class="s">&#39;Background peak #</span><span class="se">\\</span><span class="s">1 Cauchy width&#39;</span><span class="p">,</span>
         <span class="s">&#39;Bab([AU])&#39;</span><span class="p">:</span> <span class="s">&#39;Babinet solvent scattering coef. </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;D([123][123])&#39;</span> <span class="p">:</span> <span class="s">&#39;Anisotropic strain coef. </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;Extinction&#39;</span> <span class="p">:</span> <span class="s">&#39;Extinction coef.&#39;</span><span class="p">,</span>
         <span class="s">&#39;MD&#39;</span> <span class="p">:</span> <span class="s">&#39;March-Dollase coef.&#39;</span><span class="p">,</span>
         <span class="s">&#39;Mustrain;.*&#39;</span> <span class="p">:</span> <span class="s">&#39;Microstrain coef.&#39;</span><span class="p">,</span>
-        <span class="s">&#39;Scale&#39;</span> <span class="p">:</span> <span class="s">&#39;Phase scale factor&#39;</span><span class="p">,</span>
         <span class="s">&#39;Size;.*&#39;</span> <span class="p">:</span> <span class="s">&#39;Crystallite size value&#39;</span><span class="p">,</span>
         <span class="s">&#39;eA&#39;</span> <span class="p">:</span> <span class="s">&#39;?&#39;</span><span class="p">,</span>
         <span class="c">#Histogram vars (:h:&lt;var&gt;)</span>
@@ -1267,13 +1316,19 @@
         <span class="s">&#39;Lam&#39;</span> <span class="p">:</span> <span class="s">&#39;Wavelength&#39;</span><span class="p">,</span>
         <span class="s">&#39;Polariz\.&#39;</span> <span class="p">:</span> <span class="s">&#39;Polarization correction&#39;</span><span class="p">,</span>
         <span class="s">&#39;SH/L&#39;</span> <span class="p">:</span> <span class="s">&#39;FCJ peak asymmetry correction&#39;</span><span class="p">,</span>
-        <span class="s">&#39;Scale&#39;</span> <span class="p">:</span> <span class="s">&#39;Histogram scale factor&#39;</span><span class="p">,</span>
         <span class="s">&#39;([UVW])&#39;</span> <span class="p">:</span> <span class="s">&#39;Gaussian instrument broadening </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;([XY])&#39;</span> <span class="p">:</span> <span class="s">&#39;Cauchy instrument broadening </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;Zero&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye-Scherrer zero correction&#39;</span><span class="p">,</span>
         <span class="s">&#39;nDebye&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye model background corr. terms&#39;</span><span class="p">,</span>
         <span class="s">&#39;nPeaks&#39;</span> <span class="p">:</span> <span class="s">&#39;Fixed peak background corr. terms&#39;</span><span class="p">,</span>
+        <span class="s">&#39;RBV.*&#39;</span> <span class="p">:</span> <span class="s">&#39;Vector rigid body parameter&#39;</span><span class="p">,</span>
+        <span class="s">&#39;RBR.*&#39;</span> <span class="p">:</span> <span class="s">&#39;Residue rigid body parameter&#39;</span><span class="p">,</span>
+        <span class="s">&#39;RBRO([aijk])&#39;</span> <span class="p">:</span> <span class="s">&#39;Residue rigid body orientation parameter&#39;</span><span class="p">,</span>
+        <span class="s">&#39;RBRP([xyz])&#39;</span> <span class="p">:</span> <span class="s">&#39;Residue rigid body position parameter&#39;</span><span class="p">,</span>
+        <span class="s">&#39;RBRTr;.*&#39;</span> <span class="p">:</span> <span class="s">&#39;Residue rigid body torsion parameter&#39;</span><span class="p">,</span>
+        <span class="s">&#39;RBR([TLS])([123AB][123AB])&#39;</span> <span class="p">:</span> <span class="s">&#39;Residue rigid body group disp. param.&#39;</span><span class="p">,</span>
         <span class="c"># Global vars (::&lt;var&gt;)</span>
+        <span class="s">&#39;constr([0-9]*)&#39;</span> <span class="p">:</span> <span class="s">&#39;Parameter from constraint&#39;</span><span class="p">,</span>
         <span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">VarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="n">reVarDesc</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span>
@@ -1293,12 +1348,68 @@
             <span class="k">return</span> <span class="n">m</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">reVarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
     <span class="k">return</span> <span class="bp">None</span>
 </div>
+<div class="viewcode-block" id="GenWildCard"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.GenWildCard">[docs]</a><span class="k">def</span> <span class="nf">GenWildCard</span><span class="p">(</span><span class="n">varlist</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Generate wildcard versions of G2 variables. These introduce &#39;*&#39;</span>
+<span class="sd">    for a phase, histogram or atom number (but only for one of these</span>
+<span class="sd">    fields) but only when there is more than one matching variable in the</span>
+<span class="sd">    input variable list. So if the input is this::</span>
+<span class="sd">    </span>
+<span class="sd">      varlist = [&#39;0::AUiso:0&#39;, &#39;0::AUiso:1&#39;, &#39;1::AUiso:0&#39;]</span>
+
+<span class="sd">    then the output will be this::</span>
+<span class="sd">    </span>
+<span class="sd">       wildList = [&#39;*::AUiso:0&#39;, &#39;0::AUiso:*&#39;]</span>
+
+<span class="sd">    :param list varlist: an input list of GSAS-II variable names</span>
+<span class="sd">      (such as 0::AUiso:0)</span>
+
+<span class="sd">    :returns: wildList, the generated list of wild card variable names.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">wild</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">currentL</span> <span class="o">=</span> <span class="n">varlist</span><span class="p">[:]</span>
+        <span class="k">while</span> <span class="n">currentL</span><span class="p">:</span>
+            <span class="n">item1</span> <span class="o">=</span> <span class="n">currentL</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">i1splt</span> <span class="o">=</span> <span class="n">item1</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">i1splt</span><span class="p">):</span> <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">i1splt</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">nextL</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">i1splt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;[0-9]+&#39;</span>
+                <span class="n">rexp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">i1splt</span><span class="p">))</span>
+                <span class="n">matchlist</span> <span class="o">=</span> <span class="p">[</span><span class="n">item1</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">nxtitem</span> <span class="ow">in</span> <span class="n">currentL</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">rexp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">nxtitem</span><span class="p">):</span>
+                        <span class="n">matchlist</span> <span class="o">+=</span> <span class="p">[</span><span class="n">nxtitem</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">nextL</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nxtitem</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">matchlist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">i1splt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;*&#39;</span>
+                    <span class="n">wild</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">i1splt</span><span class="p">))</span>
+                <span class="n">currentL</span> <span class="o">=</span> <span class="n">nextL</span>
+    <span class="k">return</span> <span class="n">wild</span>
+</div>
+<div class="viewcode-block" id="LookupWildCard"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.LookupWildCard">[docs]</a><span class="k">def</span> <span class="nf">LookupWildCard</span><span class="p">(</span><span class="n">varname</span><span class="p">,</span><span class="n">varlist</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;returns a list of variable names from list varname</span>
+<span class="sd">    that match wildcard name in varname</span>
+<span class="sd">    </span>
+<span class="sd">    :param str varname: a G2 variable name containing a wildcard</span>
+<span class="sd">      (such as \*::var)</span>
+<span class="sd">    :param list varlist: the list of all variable names used in</span>
+<span class="sd">      the current project</span>
+<span class="sd">    :returns: a list of matching GSAS-II variables (may be empty)  </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">rexp</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">varname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;*&#39;</span><span class="p">,</span><span class="s">&#39;[0-9]+&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varlist</span> <span class="k">if</span> <span class="n">rexp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">var</span><span class="p">)])</span>
+
+</div>
 <span class="k">def</span> <span class="nf">_lookup</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span><span class="n">key</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Lookup a key in a dictionary, where None returns an empty string</span>
 <span class="sd">    but an unmatched key returns a question mark. Used in :class:`G2VarObj`</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="s">&quot;&quot;</span>
+    <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;*&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s">&quot;*&quot;</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dic</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">)</span>
 
@@ -1309,24 +1420,31 @@
 <span class="sd">    Note that :func:`LoadID` should be used to (re)load the current Ids</span>
 <span class="sd">    before creating or later using the G2VarObj object.</span>
 
+<span class="sd">    This can store rigid body variables, but does not translate the residue # and</span>
+<span class="sd">    body # to/from random Ids</span>
+
 <span class="sd">    A :class:`G2VarObj` object can be created with a single parameter:</span>
 <span class="sd">    </span>
 <span class="sd">    :param str/tuple varname: a single value can be used to create a :class:`G2VarObj`</span>
 <span class="sd">      object. If a string, it must be of form &quot;p:h:var&quot; or &quot;p:h:var:a&quot;, where</span>
 
-<span class="sd">     * p is the phase number (which may be left blank); </span>
-<span class="sd">     * h is the histogram number (which may be left blank); </span>
+<span class="sd">     * p is the phase number (which may be left blank or may be &#39;*&#39; to indicate all phases); </span>
+<span class="sd">     * h is the histogram number (which may be left blank or may be &#39;*&#39; to indicate all histograms); </span>
 <span class="sd">     * a is the atom number (which may be left blank in which case the third colon is omitted).</span>
+<span class="sd">       The atom number can be specified as &#39;*&#39; if a phase number is specified (not as &#39;*&#39;).</span>
+<span class="sd">       For rigid body variables, specify a will be a string of form &quot;residue:body#&quot;</span>
 
 <span class="sd">      Alternately a single tuple of form (Phase,Histogram,VarName,AtomID) can be used, where</span>
-<span class="sd">      Phase, Histogram, and AtomID are None or are ranId values and VarName is a string.     </span>
+<span class="sd">      Phase, Histogram, and AtomID are None or are ranId values (or one can be &#39;*&#39;)</span>
+<span class="sd">      and VarName is a string. Note that if Phase is &#39;*&#39; then the AtomID is an atom number.</span>
+<span class="sd">      For a rigid body variables, AtomID is a string of form &quot;residue:body#&quot;.</span>
 
 <span class="sd">    If four positional arguments are supplied, they are:</span>
 
-<span class="sd">    :param str/int phasenum: The number for the phase</span>
-<span class="sd">    :param str/int histnum: The number for the histogram</span>
+<span class="sd">    :param str/int phasenum: The number for the phase (or None or &#39;*&#39;)</span>
+<span class="sd">    :param str/int histnum: The number for the histogram (or None or &#39;*&#39;)</span>
 <span class="sd">    :param str varname: a single value can be used to create a :class:`G2VarObj`</span>
-<span class="sd">    :param str/int atomnum: The number for the atom</span>
+<span class="sd">    :param str/int atomnum: The number for the atom (or None or &#39;*&#39;)</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">IDdict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1339,19 +1457,49 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="c"># single arg with 4 values</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>            
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="c">#parse a string </span>
             <span class="n">lst</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">PhaseIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">],[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="n">HistIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">],[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="s">&#39;*&#39;</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="n">HistIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">],[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>            
+                <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="s">&#39;*&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">PhaseIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">],[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="n">HistIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">],[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">PhaseIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">],[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">lst</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="s">&#39;*&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">AtomIdLookup</span><span class="p">[</span><span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">3</span><span class="p">],[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="s">&quot;:&quot;</span><span class="o">+</span><span class="n">lst</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;Too many colons in var name &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">AtomIdLookup</span><span class="p">[</span><span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">3</span><span class="p">],[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">PhaseIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="n">HistIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]),[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="s">&#39;*&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">=</span> <span class="n">PhaseIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]),[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="s">&#39;*&#39;</span>
+                <span class="k">elif</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">AtomIdLookup</span><span class="p">[</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">]),[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="s">&#39;*&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">=</span> <span class="n">HistIdLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">]),[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">AtomIdLookup</span><span class="p">[</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">3</span><span class="p">]),[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;Incorrectly called GSAS-II parameter name&quot;</span>
 
@@ -1366,35 +1514,60 @@
 
 <span class="sd">        :returns: the variable name as a str</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">ph</span> <span class="o">=</span> <span class="n">_lookup</span><span class="p">(</span><span class="n">PhaseRanIdLookup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span>
-        <span class="n">hist</span> <span class="o">=</span> <span class="n">_lookup</span><span class="p">(</span><span class="n">HistRanIdLookup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="p">(</span><span class="n">ph</span> <span class="o">+</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="n">hist</span> <span class="o">+</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> 
-             <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">ph</span> <span class="ow">in</span> <span class="n">AtomRanIdLookup</span><span class="p">:</span>
-                <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="n">AtomRanIdLookup</span><span class="p">[</span><span class="n">ph</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;:?&quot;</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">==</span> <span class="s">&quot;*&quot;</span><span class="p">:</span>
+            <span class="n">ph</span> <span class="o">=</span> <span class="s">&quot;*&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">:</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ph</span> <span class="o">=</span> <span class="n">_lookup</span><span class="p">(</span><span class="n">PhaseRanIdLookup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="s">&#39;:*&#39;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s">&quot;:&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">):</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">ph</span> <span class="ow">in</span> <span class="n">AtomRanIdLookup</span><span class="p">:</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="n">AtomRanIdLookup</span><span class="p">[</span><span class="n">ph</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="s">&quot;:?&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">==</span> <span class="s">&quot;*&quot;</span><span class="p">:</span>
+            <span class="n">hist</span> <span class="o">=</span> <span class="s">&quot;*&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hist</span> <span class="o">=</span> <span class="n">_lookup</span><span class="p">(</span><span class="n">HistRanIdLookup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="p">(</span><span class="n">ph</span> <span class="o">+</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="n">hist</span> <span class="o">+</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span> <span class="o">+</span> <span class="n">a</span>
         <span class="k">return</span> <span class="n">s</span>
     </div>
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Return the detailed contents of the object</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;&lt;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Phases: all; &quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s">&quot;:&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">):</span>
+                    <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Rigid body&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;; &quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Atom #&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;; &quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">ph</span> <span class="o">=</span>  <span class="n">_lookup</span><span class="p">(</span><span class="n">PhaseRanIdLookup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span>
             <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Phase: rId=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; (#&quot;</span><span class="o">+</span> <span class="n">ph</span> <span class="o">+</span> <span class="s">&quot;); &quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Atoms: all; &quot;</span>
+            <span class="k">elif</span> <span class="s">&quot;:&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">):</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Rigid body&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;; &quot;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Atom rId=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ph</span> <span class="ow">in</span> <span class="n">AtomRanIdLookup</span><span class="p">:</span>
+                    <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot; (#&quot;</span> <span class="o">+</span> <span class="n">AtomRanIdLookup</span><span class="p">[</span><span class="n">ph</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;); &quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot; (#? -- not found!); &quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Histograms: all; &quot;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">histogram</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">hist</span> <span class="o">=</span> <span class="n">_lookup</span><span class="p">(</span><span class="n">HistRanIdLookup</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span>
             <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Histogram: rId=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">histogram</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; (#&quot;</span><span class="o">+</span> <span class="n">hist</span> <span class="o">+</span> <span class="s">&quot;); &quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;Atom rId=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">ph</span> <span class="ow">in</span> <span class="n">AtomRanIdLookup</span><span class="p">:</span>
-                <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot; (#&quot;</span> <span class="o">+</span> <span class="n">AtomRanIdLookup</span><span class="p">[</span><span class="n">ph</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="p">,</span><span class="s">&#39;?&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;); &quot;</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot; (#? -- not found!); &quot;</span>
         <span class="n">s</span> <span class="o">+=</span> <span class="s">&#39;Variable name=&quot;&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;&quot;&gt;&#39;</span>
-        <span class="k">return</span> <span class="n">s</span><span class="o">+</span><span class="s">&quot;(&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">varname</span><span class="p">()</span><span class="o">+</span><span class="s">&quot;)&quot;</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">+</span><span class="s">&quot; (&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">varname</span><span class="p">()</span><span class="o">+</span><span class="s">&quot;)&quot;</span>
 
     <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1409,7 +1582,463 @@
         <span class="k">print</span> <span class="s">&#39;phases&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;phases&#39;</span><span class="p">]</span>
         <span class="k">print</span> <span class="s">&#39;hists&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;hists&#39;</span><span class="p">]</span>
         <span class="k">print</span> <span class="s">&#39;atomDict&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">IDdict</span><span class="p">[</span><span class="s">&#39;atoms&#39;</span><span class="p">]</span>
-</pre></div></div>
+
+<span class="c">#==========================================================================</span>
+<span class="c"># shortcut routines</span></div>
+<span class="n">exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span>
+<span class="n">sind</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
+<span class="n">tand</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
+<span class="n">cosd</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
+<span class="n">sind</span> <span class="o">=</span> <span class="n">sin</span> <span class="o">=</span> <span class="n">s</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
+<span class="n">cosd</span> <span class="o">=</span> <span class="n">cos</span> <span class="o">=</span> <span class="n">c</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
+<span class="n">tand</span> <span class="o">=</span> <span class="n">tan</span> <span class="o">=</span> <span class="n">t</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
+<span class="n">sqrt</span> <span class="o">=</span> <span class="n">sq</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">pi</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+<div class="viewcode-block" id="ExpressionObj"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj">[docs]</a><span class="k">class</span> <span class="nc">ExpressionObj</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Defines an object with a user-defined expression, to be used for</span>
+<span class="sd">    secondary fits or restraints. Object is created null, but is changed</span>
+<span class="sd">    using :meth:`LoadExpression`. This contains only the minimum</span>
+<span class="sd">    information that needs to be stored to save and load the expression</span>
+<span class="sd">    and how it is mapped to GSAS-II variables. </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expression</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="s">&#39;The expression as a text string&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&#39;&#39;&#39;A dict where keys are label names in the expression mapping to a GSAS-II</span>
+<span class="sd">        variable. The value is a list with a G2 variable name and derivative step size.</span>
+<span class="sd">        Note that the G2 variable name may contain a wild-card and correspond to</span>
+<span class="sd">        multiple values.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&#39;&#39;&#39;A dict where keys are label names in the expression mapping to a free</span>
+<span class="sd">        parameter. The value is a list with:</span>
+
+<span class="sd">         * a name assigned to the parameter</span>
+<span class="sd">         * a value for to the parameter</span>
+<span class="sd">         * a derivative step size and</span>
+<span class="sd">         * a flag to determine if the variable is refined.</span>
+<span class="sd">        &#39;&#39;&#39;</span> 
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lastError</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="sd">&#39;&#39;&#39;Shows last encountered error in processing expression</span>
+<span class="sd">        (list of 1-3 str values)&#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="ExpressionObj.LoadExpression"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.LoadExpression">[docs]</a>    <span class="k">def</span> <span class="nf">LoadExpression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">expr</span><span class="p">,</span><span class="n">exprVarLst</span><span class="p">,</span><span class="n">varSelect</span><span class="p">,</span><span class="n">varName</span><span class="p">,</span><span class="n">varValue</span><span class="p">,</span><span class="n">varStep</span><span class="p">,</span><span class="n">varRefflag</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Load the expression and associated settings into the object. Raises</span>
+<span class="sd">        an exception if the expression is not parsed, if not all functions</span>
+<span class="sd">        are defined or if not all needed parameter labels in the expression</span>
+<span class="sd">        are defined.</span>
+
+<span class="sd">        This will not test if the variable referenced in these definitions</span>
+<span class="sd">        are actually in the parameter dictionary. This is checked when the</span>
+<span class="sd">        computation for the expression is done in :meth:`SetupCalc`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param str expr: the expression</span>
+<span class="sd">        :param list exprVarLst: parameter labels found in the expression</span>
+<span class="sd">        :param dict varSelect: this will be 0 for Free parameters</span>
+<span class="sd">          and non-zero for expression labels linked to G2 variables.</span>
+<span class="sd">        :param dict varName: Defines a name (str) associated with each free parameter</span>
+<span class="sd">        :param dict varValue: Defines a value (float) associated with each free parameter</span>
+<span class="sd">        :param dict varStep: Defines a derivative step size (float) for each</span>
+<span class="sd">          parameter labels found in the expression</span>
+<span class="sd">        :param dict varRefflag: Defines a refinement flag (bool)</span>
+<span class="sd">          associated with each free parameter</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expression</span> <span class="o">=</span> <span class="n">expr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compiledExpr</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">exprVarLst</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">varSelect</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">varName</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">),</span>
+                    <span class="n">varValue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">),</span>
+                    <span class="n">varStep</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">),</span>
+                    <span class="n">varRefflag</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">),</span>
+                    <span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">],</span>
+                    <span class="n">varStep</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">),</span>
+                    <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CheckVars</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ExpressionObj.EditExpression"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.EditExpression">[docs]</a>    <span class="k">def</span> <span class="nf">EditExpression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exprVarLst</span><span class="p">,</span><span class="n">varSelect</span><span class="p">,</span><span class="n">varName</span><span class="p">,</span><span class="n">varValue</span><span class="p">,</span><span class="n">varStep</span><span class="p">,</span><span class="n">varRefflag</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Load the expression and associated settings from the object into</span>
+<span class="sd">        arrays used for editing.</span>
+
+<span class="sd">        :param list exprVarLst: parameter labels found in the expression</span>
+<span class="sd">        :param dict varSelect: this will be 0 for Free parameters</span>
+<span class="sd">          and non-zero for expression labels linked to G2 variables.</span>
+<span class="sd">        :param dict varName: Defines a name (str) associated with each free parameter</span>
+<span class="sd">        :param dict varValue: Defines a value (float) associated with each free parameter</span>
+<span class="sd">        :param dict varStep: Defines a derivative step size (float) for each</span>
+<span class="sd">          parameter labels found in the expression</span>
+<span class="sd">        :param dict varRefflag: Defines a refinement flag (bool)</span>
+<span class="sd">          associated with each free parameter</span>
+
+<span class="sd">        :returns: the expression as a str</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">:</span>
+            <span class="n">varSelect</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">varValue</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">varStep</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">varRefflag</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">:</span>
+            <span class="n">varSelect</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">varStep</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">expression</span>
+</div>
+<div class="viewcode-block" id="ExpressionObj.GetVaried"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.GetVaried">[docs]</a>    <span class="k">def</span> <span class="nf">GetVaried</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&#39;Returns the names of the free parameters that will be refined&#39;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s">&quot;::&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">3</span><span class="p">]]</span>
+</div>
+<div class="viewcode-block" id="ExpressionObj.CheckVars"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.CheckVars">[docs]</a>    <span class="k">def</span> <span class="nf">CheckVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Check that the expression can be parsed, all functions are</span>
+<span class="sd">        defined and that input loaded into the object is internally</span>
+<span class="sd">        consistent. If not an Exception is raised.</span>
+
+<span class="sd">        :returns: a dict with references to packages needed to</span>
+<span class="sd">          find functions referenced in the expression.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ParseExpression</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expression</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ret</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Expression parse error&quot;</span><span class="p">)</span>
+        <span class="n">exprLblList</span><span class="p">,</span><span class="n">fxnpkgdict</span> <span class="o">=</span> <span class="n">ret</span>
+        <span class="c"># check each var used in expression is defined</span>
+        <span class="n">defined</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">notfound</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">exprLblList</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">defined</span><span class="p">:</span>
+                <span class="n">notfound</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">notfound</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;Not all variables defined&#39;</span>
+            <span class="n">msg1</span> <span class="o">=</span> <span class="s">&#39;The following variables were not defined: &#39;</span>
+            <span class="n">msg2</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">notfound</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">msg</span><span class="p">:</span> <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;, &#39;</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="n">var</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lastError</span> <span class="o">=</span> <span class="p">(</span><span class="n">msg1</span><span class="p">,</span><span class="s">&#39;  &#39;</span><span class="o">+</span><span class="n">msg2</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fxnpkgdict</span>
+</div>
+<div class="viewcode-block" id="ExpressionObj.ParseExpression"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.ParseExpression">[docs]</a>    <span class="k">def</span> <span class="nf">ParseExpression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">expr</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Parse an expression and return a dict of called functions and</span>
+<span class="sd">        the variables used in the expression. Returns None in case an error</span>
+<span class="sd">        is encountered. If packages are referenced in functions, they are loaded </span>
+<span class="sd">        and the functions are looked up into the modules global</span>
+<span class="sd">        workspace. </span>
+<span class="sd">        </span>
+<span class="sd">        Note that no changes are made to the object other than</span>
+<span class="sd">        saving an error message, so that this can be used for testing prior</span>
+<span class="sd">        to the save. </span>
+
+<span class="sd">        :returns: a list of variables used variables</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lastError</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="kn">import</span> <span class="nn">ast</span>
+        <span class="k">def</span> <span class="nf">FindFunction</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+            <span class="sd">&#39;&#39;&#39;Find the object corresponding to function f</span>
+<span class="sd">            :param str f: a function name such as &#39;numpy.exp&#39;</span>
+<span class="sd">            :returns: (pkgdict,pkgobj) where pkgdict contains a dict</span>
+<span class="sd">              that defines the package location(s) and where pkgobj</span>
+<span class="sd">              defines the object associated with the function.</span>
+<span class="sd">              If the function is not found, pkgobj is None.</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)</span>
+            <span class="n">pkgdict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c"># no listed package, try in current namespace</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> 
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">fxnobj</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">pkgdict</span><span class="p">,</span><span class="n">fxnobj</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="bp">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">fxnobj</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                    <span class="n">pkgdict</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="k">return</span> <span class="n">pkgdict</span><span class="p">,</span><span class="n">fxnobj</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">):</span>
+                    <span class="k">pass</span>
+            <span class="c"># includes a package, lets try to load the packages</span>
+            <span class="n">pkgname</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span>
+            <span class="k">for</span> <span class="n">pkg</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span> <span class="c"># if needed, descend down the tree</span>
+                <span class="k">if</span> <span class="n">pkgname</span><span class="p">:</span>
+                    <span class="n">pkgname</span> <span class="o">+=</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="n">pkg</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">pkgname</span> <span class="o">=</span> <span class="n">pkg</span>
+                <span class="n">fp</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">fp</span><span class="p">,</span> <span class="n">fppath</span><span class="p">,</span><span class="n">desc</span> <span class="o">=</span> <span class="n">imp</span><span class="o">.</span><span class="n">find_module</span><span class="p">(</span><span class="n">pkg</span><span class="p">,</span><span class="n">path</span><span class="p">)</span>
+                    <span class="n">pkgobj</span> <span class="o">=</span> <span class="n">imp</span><span class="o">.</span><span class="n">load_module</span><span class="p">(</span><span class="n">pkg</span><span class="p">,</span><span class="n">fp</span><span class="p">,</span><span class="n">fppath</span><span class="p">,</span><span class="n">desc</span><span class="p">)</span>
+                    <span class="n">pkgdict</span><span class="p">[</span><span class="n">pkgname</span><span class="p">]</span> <span class="o">=</span> <span class="n">pkgobj</span>
+                    <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="n">fppath</span><span class="p">]</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">msg</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&#39;load of &#39;</span><span class="o">+</span><span class="n">pkgname</span><span class="o">+</span><span class="s">&#39; failed with error=&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+                    <span class="k">return</span> <span class="p">{},</span><span class="bp">None</span>
+                <span class="k">finally</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">fp</span><span class="p">:</span> <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c">#print &#39;before&#39;,pkgdict.keys()</span>
+                    <span class="n">fxnobj</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="nb">globals</span><span class="p">(),</span><span class="n">pkgdict</span><span class="p">)</span>
+                    <span class="c">#print &#39;after 1&#39;,pkgdict.keys()</span>
+                    <span class="c">#fxnobj = eval(f,pkgdict)</span>
+                    <span class="c">#print &#39;after 2&#39;,pkgdict.keys()</span>
+                    <span class="k">return</span> <span class="n">pkgdict</span><span class="p">,</span><span class="n">fxnobj</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">return</span> <span class="bp">None</span> <span class="c"># not found</span>
+        <span class="k">def</span> <span class="nf">ASTtransverse</span><span class="p">(</span><span class="n">node</span><span class="p">,</span><span class="n">fxn</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+            <span class="sd">&#39;&#39;&#39;Transverse a AST-parsed expresson, compiling a list of variables</span>
+<span class="sd">            referenced in the expression. This routine is used recursively.</span>
+
+<span class="sd">            :returns: varlist,fxnlist where</span>
+<span class="sd">              varlist is a list of referenced variable names and</span>
+<span class="sd">              fxnlist is a list of used functions</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+            <span class="n">varlist</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">fxnlist</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">node</span><span class="p">:</span>
+                    <span class="n">v</span><span class="p">,</span><span class="n">f</span> <span class="o">=</span> <span class="n">ASTtransverse</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">fxn</span><span class="p">)</span>
+                    <span class="n">varlist</span> <span class="o">+=</span> <span class="n">v</span>
+                    <span class="n">fxnlist</span> <span class="o">+=</span> <span class="n">f</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">ast</span><span class="o">.</span><span class="n">iter_fields</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">ast</span><span class="o">.</span><span class="n">AST</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="s">&#39;func&#39;</span><span class="p">:</span> 
+                            <span class="n">fxnlist</span> <span class="o">+=</span> <span class="p">[</span><span class="s">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ASTtransverse</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="bp">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">])]</span>
+                            <span class="k">continue</span>
+                        <span class="n">v</span><span class="p">,</span><span class="n">f</span> <span class="o">=</span> <span class="n">ASTtransverse</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">fxn</span><span class="p">)</span>
+                        <span class="n">varlist</span> <span class="o">+=</span> <span class="n">v</span>
+                        <span class="n">fxnlist</span> <span class="o">+=</span> <span class="n">f</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                        <span class="n">v</span><span class="p">,</span><span class="n">f</span> <span class="o">=</span> <span class="n">ASTtransverse</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="n">fxn</span><span class="p">)</span>
+                        <span class="n">varlist</span> <span class="o">+=</span> <span class="n">v</span>
+                        <span class="n">fxnlist</span> <span class="o">+=</span> <span class="n">f</span>
+                    <span class="k">elif</span> <span class="n">node</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;Name&quot;</span><span class="p">:</span>
+                        <span class="n">varlist</span> <span class="o">+=</span> <span class="p">[</span><span class="n">b</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">fxn</span> <span class="ow">and</span> <span class="n">node</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;Attribute&quot;</span><span class="p">:</span>
+                        <span class="n">varlist</span> <span class="o">+=</span> <span class="p">[</span><span class="n">b</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">varlist</span><span class="p">,</span><span class="n">fxnlist</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">exprast</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">SyntaxError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+            <span class="kn">import</span> <span class="nn">traceback</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()[</span><span class="o">-</span><span class="mi">3</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">s</span><span class="p">:</span> <span class="n">s</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lastError</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;Error parsing expression:&quot;</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="c"># find the variables &amp; functions</span>
+        <span class="n">v</span><span class="p">,</span><span class="n">f</span> <span class="o">=</span> <span class="n">ASTtransverse</span><span class="p">(</span><span class="n">exprast</span><span class="p">)</span>
+        <span class="n">varlist</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">v</span><span class="p">)))</span>
+        <span class="n">fxnlist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+        <span class="n">pkgdict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c"># check the functions are defined</span>
+        <span class="k">for</span> <span class="n">fxn</span> <span class="ow">in</span> <span class="n">fxnlist</span><span class="p">:</span>
+            <span class="n">fxndict</span><span class="p">,</span><span class="n">fxnobj</span> <span class="o">=</span> <span class="n">FindFunction</span><span class="p">(</span><span class="n">fxn</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">fxnobj</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lastError</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;Error: Invalid function&quot;</span><span class="p">,</span><span class="n">fxn</span><span class="p">,</span>
+                                  <span class="s">&quot;is not defined&quot;</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">fxnobj</span><span class="p">,</span><span class="s">&#39;__call__&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lastError</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;Error: Not a function.&quot;</span><span class="p">,</span><span class="n">fxn</span><span class="p">,</span>
+                                  <span class="s">&quot;cannot be called as a function&quot;</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="n">pkgdict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fxndict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">varlist</span><span class="p">,</span><span class="n">pkgdict</span>
+
+<span class="c">#==========================================================================</span></div></div>
+<div class="viewcode-block" id="ExpressionCalcObj"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionCalcObj">[docs]</a><span class="k">class</span> <span class="nc">ExpressionCalcObj</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An object used to evaluate an expression from a :class:`ExpressionObj`</span>
+<span class="sd">    object.</span>
+<span class="sd">    </span>
+<span class="sd">    :param ExpressionObj exprObj: a :class:`~ExpressionObj` expression object with</span>
+<span class="sd">      an expression string and mappings for the parameter labels in that object.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exprObj</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span> <span class="o">=</span> <span class="n">exprObj</span>
+        <span class="s">&#39;The expression and mappings; a :class:`ExpressionObj` object&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compiledExpr</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="s">&#39;The expression as compiled byte-code&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&#39;&#39;&#39;dict that defines values for labels used in expression and packages</span>
+<span class="sd">        referenced by functions</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&#39;&#39;&#39;Contains step sizes for derivatives for variables used in the expression;</span>
+<span class="sd">        if a variable is not included in this the derivatives will be computed as zero</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&#39;&#39;&#39;Lookup table that specifies the expression label name that is</span>
+<span class="sd">        tied to a particular GSAS-II parameters in the parmDict.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fxnpkgdict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&#39;&#39;&#39;a dict with references to packages needed to</span>
+<span class="sd">        find functions referenced in the expression.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varLookup</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&#39;&#39;&#39;Lookup table that specifies the GSAS-II variable(s)</span>
+<span class="sd">        indexed by the expression label name. (Used for only for diagnostics</span>
+<span class="sd">        not evaluation of expression.)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        
+<div class="viewcode-block" id="ExpressionCalcObj.SetupCalc"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionCalcObj.SetupCalc">[docs]</a>    <span class="k">def</span> <span class="nf">SetupCalc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parmDict</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Do all preparations to use the expression for computation.</span>
+<span class="sd">        Adds the free parameter values to the parameter dict (parmDict).</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fxnpkgdict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">CheckVars</span><span class="p">()</span>
+        <span class="c"># all is OK, compile the expression</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compiledExpr</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">expression</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="s">&#39;eval&#39;</span><span class="p">)</span>
+
+        <span class="c"># look at first value in parmDict to determine its type</span>
+        <span class="n">parmsInList</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+                <span class="n">parmsInList</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">break</span>
+            <span class="k">try</span><span class="p">:</span> <span class="c"># check if values are in lists</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span><span class="ne">IndexError</span><span class="p">):</span>
+                <span class="n">parmsInList</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">break</span>
+            
+        <span class="c"># set up the dicts needed to speed computations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varLookup</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">:</span>
+            <span class="n">varname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">varname</span> <span class="o">=</span> <span class="s">&quot;::&quot;</span> <span class="o">+</span> <span class="n">varname</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span><span class="s">&#39;_&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">,</span><span class="s">&#39;;&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">varLookup</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">varname</span>
+            <span class="k">if</span> <span class="n">parmsInList</span><span class="p">:</span>
+                <span class="n">parmDict</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">3</span><span class="p">]]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">parmDict</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">3</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">:</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">varname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">varname</span><span class="p">:</span>
+                <span class="n">varlist</span> <span class="o">=</span> <span class="n">LookupWildCard</span><span class="p">(</span><span class="n">varname</span><span class="p">,</span><span class="n">parmDict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">varlist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;No variables match &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varlist</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="p">[</span><span class="n">step</span> <span class="k">if</span> <span class="n">var1</span> <span class="o">==</span> <span class="n">var</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">var1</span> <span class="ow">in</span> <span class="n">varlist</span><span class="p">]</span>
+                        <span class="p">)</span>
+                <span class="k">if</span> <span class="n">parmsInList</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">parmDict</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varlist</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">parmDict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varlist</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varLookup</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varlist</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">varname</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varLookup</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">varname</span>
+                <span class="k">if</span> <span class="n">parmsInList</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">varname</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;No value for variable &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fxnpkgdict</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ExpressionCalcObj.EvalExpression"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionCalcObj.EvalExpression">[docs]</a>    <span class="k">def</span> <span class="nf">EvalExpression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Evaluate an expression. Note that the expression</span>
+<span class="sd">        and mapping are taken from the :class:`ExpressionObj` expression object</span>
+<span class="sd">        and the parameter values were specified in :meth:`SetupCalc`.</span>
+<span class="sd">        :returns: a single value for the expression. If parameter</span>
+<span class="sd">        values are arrays (for example, from wild-carded variable names),</span>
+<span class="sd">        the sum of the resulting expression is return.</span>
+
+<span class="sd">        For example, if the expression is ``&#39;A*B&#39;``,</span>
+<span class="sd">        where A is 2.0 and B maps to ``&#39;1::Afrac:*&#39;``, which evaluates to::</span>
+
+<span class="sd">        [0.5, 1, 0.5]</span>
+
+<span class="sd">        then the result will be ``4.0``.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compiledExpr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;EvalExpression called before SetupCalc&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compiledExpr</span><span class="p">,</span><span class="nb">globals</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span>
+</div>
+<div class="viewcode-block" id="ExpressionCalcObj.EvalDeriv"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionCalcObj.EvalDeriv">[docs]</a>    <span class="k">def</span> <span class="nf">EvalDeriv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">varname</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Evaluate the expression derivative with respect to a</span>
+<span class="sd">        GSAS-II variable name. </span>
+
+<span class="sd">        :param str varname: a G2 variable name (will not have a wild-card)</span>
+<span class="sd">        :returns: the derivative</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">varname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="n">varname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span>
+        <span class="n">lbl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="c"># what label does this map to in expression?</span>
+        <span class="n">origval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="n">origval</span> <span class="o">+</span> <span class="n">step</span>
+        <span class="n">val1</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compiledExpr</span><span class="p">,</span><span class="nb">globals</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="n">origval</span> <span class="o">-</span> <span class="n">step</span>
+        <span class="n">val2</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compiledExpr</span><span class="p">,</span><span class="nb">globals</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="n">origval</span> <span class="c"># reset back to central value</span>
+
+        <span class="n">val</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span> <span class="o">-</span> <span class="n">val2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">step</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span>
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c"># test equation evaluation</span>
+    <span class="k">def</span> <span class="nf">showEQ</span><span class="p">(</span><span class="n">calcobj</span><span class="p">):</span>
+        <span class="k">print</span> <span class="mi">50</span><span class="o">*</span><span class="s">&#39;=&#39;</span>
+        <span class="k">print</span> <span class="n">calcobj</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">expression</span><span class="p">,</span><span class="s">&#39;=&#39;</span><span class="p">,</span><span class="n">calcobj</span><span class="o">.</span><span class="n">EvalExpression</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">calcobj</span><span class="o">.</span><span class="n">varLookup</span><span class="p">):</span>
+            <span class="k">print</span> <span class="s">&quot;  &quot;</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="s">&#39;=&#39;</span><span class="p">,</span><span class="n">calcobj</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">],</span><span class="s">&#39;=&#39;</span><span class="p">,</span><span class="n">calcobj</span><span class="o">.</span><span class="n">varLookup</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+        <span class="k">print</span> <span class="s">&#39;  Derivatives&#39;</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">calcobj</span><span class="o">.</span><span class="n">derivStep</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">print</span> <span class="s">&#39;    d(Expr)/d(&#39;</span><span class="o">+</span><span class="n">v</span><span class="o">+</span><span class="s">&#39;) =&#39;</span><span class="p">,</span><span class="n">calcobj</span><span class="o">.</span><span class="n">EvalDeriv</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">ExpressionObj</span><span class="p">()</span>
+
+    <span class="n">obj</span><span class="o">.</span><span class="n">expression</span> <span class="o">=</span> <span class="s">&quot;A*np.exp(B)&quot;</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">assgnVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;0::Afrac:1&#39;</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">]}</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">freeVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">u&#39;A&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="bp">True</span><span class="p">]}</span>
+    <span class="c">#obj.CheckVars()</span>
+    <span class="n">parmDict2</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;0::Afrac:0&#39;</span><span class="p">:[</span><span class="mf">0.0</span><span class="p">,</span><span class="bp">True</span><span class="p">],</span> <span class="s">&#39;0::Afrac:1&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="bp">False</span><span class="p">]}</span>
+    <span class="n">calcobj</span> <span class="o">=</span> <span class="n">ExpressionCalcObj</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="n">calcobj</span><span class="o">.</span><span class="n">SetupCalc</span><span class="p">(</span><span class="n">parmDict2</span><span class="p">)</span>
+    <span class="n">showEQ</span><span class="p">(</span><span class="n">calcobj</span><span class="p">)</span>
+
+    <span class="n">obj</span><span class="o">.</span><span class="n">expression</span> <span class="o">=</span> <span class="s">&quot;A*np.exp(B)&quot;</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">assgnVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;0::Afrac:*&#39;</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">]}</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">freeVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">u&#39;Free Prm A&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="bp">True</span><span class="p">]}</span>
+    <span class="c">#obj.CheckVars()</span>
+    <span class="n">parmDict1</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;0::Afrac:0&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s">&#39;0::Afrac:1&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+    <span class="n">calcobj</span> <span class="o">=</span> <span class="n">ExpressionCalcObj</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="n">calcobj</span><span class="o">.</span><span class="n">SetupCalc</span><span class="p">(</span><span class="n">parmDict1</span><span class="p">)</span>
+    <span class="n">showEQ</span><span class="p">(</span><span class="n">calcobj</span><span class="p">)</span>
+
+    <span class="n">calcobj</span><span class="o">.</span><span class="n">SetupCalc</span><span class="p">(</span><span class="n">parmDict2</span><span class="p">)</span>
+    <span class="n">showEQ</span><span class="p">(</span><span class="n">calcobj</span><span class="p">)</span>
+</pre></div>
 
           </div>
         </div>

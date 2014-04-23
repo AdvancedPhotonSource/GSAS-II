@@ -121,6 +121,67 @@ q=r+ai+bj+ck</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIImath.Den2Vol">
+<tt class="descclassname">GSASIImath.</tt><tt class="descname">Den2Vol</tt><big>(</big><em>Elements</em>, <em>density</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#Den2Vol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.Den2Vol" title="Permalink to this definition">¶</a></dt>
+<dd><p>converts density to molecular volume</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Elements</strong> (<em>dict</em>) &#8211; elements in molecular formula; 
+each must contain 
+Num: number of atoms in formula
+Mass: at. wt.</li>
+<li><strong>density</strong> (<em>float</em>) &#8211; material density in gm/cm^3</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">float volume: molecular volume in A^3</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImath.El2EstVol">
+<tt class="descclassname">GSASIImath.</tt><tt class="descname">El2EstVol</tt><big>(</big><em>Elements</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#El2EstVol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.El2EstVol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate volume from molecular formula; assumes atom volume = 10A^3</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Elements</strong> (<em>dict</em>) &#8211; elements in molecular formula; 
+each must contain 
+Num: number of atoms in formula</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">float volume: estimate of molecular volume in A^3</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImath.El2Mass">
+<tt class="descclassname">GSASIImath.</tt><tt class="descname">El2Mass</tt><big>(</big><em>Elements</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#El2Mass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.El2Mass" title="Permalink to this definition">¶</a></dt>
+<dd><p>compute molecular weight from Elements</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Elements</strong> (<em>dict</em>) &#8211; elements in molecular formula; 
+each must contain 
+Num: number of atoms in formula
+Mass: at. wt.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">float mass: molecular weight.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIImath.FillAtomLookUp">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">FillAtomLookUp</tt><big>(</big><em>atomData</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#FillAtomLookUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.FillAtomLookUp" title="Permalink to this definition">¶</a></dt>
 <dd><p>create a dictionary of atom indexes with atom IDs as keys</p>
@@ -645,6 +706,60 @@ precision to be shown e.g. esd=-0.01 gives 2 places beyond decimal</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIImath.Vol2Den">
+<tt class="descclassname">GSASIImath.</tt><tt class="descname">Vol2Den</tt><big>(</big><em>Elements</em>, <em>volume</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#Vol2Den"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.Vol2Den" title="Permalink to this definition">¶</a></dt>
+<dd><p>converts volume to density</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Elements</strong> (<em>dict</em>) &#8211; elements in molecular formula; 
+each must contain 
+Num: number of atoms in formula
+Mass: at. wt.</li>
+<li><strong>volume</strong> (<em>float</em>) &#8211; molecular volume in A^3</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">float density: material density in gm/cm^3</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImath.XScattDen">
+<tt class="descclassname">GSASIImath.</tt><tt class="descname">XScattDen</tt><big>(</big><em>Elements</em>, <em>vol</em>, <em>wave=0.0</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#XScattDen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.XScattDen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate X-ray scattering density from molecular formula &amp; volume;
+ignores valence, but includes anomalous effects</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Elements</strong> (<em>dict</em>) &#8211; elements in molecular formula; 
+each element must contain 
+Num: number of atoms in formula
+Z: atomic number</li>
+<li><strong>vol</strong> (<em>float</em>) &#8211; molecular volume in A^3</li>
+<li><strong>wave</strong> (<em>float</em>) &#8211; optional wavelength in A</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">float rho: scattering density in 10^10cm^-2; 
+if wave &gt; 0 the includes f&#8217; contribution</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">float mu: if wave&gt;0 absorption coeff in cm^-1 ; otherwise 0</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIImath.adjHKLmax">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">adjHKLmax</tt><big>(</big><em>SGData</em>, <em>Hmax</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#adjHKLmax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.adjHKLmax" title="Permalink to this definition">¶</a></dt>
 <dd><p>default doc string</p>
@@ -933,14 +1048,14 @@ sum is used for penalty function.</p>
 <dl class="function">
 <dt id="GSASIImath.getDensity">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getDensity</tt><big>(</big><em>generalData</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getDensity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getDensity" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>calculate crystal structure density</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>generalData</strong> (<em>dict</em>) &#8211; The General dictionary in Phase</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">float density: crystal density in gm/cm^3</td>
 </tr>
 </tbody>
 </table>
@@ -965,14 +1080,14 @@ sum is used for penalty function.</p>
 <dl class="function">
 <dt id="GSASIImath.getMass">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getMass</tt><big>(</big><em>generalData</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getMass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getMass" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>Computes mass of unit cell contents</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>generalData</strong> (<em>dict</em>) &#8211; The General dictionary in Phase</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">float mass: Crystal unit cell mass in AMU.</td>
 </tr>
 </tbody>
 </table>
@@ -1339,14 +1454,18 @@ in varyNames</p>
 <dl class="function">
 <dt id="GSASIImath.getWave">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getWave</tt><big>(</big><em>Parms</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getWave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getWave" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>returns wavelength from Instrument parameters dictionary</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Parms</strong> (<em>dict</em>) &#8211; Instrument parameters;
+must contain:
+Lam: single wavelength
+or
+Lam1: Ka1 radiation wavelength</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">float wave: wavelength</td>
 </tr>
 </tbody>
 </table>
@@ -1461,6 +1580,14 @@ q=r+ai+bj+ck</p>
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">sortArray</tt><big>(</big><em>data</em>, <em>pos</em>, <em>reverse=False</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#sortArray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.sortArray" title="Permalink to this definition">¶</a></dt>
 <dd><p>data is a list of items
 sort by pos in list; reverse if True</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIImath.wavekE">
+<tt class="descclassname">GSASIImath.</tt><tt class="descname">wavekE</tt><big>(</big><em>wavekE</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#wavekE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.wavekE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert wavelength to energy &amp; vise versa</p>
+<p>:param float waveKe:wavelength in A or energy in kE</p>
+<p>:returns float waveKe:the other one</p>
 </dd></dl>
 
 </div>

@@ -328,7 +328,7 @@ False.</li>
 
 <dl class="class">
 <dt id="GSASIIgrid.G2MultiChoiceDialog">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2MultiChoiceDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>header</em>, <em>ChoiceList</em>, <em>toggle=True</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2MultiChoiceDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2MultiChoiceDialog" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2MultiChoiceDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>header</em>, <em>ChoiceList</em>, <em>toggle=True</em>, <em>monoFont=False</em>, <em>filterBox=True</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2MultiChoiceDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2MultiChoiceDialog" title="Permalink to this definition">¶</a></dt>
 <dd><p>A dialog similar to MultiChoiceDialog except that buttons are
 added to set all choices and to toggle all choices.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -342,6 +342,10 @@ added to set all choices and to toggle all choices.</p>
 <li><strong>ChoiceList</strong> (<em>list</em>) &#8211; a list of choices where one will be selected</li>
 <li><strong>toggle</strong> (<em>bool</em>) &#8211; If True (default) the toggle and select all buttons
 are displayed</li>
+<li><strong>monoFont</strong> (<em>bool</em>) &#8211; If False (default), use a variable-spaced font;
+if True use a equally-spaced font.</li>
+<li><strong>filterBox</strong> (<em>bool</em>) &#8211; If True (default) an input widget is placed on
+the window and only entries matching the entered text are shown.</li>
 <li><strong>kw</strong> &#8211; optional keyword parameters for the wx.Dialog may
 be included such as size [which defaults to <cite>(320,310)</cite>] and
 style (which defaults to <cite>wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL</cite>);
@@ -359,6 +363,62 @@ the presence of the eponymous buttons in the dialog.</li>
 <dt id="GSASIIgrid.G2MultiChoiceDialog.GetSelections">
 <tt class="descname">GetSelections</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2MultiChoiceDialog.GetSelections"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2MultiChoiceDialog.GetSelections" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of the indices for the selected choices</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.G2MultiChoiceDialog.SetSelections">
+<tt class="descname">SetSelections</tt><big>(</big><em>selList</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2MultiChoiceDialog.SetSelections"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2MultiChoiceDialog.SetSelections" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the selection indices in selList as selected. Resets any previous
+selections for compatibility with wx.MultiChoiceDialog. Note that
+the state for only the filtered items is shown.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>selList</strong> (<em>list</em>) &#8211; indices of items to be selected. These indices
+are referenced to the order in self.ChoiceList</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.G2SingleChoiceDialog">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2SingleChoiceDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>header</em>, <em>ChoiceList</em>, <em>monoFont=False</em>, <em>filterBox=True</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2SingleChoiceDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2SingleChoiceDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dialog similar to wx.SingleChoiceDialog except that a filter can be
+added.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ParentFrame</strong> (<em>wx.Frame</em>) &#8211; reference to parent frame</li>
+<li><strong>title</strong> (<em>str</em>) &#8211; heading above list of choices</li>
+<li><strong>header</strong> (<em>str</em>) &#8211; Title to place on window frame</li>
+<li><strong>ChoiceList</strong> (<em>list</em>) &#8211; a list of choices where one will be selected</li>
+<li><strong>monoFont</strong> (<em>bool</em>) &#8211; If False (default), use a variable-spaced font;
+if True use a equally-spaced font.</li>
+<li><strong>filterBox</strong> (<em>bool</em>) &#8211; If True (default) an input widget is placed on
+the window and only entries matching the entered text are shown.</li>
+<li><strong>kw</strong> &#8211; optional keyword parameters for the wx.Dialog may
+be included such as size [which defaults to <cite>(320,310)</cite>] and
+style (which defaults to <tt class="docutils literal"><span class="pre">wx.DEFAULT_DIALOG_STYLE</span> <span class="pre">|</span> <span class="pre">wx.RESIZE_BORDER</span> <span class="pre">|</span> <span class="pre">wx.CENTRE</span> <span class="pre">|</span> <span class="pre">wx.OK</span> <span class="pre">|</span> <span class="pre">wx.CANCEL</span></tt>);
+note that <tt class="docutils literal"><span class="pre">wx.OK</span></tt> and <tt class="docutils literal"><span class="pre">wx.CANCEL</span></tt> controls
+the presence of the eponymous buttons in the dialog.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the name of the created dialog</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="GSASIIgrid.G2SingleChoiceDialog.GetSelection">
+<tt class="descname">GetSelection</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2SingleChoiceDialog.GetSelection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2SingleChoiceDialog.GetSelection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the index of the selected choice</p>
 </dd></dl>
 
 </dd></dl>
@@ -452,7 +512,7 @@ This shows up on the Mac as a very thin line, no matter what I do</p>
 <dl class="function">
 <dt id="GSASIIgrid.MovePatternTreeToGrid">
 <tt class="descclassname">GSASIIgrid.</tt><tt class="descname">MovePatternTreeToGrid</tt><big>(</big><em>G2frame</em>, <em>item</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MovePatternTreeToGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MovePatternTreeToGrid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Called from GSASII.OnPatternTreeSelChanged when a item is selected on the tree</p>
 </dd></dl>
 
 <dl class="class">
@@ -793,12 +853,6 @@ the data tree window.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="GSASIIgrid.UpdateHKLControls">
-<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">UpdateHKLControls</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#UpdateHKLControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.UpdateHKLControls" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="GSASIIgrid.UpdateNotebook">
 <tt class="descclassname">GSASIIgrid.</tt><tt class="descname">UpdateNotebook</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#UpdateNotebook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.UpdateNotebook" title="Permalink to this definition">¶</a></dt>
 <dd><p>Called when the data tree notebook entry is selected. Allows for
@@ -816,7 +870,7 @@ and the range of data for a simulation.</p>
 
 <dl class="function">
 <dt id="GSASIIgrid.UpdateSeqResults">
-<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">UpdateSeqResults</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#UpdateSeqResults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.UpdateSeqResults" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">UpdateSeqResults</tt><big>(</big><em>G2frame</em>, <em>data</em>, <em>prevSize=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#UpdateSeqResults"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.UpdateSeqResults" title="Permalink to this definition">¶</a></dt>
 <dd><p>Called when the Sequential Results data tree entry is selected
 to show results from a sequential refinement.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -828,15 +882,17 @@ to show results from a sequential refinement.</p>
 <li><strong>data</strong> (<em>dict</em>) &#8211; <p>a dictionary containing the following items:</p>
 <ul>
 <li>&#8216;histNames&#8217; - list of histogram names in order as processed by Sequential Refinement</li>
-<li>&#8216;varyList&#8217; - list of variables - identical over all refinements in sequence</li>
-<li>&#8216;histName&#8217; - dictionaries for all data sets processed, which contains:<ul>
+<li>&#8216;varyList&#8217; - list of variables - identical over all refinements in sequence
+note that this is the original list of variables, prior to processing
+constraints.</li>
+<li>keyed by histName - dictionaries for all data sets processed, which contains:<ul>
 <li>&#8216;variables&#8217;- result[0] from leastsq call</li>
-<li>&#8216;varyList&#8217; - list of variables; same as above</li>
+<li>&#8216;varyList&#8217; - list of variables passed to leastsq call (not same as above)</li>
 <li>&#8216;sig&#8217; - esds for variables</li>
 <li>&#8216;covMatrix&#8217; - covariance matrix from individual refinement</li>
 <li>&#8216;title&#8217; - histogram name; same as dict item name</li>
 <li>&#8216;newAtomDict&#8217; - new atom parameters after shifts applied</li>
-<li>&#8216;newCellDict&#8217; - new cell parameters after shifts to A0-A5 applied&#8217;</li>
+<li>&#8216;newCellDict&#8217; - refined cell parameters after shifts to A0-A5 from Dij terms applied&#8217;</li>
 </ul>
 </li>
 </ul>
@@ -850,7 +906,7 @@ to show results from a sequential refinement.</p>
 
 <dl class="class">
 <dt id="GSASIIgrid.ValidatedTxtCtrl">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ValidatedTxtCtrl</tt><big>(</big><em>parent</em>, <em>loc</em>, <em>key</em>, <em>nDig=None</em>, <em>notBlank=True</em>, <em>min=None</em>, <em>max=None</em>, <em>OKcontrol=None</em>, <em>OnLeave=None</em>, <em>typeHint=None</em>, <em>CIFinput=False</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ValidatedTxtCtrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ValidatedTxtCtrl" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ValidatedTxtCtrl</tt><big>(</big><em>parent</em>, <em>loc</em>, <em>key</em>, <em>nDig=None</em>, <em>notBlank=True</em>, <em>min=None</em>, <em>max=None</em>, <em>OKcontrol=None</em>, <em>OnLeave=None</em>, <em>typeHint=None</em>, <em>CIFinput=False</em>, <em>OnLeaveArgs={}</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ValidatedTxtCtrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ValidatedTxtCtrl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a TextCtrl widget that uses a validator to prevent the
 entry of inappropriate characters and changes color to highlight
 when invalid input is supplied. As valid values are typed,
@@ -880,7 +936,7 @@ default value: a user must set a valid value.
 If the value is not None, it must have a base
 type of int, float, str or unicode; the TextCrtl will be initialized
 from this value.</li>
-<li><strong>[nDig,nPlc]</strong> (<em>list</em>) &#8211; number of digits &amp; places after decimal to use
+<li><strong>nDig</strong> (<em>list</em>) &#8211; number of digits &amp; places ([nDig,nPlc]) after decimal to use
 for display of float. Alternately, None can be specified which causes
 numbers to be displayed with approximately 5 significant figures
 (Default=None).</li>
@@ -908,7 +964,7 @@ The called function is supplied with (at present) three keyword arguments:</p>
 <li>tc:      (<em>wx.TextCtrl</em>)  the TextCtrl name</li>
 </ul>
 </div></blockquote>
-<p>The number of keyword arguments may be increased in the future, if needs arise,
+<p>The number of keyword arguments may be increased in the future should needs arise,
 so it is best to code these functions with a **kwargs argument so they will
 continue to run without errors</p>
 <p>The default for OnLeave is None, which indicates no function should
@@ -922,6 +978,8 @@ Defaults as None, which is ignored.</li>
 ASCII characters may be entered into the TextCtrl. Forces output
 to be ASCII rather than Unicode. For float and int input, allows
 use of a single &#8216;?&#8217; or &#8216;.&#8217; character as valid input.</li>
+<li><strong>OnLeaveArgs</strong> (<em>dict</em>) &#8211; a dict with keyword args that are passed to
+the <tt class="xref py py-attr docutils literal"><span class="pre">OnLeave</span></tt> function. Defaults to <tt class="docutils literal"><span class="pre">{}</span></tt></li>
 <li><strong>(other)</strong> &#8211; other optional keyword parameters for the
 wx.TextCtrl widget such as Size or Style may be specified.</li>
 </ul>
@@ -1003,7 +1061,11 @@ that does exist or False if the user presses Cancel</p>
 <dl class="class">
 <dt id="GSASIIIO.ExportBaseclass">
 <em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ExportBaseclass</tt><big>(</big><em>G2frame</em>, <em>formatName</em>, <em>extension</em>, <em>longFormatName=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines a base class for the exporting of GSAS-II results</p>
+<dd><p>Defines a base class for the exporting of GSAS-II results.</p>
+<p>This class is subclassed in the various exports/G2export_*.py files. Those files
+are imported in <tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII._init_Exports()</span></tt> which defines the
+appropriate menu items for each one and the .Exporter method is called
+directly from the menu item.</p>
 <dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.CloseFile">
 <tt class="descname">CloseFile</tt><big>(</big><em>fp=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.CloseFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.CloseFile" title="Permalink to this definition">¶</a></dt>
@@ -1021,14 +1083,39 @@ file object self.fp is closed.</td>
 
 <dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.ExportSelect">
-<tt class="descname">ExportSelect</tt><big>(</big><em>AskFile=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.ExportSelect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.ExportSelect" title="Permalink to this definition">¶</a></dt>
-<dd><p>Selects histograms or phases when needed. Sets a default file name.</p>
+<tt class="descname">ExportSelect</tt><big>(</big><em>AskFile='ask'</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.ExportSelect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.ExportSelect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selects histograms or phases when needed. Sets a default file name when
+requested in self.filename; always sets a default directory in self.dirname.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>AskFile</strong> (<em>bool</em>) &#8211; if AskFile is True (default) get the name of the file
-in a dialog</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>AskFile</strong> (<em>bool</em>) &#8211; <p>Determines how this routine processes getting a
+location to store the current export(s).</p>
+<ul class="simple">
+<li>if AskFile is &#8216;ask&#8217; (default option), get the name of the file to be written;
+self.filename and self.dirname are always set. In the case where
+multiple files must be generated, the export routine should do this
+based on self.filename as a template.</li>
+<li>if AskFile is &#8216;dir&#8217;, get the name of the directory to be used;
+self.filename is not used, but self.dirname is always set. The export routine
+will always generate the file name.</li>
+<li>if AskFile is &#8216;single&#8217;, get only the name of the directory to be used when
+multiple items will be written (as multiple files) are used
+<em>or</em> a complete file name is requested when a single file
+name is selected. self.dirname is always set and self.filename used
+only when a single file is selected.</li>
+<li>if AskFile is &#8216;default&#8217;, creates a name of the file to be used from
+the name of the project (.gpx) file. If the project has not been saved,
+then the name of file is requested.
+self.filename and self.dirname are always set. In the case where
+multiple file names must be generated, the export routine should do this
+based on self.filename.</li>
+<li>if AskFile is &#8216;default-dir&#8217;, sets self.dirname from the project (.gpx)
+file. If the project has not been saved, then a directory is requested.
+self.filename is not used.</li>
+</ul>
+</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True in case of an error</td>
 </tr>
@@ -1086,19 +1173,36 @@ cell values and <cite>cellSig</cite> has their uncertainties.</td>
 <dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.InitExport">
 <tt class="descname">InitExport</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.InitExport"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.InitExport" title="Permalink to this definition">¶</a></dt>
-<dd><p>Determines the type of menu that called the Exporter.</p>
+<dd><p>Determines the type of menu that called the Exporter and
+misc initialization.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.MakePWDRfilename">
+<tt class="descname">MakePWDRfilename</tt><big>(</big><em>hist</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.MakePWDRfilename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.MakePWDRfilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a filename root (no extension) from a PWDR histogram name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hist</strong> (<em>str</em>) &#8211; the histogram name in data tree (starts with &#8220;PWDR &#8221;)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.OpenFile">
-<tt class="descname">OpenFile</tt><big>(</big><em>fil=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.OpenFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.OpenFile" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">OpenFile</tt><big>(</big><em>fil=None</em>, <em>mode='w'</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.OpenFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.OpenFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open the output file</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>fil</strong> (<em>str</em>) &#8211; The name of the file to open. If None (default)
-the name defaults to self.filename.</td>
+the name defaults to self.dirname + self.filename.
+If an extension is supplied, it is not overridded,
+but if not, the default extension is used.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the file object opened by the routine which is also
 saved as self.fp</td>
@@ -1122,6 +1226,21 @@ saved as self.fp</td>
 </dd></dl>
 
 <dl class="method">
+<dt id="GSASIIIO.ExportBaseclass.askSaveDirectory">
+<tt class="descname">askSaveDirectory</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.askSaveDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.askSaveDirectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ask the user to supply a directory name. Path name is used as the
+starting point for the next export path search.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a directory name (str) or None if Cancel is pressed</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASIIIO.ExportBaseclass.askSaveFile">
 <tt class="descname">askSaveFile</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ExportBaseclass.askSaveFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ExportBaseclass.askSaveFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Ask the user to supply a file name</p>
@@ -1129,7 +1248,7 @@ saved as self.fp</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a file name (str)</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a file name (str) or None if Cancel is pressed</td>
 </tr>
 </tbody>
 </table>
@@ -1235,7 +1354,7 @@ file extension</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; main GSAS-II Frame and data object. Note: not used!</li>
+<li><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; main GSAS-II Frame and data object.</li>
 <li><strong>imagefile</strong> (<em>str</em>) &#8211; name of image file</li>
 <li><strong>imageOnly</strong> (<em>bool</em>) &#8211; If True return only the image,
 otherwise  (default) return more (see below)</li>
@@ -1260,6 +1379,13 @@ Comments, Data, Npix and the Image, as selected by imageOnly</p>
 <dt id="GSASIIIO.GetMAR345Data">
 <tt class="descclassname">GSASIIIO.</tt><tt class="descname">GetMAR345Data</tt><big>(</big><em>filename</em>, <em>imageOnly=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#GetMAR345Data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.GetMAR345Data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read a MAR-345 image plate image</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIIO.GetPNGData">
+<tt class="descclassname">GSASIIIO.</tt><tt class="descname">GetPNGData</tt><big>(</big><em>filename</em>, <em>imageOnly=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#GetPNGData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.GetPNGData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an image in a png format, assumes image is converted from CheMin tif file
+so default parameters are that machine.</p>
 </dd></dl>
 
 <dl class="function">
@@ -1359,7 +1485,7 @@ returns a list of selected indicies for each choice (or None)</p>
 <dl class="method">
 <dt id="GSASIIIO.ImportBaseclass.ReInitialize">
 <tt class="descclassname">ImportBaseclass.</tt><tt class="descname">ReInitialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass.ReInitialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass.ReInitialize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reinitialize the Reader to initital settings</p>
+<dd><p>Reinitialize the Reader to initial settings</p>
 </dd></dl>
 
 </dd></dl>
@@ -1368,7 +1494,7 @@ returns a list of selected indicies for each choice (or None)</p>
 <dt id="GSASIIIO.ImportPhase">
 <em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportPhase</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPhase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the reading of files with coordinates</p>
-<p>Objects constructed that subclass this (in import/G2phase_*.py) will be used
+<p>Objects constructed that subclass this (in import/G2phase_*.py etc.) will be used
 in <a class="reference internal" href="GSASII.html#GSASII.GSASII.OnImportPhase" title="GSASII.GSASII.OnImportPhase"><tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.OnImportPhase()</span></tt></a>. 
 See <a class="reference internal" href="imports.html#import-routines"><em>Writing a Import Routine</em></a>
 for an explanation on how to use this class.</p>
@@ -1384,19 +1510,29 @@ than one phase</p>
 <dl class="class">
 <dt id="GSASIIIO.ImportPowderData">
 <em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportPowderData</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPowderData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPowderData" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines a base class for the reading of files with powder data.
+<dd><p>Defines a base class for the reading of files with powder data.</p>
+<p>Objects constructed that subclass this (in import/G2pwd_*.py etc.) will be used
+in <a class="reference internal" href="GSASII.html#GSASII.GSASII.OnImportPowder" title="GSASII.GSASII.OnImportPowder"><tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.OnImportPowder()</span></tt></a>. 
 See <a class="reference internal" href="imports.html#import-routines"><em>Writing a Import Routine</em></a>
 for an explanation on how to use this class.</p>
-<dl class="attribute">
-<dt id="GSASIIIO.ImportPowderData.powderdata">
-<tt class="descname">powderdata</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIIO.ImportPowderData.powderdata" title="Permalink to this definition">¶</a></dt>
-<dd><p>A powder data set is a list with items [x,y,w,yc,yb,yd]:
-np.array(x), # x-axis values
-np.array(y), # powder pattern intensities
-np.array(w), # 1/sig(intensity)^2 values (weights)
-np.array(yc), # calc. intensities (zero)
-np.array(yb), # calc. background (zero)
-np.array(yd), # obs-calc profiles</p>
+<dl class="method">
+<dt id="GSASIIIO.ImportPowderData.ReInitialize">
+<tt class="descname">ReInitialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPowderData.ReInitialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPowderData.ReInitialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reinitialize the Reader to initial settings</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIIO.ImportSmallAngleData">
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportSmallAngleData</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportSmallAngleData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportSmallAngleData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a base class for the reading of files with small angle data.
+See <a class="reference internal" href="imports.html#import-routines"><em>Writing a Import Routine</em></a>
+for an explanation on how to use this class.</p>
+<dl class="method">
+<dt id="GSASIIIO.ImportSmallAngleData.ReInitialize">
+<tt class="descname">ReInitialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportSmallAngleData.ReInitialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportSmallAngleData.ReInitialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reinitialize the Reader to initial settings</p>
 </dd></dl>
 
 </dd></dl>
@@ -1448,7 +1584,7 @@ which specifies how the histogram is plotted
 <dl class="method">
 <dt id="GSASIIIO.ImportStructFactor.ReInitialize">
 <tt class="descname">ReInitialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.ReInitialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.ReInitialize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reinitialize the Reader to initital settings</p>
+<dd><p>Reinitialize the Reader to initial settings</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1576,18 +1712,6 @@ defaults to data for P 1</li>
 </dd></dl>
 
 <dl class="function">
-<dt id="GSASIIIO.powderFxyeSave">
-<tt class="descclassname">GSASIIIO.</tt><tt class="descname">powderFxyeSave</tt><big>(</big><em>G2frame</em>, <em>exports</em>, <em>powderfile</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#powderFxyeSave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.powderFxyeSave" title="Permalink to this definition">¶</a></dt>
-<dd><p>Save a powder histogram as a GSAS FXYE file</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="GSASIIIO.powderXyeSave">
-<tt class="descclassname">GSASIIIO.</tt><tt class="descname">powderXyeSave</tt><big>(</big><em>G2frame</em>, <em>exports</em>, <em>powderfile</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#powderXyeSave"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.powderXyeSave" title="Permalink to this definition">¶</a></dt>
-<dd><p>Save a powder histogram as a Topas XYE file</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="GSASIIIO.sfloat">
 <tt class="descclassname">GSASIIIO.</tt><tt class="descname">sfloat</tt><big>(</big><em>S</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#sfloat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.sfloat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert a string to float. An empty field is treated as zero</p>
@@ -1647,6 +1771,29 @@ characters with a single space.</p>
 <p>Module to hold python 3-compatible code, to keep it separate from
 code that will break with __future__ options.</p>
 <dl class="function">
+<dt id="GSASIIpy3.FormatPadValue">
+<tt class="descclassname">GSASIIpy3.</tt><tt class="descname">FormatPadValue</tt><big>(</big><em>val</em>, <em>maxdigits=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIpy3.html#FormatPadValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpy3.FormatPadValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format a float to fit in <tt class="docutils literal"><span class="pre">maxdigits[0]</span></tt> spaces with maxdigits[1] after decimal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>val</strong> (<em>float</em>) &#8211; number to be formatted.</li>
+<li><strong>maxdigits</strong> (<em>list</em>) &#8211; the number of digits &amp; places after decimal to be used for display of the
+number (defaults to [10,2]).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a string with exactly maxdigits[0] characters (except under error conditions),
+but last character will always be a space</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIpy3.FormatSigFigs">
 <tt class="descclassname">GSASIIpy3.</tt><tt class="descname">FormatSigFigs</tt><big>(</big><em>val</em>, <em>maxdigits=10</em>, <em>sigfigs=5</em>, <em>treatAsZero=1e-20</em><big>)</big><a class="reference internal" href="_modules/GSASIIpy3.html#FormatSigFigs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpy3.FormatSigFigs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Format a float to use <tt class="docutils literal"><span class="pre">maxdigits</span></tt> or fewer digits with <tt class="docutils literal"><span class="pre">sigfigs</span></tt>
@@ -1688,7 +1835,7 @@ number (defaults to [10,2]).</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a string with &lt;= maxdigits characters (I hope).</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a string with &lt;= maxdigits characters (usually).</p>
 </td>
 </tr>
 </tbody>

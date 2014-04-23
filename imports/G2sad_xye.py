@@ -7,10 +7,11 @@
 # $Id: G2sad_xye.py 1168 2013-12-16 16:43:01Z toby $
 ########### SVN repository information ###################
 '''
-*Module G2sad_xye: small angle q step .sad data*
-------------------------------------
+*Module G2sad_xye: read small angle data*
+------------------------------------------------
 
-Routine to read in small angle data from an .xye file
+Routines to read in small angle data from an .xye type file, with
+two-theta or Q steps. 
 
 '''
 

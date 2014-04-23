@@ -97,7 +97,13 @@ Item &#8216;SGData&#8217; has the space group information (see <a class="referen
 <dl class="function">
 <dt id="GSASIIstrMain.Refine">
 <tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">Refine</tt><big>(</big><em>GPXfile</em>, <em>dlg</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#Refine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.Refine" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Global refinement &#8211; refines to minimize against all histograms</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIstrMain.RefineCore">
+<tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">RefineCore</tt><big>(</big><em>Controls</em>, <em>Histograms</em>, <em>Phases</em>, <em>restraintDict</em>, <em>rigidbodyDict</em>, <em>parmDict</em>, <em>varyList</em>, <em>calcControls</em>, <em>pawleyLookup</em>, <em>ifPrint</em>, <em>printFile</em>, <em>dlg</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#RefineCore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.RefineCore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Core optimization routines, shared between SeqRefine and Refine</p>
 </dd></dl>
 
 <dl class="function">
@@ -153,7 +159,8 @@ DistArray item for the list of distances for the central atom.</p>
 <dl class="function">
 <dt id="GSASIIstrMain.SeqRefine">
 <tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">SeqRefine</tt><big>(</big><em>GPXfile</em>, <em>dlg</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#SeqRefine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.SeqRefine" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Perform a sequential refinement &#8211; cycles through all selected histgrams,
+one at a time</p>
 </dd></dl>
 
 <dl class="function">
@@ -795,7 +802,7 @@ and any phase that used a histogram. Also updates rigid body definitions.</p>
 
 <dl class="function">
 <dt id="GSASIIstrIO.ShowControls">
-<tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">ShowControls</tt><big>(</big><em>Controls</em>, <em>pFile=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#ShowControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.ShowControls" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIstrIO.</tt><tt class="descname">ShowControls</tt><big>(</big><em>Controls</em>, <em>pFile=None</em>, <em>SeqRef=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrIO.html#ShowControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrIO.ShowControls" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print controls information</p>
 </dd></dl>
 

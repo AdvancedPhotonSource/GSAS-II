@@ -1089,7 +1089,7 @@ Debye diffuse terms and background peaks.
 <td><p class="first">The data consist of a list of 6 np.arrays
 containing in order:</p>
 <blockquote class="last">
-<div><ol class="arabic simple">
+<div><ol class="arabic simple" start="0">
 <li>the x-postions (two-theta in degrees),</li>
 <li>the intensity values (Yobs),</li>
 <li>the weights for each Yobs value</li>
@@ -1301,9 +1301,9 @@ used as a key, and the information in the main entry is assigned
 a key of <tt class="docutils literal"><span class="pre">Data</span></tt>, as outlined below.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="12%" />
-<col width="12%" />
-<col width="76%" />
+<col width="14%" />
+<col width="14%" />
+<col width="73%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">key</th>
@@ -1539,27 +1539,27 @@ in integrsation. The tuple is the image intensity limits and the list are those 
 </tr>
 <tr class="row-odd"><td></td>
 <td>Sample z</td>
-<td>(float) Sample translation from the calibration sample position (for Sample phi = 0)</td>
-</tr>
-<tr class="row-even"><td></td>
-<td>strain</td>
-<td>(list: 3x3 array of float) The strain tensor coefficients [[&#8216; e11&#8217;,&#8217;e12&#8217;,&#8217;e13&#8217;],[&#8216; e21&#8217;,&#8217;e22&#8217;,&#8217;e23&#8217;],[&#8216; e31&#8217;,&#8217;e32&#8217;,&#8217;e33&#8217;]].
+<td>(float) Sample translation from the calibration sample position (for Sample phi = 0)
 These will be restricted by space group symmetry; result of strain fit refinement.</td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td>Type</td>
 <td>(str) &#8216;True&#8217; or &#8216;Conventional&#8217;: The strain model used for the calculation.</td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td>d-zero</td>
-<td>(list:dict) Each item is for a diffraction ring on the image; all items are from the same phase and are used to determine the strain tensor.
+<td>(list:dict) Each item is for a diffraction ring on the image; all items are from the same phase
+and are used to determine the strain tensor.
 The dictionary items are:
 &#8216;Dset&#8217;: (float) True d-spacing for the diffraction ring; entered by the user.
-&#8216;Dcalc&#8217;: (float) d-spacing...
+&#8216;Dcalc&#8217;: (float) Average calculated d-spacing determined from strain coeff.
+&#8216;Emat&#8217;: (list: float) The strain tensor elements e11, e12 &amp; e22 (e21=e12, rest are 0)
+&#8216;Esig&#8217;: (list: float) Esds for Emat from fitting.
 &#8216;pixLimit&#8217;: (int) Search range to find highest point on ring for each data point
 &#8216;cutoff&#8217;: (float) I/Ib cutoff for searching.
-&#8216;ImxyObs&#8217;: (list:lists) [[X],[Y]] observed points to be used for strain calculations.
-&#8216;ImxyCalc&#8217;:(list:lists) [[X],[Y]] calculated points based on refined strain.</td>
+&#8216;ImxyObs&#8217;: (list: lists) [[X],[Y]] observed points to be used for strain calculations.
+&#8216;ImtaObs&#8217;: (list: lists) [[d],[azm]] transformed via detector calibration from ImxyObs.
+&#8216;ImtaCalc&#8217;: (list: lists [[d],[azm]] calculated d-spacing &amp; azimuth from fit.</td>
 </tr>
 </tbody>
 </table>
@@ -1622,6 +1622,263 @@ data tree item.</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="GSASIIobj.ExpressionCalcObj">
+<em class="property">class </em><tt class="descclassname">GSASIIobj.</tt><tt class="descname">ExpressionCalcObj</tt><big>(</big><em>exprObj</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#ExpressionCalcObj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.ExpressionCalcObj" title="Permalink to this definition">¶</a></dt>
+<dd><p>An object used to evaluate an expression from a <a class="reference internal" href="#GSASIIobj.ExpressionObj" title="GSASIIobj.ExpressionObj"><tt class="xref py py-class docutils literal"><span class="pre">ExpressionObj</span></tt></a>
+object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>exprObj</strong> (<em>ExpressionObj</em>) &#8211; a <a class="reference internal" href="#GSASIIobj.ExpressionObj" title="GSASIIobj.ExpressionObj"><tt class="xref py py-class docutils literal"><span class="pre">ExpressionObj</span></tt></a> expression object with
+an expression string and mappings for the parameter labels in that object.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="GSASIIobj.ExpressionCalcObj.EvalDeriv">
+<tt class="descname">EvalDeriv</tt><big>(</big><em>varname</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#ExpressionCalcObj.EvalDeriv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.ExpressionCalcObj.EvalDeriv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate the expression derivative with respect to a
+GSAS-II variable name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>varname</strong> (<em>str</em>) &#8211; a G2 variable name (will not have a wild-card)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the derivative</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIobj.ExpressionCalcObj.EvalExpression">
+<tt class="descname">EvalExpression</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#ExpressionCalcObj.EvalExpression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.ExpressionCalcObj.EvalExpression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate an expression. Note that the expression
+and mapping are taken from the <a class="reference internal" href="#GSASIIobj.ExpressionObj" title="GSASIIobj.ExpressionObj"><tt class="xref py py-class docutils literal"><span class="pre">ExpressionObj</span></tt></a> expression object
+and the parameter values were specified in <a class="reference internal" href="#GSASIIobj.ExpressionCalcObj.SetupCalc" title="GSASIIobj.ExpressionCalcObj.SetupCalc"><tt class="xref py py-meth docutils literal"><span class="pre">SetupCalc()</span></tt></a>.
+:returns: a single value for the expression. If parameter
+values are arrays (for example, from wild-carded variable names),
+the sum of the resulting expression is return.</p>
+<p>For example, if the expression is <tt class="docutils literal"><span class="pre">'A*B'</span></tt>,
+where A is 2.0 and B maps to <tt class="docutils literal"><span class="pre">'1::Afrac:*'</span></tt>, which evaluates to:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>then the result will be <tt class="docutils literal"><span class="pre">4.0</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIobj.ExpressionCalcObj.SetupCalc">
+<tt class="descname">SetupCalc</tt><big>(</big><em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#ExpressionCalcObj.SetupCalc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.ExpressionCalcObj.SetupCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do all preparations to use the expression for computation.
+Adds the free parameter values to the parameter dict (parmDict).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIobj.ExpressionCalcObj.compiledExpr">
+<tt class="descname">compiledExpr</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIobj.ExpressionCalcObj.compiledExpr" title="Permalink to this definition">¶</a></dt>
+<dd><p>The expression as compiled byte-code</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIobj.ExpressionCalcObj.derivStep">
+<tt class="descname">derivStep</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIobj.ExpressionCalcObj.derivStep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains step sizes for derivatives for variables used in the expression;
+if a variable is not included in this the derivatives will be computed as zero</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIobj.ExpressionCalcObj.eObj">
+<tt class="descname">eObj</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIobj.ExpressionCalcObj.eObj" title="Permalink to this definition">¶</a></dt>
+<dd><p>The expression and mappings; a <a class="reference internal" href="#GSASIIobj.ExpressionObj" title="GSASIIobj.ExpressionObj"><tt class="xref py py-class docutils literal"><span class="pre">ExpressionObj</span></tt></a> object</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIobj.ExpressionCalcObj.exprDict">
+<tt class="descname">exprDict</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIobj.ExpressionCalcObj.exprDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>dict that defines values for labels used in expression and packages
+referenced by functions</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIobj.ExpressionCalcObj.fxnpkgdict">
+<tt class="descname">fxnpkgdict</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIobj.ExpressionCalcObj.fxnpkgdict" title="Permalink to this definition">¶</a></dt>
+<dd><p>a dict with references to packages needed to
+find functions referenced in the expression.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIobj.ExpressionCalcObj.lblLookup">
+<tt class="descname">lblLookup</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIobj.ExpressionCalcObj.lblLookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lookup table that specifies the expression label name that is
+tied to a particular GSAS-II parameters in the parmDict.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIobj.ExpressionCalcObj.varLookup">
+<tt class="descname">varLookup</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIobj.ExpressionCalcObj.varLookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lookup table that specifies the GSAS-II variable(s)
+indexed by the expression label name. (Used for only for diagnostics
+not evaluation of expression.)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIobj.ExpressionObj">
+<em class="property">class </em><tt class="descclassname">GSASIIobj.</tt><tt class="descname">ExpressionObj</tt><a class="reference internal" href="_modules/GSASIIobj.html#ExpressionObj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.ExpressionObj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines an object with a user-defined expression, to be used for
+secondary fits or restraints. Object is created null, but is changed
+using <a class="reference internal" href="#GSASIIobj.ExpressionObj.LoadExpression" title="GSASIIobj.ExpressionObj.LoadExpression"><tt class="xref py py-meth docutils literal"><span class="pre">LoadExpression()</span></tt></a>. This contains only the minimum
+information that needs to be stored to save and load the expression
+and how it is mapped to GSAS-II variables.</p>
+<dl class="method">
+<dt id="GSASIIobj.ExpressionObj.CheckVars">
+<tt class="descname">CheckVars</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#ExpressionObj.CheckVars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.ExpressionObj.CheckVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that the expression can be parsed, all functions are
+defined and that input loaded into the object is internally
+consistent. If not an Exception is raised.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a dict with references to packages needed to
+find functions referenced in the expression.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIobj.ExpressionObj.EditExpression">
+<tt class="descname">EditExpression</tt><big>(</big><em>exprVarLst</em>, <em>varSelect</em>, <em>varName</em>, <em>varValue</em>, <em>varStep</em>, <em>varRefflag</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#ExpressionObj.EditExpression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.ExpressionObj.EditExpression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the expression and associated settings from the object into
+arrays used for editing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>exprVarLst</strong> (<em>list</em>) &#8211; parameter labels found in the expression</li>
+<li><strong>varSelect</strong> (<em>dict</em>) &#8211; this will be 0 for Free parameters
+and non-zero for expression labels linked to G2 variables.</li>
+<li><strong>varName</strong> (<em>dict</em>) &#8211; Defines a name (str) associated with each free parameter</li>
+<li><strong>varValue</strong> (<em>dict</em>) &#8211; Defines a value (float) associated with each free parameter</li>
+<li><strong>varStep</strong> (<em>dict</em>) &#8211; Defines a derivative step size (float) for each
+parameter labels found in the expression</li>
+<li><strong>varRefflag</strong> (<em>dict</em>) &#8211; Defines a refinement flag (bool)
+associated with each free parameter</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the expression as a str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIobj.ExpressionObj.GetVaried">
+<tt class="descname">GetVaried</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#ExpressionObj.GetVaried"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.ExpressionObj.GetVaried" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the names of the free parameters that will be refined</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIobj.ExpressionObj.LoadExpression">
+<tt class="descname">LoadExpression</tt><big>(</big><em>expr</em>, <em>exprVarLst</em>, <em>varSelect</em>, <em>varName</em>, <em>varValue</em>, <em>varStep</em>, <em>varRefflag</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#ExpressionObj.LoadExpression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.ExpressionObj.LoadExpression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the expression and associated settings into the object. Raises
+an exception if the expression is not parsed, if not all functions
+are defined or if not all needed parameter labels in the expression
+are defined.</p>
+<p>This will not test if the variable referenced in these definitions
+are actually in the parameter dictionary. This is checked when the
+computation for the expression is done in <tt class="xref py py-meth docutils literal"><span class="pre">SetupCalc()</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>expr</strong> (<em>str</em>) &#8211; the expression</li>
+<li><strong>exprVarLst</strong> (<em>list</em>) &#8211; parameter labels found in the expression</li>
+<li><strong>varSelect</strong> (<em>dict</em>) &#8211; this will be 0 for Free parameters
+and non-zero for expression labels linked to G2 variables.</li>
+<li><strong>varName</strong> (<em>dict</em>) &#8211; Defines a name (str) associated with each free parameter</li>
+<li><strong>varValue</strong> (<em>dict</em>) &#8211; Defines a value (float) associated with each free parameter</li>
+<li><strong>varStep</strong> (<em>dict</em>) &#8211; Defines a derivative step size (float) for each
+parameter labels found in the expression</li>
+<li><strong>varRefflag</strong> (<em>dict</em>) &#8211; Defines a refinement flag (bool)
+associated with each free parameter</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIobj.ExpressionObj.ParseExpression">
+<tt class="descname">ParseExpression</tt><big>(</big><em>expr</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#ExpressionObj.ParseExpression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.ExpressionObj.ParseExpression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse an expression and return a dict of called functions and
+the variables used in the expression. Returns None in case an error
+is encountered. If packages are referenced in functions, they are loaded 
+and the functions are looked up into the modules global
+workspace.</p>
+<p>Note that no changes are made to the object other than
+saving an error message, so that this can be used for testing prior
+to the save.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a list of variables used variables</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIobj.ExpressionObj.assgnVars">
+<tt class="descname">assgnVars</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIobj.ExpressionObj.assgnVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict where keys are label names in the expression mapping to a GSAS-II
+variable. The value is a list with a G2 variable name and derivative step size.
+Note that the G2 variable name may contain a wild-card and correspond to
+multiple values.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIobj.ExpressionObj.expression">
+<tt class="descname">expression</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIobj.ExpressionObj.expression" title="Permalink to this definition">¶</a></dt>
+<dd><p>The expression as a text string</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIobj.ExpressionObj.freeVars">
+<tt class="descname">freeVars</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIobj.ExpressionObj.freeVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict where keys are label names in the expression mapping to a free
+parameter. The value is a list with:</p>
+<blockquote>
+<div><ul class="simple">
+<li>a name assigned to the parameter</li>
+<li>a value for to the parameter</li>
+<li>a derivative step size and</li>
+<li>a flag to determine if the variable is refined.</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIobj.ExpressionObj.lastError">
+<tt class="descname">lastError</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIobj.ExpressionObj.lastError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows last encountered error in processing expression
+(list of 1-3 str values)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="GSASIIobj.G2VarObj">
 <em class="property">class </em><tt class="descclassname">GSASIIobj.</tt><tt class="descname">G2VarObj</tt><big>(</big><em>*args</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#G2VarObj"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.G2VarObj" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a GSAS-II variable either using the phase/atom/histogram
@@ -1629,6 +1886,8 @@ unique Id numbers or using a character string that specifies
 variables by phase/atom/histogram number (which can change).
 Note that <tt class="xref py py-func docutils literal"><span class="pre">LoadID()</span></tt> should be used to (re)load the current Ids
 before creating or later using the G2VarObj object.</p>
+<p>This can store rigid body variables, but does not translate the residue # and
+body # to/from random Ids</p>
 <p>A <a class="reference internal" href="#GSASIIobj.G2VarObj" title="GSASIIobj.G2VarObj"><tt class="xref py py-class docutils literal"><span class="pre">G2VarObj</span></tt></a> object can be created with a single parameter:</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1639,13 +1898,17 @@ before creating or later using the G2VarObj object.</p>
 <dd>object. If a string, it must be of form &#8220;p:h:var&#8221; or &#8220;p:h:var:a&#8221;, where</dd>
 </dl>
 <ul class="simple">
-<li>p is the phase number (which may be left blank);</li>
-<li>h is the histogram number (which may be left blank);</li>
-<li>a is the atom number (which may be left blank in which case the third colon is omitted).</li>
+<li>p is the phase number (which may be left blank or may be &#8216;*&#8217; to indicate all phases);</li>
+<li>h is the histogram number (which may be left blank or may be &#8216;*&#8217; to indicate all histograms);</li>
+<li>a is the atom number (which may be left blank in which case the third colon is omitted).
+The atom number can be specified as &#8216;*&#8217; if a phase number is specified (not as &#8216;*&#8217;).
+For rigid body variables, specify a will be a string of form &#8220;residue:body#&#8221;</li>
 </ul>
 <blockquote>
 <div>Alternately a single tuple of form (Phase,Histogram,VarName,AtomID) can be used, where
-Phase, Histogram, and AtomID are None or are ranId values and VarName is a string.</div></blockquote>
+Phase, Histogram, and AtomID are None or are ranId values (or one can be &#8216;*&#8217;)
+and VarName is a string. Note that if Phase is &#8216;*&#8217; then the AtomID is an atom number.
+For a rigid body variables, AtomID is a string of form &#8220;residue:body#&#8221;.</div></blockquote>
 </td>
 </tr>
 </tbody>
@@ -1656,10 +1919,10 @@ Phase, Histogram, and AtomID are None or are ranId values and VarName is a strin
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>phasenum</strong> (<em>str/int</em>) &#8211; The number for the phase</li>
-<li><strong>histnum</strong> (<em>str/int</em>) &#8211; The number for the histogram</li>
+<li><strong>phasenum</strong> (<em>str/int</em>) &#8211; The number for the phase (or None or &#8216;*&#8217;)</li>
+<li><strong>histnum</strong> (<em>str/int</em>) &#8211; The number for the histogram (or None or &#8216;*&#8217;)</li>
 <li><strong>varname</strong> (<em>str</em>) &#8211; a single value can be used to create a <a class="reference internal" href="#GSASIIobj.G2VarObj" title="GSASIIobj.G2VarObj"><tt class="xref py py-class docutils literal"><span class="pre">G2VarObj</span></tt></a></li>
-<li><strong>atomnum</strong> (<em>str/int</em>) &#8211; The number for the atom</li>
+<li><strong>atomnum</strong> (<em>str/int</em>) &#8211; The number for the atom (or None or &#8216;*&#8217;)</li>
 </ul>
 </td>
 </tr>
@@ -1680,6 +1943,33 @@ string (p:h:&lt;var&gt;:a) or (p:h:&lt;var&gt;)</p>
 </table>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.GenWildCard">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">GenWildCard</tt><big>(</big><em>varlist</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#GenWildCard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.GenWildCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate wildcard versions of G2 variables. These introduce &#8216;*&#8217;
+for a phase, histogram or atom number (but only for one of these
+fields) but only when there is more than one matching variable in the
+input variable list. So if the input is this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">varlist</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;0::AUiso:0&#39;</span><span class="p">,</span> <span class="s">&#39;0::AUiso:1&#39;</span><span class="p">,</span> <span class="s">&#39;1::AUiso:0&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>then the output will be this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">wildList</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;*::AUiso:0&#39;</span><span class="p">,</span> <span class="s">&#39;0::AUiso:*&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>varlist</strong> (<em>list</em>) &#8211; an input list of GSAS-II variable names
+(such as 0::AUiso:0)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">wildList, the generated list of wild card variable names.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="data">
@@ -1821,6 +2111,30 @@ and ranId is the random # id for the phase (int)</td>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIobj.LookupWildCard">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">LookupWildCard</tt><big>(</big><em>varname</em>, <em>varlist</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#LookupWildCard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.LookupWildCard" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns a list of variable names from list varname
+that match wildcard name in varname</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>varname</strong> (<em>str</em>) &#8211; a G2 variable name containing a wildcard
+(such as *::var)</li>
+<li><strong>varlist</strong> (<em>list</em>) &#8211; the list of all variable names used in
+the current project</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a list of matching GSAS-II variables (may be empty)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIobj.MakeUniqueLabel">
 <tt class="descclassname">GSASIIobj.</tt><tt class="descname">MakeUniqueLabel</tt><big>(</big><em>lbl</em>, <em>labellist</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#MakeUniqueLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.MakeUniqueLabel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make sure that every a label is unique against a list by adding
@@ -1880,16 +2194,33 @@ for how keys and values are written.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="GSASIIobj.fmtVarDescr">
-<tt class="descclassname">GSASIIobj.</tt><tt class="descname">fmtVarDescr</tt><big>(</big><em>varname</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#fmtVarDescr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.fmtVarDescr" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a string with a more complete description for a GSAS-II variable</p>
-<p>TODO: This will not handle rigid body parameters yet</p>
+<dt id="GSASIIobj.VarDescr">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">VarDescr</tt><big>(</big><em>varname</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#VarDescr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.VarDescr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return two strings with a more complete description for a GSAS-II variable</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; A full G2 variable name with 2 or 3
-colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;])</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; A full G2 variable name with 2 or 3 or 4
+colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;] or &lt;p&gt;::RBname:&lt;r&gt;:&lt;t&gt;])</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(loc,meaning) where loc describes what item the variable is mapped
+(phase, histogram, etc.) and meaning describes what the variable does.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIobj.fmtVarDescr">
+<tt class="descclassname">GSASIIobj.</tt><tt class="descname">fmtVarDescr</tt><big>(</big><em>varname</em><big>)</big><a class="reference internal" href="_modules/GSASIIobj.html#fmtVarDescr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIobj.fmtVarDescr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a string with a more complete description for a GSAS-II variable</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>varname</strong> (<em>str</em>) &#8211; A full G2 variable name with 2 or 3 or 4
+colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;] or &lt;p&gt;::RBname:&lt;r&gt;:&lt;t&gt;])</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a string with the description</td>
 </tr>
@@ -1921,11 +2252,11 @@ colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;])</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; A full G2 variable name with 2 or 3
-colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a&gt;])</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; A full G2 variable name with 2 or 3 or 4
+colons (&lt;p&gt;:&lt;h&gt;:name[:&lt;a1&gt;][:&lt;a2&gt;])</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a five element list as [<cite>p</cite>,`h`,`name`,`a`,`description`],
-where <cite>p</cite>, <cite>h</cite>, <cite>a</cite> are str values or <cite>None</cite>, for the phase number,
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a six element list as [<cite>p</cite>,`h`,`name`,`a1`,`a2`,`description`],
+where <cite>p</cite>, <cite>h</cite>, <cite>a1</cite>, <cite>a2</cite> are str values or <cite>None</cite>, for the phase number,
 the histogram number and the atom number; <cite>name</cite> will always be
 an str; and <cite>description</cite> is str or <cite>None</cite>.
 If the variable name is incorrectly formed (for example, wrong

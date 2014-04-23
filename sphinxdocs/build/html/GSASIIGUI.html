@@ -149,6 +149,12 @@ to delete an element from a list of selected elements.</p>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="GSASIIElemGUI.PickElements">
+<em class="property">class </em><tt class="descclassname">GSASIIElemGUI.</tt><tt class="descname">PickElements</tt><big>(</big><em>parent</em>, <em>list</em><big>)</big><a class="reference internal" href="_modules/GSASIIElemGUI.html#PickElements"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElemGUI.PickElements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes periodic table widget for picking elements - caller maintains element list</p>
+</dd></dl>
+
 </div>
 <span class="target" id="module-GSASIIconstrGUI"></span><div class="section" id="gsasiiconstrgui-constraint-gui-routines">
 <h2><em>GSASIIconstrGUI: Constraint GUI routines</em><a class="headerlink" href="#gsasiiconstrgui-constraint-gui-routines" title="Permalink to this headline">¶</a></h2>
@@ -210,15 +216,68 @@ data tree entry</p>
 <p>Used to define GUI controls for the routines that interact
 with the powder histogram (PWDR) data tree items.</p>
 <dl class="function">
+<dt id="GSASIIpwdGUI.CopySelectedHistItems">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">CopySelectedHistItems</tt><big>(</big><em>G2frame</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#CopySelectedHistItems"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.CopySelectedHistItems" title="Permalink to this definition">¶</a></dt>
+<dd><p>Global copy: Copy items from current histogram to others.
+This is called from the menubar and is available only when the top histogram tree entry
+is selected.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.GetHistsLikeSelected">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">GetHistsLikeSelected</tt><big>(</big><em>G2frame</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#GetHistsLikeSelected"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.GetHistsLikeSelected" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the histograms that match the current selected one:
+The histogram prefix and data type (PXC etc.), the number of
+wavelengths and the instrument geometry (Debye-Scherrer etc.) 
+must all match. The current histogram is not included in the list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; pointer to main GSAS-II data tree</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIpwdGUI.IsHistogramInAnyPhase">
 <tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">IsHistogramInAnyPhase</tt><big>(</big><em>G2frame</em>, <em>histoName</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#IsHistogramInAnyPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.IsHistogramInAnyPhase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIpwdGUI.SetCopyNames">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">SetCopyNames</tt><big>(</big><em>histName</em>, <em>dataType</em>, <em>addNames=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#SetCopyNames"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.SetCopyNames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine the items in the sample parameters that should be copied,
+depending on the histogram type and the instrument type.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.SetDefaultSASDModel">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">SetDefaultSASDModel</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#SetDefaultSASDModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.SetDefaultSASDModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fills in default items for the SASD Models dictionary</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIpwdGUI.SetDefaultSample">
 <tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">SetDefaultSample</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#SetDefaultSample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.SetDefaultSample" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>Fills in default items for the Sample dictionary</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.SetDefaultSubstances">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">SetDefaultSubstances</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#SetDefaultSubstances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.SetDefaultSubstances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fills in default items for the SASD Substances dictionary</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.SetupSampleLabels">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">SetupSampleLabels</tt><big>(</big><em>histName</em>, <em>dataType</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#SetupSampleLabels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.SetupSampleLabels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup a list of labels and number formatting for use in
+labeling sample parameters.
+:param str histName: Name of histogram, (&#8220;PWDR ...&#8221;)
+:param str dataType:</p>
 </dd></dl>
 
 <dl class="function">
@@ -237,14 +296,20 @@ tree item.</p>
 <dl class="function">
 <dt id="GSASIIpwdGUI.UpdateInstrumentGrid">
 <tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateInstrumentGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateInstrumentGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateInstrumentGrid" title="Permalink to this definition">¶</a></dt>
-<dd><p>respond to selection of PWDR Instrument Parameters
+<dd><p>respond to selection of PWDR/SASD Instrument Parameters
 data tree item.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIpwdGUI.UpdateLimitsGrid">
-<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateLimitsGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateLimitsGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateLimitsGrid" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateLimitsGrid</tt><big>(</big><em>G2frame</em>, <em>data</em>, <em>plottype</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateLimitsGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateLimitsGrid" title="Permalink to this definition">¶</a></dt>
 <dd><p>respond to selection of PWDR Limits data tree item.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.UpdateModelsGrid">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateModelsGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateModelsGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateModelsGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>respond to selection of SASD Models data tree item.</p>
 </dd></dl>
 
 <dl class="function">
@@ -268,8 +333,14 @@ data tree item.</p>
 <dl class="function">
 <dt id="GSASIIpwdGUI.UpdateSampleGrid">
 <tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateSampleGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateSampleGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateSampleGrid" title="Permalink to this definition">¶</a></dt>
-<dd><p>respond to selection of PWDR Sample Parameters
+<dd><p>respond to selection of PWDR/SASD Sample Parameters
 data tree item.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpwdGUI.UpdateSubstanceGrid">
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">UpdateSubstanceGrid</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#UpdateSubstanceGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.UpdateSubstanceGrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>respond to selection of SASD Substance data tree item.</p>
 </dd></dl>
 
 <dl class="function">
@@ -287,6 +358,215 @@ data tree item.</p>
 <tt class="descclassname">GSASIIrestrGUI.</tt><tt class="descname">UpdateRestraints</tt><big>(</big><em>G2frame</em>, <em>data</em>, <em>Phases</em>, <em>phaseName</em><big>)</big><a class="reference internal" href="_modules/GSASIIrestrGUI.html#UpdateRestraints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIrestrGUI.UpdateRestraints" title="Permalink to this definition">¶</a></dt>
 <dd><p>Respond to selection of the Restraints item on the
 data tree</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIexprGUI"></span><div class="section" id="gsasiiexprgui-expression-handling">
+<h2><em>GSASIIexprGUI: Expression Handling</em><a class="headerlink" href="#gsasiiexprgui-expression-handling" title="Permalink to this headline">¶</a></h2>
+<p>This module defines a class for defining an expression in terms of values
+in a parameter dictionary via a wx.Dialog. The dialog creates a <tt class="xref py py-class docutils literal"><span class="pre">GSASII.ExpressionObj</span></tt>
+which is used to evaluate the expression against a supplied parameter dictionary.</p>
+<p>The expression is parsed to find variables used in the expression and then
+the user is asked to assign parameters from the dictionary to each variable.</p>
+<dl class="class">
+<dt id="GSASIIexprGUI.ExpressionDialog">
+<em class="property">class </em><tt class="descclassname">GSASIIexprGUI.</tt><tt class="descname">ExpressionDialog</tt><big>(</big><em>parent</em>, <em>parmDict</em>, <em>exprObj=None</em>, <em>header='Enter restraint expression here'</em>, <em>wintitle='Expression Editor'</em>, <em>fit=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>A wx.Dialog that allows a user to input an arbitrary expression
+to be evaluated and possibly minimized.</p>
+<p>To do this, the user assigns a new (free) or existing
+GSAS-II parameter to each parameter label used in the expression.
+The free parameters can optionally be designated to be refined. 
+For example, is an expression is used such as:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&#39;A*np.exp(-B/C)&#39;</span>
+</pre></div>
+</div>
+<p>then A, B and C can each be assigned as Free parameter with a user-selected
+value or to any existing GSAS-II variable in the parameter dictionary.
+As the expression is entered it is checked for validity.</p>
+<p>After the <a class="reference internal" href="#GSASIIexprGUI.ExpressionDialog" title="GSASIIexprGUI.ExpressionDialog"><tt class="xref py py-class docutils literal"><span class="pre">ExpressionDialog</span></tt></a> object is created, use <a class="reference internal" href="#GSASIIexprGUI.ExpressionDialog.Show" title="GSASIIexprGUI.ExpressionDialog.Show"><tt class="xref py py-meth docutils literal"><span class="pre">Show()</span></tt></a> to
+run it and obtain a <a class="reference internal" href="GSASIIobj.html#GSASIIobj.ExpressionObj" title="GSASIIobj.ExpressionObj"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIobj.ExpressionObj</span></tt></a> object with the user
+input.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parent</strong> (<em>wx.Frame</em>) &#8211; The parent of the Dialog. Can be None,
+but better is to provide the name of the Frame where the dialog
+is called.</li>
+<li><strong>parmDict</strong> (<em>dict</em>) &#8211; a dict with defined parameters and their values. Each value
+may be a list with parameter values and a refine flag or may just contain
+the parameter value (non-float/int values in dict are ignored)</li>
+<li><strong>exprObj</strong> (<em>str</em>) &#8211; a <a class="reference internal" href="GSASIIobj.html#GSASIIobj.ExpressionObj" title="GSASIIobj.ExpressionObj"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIobj.ExpressionObj</span></tt></a> object with an expression and
+label assignments or None (default)</li>
+<li><strong>wintitle</strong> (<em>str</em>) &#8211; String placed on title bar of dialog; 
+defaults to &#8220;Expression Editor&#8221;</li>
+<li><strong>header</strong> (<em>str</em>) &#8211; String placed at top of dialog to tell the user
+what they will do here; default is &#8220;Enter restraint expression here&#8221;</li>
+<li><strong>fit</strong> (<em>bool</em>) &#8211; determines if the expression will be used in fitting (default=True).
+If set to False, derivate step values and refinement flags are not shown
+and Free parameters are not offered as an assignment option.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.CheckVars">
+<tt class="descname">CheckVars</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.CheckVars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.CheckVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that appropriate variables are defined for each
+symbol used in <tt class="xref py py-data docutils literal"><span class="pre">self.expr</span></tt></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">a text error message or None if all needed input is present</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.OnChar">
+<tt class="descname">OnChar</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.OnChar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.OnChar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called as each character is entered. Cancels any running timer
+and starts a new one. The timer causes a check of syntax after 2 seconds
+without input.
+Disables the OK button until a validity check is complete.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.OnChoice">
+<tt class="descname">OnChoice</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.OnChoice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.OnChoice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Respond to a selection of a variable type for a label in
+an expression</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.OnValidate">
+<tt class="descname">OnValidate</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.OnValidate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.OnValidate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Respond to a press of the Validate button or when a variable
+is associated with a label (in <a class="reference internal" href="#GSASIIexprGUI.ExpressionDialog.OnChoice" title="GSASIIexprGUI.ExpressionDialog.OnChoice"><tt class="xref py py-meth docutils literal"><span class="pre">OnChoice()</span></tt></a>)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.SelectG2var">
+<tt class="descname">SelectG2var</tt><big>(</big><em>sel</em>, <em>var</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.SelectG2var"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.SelectG2var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Offer a selection of a GSAS-II variable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sel</strong> (<em>int</em>) &#8211; Determines the type of variable to be selected.
+where 1 is used for Phase variables, and 2 for Histogram/Phase vars,
+3 for Histogram vars and 4 for Global vars.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a variable name or None (if Cancel is pressed)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.Show">
+<tt class="descname">Show</tt><big>(</big><em>mode=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.Show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.Show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call to use the dialog after it is created.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None (On Cancel) or a new <a class="reference internal" href="GSASIIobj.html#GSASIIobj.ExpressionObj" title="GSASIIobj.ExpressionObj"><tt class="xref py py-class docutils literal"><span class="pre">ExpressionObj</span></tt></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.expr">
+<tt class="descname">expr</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.expr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expression as a text string</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.exprVarLst">
+<tt class="descname">exprVarLst</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.exprVarLst" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list containing the variables utilized in the current expression.
+Placed into a <a class="reference internal" href="GSASIIobj.html#GSASIIobj.ExpressionObj" title="GSASIIobj.ExpressionObj"><tt class="xref py py-class docutils literal"><span class="pre">GSASIIobj.ExpressionObj</span></tt></a> object when the dialog is closed
+with &#8220;OK&#8221;, saving any changes.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.parmDict">
+<tt class="descname">parmDict</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.parmDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>A copy of the G2 parameter dict (parmDict) except only numerical
+values are included and only the value (not the vary flag, if present)
+is included.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.setEvalResult">
+<tt class="descname">setEvalResult</tt><big>(</big><em>msg</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.setEvalResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.setEvalResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show a string in the expression result area</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.showError">
+<tt class="descname">showError</tt><big>(</big><em>msg1</em>, <em>msg2=''</em>, <em>msg3=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.showError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.showError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show an error message of 1 to 3 sections. The second
+section is shown in an equally-spaced font.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>msg1</strong> (<em>str</em>) &#8211; msg1 is shown in a the standard font</li>
+<li><strong>msg2</strong> (<em>str</em>) &#8211; msg2 is shown in a equally-spaced (wx.MODERN) font</li>
+<li><strong>msg3</strong> (<em>str</em>) &#8211; msg3 is shown in a the standard font</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.varName">
+<tt class="descname">varName</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.varName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name assigned to each variable</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.varRefflag">
+<tt class="descname">varRefflag</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.varRefflag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refinement flag for a variable (Free parameters only)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.varSelect">
+<tt class="descname">varSelect</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.varSelect" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict that shows the variable type for each label
+found in the expression.</p>
+<ul class="simple">
+<li>If the value is None or is not defined, the value is not assigned.</li>
+<li>If the value is 0, then the varible is &#8220;free&#8221; &#8211; a new refineable
+parameter.</li>
+<li>Values above 1 determine what variables will be shown
+when the option is selected.</li>
+</ul>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.varStep">
+<tt class="descname">varStep</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.varStep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Step size for each variable</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.varValue">
+<tt class="descname">varValue</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.varValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Value for a variable (Free parameters only)</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -311,6 +591,7 @@ data tree</p>
 <li><a class="reference internal" href="#gsasiiimggui-image-gui"><em>GSASIIimgGUI: Image GUI</em></a></li>
 <li><a class="reference internal" href="#gsasiipwdgui-powder-pattern-gui-routines"><em>GSASIIpwdGUI: Powder Pattern GUI routines</em></a></li>
 <li><a class="reference internal" href="#gsasiirestrgui-restraint-gui-routines"><em>GSASIIrestrGUI: Restraint GUI routines</em></a></li>
+<li><a class="reference internal" href="#gsasiiexprgui-expression-handling"><em>GSASIIexprGUI: Expression Handling</em></a></li>
 </ul>
 </li>
 </ul>

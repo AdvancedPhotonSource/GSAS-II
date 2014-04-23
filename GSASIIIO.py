@@ -1898,6 +1898,7 @@ class ExportBaseclass(object):
 
         :param bool AskFile: Determines how this routine processes getting a
           location to store the current export(s).
+          
           * if AskFile is 'ask' (default option), get the name of the file to be written;
             self.filename and self.dirname are always set. In the case where
             multiple files must be generated, the export routine should do this

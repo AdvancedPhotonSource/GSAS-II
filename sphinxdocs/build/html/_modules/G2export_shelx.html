@@ -53,11 +53,11 @@
 <span class="c">#!/usr/bin/env python</span>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-25 14:24:22 -0500 (Fri, 25 Oct 2013) $</span>
+<span class="c"># $Date: 2014-03-24 17:22:41 -0500 (Mon, 24 Mar 2014) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1123 $</span>
+<span class="c"># $Revision: 1261 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_shelx.py $</span>
-<span class="c"># $Id: G2export_shelx.py 1123 2013-10-25 19:24:22Z toby $</span>
+<span class="c"># $Id: G2export_shelx.py 1261 2014-03-24 22:22:41Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*Module G2export_shelx: Examples*</span>
@@ -69,7 +69,7 @@
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1123 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1261 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIstrIO</span> <span class="kn">as</span> <span class="nn">G2stIO</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -100,17 +100,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">loadTree</span><span class="p">()</span>
         <span class="c"># create a dict with refined values and their uncertainties</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loadParmDict</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">(</span>  <span class="c"># set export parameters</span>
-            <span class="n">AskFile</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span> <span class="k">return</span> 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExportSelect</span><span class="p">():</span> <span class="k">return</span>  <span class="c"># set export parameters; </span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span>
         <span class="k">for</span> <span class="n">phasenam</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span><span class="p">:</span>
             <span class="n">phasedict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">]</span> <span class="c"># pointer to current phase info            </span>
             <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Phases</span><span class="p">[</span><span class="n">phasenam</span><span class="p">][</span><span class="s">&#39;pId&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phasenam</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="c"># if more than one filename is included, add a phase #</span>
-                <span class="n">nam</span><span class="p">,</span><span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
-                <span class="n">fil</span> <span class="o">=</span> <span class="n">nam</span><span class="o">+</span><span class="s">&quot;_&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="n">ext</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">fil</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span>
-            <span class="n">fp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">(</span><span class="n">fil</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extension</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">()</span>
             <span class="c"># title line</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&quot;TITL from &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GSASprojectfile</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;, phase &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">))</span>
             <span class="c"># get &amp; write cell parameters</span>
@@ -175,7 +172,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&#39;END&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">CloseFile</span><span class="p">()</span>
-            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Phase &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; written to file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">fil</span><span class="p">))</span></div></div>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Phase &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">phasenam</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; written to file &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fullpath</span><span class="p">))</span></div></div>
 </pre></div>
 
           </div>

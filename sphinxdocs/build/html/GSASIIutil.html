@@ -86,20 +86,21 @@ H. H. M. Balyuzi, <em>Acta Cryst.</em> <strong>(1975).</strong> A31, 600.</p>
 <p>GSASII powder calibrants as a dictionary <tt class="docutils literal"><span class="pre">ImageCalibrants.Calibrants</span></tt> with substances
 commonly used for powder calibrations for image data.</p>
 <p>Each entry in <tt class="docutils literal"><span class="pre">ImageCalibrants</span></tt> consists of:</p>
-<div class="highlight-python"><pre>'key':([Bravais num,],[(a,b,c,alpha,beta,gamma),],no. lines skipped,(dmin,pixLimit,cutOff))</pre>
+<div class="highlight-python"><pre>'key':([Bravais num,],[space group,],[(a,b,c,alpha,beta,gamma),],no. lines skipped,(dmin,pixLimit,cutOff))
+(The space group may be an empty string)</pre>
 </div>
 <p>as an example:</p>
-<div class="highlight-python"><pre>'LaB6  SRM660a':([2,],[(4.1569162,4.1569162,4.1569162,90,90,90),],0,(1.0,10,10)),</pre>
+<div class="highlight-python"><pre>'LaB6  SRM660a':([2,],['',][(4.1569162,4.1569162,4.1569162,90,90,90),],0,(1.0,10,10)),</pre>
 </div>
 <p>or where &#8220;Bravais num&#8221; and &#8220;(a,b,...)&#8221; are repeated in the case of mixtures:</p>
-<div class="highlight-python"><pre>'LaB6 &amp; CeO2':([2,0], [(4.1569,4.1569,4.1569,90,90,90),(5.4117,5.4117,5.4117,90,90,90)], 0, (1.0,2,1)),</pre>
+<div class="highlight-python"><pre>'LaB6 &amp; CeO2':([2,0],['',''] [(4.1569,4.1569,4.1569,90,90,90),(5.4117,5.4117,5.4117,90,90,90)], 0, (1.0,2,1)),</pre>
 </div>
 <p>To expand this list with locally needed additions, do not modify this file,
 because you may lose these changes during a software update. Instead
 duplicate the format of this file in a file named <cite>UserCalibrants.py</cite>
 and there define the material(s) you want:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">Calibrants</span><span class="o">=</span><span class="p">{</span>
-  <span class="s">&#39;LaB6 skip 2 lines&#39;</span><span class="p">:([</span><span class="mi">2</span><span class="p">,],[(</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">90</span><span class="p">),],</span><span class="mi">2</span><span class="p">,(</span><span class="mf">1.0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)),</span>
+  <span class="s">&#39;LaB6 skip 2 lines&#39;</span><span class="p">:([</span><span class="mi">2</span><span class="p">,],[</span><span class="s">&#39;&#39;</span><span class="p">,],[(</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">90</span><span class="p">),],</span><span class="mi">2</span><span class="p">,(</span><span class="mf">1.0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)),</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -1147,7 +1148,7 @@ unit cell constants</p>
 
 <dl class="data">
 <dt id="GSASIIlattice.selftestlist">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x5e34c30&gt;, &lt;function test1 at 0x5e34c70&gt;, &lt;function test2 at 0x5e34cb0&gt;, &lt;function test3 at 0x5e34cf0&gt;, &lt;function test4 at 0x5e34d30&gt;, &lt;function test5 at 0x5e34d70&gt;, &lt;function test6 at 0x5e34db0&gt;, &lt;function test7 at 0x5e34df0&gt;, &lt;function test8 at 0x5e34e30&gt;, &lt;function test9 at 0x5e34e70&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x1da2530&gt;, &lt;function test1 at 0x1da2570&gt;, &lt;function test2 at 0x1da25b0&gt;, &lt;function test3 at 0x1da25f0&gt;, &lt;function test4 at 0x1da2630&gt;, &lt;function test5 at 0x1da2670&gt;, &lt;function test6 at 0x1da26b0&gt;, &lt;function test7 at 0x1da26f0&gt;, &lt;function test8 at 0x1da2730&gt;, &lt;function test9 at 0x1da2770&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1595,7 +1596,7 @@ Should return resultant string - C. SGData - dictionary using entries:</p>
 
 <dl class="data">
 <dt id="GSASIIspc.selftestlist">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x5ac5830&gt;, &lt;function test1 at 0x5ac5870&gt;, &lt;function test2 at 0x5ac58b0&gt;, &lt;function test3 at 0x5ac58f0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x5cda130&gt;, &lt;function test1 at 0x5cda170&gt;, &lt;function test2 at 0x5cda1b0&gt;, &lt;function test3 at 0x5cda1f0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 

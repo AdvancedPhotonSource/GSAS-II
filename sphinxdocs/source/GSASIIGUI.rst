@@ -21,3 +21,6 @@
 
 .. automodule:: GSASIIrestrGUI
     :members: 
+
+.. automodule:: GSASIIexprGUI
+    :members: 

@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIrestr - restraint GUI routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-13 07:55:07 -0500 (Sun, 13 Oct 2013) $</span>
-<span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1103 $</span>
+<span class="c"># $Date: 2014-02-03 16:31:54 -0600 (Mon, 03 Feb 2014) $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: 1214 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIrestrGUI.py $</span>
-<span class="c"># $Id: GSASIIrestrGUI.py 1103 2013-10-13 12:55:07Z vondreele $</span>
+<span class="c"># $Id: GSASIIrestrGUI.py 1214 2014-02-03 22:31:54Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIrestrGUI: Restraint GUI routines*</span>
@@ -73,7 +73,7 @@
 <span class="kn">import</span> <span class="nn">numpy.ma</span> <span class="kn">as</span> <span class="nn">ma</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1103 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1214 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
@@ -98,6 +98,7 @@
         <span class="k">print</span> <span class="s">&#39;There are no phases to form restraints&#39;</span>
         <span class="k">return</span>
     <span class="n">phasedata</span> <span class="o">=</span> <span class="n">Phases</span><span class="p">[</span><span class="n">phaseName</span><span class="p">]</span>
+    <span class="n">tabIndex</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">phaseName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
         <span class="n">data</span><span class="p">[</span><span class="n">phaseName</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">restrData</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">phaseName</span><span class="p">]</span>
@@ -1828,6 +1829,7 @@
         <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">SetSize</span><span class="p">(</span><span class="n">Size</span><span class="p">)</span>
             
     <span class="k">def</span> <span class="nf">OnPageChanged</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        <span class="c">#print &#39;OnPageChanged&#39;</span>
         <span class="n">page</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
         <span class="n">text</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">GetPageText</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">RestraintEdit</span><span class="o">.</span><span class="n">SetLabel</span><span class="p">(</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_RESRCHANGEVAL</span><span class="p">,</span><span class="s">&#39;Change value&#39;</span><span class="p">)</span>
@@ -1890,7 +1892,20 @@
 
     <span class="k">def</span> <span class="nf">SetStatusLine</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
         <span class="n">Status</span><span class="o">.</span><span class="n">SetStatusText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>                                      
-        
+
+    <span class="k">def</span> <span class="nf">RaisePage</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        <span class="s">&#39;Respond to a &quot;select tab&quot; menu button&#39;</span>
+        <span class="c"># class PseudoEvent(object):</span>
+        <span class="c">#     def __init__(self,page): self.page = page</span>
+        <span class="c">#     def Skip(self): pass</span>
+        <span class="c">#     def GetSelection(self): return self.page</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">tabIndex</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">SetSelection</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="c">#OnPageChanged(PseudoEvent(i))</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;Unexpected event in RaisePage&#39;</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">:</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
         
@@ -1911,24 +1926,93 @@
         <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">OnPlotAARestraint</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">G2gd</span><span class="o">.</span><span class="n">wxID_AARESTRAINTPLOT</span><span class="p">)</span>
     <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">GSNoteBook</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">GetClientSize</span><span class="p">())</span>
     
+    <span class="c"># clear menu and menu pointers</span>
+    <span class="n">tabIndex</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">tabcount</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">RestraintTab</span><span class="o">.</span><span class="n">GetMenuItems</span><span class="p">():</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">RestraintTab</span><span class="o">.</span><span class="n">DestroyItem</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>        
+
+    <span class="n">txt</span> <span class="o">=</span> <span class="s">&#39;Bond restraints&#39;</span>
     <span class="n">BondRestr</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">)</span>
-    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">BondRestr</span><span class="p">,</span><span class="s">&#39;Bond restraints&#39;</span><span class="p">)</span>
+    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">BondRestr</span><span class="p">,</span><span class="n">txt</span><span class="p">)</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">RestraintTab</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">txt</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select restraint editing tab&#39;</span><span class="p">)</span>
+    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">RaisePage</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+    <span class="n">tabcount</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">tabIndex</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">tabcount</span>
+
+    <span class="n">txt</span> <span class="o">=</span> <span class="s">&#39;Angle restraints&#39;</span>
     <span class="n">AngleRestr</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">)</span>
-    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">AngleRestr</span><span class="p">,</span><span class="s">&#39;Angle restraints&#39;</span><span class="p">)</span>
+    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">AngleRestr</span><span class="p">,</span><span class="n">txt</span><span class="p">)</span> 
+    <span class="n">item</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">RestraintTab</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">txt</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select restraint editing tab&#39;</span><span class="p">)</span>
+    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">RaisePage</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+    <span class="n">tabcount</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">tabIndex</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">tabcount</span>
+   
+    <span class="n">txt</span> <span class="o">=</span> <span class="s">&#39;Plane restraints&#39;</span>
     <span class="n">PlaneRestr</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">)</span>
-    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">PlaneRestr</span><span class="p">,</span><span class="s">&#39;Plane restraints&#39;</span><span class="p">)</span>
+    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">PlaneRestr</span><span class="p">,</span><span class="n">txt</span><span class="p">)</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">RestraintTab</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">txt</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select restraint editing tab&#39;</span><span class="p">)</span>
+    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">RaisePage</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+    <span class="n">tabcount</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">tabIndex</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">tabcount</span>
+
+    <span class="n">txt</span> <span class="o">=</span> <span class="s">&#39;Chiral restraints&#39;</span>
     <span class="n">ChiralRestr</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">)</span>
-    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">ChiralRestr</span><span class="p">,</span><span class="s">&#39;Chiral restraints&#39;</span><span class="p">)</span>
+    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">ChiralRestr</span><span class="p">,</span><span class="n">txt</span><span class="p">)</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">RestraintTab</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">txt</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select restraint editing tab&#39;</span><span class="p">)</span>
+    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">RaisePage</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+    <span class="n">tabcount</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">tabIndex</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">tabcount</span>
+
     <span class="k">if</span> <span class="s">&#39;macro&#39;</span> <span class="ow">in</span> <span class="n">General</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]:</span>
+        <span class="n">txt</span> <span class="o">=</span> <span class="s">&#39;Torsion restraints&#39;</span>
         <span class="n">TorsionRestr</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">)</span>
-        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">TorsionRestr</span><span class="p">,</span><span class="s">&#39;Torsion restraints&#39;</span><span class="p">)</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">TorsionRestr</span><span class="p">,</span><span class="n">txt</span><span class="p">)</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">RestraintTab</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">txt</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select restraint editing tab&#39;</span><span class="p">)</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">RaisePage</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+        <span class="n">tabcount</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">tabIndex</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">tabcount</span>
+
+        <span class="n">txt</span> <span class="o">=</span> <span class="s">&#39;Ramachandran restraints&#39;</span>
         <span class="n">RamaRestr</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">)</span>
-        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">RamaRestr</span><span class="p">,</span><span class="s">&#39;Ramachandran restraints&#39;</span><span class="p">)</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">RamaRestr</span><span class="p">,</span><span class="n">txt</span><span class="p">)</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">RestraintTab</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">txt</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select restraint editing tab&#39;</span><span class="p">)</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">RaisePage</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+        <span class="n">tabcount</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">tabIndex</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">tabcount</span>
+
+    <span class="n">txt</span> <span class="o">=</span> <span class="s">&#39;Chem. comp. restraints&#39;</span>
     <span class="n">ChemCompRestr</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">)</span>
-    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">ChemCompRestr</span><span class="p">,</span><span class="s">&#39;Chem. comp. restraints&#39;</span><span class="p">)</span>
+    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">ChemCompRestr</span><span class="p">,</span><span class="n">txt</span><span class="p">)</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">RestraintTab</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">txt</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select restraint editing tab&#39;</span><span class="p">)</span>
+    <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">RaisePage</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+    <span class="n">tabcount</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">tabIndex</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">tabcount</span>
+    
     <span class="k">if</span> <span class="n">General</span><span class="p">[</span><span class="s">&#39;SH Texture&#39;</span><span class="p">][</span><span class="s">&#39;Order&#39;</span><span class="p">]:</span>
+        <span class="n">txt</span> <span class="o">=</span> <span class="s">&#39;Texture restraints&#39;</span>
         <span class="n">TextureRestr</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ScrolledWindow</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="p">)</span>
-        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">TextureRestr</span><span class="p">,</span><span class="s">&#39;Texture restraints&#39;</span><span class="p">)</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataDisplay</span><span class="o">.</span><span class="n">AddPage</span><span class="p">(</span><span class="n">TextureRestr</span><span class="p">,</span><span class="n">txt</span><span class="p">)</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">RestraintTab</span><span class="o">.</span><span class="n">Append</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">ITEM_NORMAL</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">txt</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Select restraint editing tab&#39;</span><span class="p">)</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">dataFrame</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_MENU</span><span class="p">,</span> <span class="n">RaisePage</span><span class="p">,</span><span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">())</span>
+        <span class="n">tabcount</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">tabIndex</span><span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">GetId</span><span class="p">()]</span> <span class="o">=</span> <span class="n">tabcount</span>
     
     <span class="n">UpdateBondRestr</span><span class="p">(</span><span class="n">restrData</span><span class="p">[</span><span class="s">&#39;Bond&#39;</span><span class="p">])</span>
 

@@ -100,6 +100,7 @@
 <li class="toctree-l2"><a class="reference internal" href="GSASIIGUI.html#gsasiiimggui-image-gui"><em>GSASIIimgGUI: Image GUI</em></a></li>
 <li class="toctree-l2"><a class="reference internal" href="GSASIIGUI.html#gsasiipwdgui-powder-pattern-gui-routines"><em>GSASIIpwdGUI: Powder Pattern GUI routines</em></a></li>
 <li class="toctree-l2"><a class="reference internal" href="GSASIIGUI.html#gsasiirestrgui-restraint-gui-routines"><em>GSASIIrestrGUI: Restraint GUI routines</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="GSASIIGUI.html#gsasiiexprgui-expression-handling"><em>GSASIIexprGUI: Expression Handling</em></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="GSASIIstruc.html"><em>GSAS-II Structure  Submodules</em></a><ul>
@@ -119,6 +120,11 @@
 <li class="toctree-l1"><a class="reference internal" href="GSASIIindex.html"><em>GSASIIindex: Cell Indexing Module</em></a></li>
 <li class="toctree-l1"><a class="reference internal" href="GSASIIplot.html"><em>GSASIIplot: plotting routines</em></a></li>
 <li class="toctree-l1"><a class="reference internal" href="GSASIIpwd.html"><em>GSASII powder calculation module</em></a></li>
+<li class="toctree-l1"><a class="reference internal" href="SAS.html"><em>GSAS-II Small Angle Scattering Submodules</em></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SAS.html#gsasii-small-angle-calculation-module"><em>GSASII small angle calculation module</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="SAS.html#substances-define-materials"><em>Substances: Define Materials</em></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="GSASIIscripts.html"><em>GSAS-II Scripts</em></a><ul>
 <li class="toctree-l2"><a class="reference internal" href="GSASIIscripts.html#testderiv-check-derivative-computation"><em>testDeriv: Check derivative computation</em></a></li>
 <li class="toctree-l2"><a class="reference internal" href="GSASIIscripts.html#gsasiitestplot-plotting-for-testderiv"><em>GSASIItestplot: Plotting for testDeriv</em></a></li>
@@ -135,6 +141,7 @@
 <li class="toctree-l2"><a class="reference internal" href="exports.html#module-g2export-map-map-export"><em>Module G2export_map: Map export</em></a></li>
 <li class="toctree-l2"><a class="reference internal" href="exports.html#module-g2export-shelx-examples"><em>Module G2export_shelx: Examples</em></a></li>
 <li class="toctree-l2"><a class="reference internal" href="exports.html#module-g2export-cif-cif-exports"><em>Module G2export_CIF: CIF Exports</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="exports.html#module-g2export-pwdr-export-powder-input-files"><em>Module G2export_pwdr: Export powder input files</em></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="imports.html"><em>GSAS-II Import Modules</em></a><ul>
@@ -155,22 +162,26 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="imports.html#currently-defined-phase-import-routines">Currently Defined Phase Import Routines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="imports.html#phase-import-routines">Phase Import Routines</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="imports.html#module-g2phase-pdb-and-exp"><em>Module G2phase: PDB and .EXP</em></a></li>
 <li class="toctree-l3"><a class="reference internal" href="imports.html#module-g2phase-gpx-import-phase-from-gsas-ii-project"><em>Module G2phase_GPX: Import phase from GSAS-II project</em></a></li>
 <li class="toctree-l3"><a class="reference internal" href="imports.html#module-g2phase-cif-coordinates-from-cif"><em>Module G2phase_CIF: Coordinates from CIF</em></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="imports.html#currently-defined-powder-data-import-routines">Currently Defined Powder Data Import Routines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="imports.html#powder-data-import-routines">Powder Data Import Routines</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="imports.html#module-g2pwd-gpx-gsas-ii-projects"><em>Module G2pwd_GPX: GSAS-II projects</em></a></li>
 <li class="toctree-l3"><a class="reference internal" href="imports.html#module-g2pwd-fxye-gsas-data-files"><em>Module G2pwd_fxye: GSAS data files</em></a></li>
 <li class="toctree-l3"><a class="reference internal" href="imports.html#module-g2pwd-xye-topas-xye-data"><em>Module G2pwd_xye: Topas .xye data</em></a></li>
 <li class="toctree-l3"><a class="reference internal" href="imports.html#module-g2pwd-cif-cif-powder-data"><em>Module G2pwd_CIF: CIF powder data</em></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="imports.html#currently-defined-single-crystal-data-import-routines">Currently Defined Single Crystal Data Import Routines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="imports.html#single-crystal-data-import-routines">Single Crystal Data Import Routines</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="imports.html#module-g2sfact-simple-hkl-import"><em>Module G2sfact: simple HKL import</em></a></li>
 <li class="toctree-l3"><a class="reference internal" href="imports.html#module-g2sfact-cif-cif-import"><em>Module G2sfact_CIF: CIF import</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="imports.html#small-angle-scattering-data-import-routines">Small Angle Scattering Data Import Routines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="imports.html#module-g2sad-xye-read-small-angle-data"><em>Module G2sad_xye: read small angle data</em></a></li>
 </ul>
 </li>
 </ul>

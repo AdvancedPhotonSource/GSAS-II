@@ -1,0 +1,679 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>GSASIIexprGUI &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for GSASIIexprGUI</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c">#GSASIIexprGUI - Expression Definition and Evaluation</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="c"># $Date: $</span>
+<span class="c"># $Author: toby $</span>
+<span class="c"># $Revision: $</span>
+<span class="c"># $URL: $</span>
+<span class="c"># $Id: $</span>
+<span class="c">########### SVN repository information ###################</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">*GSASIIexprGUI: Expression Handling*</span>
+<span class="sd">-------------------------------------</span>
+
+<span class="sd">This module defines a class for defining an expression in terms of values</span>
+<span class="sd">in a parameter dictionary via a wx.Dialog. The dialog creates a :class:`GSASII.ExpressionObj`</span>
+<span class="sd">which is used to evaluate the expression against a supplied parameter dictionary.</span>
+
+<span class="sd">The expression is parsed to find variables used in the expression and then</span>
+<span class="sd">the user is asked to assign parameters from the dictionary to each variable.</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="c"># TODO: improve variable browser (search, add parameter descriptions)</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">wx</span>
+<span class="kn">import</span> <span class="nn">wx.lib.scrolledpanel</span> <span class="kn">as</span> <span class="nn">wxscroll</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
+<span class="kn">import</span> <span class="nn">GSASIIpy3</span> <span class="kn">as</span> <span class="nn">G2py3</span>
+<span class="kn">import</span> <span class="nn">GSASIIobj</span> <span class="kn">as</span> <span class="nn">G2obj</span>
+
+<span class="c">#==========================================================================</span>
+<div class="viewcode-block" id="ExpressionDialog"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog">[docs]</a><span class="k">class</span> <span class="nc">ExpressionDialog</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;A wx.Dialog that allows a user to input an arbitrary expression</span>
+<span class="sd">    to be evaluated and possibly minimized.</span>
+
+<span class="sd">    To do this, the user assigns a new (free) or existing</span>
+<span class="sd">    GSAS-II parameter to each parameter label used in the expression.</span>
+<span class="sd">    The free parameters can optionally be designated to be refined. </span>
+<span class="sd">    For example, is an expression is used such as::</span>
+
+<span class="sd">    &#39;A*np.exp(-B/C)&#39;</span>
+
+<span class="sd">    then A, B and C can each be assigned as Free parameter with a user-selected</span>
+<span class="sd">    value or to any existing GSAS-II variable in the parameter dictionary.</span>
+<span class="sd">    As the expression is entered it is checked for validity.</span>
+
+<span class="sd">    After the :class:`ExpressionDialog` object is created, use :meth:`Show` to</span>
+<span class="sd">    run it and obtain a :class:`GSASIIobj.ExpressionObj` object with the user</span>
+<span class="sd">    input.</span>
+
+<span class="sd">    :param wx.Frame parent: The parent of the Dialog. Can be None,</span>
+<span class="sd">      but better is to provide the name of the Frame where the dialog</span>
+<span class="sd">      is called.</span>
+<span class="sd">    :param dict parmDict: a dict with defined parameters and their values. Each value</span>
+<span class="sd">      may be a list with parameter values and a refine flag or may just contain</span>
+<span class="sd">      the parameter value (non-float/int values in dict are ignored)</span>
+<span class="sd">    :param str exprObj: a :class:`GSASIIobj.ExpressionObj` object with an expression and</span>
+<span class="sd">      label assignments or None (default)</span>
+<span class="sd">    :param str wintitle: String placed on title bar of dialog; </span>
+<span class="sd">      defaults to &quot;Expression Editor&quot;</span>
+<span class="sd">    :param str header: String placed at top of dialog to tell the user</span>
+<span class="sd">      what they will do here; default is &quot;Enter restraint expression here&quot;</span>
+<span class="sd">    :param bool fit: determines if the expression will be used in fitting (default=True).</span>
+<span class="sd">      If set to False, derivate step values and refinement flags are not shown</span>
+<span class="sd">      and Free parameters are not offered as an assignment option.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">parmDict</span><span class="p">,</span> <span class="n">exprObj</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">header</span><span class="o">=</span><span class="s">&#39;Enter restraint expression here&#39;</span><span class="p">,</span>
+                 <span class="n">wintitle</span><span class="o">=</span><span class="s">&#39;Expression Editor&#39;</span><span class="p">,</span>
+                 <span class="n">fit</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit</span> <span class="o">=</span> <span class="n">fit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&#39;&#39;&#39;A copy of the G2 parameter dict (parmDict) except only numerical</span>
+<span class="sd">        values are included and only the value (not the vary flag, if present)</span>
+<span class="sd">        is included.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exprVarLst</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="sd">&#39;&#39;&#39;A list containing the variables utilized in the current expression.</span>
+<span class="sd">        Placed into a :class:`GSASIIobj.ExpressionObj` object when the dialog is closed</span>
+<span class="sd">        with &quot;OK&quot;, saving any changes.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&#39;&#39;&#39;A dict that shows the variable type for each label</span>
+<span class="sd">        found in the expression.</span>
+
+<span class="sd">        * If the value is None or is not defined, the value is not assigned.</span>
+<span class="sd">        * If the value is 0, then the varible is &quot;free&quot; -- a new refineable</span>
+<span class="sd">          parameter.</span>
+<span class="sd">        * Values above 1 determine what variables will be shown</span>
+<span class="sd">          when the option is selected. </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varName</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="s">&#39;Name assigned to each variable&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varStep</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="s">&#39;Step size for each variable&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varValue</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="s">&#39;Value for a variable (Free parameters only)&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varRefflag</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="s">&#39;Refinement flag for a variable (Free parameters only)&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="s">&#39;Expression as a text string&#39;</span>
+        
+        <span class="c"># process dictionary of values and create an index</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span> <span class="c"># deal with values that are in lists</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span><span class="ne">IndexError</span><span class="p">):</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span> <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="n">prex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;[0-9]+::.*&#39;</span><span class="p">)</span>
+        <span class="n">hrex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;:[0-9]+:.*&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">i</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;::&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">i</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="c"># globals</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">prex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">hrex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span>
+                <span class="n">wildList</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">GenWildCard</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">wildList</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Timer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_TIMER</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">OnValidate</span><span class="p">)</span>
+
+        <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span> <span class="o">|</span> <span class="n">wx</span><span class="o">.</span><span class="n">RESIZE_BORDER</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">wintitle</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTRE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">TextCtrl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">150</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span><span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">TE_PROCESS_ENTER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_CHAR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnChar</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_TEXT_ENTER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnValidate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">evalSizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">evalSizer</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">btn</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="s">&quot;Validate&quot;</span><span class="p">)</span>
+        <span class="n">btn</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_BUTTON</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">OnValidate</span><span class="p">)</span>
+        <span class="n">evalSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">btn</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">RIGHT</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">evalSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTRE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">varSizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">HORIZONTAL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varSizer</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">btnsizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StdDialogButtonSizer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span><span class="o">.</span><span class="n">SetDefault</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span><span class="o">.</span><span class="n">Disable</span><span class="p">()</span>
+        <span class="n">btnsizer</span><span class="o">.</span><span class="n">AddButton</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span><span class="p">)</span>
+        <span class="n">btn</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_CANCEL</span><span class="p">)</span>
+        <span class="n">btnsizer</span><span class="o">.</span><span class="n">AddButton</span><span class="p">(</span><span class="n">btn</span><span class="p">)</span>
+        <span class="n">btnsizer</span><span class="o">.</span><span class="n">Realize</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">btnsizer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetSizer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">CenterOnParent</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">exprObj</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="n">exprObj</span><span class="o">.</span><span class="n">EditExpression</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exprVarLst</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varValue</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varStep</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varRefflag</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OnValidate</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetMinSize</span><span class="p">((</span><span class="mi">620</span><span class="p">,</span><span class="mi">300</span><span class="p">))</span> <span class="c"># seems like a good size</span>
+        <span class="c">#self.errbox.SetAutoLayout(1)</span>
+        <span class="c">#self.errbox.SetupScrolling()</span>
+        <span class="c">#self.varbox.SetAutoLayout(1)</span>
+        <span class="c">#self.varbox.SetupScrolling()</span>
+        <span class="c">#self.mainsizer.Fit(self)</span>
+
+<div class="viewcode-block" id="ExpressionDialog.Show"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog.Show">[docs]</a>    <span class="k">def</span> <span class="nf">Show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Call to use the dialog after it is created.</span>
+
+<span class="sd">        :returns: None (On Cancel) or a new :class:`~GSASIIobj.ExpressionObj`</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Layout</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span><span class="o">.</span><span class="n">Fit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
+            <span class="c"># store the edit results in the object and return it</span>
+            <span class="n">exprObj</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">ExpressionObj</span><span class="p">()</span>
+            <span class="n">exprObj</span><span class="o">.</span><span class="n">LoadExpression</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">expr</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exprVarLst</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varValue</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varStep</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varRefflag</span><span class="p">,</span>
+                <span class="p">)</span>                
+            <span class="k">return</span> <span class="n">exprObj</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        </div>
+<div class="viewcode-block" id="ExpressionDialog.setEvalResult"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog.setEvalResult">[docs]</a>    <span class="k">def</span> <span class="nf">setEvalResult</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">msg</span><span class="p">):</span>
+        <span class="s">&#39;Show a string in the expression result area&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">SetLabel</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ExpressionDialog.OnChar"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog.OnChar">[docs]</a>    <span class="k">def</span> <span class="nf">OnChar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Called as each character is entered. Cancels any running timer</span>
+<span class="sd">        and starts a new one. The timer causes a check of syntax after 2 seconds</span>
+<span class="sd">        without input.</span>
+<span class="sd">        Disables the OK button until a validity check is complete.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">IsRunning</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">Stop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">Start</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span><span class="n">oneShot</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span><span class="o">.</span><span class="n">Disable</span><span class="p">()</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">Skip</span><span class="p">()</span>
+        <span class="k">return</span>
+    </div>
+<div class="viewcode-block" id="ExpressionDialog.CheckVars"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog.CheckVars">[docs]</a>    <span class="k">def</span> <span class="nf">CheckVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Check that appropriate variables are defined for each</span>
+<span class="sd">        symbol used in :data:`self.expr`</span>
+
+<span class="sd">        :returns: a text error message or None if all needed input is present       </span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">invalid</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">exprVarLst</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">invalid</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">invalid</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;(a variable is not assigned)&#39;</span>
+        <span class="k">elif</span> <span class="n">invalid</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;(&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">invalid</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; variables are not assigned)&#39;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">exprVarLst</span><span class="p">:</span>
+            <span class="n">varname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">varname</span><span class="p">:</span>
+                <span class="n">invalid</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">msg</span><span class="p">:</span> <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;; &quot;</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;No variable for &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+               <span class="k">if</span> <span class="s">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">varname</span><span class="p">:</span>
+                   <span class="n">l</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">LookupWildCard</span><span class="p">(</span><span class="n">varname</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                   <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                       <span class="n">invalid</span> <span class="o">+=</span> <span class="mi">1</span>
+                       <span class="k">if</span> <span class="n">msg</span><span class="p">:</span> <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;; &quot;</span>
+                       <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;No variables match &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
+               <span class="k">elif</span> <span class="n">varname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                   <span class="n">invalid</span> <span class="o">+=</span> <span class="mi">1</span>
+                   <span class="k">if</span> <span class="n">msg</span><span class="p">:</span> <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;; &quot;</span>
+                   <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;No variables match &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># value assignment: this check is likely unneeded</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">varValue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">,</span><span class="ne">TypeError</span><span class="p">:</span>
+                    <span class="n">invalid</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">msg</span><span class="p">:</span> <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;; &quot;</span>
+                    <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;No value for &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;Value &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; invalid for &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="c"># step assignment</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">varStep</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">vf</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">vf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">,</span><span class="ne">TypeError</span><span class="p">:</span>
+                <span class="n">invalid</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">msg</span><span class="p">:</span> <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;; &quot;</span>
+                <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;No step value for &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;Step value &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">+</span><span class="s">&#39; invalid for &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">vf</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">invalid</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">msg</span><span class="p">:</span> <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot;; &quot;</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;Zero is not valid as a step for &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">invalid</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;(&#39;</span><span class="o">+</span><span class="n">msg</span><span class="o">+</span><span class="s">&#39;)&#39;</span>        
+        <span class="k">return</span>
+</div>
+    <span class="k">def</span> <span class="nf">ShowVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># create widgets to associate vars with labels and/or show messages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varSizer</span><span class="o">.</span><span class="n">Clear</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errbox</span> <span class="o">=</span> <span class="n">wxscroll</span><span class="o">.</span><span class="n">ScrolledPanel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">HSCROLL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errbox</span><span class="o">.</span><span class="n">SetMinSize</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span><span class="mi">130</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">errbox</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varbox</span> <span class="o">=</span> <span class="n">wxscroll</span><span class="o">.</span><span class="n">ScrolledPanel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">HSCROLL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">Siz</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
+        <span class="n">Siz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
+                          <span class="s">&#39;Assign variables to labels&#39;</span><span class="p">),</span>
+            <span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">GridSiz</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">FlexGridSizer</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exprVarLst</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span>
+            <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="s">&#39;label&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">CENTER</span><span class="p">),</span>
+            <span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="p">)</span>
+        <span class="n">lbls</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;varib. type</span><span class="se">\n</span><span class="s">selection&#39;</span><span class="p">,</span><span class="s">&#39;variable</span><span class="se">\n</span><span class="s">name&#39;</span><span class="p">,</span><span class="s">&#39;value&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">:</span>
+            <span class="n">lbls</span> <span class="o">+=</span> <span class="p">(</span><span class="s">&#39;derivative</span><span class="se">\n</span><span class="s">step&#39;</span><span class="p">,</span><span class="s">&#39;refine</span><span class="se">\n</span><span class="s">flag&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">choices</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;Free&#39;</span><span class="p">,</span><span class="s">&#39;Phase&#39;</span><span class="p">,</span><span class="s">&#39;Hist./Phase&#39;</span><span class="p">,</span><span class="s">&#39;Hist.&#39;</span><span class="p">,</span>
+                           <span class="s">&#39;Global&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lbls</span> <span class="o">+=</span> <span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">choices</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="s">&#39;Phase&#39;</span><span class="p">,</span><span class="s">&#39;Hist./Phase&#39;</span><span class="p">,</span><span class="s">&#39;Hist.&#39;</span><span class="p">,</span>
+                           <span class="s">&#39;Global&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="n">lbls</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="n">lbl</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">CENTER</span><span class="p">)</span>
+            <span class="n">w</span><span class="o">.</span><span class="n">SetMinSize</span><span class="p">((</span><span class="mi">80</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">w</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="p">)</span>
+
+        <span class="c"># show input for each var in expression.</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">exprVarLst</span><span class="p">:</span>
+            <span class="c"># label</span>
+            <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="n">v</span><span class="p">),</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c"># assignment type</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ch</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Choice</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
+                <span class="n">choices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">choices</span><span class="p">)</span>
+            <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ch</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ch</span><span class="o">.</span><span class="n">SetSelection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ch</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ch</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_CHOICE</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">OnChoice</span><span class="p">)</span>
+
+            <span class="c"># var name/var assignment</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">wid</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ValidatedTxtCtrl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">,</span><span class="n">v</span><span class="p">,</span>
+                                            <span class="c">#OnLeave=self.OnTxtLeave,</span>
+                                            <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wid</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wid</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">])</span>
+                <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wid</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c"># value</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_RIGHT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">wid</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ValidatedTxtCtrl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">varValue</span><span class="p">,</span><span class="n">v</span><span class="p">,</span>
+                                            <span class="c">#OnLeave=self.OnTxtLeave,</span>
+                                            <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">75</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+                <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wid</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">wid</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_CHAR</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">OnChar</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">var</span><span class="p">:</span>
+                    <span class="c">#[self.parmDict[v] for v in LookupWildCard(var,self.parmDict.keys())]</span>
+                    <span class="c">#print self.varValue[v]</span>
+                    <span class="n">vs</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">LookupWildCard</span><span class="p">(</span><span class="n">var</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                    <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;(&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vs</span><span class="p">))</span><span class="o">+</span><span class="s">&#39; values)&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+                    <span class="n">s</span> <span class="o">=</span> <span class="n">G2py3</span><span class="o">.</span><span class="n">FormatSigFigs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;0&#39;</span><span class="p">)</span>
+                <span class="n">wid</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+                <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wid</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c"># step</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">:</span>
+                <span class="n">wid</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+            <span class="c">#if self.varSelect.get(v) == 0:</span>
+                <span class="n">wid</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">ValidatedTxtCtrl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">varStep</span><span class="p">,</span><span class="n">v</span><span class="p">,</span>
+                                            <span class="c">#OnLeave=self.OnTxtLeave,</span>
+                                            <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wid</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c"># show a refine flag for Free Vars only</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">varRefflag</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">varRefflag</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">wid</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">G2CheckBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">varRefflag</span><span class="p">,</span><span class="n">v</span><span class="p">)</span>
+                <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wid</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wid</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">wid</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">Siz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">GridSiz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="o">.</span><span class="n">SetSizer</span><span class="p">(</span><span class="n">Siz</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">xwid</span><span class="p">,</span><span class="n">yhgt</span> <span class="o">=</span> <span class="n">Siz</span><span class="o">.</span><span class="n">Fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="o">.</span><span class="n">SetMinSize</span><span class="p">((</span><span class="n">xwid</span><span class="p">,</span><span class="mi">130</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="o">.</span><span class="n">SetAutoLayout</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="o">.</span><span class="n">SetupScrolling</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="o">.</span><span class="n">Refresh</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Layout</span><span class="p">()</span>
+        <span class="k">return</span>
+        
+<div class="viewcode-block" id="ExpressionDialog.OnChoice"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog.OnChoice">[docs]</a>    <span class="k">def</span> <span class="nf">OnChoice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Respond to a selection of a variable type for a label in</span>
+<span class="sd">        an expression</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">GetEventObject</span><span class="p">()</span><span class="o">.</span><span class="n">label</span>
+        <span class="n">sel</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">GetEventObject</span><span class="p">()</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="n">sel</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="p">:</span> <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+            <span class="n">sel</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">GetEventObject</span><span class="p">()</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">OnValidate</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">sel</span>
+        <span class="k">if</span> <span class="n">sel</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">varValue</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">varValue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SelectG2var</span><span class="p">(</span><span class="n">sel</span><span class="p">,</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">var</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+                <span class="n">sel</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">GetEventObject</span><span class="p">()</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">OnValidate</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">var</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varStep</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">varStep</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">,</span><span class="mf">0.0001</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OnValidate</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ExpressionDialog.SelectG2var"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog.SelectG2var">[docs]</a>    <span class="k">def</span> <span class="nf">SelectG2var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">sel</span><span class="p">,</span><span class="n">var</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Offer a selection of a GSAS-II variable. </span>
+
+<span class="sd">        :param int sel: Determines the type of variable to be selected.</span>
+<span class="sd">          where 1 is used for Phase variables, and 2 for Histogram/Phase vars,</span>
+<span class="sd">          3 for Histogram vars and 4 for Global vars.</span>
+<span class="sd">        :returns: a variable name or None (if Cancel is pressed)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="n">sel</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="c">#varListlbl = [&quot;(&quot;+i+&quot;) &quot;+G2obj.fmtVarDescr(i) for i in self.parmLists[sel]]</span>
+        <span class="c">#varListlbl = self.parmLists[sel]</span>
+        <span class="n">l2</span> <span class="o">=</span> <span class="n">l1</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="n">sel</span><span class="p">]:</span>
+            <span class="n">l1</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">l1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="n">loc</span><span class="p">,</span><span class="n">desc</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">VarDescr</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">l2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">l2</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">loc</span><span class="p">))</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s">u&quot;{:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l1</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;s} {:&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l2</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;s} {:s}&quot;</span>
+        <span class="n">varListlbl</span> <span class="o">=</span> <span class="p">[</span><span class="n">fmt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="o">*</span><span class="n">G2obj</span><span class="o">.</span><span class="n">VarDescr</span><span class="p">(</span><span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="n">sel</span><span class="p">]]</span>
+
+        <span class="n">dlg</span> <span class="o">=</span> <span class="n">G2gd</span><span class="o">.</span><span class="n">G2SingleChoiceDialog</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span><span class="s">&#39;Select GSAS-II variable for &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;:&#39;</span><span class="p">,</span>
+            <span class="s">&#39;Select variable&#39;</span><span class="p">,</span>
+            <span class="n">varListlbl</span><span class="p">,</span><span class="n">monoFont</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">SetSize</span><span class="p">((</span><span class="mi">625</span><span class="p">,</span><span class="mi">250</span><span class="p">))</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">CenterOnParent</span><span class="p">()</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">dlg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">dlg</span><span class="o">.</span><span class="n">GetSelection</span><span class="p">()</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span><span class="p">[</span><span class="n">sel</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">var</span>
+</div>
+<div class="viewcode-block" id="ExpressionDialog.showError"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog.showError">[docs]</a>    <span class="k">def</span> <span class="nf">showError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">msg1</span><span class="p">,</span><span class="n">msg2</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">msg3</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Show an error message of 1 to 3 sections. The second</span>
+<span class="sd">        section is shown in an equally-spaced font. </span>
+<span class="sd">        </span>
+<span class="sd">        :param str msg1: msg1 is shown in a the standard font</span>
+<span class="sd">        :param str msg2: msg2 is shown in a equally-spaced (wx.MODERN) font</span>
+<span class="sd">        :param str msg3: msg3 is shown in a the standard font</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span><span class="o">.</span><span class="n">Disable</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varSizer</span><span class="o">.</span><span class="n">Clear</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errbox</span> <span class="o">=</span> <span class="n">wxscroll</span><span class="o">.</span><span class="n">ScrolledPanel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">HSCROLL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errbox</span><span class="o">.</span><span class="n">SetMinSize</span><span class="p">((</span><span class="mi">200</span><span class="p">,</span><span class="mi">130</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varSizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">errbox</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">Siz</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
+        <span class="n">errMsg1</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">errbox</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">Siz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">errMsg1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="n">errMsg2</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">errbox</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="s">&quot;</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="n">font1</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="n">errMsg2</span><span class="o">.</span><span class="n">GetFont</span><span class="p">()</span><span class="o">.</span><span class="n">GetPointSize</span><span class="p">(),</span>
+                        <span class="n">wx</span><span class="o">.</span><span class="n">MODERN</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">NORMAL</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">NORMAL</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+        <span class="n">errMsg2</span><span class="o">.</span><span class="n">SetFont</span><span class="p">(</span><span class="n">font1</span><span class="p">)</span>
+        <span class="n">Siz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">errMsg2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="n">errMsg3</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">errbox</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">Siz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">errMsg3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">LEFT</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">errbox</span><span class="o">.</span><span class="n">SetSizer</span><span class="p">(</span><span class="n">Siz</span><span class="p">,</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">Siz</span><span class="o">.</span><span class="n">Fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">errbox</span><span class="p">)</span>
+        <span class="n">errMsg1</span><span class="o">.</span><span class="n">SetLabel</span><span class="p">(</span><span class="n">msg1</span><span class="p">)</span>
+        <span class="n">errMsg2</span><span class="o">.</span><span class="n">SetLabel</span><span class="p">(</span><span class="s">&quot;  &quot;</span><span class="o">+</span><span class="n">msg2</span><span class="p">)</span>
+        <span class="n">errMsg2</span><span class="o">.</span><span class="n">Wrap</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">errMsg3</span><span class="o">.</span><span class="n">SetLabel</span><span class="p">(</span><span class="n">msg3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Layout</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ExpressionDialog.OnValidate"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog.OnValidate">[docs]</a>    <span class="k">def</span> <span class="nf">OnValidate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Respond to a press of the Validate button or when a variable</span>
+<span class="sd">        is associated with a label (in :meth:`OnChoice`)</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setEvalResult</span><span class="p">(</span><span class="s">&#39;(expression cannot be evaluated)&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">Stop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span><span class="o">.</span><span class="n">GetValue</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">varSizer</span><span class="o">.</span><span class="n">Clear</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">expr</span><span class="p">:</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span>
+                <span class="s">&quot;Invalid Expression:&quot;</span><span class="p">,</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                <span class="s">&quot;(an expression must be entered)&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">exprObj</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">ExpressionObj</span><span class="p">()</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">exprObj</span><span class="o">.</span><span class="n">ParseExpression</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ret</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">showError</span><span class="p">(</span><span class="o">*</span><span class="n">exprObj</span><span class="o">.</span><span class="n">lastError</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exprVarLst</span><span class="p">,</span><span class="n">pkgdict</span> <span class="o">=</span> <span class="n">ret</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ShowVars</span><span class="p">()</span> <span class="c"># show widgets to set vars</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CheckVars</span><span class="p">()</span> 
+        <span class="k">if</span> <span class="n">msg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setEvalResult</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">exprObj</span><span class="o">.</span><span class="n">LoadExpression</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expr</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exprVarLst</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">varSelect</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">varValue</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">varStep</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">varRefflag</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">calcobj</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">ExpressionCalcObj</span><span class="p">(</span><span class="n">exprObj</span><span class="p">)</span>
+            <span class="n">calcobj</span><span class="o">.</span><span class="n">SetupCalc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">calcobj</span><span class="o">.</span><span class="n">EvalExpression</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">msg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setEvalResult</span><span class="p">(</span><span class="s">&quot;Error in evaluation: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setEvalResult</span><span class="p">(</span><span class="s">&quot;Expression value is infinite or out-of-bounds&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">G2py3</span><span class="o">.</span><span class="n">FormatSigFigs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s">&#39;0&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setEvalResult</span><span class="p">(</span><span class="s">&quot;Expression evaluates to: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">OKbtn</span><span class="o">.</span><span class="n">Enable</span><span class="p">()</span>
+        </div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">cPickle</span>
+    <span class="k">def</span> <span class="nf">showEQ</span><span class="p">(</span><span class="n">calcobj</span><span class="p">):</span>
+        <span class="k">print</span>
+        <span class="k">print</span> <span class="n">calcobj</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">expression</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">calcobj</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="o">+</span><span class="n">calcobj</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">print</span> <span class="s">&quot;  &quot;</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="s">&#39;=&#39;</span><span class="p">,</span><span class="n">calcobj</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
+        <span class="k">print</span> <span class="n">calcobj</span><span class="o">.</span><span class="n">EvalExpression</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s">&quot;starting test&quot;</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">ExpressionObj</span><span class="p">()</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">expression</span> <span class="o">=</span> <span class="s">&quot;A*np.exp(B)&quot;</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">assgnVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;0::Afrac:*&#39;</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">]}</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">freeVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">u&#39;A&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="bp">True</span><span class="p">]}</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">CheckVars</span><span class="p">()</span>
+    <span class="n">parmDict2</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;0::Afrac:0&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s">&#39;0::Afrac:1&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+    <span class="n">calcobj</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">ExpressionCalcObj</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="n">calcobj</span><span class="o">.</span><span class="n">SetupCalc</span><span class="p">(</span><span class="n">parmDict2</span><span class="p">)</span>
+    <span class="n">showEQ</span><span class="p">(</span><span class="n">calcobj</span><span class="p">)</span>
+    <span class="n">fp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;/tmp/obj.pickle&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">cPickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span><span class="n">fp</span><span class="p">)</span>
+    <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    
+    <span class="n">obj</span><span class="o">.</span><span class="n">expression</span> <span class="o">=</span> <span class="s">&quot;A*np.exp(-2/B)&quot;</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">assgnVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;0::Afrac:0&#39;</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">],</span> <span class="s">&#39;B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;0::Afrac:1&#39;</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">]}</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">freeVars</span> <span class="o">=</span>  <span class="p">{}</span>
+    <span class="n">parmDict1</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;0::Afrac:0&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s">&#39;0::Afrac:1&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">}</span>
+    <span class="n">calcobj</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">ExpressionCalcObj</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="n">calcobj</span><span class="o">.</span><span class="n">SetupCalc</span><span class="p">(</span><span class="n">parmDict1</span><span class="p">)</span>
+    <span class="n">showEQ</span><span class="p">(</span><span class="n">calcobj</span><span class="p">)</span>
+
+    <span class="n">fp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;/tmp/obj.pickle&#39;</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">cPickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+    <span class="n">fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">parmDict2</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;0::Afrac:0&#39;</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span> <span class="s">&#39;0::Afrac:1&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+    <span class="n">calcobj</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">ExpressionCalcObj</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="n">calcobj</span><span class="o">.</span><span class="n">SetupCalc</span><span class="p">(</span><span class="n">parmDict2</span><span class="p">)</span>
+    <span class="n">showEQ</span><span class="p">(</span><span class="n">calcobj</span><span class="p">)</span>
+
+    <span class="n">parmDict2</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;0::Afrac:0&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s">&#39;0::Afrac:1&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+    <span class="n">calcobj</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">ExpressionCalcObj</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="n">calcobj</span><span class="o">.</span><span class="n">SetupCalc</span><span class="p">(</span><span class="n">parmDict2</span><span class="p">)</span>
+    <span class="n">showEQ</span><span class="p">(</span><span class="n">calcobj</span><span class="p">)</span>
+    
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

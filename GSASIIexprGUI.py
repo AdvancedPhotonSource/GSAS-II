@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIexprGUI - Expression Definition and Evaluation
 ########### SVN repository information ###################
-# $Date: $
-# $Author: toby $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *GSASIIexprGUI: Expression Handling*

@@ -3829,7 +3829,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             val = True
         else:
             val = False
-        G2frame.dataFrame.SequentialPfit.Enable(wxADDPARFIT,val) # TODO: remove when testing
+        #G2frame.dataFrame.SequentialPfit.Enable(wxADDPARFIT,val) # TODO: remove when testing done
         G2frame.dataFrame.SequentialPfit.Enable(wxDELPARFIT,val)
         G2frame.dataFrame.SequentialPfit.Enable(wxEDITPARFIT,val)
         G2frame.dataFrame.SequentialPfit.Enable(wxDOPARFIT,val)

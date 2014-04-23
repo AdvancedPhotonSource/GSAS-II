@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2013-12-16 10:43:01 -0600 (Mon, 16 Dec 2013) $
-# $Author: toby $
-# $Revision: 1168 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/imports/G2sad_xye.py $
-# $Id: G2sad_xye.py 1168 2013-12-16 16:43:01Z toby $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2sad_xye: read small angle data*
@@ -20,7 +20,7 @@ import os.path as ospath
 import numpy as np
 import GSASIIIO as G2IO
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 1168 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 
 class txt_XRayReaderClass(G2IO.ImportSmallAngleData):

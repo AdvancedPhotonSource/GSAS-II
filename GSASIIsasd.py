@@ -6,11 +6,11 @@
 
 '''
 ########### SVN repository information ###################
-# $Date: 2014-01-09 11:09:53 -0600 (Thu, 09 Jan 2014) $
-# $Author: vondreele $
-# $Revision: 1186 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIsasd.py $
-# $Id: GSASIIsasd.py 1186 2014-01-09 17:09:53Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 import os
 import sys
@@ -28,7 +28,7 @@ import scipy.optimize as so
 #import pdb
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 1186 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIElem as G2elem

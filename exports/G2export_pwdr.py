@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2014-01-10 14:46:36 -0600 (Fri, 10 Jan 2014) $
-# $Author: vondreele $
-# $Revision: 1191 $
-# $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_csv.py $
-# $Id: G2export_csv.py 1191 2014-01-10 20:46:36Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2export_pwdr: Export powder input files*
@@ -17,7 +17,7 @@ Creates files used by GSAS (FXYE) & TOPAS (XYE) as input
 import os.path
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 1191 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj

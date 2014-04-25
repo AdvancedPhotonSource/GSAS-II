@@ -348,6 +348,8 @@ class GSASII(wx.Frame):
             mode = style=wx.OPEN | wx.CHANGE_DIR
         dlg = wx.FileDialog(self, message="Choose "+label+" input file",
             defaultFile="",wildcard=choices, style=mode)
+        if self.Tutorials:
+            dlg.SetDirectory(os.path.join(GSASIIpath.path2GSAS2,'Exercises'))
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 if multiple:
@@ -1912,6 +1914,7 @@ class GSASII(wx.Frame):
         self.MaskKey = ''           #trigger for making image masks
         self.StrainKey = ''         #ditto for new strain d-zeros
         self.EnablePlot = True
+        self.Tutorials = False      #used for changing default directory
         arg = sys.argv
         if len(arg) > 1:
             self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'

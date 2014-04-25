@@ -2008,6 +2008,8 @@ class MyHelp(wx.Menu):
             print 'Error: help lookup failed!',event.GetEventObject()
             print 'id=',event.GetId()
         else:
+            if helpType == 'Tutorials':
+                self.frame.Tutorials = True 
             ShowHelp(helpType,self.frame)
 
     def OnHelpAbout(self, event):

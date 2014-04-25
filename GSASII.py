@@ -350,6 +350,7 @@ class GSASII(wx.Frame):
             defaultFile="",wildcard=choices, style=mode)
         if self.Tutorials:
             dlg.SetDirectory(os.path.join(GSASIIpath.path2GSAS2,'Exercises'))
+            self.Tutorials = False
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 if multiple:

@@ -449,7 +449,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             newPlot = True
         elif event.key == 'e' and 'SASD' in plottype:
             G2frame.ErrorBars = not G2frame.ErrorBars
-        elif event.key == 'b' and 'PWDR' in plottype:
+        elif event.key == 'b':
             G2frame.SubBack = not G2frame.SubBack
             if not G2frame.SubBack:
                 G2frame.SinglePlot = True                
@@ -478,7 +478,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         elif event.key == 'o':
             G2frame.Cmax = 1.0
             G2frame.Offset = [0,0]
-        elif event.key == 'c':
+        elif event.key == 'c' and 'PWDR' in plottype:
             newPlot = True
             G2frame.Contour = not G2frame.Contour
             if not G2frame.Contour:
@@ -765,7 +765,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Page.Choice = (' key press','n: log(I) off','l: offset left','r: offset right','o: reset offset',
                     'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
             elif 'SASD' in plottype:
-                Page.Choice = (' key press','c: contour on','n: semilog on',
+                Page.Choice = (' key press','b: toggle subtract background','n: semilog on',
                     'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                     'q: toggle S(q) plot','s: toggle single plot','+: no selection')
         else:
@@ -774,7 +774,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
                     'q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
             elif 'SASD' in plottype:
-                Page.Choice = (' key press','c: contour on','n: loglog on','e: toggle error bars',
+                Page.Choice = (' key press','b: toggle subtract background','n: loglog on','e: toggle error bars',
                     'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                     'q: toggle S(q) plot','s: toggle single plot','+: no selection')
 
@@ -895,6 +895,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if 'PWDR' in plottype:
             Y = xye[1]+offset*N
         elif 'SASD' in plottype:
+            B = xye[5]
             if G2frame.sqPlot:
                 Y = xye[1]*Sample['Scale'][0]*(1.005)**(offset*N)*X**4
             else:
@@ -933,10 +934,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     D = xye[5]-Ymax*G2frame.delOffset
                 elif 'SASD' in plottype:
                     if G2frame.sqPlot:
-                        D = xye[4]*X**4
+                        W = xye[4]*X**4
                         Z = xye[3]*X**4
+                        B = B*X**4
                     else:
-                        D = xye[4]
+                        W = xye[4]
+                    if G2frame.SubBack:
+                        YB = Y-B
+                        ZB = Z
+                    else:
+                        YB = Y
+                        ZB = Z+B
                     Plot.set_yscale("log",nonposy='mask')
                     Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                 if G2frame.logPlot:
@@ -950,15 +958,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         Plot.set_yscale("log",nonposy='mask')
                         if G2frame.ErrorBars:
                             if G2frame.sqPlot:
-                                Plot.errorbar(X,Y,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
+                                Plot.errorbar(X,YB,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
                                     ecolor=colors[N%6],picker=3.,clip_on=False)
                             else:
-                                Plot.errorbar(X,Y,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
+                                Plot.errorbar(X,YB,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
                                     ecolor=colors[N%6],picker=3.,clip_on=False)
                         else:
-                            Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
-                        Plot.plot(X,D,colors[(N+2)%6],picker=False)
-                        Plot.plot(X,Z,colors[(N+1)%6],picker=False)
+                            Plot.plot(X,YB,colors[N%6]+'+',picker=3.,clip_on=False)
+                        Plot.plot(X,W,colors[(N+2)%6],picker=False)
+                        Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
                 elif G2frame.Weight and 'PWDR' in plottype:
                     DY = xye[1]*np.sqrt(xye[2])
                     DYmax = max(DY)
@@ -969,7 +977,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Plot.plot(X,DS,colors[(N+3)%6],picker=False)
                     Plot.axhline(0.,color=wx.BLACK)
                 else:
-                    if G2frame.SubBack and 'PWDR' in plottype:
+                    if G2frame.SubBack:
                         Plot.plot(Xum,Y-W,colors[N%6]+'+',picker=3.,clip_on=False)
                         Plot.plot(X,Z-W,colors[(N+1)%6],picker=False)
                     else:
@@ -980,7 +988,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                             Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
                     if 'PWDR' in plottype:
                         Plot.plot(X,W,colors[(N+2)%6],picker=False)
-                    Plot.plot(X,D,colors[(N+3)%6],picker=False)
+                        Plot.plot(X,D,colors[(N+3)%6],picker=False)
                     Plot.axhline(0.,color=wx.BLACK)
                 Page.canvas.SetToolTipString('')
                 if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':

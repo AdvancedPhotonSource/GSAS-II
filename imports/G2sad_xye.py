@@ -105,6 +105,7 @@ class txt_XRayReaderClass(G2IO.ImportSmallAngleData):
                 np.array(w), # 1/sig(intensity)^2 values (weights)
                 np.zeros(N), # calc. intensities (zero)
                 np.zeros(N), # obs-calc profiles
+                np.zeros(N), # fix bkg
                 ]
             self.smallangleentry[0] = filename
             self.smallangleentry[2] = 1 # xye file only has one bank
@@ -202,6 +203,7 @@ class txt_nmXRayReaderClass(G2IO.ImportSmallAngleData):
                 np.array(w), # 1/sig(intensity)^2 values (weights)
                 np.zeros(N), # calc. intensities (zero)
                 np.zeros(N), # obs-calc profiles
+                np.zeros(N), # fix bkg
                 ]
             self.smallangleentry[0] = filename
             self.smallangleentry[2] = 1 # xye file only has one bank
@@ -301,6 +303,7 @@ class txt_CWNeutronReaderClass(G2IO.ImportSmallAngleData):
                 np.array(w), # 1/sig(intensity)^2 values (weights)
                 np.zeros(N), # calc. intensities (zero)
                 np.zeros(N), # obs-calc profiles
+                np.zeros(N), # fix bkg
                 ]
             self.smallangleentry[0] = filename
             self.smallangleentry[2] = 1 # xye file only has one bank
@@ -398,6 +401,7 @@ class txt_nmCWNeutronReaderClass(G2IO.ImportSmallAngleData):
                 np.array(w), # 1/sig(intensity)^2 values (weights)
                 np.zeros(N), # calc. intensities (zero)
                 np.zeros(N), # obs-calc profiles
+                np.zeros(N), # fix bkg
                 ]
             self.smallangleentry[0] = filename
             self.smallangleentry[2] = 1 # xye file only has one bank

@@ -120,7 +120,7 @@ def SetDefaultSASDModel():
         'Shape':['Spheroid',1.0],'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':-3},
         'IPG':{'Niter':100,'Approach':0.8,'Power':-1},'Reg':{},},            
         'Particle':{'Matrix':{'Name':'vacuum','VolFrac':[0.0,False]},'Levels':[],},
-        'Current':'Size dist.',
+        'Current':'Size dist.','BackFile':'',
         }
         
 def SetDefaultSubstances():
@@ -2666,6 +2666,8 @@ def UpdateModelsGrid(G2frame,data):
         data['Size']['IPG']['Power'] = -1
     if 'Matrix' not in data['Particle']:
         data['Particle']['Matrix'] = {'Name':'vacuum','VolFrac':[0.0,False]}
+    if 'BackFile' not in data:
+        data['BackFile'] = ''
     #end patches
     
     def RefreshPlots(newPlot=False):
@@ -2718,8 +2720,14 @@ def UpdateModelsGrid(G2frame,data):
             dlg.Destroy()        
         for item in copyList:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Models'),
-                copy.deepcopy(data))
+            newdata = copy.deepcopy(data)
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Models'),newdata)
+            if newdata['BackFile']:
+                Profile = G2frame.PatternTree.GetItemPyData(Id)[1]
+                BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,newdata['BackFile'])
+                BackSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,BackId, 'Sample Parameters'))
+                Profile[5] = BackSample['Scale'][0]*G2frame.PatternTree.GetItemPyData(BackId)[1][1]
+        RefreshPlots(True)
                 
     def OnCopyFlags(event):
         thisModel = copy.deepcopy(data)
@@ -2753,8 +2761,6 @@ def UpdateModelsGrid(G2frame,data):
                                        level[form][item][1] = copy.copy(thisForm[item][1])
         finally:
             dlg.Destroy()
-
-        
                 
     def OnFitModelAll(event):
         choices = G2gd.GetPatternTreeDataNames(G2frame,['SASD',])
@@ -2817,6 +2823,7 @@ def UpdateModelsGrid(G2frame,data):
                     ' Do Substances and then Sample parameters')
                 return
             G2sasd.SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data)
+            G2plt.PlotSASDSizeDist(G2frame)
             RefreshPlots(True)
             
         elif data['Current'] == 'Particle fit':
@@ -2858,19 +2865,6 @@ def UpdateModelsGrid(G2frame,data):
     def OnSelectFit(event):
         data['Current'] = fitSel.GetValue()
         wx.CallAfter(UpdateModelsGrid,G2frame,data)
-        
-    def OnValueChange(event):
-        Obj = event.GetEventObject()
-        itemKey,ind,fmt = Indx[Obj.GetId()]
-        try:
-            value = float(Obj.GetValue())
-        except ValueError:
-            value = 0.0
-        Obj.SetValue(fmt%(value))
-        data[itemKey][ind] = value
-        if itemKey == 'Back':
-            Profile[4][:] = value
-        RefreshPlots()
         
     def OnCheckBox(event):
         Obj = event.GetEventObject()
@@ -3230,12 +3224,34 @@ def UpdateModelsGrid(G2frame,data):
         esdScale.SetValue('%.3f'%(value))
         RefreshPlots(True)
         
+    def OnBackChange(event):
+        try:
+            value = float(backVal.GetValue())
+        except ValueError:
+            value = 0.0
+        backVal.SetValue('%.3g'%(value))
+        data['Back'][0] = value
+        Profile[4][:] = value
+        RefreshPlots()
+        
+    def OnBackFile(event):
+        data['BackFile'] = backFile.GetValue()
+        if data['BackFile']:
+            fixBack =  data['Back'][0]
+            BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['BackFile'])
+            BackSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,BackId, 'Sample Parameters'))
+            Profile[5] = BackSample['Scale'][0]*G2frame.PatternTree.GetItemPyData(BackId)[1][1]
+            RefreshPlots(True)
+            
     Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
     Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
     Substances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))
     ProfDict,Profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[:2]
-
+    if data['BackFile']:
+        BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['BackFile'])
+        BackSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,BackId, 'Sample Parameters'))
+        Profile[5] = BackSample['Scale'][0]*G2frame.PatternTree.GetItemPyData(BackId)[1][1]
     if G2frame.dataDisplay:
         G2frame.dataFrame.DestroyChildren()
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ModelMenu)
@@ -3278,14 +3294,20 @@ def UpdateModelsGrid(G2frame,data):
     backSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Background:'),0,WACV)
     backVal = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(data['Back'][0]),style=wx.TE_PROCESS_ENTER)
     Indx[backVal.GetId()] = ['Back',0,'%.3g']
-    backVal.Bind(wx.EVT_TEXT_ENTER,OnValueChange)        
-    backVal.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
+    backVal.Bind(wx.EVT_TEXT_ENTER,OnBackChange)        
+    backVal.Bind(wx.EVT_KILL_FOCUS,OnBackChange)
     backSizer.Add(backVal,0,WACV)
     backVar = wx.CheckBox(G2frame.dataDisplay,label='Refine?')
     Indx[backVar.GetId()] = [data['Back'],1]
     backVar.SetValue(data['Back'][1])
     backVar.Bind(wx.EVT_CHECKBOX, OnCheckBox)
-    backSizer.Add(backVar,0,WACV)
+    backSizer.Add(backVar,0,WACV)    
+    backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background file: '),0,WACV)
+    Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['SASD',])
+    backFile = wx.ComboBox(parent=G2frame.dataDisplay,value=data['BackFile'],choices=Choices,
+        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+    backFile.Bind(wx.EVT_COMBOBOX,OnBackFile)
+    backSizer.Add(backFile)    
     mainSizer.Add(backSizer)
 
     mainSizer.Layout()    

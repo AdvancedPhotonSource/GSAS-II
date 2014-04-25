@@ -1812,6 +1812,7 @@ class ImportSmallAngleData(ImportBaseclass):
                 np.array(w), # 1/sig(intensity)^2 values (weights)
                 np.array(yc), # calc. intensities (zero)
                 np.array(yd), # obs-calc profiles
+                np.array(yb), # preset bkg
         '''                            
         self.comments = []
         self.idstring = ''

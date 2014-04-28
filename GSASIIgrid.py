@@ -4063,20 +4063,20 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     Types += len(atomList)*[wg.GRID_VALUE_FLOAT]
     for parm in atomList:
         colList += [[data[name]['newAtomDict'][atomList[parm]][1] for name in histNames]]
+        colSigs += [None]   #why not the values?
     # add Pseudovars
-    for exp in Controls['SeqPseudoVars']:
-        obj = Controls['SeqPseudoVars'][exp]
+    for expr in Controls['SeqPseudoVars']:
+        obj = Controls['SeqPseudoVars'][expr]
         calcobj = G2obj.ExpressionCalcObj(obj)
         valList = []
         for row in zip(*colList):
             parmDict = dict(zip(colLabels,row))
             calcobj.SetupCalc(parmDict)
             valList.append(calcobj.EvalExpression())
-        colList += [valList]
         colSigs += [None]
-        colLabels += [exp]
+        colList += [valList]
+        colLabels += [expr]
         Types += [wg.GRID_VALUE_FLOAT,]
-
     rowList = [c for c in zip(*colList)]     # convert from columns to rows
     G2frame.SeqTable = Table(rowList,colLabels=colLabels,rowLabels=histNames,types=Types)
 

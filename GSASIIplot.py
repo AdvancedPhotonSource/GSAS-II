@@ -2346,7 +2346,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX):
         
     def Draw():
         Page.SetFocus()
-        G2frame.G2plotNB.status.SetFields(['press s to select X axis'])
+        G2frame.G2plotNB.status.SetStatusText('press s to select X axis',1)
         Plot.clear()
         if G2frame.seqXaxis is not None:    
             xName,X,Xsig = G2frame.seqTableGet(G2frame.seqXaxis)
@@ -2408,7 +2408,7 @@ def OnStartNewDzero(G2frame):
     :param str eventkey: a single letter ('a') that
       triggers the addition of a d-zero.    
     '''
-    G2frame.dataFrame.GetStatusBar().SetStatusText('Add strain ring active - LB pick d-zero value')
+    G2frame.dataFrame.GetStatusBar().SetStatusText('Add strain ring active - LB pick d-zero value',1)
     StrSta = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Stress/Strain'))
 
@@ -2560,12 +2560,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         ypos /= scaley
                         Data['ring'].append([xpos,ypos])
                 elif event.button == 3:
-                    G2frame.dataFrame.GetStatusBar().SetStatusText('Calibrating...')
+                    G2frame.dataFrame.GetStatusBar().SetStatusText('Calibrating...',1)
                     if G2img.ImageCalibrate(G2frame,Data):
-                        G2frame.dataFrame.GetStatusBar().SetStatusText('Calibration successful - Show ring picks to check')
+                        G2frame.dataFrame.GetStatusBar().SetStatusText('Calibration successful - Show ring picks to check',1)
                         print 'Calibration successful'
                     else:
-                        G2frame.dataFrame.GetStatusBar().SetStatusText('Calibration failed - Show ring picks to diagnose')
+                        G2frame.dataFrame.GetStatusBar().SetStatusText('Calibration failed - Show ring picks to diagnose',1)
                         print 'Calibration failed'
                     G2frame.ifGetRing = False
                     G2imG.UpdateImageControls(G2frame,Data,Masks)
@@ -3385,7 +3385,7 @@ def PlotStructure(G2frame,data):
         try:
             return G2frame.dataDisplay.GetSelection()
         except AttributeError:
-            G2frame.G2plotNB.status.SetStatusText('Select this from Phase data window!')
+            G2frame.G2plotNB.status.SetStatusText('Select this from Phase data window!',1)
             return 0
             
     def SetViewPointText(VP):

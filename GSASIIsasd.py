@@ -434,6 +434,182 @@ def SchulzZimmCume(x,pos,args):
     
     return []
     
+################################################################################
+#### Structure factors for condensed systems
+################################################################################
+
+def DiluteSF(Q,args=[]):
+    ''' Default: no structure factor correction for dilute system
+    '''
+    return np.ones_like(Q)  #or return 1.0
+
+def HardSpheresSF(Q,args):
+    ''' Computes structure factor for not dilute monodisperse hard spheres
+    Refs.: PERCUS,YEVICK PHYS. REV. 110 1 (1958),THIELE J. CHEM PHYS. 39 474 (1968),
+    WERTHEIM  PHYS. REV. LETT. 47 1462 (1981)
+    
+    param float Q: Q value array (A-1)
+    param array args: [float R, float VolFrac]: interparticle distance & volume fraction
+    returns numpy array S(Q)
+    '''
+    
+    R,VolFr = args
+    denom = (1.-VolFr)**4
+    num = (1.+2.*VolFr)**2
+    alp = num/denom
+    bet = -6.*VolFr*(1.+VolFr/2.)**2/denom
+    gamm = 0.5*VolFr*num/denom        
+    A = 2.*Q*R
+    A2 = A**2
+    A3 = A**3
+    A4 = A**4
+    Rca = np.cos(A)
+    Rsa = np.sin(A)
+    calp = alp*(Rsa/A2-Rca/A)
+    cbet = bet*(2.*Rsa/A2-(A2-2.)*Rca/A3-2./A3)
+    cgam = gamm*(-Rca/A+(4./A)*((3.*A2-6.)*Rca/A4+(A2-6.)*Rsa/A3+6./A4))
+    pfac = -24.*VolFr/A
+    C = pfac*(calp+cbet+cgam)
+    return 1./(1.-C)
+        
+def SquareWellSF(Q,args):
+    ''' Computes structure factor for not dilute monodisperse hard sphere with a
+    square well potential interaction. 
+    Refs.: SHARMA,SHARMA, PHYSICA 89A,(1977),212
+    
+    param float Q: Q value array (A-1)
+    param array args: [float R, float VolFrac, float depth, float width]: 
+        interparticle distance, volume fraction (<0.08), well depth (e/kT<1.5kT),
+        well width
+    returns numpy array S(Q)
+    well depth > 0 attractive & values outside above limits nonphysical cf. 
+    Monte Carlo simulations 
+    '''
+    R,VolFr,Depth,Width = args 
+    eta = VolFr
+    eta2 = eta*eta
+    eta3 = eta*eta2
+    eta4 = eta*eta3       
+    etam1 = 1. - eta 
+    etam14 = etam1**4
+    alp = (  ( (1. + 2.*eta)**2 ) + eta3*( eta-4.0 )  )/etam14
+    bet = -(eta/3.0) * ( 18. + 20.*eta - 12.*eta2 + eta4 )/etam14
+    gam = 0.5*eta*( (1. + 2.*eta)**2 + eta3*(eta-4.) )/etam14
+
+    SK = 2.*Q*R
+    SK2 = SK*SK
+    SK3 = SK*SK2
+    SK4 = SK3*SK
+    T1 = alp * SK3 * ( np.sin(SK) - SK * np.cos(SK) )
+    T2 = bet * SK2 * ( 2.*SK*np.sin(SK) - (SK2-2.)*np.cos(SK) - 2.0 )
+    T3 =   ( 4.0*SK3 - 24.*SK ) * np.sin(SK)  
+    T3 = T3 - ( SK4 - 12.0*SK2 + 24.0 )*np.cos(SK) + 24.0    
+    T3 = gam*T3
+    T4 = -Depth*SK3*(np.sin(Width*SK) - Width*SK*np.cos(Width*SK)+ SK*np.cos(SK) - np.sin(SK) )
+    CK =  -24.0*eta*( T1 + T2 + T3 + T4 )/SK3/SK3
+    return 1./(1.-CK)
+    
+def StickyHardSpheresSF(Q,args):
+    ''' Computes structure factor for not dilute monodisperse hard spheres
+    Refs.: PERCUS,YEVICK PHYS. REV. 110 1 (1958),THIELE J. CHEM PHYS. 39 474 (1968),
+    WERTHEIM  PHYS. REV. LETT. 47 1462 (1981)
+    
+    param float Q: Q value array (A-1)
+    param array args: [float R, float VolFrac]: sphere radius & volume fraction
+    returns numpy array S(Q)
+    '''
+    R,VolFr,epis,tau = args
+#//	 Input (fitting) variables are:
+#	//radius = w[0]
+#	//volume fraction = w[1]
+#	//epsilon (perurbation param) = w[2]
+#	//tau (stickiness) = w[3]
+#	Variable rad,phi,eps,tau,eta
+#	Variable sig,aa,etam1,qa,qb,qc,radic
+#	Variable lam,lam2,test,mu,alpha,BetaVar
+#	Variable qv,kk,k2,k3,ds,dc,aq1,aq2,aq3,aq,bq1,bq2,bq3,bq,sq
+#	rad = w[0]
+#	phi = w[1]
+#	eps = w[2]
+#	tau = w[3]
+#	
+#	eta = phi/(1.0-eps)/(1.0-eps)/(1.0-eps)
+#	
+#	sig = 2.0 * rad
+#	aa = sig/(1.0 - eps)
+#	etam1 = 1.0 - eta
+#//C
+#//C  SOLVE QUADRATIC FOR LAMBDA
+#//C
+#	qa = eta/12.0
+#	qb = -1.0*(tau + eta/(etam1))
+#	qc = (1.0 + eta/2.0)/(etam1*etam1)
+#	radic = qb*qb - 4.0*qa*qc
+#	if(radic<0)
+#		if(x>0.01 && x<0.015)
+#	 		Print "Lambda unphysical - both roots imaginary"
+#	 	endif
+#	 	return(-1)
+#	endif
+#//C   KEEP THE SMALLER ROOT, THE LARGER ONE IS UNPHYSICAL
+#	lam = (-1.0*qb-sqrt(radic))/(2.0*qa)
+#	lam2 = (-1.0*qb+sqrt(radic))/(2.0*qa)
+#	if(lam2<lam)
+#		lam = lam2
+#	endif
+#	test = 1.0 + 2.0*eta
+#	mu = lam*eta*etam1
+#	if(mu>test)
+#		if(x>0.01 && x<0.015)
+#		 Print "Lambda unphysical mu>test"
+#		endif
+#		return(-1)
+#	endif
+#	alpha = (1.0 + 2.0*eta - mu)/(etam1*etam1)
+#	BetaVar = (mu - 3.0*eta)/(2.0*etam1*etam1)
+#	
+#//C
+#//C   CALCULATE THE STRUCTURE FACTOR
+#//C
+#
+#	qv = x
+#	kk = qv*aa
+#	k2 = kk*kk
+#	k3 = kk*k2
+#	ds = sin(kk)
+#	dc = cos(kk)
+#	aq1 = ((ds - kk*dc)*alpha)/k3
+#	aq2 = (BetaVar*(1.0-dc))/k2
+#	aq3 = (lam*ds)/(12.0*kk)
+#	aq = 1.0 + 12.0*eta*(aq1+aq2-aq3)
+#//
+#	bq1 = alpha*(0.5/kk - ds/k2 + (1.0 - dc)/k3)
+#	bq2 = BetaVar*(1.0/kk - ds/k2)
+#	bq3 = (lam/12.0)*((1.0 - dc)/kk)
+#	bq = 12.0*eta*(bq1+bq2-bq3)
+#//
+#	sq = 1.0/(aq*aq +bq*bq)
+#
+#	Return (sq)
+    pass
+    
+#def HayterPenfoldSF(Q,args): #big & ugly function - do later (if ever)
+#    pass
+    
+def InterPrecipitateSF(Q,args):
+    ''' Computes structure factor for precipitates in a matrix
+    Refs.: E-Wen Huang, Peter K. Liaw, Lionel Porcar, Yun Liu, Yee-Lang Liu, 
+    Ji-Jung Kai, and Wei-Ren Chen,APPLIED PHYSICS LETTERS 93, 161904 (2008)
+    R. Giordano, A. Grasso, and J. Teixeira, Phys. Rev. A 43, 6894    1991    
+    param float Q: Q value array (A-1)
+    param array args: [float R, float VolFr]: "radius" & volume fraction
+    returns numpy array S(Q)
+    '''
+    R,VolFr = args
+    QV2 = Q**2*VolFr**2
+    top = 1 - np.exp(-QV2/4)*np.cos(2.*Q*R)
+    bot = 1-2*np.exp(-QV2/4)*np.cos(2.*Q*R) + np.exp(-QV2/2)
+    return 2*(top/bot) - 1
           
 ################################################################################
 ##### SB-MaxEnt
@@ -920,10 +1096,18 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
         'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
         'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol],
         'Unified tube':[UniTubeFF,UniTubeVol],'Cylinder diam':[CylinderDFF,CylinderDVol]}
+            
+    sfxns = {'Dilute':DiluteSF,'Hard sphere':HardSpheresSF,'Square well':SquareWellSF,
+            'Sticky hard sphere':StickyHardSpheresSF,'InterPrecipitate':InterPrecipitateSF,}
+                
+    parmOrder = ['Volume','Radius','Mean','StdDev','MinSize','G','Rg','B','P','Cutoff',
+        'PkInt','PkPos','PkSig','PkGam',]
+        
+    FFparmOrder = ['Aspect ratio','Length','Diameter','Thickness']
+    
+    SFparmOrder = ['Dist','VolFr','epis','Sticky','Depth','Width']
 
     def GetModelParms():
-        parmOrder = ['Volume','Radius','Mean','StdDev','MinSize','G','Rg','B','P','Cutoff',
-            'PkInt','PkPos','PkSig','PkGam',]
         parmDict = {'Scale':Sample['Scale'][0]}
         varyList = []
         values = []
@@ -946,13 +1130,20 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                     parmDict[cid+'Cutoff'] = controls['Cutoff']
                 parmDict[cid+'FormFact'] = shapes[controls['FormFact']][0]
                 parmDict[cid+'FFVolume'] = shapes[controls['FormFact']][1]
+                parmDict[cid+'StrFact'] = sfxns[controls['StrFact']]
                 parmDict[cid+'XAnom density'] = Substances['Substances'][controls['Material']].get('XAnom density',0.0)
-                for item in ['Aspect ratio','Length','Thickness','Diameter',]:
+                for item in FFparmOrder:
                     if item in controls['FFargs']:
                         parmDict[cid+item] = controls['FFargs'][item][0]
                         if controls['FFargs'][item][1]:
                             varyList.append(cid+item)
                             values.append(controls['FFargs'][item][0])
+                for item in SFparmOrder:
+                    if item in controls.get('SFargs',{}):
+                        parmDict[cid+item] = controls['SFargs'][item][0]
+                        if controls['SFargs'][item][1]:
+                            varyList.append(cid+item)
+                            values.append(controls['SFargs'][item][0])
             distDict = controls['DistType']
             for item in parmOrder:
                 if item in level[distDict]:
@@ -969,15 +1160,21 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
             print '  %15s %15.4f esd: %15.4g'%('Background:',parmDict['Back'],sigDict['Back'])
         partData = Model['Particle']
         for i,level in enumerate(partData['Levels']):
-            Type = level['Controls']['DistType']
-            print ' Component %d: Type: %s:'%(i,Type)
-            cid = str(i)+':'
             controls = level['Controls']
             Type = controls['DistType']
             if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm','Monodisperse']:
-                for item in ['Aspect ratio','Length','Thickness','Diameter',]:
+                print ' Component %d: Type: %s: Structure Factor: %s'%(i,Type,controls['StrFact'])                
+            else:
+                print ' Component %d: Type: %s: '%(i,Type,)
+            cid = str(i)+':'
+            if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm','Monodisperse']:
+                for item in FFparmOrder:
                     if cid+item in varyList:
                         controls['FFargs'][item][0] = parmDict[cid+item]
+                        print ' %15s: %15.4g esd: %15.4g'%(cid+item,parmDict[cid+item],sigDict[cid+item])
+                for item in SFparmOrder:
+                    if cid+item in varyList:
+                        controls['SFargs'][item][0] = parmDict[cid+item]
                         print ' %15s: %15.4g esd: %15.4g'%(cid+item,parmDict[cid+item],sigDict[cid+item])
             distDict = controls['DistType']
             for item in level[distDict]:
@@ -998,10 +1195,15 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
             if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm']:
                 FFfxn = parmDict[cid+'FormFact']
                 Volfxn = parmDict[cid+'FFVolume']
+                SFfxn = parmDict[cid+'StrFact']
                 FFargs = []
-                for item in [cid+'Aspect ratio',cid+'Length',cid+'Thickness',cid+'Diameter',]:
+                SFargs = []
+                for item in [cid+'Aspect ratio',cid+'Length',cid+'Thickness',cid+'Diameter']:
                     if item in parmDict: 
                         FFargs.append(parmDict[item])
+                for item in [cid+'Dist',cid+'VolFr',cid+'epis',cid+'Sticky',cid+'Depth',cid+'Width']:
+                    if item in parmDict: 
+                        SFargs.append(parmDict[item])
                 distDict = {}
                 for item in [cid+'Volume',cid+'Mean',cid+'StdDev',cid+'MinSize',]:
                     if item in parmDict:
@@ -1011,7 +1213,7 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                 rBins,dBins,dist = MakeDiamDist(Type,parmDict[cid+'NumPoints'],parmDict[cid+'Cutoff'],distDict)
                 Gmat = G_matrix(Q,rBins,contrast,FFfxn,Volfxn,FFargs).T
                 dist *= parmDict[cid+'Volume']
-                Ic += np.dot(Gmat,dist)
+                Ic += np.dot(Gmat,dist)*SFfxn(Q,args=SFargs)
             elif 'Unified' in Type:
                 Rg,G,B,P,Rgco = parmDict[cid+'Rg'],parmDict[cid+'G'],parmDict[cid+'B'], \
                     parmDict[cid+'P'],parmDict[cid+'Cutoff']
@@ -1026,7 +1228,9 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
             elif 'Mono' in Type:
                 FFfxn = parmDict[cid+'FormFact']
                 Volfxn = parmDict[cid+'FFVolume']
+                SFfxn = parmDict[cid+'StrFact']
                 FFargs = []
+                SFargs = []
                 for item in [cid+'Aspect ratio',cid+'Length',cid+'Thickness',cid+'Diameter',]:
                     if item in parmDict: 
                         FFargs.append(parmDict[item])
@@ -1034,7 +1238,7 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                 contrast = rho**2-rhoMat**2
                 R = parmDict[cid+'Radius']
                 Gmat = G_matrix(Q,R,contrast,FFfxn,Volfxn,FFargs)             
-                Ic += Gmat[0]*parmDict[cid+'Volume']
+                Ic += Gmat[0]*parmDict[cid+'Volume']*SFfxn(Q,args=SFargs)
             elif 'Bragg' in distFxn:
                 Ic += parmDict[cid+'PkInt']*G2pwd.getPsVoigt(parmDict[cid+'PkPos'],
                     parmDict[cid+'PkSig'],parmDict[cid+'PkGam'],Q)
@@ -1083,11 +1287,15 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
         return False,0,0,0,0,0
     
 def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
+    
     shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],
         'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
         'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
         'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol],
         'Unified tube':[UniTubeFF,UniTubeVol],'Cylinder diam':[CylinderDFF,CylinderDVol]}
+    sfxns = {'Dilute':DiluteSF,'Hard sphere':HardSpheresSF,'Square well':SquareWellSF,
+            'Sticky hard sphere':StickyHardSpheresSF,'InterPrecipitate':InterPrecipitateSF,}
+
 #    pdb.set_trace()
     partData = sasdData['Particle']
     rhoMat = Substances['Substances'][partData['Matrix']['Name']].get('XAnom density',0.0)
@@ -1108,22 +1316,27 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
         controls = level['Controls']
         distFxn = controls['DistType']
         if distFxn in ['LogNormal','Gaussian','LSW','Schulz-Zimm']:
+            parmDict = level[controls['DistType']]
             FFfxn = shapes[controls['FormFact']][0]
             Volfxn = shapes[controls['FormFact']][1]
+            SFfxn = sfxns[controls['StrFact']]
             FFargs = []
+            SFargs = []
+            for item in ['Dist','VolFr','epis','Sticky','Depth','Width',]:
+                if item in controls.get('SFargs',{}):
+                    SFargs.append(controls['SFargs'][item][0])
             for item in ['Aspect ratio','Length','Thickness','Diameter',]:
                 if item in controls['FFargs']: 
                     FFargs.append(controls['FFargs'][item][0])
             rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
             contrast = rho**2-rhoMat**2
-            parmDict = level[controls['DistType']]
             distDict = {}
             for item in parmDict:
                 distDict[item] = parmDict[item][0]
             rBins,dBins,dist = MakeDiamDist(controls['DistType'],controls['NumPoints'],controls['Cutoff'],distDict)
             Gmat = G_matrix(Q[Ibeg:Ifin],rBins,contrast,FFfxn,Volfxn,FFargs).T
             dist *= level[distFxn]['Volume'][0]
-            Ic[Ibeg:Ifin] += np.dot(Gmat,dist)
+            Ic[Ibeg:Ifin] += np.dot(Gmat,dist)*SFfxn(Q[Ibeg:Ifin],args=SFargs)
             Rbins.append(rBins)
             Dist.append(dist/(4.*dBins))
         elif 'Unified' in distFxn:
@@ -1144,17 +1357,23 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
             Rbins.append([])
             Dist.append([])
         elif 'Mono' in distFxn:
+            parmDict = level[controls['DistType']]
+            R = level[controls['DistType']]['Radius'][0]
             FFfxn = shapes[controls['FormFact']][0]
             Volfxn = shapes[controls['FormFact']][1]
+            SFfxn = sfxns[controls['StrFact']]
             FFargs = []
+            SFargs = [parmDict['Volume'][0],R]
+            for item in ['epis','Sticky','Depth','Width',]:
+                if item in controls.get('SFargs',{}):
+                    SFargs.append(controls['SFargs'][item][0])
             for item in ['Aspect ratio','Length','Thickness','Diameter',]:
                 if item in controls['FFargs']: 
                     FFargs.append(controls['FFargs'][item][0])
             rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
             contrast = rho**2-rhoMat**2
-            R = level[controls['DistType']]['Radius'][0]
             Gmat = G_matrix(Q[Ibeg:Ifin],R,contrast,FFfxn,Volfxn,FFargs)             
-            Ic[Ibeg:Ifin] += Gmat[0]*level[distFxn]['Volume'][0]
+            Ic[Ibeg:Ifin] += Gmat[0]*level[distFxn]['Volume'][0]*SFfxn(Q[Ibeg:Ifin],args=SFargs)
             Rbins.append([])
             Dist.append([])
         elif 'Bragg' in distFxn:

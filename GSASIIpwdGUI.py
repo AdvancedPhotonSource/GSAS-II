@@ -2684,7 +2684,7 @@ def UpdateModelsGrid(G2frame,data):
                 material = data['Particle']['Levels'][-1]['Controls']['Material']
             data['Particle']['Levels'].append({
                 'Controls':{'FormFact':'Sphere','DistType':'LogNormal','Material':material,
-                    'FFargs':{},'NumPoints':50,'Cutoff':0.01,
+                    'FFargs':{},'SFargs':{},'NumPoints':50,'Cutoff':0.01,
                     'SlitSmear':[0.0,False],'StrFact':'Dilute'},    #last 2 not used - future?
                 'LogNormal':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[0.5,False],'MinSize':[10.,False],},
                 'Gaussian':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
@@ -2998,29 +2998,39 @@ def UpdateModelsGrid(G2frame,data):
             'Unified disk':{'Thickness':[100.,False]},
             'Unified tube':{'Length':[100.,False],'Thickness':[10.,False]},}
                 
+        StructureFactors = {'Dilute':{},'Hard sphere':{'VolFr':[0.1,False],'Dist':[100.,False]},
+            'Sticky hard sphere':{'VolFr':[0.1,False],'Dist':[100.,False],'epis':[0.05,False],'Sticky':[0.2,False]},
+            'Square well':{'VolFr':[0.1,False],'Dist':[100.,False],'Depth':[0.1,False],'Width':[1.,False]},
+            'InterPrecipitate':{'VolFr':[0.1,False],'Dist':[100.,False]},}
+                
         ffDistChoices =  ['Sphere','Spheroid','Cylinder','Cylinder diam',
             'Cylinder AR','Unified sphere','Unified rod','Unified rod AR',
             'Unified disk','Unified tube',]
                 
-        ffMonoChoices = ['Sphere','Spheroid','Cylinder','Cylinder AR',
-            ]
+        ffMonoChoices = ['Sphere','Spheroid','Cylinder','Cylinder AR',]
+        
+        sfChoices = ['Dilute','Hard sphere','Sticky hard sphere','Square well','InterPrecipitate',]
+            
+        slMult = 1000.
                   
         def OnValue(event):
             Obj = event.GetEventObject()
-            item,key,id,sldrObj = Indx[Obj.GetId()]
+            item,key,sldrObj = Indx[Obj.GetId()]
             try:
                 value = float(Obj.GetValue())
                 if value <= 0.:
                     raise ValueError
             except ValueError:
-                value = item[key][id]
-            item[key][id] = value
+                value = item[key][0]
+            item[key][0] = value
             Obj.SetValue('%.3g'%(value))
-            if key == 'P':
-                sldrObj.SetValue(1000.*value)
+            if key in ['P','epis','Sticky','Depth','Width','VolFr','Dist']:
+                sldrObj.SetValue(slMult*value)
             else:
-                sldrObj.SetRange(1000.*(np.log10(value)-2),1000.*(np.log10(value)+2))
-                sldrObj.SetValue(1000.*np.log10(value))
+                logv = np.log10(value)
+                valMinMax = [logv-1,logv+1]
+                sldrObj.SetRange(slMult*valMinMax[0],slMult*valMinMax[1])
+                sldrObj.SetValue(slMult*logv)
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
             RefreshPlots()
             
@@ -3031,6 +3041,8 @@ def UpdateModelsGrid(G2frame,data):
             if 'Refine' not in Obj.GetLabel():
                 if 'FormFact' in key :
                     item['FFargs'] = FormFactors[Obj.GetValue()]
+                elif 'StrFact' in key:
+                    item['SFargs'] = StructureFactors[Obj.GetValue()]
                 wx.CallAfter(UpdateModelsGrid,G2frame,data)
                 G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
                 RefreshPlots()
@@ -3045,23 +3057,16 @@ def UpdateModelsGrid(G2frame,data):
             
         def OnParmSlider(event):
             Obj = event.GetEventObject()
-            item,key,id,pvObj = Indx[Obj.GetId()]
+            item,key,pvObj = Indx[Obj.GetId()]
             slide = Obj.GetValue()
-            if key == 'P':
-                value = float(slide/1000.)
+            if key in ['P','epis','Sticky','Depth','Width','VolFr','Dist']:
+                value = float(slide/slMult)
             else:
-                value = 10.**float(slide/1000.)
-            item[key][id] = value
-            pvObj.SetValue('%.3g'%(item[key][id]))
+                value = 10.**float(slide/slMult)
+            item[key][0] = value
+            pvObj.SetValue('%.3g'%(item[key][0]))
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
             RefreshPlots()
-            
-        def OnCenterSlider(event):
-            Obj = event.GetEventObject()
-            Obj.SetValue(False)
-            sldrObj,value = Indx[Obj.GetId()]
-            sldrObj.SetRange(1000*(value-1),1000*(value+1))
-            sldrObj.SetValue(1000*value)
             
         def SizeSizer():
             sizeSizer = wx.FlexGridSizer(0,4,5,5)
@@ -3071,18 +3076,19 @@ def UpdateModelsGrid(G2frame,data):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[distChoice.GetId()] = [level['Controls'],'DistType']
             distChoice.Bind(wx.EVT_COMBOBOX,OnSelect)
-            sizeSizer.Add(distChoice,0,WACV)
+            sizeSizer.Add(distChoice,0,WACV)    #put structure factor choices here
             if level['Controls']['DistType'] not in ['Bragg','Unified','Porod',]:
                 sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Form Factor: '),0,WACV)
-                if 'Mono' not in level['Controls']['DistType']:
-                    ffChoice = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['FormFact'],choices=ffDistChoices,
+                if 'Mono' in level['Controls']['DistType']:
+                    ffChoice = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['FormFact'],choices=ffMonoChoices,
                         style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 else:
-                    ffChoice = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['FormFact'],choices=ffMonoChoices,
+                    ffChoice = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['FormFact'],choices=ffDistChoices,
                         style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 Indx[ffChoice.GetId()] = [level['Controls'],'FormFact']
                 ffChoice.Bind(wx.EVT_COMBOBOX,OnSelect)
                 sizeSizer.Add(ffChoice,0,WACV)
+                
                 sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Material: '),0,WACV)
                 matSel = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['Material'],
                     choices=Substances['Substances'].keys(),style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -3093,22 +3099,98 @@ def UpdateModelsGrid(G2frame,data):
                 contrast = rho**2-rhoMat**2
                 sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Resonant X-ray contrast: '),0,WACV)
                 sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label='  %.2f 10%scm%s'%(contrast,Pwr20,Pwrm4)),0,WACV)
-                sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Num. radii: '),0,WACV)
-                radii = ['25','50','75','100','200']
-                nRadii = wx.ComboBox(G2frame.dataDisplay,value=str(level['Controls']['NumPoints']),choices=radii,
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                Indx[nRadii.GetId()] = [level['Controls'],'NumPoints']
-                nRadii.Bind(wx.EVT_COMBOBOX,OnSelect)
-                sizeSizer.Add(nRadii,0,WACV)
-                sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' R dist. cutoff: '),0,WACV)
-                rCutoff = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,level['Controls'],'Cutoff',
-                    min=0.001,max=0.1,typeHint=float)
-                sizeSizer.Add(rCutoff,0,WACV)
+                if 'Mono' not in level['Controls']['DistType']:
+                    sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Num. radii: '),0,WACV)
+                    radii = ['25','50','75','100','200']
+                    nRadii = wx.ComboBox(G2frame.dataDisplay,value=str(level['Controls']['NumPoints']),choices=radii,
+                        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    Indx[nRadii.GetId()] = [level['Controls'],'NumPoints']
+                    nRadii.Bind(wx.EVT_COMBOBOX,OnSelect)
+                    sizeSizer.Add(nRadii,0,WACV)
+                    sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' R dist. cutoff: '),0,WACV)
+                    rCutoff = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,level['Controls'],'Cutoff',
+                        min=0.001,max=0.1,typeHint=float)
+                    sizeSizer.Add(rCutoff,0,WACV)
             elif level['Controls']['DistType']  in ['Unified',]:
                 Parms = level['Unified']
                 Best = G2sasd.Bestimate(Parms['G'][0],Parms['Rg'][0],Parms['P'][0])
                 sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Estimated Dist B: %12.4g'%(Best)),0,WACV)
             return sizeSizer
+            
+        def ParmSizer():
+            parmSizer = wx.FlexGridSizer(1,3,5,5)
+            parmSizer.AddGrowableCol(2,1)
+            parmSizer.SetFlexibleDirection(wx.HORIZONTAL)
+            Parms = level[level['Controls']['DistType']]
+            FFargs = level['Controls']['FFargs']
+            SFargs = level['Controls'].get('SFargs',{})
+            parmOrder = ['Volume','Radius','Mean','StdDev','MinSize','G','Rg','B','P','Cutoff',
+                'PkInt','PkPos','PkSig','PkGam',]
+            for parm in parmOrder:
+                if parm in Parms:
+                    if parm == 'MinSize':
+                        parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Dist '+parm),0,wx.ALIGN_CENTER)
+                    else:
+                        parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? Dist '+parm) 
+                        parmVar.SetValue(Parms[parm][1])
+                        parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
+                        parmSizer.Add(parmVar,0,WACV)
+                        Indx[parmVar.GetId()] = [Parms[parm],1]
+                    parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(Parms[parm][0]),
+                        style=wx.TE_PROCESS_ENTER)
+                    parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
+                    parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
+                    parmSizer.Add(parmValue,0,WACV)
+                    if parm == 'P':
+                        value = Parms[parm][0]
+                        valMinMax = [0.1,4.2]
+                    else:
+                        value = np.log10(Parms[parm][0])
+                        valMinMax = [value-1,value+1]
+                    parmSldr = wx.Slider(G2frame.dataDisplay,minValue=slMult*valMinMax[0],
+                        maxValue=slMult*valMinMax[1],value=slMult*value)
+                    Indx[parmValue.GetId()] = [Parms,parm,parmSldr]
+                    Indx[parmSldr.GetId()] = [Parms,parm,parmValue]
+                    parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
+                    parmSizer.Add(parmSldr,1,wx.EXPAND)
+            if level['Controls']['DistType'] not in ['Bragg']:
+                parmOrder = ['Aspect ratio','Length','Diameter','Thickness','VolFr','Dist','epis','Sticky','Depth','Width']
+                fTypes = ['FF ','SF ']
+                for iarg,Args in enumerate([FFargs,SFargs]):
+                    for parm in parmOrder:
+                        if parm in Args:
+                            parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? '+fTypes[iarg]+parm) 
+                            parmVar.SetValue(Args[parm][1])
+                            Indx[parmVar.GetId()] = [Args[parm],1]
+                            parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
+                            parmSizer.Add(parmVar,0,WACV)
+                            parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(Args[parm][0]),
+                                style=wx.TE_PROCESS_ENTER)
+                            parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
+                            parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
+                            parmSizer.Add(parmValue,0,WACV)
+                            value = Args[parm][0]
+                            if parm == 'epis':
+                                valMinMax = [0,.1]
+                            elif parm in ['Sticky','Width',]:
+                                valMinMax = [0,1.]
+                            elif parm == 'Depth':
+                                valMinMax = [-2.,2.]
+                            elif parm == 'Dist':
+                                valMinMax = [100.,1000.]
+                            elif parm == 'VolFr':
+                                valMinMax = [1.e-4,1.]
+                            else:
+                                value = np.log10(Args[parm][0])
+                                valMinMax = [value-1,value+1]
+                            parmSldr = wx.Slider(G2frame.dataDisplay,minValue=slMult*valMinMax[0],
+                                maxValue=slMult*valMinMax[1],value=slMult*value)
+                            Indx[parmVar.GetId()] = [Args[parm],1]
+                            Indx[parmValue.GetId()] = [Args,parm,parmSldr]
+                            Indx[parmSldr.GetId()] = [Args,parm,parmValue]
+                            parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
+                            parmSizer.Add(parmSldr,1,wx.EXPAND)
+            return parmSizer                
             
         Indx = {}
         partSizer = wx.BoxSizer(wx.VERTICAL)
@@ -3141,76 +3223,14 @@ def UpdateModelsGrid(G2frame,data):
             topLevel.Add(delBtn,0,WACV)
             partSizer.Add(topLevel,0)
             partSizer.Add(SizeSizer())
-            
-            lvlSizer = wx.BoxSizer(wx.HORIZONTAL)
-            parmSizer = wx.FlexGridSizer(1,4,5,5)
-            parmSizer.AddGrowableCol(2,1)
-            parmSizer.SetFlexibleDirection(wx.HORIZONTAL)
-            Parms = level[level['Controls']['DistType']]
-            FFargs = level['Controls']['FFargs']
-            parmOrder = ['Volume','Radius','Mean','StdDev','MinSize','G','Rg','B','P','Cutoff',
-                'PkInt','PkPos','PkSig','PkGam',]
-            for parm in parmOrder:
-                if parm in Parms:
-                    if parm == 'MinSize':
-                        parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Dist '+parm),0,wx.ALIGN_CENTER)
-                    else:
-                        parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? Dist '+parm) 
-                        parmVar.SetValue(Parms[parm][1])
-                        parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
-                        parmSizer.Add(parmVar,0,WACV)
-                        Indx[parmVar.GetId()] = [Parms[parm],1]
-                    parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(Parms[parm][0]),
-                        style=wx.TE_PROCESS_ENTER)
-                    parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
-                    parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
-                    parmSizer.Add(parmValue,0,WACV)
-                    if parm == 'P':
-                        value = Parms[parm][0]
-                        valMinMax = [0.1,4.2]
-                    else:
-                        value = np.log10(Parms[parm][0])
-                        valMinMax = [value-1,value+1]
-                    parmSldr = wx.Slider(G2frame.dataDisplay,minValue=1000.*valMinMax[0],
-                        maxValue=1000.*valMinMax[1],value=1000.*value)
-                    Indx[parmValue.GetId()] = [Parms,parm,0,parmSldr]
-                    Indx[parmSldr.GetId()] = [Parms,parm,0,parmValue]
-                    parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
-                    parmSizer.Add(parmSldr,1,wx.EXPAND)
-                    if parm == 'P':
-                        parmSizer.Add((5,5),)
-                    else:
-                        center = wx.CheckBox(G2frame.dataDisplay,label='Center? ')
-                        Indx[center.GetId()] = [parmSldr,value]
-                        center.Bind(wx.EVT_CHECKBOX,OnCenterSlider)
-                        parmSizer.Add(center,0,WACV)
-            if level['Controls']['DistType'] not in ['Bragg']:
-                for parm in list(FFargs):
-                    parmVar = wx.CheckBox(G2frame.dataDisplay,label='Refine? FF '+parm) 
-                    parmVar.SetValue(FFargs[parm][1])
-                    Indx[parmVar.GetId()] = [FFargs[parm],1]
-                    parmVar.Bind(wx.EVT_CHECKBOX, OnSelect)
-                    parmSizer.Add(parmVar,0,WACV)
-                    parmValue = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(FFargs[parm][0]),
-                        style=wx.TE_PROCESS_ENTER)
-                    parmValue.Bind(wx.EVT_TEXT_ENTER,OnValue)        
-                    parmValue.Bind(wx.EVT_KILL_FOCUS,OnValue)
-                    parmSizer.Add(parmValue,0,WACV)
-                    value = np.log10(FFargs[parm][0])
-                    valMinMax = [value-1,value+1]
-                    parmSldr = wx.Slider(G2frame.dataDisplay,minValue=1000.*valMinMax[0],
-                        maxValue=1000.*valMinMax[1],value=1000.*value)
-                    Indx[parmVar.GetId()] = [FFargs[parm],1]
-                    Indx[parmValue.GetId()] = [FFargs[parm],0,parmSldr]
-                    Indx[parmSldr.GetId()] = [FFargs,parm,0,parmValue]
-                    parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
-                    parmSizer.Add(parmSldr,1,wx.EXPAND)
-                    center = wx.CheckBox(G2frame.dataDisplay,label='Center? ')
-                    Indx[center.GetId()] = [parmSldr,value]
-                    center.Bind(wx.EVT_CHECKBOX,OnCenterSlider)
-                    parmSizer.Add(center,0,WACV)
-            lvlSizer.Add(parmSizer,1,wx.EXPAND)
-            partSizer.Add(lvlSizer,1,wx.EXPAND)
+            if level['Controls']['DistType'] not in ['Bragg','Unified','Porod',]:
+                topLevel.Add(wx.StaticText(G2frame.dataDisplay,label=' Structure factor: '),0,WACV)
+                strfctr = wx.ComboBox(G2frame.dataDisplay,value=level['Controls']['StrFact'],
+                    choices=sfChoices,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                Indx[strfctr.GetId()] = [level['Controls'],'StrFact']
+                strfctr.Bind(wx.EVT_COMBOBOX,OnSelect)
+                topLevel.Add(strfctr,0,WACV)
+            partSizer.Add(ParmSizer(),1,wx.EXPAND)
         return partSizer
         
     def OnEsdScale(event):
@@ -3318,7 +3338,6 @@ def UpdateModelsGrid(G2frame,data):
     Size[0] += 25
     G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)    
-        
     
 ################################################################################
 #####  PDF controls

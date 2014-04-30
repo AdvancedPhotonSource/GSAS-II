@@ -526,6 +526,7 @@ def GetAtomFXU(pfx,calcControls,parmDict):
             parm = pfx+key+str(iatm)
             if parm in parmDict:
                 keys[key][iatm] = parmDict[parm]
+    Fdata = np.where(Fdata,Fdata,1.e-8)         #avoid divide by zero in derivative calc.?
     return Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata
     
 def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
@@ -746,7 +747,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fax = np.array([-fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])   #positions
         fbx = np.array([fot[:,np.newaxis]*cosp,-fot[:,np.newaxis]*cosp])
         #sum below is over Uniq
-        dfadfr = np.sum(fa/occ[:,np.newaxis],axis=2)
+        dfadfr = np.sum(fa/occ[:,np.newaxis],axis=2)        #Fdata != 0 ever avoids /0. problem
         dfadx = np.sum(twopi*Uniq*fax[:,:,:,np.newaxis],axis=2)
         dfadui = np.sum(-SQfactor*fa,axis=2)
         dfadua = np.sum(-Hij*fa[:,:,:,np.newaxis],axis=2)
@@ -758,8 +759,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])
         dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         if not SGData['SGInv']:
-            dfbdfr = np.sum(fb/occ[:,np.newaxis],axis=2)        #problem here if occ=0 for some atom
-            dfbdx = np.sum(twopi*Uniq*fbx[:,:,:,np.newaxis],axis=2)          
+            dfbdfr = np.sum(fb/occ[:,np.newaxis],axis=2)        #Fdata != 0 ever avoids /0. problem
+            dfbdx = np.sum(twopi*Uniq*fbx[:,:,:,np.newaxis],axis=2)           
             dfbdui = np.sum(-SQfactor*fb,axis=2)
             dfbdua = np.sum(-Hij*fb[:,:,:,np.newaxis],axis=2)
             dfbdba = np.sum(-sinp*(occ*Tcorr)[:,np.newaxis],axis=1)

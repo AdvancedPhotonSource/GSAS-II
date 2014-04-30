@@ -1196,6 +1196,9 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                 for item in [cid+'Aspect ratio',cid+'Length',cid+'Thickness',cid+'Diameter',]:
                     if item in parmDict: 
                         FFargs.append(parmDict[item])
+                for item in [cid+'Dist',cid+'VolFr',cid+'epis',cid+'Sticky',cid+'Depth',cid+'Width']:
+                    if item in parmDict: 
+                        SFargs.append(parmDict[item])
                 rho = parmDict[cid+'XAnom density']
                 contrast = rho**2-rhoMat**2
                 R = parmDict[cid+'Radius']
@@ -1325,8 +1328,8 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
             Volfxn = shapes[controls['FormFact']][1]
             SFfxn = sfxns[controls['StrFact']]
             FFargs = []
-            SFargs = [parmDict['Volume'][0],R]
-            for item in ['epis','Sticky','Depth','Width',]:
+            SFargs = []
+            for item in ['Dist','VolFr','epis','Sticky','Depth','Width',]:
                 if item in controls.get('SFargs',{}):
                     SFargs.append(controls['SFargs'][item][0])
             for item in ['Aspect ratio','Length','Thickness','Diameter',]:

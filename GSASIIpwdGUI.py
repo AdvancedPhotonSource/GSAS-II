@@ -2499,7 +2499,6 @@ def UpdateSubstanceGrid(G2frame,data):
                 data['Substances'][name]['XAbsorption'] = absorb
         dlg.Destroy()
         
-        
     def OnDeleteElement(event):
         TextList = []
         for name in data['Substances']:
@@ -2564,7 +2563,7 @@ def UpdateSubstanceGrid(G2frame,data):
             contrst,absorb = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
             data['Substances'][name]['XAnom density'] = contrst
             data['Substances'][name]['XAbsorption'] = absorb
-            UpdateSubstanceGrid(G2frame,data)
+            wx.CallAfter(UpdateSubstanceGrid,G2frame,data)
         
         Indx = {}
         substSizer = wx.BoxSizer(wx.VERTICAL)
@@ -3096,7 +3095,7 @@ def UpdateModelsGrid(G2frame,data):
                 matSel.Bind(wx.EVT_COMBOBOX,OnSelect)        
                 sizeSizer.Add(matSel,0,WACV) #do neutron test here?
                 rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
-                contrast = rho**2-rhoMat**2
+                contrast = (rho-rhoMat)**2
                 sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Resonant X-ray contrast: '),0,WACV)
                 sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label='  %.2f 10%scm%s'%(contrast,Pwr20,Pwrm4)),0,WACV)
                 if 'Mono' not in level['Controls']['DistType']:

@@ -1171,7 +1171,7 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                     if item in parmDict:
                         distDict[item.split(':')[1]] = parmDict[item]
                 rho = parmDict[cid+'XAnom density']
-                contrast = rho**2-rhoMat**2
+                contrast = (rho-rhoMat)**2
                 rBins,dBins,dist = MakeDiamDist(Type,parmDict[cid+'NumPoints'],parmDict[cid+'Cutoff'],distDict)
                 Gmat = G_matrix(Q,rBins,contrast,FFfxn,Volfxn,FFargs).T
                 dist *= parmDict[cid+'Volume']
@@ -1200,7 +1200,7 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                     if item in parmDict: 
                         SFargs.append(parmDict[item])
                 rho = parmDict[cid+'XAnom density']
-                contrast = rho**2-rhoMat**2
+                contrast = (rho-rhoMat)**2
                 R = parmDict[cid+'Radius']
                 Gmat = G_matrix(Q,R,contrast,FFfxn,Volfxn,FFargs)             
                 Ic += Gmat[0]*parmDict[cid+'Volume']*SFfxn(Q,args=SFargs)
@@ -1294,7 +1294,7 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
                 if item in controls['FFargs']: 
                     FFargs.append(controls['FFargs'][item][0])
             rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
-            contrast = rho**2-rhoMat**2
+            contrast = (rho-rhoMat)**2
             distDict = {}
             for item in parmDict:
                 distDict[item] = parmDict[item][0]
@@ -1336,7 +1336,7 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
                 if item in controls['FFargs']: 
                     FFargs.append(controls['FFargs'][item][0])
             rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
-            contrast = rho**2-rhoMat**2
+            contrast = (rho-rhoMat)**2
             Gmat = G_matrix(Q[Ibeg:Ifin],R,contrast,FFfxn,Volfxn,FFargs)             
             Ic[Ibeg:Ifin] += Gmat[0]*level[distFxn]['Volume'][0]*SFfxn(Q[Ibeg:Ifin],args=SFargs)
             Rbins.append([])

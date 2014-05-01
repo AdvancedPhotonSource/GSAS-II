@@ -1277,8 +1277,7 @@ def getCellEsd(pfx,SGData,A,covData):
     sigMat = np.inner(dadg,np.inner(vcov,dadg.T))
     var = np.diag(sigMat)
     CS = np.where(var>0.,np.sqrt(var),0.)
-    cellSig = [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]  #exchange sig(alp) & sig(gam) to get in right order
-    return cellSig            
+    return [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]  #exchange sig(alp) & sig(gam) to get in right order
     
 def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=None):
     'needs a doc string'

@@ -858,10 +858,10 @@ def Dict2Values(parmdict, varylist):
     in parmdict, as selected by key in varylist'''
     return [parmdict[key] for key in varylist] 
     
-def Values2Dict(parmdict, varylist, values):
-    ''' Use after call to leastsq to update the parameter dictionary with 
-    values corresponding to keys in varylist'''
-    parmdict.update(zip(varylist,values))
+#def Values2Dict(parmdict, varylist, values):
+#    ''' Use after call to leastsq to update the parameter dictionary with 
+#    values corresponding to keys in varylist'''
+#    parmdict.update(zip(varylist,values))
     
 def GetNewCellParms(parmDict,varyList):
     'Needs a doc string'
@@ -1980,7 +1980,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
 def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):        
     'Needs a doc string'
     parmDict.update(zip(varylist,values))
-    Values2Dict(parmDict, varylist, values)
+    #Values2Dict(parmDict, varylist, values) # BHT -- seems to duplicate previous statement
     G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     M = np.empty(0)

@@ -3314,6 +3314,10 @@ class GSASIImain(wx.App):
         self.main = GSASII(None)
         self.main.Show()
         self.SetTopWindow(self.main)
+        # DEBUG: jump to sequential results
+        #Id = G2gd.GetPatternTreeItemId(self.main,self.main.root,'Sequential results')
+        #self.main.PatternTree.SelectItem(Id)
+        # end DEBUG
         return True
     def MacOpenFile(self, filename):
         '''Called on Mac every time a file is dropped on the app when it is running,

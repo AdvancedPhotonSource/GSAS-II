@@ -1241,7 +1241,8 @@ def CompileVarDesc():
         'A([0-5])' : 'Reciprocal metric tensor component \\1',
         'Vol' : 'Unit cell volume',
         # Atom vars (p::<var>:a)
-        'dA([xyz])' : 'change to atomic position \\1',
+        'dA([xyz])' : 'change to atomic coordinate, \\1',
+        'A([xyz])$' : '\\1 fractional atomic coordinate',
         'AUiso':'Atomic isotropic displacement parameter',
         'AU([123][123])':'Atomic anisotropic displacement parameter U\\1',
         'Afrac': 'Atomic occupancy parameter',
@@ -1567,6 +1568,7 @@ class ExpressionObj(object):
          * a derivative step size and
          * a flag to determine if the variable is refined.
         ''' 
+        self.depVar = None
 
         self.lastError = ('','')
         '''Shows last encountered error in processing expression
@@ -1644,6 +1646,22 @@ class ExpressionObj(object):
         'Returns the names of the free parameters that will be refined'
         return ["::"+self.freeVars[v][0] for v in self.freeVars if self.freeVars[v][3]]
 
+    def GetVariedVarVal(self):
+        'Returns the names and values of the free parameters that will be refined'
+        return [("::"+self.freeVars[v][0],self.freeVars[v][1]) for v in self.freeVars if self.freeVars[v][3]]
+
+    def UpdateVariedVars(self,varyList,values):
+        'Updates values for the free parameters (after a refinement); only updates refined vars'
+        for v in self.freeVars:
+            if not self.freeVars[v][3]: continue
+            if "::"+self.freeVars[v][0] not in varyList: continue
+            indx = varyList.index("::"+self.freeVars[v][0])
+            self.freeVars[v][1] = values[indx]
+
+    def GetIndependentVars(self):
+        'Returns the names of the required independent parameters used in expression'
+        return [self.assgnVars[v][0] for v in self.assgnVars]
+
     def CheckVars(self):
         '''Check that the expression can be parsed, all functions are
         defined and that input loaded into the object is internally
@@ -1684,7 +1702,7 @@ class ExpressionObj(object):
         saving an error message, so that this can be used for testing prior
         to the save. 
 
-        :returns: a list of variables used variables
+        :returns: a list of used variables
         '''
         self.lastError = ('','')
         import ast
@@ -1704,7 +1722,7 @@ class ExpressionObj(object):
                     fxnobj = eval(f)
                     return pkgdict,fxnobj
                 except (AttributeError, NameError):
-                    return None
+                    return None,None
             else:
                 try:
                     fxnobj = eval(f)
@@ -1803,6 +1821,13 @@ class ExpressionObj(object):
             pkgdict.update(fxndict)
         return varlist,pkgdict
 
+    def GetDepVar(self):
+        'return the dependent variable, or None'
+        return self.depVar
+
+    def SetDepVar(self,var):
+        'Set the dependent variable, if used'
+        self.depVar = var
 #==========================================================================
 class ExpressionCalcObj(object):
     '''An object used to evaluate an expression from a :class:`ExpressionObj`
@@ -1905,13 +1930,21 @@ class ExpressionCalcObj(object):
                 raise Exception,"No value for variable "+str(v)
         self.exprDict.update(self.fxnpkgdict)
 
+    def UpdateVars(self,varList,valList):
+        '''Update the dict for the expression with a set of values
+        :param list varList: a list of variable names
+        :param list valList: a list of corresponding values
+        '''
+        for var,val in zip(varList,valList):
+            self.exprDict[self.lblLookup.get(var,'undefined: '+var)] = val
+            
     def EvalExpression(self):
         '''Evaluate an expression. Note that the expression
         and mapping are taken from the :class:`ExpressionObj` expression object
         and the parameter values were specified in :meth:`SetupCalc`.
         :returns: a single value for the expression. If parameter
         values are arrays (for example, from wild-carded variable names),
-        the sum of the resulting expression is return.
+        the sum of the resulting expression is returned.
 
         For example, if the expression is ``'A*B'``,
         where A is 2.0 and B maps to ``'1::Afrac:*'``, which evaluates to::
@@ -1927,16 +1960,17 @@ class ExpressionCalcObj(object):
             val = np.sum(val)
         return val
 
-    def EvalDeriv(self,varname):
+    def EvalDeriv(self,varname,step=None):
         '''Evaluate the expression derivative with respect to a
         GSAS-II variable name. 
 
         :param str varname: a G2 variable name (will not have a wild-card)
         :returns: the derivative
         '''
-        if varname not in self.derivStep: return 0.0
+        if step is None:
+            if varname not in self.derivStep: return 0.0
+            step = self.derivStep[varname]
         if varname not in self.lblLookup: return 0.0
-        step = self.derivStep[varname]
         lbl = self.lblLookup[varname] # what label does this map to in expression?
         origval = self.exprDict[lbl]
 

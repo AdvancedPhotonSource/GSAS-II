@@ -65,12 +65,17 @@ class ExpressionDialog(wx.Dialog):
     :param bool fit: determines if the expression will be used in fitting (default=True).
       If set to False, derivate step values and refinement flags are not shown
       and Free parameters are not offered as an assignment option.
+    :param str VarLabel: an optional variable label to include before the expression
+      input. Ignored if None (default)
+    :param list depVarDict: a dict of choices for the dependent variable to be
+      fitted to the expression and their values. Ignored if None (default).
     '''
     def __init__(self, parent, parmDict, exprObj=None,
                  header='Enter restraint expression here',
                  wintitle='Expression Editor',
-                 fit=True):
+                 fit=True,VarLabel=None,depVarDict=None):
         self.fit = fit
+        self.depVarDict = depVarDict
         self.parmDict = {}
         '''A copy of the G2 parameter dict (parmDict) except only numerical
         values are included and only the value (not the vary flag, if present)
@@ -101,6 +106,8 @@ class ExpressionDialog(wx.Dialog):
         'Refinement flag for a variable (Free parameters only)'
         self.expr = ''
         'Expression as a text string'
+        self.depVar = [None,None]
+        'index # and name for dependent variable selection when depVarDict is specified'
         
         # process dictionary of values and create an index
         for key in parmDict:
@@ -118,7 +125,7 @@ class ExpressionDialog(wx.Dialog):
         self.parmLists = {}
         for i in (1,2,3,4):
             self.parmLists[i] = []
-        for i in self.parmDict.keys():
+        for i in sorted(self.parmDict.keys()):
             if i.startswith("::") or i.find(':') == -1: # globals
                 self.parmLists[4].append(i)
             elif prex.match(i):
@@ -141,10 +148,28 @@ class ExpressionDialog(wx.Dialog):
         self.mainsizer = wx.BoxSizer(wx.VERTICAL)
         label = wx.StaticText(self,  wx.ID_ANY, header)
         self.mainsizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+
+        self.exsizer = wx.BoxSizer(wx.HORIZONTAL)
+        if VarLabel:
+            label = wx.StaticText(self,  wx.ID_ANY, VarLabel + ' = ')
+            self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+        elif depVarDict:
+            choice = G2gd.G2ChoiceButton(
+                self,
+                sorted(depVarDict.keys()),
+                self.depVar,0,
+                self.depVar,1,
+                self.RestartTimer)
+            self.exsizer.Add(choice, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+            label = wx.StaticText(self,  wx.ID_ANY, ' = ')
+            self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+
         self.exCtrl = wx.TextCtrl(self,  wx.ID_ANY, size=(150,-1),style=wx.TE_PROCESS_ENTER)
         self.exCtrl.Bind(wx.EVT_CHAR, self.OnChar)
         self.exCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnValidate)
-        self.mainsizer.Add(self.exCtrl, 0, wx.ALL|wx.EXPAND, 5)
+        self.exsizer.Add(self.exCtrl, 1, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+        #self.mainsizer.Add(self.exCtrl, 0, wx.ALL|wx.EXPAND, 5)
+        self.mainsizer.Add(self.exsizer, 0, wx.ALL|wx.EXPAND, 5)
         self.mainsizer.Add((-1,5),0,wx.EXPAND,1)
 
         evalSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -179,6 +204,14 @@ class ExpressionDialog(wx.Dialog):
                 self.varStep,
                 self.varRefflag,
                 )
+            # set the initial value for the dependent value
+            if self.depVarDict:
+                var = exprObj.GetDepVar()
+                if var in self.depVarDict:
+                    indx = sorted(self.depVarDict.keys()).index(var)
+                    choice.SetSelection(indx)
+                    self.depVar = [indx,var]
+                    
         self.exCtrl.SetValue(self.expr)
         self.OnValidate(None)
         self.SetMinSize((620,300)) # seems like a good size
@@ -206,7 +239,9 @@ class ExpressionDialog(wx.Dialog):
                 self.varValue,
                 self.varStep,
                 self.varRefflag,
-                )                
+                )
+            if self.depVarDict:
+                exprObj.SetDepVar(self.depVar[1])
             return exprObj
         else:
             return None
@@ -215,15 +250,22 @@ class ExpressionDialog(wx.Dialog):
         'Show a string in the expression result area'
         self.result.SetLabel(msg)
 
+    def RestartTimer(self):
+        '''Cancels any running timer and starts a new one.
+        The timer causes a check of syntax after 2 seconds unless there is further input.
+        Disables the OK button until a validity check is complete.
+        '''
+        if self.timer.IsRunning():
+            self.timer.Stop()
+        self.timer.Start(2000,oneShot=True)
+        
     def OnChar(self,event):
         '''Called as each character is entered. Cancels any running timer
         and starts a new one. The timer causes a check of syntax after 2 seconds
         without input.
         Disables the OK button until a validity check is complete.
         '''
-        if self.timer.IsRunning():
-            self.timer.Stop()
-        self.timer.Start(2000,oneShot=True)
+        self.RestartTimer()
         self.OKbtn.Disable()
         event.Skip()
         return
@@ -310,14 +352,15 @@ class ExpressionDialog(wx.Dialog):
             wx.StaticText(self.varbox,wx.ID_ANY,'label',style=wx.CENTER),
             0,wx.ALIGN_CENTER)
         lbls = ('varib. type\nselection','variable\nname','value')
+        self.choices = ['Free','Phase','Hist./Phase','Hist.','Global']
         if self.fit:
             lbls += ('derivative\nstep','refine\nflag')
-            self.choices = ('Free','Phase','Hist./Phase','Hist.',
-                           'Global')
         else:
             lbls += ('','')
-            self.choices = ('','Phase','Hist./Phase','Hist.',
-                           'Global')
+            self.choices[0] = ''
+        for i in (1,2,3,4): # remove empty menus from choice list
+            if not len(self.parmLists[i]): self.choices[i] = ''
+
         for lbl in lbls:
             w = wx.StaticText(self.varbox,wx.ID_ANY,lbl,style=wx.CENTER)
             w.SetMinSize((80,-1))
@@ -364,9 +407,11 @@ class ExpressionDialog(wx.Dialog):
                     #print self.varValue[v]
                     vs = G2obj.LookupWildCard(var,self.parmDict.keys())
                     s = '('+str(len(vs))+' values)'
-                else:
+                elif var in self.parmDict:
                     val = self.parmDict[var]
                     s = G2py3.FormatSigFigs(val).rstrip('0')
+                else:
+                    s = '?'
                 wid = wx.StaticText(self.varbox,wx.ID_ANY,s)
                 GridSiz.Add(wid,0,wx.ALIGN_LEFT,0)
 
@@ -398,6 +443,11 @@ class ExpressionDialog(wx.Dialog):
         self.varbox.Refresh()
         self.Layout()
         return
+
+    def GetDepVar(self):
+        '''Returns the name of the dependent variable, when depVarDict is used.
+        '''
+        return self.depVar[1]
         
     def OnChoice(self,event):
         '''Respond to a selection of a variable type for a label in
@@ -533,10 +583,44 @@ class ExpressionDialog(wx.Dialog):
             self.setEvalResult("Expression value is infinite or out-of-bounds")
             return
         s = G2py3.FormatSigFigs(val).rstrip('0')
-        self.setEvalResult("Expression evaluates to: "+str(s))
+        depVal = ""
+        if self.depVarDict:
+            if not self.depVar[1]:
+                self.setEvalResult("A dependent variable must be selected.")
+                return
+            depVal = '; Variable "' + self.depVar[1] + '" = ' + str(
+                self.depVarDict.get(self.depVar[1],'?')
+                )
+        self.setEvalResult("Expression evaluates to: "+str(s)+depVal)
         self.OKbtn.Enable()
         
 if __name__ == "__main__":
+    app = wx.PySimpleApp() # create the App
+    frm = wx.Frame(None)
+    frm.Show()
+    PSvarDict = {'::a':1.0,'::b':1.1,'0::c':1.2}
+    #PSvars = PSvarDict.keys()
+    indepvarDict = {'Temperature':1.0,'Pressure':1.1,'Phase of Moon':1.2}
+    dlg = ExpressionDialog(frm,indepvarDict,
+                           header="Edit the PseudoVar expression",
+                           fit=False,
+                           depVarDict=PSvarDict,
+                           #VarLabel="New PseudoVar",                           
+                           )
+    print dlg.GetDepVar()
+    newobj = dlg.Show(True)
+    print dlg.GetDepVar()
+    dlg = ExpressionDialog(frm,PSvarDict,
+                           header="Edit the PseudoVar expression",
+                           fit=True)
+    newobj = dlg.Show(True)
+    print dlg.GetDepVar()
+    import sys
+    sys.exit()
+
+    #app.MainLoop()
+
+
     import cPickle
     def showEQ(calcobj):
         print

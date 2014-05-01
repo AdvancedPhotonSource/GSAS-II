@@ -10,9 +10,9 @@ xmlns="http://www.w3.org/TR/REC-html40">
 <meta name=Generator content="Microsoft Word 14">
 <meta name=Originator content="Microsoft Word 14">
 <link rel=File-List
-href="Small%20Angle%20Size%20Distribution_files/filelist.xml">
+href="Fitting%20Small%20Angle%20Scattering%20Data_files/filelist.xml">
 <link rel=Edit-Time-Data
-href="Small%20Angle%20Size%20Distribution_files/editdata.mso">
+href="Fitting%20Small%20Angle%20Scattering%20Data_files/editdata.mso">
 <!--[if !mso]>
 <style>
 v\:* {behavior:url(#default#VML);}
@@ -24,17 +24,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>9</o:Revision>
-  <o:TotalTime>1871</o:TotalTime>
-  <o:Created>2014-03-20T16:54:00Z</o:Created>
-  <o:LastSaved>2014-05-01T14:14:00Z</o:LastSaved>
-  <o:Pages>7</o:Pages>
-  <o:Words>1263</o:Words>
-  <o:Characters>7202</o:Characters>
+  <o:Revision>4</o:Revision>
+  <o:TotalTime>2056</o:TotalTime>
+  <o:Created>2014-05-01T13:58:00Z</o:Created>
+  <o:LastSaved>2014-05-01T17:08:00Z</o:LastSaved>
+  <o:Pages>10</o:Pages>
+  <o:Words>1602</o:Words>
+  <o:Characters>9132</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
-  <o:Lines>60</o:Lines>
-  <o:Paragraphs>16</o:Paragraphs>
-  <o:CharactersWithSpaces>8449</o:CharactersWithSpaces>
+  <o:Lines>76</o:Lines>
+  <o:Paragraphs>21</o:Paragraphs>
+  <o:CharactersWithSpaces>10713</o:CharactersWithSpaces>
   <o:Version>14.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -42,9 +42,9 @@ w\:* {behavior:url(#default#VML);}
  </o:OfficeDocumentSettings>
 </xml><![endif]-->
 <link rel=themeData
-href="Small%20Angle%20Size%20Distribution_files/themedata.thmx">
+href="Fitting%20Small%20Angle%20Scattering%20Data_files/themedata.thmx">
 <link rel=colorSchemeMapping
-href="Small%20Angle%20Size%20Distribution_files/colorschememapping.xml">
+href="Fitting%20Small%20Angle%20Scattering%20Data_files/colorschememapping.xml">
 <!--[if gte mso 9]><xml>
  <w:WordDocument>
   <w:Zoom>FullPage</w:Zoom>
@@ -882,22 +882,22 @@ table.MsoTableGrid
 
 <div class=WordSection1>
 
-<h1><strong><span style='mso-bidi-font-weight:normal'>Small Angle X-Ray Data –
-Size Distribution in Alumina Powder</span><o:p></o:p></strong></h1>
+<h1><strong><span style='mso-bidi-font-weight:normal'>Fitting Small Angle X-Ray
+Data – Alumina Powder</span><o:p></o:p></strong></h1>
 
 <p class=MsoNormal style='mso-layout-grid-align:none;text-autospace:none'>In
-this tutorial you will determine the size distribution of particles in an
-alumina polishing powder using data from a constant wavelength synchrotron
-X-ray USAXS instrument. You will use both Maximum Entropy (<span class=SpellE>MaxEnt</span>)
-and Total Non-Negative Least Squares (TNNLS) methods assuming spherical
-particles. The data were collected from <span style='mso-fareast-font-family:
-Calibri;mso-fareast-theme-font:minor-latin;mso-bidi-font-weight:bold;
-mso-bidi-font-style:italic'>powders spread onto sticky tape and covered with
-another layer of the same tape. The data were corrected for background from
-data collected from two layers of sticky tape. However, the sample thickness is
-not</span> accurately known <span style='mso-fareast-font-family:Calibri;
-mso-fareast-theme-font:minor-latin;mso-bidi-font-weight:bold;mso-bidi-font-style:
-italic'>so the data are not calibrated on an absolute scale.<o:p></o:p></span></p>
+this tutorial you will fit small angle scattering data for an alumina polishing
+powder using data from a constant wavelength synchrotron X-ray USAXS
+instrument. You will use both a lognormal distribution of spherical particles
+model and a unified <span class=SpellE>Guinier-Porod</span> model. The data
+were collected from <span style='mso-fareast-font-family:Calibri;mso-fareast-theme-font:
+minor-latin;mso-bidi-font-weight:bold;mso-bidi-font-style:italic'>powders
+spread onto sticky tape and covered with another layer of the same tape. The
+data were corrected for background using data collected from two layers of
+sticky tape. However, the sample thickness is not</span> accurately known <span
+style='mso-fareast-font-family:Calibri;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-weight:bold;mso-bidi-font-style:italic'>so the data are not calibrated
+on an absolute scale.<o:p></o:p></span></p>
 
 <p class=MsoNormal>If you have not done so already, <a
 href="Starting%20GSAS.htm">start GSAS-II</a>.</p>
@@ -906,21 +906,40 @@ href="Starting%20GSAS.htm">start GSAS-II</a>.</p>
 
 <p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>1.<span
-style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Use
-the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>Import/Small Angle Data/from a q step
-QIE data file</span></b> menu item to read the data file into GSAS-II. This
-read option is set to read three column small angle scattering data (SASD) as
-Q, intensity and estimated standard deviation in intensity; there may be a
-header with metadata information in the front of this file.<span
-style='mso-spacerun:yes'>  </span>Change the file directory to <b
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>If
+you have saved the GSAS-II project file from the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Size Distribution</span></b>
+tutorial, use <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>File/Open project…</span></b> menu item to retrieve the data; plots
+of the size distribution and the data will appear. Then go to <!--[if supportFields]><b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
-Calibri;mso-bidi-theme-font:minor-latin'>Exercises/Small angle</span></b><span
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'><span
+style='mso-element:field-begin'></span><span style='mso-spacerun:yes'> </span>REF
+_Ref386704789 \h <span style='mso-spacerun:yes'> </span>\* MERGEFORMAT <span
+style='mso-element:field-separator'></span></span></b><![endif]--><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Step 2: Set
+Limits<!--[if gte mso 9]><xml>
+ <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F005200650066003300380036003700300034003700380039000000</w:data>
+</xml><![endif]--></span></b><!--[if supportFields]><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'><span style='mso-element:field-end'></span></span></b><![endif]-->.
+Otherwise, use the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
-minor-latin'> to find the file.</span></p>
+minor-latin'>Import/Small Angle Data/from a q step QIE data file</span></b>
+menu item to read the data file into GSAS-II. This read option is set to read
+three column small angle scattering data (SASD) as Q, intensity and estimated
+standard deviation in intensity; there may be a header with metadata
+information in the front of this file.<span style='mso-spacerun:yes'> 
+</span>Change the file directory to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Exercises/Small angle</span></b><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
+Calibri;mso-bidi-theme-font:minor-latin'> to find the file.</span></p>
 
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
@@ -972,58 +991,61 @@ the plot window will show the SASD pattern as a log-log plot of intensity vs. Q<
  </v:formulas>
  <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
  <o:lock v:ext="edit" aspectratio="t"/>
-</v:shapetype><v:shape id="Picture_x0020_6" o:spid="_x0000_i1038" type="#_x0000_t75"
+</v:shapetype><v:shape id="Picture_x0020_6" o:spid="_x0000_i1048" type="#_x0000_t75"
  style='width:525pt;height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image001.png"
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image001.png"
   o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Small%20Angle%20Size%20Distribution_files/image001.png" v:shapes="Picture_x0020_6"><![endif]></span></p>
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image001.png" v:shapes="Picture_x0020_6"><![endif]></span></p>
 
-<h2>Step 2: Set Limits</h2>
+<h2><a name="_Ref386704789">Step 2: Set Limits</a></h2>
 
-<p class=MsoNormal>For this step we will reposition the limits to enclose only
-that part of the SASD pattern suitable for size distribution analysis.
-Typically this covers 10<sup>-3</sup> &lt; Q &lt; 10<sup>-1</sup>; below this
-range scattering is from very large objects not readily described by the size
-distribution analysis and above the scattering is mostly background. Select <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+<p class=MsoNormal>For this step we will reposition the limits to exclude only the
+last point in the pattern as it does appear to be somewhat suspect (see plot).
+Select <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Limits</span></b>
 under <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>SASD alumina
-data.dat</span></b> from the GSAS-II tree. Then set <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>changed</span></b> to <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>0.001</span></b>
-for <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Tmin</span></b></span> and <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>0.1</span></b>
-for <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Tmax</span></b></span>. You can also set the
-limits using the cursor on the plot by either picking a point on the curve with
-the left or right mouse button or by dragging the green and red vertical lines
-to the desired positions. The limits window should look like</p>
+data.dat</span></b> from the GSAS-II tree. Set the upper limit <span
+class=SpellE>limit</span> using the cursor on the plot by picking the
+next-to-last point on the curve with the left or right mouse button. The limits
+window should look like</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_22" o:spid="_x0000_i1037" type="#_x0000_t75" style='width:225pt;
+ id="Picture_x0020_15" o:spid="_x0000_i1047" type="#_x0000_t75" style='width:225pt;
  height:195pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image002.png"
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image002.png"
   o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=300 height=260
-src="Small%20Angle%20Size%20Distribution_files/image002.png" v:shapes="Picture_x0020_22"><![endif]></span><span
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image002.png" v:shapes="Picture_x0020_15"><![endif]></span><span
 style='mso-spacerun:yes'> </span></p>
 
 <h2>Step 3 Select the scattering substances for your sample</h2>
 
-<p class=MsoNormal><span style='mso-no-proof:yes'>Two scsttering substances
-need to be defined for your sample to give the anticipated scattering contrast;
-in this case one is alumina and the other is “vacuum” (really air). Parameters
-for a number of substances are defined in the file </span><b style='mso-bidi-font-weight:
+<p class=MsoNormal><span style='mso-no-proof:yes'>If you have already done this
+step in the </span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-no-proof:yes'>Size Distribution</span></b><span
+style='mso-no-proof:yes'> tutorial, skip to </span><!--[if supportFields]><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-no-proof:
+yes'><span style='mso-element:field-begin'></span><span
+style='mso-spacerun:yes'> </span>REF _Ref386699210 \h <span
+style='mso-spacerun:yes'> </span>\* MERGEFORMAT <span style='mso-element:field-separator'></span></span></b><![endif]--><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Step 4: Set
+Sample parameters<span style='mso-no-proof:yes'><!--[if gte mso 9]><xml>
+ <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F005200650066003300380036003600390039003200310030000000</w:data>
+</xml><![endif]--></span></span></b><!--[if supportFields]><b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin;mso-no-proof:yes'>Substances.py</span></b><span
+minor-latin;mso-hansi-theme-font:minor-latin;mso-no-proof:yes'><span
+style='mso-element:field-end'></span></span></b><![endif]--><span
+style='mso-no-proof:yes'>. Two substances need to be defined for your sample to
+give the anticipated scattering contrast; in this case one is alumina and the
+other is “vacuum” (really air). Parameters for a number of substances are
+defined in the file </span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-no-proof:yes'>Substances.py</span></b><span
 style='mso-no-proof:yes'>. You can add your own substances to this or better
 put them in </span><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
@@ -1040,12 +1062,12 @@ minor-latin;mso-hansi-theme-font:minor-latin'>Edit/Load</span></b> substance
 from the menu; a popup window will appear with possible selections</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_23" o:spid="_x0000_i1036" type="#_x0000_t75" style='width:259.5pt;
- height:252pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image003.png"
+ id="_x0000_i1046" type="#_x0000_t75" style='width:259.5pt;height:252pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image003.png"
   o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=346 height=336
-src="Small%20Angle%20Size%20Distribution_files/image003.png" v:shapes="Picture_x0020_23"><![endif]><o:p></o:p></span></p>
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image003.png" v:shapes="_x0000_i1046"><![endif]><o:p></o:p></span></p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
@@ -1057,12 +1079,12 @@ mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>OK</span></b>
 the relevant data for alumina (and vacuum) are displayed next</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_24" o:spid="_x0000_i1035" type="#_x0000_t75" style='width:259.5pt;
- height:195pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image004.png"
+ id="_x0000_i1045" type="#_x0000_t75" style='width:259.5pt;height:195pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image004.png"
   o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=346 height=260
-src="Small%20Angle%20Size%20Distribution_files/image004.png" v:shapes="Picture_x0020_24"><![endif]></span><span
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image004.png" v:shapes="_x0000_i1045"><![endif]></span><span
 style='mso-spacerun:yes'> </span></p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
@@ -1083,9 +1105,41 @@ mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Instrument
 Parameters</span></b> GSAS-II tree item if needed). The resonant scattering
 value is used for contrast calculations.</p>
 
-<h2>Step 4: Set Sample parameters </h2>
+<h2><a name="_Ref386699210">Step 4: Set Sample parameters</a> </h2>
 
-<p class=MsoNormal>Two of the substances you have loaded into GSAS-II next need
+<p class=MsoNormal><span style='mso-no-proof:yes'>If you have already done this
+step in the </span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-no-proof:yes'>Size Distribution</span></b><span
+style='mso-no-proof:yes'> tutorial, skip to </span><!--[if supportFields]><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-no-proof:
+yes'><span style='mso-element:field-begin'></span><span
+style='mso-spacerun:yes'> </span>REF _Ref386699210 \h <span
+style='mso-spacerun:yes'> </span>\* MERGEFORMAT <span style='mso-element:field-separator'></span></span></b><![endif]--><!--[if supportFields]><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'><span
+style='mso-element:field-begin'></span><span style='mso-no-proof:yes'><span
+style='mso-spacerun:yes'> </span>REF _Ref386699439 \h </span><span
+style='mso-spacerun:yes'> </span>\* MERGEFORMAT <span style='mso-element:field-separator'></span></span></b><![endif]--><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Step 5 Creation
+and Refinement of Log Normal Particle Model<!--[if gte mso 9]><xml>
+ <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F005200650066003300380036003600390039003400330039000000</w:data>
+</xml><![endif]--></span></b><!--[if supportFields]><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'><span style='mso-element:field-end'></span></span></b><![endif]--><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>.<span
+style='mso-no-proof:yes'><!--[if gte mso 9]><xml>
+ <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F005200650066003300380036003600390039003200310030000000</w:data>
+</xml><![endif]--></span></span></b><!--[if supportFields]><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-no-proof:yes'><span
+style='mso-element:field-end'></span></span></b><![endif]--><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-no-proof:
+yes'> </span></b>Two of the substances you have loaded into GSAS-II next need
 to be selected for this experiment; Select <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Sample Parameters</span></b> under <b
@@ -1105,12 +1159,12 @@ without and with consideration of resonant scattering effects; the latter is
 used in subsequent calculations.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_25" o:spid="_x0000_i1034" type="#_x0000_t75" style='width:305.25pt;
- height:369pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image005.png"
+ id="_x0000_i1044" type="#_x0000_t75" style='width:305.25pt;height:369pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image005.png"
   o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=407 height=492
-src="Small%20Angle%20Size%20Distribution_files/image005.png" v:shapes="Picture_x0020_25"><![endif]></span></p>
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image005.png" v:shapes="_x0000_i1044"><![endif]></span></p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
@@ -1127,214 +1181,560 @@ style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-ser
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Command/Set
 scale</span></b> menu item.</p>
 
-<h2>Step 5 Size distribution via Maximum Entropy</h2>
+<h2><a name="_Ref386699439"></a><a name="_Ref386699331"><span style='mso-bookmark:
+_Ref386699439'>Step 5 </span></a><span style='mso-bookmark:_Ref386699439'>Creation
+and Refinement of Log Normal Particle Model</span></h2>
 
-<p class=MsoNormal>You are now ready to attempt a size distribution analysis
-using the maximum entropy method. Select <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Models</span></b> under <b style='mso-bidi-font-weight:
+<p class=MsoNormal>You are now ready to attempt fitting the data with a log
+normal distribution of spherical particles. Thus you’ll need to select <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Models</span></b>
+under <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>SASD alumina
+data.dat</span></b> from the GSAS-II tree; the data window will display the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Size dist.</span></b>
+display;<span style='mso-no-proof:yes'> </span></p>
+
+<p class=MsoNormal><span class=GramE>change</span> this to <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>SASD alumina data.dat</span></b>
-from the GSAS-II tree; the window will display</p>
+minor-latin;mso-hansi-theme-font:minor-latin'>Particle fit</span></b> using the
+<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Modeling by</span></b>
+pull down. NB: GSAS-II will remember your selection for the next time you enter
+this <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Models</span></b>
+data tree item.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_15" o:spid="_x0000_i1033" type="#_x0000_t75" style='width:355.5pt;
- height:191.25pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image006.png"
+ id="Picture_x0020_16" o:spid="_x0000_i1043" type="#_x0000_t75" style='width:379.5pt;
+ height:142.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image006.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=474 height=255
-src="Small%20Angle%20Size%20Distribution_files/image006.png" v:shapes="Picture_x0020_15"><![endif]></span></p>
+</v:shape><![endif]--><![if !vml]><img border=0 width=506 height=190
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image006.png" v:shapes="Picture_x0020_16"><![endif]></span></p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
-<p class=MsoNormal>Many selections are made by default for this <span
-class=GramE>analysis,</span> however it is important that an appropriate value
-is selected for the background. From the high Q end of the data plot</p>
+<p class=MsoNormal>If you had done the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Size Distribution</span></b> tutorial, you
+would know that there were two populations of particles in the sample. One had
+a mean diameter of ~1300A and the other had a mean diameter of ~150A. You will
+also need something to describe the very lowest Q portion of the data. Do <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Models/Add</span></b>
+from the menu; the data window will change and the plots will be refreshed.
+Your first step is to change the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Material</span></b> to <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Alumina</span></b> and make sure
+the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Background</span></b>
+is something reasonable (<b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>0.11</span></b>) based on the data at highest
+Q; again the data window and plots will be refreshed.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_17" o:spid="_x0000_i1042" type="#_x0000_t75" style='width:379.5pt;
+ height:315pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image007.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=506 height=420
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image007.png" v:shapes="Picture_x0020_17"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>The data plot shows a horizontal red line for the background
+and a green one calculated from your selected model. </p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_18" o:spid="_x0000_i1041" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image008.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image008.png" v:shapes="Picture_x0020_18"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>You can manually adjust the calculated curve by using the
+sliders: increase <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'> Volume</span></b> and decrease <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> Mean</span></b> to improve the fit. NB: The <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> Mean</span></b> is a radius so its value is
+roughly ½ the <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Size Distribution</span></b> result. The sliders cover 2 orders of
+<span class=GramE>magnitude,</span> their range is reset if a value is entered
+in the value field. After changing <span class=SpellE><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> Mean</span></b>
+to 700 and <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'> Volume</span></b> to <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>0.0953</span></b>
+my plot is</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_19" o:spid="_x0000_i1040" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image009.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image009.png" v:shapes="Picture_x0020_19"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>There is an obvious discrepancy at low Q and a much less
+obvious one at Q~0.033Å<sup>-1</sup>; the latter is responsible for the ~150Å
+peak in the <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Size Distribution</span></b> result. Do another <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Models/Add</span></b>
+to include it. The data window now shows two components</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_20" o:spid="_x0000_i1039" type="#_x0000_t75" style='width:379.5pt;
+ height:487.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image010.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=506 height=650
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image010.png" v:shapes="Picture_x0020_20"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Note the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Material</span></b> for the new one is preset
+to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Alumina</span></b>
+to save you the easily forgotten step of setting it. Change <span class=SpellE><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> Mean</span></b>
+to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>75</span></b>
+(i.e. ½ of 150) and reduce <span class=SpellE><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> Volume</span></b>
+to make the green curve better match the data (you can inset ‘<b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>0</span></b>’s
+in the value &amp; play with the slider – something like <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>0.0003</span></b> looks good). My
+fit looked like</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_21" o:spid="_x0000_i1038" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image011.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image011.png" v:shapes="Picture_x0020_21"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Finally we need to deal with the low Q region – this is
+probably due to some agglomeration of the 1300Å articles which is best
+described by a pure <span class=SpellE>Porod</span> power law scattering model.
+Do another <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Models/Add</span></b> and change the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Distribution </span></b>selection
+to <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Porod</span></b></span>. The third component
+is then (I’ve shrunk the window &amp; moved the scroll bar).</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_22" o:spid="_x0000_i1037" type="#_x0000_t75" style='width:379.5pt;
+ height:270.75pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image012.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=506 height=361
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image012.png" v:shapes="Picture_x0020_22"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>The green curve on the plot looks very poor</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_23" o:spid="_x0000_i1036" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image013.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image013.png" v:shapes="Picture_x0020_23"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Not to worry, all the problem is in the <span class=SpellE>Porod</span>
+component variables. <span class=GramE>Remembering that this is likely to be an
+agglomeration of 1300Å particles, set the <span class=SpellE><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> Cutoff</span></b>
+to that value.</span> That immediately restores the higher Q portion of the
+fit.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_24" o:spid="_x0000_i1035" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image014.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image014.png" v:shapes="Picture_x0020_24"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Next use the <span class=SpellE><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> P</span></b>
+(power law exponent) slider to adjust the fit. In this case setting <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> P</span></b> to ~<b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>3.25</span></b> gives a pretty
+good fit without needing to adjust the <span class=SpellE><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> B</span></b>
+<span class=SpellE>prefactor</span>.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_25" o:spid="_x0000_i1034" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image015.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image015.png" v:shapes="Picture_x0020_25"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Finally, you can refine these coefficients to find the best
+fit to the data. As a beginner, I’d start by refining just the two <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> Volume</span></b> and the <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> B</span></b> along with the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Background</span></b>
+parameters (one might be able to refine “everything” at once, but then again it
+might not work); check the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Refine?</span></b> <span class=GramE>boxes</span>
+for these parameters. Do <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Models/Fit </span></b>to do the least squares
+refinement; convergence will occur very quickly. NB: if the refinement messes
+up, you can recover the previous result; do <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Models/Undo</span></b> to
+recover. Then add the two <span class=SpellE><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> Mean</span></b>
+and <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'> P</span></b> parameters to the
+refinement, again convergence is easily obtained. Finally, add the two <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> <span class=SpellE>StdDev</span></span></b> and
+<span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'> Cutoff</span></b> parameters (a
+total of ten) to the list. The result is a really nice fit to the data with
+reasonable values; the console window shows the full results of the refinement</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_28" o:spid="_x0000_i1033" type="#_x0000_t75" style='width:549.75pt;
+ height:206.25pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image016.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=733 height=275
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image016.png" v:shapes="Picture_x0020_28"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_27" o:spid="_x0000_i1032" type="#_x0000_t75" style='width:525pt;
  height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image007.png"
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image017.png"
   o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Small%20Angle%20Size%20Distribution_files/image007.png" v:shapes="Picture_x0020_27"><![endif]></span><span
-style='mso-spacerun:yes'> </span></p>
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image017.png" v:shapes="Picture_x0020_27"><![endif]></span></p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
-<p class=MsoNormal>It is clear that the intensity levels off at an apparent
-background level of ~0.12; enter that into the appropriate place in the data
-window. The plot will be redrawn showing a horizontal green line for the
-background. All the other parameters seem reasonable for a 1<sup>st</sup>
-attempt at a <span class=SpellE>MaxEnt</span> solution. Do <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>Models/Fit</span></b>; the
-console window will show that the calculation did not converge and the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Size
-Distribution</span></b> plot has a “choppy” appearance.</p>
-
-<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_28" o:spid="_x0000_i1031" type="#_x0000_t75" style='width:525pt;
- height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image008.png"
-  o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Small%20Angle%20Size%20Distribution_files/image008.png" v:shapes="Picture_x0020_28"><![endif]></span></p>
-
-<p class=MsoNormal><o:p>&nbsp;</o:p></p>
-
-<p class=MsoNormal>This is not a satisfactory result, but the suggestion given
-in the console window is worth trying. Change the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>Error multiplier</span></b> to <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>5</span></b>
-(notice the increased error bars on the data plot) and repeat <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Model/Fit</span></b>.
-Convergence is now achieved in &lt;10 cycles (see console window for details)
-and a much smoother size distribution results</p>
-
-<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_29" o:spid="_x0000_i1030" type="#_x0000_t75" style='width:525pt;
- height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image009.png"
-  o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Small%20Angle%20Size%20Distribution_files/image009.png" v:shapes="Picture_x0020_29"><![endif]></span></p>
-
-<p class=MsoNormal><o:p>&nbsp;</o:p></p>
-
-<p class=MsoNormal>This is a good result: clearly the alumina polishing powder
-has a bimodal distribution with diameters centered about ~1600Å and ~160Å (not
-500Å and 1µm as advertised by the manufacturer!).</p>
-
-<p class=MsoNormal>You may wish to explore the effect of some of the other
-parameters in the data window. Most are obvious but <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>Log floor factor</span></b> needs
-a bit of explanation. This is the log of the minimum size distribution (scaled
-by the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>histogram
-scale factor</span></b> and the <b style='mso-bidi-font-weight:normal'><span
+<p class=MsoNormal>If you had done a <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>contrast</span></b>). This size distribution
-minimum needs to be set within 1-2 orders of magnitude of the optimal value and
-can differ from the default of 10<sup>-3; </sup>it is worth changing if
-convergence is poor despite trying different error multipliers. Try changing it
-to see what effect it has on the result. With the original settings the data
-fit looks like</p>
+mso-hansi-theme-font:minor-latin'>Size Distribution</span></b> analysis, these
+results are plotted as component curves on that plot as well</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_30" o:spid="_x0000_i1029" type="#_x0000_t75" style='width:621.75pt;
+ id="Picture_x0020_29" o:spid="_x0000_i1031" type="#_x0000_t75" style='width:525pt;
  height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image010.png"
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image018.png"
   o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=829 height=600
-src="Small%20Angle%20Size%20Distribution_files/image010.png" v:shapes="Picture_x0020_30"><![endif]></span></p>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image018.png" v:shapes="Picture_x0020_29"><![endif]></span></p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
-<p class=MsoNormal>The green curve is the result calculated from the size
-distribution. Notice that it is not perfect, there is appreciable misfit around
-Q=0.03A. This may be due to the assumption that the particles are spheres; they
-could be some other shape (I could get a better fit by setting the Spheroid
-aspect ratio to 2.0), however this tool is not really the appropriate one to
-make this determination.</p>
-
-<h2>Step 6 Size Distribution <i style='mso-bidi-font-style:normal'>via</i>
-Total Non-Negative Least Squares (TNNLS)</h2>
-
-<p class=MsoNormal>An alternative method for determining size distributions is
-the TNNLS or Interior-Point Gradient (IPG) method. As the name implies this is
-a gradient refinement method for the special case of all positive data and
-parameter values. To try it on this alumina data, select <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>IPG</span></b> from the <b
+<p class=MsoNormal>This is the sort of agreement one should expect between the
+best fit and the size distribution. To save these results you must do <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Fitting
-method</span></b> pull down. The data window will change to give</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>File/Save
+project </span></b>in the main <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>GSAS-II data tree</span></b> window.</p>
 
-<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_16" o:spid="_x0000_i1028" type="#_x0000_t75" style='width:375.75pt;
- height:191.25pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image011.png"
-  o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=501 height=255
-src="Small%20Angle%20Size%20Distribution_files/image011.png" v:shapes="Picture_x0020_16"><![endif]></span></p>
+<h2>Step 6 Creation of a Unified <span class=SpellE>Guinier-Porod</span> Model</h2>
 
-<p class=MsoNormal><o:p>&nbsp;</o:p></p>
-
-<p class=MsoNormal>Reset the Error multiplier back to 1.0 and then do
-Models/Fit to run the IPG fitting. The IPG algorithm did not converge in 100
-cycles and resulting size distribution is a little choppy but has roughly the
-same bimodal distribution found by <span class=SpellE>MaxEnt</span>.</p>
-
-<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_289" o:spid="_x0000_i1027" type="#_x0000_t75" style='width:621.75pt;
- height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image012.png"
-  o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=829 height=600
-src="Small%20Angle%20Size%20Distribution_files/image012.png" v:shapes="Picture_x0020_289"><![endif]></span></p>
-
-<p class=MsoNormal><o:p>&nbsp;</o:p></p>
-
-<p class=MsoNormal>This can be considerably improved by setting the <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Error
-multiplier</span></b> to 2.0; the IPG fit con<span style='mso-no-proof:yes'>verges
-in &lt;20 cycles and gives a smoother size distribution.<o:p></o:p></span></p>
-
-<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_291" o:spid="_x0000_i1026" type="#_x0000_t75" style='width:621.75pt;
- height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image013.png"
-  o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=829 height=600
-src="Small%20Angle%20Size%20Distribution_files/image013.png" v:shapes="Picture_x0020_291"><![endif]></span></p>
-
-<p class=MsoNormal><o:p>&nbsp;</o:p></p>
-
-<p class=MsoNormal>The bimodal distribution is again quite clear with ~1400A
-and ~150A diameter particles. This method appears to give a better fit to the
-data than the <span class=SpellE>MaxEnt</span> method particularly in the
-Q~0.3A region’</p>
-
-<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_292" o:spid="_x0000_i1025" type="#_x0000_t75" style='width:621.75pt;
- height:450pt;visibility:visible;mso-wrap-style:square'>
- <v:imagedata src="Small%20Angle%20Size%20Distribution_files/image014.png"
-  o:title=""/>
-</v:shape><![endif]--><![if !vml]><img border=0 width=829 height=600
-src="Small%20Angle%20Size%20Distribution_files/image014.png" v:shapes="Picture_x0020_292"><![endif]></span></p>
-
-<p class=MsoNormal><o:p>&nbsp;</o:p></p>
-
-<p class=MsoNormal>You may wish to explore the other parameters for the IPG
-fitting. If <b style='mso-bidi-font-weight:normal'><span style='font-family:
+<p class=MsoNormal>For the Unified model there is assumed to be particles with
+some radius of gyration (<span class=SpellE>Guinier</span> model) with a power
+law distribution tail (<span class=SpellE>Porod</span> model). This can be set
+for your model by changing the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Distribution</span></b> for the first two
+components to <b style='mso-bidi-font-weight:normal'><span style='font-family:
 "Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin'>Q power weight</span></b> is set to <b style='mso-bidi-font-weight:
+minor-latin'>Unified</span></b>. NB: the log normal coefficients are not lost
+by this step; they can be recovered by simply changing the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>0-4</span></b>, that changes the
-data weighting to <span class=SpellE><span class=GramE>Q<sup>p</sup></span></span>.
-This can change the convergence of the IPG method and yield improved results if
-one is unsuccessful with the default settings. I got a nice fit with a <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Q power
-weight</span></b> of <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>3</span></b> and <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>Error multiplier</span></b> of <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>2.0</span></b>.</p>
+minor-latin;mso-hansi-theme-font:minor-latin'>Distribution</span></b> back to <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>LogNormal</span></b></span>. The data window values give the
+defaults for these components</p>
 
-<p class=MsoNormal>You should save this GSAS-II project as it will be used in tutorials
-for fitting small angle scattering data; I used <span class=SpellE><b
+<p class=MsoNormal><span style='mso-no-proof:yes'><span
+style='mso-spacerun:yes'> </span><!--[if gte vml 1]><v:shape id="Picture_x0020_30"
+ o:spid="_x0000_i1030" type="#_x0000_t75" style='width:379.5pt;height:546pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image019.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=506 height=728
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image019.png" v:shapes="Picture_x0020_30"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>And the plot shows a poor fit</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_31" o:spid="_x0000_i1029" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image020.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image020.png" v:shapes="Picture_x0020_31"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>First, change the <span class=SpellE><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>alumina.gpx</span></b></span>.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> <span
+class=SpellE>Rg</span></span></b> values to be about ½ the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Size Distribution</span></b>
+results (e.g. <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>700</span></b> &amp; <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>75</span></b>), then set the <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> Cutoff</span></b> value for the <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> <span class=SpellE>Rg</span></span></b>=700
+one to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>100</span></b>.
+Next, change the <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'> G</span></b> for the <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> <span class=SpellE>Rg</span>=700</span></b>
+one to be about the Intensity value for the lower Q bump in the data (~<b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>1.0e6</span></b>).
+Finally, reduce the <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'> G</span></b> value for the <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> <span class=SpellE>Rg</span>=75</span></b>
+component to get the best fit to the data (~<b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>210</span></b>). The data window
+looks like</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_32" o:spid="_x0000_i1028" type="#_x0000_t75" style='width:379.5pt;
+ height:546pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image021.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=506 height=728
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image021.png" v:shapes="Picture_x0020_32"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>And the plot looks like</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_33" o:spid="_x0000_i1027" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image022.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image022.png" v:shapes="Picture_x0020_33"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>This is probably close enough to do a refinement. Select <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Refine?</span></b>
+For <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'> G</span></b>, <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> <span class=SpellE>Rg</span></span></b> and <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> B</span></b> for both components (the <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> B</span></b>, <span class=SpellE><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> P</span></b>
+and <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Background
+Refine?</span></b> boxes should also be checked). Then do <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Models/Fit</span></b>; it should
+rapidly converge to give in the console window</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_34" o:spid="_x0000_i1026" type="#_x0000_t75" style='width:549.75pt;
+ height:206.25pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image023.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=733 height=275
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image023.png" v:shapes="Picture_x0020_34"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>And the closeness of the fit to the data in the plot is</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_35" o:spid="_x0000_i1025" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Fitting%20Small%20Angle%20Scattering%20Data_files/image024.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Fitting%20Small%20Angle%20Scattering%20Data_files/image024.png" v:shapes="Picture_x0020_35"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>This fit is almost as close as the log normal one done
+earlier. However, the <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'> <span class=SpellE>Rg</span></span></b>
+values are a bit less than the corresponding <span class=SpellE><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Dist</span></b></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> Mean</span></b>
+values obtained earlier. Also note that this model makes no reference to the
+substance contrast used earlier (the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Size Distribution</span></b> plot will not
+have curves calculated from this model). To save these results you must do <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>File/Save
+project </span></b>in the main <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>GSAS-II data tree</span></b> window.</p>
+
+<p class=MsoNormal>This concludes the SASD modeling tutorial.<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
 </div>
 

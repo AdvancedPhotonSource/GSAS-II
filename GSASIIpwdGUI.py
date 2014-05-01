@@ -2683,7 +2683,7 @@ def UpdateModelsGrid(G2frame,data):
                 material = data['Particle']['Levels'][-1]['Controls']['Material']
             data['Particle']['Levels'].append({
                 'Controls':{'FormFact':'Sphere','DistType':'LogNormal','Material':material,
-                    'FFargs':{},'SFargs':{},'NumPoints':50,'Cutoff':0.01,
+                    'FFargs':{},'SFargs':{},'NumPoints':50,'Cutoff':0.01,'Contrast':0.0,
                     'SlitSmear':[0.0,False],'StrFact':'Dilute'},    #last 2 not used - future?
                 'LogNormal':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[0.5,False],'MinSize':[10.,False],},
                 'Gaussian':{'Volume':[0.05,False],'Mean':[1000.,False],'StdDev':[300.,False],},
@@ -2695,7 +2695,7 @@ def UpdateModelsGrid(G2frame,data):
                 'Bragg':{'PkInt':[100,False],'PkPos':[0.2,False],
                     'PkSig':[10,False],'PkGam':[10,False],},        #reasonable 31A peak
                 })
-            G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
             RefreshPlots(True)
                     
         wx.CallAfter(UpdateModelsGrid,G2frame,data)
@@ -2788,8 +2788,8 @@ def UpdateModelsGrid(G2frame,data):
                 ISample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Sample Parameters'))
                 ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Limits'))
                 IInst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Instrument Parameters'))
-                ISubstances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Substances'))
-                IfOK,result,varyList,sig,Rvals,covMatrix = G2sasd.ModelFit(IProfile,IProfDict,ILimits,ISubstances,ISample,IModel)
+#                ISubstances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Substances'))
+                IfOK,result,varyList,sig,Rvals,covMatrix = G2sasd.ModelFit(IProfile,IProfDict,ILimits,ISample,IModel)
                 if not IfOK:
                     G2frame.ErrorDialog('Failed sequential refinement for data '+name,
                         'You need to rethink your selection of parameters\n'+    \
@@ -2798,7 +2798,7 @@ def UpdateModelsGrid(G2frame,data):
                     dlg.Destroy()
                     break
                 
-                G2sasd.ModelFxn(IProfile,IProfDict,ILimits,ISubstances,ISample,IModel)
+                G2sasd.ModelFxn(IProfile,IProfDict,ILimits,ISample,IModel)
                 SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
                     'covMatrix':covMatrix,'title':name}
             else:
@@ -2821,17 +2821,17 @@ def UpdateModelsGrid(G2frame,data):
                     'You need to define a scattering substance!\n'+    \
                     ' Do Substances and then Sample parameters')
                 return
-            G2sasd.SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data)
+            G2sasd.SizeDistribution(Profile,ProfDict,Limits,Sample,data)
             G2plt.PlotSASDSizeDist(G2frame)
             RefreshPlots(True)
             
         elif data['Current'] == 'Particle fit':
             SaveState()
-            if not G2sasd.ModelFit(Profile,ProfDict,Limits,Substances,Sample,data)[0]:
+            if not G2sasd.ModelFit(Profile,ProfDict,Limits,Sample,data)[0]:
                 G2frame.ErrorDialog('Failed refinement',
                     'You need to rethink your selection of parameters\n'+    \
                     ' Model restored to previous version')
-            G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
             RefreshPlots(True)
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
@@ -2841,7 +2841,7 @@ def UpdateModelsGrid(G2frame,data):
             G2frame.PatternId,'Models'))
         G2frame.dataFrame.SasdUndo.Enable(False)
         UpdateModelsGrid(G2frame,data)
-        G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+        G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
         RefreshPlots(True)
 
     def DoUnDo():
@@ -3030,7 +3030,7 @@ def UpdateModelsGrid(G2frame,data):
                 valMinMax = [logv-1,logv+1]
                 sldrObj.SetRange(slMult*valMinMax[0],slMult*valMinMax[1])
                 sldrObj.SetValue(slMult*logv)
-            G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
             RefreshPlots()
             
         def OnSelect(event):
@@ -3043,7 +3043,7 @@ def UpdateModelsGrid(G2frame,data):
                 elif 'StrFact' in key:
                     item['SFargs'] = StructureFactors[Obj.GetValue()]
                 wx.CallAfter(UpdateModelsGrid,G2frame,data)
-                G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+                G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
                 RefreshPlots()
                 
         def OnDelLevel(event):
@@ -3051,7 +3051,7 @@ def UpdateModelsGrid(G2frame,data):
             item = Indx[Obj.GetId()]
             del data['Particle']['Levels'][item]
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
-            G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
             RefreshPlots()
             
         def OnParmSlider(event):
@@ -3064,7 +3064,7 @@ def UpdateModelsGrid(G2frame,data):
                 value = 10.**float(slide/slMult)
             item[key][0] = value
             pvObj.SetValue('%.3g'%(item[key][0]))
-            G2sasd.ModelFxn(Profile,ProfDict,Limits,Substances,Sample,data)
+            G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
             RefreshPlots()
             
         def SizeSizer():
@@ -3095,7 +3095,7 @@ def UpdateModelsGrid(G2frame,data):
                 matSel.Bind(wx.EVT_COMBOBOX,OnSelect)        
                 sizeSizer.Add(matSel,0,WACV) #do neutron test here?
                 rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
-                contrast = (rho-rhoMat)**2
+                level['Controls']['Contrast'] = contrast = (rho-rhoMat)**2                 
                 sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Resonant X-ray contrast: '),0,WACV)
                 sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label='  %.2f 10%scm%s'%(contrast,Pwr20,Pwrm4)),0,WACV)
                 if 'Mono' not in level['Controls']['DistType']:

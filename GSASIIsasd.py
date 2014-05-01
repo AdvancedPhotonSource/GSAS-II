@@ -1004,7 +1004,7 @@ def Bestimate(G,Rg,P):
 #### Size distribution
 ###############################################################################
 
-def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
+def SizeDistribution(Profile,ProfDict,Limits,Sample,data):
     shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],
         'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
         'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
@@ -1052,7 +1052,7 @@ def SizeDistribution(Profile,ProfDict,Limits,Substances,Sample,data):
 #### Modelling
 ################################################################################
 
-def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
+def ModelFit(Profile,ProfDict,Limits,Sample,Model):
     shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],
         'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
         'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
@@ -1080,7 +1080,6 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
             values.append(Back[0])
         parmDict['Back'] = Back[0]
         partData = Model['Particle']
-        parmDict['Matrix density'] = Substances['Substances'][partData['Matrix']['Name']].get('XAnom density',0.0)
         for i,level in enumerate(partData['Levels']):
             cid = str(i)+':'
             controls = level['Controls']
@@ -1093,7 +1092,7 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                 parmDict[cid+'FormFact'] = shapes[controls['FormFact']][0]
                 parmDict[cid+'FFVolume'] = shapes[controls['FormFact']][1]
                 parmDict[cid+'StrFact'] = sfxns[controls['StrFact']]
-                parmDict[cid+'XAnom density'] = Substances['Substances'][controls['Material']].get('XAnom density',0.0)
+                parmDict[cid+'Contrast'] = controls['Contrast']
                 for item in FFparmOrder:
                     if item in controls['FFargs']:
                         parmDict[cid+item] = controls['FFargs'][item][0]
@@ -1125,7 +1124,8 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
             controls = level['Controls']
             Type = controls['DistType']
             if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm','Monodisperse']:
-                print ' Component %d: Type: %s: Structure Factor: %s'%(i,Type,controls['StrFact'])                
+                print ' Component %d: Type: %s: Structure Factor: %s Contrast: %12.3f'  \
+                    %(i,Type,controls['StrFact'],controls['Contrast'])                
             else:
                 print ' Component %d: Type: %s: '%(i,Type,)
             cid = str(i)+':'
@@ -1151,7 +1151,6 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
         
     def getSASD(Q,levelTypes,parmDict):
         Ic = np.zeros_like(Q)
-        rhoMat = parmDict['Matrix density']
         for i,Type in enumerate(levelTypes):
             cid = str(i)+':'
             if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm']:
@@ -1170,8 +1169,7 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                 for item in [cid+'Volume',cid+'Mean',cid+'StdDev',cid+'MinSize',]:
                     if item in parmDict:
                         distDict[item.split(':')[1]] = parmDict[item]
-                rho = parmDict[cid+'XAnom density']
-                contrast = (rho-rhoMat)**2
+                contrast = parmDict[cid+'Contrast']
                 rBins,dBins,dist = MakeDiamDist(Type,parmDict[cid+'NumPoints'],parmDict[cid+'Cutoff'],distDict)
                 Gmat = G_matrix(Q,rBins,contrast,FFfxn,Volfxn,FFargs).T
                 dist *= parmDict[cid+'Volume']
@@ -1199,8 +1197,7 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
                 for item in [cid+'Dist',cid+'VolFr',cid+'epis',cid+'Sticky',cid+'Depth',cid+'Width']:
                     if item in parmDict: 
                         SFargs.append(parmDict[item])
-                rho = parmDict[cid+'XAnom density']
-                contrast = (rho-rhoMat)**2
+                contrast = parmDict[cid+'Contrast']
                 R = parmDict[cid+'Radius']
                 Gmat = G_matrix(Q,R,contrast,FFfxn,Volfxn,FFargs)             
                 Ic += Gmat[0]*parmDict[cid+'Volume']*SFfxn(Q,args=SFargs)
@@ -1251,7 +1248,7 @@ def ModelFit(Profile,ProfDict,Limits,Substances,Sample,Model):
     except ValueError:
         return False,0,0,0,0,0
     
-def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
+def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
     
     shapes = {'Spheroid':[SpheroidFF,SpheroidVol],'Cylinder':[CylinderDFF,CylinderDVol],
         'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
@@ -1263,7 +1260,6 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
 
 #    pdb.set_trace()
     partData = sasdData['Particle']
-    rhoMat = Substances['Substances'][partData['Matrix']['Name']].get('XAnom density',0.0)
     matFrac = partData['Matrix']['VolFrac'] #[value,flag]        
     Scale = Sample['Scale']     #[value,flag]
     Back = sasdData['Back']
@@ -1293,8 +1289,7 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
             for item in ['Aspect ratio','Length','Thickness','Diameter',]:
                 if item in controls['FFargs']: 
                     FFargs.append(controls['FFargs'][item][0])
-            rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
-            contrast = (rho-rhoMat)**2
+            contrast = controls['Contrast']
             distDict = {}
             for item in parmDict:
                 distDict[item] = parmDict[item][0]
@@ -1335,8 +1330,7 @@ def ModelFxn(Profile,ProfDict,Limits,Substances,Sample,sasdData):
             for item in ['Aspect ratio','Length','Thickness','Diameter',]:
                 if item in controls['FFargs']: 
                     FFargs.append(controls['FFargs'][item][0])
-            rho = Substances['Substances'][level['Controls']['Material']].get('XAnom density',0.0)
-            contrast = (rho-rhoMat)**2
+            contrast = controls['Contrast']
             Gmat = G_matrix(Q[Ibeg:Ifin],R,contrast,FFfxn,Volfxn,FFargs)             
             Ic[Ibeg:Ifin] += Gmat[0]*level[distFxn]['Volume'][0]*SFfxn(Q[Ibeg:Ifin],args=SFargs)
             Rbins.append([])

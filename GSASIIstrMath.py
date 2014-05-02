@@ -858,10 +858,10 @@ def Dict2Values(parmdict, varylist):
     in parmdict, as selected by key in varylist'''
     return [parmdict[key] for key in varylist] 
     
-#def Values2Dict(parmdict, varylist, values):
-#    ''' Use after call to leastsq to update the parameter dictionary with 
-#    values corresponding to keys in varylist'''
-#    parmdict.update(zip(varylist,values))
+def Values2Dict(parmdict, varylist, values):
+    ''' Use after call to leastsq to update the parameter dictionary with 
+    values corresponding to keys in varylist'''
+    parmdict.update(zip(varylist,values))
     
 def GetNewCellParms(parmDict,varyList):
     'Needs a doc string'

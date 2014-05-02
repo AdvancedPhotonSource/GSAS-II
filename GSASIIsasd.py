@@ -1201,7 +1201,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
                 R = parmDict[cid+'Radius']
                 Gmat = G_matrix(Q,R,contrast,FFfxn,Volfxn,FFargs)             
                 Ic += Gmat[0]*parmDict[cid+'Volume']*SFfxn(Q,args=SFargs)
-            elif 'Bragg' in distFxn:
+            elif 'Bragg' in Type:
                 Ic += parmDict[cid+'PkInt']*G2pwd.getPsVoigt(parmDict[cid+'PkPos'],
                     parmDict[cid+'PkSig'],parmDict[cid+'PkGam'],Q)
         Ic += parmDict['Back']  #/parmDict['Scale']
@@ -1245,7 +1245,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
         SetModelParms()
         covMatrix = covM*Rvals['GOF']
         return True,result,varyList,sig,Rvals,covMatrix
-    except ValueError,TypeError:      #when bad LS refinement; covM missing or with nans
+    except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
         return False,0,0,0,0,0
     
 def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):

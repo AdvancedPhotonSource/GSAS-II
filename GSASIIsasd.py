@@ -1245,7 +1245,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
         SetModelParms()
         covMatrix = covM*Rvals['GOF']
         return True,result,varyList,sig,Rvals,covMatrix
-    except ValueError:
+    except ValueError,TypeError:      #when bad LS refinement; covM missing or with nans
         return False,0,0,0,0,0
     
 def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):

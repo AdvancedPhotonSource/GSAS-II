@@ -3229,7 +3229,7 @@ def UpdateModelsGrid(G2frame,data):
                 Indx[strfctr.GetId()] = [level['Controls'],'StrFact']
                 strfctr.Bind(wx.EVT_COMBOBOX,OnSelect)
                 topLevel.Add(strfctr,0,WACV)
-            partSizer.Add(ParmSizer(),1,wx.EXPAND)
+            partSizer.Add(ParmSizer(),0,wx.EXPAND)
         return partSizer
         
     def OnEsdScale(event):

@@ -1000,6 +1000,9 @@ def SetScale(Data,refData):
 def Bestimate(G,Rg,P):
     return (G*P/Rg**P)*np.exp(scsp.gammaln(P/2))
     
+def SmearData(Ic,Q,slitLength):
+    return Ic   #for now
+    
 ###############################################################################
 #### Size distribution
 ###############################################################################
@@ -1011,6 +1014,7 @@ def SizeDistribution(Profile,ProfDict,Limits,Sample,data):
         'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol],
         'Cylinder diam':[CylinderDFF,CylinderDVol]}
     Shape = data['Size']['Shape'][0]
+    SlitLen = Sample.get('SlitLen',0.0)
     Parms = data['Size']['Shape'][1:]
     if data['Size']['logBins']:
         Bins = np.logspace(np.log10(data['Size']['MinDiam']),np.log10(data['Size']['MaxDiam']),
@@ -1070,7 +1074,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
     SFparmOrder = ['Dist','VolFr','epis','Sticky','Depth','Width']
 
     def GetModelParms():
-        parmDict = {'Scale':Sample['Scale'][0]}
+        parmDict = {'Scale':Sample['Scale'][0],'SlitLen':Sample.get('SlitLen',0.0),}
         varyList = []
         values = []
         levelTypes = []
@@ -1262,6 +1266,7 @@ def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
     partData = sasdData['Particle']
     matFrac = partData['Matrix']['VolFrac'] #[value,flag]        
     Scale = Sample['Scale']     #[value,flag]
+    SlitLen = Sample.get('SlitLen',0.0)
     Back = sasdData['Back']
     Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
     Qmin = Limits[1][0]

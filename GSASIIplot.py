@@ -2366,8 +2366,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
                 Plot.plot(X,Y)
                 Plot.plot(X,Y,'o',label=name)
         if Page.fitvals:
-                Plot.plot(X,fitvals)
-                Plot.plot(X,fitvals,'*',label='Fit')
+                Plot.plot(X,fitvals,label='Fit')
             
         Plot.legend(loc='best')
         Plot.set_ylabel('Parameter values')
@@ -2569,12 +2568,12 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         ypos /= scaley
                         Data['ring'].append([xpos,ypos])
                 elif event.button == 3:
-                    G2frame.dataFrame.GetStatusBar().SetStatusText('Calibrating...',1)
+                    G2frame.dataFrame.GetStatusBar().SetStatusText('Calibrating...',0)
                     if G2img.ImageCalibrate(G2frame,Data):
-                        G2frame.dataFrame.GetStatusBar().SetStatusText('Calibration successful - Show ring picks to check',1)
+                        G2frame.dataFrame.GetStatusBar().SetStatusText('Calibration successful - Show ring picks to check',0)
                         print 'Calibration successful'
                     else:
-                        G2frame.dataFrame.GetStatusBar().SetStatusText('Calibration failed - Show ring picks to diagnose',1)
+                        G2frame.dataFrame.GetStatusBar().SetStatusText('Calibration failed - Show ring picks to diagnose',0)
                         print 'Calibration failed'
                     G2frame.ifGetRing = False
                     G2imG.UpdateImageControls(G2frame,Data,Masks)

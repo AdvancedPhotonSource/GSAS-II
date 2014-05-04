@@ -459,7 +459,8 @@ def MakeFrameMask(data,frame):
             jFin = min(jBeg+blkSize,Ny)                
             nI = iFin-iBeg
             nJ = jFin-jBeg
-            tax,tay = np.mgrid[iBeg+0.5:iFin+.5,jBeg+.5:jFin+.5]         #bin centers not corners
+            tax,tay = np.mgrid[iBeg:iFin,jBeg:jFin]
+#            tax,tay = np.mgrid[iBeg+0.5:iFin+.5,jBeg+.5:jFin+.5]         #bin centers not corners
             tax = np.asfarray(tax*scalex,dtype=np.float32)
             tay = np.asfarray(tay*scaley,dtype=np.float32)
             tamp = ma.make_mask_none((1024*1024))

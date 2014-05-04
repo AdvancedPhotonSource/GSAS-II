@@ -985,7 +985,7 @@ def SaveIntegration(G2frame,PickId,data):
             Sample['Trans'] = data['SampleAbs'][0]
             parms = ['LXC',data['wavelength'],0.0,Azms[i]]
         Y = G2frame.Integrate[0][i]
-        W = 1./Y                    #probably not true
+        W = np.where(Y>0.,1./Y,1.e-6)                    #probably not true
         Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=name)
         G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
         G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])

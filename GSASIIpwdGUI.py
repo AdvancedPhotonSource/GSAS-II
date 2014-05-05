@@ -83,6 +83,7 @@ def SetDefaultSample():
         'Materials':[{'Name':'vacuum','VolFrac':1.0,},{'Name':'vacuum','VolFrac':0.0,}],
         'Thick':1.0,'Contrast':[0.0,0.0],       #contrast & anomalous contrast
         'Trans':1.0,                            #measured transmission
+        'SlitLen':0.0,                          #Slit length - units?
         }
 def SetupSampleLabels(histName,dataType):
     '''Setup a list of labels and number formatting for use in
@@ -106,6 +107,7 @@ def SetupSampleLabels(histName,dataType):
     elif 'SASD' in histName:
         parms.append(['Thick','Sample thickness (mm)',[10,3]])
         parms.append(['Trans','Transmission (meas)',[10,3]])
+        parms.append(['SlitLen','Slit length',[10,3]])
     parms.append(['Omega','Goniometer omega:',[10,3]])
     parms.append(['Chi','Goniometer chi:',[10,3]])
     parms.append(['Phi','Goniometer phi:',[10,3]])
@@ -115,8 +117,7 @@ def SetupSampleLabels(histName,dataType):
 
 def SetDefaultSASDModel():
     'Fills in default items for the SASD Models dictionary'    
-    return {'Back':[0.0,False],'Size':{'MinDiam':50,'MaxDiam':10000,'Nbins':100,
-        'logBins':True,'Method':'MaxEnt','Distribution':[],
+    return {'Back':[0.0,False],'Size':{'MinDiam':50,'MaxDiam':10000,'Nbins':100,'logBins':True,'Method':'MaxEnt','Distribution':[],
         'Shape':['Spheroid',1.0],'MaxEnt':{'Niter':100,'Precision':0.01,'Sky':-3},
         'IPG':{'Niter':100,'Approach':0.8,'Power':-1},'Reg':{},},            
         'Particle':{'Matrix':{'Name':'vacuum','VolFrac':[0.0,False]},'Levels':[],},
@@ -1596,6 +1597,8 @@ def UpdateSampleGrid(G2frame,data):
         data['SurfRoughB'] = [0.,False]
     if 'Trans' not in data and 'SASD' in histName:
         data['Trans'] = 1.0
+    if 'SlitLen' not in data and 'SASD' in histName:
+        data['SlitLen'] = 0.0
 #patch end
     
     parms = SetupSampleLabels(histName,data.get('Type'))
@@ -2806,11 +2809,11 @@ def UpdateModelsGrid(G2frame,data):
                 print ' ***** Small angle sequential refinement successful *****'
         finally:
             wx.EndBusyCursor()    
-        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Small Angle Sequential results')
+        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results')
         if Id:
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         else:
-            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Small Angle Sequential results')
+            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential results')
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         G2frame.PatternTree.SelectItem(Id)
         

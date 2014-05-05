@@ -137,9 +137,7 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_PLOTSEQSEL,
   wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,
   wxADDPARFIT,wxDELPARFIT,wxEDITPARFIT,wxDOPARFIT,
-  wxID_SAVESASDSEQSEL,wxID_SAVESASDSEQSELCSV,wxID_PLOTSASDSEQSEL,
-  wxADDSASDSEQVAR,wxDELSASDSEQVAR,wxEDITSASDSEQVAR,
-] = [wx.NewId() for item in range(16)]
+] = [wx.NewId() for item in range(10)]
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
@@ -1302,7 +1300,7 @@ class PickTwoDialog(wx.Dialog):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             Indx[choice.GetId()] = isel
             choice.Bind(wx.EVT_COMBOBOX, OnSelection)
-            lineSizer.Add(choice,0,wx.ALIGN_CENTER)
+            lineSizer.Add(choice,0,WACV)
             mainSizer.Add(lineSizer)
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -2541,30 +2539,6 @@ class DataFrame(wx.Frame):
         self.SequentialPfit.Append(
             id=wxDOPARFIT, kind=wx.ITEM_NORMAL,text='Fit to function(s)',
             help='Perform a parametric minimization')
-        self.PostfillDataMenu()
-            
-        # Sequential SASD results
-        self.SequentialSASDMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.SequentialSASDMenu,helpType='Sequential',helpLbl='Sequential SASD Refinement')
-        self.SequentialSASDFile = wx.Menu(title='')
-        self.SequentialSASDMenu.Append(menu=self.SequentialSASDFile, title='Selected Cols')
-        self.SequentialSASDFile.Append(id=wxID_SAVESASDSEQSEL, kind=wx.ITEM_NORMAL,text='Save as text',
-            help='Save selected sequential SASD refinement results as a text file')
-        self.SequentialSASDFile.Append(id=wxID_SAVESASDSEQSELCSV, kind=wx.ITEM_NORMAL,text='Save as CSV',
-            help='Save selected sequential SASD refinement results as a CSV spreadsheet file')
-        self.SequentialSASDFile.Append(id=wxID_PLOTSASDSEQSEL, kind=wx.ITEM_NORMAL,text='Plot selected',
-            help='Plot selected sequential SASD refinement results')
-#        self.SequentialPvars = wx.Menu(title='')
-#        self.SequentialMenu.Append(menu=self.SequentialPvars, title='Pseudo Vars')
-#        self.SequentialPvars.Append(
-#            id=wxADDSEQVAR, kind=wx.ITEM_NORMAL,text='Add',
-#            help='Add a new pseudo-variable')
-#        self.SequentialPvars.Append(
-#            id=wxDELSEQVAR, kind=wx.ITEM_NORMAL,text='Delete',
-#            help='Delete an existing pseudo-variable')
-#        self.SequentialPvars.Append(
-#            id=wxEDITSEQVAR, kind=wx.ITEM_NORMAL,text='Edit',
-#            help='Edit an existing pseudo-variable')
         self.PostfillDataMenu()
             
         # Powder 
@@ -3909,12 +3883,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         modVaryList = []
         for i,(key,val) in enumerate(zip(data[name]['varyList'],data[name]['variables'])):
             skey = striphist(key)
-            if skey in data[name]['newAtomDict']:
+            if skey in data[name].get('newAtomDict',{}):
                 # replace coordinate shifts with equivalents from lookup table
                 repkey,repval = data[name]['newAtomDict'][skey]
                 parmDict[repkey] = repval
                 modVaryList.append(repkey)
-            elif skey in data[name]['newCellDict']:
+            elif skey in data[name].get('newCellDict',{}):
                 # replace recip. cell term shifts with equivalents from lookup table        
                 repkey,repval = data[name]['newCellDict'][skey]
                 parmDict[repkey] = repval
@@ -4157,7 +4131,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     sampleParms = GetSampleParms()
 
     # make dict of varied atom coords keyed by absolute position
-    newAtomDict = data[histNames[0]]['newAtomDict'] # dict with atom positions; relative & absolute
+    newAtomDict = data[histNames[0]].get('newAtomDict',{}) # dict with atom positions; relative & absolute
     # Possible error: the next might need to be data[histNames[0]]['varyList']
     # error will arise if there constraints on coordinates?
     atomLookup = {newAtomDict[item][0]:item for item in newAtomDict if item in data['varyList']}
@@ -4166,7 +4140,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     ESDlookup = {} # provides the Dij term for each Ak term (where terms are refined)
     Dlookup = {} # provides the Ak term for each Dij term (where terms are refined)
     # N.B. These Dij vars are missing a histogram #
-    newCellDict = data[histNames[0]]['newCellDict']
+    newCellDict = data[histNames[0]].get('newCellDict',{})
     for item in newCellDict:
         if item in data['varyList']:
             ESDlookup[newCellDict[item][0]] = item
@@ -4236,10 +4210,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     colLabels += ['Rwp']
     Types += [wg.GRID_VALUE_FLOAT+':10,3',]
     # add % change in Chi^2 in last cycle
-    colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
-    colSigs += [None]
-    colLabels += [u'\u0394\u03C7\u00B2 (%)']
-    Types += [wg.GRID_VALUE_FLOAT,]
+    if 'SASD' not in histNames[0]:
+        colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
+        colSigs += [None]
+        colLabels += [u'\u0394\u03C7\u00B2 (%)']
+        Types += [wg.GRID_VALUE_FLOAT,]
     deltaChiCol = len(colLabels)-1
     # add changing sample parameters to table
     for key in sampleParms:
@@ -4345,7 +4320,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # for Parametric fitting from the data table
     parmDict = dict(zip(colLabels,zip(*colList)[0])) # scratch dict w/all values in table
     parmDict.update(
-        {var:val for var,val in data[name]['newCellDict'].values()} #  add varied reciprocal cell terms
+        {var:val for var,val in data[name].get('newCellDict',{}).values()} #  add varied reciprocal cell terms
     )
     name = histNames[0]
     indepVarDict = {     #  values in table w/o ESDs
@@ -4357,7 +4332,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if colSigs[i] is not None and striphist(var) not in Dlookup
         }
     # add recip cell coeff. values
-    depVarDict.update({var:val for var,val in data[name]['newCellDict'].values()})
+    depVarDict.update({var:val for var,val in data[name].get('newCellDict',{}).values()})
     
     G2frame.dataDisplay = GSGrid(parent=G2frame.dataFrame)
     G2frame.SeqTable = Table(
@@ -4374,174 +4349,42 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     else:
         G2frame.dataFrame.setSizePosLeft([700,350])
     # highlight unconverged shifts 
-    for row,name in enumerate(histNames):
-        deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
-        if deltaChi > 10.:
-            G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Color(255,0,0))
-        elif deltaChi > 1.0:
-            G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Color(255,255,0))
+    if 'SASD' not in histNames[0]:
+        for row,name in enumerate(histNames):
+            deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
+            if deltaChi > 10.:
+                G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Color(255,0,0))
+            elif deltaChi > 1.0:
+                G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Color(255,255,0))
     G2frame.dataDisplay.InstallGridToolTip(GridSetToolTip)
     #======================================================================
     # end UpdateSeqResults; done processing sequential results
     #======================================================================
 
-def UpdateSASDSeqResults(G2frame,data,prevSize=None):
-    
-    def GetColumnInfo(col):
-        '''returns column label, lists of values and errors (or None) for each column in the table.
-        label is reformatted from Unicode to MatPlotLib
-        '''
-        plotName = plotSpCharFix(G2frame.SeqTable.GetColLabelValue(col))
-        collist = [float(i) for i in colList[col]] 
-        return plotName,collist,colSigs[col]
-            
-    def GetSampleParms():
-        '''Make a dictionary of the sample parameters are not the same over the
-        refinement series.
-        '''
-        sampleParmDict = {'Temperature':[],'Pressure':[],
-                          'FreePrm1':[],'FreePrm2':[],'FreePrm3':[],}
-        sampleParm = {}
-        for name in histNames:
-            Id = GetPatternTreeItemId(G2frame,G2frame.root,name)
-            sampleData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
-            for item in sampleParmDict:
-                sampleParmDict[item].append(sampleData[item])
-        for item in sampleParmDict:
-            frstValue = sampleParmDict[item][0]
-            if np.any(np.array(sampleParmDict[item])-frstValue):
-                sampleParm[item] = sampleParmDict[item]            
-        return sampleParm
+    # make dict with vars for use in PseudoVars
+    # name = histNames[0]
+    # parmDict = dict(zip(colLabels,zip(*colList)[0]))
+    # # create a dict with the refined Ax values for all phases (only)
+    # refCellDict = {var:val for var,val in data[name]['newCellDict'].values()}
+    # # compute the Ai values for each phase, updated with refined values and
+    # # with symmetry constraints applied
+    # for pId in Alist:     # loop over phases
+    #     Albls = [str(pId)+'::A'+str(i) for i in range(6)]
+    #     cellDict = {var:refCellDict.get(var,val) for var,val in zip(Albls,Alist[pId])}
+    #     zeroDict = {var:0.0 for var in Albls}
+    #     A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata[pId],cellDict,zeroDict)
+    #     parmDict.update(dict(zip(Albls,A)))
 
-    def PlotSelect(event):
-        'Plots a row (covariance) or column on double-click'
-        cols = G2frame.dataDisplay.GetSelectedCols()
-        rows = G2frame.dataDisplay.GetSelectedRows()
-        if cols:
-            G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
-        elif rows:
-            name = histNames[rows[0]]       #only does 1st one selected
-            G2plt.PlotCovariance(G2frame,data[name])
-        else:
-            G2frame.ErrorDialog(
-                'Select row or columns',
-                'Nothing selected in table. Click on column or row label(s) to plot. N.B. Grid selection can be a bit funky.'
-                )
-
-    def SelectXaxis():
-        'returns a selected column number (or None) as the X-axis selection'
-        ncols = G2frame.SeqTable.GetNumberCols()
-        colNames = [G2frame.SeqTable.GetColLabelValue(r) for r in range(ncols)]
-        dlg = G2SingleChoiceDialog(
-            G2frame.dataDisplay,
-            'Select x-axis parameter for plot or Cancel for sequence number',
-            'Select X-axis',
-            colNames)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                col = dlg.GetSelection()
-            else:
-                col = None
-        finally:
-            dlg.Destroy()
-        return col
-    
-    def plotSpCharFix(lbl):
-        'Change selected unicode characters to their matplotlib equivalent'
-        for u,p in [
-            (u'\u03B1',r'$\alpha$'),
-            (u'\u03B2',r'$\beta$'),
-            (u'\u03B3',r'$\gamma$'),
-            (u'\u0394\u03C7',r'$\Delta\chi$'),
-            ]:
-            lbl = lbl.replace(u,p)
-        return lbl
-    
-    def OnPlotSelSeq(event):
-        'plot the selected columns or row from menu command'
-        cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
-        rows = G2frame.dataDisplay.GetSelectedRows()
-        if cols:
-            G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
-        elif rows:
-            name = histNames[rows[0]]       #only does 1st one selected
-            G2plt.PlotCovariance(G2frame,data[name])
-        else:
-            G2frame.ErrorDialog(
-                'Select columns',
-                'No columns or rows selected in table. Click on row or column labels to select fields for plotting.'
-                )
-            
-    histNames = data['histNames']
-    if G2frame.dataDisplay:
-        G2frame.dataDisplay.Destroy()
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
-        Status.SetStatusText("Select column to export; Double click on column to plot data; on row for Covariance")
-
-    G2frame.dataFrame.SetLabel('Sequential SASD refinement results')
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
-        Status.SetStatusText('')
-#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=wxID_SAVESASDSEQSEL)
-#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeqCSV, id=wxID_SAVESASDSEQSELCSV)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotSelSeq, id=wxID_PLOTSASDSEQSEL)
-#    G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewPseudoVar, id=wxADDSEQVAR)
-#    G2frame.dataFrame.Bind(wx.EVT_MENU, DelPseudoVar, id=wxDELSEQVAR)
-#    G2frame.dataFrame.Bind(wx.EVT_MENU, EditPseudoVar, id=wxEDITSEQVAR)
-#    EnablePseudoVarMenus()
-    # build up the data table one column at a time
-    colList = []
-    colSigs = []
-    colLabels = []
-    Types = []
-    nRows = len(histNames)
-    # add Rwp values
-    colList += [[data[name]['Rvals']['Rwp'] for name in histNames]]
-    colSigs += [None]
-    colLabels += ['Rwp']
-    Types += [wg.GRID_VALUE_FLOAT+':10,3',]
-    # add sample parameters
-    sampleParms = GetSampleParms()
-    for key in sampleParms:
-        colList += [sampleParms[key]]
-        colSigs += [None]
-        colLabels += [key]
-        Types += [wg.GRID_VALUE_FLOAT+':10,3',]
-    # add the variables that were refined; change from rows to columns
-    collist = zip(*[data[name]['variables'] for name in histNames])
-    colText = [['%12.5g'%collist[j][i] for i in range(len(collist[0]))] for j in range(len(collist))]
-    colList += colText
-    colLabels += data[histNames[0]]['varyList']
-    Types += len(data[histNames[0]]['varyList'])*[wg.GRID_VALUE_STRING]
-    colSigs += zip(*[data[name]['sig'] for name in histNames])
-#    # add Pseudovars
-#    for expr in Controls['SeqPseudoVars']:
-#        obj = Controls['SeqPseudoVars'][expr]
-#        calcobj = G2obj.ExpressionCalcObj(obj)
-#        valList = []
-#        for row in zip(*colList):
-#            parmDict = dict(zip(colLabels,row))
-#            calcobj.SetupCalc(parmDict)
-#            valList.append(calcobj.EvalExpression())
-#        colList += [valList]
-#        colSigs += [None]
-#        colLabels += [expr]
-#        Types += [wg.GRID_VALUE_FLOAT,]
-
-    rowList = [c for c in zip(*colList)]     # convert from columns to rows
-    G2frame.SeqTable = Table(rowList,colLabels=colLabels,rowLabels=histNames,types=Types)
-    G2frame.dataDisplay = GSGrid(parent=G2frame.dataFrame)
-    G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
-    G2frame.dataDisplay.EnableEditing(False)
-    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PlotSelect)
-    G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
-    G2frame.dataDisplay.SetMargins(0,0)
-    G2frame.dataDisplay.AutoSizeColumns(True)
-    if prevSize:
-        G2frame.dataDisplay.SetSize(prevSize)
-    else:
-        G2frame.dataFrame.setSizePosLeft([700,350])
+#    print data[name]['varyList']
+#            
+    # print 'vars for PVar dict'
+    # for i,(var,val) in enumerate(zip(colLabels,zip(*colList)[0])):
+    #     if var in data[name]['varyList']:
+    #         print var,Dlookup.get(striphist(var),var),val,parmDict.get(Dlookup.get(striphist(var),var))
+    #         pass
+    #     #else:
+    #     #    print i,var,colSigs[i]
+    # print 'vars for PVar dict again'
     
 ################################################################################
 #####  Main PWDR panel

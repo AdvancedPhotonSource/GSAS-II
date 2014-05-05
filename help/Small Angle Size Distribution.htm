@@ -24,17 +24,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Von Dreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>9</o:Revision>
-  <o:TotalTime>1871</o:TotalTime>
+  <o:Revision>12</o:Revision>
+  <o:TotalTime>1897</o:TotalTime>
   <o:Created>2014-03-20T16:54:00Z</o:Created>
-  <o:LastSaved>2014-05-01T14:14:00Z</o:LastSaved>
+  <o:LastSaved>2014-05-03T16:09:00Z</o:LastSaved>
   <o:Pages>7</o:Pages>
-  <o:Words>1263</o:Words>
-  <o:Characters>7202</o:Characters>
+  <o:Words>1277</o:Words>
+  <o:Characters>7282</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
   <o:Lines>60</o:Lines>
-  <o:Paragraphs>16</o:Paragraphs>
-  <o:CharactersWithSpaces>8449</o:CharactersWithSpaces>
+  <o:Paragraphs>17</o:Paragraphs>
+  <o:CharactersWithSpaces>8542</o:CharactersWithSpaces>
   <o:Version>14.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -887,8 +887,8 @@ Size Distribution in Alumina Powder</span><o:p></o:p></strong></h1>
 
 <p class=MsoNormal style='mso-layout-grid-align:none;text-autospace:none'>In
 this tutorial you will determine the size distribution of particles in an
-alumina polishing powder using data from a constant wavelength synchrotron
-X-ray USAXS instrument. You will use both Maximum Entropy (<span class=SpellE>MaxEnt</span>)
+alumina polishing powder using data from a constant wavelength synchrotron X-ray
+USAXS instrument. You will use both Maximum Entropy (<span class=SpellE>MaxEnt</span>)
 and Total Non-Negative Least Squares (TNNLS) methods assuming spherical
 particles. The data were collected from <span style='mso-fareast-font-family:
 Calibri;mso-fareast-theme-font:minor-latin;mso-bidi-font-weight:bold;
@@ -911,16 +911,19 @@ the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","s
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
 Calibri;mso-bidi-theme-font:minor-latin'>Import/Small Angle Data/from a q step
 QIE data file</span></b> menu item to read the data file into GSAS-II. This
-read option is set to read three column small angle scattering data (SASD) as
-Q, intensity and estimated standard deviation in intensity; there may be a
-header with metadata information in the front of this file.<span
+read option is set to read three column small angle scattering data (SASD) as Q
+in Å<sup>-1</sup>, intensity and estimated standard deviation in intensity;
+there may be a header with metadata information in the front of this file.<span
 style='mso-spacerun:yes'>  </span>Change the file directory to <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:
 Calibri;mso-bidi-theme-font:minor-latin'>Exercises/Small angle</span></b><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
-minor-latin'> to find the file.</span></p>
+minor-latin'> to find the file</span>; you will have to select the ‘<b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>any file
+(*.*)</span></b>’ filter to see it.</p>
 
 <p class=MsoListParagraphCxSpLast style='text-indent:-.25in;mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
@@ -1024,15 +1027,17 @@ in this case one is alumina and the other is “vacuum” (really air). Parameters
 for a number of substances are defined in the file </span><b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
 minor-latin;mso-hansi-theme-font:minor-latin;mso-no-proof:yes'>Substances.py</span></b><span
-style='mso-no-proof:yes'>. You can add your own substances to this or better
-put them in </span><b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin;mso-no-proof:yes'>UserSubstances.py</span></b><span
-style='mso-no-proof:yes'>; this is read after Substances.py when you load
-substances for your selection. </span>Select <b style='mso-bidi-font-weight:
+style='mso-no-proof:yes'>. You can add your own substances to this or better put
+them in </span><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-no-proof:yes'>UserSubstances.py</span></b><span
+style='mso-no-proof:yes'>; this is read after </span><b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>Substances</span></b> under <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+minor-latin;mso-hansi-theme-font:minor-latin;mso-no-proof:yes'>Substances.py</span></b><span
+style='mso-no-proof:yes'> when you load substances for your selection. </span>Select
+<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Substances</span></b>
+under <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>SASD alumina
 data.dat</span></b> from the GSAS-II tree. Then do <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
@@ -1086,10 +1091,10 @@ value is used for contrast calculations.</p>
 <h2>Step 4: Set Sample parameters </h2>
 
 <p class=MsoNormal>Two of the substances you have loaded into GSAS-II next need
-to be selected for this experiment; Select <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Sample Parameters</span></b> under <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+to be selected for this size distribution analysis; Select <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Sample Parameters</span></b>
+under <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>SASD alumina
 data.dat</span></b> from the GSAS-II tree. Near the bottom of the window will
 be two rows marked “<b style='mso-bidi-font-weight:normal'><span
@@ -1101,8 +1106,8 @@ from one of the pull downs (leave the other as <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
 minor-latin;mso-hansi-theme-font:minor-latin'>vacuum</span></b>). The window
 will show at the bottom the computed contrast between alumina and vacuum
-without and with consideration of resonant scattering effects; the latter is
-used in subsequent calculations.</p>
+without and with consideration of resonant scattering effects; the latter is used
+in subsequent calculations.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_25" o:spid="_x0000_i1034" type="#_x0000_t75" style='width:305.25pt;
@@ -1147,9 +1152,9 @@ src="Small%20Angle%20Size%20Distribution_files/image006.png" v:shapes="Picture_x
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
-<p class=MsoNormal>Many selections are made by default for this <span
-class=GramE>analysis,</span> however it is important that an appropriate value
-is selected for the background. From the high Q end of the data plot</p>
+<p class=MsoNormal>Many selections are made by default for this analysis;
+however it is important that an appropriate value is selected for the
+background. From the high Q end of the data plot</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_27" o:spid="_x0000_i1032" type="#_x0000_t75" style='width:525pt;
@@ -1163,9 +1168,11 @@ style='mso-spacerun:yes'> </span></p>
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
 <p class=MsoNormal>It is clear that the intensity levels off at an apparent
-background level of ~0.12; enter that into the appropriate place in the data
-window. The plot will be redrawn showing a horizontal green line for the
-background. All the other parameters seem reasonable for a 1<sup>st</sup>
+background level of ~<b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>0.12</span></b>; enter that into the
+appropriate place in the data window. The plot will be redrawn showing a horizontal
+red line for the background. All the other parameters seem reasonable for a 1<sup>st</sup>
 attempt at a <span class=SpellE>MaxEnt</span> solution. Do <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
 minor-latin;mso-hansi-theme-font:minor-latin'>Models/Fit</span></b>; the
@@ -1238,10 +1245,10 @@ src="Small%20Angle%20Size%20Distribution_files/image010.png" v:shapes="Picture_x
 
 <p class=MsoNormal>The green curve is the result calculated from the size
 distribution. Notice that it is not perfect, there is appreciable misfit around
-Q=0.03A. This may be due to the assumption that the particles are spheres; they
-could be some other shape (I could get a better fit by setting the Spheroid
-aspect ratio to 2.0), however this tool is not really the appropriate one to
-make this determination.</p>
+Q=0.003Å<sup>-1</sup>. This may be due to the assumption that the particles are
+spheres; they could be some other shape (I could get a better fit by setting
+the Spheroid aspect ratio to 2.0), however this tool is not really the
+appropriate one to make this determination.</p>
 
 <h2>Step 6 Size Distribution <i style='mso-bidi-font-style:normal'>via</i>
 Total Non-Negative Least Squares (TNNLS)</h2>
@@ -1266,10 +1273,14 @@ src="Small%20Angle%20Size%20Distribution_files/image011.png" v:shapes="Picture_x
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
-<p class=MsoNormal>Reset the Error multiplier back to 1.0 and then do
-Models/Fit to run the IPG fitting. The IPG algorithm did not converge in 100
-cycles and resulting size distribution is a little choppy but has roughly the
-same bimodal distribution found by <span class=SpellE>MaxEnt</span>.</p>
+<p class=MsoNormal>Reset the Error multiplier back to <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>1.0</span></b> and then do <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Models/Fit</span></b>
+to run the IPG fitting. The IPG algorithm did not converge in 100 cycles and
+resulting size distribution is a little choppy but has roughly the same bimodal
+distribution found by <span class=SpellE>MaxEnt</span>.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_289" o:spid="_x0000_i1027" type="#_x0000_t75" style='width:621.75pt;
@@ -1284,8 +1295,11 @@ src="Small%20Angle%20Size%20Distribution_files/image012.png" v:shapes="Picture_x
 <p class=MsoNormal>This can be considerably improved by setting the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Error
-multiplier</span></b> to 2.0; the IPG fit con<span style='mso-no-proof:yes'>verges
-in &lt;20 cycles and gives a smoother size distribution.<o:p></o:p></span></p>
+multiplier</span></b> to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>2.0</span></b>; the IPG fit con<span
+style='mso-no-proof:yes'>verges in &lt;20 cycles and gives a smoother size
+distribution.<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_291" o:spid="_x0000_i1026" type="#_x0000_t75" style='width:621.75pt;
@@ -1297,10 +1311,10 @@ src="Small%20Angle%20Size%20Distribution_files/image013.png" v:shapes="Picture_x
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
-<p class=MsoNormal>The bimodal distribution is again quite clear with ~1400A
-and ~150A diameter particles. This method appears to give a better fit to the
+<p class=MsoNormal>The bimodal distribution is again quite clear with ~1400Å
+and ~150Å diameter particles. This method appears to give a better fit to the
 data than the <span class=SpellE>MaxEnt</span> method particularly in the
-Q~0.3A region’</p>
+Q~0.003Å<sup>-1</sup> region’</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_292" o:spid="_x0000_i1025" type="#_x0000_t75" style='width:621.75pt;
@@ -1331,10 +1345,11 @@ minor-latin;mso-hansi-theme-font:minor-latin'>Error multiplier</span></b> of <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>2.0</span></b>.</p>
 
-<p class=MsoNormal>You should save this GSAS-II project as it will be used in tutorials
-for fitting small angle scattering data; I used <span class=SpellE><b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>alumina.gpx</span></b></span>.</p>
+<p class=MsoNormal>You should save this GSAS-II project as it will be used in
+the tutorial for fitting small angle scattering data; I used <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>alumina.gpx</span></b></span>.</p>
 
 </div>
 

@@ -30,6 +30,36 @@ import GSASIIgrid as G2gd
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 
+def IndexParmDict(parmDict,wildcard):
+    '''Separate the parameters in parmDict into list of keys by parameter
+    type
+    :param dict parmDict: a dict with GSAS-II parameters
+    :param bool wildcard: True if wildcard versions of parameters should
+      be generated and added to the lists
+    :returns: a dict of lists where key 1 is a list of phase parameters,
+      2 is histogram/phase parms, 3 is histogram parms and 4 are global parameters
+    '''
+    prex = re.compile('[0-9]+::.*')
+    hrex = re.compile(':[0-9]+:.*')
+    parmLists = {}
+    for i in (1,2,3,4):
+        parmLists[i] = []
+    for i in sorted(parmDict.keys()):
+        if i.startswith("::") or i.find(':') == -1: # globals
+            parmLists[4].append(i)
+        elif prex.match(i):
+            parmLists[1].append(i)
+        elif hrex.match(i):
+            parmLists[3].append(i)
+        else:
+            parmLists[2].append(i)
+    if wildcard:
+        for i in (1,2,3,4):
+            parmLists[i] += G2obj.GenWildCard(parmLists[i]) # generate wildcard versions
+    for i in (1,2,3,4):
+        parmLists[i].sort()
+    return parmLists
+
 #==========================================================================
 class ExpressionDialog(wx.Dialog):
     '''A wx.Dialog that allows a user to input an arbitrary expression
@@ -118,26 +148,8 @@ class ExpressionDialog(wx.Dialog):
                 self.parmDict[key] = float(val)
             except:
                 pass
-        prex = re.compile('[0-9]+::.*')
-        hrex = re.compile(':[0-9]+:.*')
-        self.parmLists = {}
-        for i in (1,2,3,4):
-            self.parmLists[i] = []
-        for i in sorted(self.parmDict.keys()):
-            if i.startswith("::") or i.find(':') == -1: # globals
-                self.parmLists[4].append(i)
-            elif prex.match(i):
-                self.parmLists[1].append(i)
-            elif hrex.match(i):
-                self.parmLists[3].append(i)
-            else:
-                self.parmLists[2].append(i)
-        if self.fit:
-            for i in (1,2,3,4):
-                wildList = G2obj.GenWildCard(self.parmLists[i])
-                self.parmLists[i] += wildList
-                self.parmLists[i].sort()
-
+        # separate the variables by type
+        self.parmLists = IndexParmDict(self.parmDict,self.fit)
         self.timer = wx.Timer()
         self.timer.Bind(wx.EVT_TIMER,self.OnValidate)
 
@@ -332,15 +344,16 @@ class ExpressionDialog(wx.Dialog):
             wx.StaticText(self.varbox,wx.ID_ANY,'label',style=wx.CENTER),
             0,wx.ALIGN_CENTER)
         lbls = ('varib. type\nselection','variable\nname','value')
-        self.choices = ['Free','Phase','Hist./Phase','Hist.','Global']
+        choices = ['Free','Phase','Hist./Phase','Hist.','Global']
         if self.fit:
             lbls += ('refine\nflag',)
         else:
             lbls += ('',)
-            self.choices[0] = ''
-        for i in (1,2,3,4): # remove empty menus from choice list
-            if not len(self.parmLists[i]): self.choices[i] = ''
+            choices[0] = ''
+        for i in range(1,len(choices)): # remove empty menus from choice list
+            if not len(self.parmLists[i]): choices[i] = ''
 
+        self.AllowedChoices = [i for i in range(len(choices)) if choices[i]]
         for lbl in lbls:
             w = wx.StaticText(self.varbox,wx.ID_ANY,lbl,style=wx.CENTER)
             w.SetMinSize((80,-1))
@@ -351,13 +364,18 @@ class ExpressionDialog(wx.Dialog):
             # label
             GridSiz.Add(wx.StaticText(self.varbox,wx.ID_ANY,v),0,wx.ALIGN_CENTER,0)
             # assignment type
-            self.ch = wx.Choice(
+            ch = wx.Choice(
                 self.varbox, wx.ID_ANY,
-                choices = self.choices)
-            GridSiz.Add(self.ch,0,wx.ALIGN_LEFT,0)
-            self.ch.SetSelection(self.varSelect.get(v,wx.NOT_FOUND))
-            self.ch.label = v
-            self.ch.Bind(wx.EVT_CHOICE,self.OnChoice)
+                choices = [choices[i] for i in self.AllowedChoices]
+                )
+            GridSiz.Add(ch,0,wx.ALIGN_LEFT,0)
+            if v in self.varSelect and self.varSelect.get(v) in self.AllowedChoices:
+                i = self.AllowedChoices.index(self.varSelect[v])
+                ch.SetSelection(i)
+            else:
+                ch.SetSelection(wx.NOT_FOUND)
+            ch.label = v
+            ch.Bind(wx.EVT_CHOICE,self.OnChoice)
 
             # var name/var assignment
             if self.varSelect.get(v) is None:
@@ -424,12 +442,7 @@ class ExpressionDialog(wx.Dialog):
         an expression
         '''
         v = event.GetEventObject().label
-        sel = event.GetEventObject().GetSelection()
-        if self.choices[sel] == '':
-            if v in self.varSelect: del self.varSelect[v]
-            sel = event.GetEventObject().GetSelection()
-            self.OnValidate(None)
-            return
+        sel = self.AllowedChoices[event.GetEventObject().GetSelection()]
         self.varSelect[v] = sel
         if sel == 0:
             self.varName[v] = str(v)
@@ -438,7 +451,6 @@ class ExpressionDialog(wx.Dialog):
             var = self.SelectG2var(sel,v)
             if not var:
                 del self.varSelect[v]
-                sel = event.GetEventObject().GetSelection()
                 self.OnValidate(None)
                 return
             self.varName[v] = var

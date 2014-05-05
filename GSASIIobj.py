@@ -1564,8 +1564,7 @@ class ExpressionObj(object):
         parameter. The value is a list with:
 
          * a name assigned to the parameter
-         * a value for to the parameter
-         * a derivative step size and
+         * a value for to the parameter and
          * a flag to determine if the variable is refined.
         ''' 
         self.depVar = None
@@ -1574,7 +1573,7 @@ class ExpressionObj(object):
         '''Shows last encountered error in processing expression
         (list of 1-3 str values)'''
 
-    def LoadExpression(self,expr,exprVarLst,varSelect,varName,varValue,varStep,varRefflag):
+    def LoadExpression(self,expr,exprVarLst,varSelect,varName,varValue,varRefflag):
         '''Load the expression and associated settings into the object. Raises
         an exception if the expression is not parsed, if not all functions
         are defined or if not all needed parameter labels in the expression
@@ -1590,8 +1589,6 @@ class ExpressionObj(object):
           and non-zero for expression labels linked to G2 variables.
         :param dict varName: Defines a name (str) associated with each free parameter
         :param dict varValue: Defines a value (float) associated with each free parameter
-        :param dict varStep: Defines a derivative step size (float) for each
-          parameter labels found in the expression
         :param dict varRefflag: Defines a refinement flag (bool)
           associated with each free parameter
         '''
@@ -1604,17 +1601,13 @@ class ExpressionObj(object):
                 self.freeVars[v] = [
                     varName.get(v),
                     varValue.get(v),
-                    varStep.get(v),
                     varRefflag.get(v),
                     ]
             else:
-                self.assgnVars[v] = [
-                    varName[v],
-                    varStep.get(v),
-                    ]
+                self.assgnVars[v] = varName[v]
         self.CheckVars()
 
-    def EditExpression(self,exprVarLst,varSelect,varName,varValue,varStep,varRefflag):
+    def EditExpression(self,exprVarLst,varSelect,varName,varValue,varRefflag):
         '''Load the expression and associated settings from the object into
         arrays used for editing.
 
@@ -1623,8 +1616,6 @@ class ExpressionObj(object):
           and non-zero for expression labels linked to G2 variables.
         :param dict varName: Defines a name (str) associated with each free parameter
         :param dict varValue: Defines a value (float) associated with each free parameter
-        :param dict varStep: Defines a derivative step size (float) for each
-          parameter labels found in the expression
         :param dict varRefflag: Defines a refinement flag (bool)
           associated with each free parameter
 
@@ -1634,33 +1625,31 @@ class ExpressionObj(object):
             varSelect[v] = 0
             varName[v] = self.freeVars[v][0]
             varValue[v] = self.freeVars[v][1]
-            varStep[v] = self.freeVars[v][2]
-            varRefflag[v] = self.freeVars[v][3]
+            varRefflag[v] = self.freeVars[v][2]
         for v in self.assgnVars:
             varSelect[v] = 1
-            varName[v] = self.assgnVars[v][0]
-            varStep[v] = self.assgnVars[v][1]
+            varName[v] = self.assgnVars[v]
         return self.expression
 
     def GetVaried(self):
         'Returns the names of the free parameters that will be refined'
-        return ["::"+self.freeVars[v][0] for v in self.freeVars if self.freeVars[v][3]]
+        return ["::"+self.freeVars[v][0] for v in self.freeVars if self.freeVars[v][2]]
 
     def GetVariedVarVal(self):
         'Returns the names and values of the free parameters that will be refined'
-        return [("::"+self.freeVars[v][0],self.freeVars[v][1]) for v in self.freeVars if self.freeVars[v][3]]
+        return [("::"+self.freeVars[v][0],self.freeVars[v][1]) for v in self.freeVars if self.freeVars[v][2]]
 
     def UpdateVariedVars(self,varyList,values):
         'Updates values for the free parameters (after a refinement); only updates refined vars'
         for v in self.freeVars:
-            if not self.freeVars[v][3]: continue
+            if not self.freeVars[v][2]: continue
             if "::"+self.freeVars[v][0] not in varyList: continue
             indx = varyList.index("::"+self.freeVars[v][0])
             self.freeVars[v][1] = values[indx]
 
     def GetIndependentVars(self):
         'Returns the names of the required independent parameters used in expression'
-        return [self.assgnVars[v][0] for v in self.assgnVars]
+        return [self.assgnVars[v] for v in self.assgnVars]
 
     def CheckVars(self):
         '''Check that the expression can be parsed, all functions are
@@ -1845,10 +1834,6 @@ class ExpressionCalcObj(object):
         '''dict that defines values for labels used in expression and packages
         referenced by functions
         '''
-        self.derivStep = {}
-        '''Contains step sizes for derivatives for variables used in the expression;
-        if a variable is not included in this the derivatives will be computed as zero
-        '''
         self.lblLookup = {}
         '''Lookup table that specifies the expression label name that is
         tied to a particular GSAS-II parameters in the parmDict.
@@ -1886,7 +1871,6 @@ class ExpressionCalcObj(object):
             
         # set up the dicts needed to speed computations
         self.exprDict = {}
-        self.derivStep = {}
         self.lblLookup = {}
         self.varLookup = {}
         for v in self.eObj.freeVars:
@@ -1895,24 +1879,18 @@ class ExpressionCalcObj(object):
             self.lblLookup[varname] = v
             self.varLookup[v] = varname
             if parmsInList:
-                parmDict[varname] = [self.eObj.freeVars[v][1],self.eObj.freeVars[v][3]]
+                parmDict[varname] = [self.eObj.freeVars[v][1],self.eObj.freeVars[v][2]]
             else:
                 parmDict[varname] = self.eObj.freeVars[v][1]
             self.exprDict[v] = self.eObj.freeVars[v][1]
-            if self.eObj.freeVars[v][3]:
-                self.derivStep[varname] = self.eObj.freeVars[v][2]
         for v in self.eObj.assgnVars:
-            step = self.eObj.assgnVars[v][1]
-            varname = self.eObj.assgnVars[v][0]
+            varname = self.eObj.assgnVars[v]
             if '*' in varname:
                 varlist = LookupWildCard(varname,parmDict.keys())
                 if len(varlist) == 0:
                     raise Exception,"No variables match "+str(v)
                 for var in varlist:
                     self.lblLookup[var] = v
-                    self.derivStep[var] = np.array(
-                        [step if var1 == var else 0 for var1 in varlist]
-                        )
                 if parmsInList:
                     self.exprDict[v] = np.array([parmDict[var][0] for var in varlist])
                 else:
@@ -1925,7 +1903,6 @@ class ExpressionCalcObj(object):
                     self.exprDict[v] = parmDict[varname][0]
                 else:
                     self.exprDict[v] = parmDict[varname]
-                self.derivStep[varname] = step
             else:
                 raise Exception,"No value for variable "+str(v)
         self.exprDict.update(self.fxnpkgdict)
@@ -1960,32 +1937,6 @@ class ExpressionCalcObj(object):
             val = np.sum(val)
         return val
 
-    def EvalDeriv(self,varname,step=None):
-        '''Evaluate the expression derivative with respect to a
-        GSAS-II variable name. 
-
-        :param str varname: a G2 variable name (will not have a wild-card)
-        :returns: the derivative
-        '''
-        if step is None:
-            if varname not in self.derivStep: return 0.0
-            step = self.derivStep[varname]
-        if varname not in self.lblLookup: return 0.0
-        lbl = self.lblLookup[varname] # what label does this map to in expression?
-        origval = self.exprDict[lbl]
-
-        self.exprDict[lbl] = origval + step
-        val1 = eval(self.compiledExpr,globals(),self.exprDict)
-
-        self.exprDict[lbl] = origval - step
-        val2 = eval(self.compiledExpr,globals(),self.exprDict)
-
-        self.exprDict[lbl] = origval # reset back to central value
-
-        val = (val1 - val2) / (2.*np.max(step))
-        if not np.isscalar(val):
-            val = np.sum(val)
-        return val
 
 if __name__ == "__main__":
     # test equation evaluation
@@ -1994,15 +1945,15 @@ if __name__ == "__main__":
         print calcobj.eObj.expression,'=',calcobj.EvalExpression()
         for v in sorted(calcobj.varLookup):
             print "  ",v,'=',calcobj.exprDict[v],'=',calcobj.varLookup[v]
-        print '  Derivatives'
-        for v in calcobj.derivStep.keys():
-            print '    d(Expr)/d('+v+') =',calcobj.EvalDeriv(v)
+        # print '  Derivatives'
+        # for v in calcobj.derivStep.keys():
+        #     print '    d(Expr)/d('+v+') =',calcobj.EvalDeriv(v)
 
     obj = ExpressionObj()
 
     obj.expression = "A*np.exp(B)"
-    obj.assgnVars =  {'B': ['0::Afrac:1', 0.0001]}
-    obj.freeVars =  {'A': [u'A', 0.5, 0.0001, True]}
+    obj.assgnVars =  {'B': '0::Afrac:1'}
+    obj.freeVars =  {'A': [u'A', 0.5, True]}
     #obj.CheckVars()
     parmDict2 = {'0::Afrac:0':[0.0,True], '0::Afrac:1': [1.0,False]}
     calcobj = ExpressionCalcObj(obj)
@@ -2010,8 +1961,8 @@ if __name__ == "__main__":
     showEQ(calcobj)
 
     obj.expression = "A*np.exp(B)"
-    obj.assgnVars =  {'B': ['0::Afrac:*', 0.0001]}
-    obj.freeVars =  {'A': [u'Free Prm A', 0.5, 0.0001, True]}
+    obj.assgnVars =  {'B': '0::Afrac:*'}
+    obj.freeVars =  {'A': [u'Free Prm A', 0.5, True]}
     #obj.CheckVars()
     parmDict1 = {'0::Afrac:0':1.0, '0::Afrac:1': 1.0}
     calcobj = ExpressionCalcObj(obj)

@@ -63,7 +63,7 @@ class ExpressionDialog(wx.Dialog):
     :param str header: String placed at top of dialog to tell the user
       what they will do here; default is "Enter restraint expression here"
     :param bool fit: determines if the expression will be used in fitting (default=True).
-      If set to False, derivate step values and refinement flags are not shown
+      If set to False, and refinement flags are not shown
       and Free parameters are not offered as an assignment option.
     :param str VarLabel: an optional variable label to include before the expression
       input. Ignored if None (default)
@@ -98,8 +98,6 @@ class ExpressionDialog(wx.Dialog):
         '''
         self.varName = {}
         'Name assigned to each variable'
-        self.varStep = {}
-        'Step size for each variable'
         self.varValue = {}
         'Value for a variable (Free parameters only)'
         self.varRefflag = {}
@@ -201,7 +199,6 @@ class ExpressionDialog(wx.Dialog):
                 self.varSelect,
                 self.varName,
                 self.varValue,
-                self.varStep,
                 self.varRefflag,
                 )
             # set the initial value for the dependent value
@@ -237,7 +234,6 @@ class ExpressionDialog(wx.Dialog):
                 self.varSelect,
                 self.varName,
                 self.varValue,
-                self.varStep,
                 self.varRefflag,
                 )
             if self.depVarDict:
@@ -314,22 +310,6 @@ class ExpressionDialog(wx.Dialog):
                         msg += 'No value for '+str(v)
                     else:
                         msg += 'Value '+str(val)+' invalid for '+str(v)
-            # step assignment
-            val = self.varStep.get(v)
-            vf = 1.0
-            try:
-                vf = float(val)
-            except ValueError,TypeError:
-                invalid += 1
-                if msg: msg += "; "
-                if val is None:
-                    msg += 'No step value for '+str(v)
-                else:
-                    msg += 'Step value '+str(val)+' invalid for '+str(v)
-            if vf == 0.0:
-                invalid += 1
-                if msg: msg += "; "
-                msg += 'Zero is not valid as a step for '+str(v)
         if invalid:
             return '('+msg+')'        
         return
@@ -347,16 +327,16 @@ class ExpressionDialog(wx.Dialog):
             wx.StaticText(self.varbox,wx.ID_ANY,
                           'Assign variables to labels'),
             0,wx.EXPAND|wx.ALIGN_CENTER,0)
-        GridSiz = wx.FlexGridSizer(len(self.exprVarLst)+1,6,2,2)
+        GridSiz = wx.FlexGridSizer(len(self.exprVarLst)+1,5,2,2)
         GridSiz.Add(
             wx.StaticText(self.varbox,wx.ID_ANY,'label',style=wx.CENTER),
             0,wx.ALIGN_CENTER)
         lbls = ('varib. type\nselection','variable\nname','value')
         self.choices = ['Free','Phase','Hist./Phase','Hist.','Global']
         if self.fit:
-            lbls += ('derivative\nstep','refine\nflag')
+            lbls += ('refine\nflag',)
         else:
-            lbls += ('','')
+            lbls += ('',)
             self.choices[0] = ''
         for i in (1,2,3,4): # remove empty menus from choice list
             if not len(self.parmLists[i]): self.choices[i] = ''
@@ -415,16 +395,6 @@ class ExpressionDialog(wx.Dialog):
                 wid = wx.StaticText(self.varbox,wx.ID_ANY,s)
                 GridSiz.Add(wid,0,wx.ALIGN_LEFT,0)
 
-            # step
-            if self.varSelect.get(v) != 0 or not self.fit:
-                wid = (-1,-1)
-            else:
-            #if self.varSelect.get(v) == 0:
-                wid = G2gd.ValidatedTxtCtrl(self.varbox,self.varStep,v,
-                                            #OnLeave=self.OnTxtLeave,
-                                            size=(50,-1))
-            GridSiz.Add(wid,0,wx.ALIGN_LEFT|wx.EXPAND,0)
-
             # show a refine flag for Free Vars only
             if self.varSelect.get(v) == 0 and self.fit:
                 self.varRefflag[v] = self.varRefflag.get(v,True)
@@ -472,7 +442,6 @@ class ExpressionDialog(wx.Dialog):
                 self.OnValidate(None)
                 return
             self.varName[v] = var
-        self.varStep[v] = self.varStep.get(v,0.0001)
         self.OnValidate(None)
 
     def SelectG2var(self,sel,var):
@@ -569,7 +538,6 @@ class ExpressionDialog(wx.Dialog):
             self.varSelect,
             self.varName,
             self.varValue,
-            self.varStep,
             self.varRefflag,
             )
         try:
@@ -600,7 +568,7 @@ if __name__ == "__main__":
     frm.Show()
     PSvarDict = {'::a':1.0,'::b':1.1,'0::c':1.2}
     #PSvars = PSvarDict.keys()
-    indepvarDict = {'Temperature':1.0,'Pressure':1.1,'Phase of Moon':1.2}
+    indepvarDict = {'Temperature':1.0,'Pressure':1.1,'Phase of Moon':1.2,'1:1:HAP':1.3}
     dlg = ExpressionDialog(frm,indepvarDict,
                            header="Edit the PseudoVar expression",
                            fit=False,
@@ -616,7 +584,7 @@ if __name__ == "__main__":
     newobj = dlg.Show(True)
     print dlg.GetDepVar()
     import sys
-    sys.exit()
+    #sys.exit()
 
     #app.MainLoop()
 
@@ -631,8 +599,8 @@ if __name__ == "__main__":
     print "starting test"
     obj = G2obj.ExpressionObj()
     obj.expression = "A*np.exp(B)"
-    obj.assgnVars =  {'B': ['0::Afrac:*', 0.0001]}
-    obj.freeVars =  {'A': [u'A', 0.5, 0.0001, True]}
+    obj.assgnVars =  {'B': '0::Afrac:*'}
+    obj.freeVars =  {'A': [u'A', 0.5, True]}
     obj.CheckVars()
     parmDict2 = {'0::Afrac:0':1.0, '0::Afrac:1': 1.0}
     calcobj = G2obj.ExpressionCalcObj(obj)
@@ -643,7 +611,7 @@ if __name__ == "__main__":
     fp.close()
     
     obj.expression = "A*np.exp(-2/B)"
-    obj.assgnVars =  {'A': ['0::Afrac:0', 0.0001], 'B': ['0::Afrac:1', 0.0001]}
+    obj.assgnVars =  {'A': '0::Afrac:0', 'B': '0::Afrac:1'}
     obj.freeVars =  {}
     parmDict1 = {'0::Afrac:0':1.0, '0::Afrac:1': -2.0}
     calcobj = G2obj.ExpressionCalcObj(obj)

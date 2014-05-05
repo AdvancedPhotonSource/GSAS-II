@@ -1979,8 +1979,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
 
 def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):        
     'Needs a doc string'
-    parmDict.update(zip(varylist,values))
-    #Values2Dict(parmDict, varylist, values) # BHT -- seems to duplicate previous statement
+    Values2Dict(parmDict, varylist, values)
     G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     M = np.empty(0)

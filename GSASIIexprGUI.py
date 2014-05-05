@@ -19,8 +19,6 @@ The expression is parsed to find variables used in the expression and then
 the user is asked to assign parameters from the dictionary to each variable.
 
 '''
-# TODO: improve variable browser (search, add parameter descriptions)
-
 import re
 import sys
 import wx
@@ -106,6 +104,7 @@ class ExpressionDialog(wx.Dialog):
                  fit=True,VarLabel=None,depVarDict=None):
         self.fit = fit
         self.depVarDict = depVarDict
+        'dict for dependent variables'
         self.parmDict = {}
         '''A copy of the G2 parameter dict (parmDict) except only numerical
         values are included and only the value (not the vary flag, if present)
@@ -134,8 +133,8 @@ class ExpressionDialog(wx.Dialog):
         'Refinement flag for a variable (Free parameters only)'
         self.expr = ''
         'Expression as a text string'
-        self.depVar = [None,None]
-        'index # and name for dependent variable selection when depVarDict is specified'
+        self.dependentVar = None
+        'name for dependent variable selection, when depVarDict is specified'
         
         # process dictionary of values and create an index
         for key in parmDict:
@@ -164,13 +163,21 @@ class ExpressionDialog(wx.Dialog):
             label = wx.StaticText(self,  wx.ID_ANY, VarLabel + ' = ')
             self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
         elif depVarDict:
-            choice = G2gd.G2ChoiceButton(
-                self,
-                sorted(depVarDict.keys()),
-                self.depVar,0,
-                self.depVar,1,
-                self.RestartTimer)
+            self.depParmLists = IndexParmDict(self.depVarDict,False)
+            choices = ['','Phase','Hist./Phase','Hist.','Global']
+            for i in range(1,len(choices)): # remove empty menus from choice list
+                if not len(self.depParmLists[i]): choices[i] = ''
+            self.depChoices = [i for i in range(len(choices)) if choices[i]]
+            choice = wx.Choice(
+                self, wx.ID_ANY,
+                choices = [choices[i] for i in self.depChoices]
+                )
+            choice.SetSelection(wx.NOT_FOUND)
+            choice.Bind(wx.EVT_CHOICE,self.OnDepChoice)
             self.exsizer.Add(choice, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
+            self.exsizer.Add((5,5))
+            self.depLabel = wx.StaticText(self,  wx.ID_ANY, ' ')
+            self.exsizer.Add(self.depLabel, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
             label = wx.StaticText(self,  wx.ID_ANY, ' = ')
             self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -217,9 +224,8 @@ class ExpressionDialog(wx.Dialog):
             if self.depVarDict:
                 var = exprObj.GetDepVar()
                 if var in self.depVarDict:
-                    indx = sorted(self.depVarDict.keys()).index(var)
-                    choice.SetSelection(indx)
-                    self.depVar = [indx,var]
+                    self.depLabel.SetLabel(var)
+                    self.dependentVar = var
                     
         self.exCtrl.SetValue(self.expr)
         self.OnValidate(None)
@@ -249,7 +255,7 @@ class ExpressionDialog(wx.Dialog):
                 self.varRefflag,
                 )
             if self.depVarDict:
-                exprObj.SetDepVar(self.depVar[1])
+                exprObj.SetDepVar(self.dependentVar)
             return exprObj
         else:
             return None
@@ -337,7 +343,7 @@ class ExpressionDialog(wx.Dialog):
         Siz = wx.BoxSizer(wx.VERTICAL)
         Siz.Add(
             wx.StaticText(self.varbox,wx.ID_ANY,
-                          'Assign variables to labels'),
+                          'Assignment of variables to labels:'),
             0,wx.EXPAND|wx.ALIGN_CENTER,0)
         GridSiz = wx.FlexGridSizer(len(self.exprVarLst)+1,5,2,2)
         GridSiz.Add(
@@ -352,7 +358,6 @@ class ExpressionDialog(wx.Dialog):
             choices[0] = ''
         for i in range(1,len(choices)): # remove empty menus from choice list
             if not len(self.parmLists[i]): choices[i] = ''
-
         self.AllowedChoices = [i for i in range(len(choices)) if choices[i]]
         for lbl in lbls:
             w = wx.StaticText(self.varbox,wx.ID_ANY,lbl,style=wx.CENTER)
@@ -432,10 +437,26 @@ class ExpressionDialog(wx.Dialog):
         self.Layout()
         return
 
+    def OnDepChoice(self,event):
+        '''Respond to a selection of a variable type for a label in
+        an expression
+        '''
+        sel = self.depChoices[event.GetEventObject().GetSelection()]
+        var = self.SelectG2var(sel,'Dependent variable',self.depParmLists[sel])
+        if not var:
+            self.dependentVar = None
+            self.OnValidate(None)
+            event.GetEventObject().SetSelection(wx.NOT_FOUND)
+            return
+        self.dependentVar = var
+        self.depLabel.SetLabel(var)
+        self.OnValidate(None)
+        self.Layout()
+
     def GetDepVar(self):
         '''Returns the name of the dependent variable, when depVarDict is used.
         '''
-        return self.depVar[1]
+        return self.dependentVar
         
     def OnChoice(self,event):
         '''Respond to a selection of a variable type for a label in
@@ -448,7 +469,7 @@ class ExpressionDialog(wx.Dialog):
             self.varName[v] = str(v)
             self.varValue[v] = self.varValue.get(v,0.0)
         else:
-            var = self.SelectG2var(sel,v)
+            var = self.SelectG2var(sel,v,self.parmLists[sel])
             if not var:
                 del self.varSelect[v]
                 self.OnValidate(None)
@@ -456,7 +477,7 @@ class ExpressionDialog(wx.Dialog):
             self.varName[v] = var
         self.OnValidate(None)
 
-    def SelectG2var(self,sel,var):
+    def SelectG2var(self,sel,var,parmList):
         '''Offer a selection of a GSAS-II variable. 
 
         :param int sel: Determines the type of variable to be selected.
@@ -464,17 +485,15 @@ class ExpressionDialog(wx.Dialog):
           3 for Histogram vars and 4 for Global vars.
         :returns: a variable name or None (if Cancel is pressed)
         '''
-        if not self.parmLists[sel]:
+        if not parmList:
             return None
-        #varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in self.parmLists[sel]]
-        #varListlbl = self.parmLists[sel]
         l2 = l1 = 1
-        for i in self.parmLists[sel]:
+        for i in parmList:
             l1 = max(l1,len(i))
             loc,desc = G2obj.VarDescr(i)
             l2 = max(l2,len(loc))
         fmt = u"{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
-        varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in self.parmLists[sel]]
+        varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in parmList]
 
         dlg = G2gd.G2SingleChoiceDialog(
             self,'Select GSAS-II variable for '+str(var)+':',
@@ -485,7 +504,7 @@ class ExpressionDialog(wx.Dialog):
         var = None
         if dlg.ShowModal() == wx.ID_OK:
             i = dlg.GetSelection()
-            var = self.parmLists[sel][i]
+            var = parmList[i]
         dlg.Destroy()
         return var
 
@@ -565,11 +584,11 @@ class ExpressionDialog(wx.Dialog):
         s = G2py3.FormatSigFigs(val).rstrip('0')
         depVal = ""
         if self.depVarDict:
-            if not self.depVar[1]:
+            if not self.dependentVar:
                 self.setEvalResult("A dependent variable must be selected.")
                 return
-            depVal = '; Variable "' + self.depVar[1] + '" = ' + str(
-                self.depVarDict.get(self.depVar[1],'?')
+            depVal = '; Variable "' + self.dependentVar + '" = ' + str(
+                self.depVarDict.get(self.dependentVar,'?')
                 )
         self.setEvalResult("Expression evaluates to: "+str(s)+depVal)
         self.OKbtn.Enable()
@@ -578,7 +597,7 @@ if __name__ == "__main__":
     app = wx.PySimpleApp() # create the App
     frm = wx.Frame(None)
     frm.Show()
-    PSvarDict = {'::a':1.0,'::b':1.1,'0::c':1.2}
+    PSvarDict = {'::a':1.0,'::b':1.1,'0::c':1.2,'::AlongVaraiableName':1000.}
     #PSvars = PSvarDict.keys()
     indepvarDict = {'Temperature':1.0,'Pressure':1.1,'Phase of Moon':1.2,'1:1:HAP':1.3}
     dlg = ExpressionDialog(frm,indepvarDict,
@@ -587,7 +606,13 @@ if __name__ == "__main__":
                            depVarDict=PSvarDict,
                            #VarLabel="New PseudoVar",                           
                            )
-    print dlg.GetDepVar()
+    newobj = dlg.Show(True)
+    dlg = ExpressionDialog(frm,indepvarDict,newobj,
+                           header="Edit the PseudoVar expression",
+                           fit=False,
+                           depVarDict=PSvarDict,
+                           #VarLabel="New PseudoVar",                           
+                           )
     newobj = dlg.Show(True)
     print dlg.GetDepVar()
     dlg = ExpressionDialog(frm,PSvarDict,

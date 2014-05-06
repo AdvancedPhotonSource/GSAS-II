@@ -145,7 +145,9 @@ class ExportPowderXYE(G2IO.ExportBaseclass):
 
             self.OpenFile()
             histblk = self.Histograms[hist]
-            self.Write('# '+hist[5:])
+            self.Write('/*')    #The ugly c comment delimiter used in topas!
+            self.Write('# '+hist[5:])  #evidently this by itself fails in topas
+            self.Write('*/')
             x = np.array(histblk['Data'][0])
             # convert weights to sigmas; use largest weight as minimum esd
             s = np.sqrt(np.maximum(0.,np.array(histblk['Data'][2])))

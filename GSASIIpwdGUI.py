@@ -2781,9 +2781,22 @@ def UpdateModelsGrid(G2frame,data):
                 names.append(choices[sel])
         dlg.Destroy()
         SeqResult = {'histNames':names}
+        Reverse = False
+        CopyForward = False
+        choice = ['Reverse sequence','Copy from prev.']
+        dlg = wx.MultiChoiceDialog(G2frame.dataFrame,'Sequential controls','Select controls',choice)
+        if dlg.ShowModal() == wx.ID_OK:
+            for sel in dlg.GetSelections():
+                if sel:
+                    CopyForward = True
+                else:
+                    Reverse = True
+        dlg.Destroy()
         dlg = wx.ProgressDialog('SASD Sequential fit','Data set name = '+names[0],len(names), 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         wx.BeginBusyCursor()
+        if Reverse:
+            names.reverse()
         try:
             for i,name in enumerate(names):
                 print ' Sequential fit for ',name
@@ -2791,13 +2804,15 @@ def UpdateModelsGrid(G2frame,data):
                 if not GoOn:
                     break
                 Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                if i and CopyForward:
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Models'),JModel)
                 IProfDict,IProfile = G2frame.PatternTree.GetItemPyData(Id)[:2]
                 IModel = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Models'))
                 ISample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Sample Parameters'))
                 ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Limits'))
                 IInst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Instrument Parameters'))
-#                ISubstances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Substances'))
                 IfOK,result,varyList,sig,Rvals,covMatrix,Msg = G2sasd.ModelFit(IProfile,IProfDict,ILimits,ISample,IModel)
+                JModel = copy.copy(IModel)
                 if not IfOK:
                     G2frame.ErrorDialog('Failed sequential refinement for data '+name,
                         ' Msg: '+Msg+'\nYou need to rethink your selection of parameters\n'+    \

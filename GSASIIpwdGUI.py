@@ -2745,7 +2745,7 @@ def UpdateModelsGrid(G2frame,data):
         distChoice = ['LogNormal','Gaussian','LSW','Schulz-Zimm','Bragg','Unified',
             'Porod','Monodisperse',]
         parmOrder = ['Volume','Radius','Mean','StdDev','G','Rg','B','P',
-            'Cutoff','PkInt','PkPos','PkSig','PkGam',]
+            'Cutoff','PkInt','PkPos','PkSig','PkGam','VolFr','Dist',]
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelections()
@@ -2761,6 +2761,11 @@ def UpdateModelsGrid(G2frame,data):
                                 for item in parmOrder:
                                     if item in thisForm:
                                        level[form][item][1] = copy.copy(thisForm[item][1])
+                            elif form == 'Controls':
+                                thisForm = thisModel['Particle']['Levels'][ilev][form]['SFargs']
+                                for item in parmOrder:
+                                    if item in thisForm:
+                                        level[form]['SFargs'][item][1] = copy.copy(thisForm[item][1])
         finally:
             dlg.Destroy()
                 

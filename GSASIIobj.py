@@ -1884,7 +1884,7 @@ class ExpressionCalcObj(object):
                 parmDict[varname] = self.eObj.freeVars[v][1]
             self.exprDict[v] = self.eObj.freeVars[v][1]
         for v in self.eObj.assgnVars:
-            varname = self.eObj.assgnVars[v]
+            varname = self.eObj.assgnVars[v][0]         #was [name,value]?
             if '*' in varname:
                 varlist = LookupWildCard(varname,parmDict.keys())
                 if len(varlist) == 0:

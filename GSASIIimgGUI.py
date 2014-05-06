@@ -112,7 +112,7 @@ def UpdateImageControls(G2frame,data,masks):
                     backImage += BdarkImage*BdarkScale                
                 sumImg += backImage*backScale
             G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,dlg)
-    #        G2plt.PlotIntegration(G2frame,newPlot=True)
+#            G2plt.PlotIntegration(G2frame,newPlot=True)
             Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
             G2frame.PatternId = Id
             G2frame.PatternTree.SelectItem(Id)
@@ -179,7 +179,6 @@ def UpdateImageControls(G2frame,data,masks):
                                     G2frame.Integrate = G2img.ImageIntegrate(image+backImage,Data,Masks,blkSize,dlgp)
                                 else:
                                     G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
-#                               G2plt.PlotIntegration(G2frame,newPlot=True,event=event)
                                 pId = G2IO.SaveIntegration(G2frame,Id,Data)
                             finally:
                                 dlgp.Destroy()

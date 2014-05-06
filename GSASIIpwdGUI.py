@@ -2792,10 +2792,10 @@ def UpdateModelsGrid(G2frame,data):
                 ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Limits'))
                 IInst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Instrument Parameters'))
 #                ISubstances = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Substances'))
-                IfOK,result,varyList,sig,Rvals,covMatrix = G2sasd.ModelFit(IProfile,IProfDict,ILimits,ISample,IModel)
+                IfOK,result,varyList,sig,Rvals,covMatrix,Msg = G2sasd.ModelFit(IProfile,IProfDict,ILimits,ISample,IModel)
                 if not IfOK:
                     G2frame.ErrorDialog('Failed sequential refinement for data '+name,
-                        'You need to rethink your selection of parameters\n'+    \
+                        ' Msg: '+Msg+'\nYou need to rethink your selection of parameters\n'+    \
                         ' Model restored to previous version for'+name)
                     SeqResult['histNames'] = names[:i]
                     dlg.Destroy()
@@ -2830,10 +2830,11 @@ def UpdateModelsGrid(G2frame,data):
             
         elif data['Current'] == 'Particle fit':
             SaveState()
-            if not G2sasd.ModelFit(Profile,ProfDict,Limits,Sample,data)[0]:
-                G2frame.ErrorDialog('Failed refinement',
-                    'You need to rethink your selection of parameters\n'+    \
-                    ' Model restored to previous version')
+            Results = G2sasd.ModelFit(Profile,ProfDict,Limits,Sample,data)
+            if not Results[0]:
+                    G2frame.ErrorDialog('Failed refinement',
+                        ' Msg: '+Results[-1]+'\nYou need to rethink your selection of parameters\n'+    \
+                        ' Model restored to previous version')
             G2sasd.ModelFxn(Profile,ProfDict,Limits,Sample,data)
             RefreshPlots(True)
             wx.CallAfter(UpdateModelsGrid,G2frame,data)

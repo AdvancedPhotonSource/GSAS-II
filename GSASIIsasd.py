@@ -1239,7 +1239,18 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
     Rvals['Rwp'] = np.sqrt(chisq/np.sum(wt[Ibeg:Ifin]*Io[Ibeg:Ifin]**2))*100.      #to %
     Rvals['GOF'] = chisq/(Ifin-Ibeg-len(varyList))       #reduced chi^2
     Ic[Ibeg:Ifin] = getSASD(Q[Ibeg:Ifin],levelTypes,parmDict)
+    Msg = 'Failed to converge'
     try:
+        Nans = np.isnan(result[0])
+        if np.any(Nans):
+            name = varyList[Nans.nonzero(True)[0]]
+            Msg = 'Nan result for '+name+'!'
+            raise ValueError
+        Negs = np.less_equal(result[0],0.)
+        if np.any(Negs):
+            name = varyList[Negs.nonzero(True)[0]]
+            Msg = 'negative coefficient for '+name+'!'
+            raise ValueError
         if len(covM):
             sig = np.sqrt(np.diag(covM)*Rvals['GOF'])
             sigDict = dict(zip(varyList,sig))
@@ -1248,9 +1259,9 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
         print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
         SetModelParms()
         covMatrix = covM*Rvals['GOF']
-        return True,result,varyList,sig,Rvals,covMatrix
+        return True,result,varyList,sig,Rvals,covMatrix,''
     except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
-        return False,0,0,0,0,0
+        return False,0,0,0,0,0,Msg
     
 def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
     

@@ -3918,44 +3918,94 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             parmDict[key] = sampleParms[key][seqnum]
         return parmDict,modVaryList,data[name]['sig']
 
-    def EvalPSvarDeriv(calcobj,parmDict,var,step):
-        '''Evaluate an expression derivative with respect to a
-        GSAS-II variable name. 
+    def UpdateParmDict(parmDict):
+        '''generate the atom positions and the direct & reciprocal cell values,
+        because they might be needed to evaluate the pseudovar
         '''
-        varList = [var]
-        origVals = [parmDict[var]]
-        minusVals = [parmDict[var]-step]
-        plusVals = [parmDict[var]+step]
-        if var in Rcelldict:
-            pId = var.split(':')[0] # get phase number
-            pfx = pId + '::'
-            pId = int(pId)
-            Rcell = Rcelldict.copy()
-            Rcell.update({v:parmDict[v] for v in Rcelldict if v in parmDict})
-            Rcell[var] = parmDict[var] - step
-            Aminus,zeros = G2stIO.cellFill(pfx,SGdata[pId],Rcell,zeroDict[pId])
-            Rcell[var] =  parmDict[var] + step
-            Aplus,zeros = G2stIO.cellFill(pfx,SGdata[pId],Rcell,zeroDict[pId])
-            for i,(mval,pval) in enumerate(zip(G2lat.A2cell(Aminus),G2lat.A2cell(Aplus))):
+        Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],
+                         ['A'+str(i) for i in range(6)])
+                     )
+        delList = []
+        phaselist = []
+        for item in parmDict: 
+            if ':' not in item: continue
+            key = item.split(':')
+            if len(key) < 3: continue
+            # remove the dA[xyz] terms, they would only bring confusion
+            if key[2].startswith('dA'):
+                delList.append(item)
+            # compute and update the corrected reciprocal cell terms using the Dij values
+            elif key[2] in Ddict:
+                if key[0] not in phaselist: phaselist.append(key[0])
+                akey = key[0]+'::'+Ddict[key[2]]
+                parmDict[akey] += parmDict[item]
+                delList.append(item)
+        for item in delList:
+            del parmDict[item]                
+        for i in phaselist:
+            pId = int(i)
+            # apply cell symmetry
+            A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata[pId],parmDict,zeroDict[pId])
+            # convert to direct cell & add the unique terms to the dictionary
+            for i,val in enumerate(G2lat.A2cell(A)):
                 if i in uniqCellIndx[pId]:
-                    lbl = pfx+cellUlbl[i]
-                    varList.append(lbl)
-                    origVals.append(parmDict[lbl])
-                    minusVals.append(mval)
-                    plusVals.append(pval)
-            lbl = pfx+'vol'
-            varList.append(lbl)
-            origVals.append(parmDict[lbl])
-            minusVals.append(G2lat.calc_V(Aminus))
-            plusVals.append(G2lat.calc_V(Aplus))
+                    lbl = str(pId)+'::'+cellUlbl[i]
+                    parmDict[lbl] = val
+            lbl = str(pId)+'::'+'vol'
+            parmDict[lbl] = G2lat.calc_V(A)
+        return parmDict
 
-        calcobj.UpdateVars(varList,plusVals)
-        pVal = calcobj.EvalExpression()
-        calcobj.UpdateVars(varList,minusVals)
-        mVal = calcobj.EvalExpression()
-        calcobj.UpdateVars(varList,origVals)
-        return (pVal - mVal) / (2.*step)
+    def EvalPSvarDeriv(calcobj,parmDict,var,ESD):
+        '''Evaluate an expression derivative with respect to a
+        GSAS-II variable name.
 
+        Note this likely could be faster if the loop over calcobjs were done
+        inside after the Dict was created. 
+        '''
+        step = ESD/10
+        Ddict = dict(zip(['D11','D22','D33','D12','D13','D23'],
+                         ['A'+str(i) for i in range(6)])
+                     )
+        results = []
+        phaselist = []
+        for incr in step,-step:
+            VparmDict = parmDict.copy()            
+            # as saved, the parmDict has updated 'A[xyz]' values, but 'dA[xyz]'
+            # values are not zeroed: fix that!
+            VparmDict.update({item:0.0 for item in parmDict if 'dA' in item})
+            VparmDict[var] += incr
+            G2mv.Dict2Map(VparmDict,[]) # apply constraints
+            # generate the atom positions and the direct & reciprocal cell values now, because they might
+            # needed to evaluate the pseudovar
+            for item in VparmDict: 
+                if ':' not in item: continue
+                key = item.split(':')
+                if len(key) < 3: continue
+                # apply any new shifts to atom positions
+                if key[2].startswith('dA'):
+                    VparmDict[''.join(item.split('d'))] += VparmDict[item]
+                    VparmDict[item] = 0.0
+                # compute and update the corrected reciprocal cell terms using the Dij values
+                if key[2] in Ddict:
+                    if key[0] not in phaselist: phaselist.append(key[0])
+                    akey = key[0]+'::'+Ddict[key[2]]
+                    VparmDict[akey] += VparmDict[item]
+            for i in phaselist:
+                pId = int(i)
+                # apply cell symmetry
+                A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata[pId],VparmDict,zeroDict[pId])
+                # convert to direct cell & add the unique terms to the dictionary
+                for i,val in enumerate(G2lat.A2cell(A)):
+                    if i in uniqCellIndx[pId]:
+                        lbl = str(pId)+'::'+cellUlbl[i]
+                        VparmDict[lbl] = val
+                lbl = str(pId)+'::'+'vol'
+                VparmDict[lbl] = G2lat.calc_V(A)
+            # dict should be fully updated, use it & calculate
+            calcobj.SetupCalc(VparmDict)
+            results.append(calcobj.EvalExpression())
+        return (results[0] - results[1]) / (2.*step)
+        
     def EnableParFitEqMenus():
         'Enables or disables the Parametric Fit menu items that require existing defs'
         if Controls['SeqParFitEqs']:
@@ -4299,15 +4349,32 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         valList = []
         esdList = []
         for seqnum,name in enumerate(histNames):
-            parmDict,modVaryL,ESDL = CreatePSvarDict(seqnum,name)
-            calcobj.SetupCalc(parmDict)
+            sigs = data[name]['sig']
+            G2mv.InitVars()
+            parmDict = data[name].get('parmDict')
+            if parmDict:
+                constraintInfo = data[name].get('constraintInfo')
+                groups,parmlist,constrDict,fixedList,ihst = constraintInfo
+                varyList = data[name]['varyList']
+                parmDict = data[name]['parmDict']
+                G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
+                derivs = np.array(
+                    [EvalPSvarDeriv(calcobj,parmDict.copy(),var,ESD)
+                     for var,ESD in zip(varyList,sigs)]
+                    )
+                esdList.append(np.sqrt(
+                    np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T))
+                    ))
+                PSvarDict = parmDict.copy()
+                UpdateParmDict(PSvarDict)
+                #calcobj.SetupCalc(PSvarDict)
+                calcobj.UpdateDict(PSvarDict)
+            else:
+                PSvarDict,unused,unused = CreatePSvarDict(0,histNames[0])
+                calcobj.SetupCalc(PSvarDict)
             valList.append(calcobj.EvalExpression())
-            derivs = np.array(
-                [EvalPSvarDeriv(calcobj,parmDict,var,ESD/10.) for var,ESD in zip(modVaryL,ESDL)]
-                )
-            esdList.append(np.sqrt(
-                np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T))
-                ))
+        if not esdList:
+            esdList = None
         colList += [valList]
         colSigs += [esdList]
         colLabels += [expr]
@@ -4315,7 +4382,14 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     #---- table build done -------------------------------------------------------------
 
     # Make dict needed for creating & editing pseudovars (PSvarDict).
-    PSvarDict,unused,unused = CreatePSvarDict(0,histNames[0])
+    name = histNames[0]
+    parmDict = data[name].get('parmDict')
+    if parmDict:
+        PSvarDict = parmDict.copy()
+        UpdateParmDict(PSvarDict)
+    else:
+        print 'Sequential refinement needs to be rerun to obtain ESDs for PseudoVariables'
+        PSvarDict,unused,unused = CreatePSvarDict(0,histNames[0])
     # Also dicts of dependent (depVarDict) & independent vars (indepVarDict)
     # for Parametric fitting from the data table
     parmDict = dict(zip(colLabels,zip(*colList)[0])) # scratch dict w/all values in table

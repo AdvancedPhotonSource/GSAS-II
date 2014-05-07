@@ -292,6 +292,7 @@ def SeqRefine(GPXfile,dlg):
         try:
             groups,parmlist = G2mv.GroupConstraints(constrDict)
             G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
+            constraintInfo = (groups,parmlist,constrDict,fixedList,ihst)
         except:
             print ' *** ERROR - your constraints are internally inconsistent ***'
             #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
@@ -365,16 +366,19 @@ def SeqRefine(GPXfile,dlg):
                        if i not in varyList}
         newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
         newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
-        covData = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-                   'varyListStart':varyListStart,
-                   'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,
-                   'newCellDict':newCellDict,'depParmDict':depParmDict}
+        histRefData = {
+            'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
+            'varyListStart':varyListStart,
+            'covMatrix':covMatrix,'title':histogram,'newAtomDict':newAtomDict,
+            'newCellDict':newCellDict,'depParmDict':depParmDict,
+            'constraintInfo':constraintInfo,
+            'parmDict':parmDict}
+        SeqResult[histogram] = histRefData
         G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
 #        G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
         G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint,printFile)
         G2stIO.SetHistogramData(parmDict,sigDict,Histo,ifPrint,printFile)
-        SeqResult[histogram] = covData
-        G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,covData,makeBack)
+        G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,histRefData,makeBack)
         makeBack = False
         NewparmDict = {}
         # make dict of varied parameters in current histogram, renamed to

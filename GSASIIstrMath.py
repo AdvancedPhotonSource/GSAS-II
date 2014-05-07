@@ -881,7 +881,7 @@ def ApplyXYZshifts(parmDict,varyList):
     takes atom x,y,z shift and applies it to corresponding atom x,y,z value
     
     :param dict parmDict: parameter dictionary
-    :param list varyList: list of variables
+    :param list varyList: list of variables (not used!)
     :returns: newAtomDict - dictionary of new atomic coordinate names & values; key is parameter shift name
 
     '''

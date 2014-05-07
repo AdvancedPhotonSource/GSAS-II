@@ -1847,7 +1847,11 @@ class ExpressionCalcObj(object):
         indexed by the expression label name. (Used for only for diagnostics
         not evaluation of expression.)
         '''
-        
+        # Patch: for old-style expressions with a (now removed step size)
+        for v in self.eObj.assgnVars:
+            if not isinstance(self.eObj.assgnVars[v], basestring):
+                self.eObj.assgnVars[v] = self.eObj.assgnVars[v][0]
+
     def SetupCalc(self,parmDict):
         '''Do all preparations to use the expression for computation.
         Adds the free parameter values to the parameter dict (parmDict).
@@ -1914,6 +1918,14 @@ class ExpressionCalcObj(object):
         '''
         for var,val in zip(varList,valList):
             self.exprDict[self.lblLookup.get(var,'undefined: '+var)] = val
+
+    def UpdateDict(self,parmDict):
+        '''Update the dict for the expression with values in a dict
+        :param list parmDict: a dict of values some of which may be in use here
+        '''
+        for var in parmDict:
+            if var in self.lblLookup:
+                self.exprDict[self.lblLookup[var]] = parmDict[var]
             
     def EvalExpression(self):
         '''Evaluate an expression. Note that the expression

@@ -2811,7 +2811,7 @@ def UpdateModelsGrid(G2frame,data):
                 ISample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Sample Parameters'))
                 ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Limits'))
                 IInst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Instrument Parameters'))
-                IfOK,result,varyList,sig,Rvals,covMatrix,Msg = G2sasd.ModelFit(IProfile,IProfDict,ILimits,ISample,IModel)
+                IfOK,result,varyList,sig,Rvals,covMatrix,parmDict,Msg = G2sasd.ModelFit(IProfile,IProfDict,ILimits,ISample,IModel)
                 JModel = copy.copy(IModel)
                 if not IfOK:
                     G2frame.ErrorDialog('Failed sequential refinement for data '+name,
@@ -2823,7 +2823,7 @@ def UpdateModelsGrid(G2frame,data):
                 
                 G2sasd.ModelFxn(IProfile,IProfDict,ILimits,ISample,IModel)
                 SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-                    'covMatrix':covMatrix,'title':name}
+                    'covMatrix':covMatrix,'title':name,'parmDict':parmDict}
             else:
                 dlg.Destroy()
                 print ' ***** Small angle sequential refinement successful *****'

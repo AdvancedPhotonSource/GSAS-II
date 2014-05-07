@@ -1259,9 +1259,9 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
         print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
         SetModelParms()
         covMatrix = covM*Rvals['GOF']
-        return True,result,varyList,sig,Rvals,covMatrix,''
+        return True,result,varyList,sig,Rvals,covMatrix,parmDict,''
     except (ValueError,TypeError):      #when bad LS refinement; covM missing or with nans
-        return False,0,0,0,0,0,Msg
+        return False,0,0,0,0,0,0,Msg
     
 def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
     

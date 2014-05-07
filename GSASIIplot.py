@@ -2326,6 +2326,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         if event.key == 's':
             G2frame.seqXaxis = G2frame.seqXselect()
             Draw()
+            
     if fitnum is None:
         label = 'Sequential refinement'
     else:
@@ -2343,7 +2344,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-    Page.Choice = ['s to select plot x-axis']
+    Page.Choice = ['s to select plot x-axis',]
     Page.keyPress = OnKeyPress
     Page.seqYaxisList = ColumnList
     Page.seqTableGet = TableGet
@@ -2361,12 +2362,19 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         for col in Page.seqYaxisList:
             name,Y,sig = Page.seqTableGet(col)
             if sig:
+                if G2frame.seqReverse and not G2frame.seqXaxis:
+                    Y = Y[::-1]
+                    sig = sig[::-1]
                 Plot.errorbar(X,Y,yerr=sig,label=name)
             else:
+                if G2frame.seqReverse and not G2frame.seqXaxis:
+                    Y = Y[::-1]
                 Plot.plot(X,Y)
                 Plot.plot(X,Y,'o',label=name)
         if Page.fitvals:
-                Plot.plot(X,fitvals,label='Fit')
+            if G2frame.seqReverse and not G2frame.seqXaxis:
+                Page.fitvals = Page.fitvals[::-1]
+            Plot.plot(X,Page.fitvals,label='Fit')
             
         Plot.legend(loc='best')
         Plot.set_ylabel('Parameter values')

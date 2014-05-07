@@ -1904,6 +1904,7 @@ class GSASII(wx.Frame):
         self.Legend = False
         self.SinglePlot = False
         self.SubBack = False
+        self.seqReverse = False
         self.plotView = 0
         self.Image = 0
         self.oldImagefile = ''

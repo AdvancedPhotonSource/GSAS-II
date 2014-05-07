@@ -2790,12 +2790,12 @@ def UpdateModelsGrid(G2frame,data):
                 if sel:
                     CopyForward = True
                 else:
-                    Reverse = True
+                    G2frame.seqReverse = True
         dlg.Destroy()
         dlg = wx.ProgressDialog('SASD Sequential fit','Data set name = '+names[0],len(names), 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         wx.BeginBusyCursor()
-        if Reverse:
+        if G2frame.seqReverse:
             names.reverse()
         try:
             for i,name in enumerate(names):

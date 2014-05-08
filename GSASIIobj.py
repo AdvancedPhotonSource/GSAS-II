@@ -1125,12 +1125,15 @@ def VarDescr(varname):
         
     l = getVarDescr(varname)
     if not l:
-        #return ("invalid variable name ("+str(varname)+")!"),""
-        return "invalid variable name!",""
+        return ("invalid variable name ("+str(varname)+")!"),""
+#        return "invalid variable name!",""
 
     if not l[-1]:
         l[-1] = "(variable needs a definition!)"
 
+    if len(l) == 3:         #SASD variable name!
+        s = 'component:'+l[1]
+        return s,l[-1]
     s = ""
     if l[0] is not None and l[1] is not None: # HAP: keep short
         if l[0] == '*':
@@ -1190,11 +1193,13 @@ def getVarDescr(varname):
     :returns: a six element list as [`p`,`h`,`name`,`a1`,`a2`,`description`],
       where `p`, `h`, `a1`, `a2` are str values or `None`, for the phase number,
       the histogram number and the atom number; `name` will always be
-      an str; and `description` is str or `None`.
+      a str; and `description` is str or `None`.
       If the variable name is incorrectly formed (for example, wrong
       number of colons), `None` is returned instead of a list.
     '''
     l = varname.split(':')
+    if len(l) == 2:     #SASD parameter name
+        return varname,l[0],getDescr(l[1])
     if len(l) == 3:
         l += [None,None]
     elif len(l) == 4:
@@ -1278,6 +1283,30 @@ def CompileVarDesc():
         'RBR([TLS])([123AB][123AB])' : 'Residue rigid body group disp. param.',
         # Global vars (::<var>)
         'constr([0-9]*)' : 'Parameter from constraint',
+        # SASD vars (l:<var>;l = component)
+        'Aspect ratio' : 'Particle aspect ratio',
+        'Length' : 'Cylinder length',
+        'Diameter' : 'Cylinder/disk diameter',
+        'Thickness' : 'Disk thickness',
+        'Dist' : 'Interparticle distance',
+        'VolFr' : 'Dense scatterer volume fraction',
+        'epis' : 'Sticky sphere epsilon',
+        'Sticky' : 'Stickyness',
+        'Depth' : 'Well depth',
+        'Width' : 'Well width',
+        'Volume' : 'Particle volume',
+        'Radius' : 'Sphere/cylinder/disk radius',
+        'Mean' : 'Particle mean radius',
+        'StdDev' : 'Standard deviation in Mean',
+        'G': 'Guinier prefactor',
+        'Rg': 'Guinier radius of gyration',
+        'B': 'Porod prefactor',
+        'P': 'Porod power',
+        'Cutoff': 'Porod cutoff',
+        'PkInt': 'Bragg peak intensity',
+        'PkPos': 'Bragg peak position',
+        'PkSig': 'Bragg peak sigma',
+        'PkGam': 'Bragg peak gamma',   
         }.items():
         VarDesc[key] = value
         reVarDesc[re.compile(key)] = value

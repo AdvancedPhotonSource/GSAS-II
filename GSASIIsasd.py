@@ -1000,8 +1000,21 @@ def SetScale(Data,refData):
 def Bestimate(G,Rg,P):
     return (G*P/Rg**P)*np.exp(scsp.gammaln(P/2))
     
-def SmearData(Ic,Q,slitLength):
-    return Ic   #for now
+def SmearData(Ic,Q,slitLen):
+    Qtemp = np.concatenate([Q,20*Q])
+    Ictemp = np.concatenate([Ic,np.zeros_like(Ic)])
+    print Ictemp
+    Icsm = np.zeros_like(Qtemp)
+    Np = Q.shape[0]
+    Qsm = 2*slitLen*(np.interp(np.arange(2*Np)/2.,np.arange(Np),Q)-Q[0])/(Q[-1]-Q[0])
+    Sp = np.searchsorted(Qsm,slitLen)
+    for i in range(Np):
+        Ism = np.interp(np.sqrt(Q[i]**2+Qsm**2),Qtemp,Ictemp)
+        print Ism
+        raise Exception
+        Icsm[i] = np.sum(Ism[:Sp])
+    Icsm /= slitLen
+    return Icsm   #for now
     
 ###############################################################################
 #### Size distribution
@@ -1209,6 +1222,9 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
                 Ic += parmDict[cid+'PkInt']*G2pwd.getPsVoigt(parmDict[cid+'PkPos'],
                     parmDict[cid+'PkSig'],parmDict[cid+'PkGam'],Q)
         Ic += parmDict['Back']  #/parmDict['Scale']
+        slitLen = Sample['SlitLen']
+        if slitLen:
+            Ic = SmearData(Ic,Q,slitLen)
         return Ic
         
     Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
@@ -1358,6 +1374,9 @@ def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
             Rbins.append([])
             Dist.append([])
     Ic[Ibeg:Ifin] += Back[0]
+    slitLen = Sample['SlitLen']
+    if slitLen:
+        Ic[Ibeg:Ifin] = SmearData(Ic,Q,slitLen)[Ibeg:Ifin]
     sasdData['Size Calc'] = [Rbins,Dist]
     
 def MakeDiamDist(DistName,nPoints,cutoff,distDict):

@@ -443,7 +443,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     def OnPlotKeyPress(event):
         newPlot = False
         if event.key == 'w' and 'PWDR' in plottype:
-            G2frame.ErrorBars = not G2frame.ErrorBars
+            G2frame.Weight = not G2frame.Weight
             if not G2frame.Weight:
                 G2frame.SinglePlot = True
             newPlot = True
@@ -927,11 +927,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             else:
                 X += G2frame.Offset[1]*.005*N
             Xum = ma.getdata(X)
+            
             if ifpicked:
                 Z = xye[3]+offset*N
-                if 'PWDR' in plottype:  #powder background
+                if 'PWDR' in plottype:
                     W = xye[4]+offset*N
-                    D = xye[5]-Ymax*G2frame.delOffset
+                    D = xye[5]-Ymax*G2frame.delOffset  #powder background
                 elif 'SASD' in plottype:
                     if G2frame.sqPlot:
                         W = xye[4]*X**4
@@ -946,7 +947,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         YB = Y
                         ZB = Z+B
                     Plot.set_yscale("log",nonposy='mask')
-                    Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
+                    Plot.set_ylim(bottom=np.min(np.trim_zeros(YB))/2.,top=np.max(Y)*2.)
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
@@ -1007,7 +1008,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
                     Page.canvas.SetToolTipString(tip)
                     data = G2frame.LimitsTable.GetData()
-            else:
+                    
+            else:   #not picked
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
                         Plot.semilogy(X,Y,colors[N%6],picker=False,nonposy='mask')
@@ -1019,7 +1021,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     elif 'SASD' in plottype:
                         Plot.loglog(X,Y,colors[N%6],picker=False,nonposy='mask')
                         Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
-            if G2frame.logPlot:
+                        
+            if G2frame.logPlot and 'PWDR' in plottype:
                 Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
     if PickId and not G2frame.Contour:
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))

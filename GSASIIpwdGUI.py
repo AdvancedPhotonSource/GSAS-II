@@ -83,7 +83,7 @@ def SetDefaultSample():
         'Materials':[{'Name':'vacuum','VolFrac':1.0,},{'Name':'vacuum','VolFrac':0.0,}],
         'Thick':1.0,'Contrast':[0.0,0.0],       #contrast & anomalous contrast
         'Trans':1.0,                            #measured transmission
-        'SlitLen':0.0,                          #Slit length - units?
+        'SlitLen':0.0,                          #Slit length - in Q(A-1)
         }
 def SetupSampleLabels(histName,dataType):
     '''Setup a list of labels and number formatting for use in
@@ -107,7 +107,7 @@ def SetupSampleLabels(histName,dataType):
     elif 'SASD' in histName:
         parms.append(['Thick','Sample thickness (mm)',[10,3]])
         parms.append(['Trans','Transmission (meas)',[10,3]])
-        parms.append(['SlitLen','Slit length',[10,3]])
+        parms.append(['SlitLen',u'Slit length (Q,\xc5'+Pwrm1+')',[10,3]])
     parms.append(['Omega','Goniometer omega:',[10,3]])
     parms.append(['Chi','Goniometer chi:',[10,3]])
     parms.append(['Phi','Goniometer phi:',[10,3]])

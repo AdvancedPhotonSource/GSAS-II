@@ -1902,7 +1902,7 @@ class GSASII(wx.Frame):
         self.ErrorBars = False
         self.Contour = False
         self.Legend = False
-        self.SinglePlot = False
+        self.SinglePlot = True
         self.SubBack = False
         self.seqReverse = False
         self.plotView = 0
@@ -3218,6 +3218,8 @@ class GSASII(wx.Frame):
                     if name[:4] in ['PWDR','HKLF']:
                         Id = item
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
+                if Id:
+                    self.PatternTree.SelectItem(Id)
                 if parentName:
                     parentId = G2gd.GetPatternTreeItemId(self, self.root, parentName)
                     if parentId:
@@ -3225,8 +3227,6 @@ class GSASII(wx.Frame):
                     else:
                         itemId = G2gd.GetPatternTreeItemId(self, self.root, oldName)
                     self.PatternTree.SelectItem(itemId)
-                elif Id:
-                    self.PatternTree.SelectItem(Id)
         finally:
             dlg.Destroy()
 

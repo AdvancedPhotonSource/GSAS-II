@@ -2528,16 +2528,16 @@ class DataFrame(wx.Frame):
         self.SequentialPfit = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialPfit, title='Parametric Fit')
         self.SequentialPfit.Append(
-            id=wxADDPARFIT, kind=wx.ITEM_NORMAL,text='Add function',
-            help='Add a new function to minimize')
+            id=wxADDPARFIT, kind=wx.ITEM_NORMAL,text='Add equation',
+            help='Add a new equation to minimize')
         self.SequentialPfit.Append(
-            id=wxDELPARFIT, kind=wx.ITEM_NORMAL,text='Delete function',
-            help='Delete a function for parametric minimization')
+            id=wxDELPARFIT, kind=wx.ITEM_NORMAL,text='Delete equation',
+            help='Delete an equation for parametric minimization')
         self.SequentialPfit.Append(
-            id=wxEDITPARFIT, kind=wx.ITEM_NORMAL,text='Edit function',
-            help='Edit an existing parametric minimization function')
+            id=wxEDITPARFIT, kind=wx.ITEM_NORMAL,text='Edit equation',
+            help='Edit an existing parametric minimization equation')
         self.SequentialPfit.Append(
-            id=wxDOPARFIT, kind=wx.ITEM_NORMAL,text='Fit to function(s)',
+            id=wxDOPARFIT, kind=wx.ITEM_NORMAL,text='Fit to equation(s)',
             help='Perform a parametric minimization')
         self.PostfillDataMenu()
             
@@ -3867,6 +3867,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
 
+    # PATCH: this routine can go away eventually
     def CreatePSvarDict(seqnum,name):
         '''Create a parameter dict (parmDict) for everything that might be used
         in a PseudoVar.
@@ -4016,59 +4017,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         G2frame.dataFrame.SequentialPfit.Enable(wxEDITPARFIT,val)
         G2frame.dataFrame.SequentialPfit.Enable(wxDOPARFIT,val)
 
-    def DelParFitEq(event):
-        'Ask the user to select function to delete'
-        choices = Controls['SeqParFitEqs'].keys()
-        selected = ItemSelector(
-            choices,G2frame.dataFrame,
-            multiple=True,
-            title='Select functions to remove',
-            header='Delete function')
-        if selected is None: return
-        for item in selected:
-            del Controls['SeqParFitEqs'][choices[item]]
-        EnableParFitEqMenus()
-        if Controls['SeqParFitEqs']: DoParEqFit(event)
-        
-    def EditParFitEq(event):
-        'Edit an existing parametric equation'
-        choices = Controls['SeqParFitEqs'].keys()
-        if len(choices) == 1:
-            selected = 0
-        else:
-            selected = ItemSelector(
-                choices,G2frame.dataFrame,
-                multiple=False,
-                title='Select a function to edit',
-                header='Edit function')
-        if selected is not None:
-            dlg = G2exG.ExpressionDialog(
-                G2frame.dataDisplay,indepVarDict,
-                Controls['SeqParFitEqs'][choices[selected]],
-                depVarDict=depVarDict,
-                header="Edit this minimization function's formula")
-            newobj = dlg.Show(True)
-            if newobj:
-                calcobj = G2obj.ExpressionCalcObj(newobj)
-                del Controls['SeqParFitEqs'][choices[selected]]
-                Controls['SeqParFitEqs'][calcobj.eObj.expression] = newobj
-            EnableParFitEqMenus()
-        if Controls['SeqParFitEqs']: DoParEqFit(event)
-
-    def AddNewParFitEq(event):
-        'Create a new parametric equation to be fit to sequential results'
-        dlg = G2exG.ExpressionDialog(
-            G2frame.dataDisplay,indepVarDict,
-            depVarDict=depVarDict,
-            header='Enter a function to minimize in the parametric fit')
-        obj = dlg.Show(True)
-        dlg.Destroy()
-        if obj:
-            calcobj = G2obj.ExpressionCalcObj(obj)
-            Controls['SeqParFitEqs'][calcobj.eObj.expression] = obj
-            EnableParFitEqMenus()
-        if Controls['SeqParFitEqs']: DoParEqFit(event)
-            
     def ParEqEval(Values,calcObjList,varyList):
         '''Evaluate the parametric expression(s)
         :param list Values: a list of values for each variable parameter
@@ -4082,12 +4030,16 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             result.append((calcobj.depVal-calcobj.EvalExpression())/calcobj.depSig)
         return result
 
-    def DoParEqFit(event):
+    def DoParEqFit(event,eqObj=None):
         'Parametric fit minimizer'
         varyValueDict = {} # dict of variables and their initial values
         calcObjList = [] # expression objects, ready to go for each data point
-        for expr in Controls['SeqParFitEqs']:
-            obj = Controls['SeqParFitEqs'][expr]
+        if eqObj is not None:
+            eqObjDict = {eqObj.expression:eqObj}
+        else:
+            eqObjDict = Controls['SeqParFitEqs']
+        for expr in eqObjDict.keys():
+            obj = eqObjDict[expr]
             # assemble refined vars for this equation
             varyValueDict.update({var:val for var,val in obj.GetVariedVarVal()})
             # lookup dependent var position
@@ -4111,18 +4063,27 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 calcObjList.append(calcobj)
         # varied parameters
         varyList = varyValueDict.keys()
-        varyValues = [varyValueDict[key] for key in varyList]
-        result = so.leastsq(ParEqEval,varyValues,full_output=True,   #ftol=Ftol,
-                            args=(calcObjList,varyList)
-                            )
+        values = varyValues = [varyValueDict[key] for key in varyList]
+        if not varyList:
+            print 'no variables to refine!'
+        else:
+            try:
+                print 'Fit Results'
+                result = so.leastsq(ParEqEval,varyValues,full_output=True,   #ftol=Ftol,
+                                    args=(calcObjList,varyList)
+                                    )
+                values = result[0]
+                covar = result[1]
+                if covar is None:
+                    raise Exception
+                for i,(var,val) in enumerate(zip(varyList,values)):
+                    print '  ',var,' =',G2mth.ValEsd(val,np.sqrt(covar[i,i]))
+            except:
+                print 'Fit failed'
+                return
         # create a plot for each parametric variable
-        values = result[0]
-        covar = result[1]
-        print 'Fit Results'
-        for i,(var,val) in enumerate(zip(varyList,values)):
-            print '  ',var,' =',G2mth.ValEsd(val,np.sqrt(covar[i,i]))
-        for fitnum,expr in enumerate(Controls['SeqParFitEqs']):
-            obj = Controls['SeqParFitEqs'][expr]
+        for fitnum,expr in enumerate(sorted(eqObjDict)):
+            obj = eqObjDict[expr]
             obj.UpdateVariedVars(varyList,values)
             calcobj = G2obj.ExpressionCalcObj(obj)
             # lookup dependent var position
@@ -4136,9 +4097,78 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     {var:row[i] for i,var in enumerate(colLabels) if var in indepVars}
                     )
                 fitvals.append(calcobj.EvalExpression())
-            G2plt.PlotSelectedSequence(G2frame,[indx],GetColumnInfo,SelectXaxis,
-                                           fitnum,fitvals)
-                                
+            G2plt.PlotSelectedSequence(
+                G2frame,[indx],GetColumnInfo,SelectXaxis,
+                fitnum,fitvals)
+
+    def SingleParEqFit(eqObj):
+        DoParEqFit(None,eqObj)
+
+    def DelParFitEq(event):
+        'Ask the user to select function to delete'
+        choices = sorted(Controls['SeqParFitEqs'].keys())
+        txtlst = [Controls['SeqParFitEqs'][i].GetDepVar()+' = '+i for i in choices]
+        selected = ItemSelector(
+            txtlst,G2frame.dataFrame,
+            multiple=True,
+            title='Select a parametric equation to remove',
+            header='Delete equation')
+        if selected is None: return
+        for item in selected:
+            del Controls['SeqParFitEqs'][choices[item]]
+        EnableParFitEqMenus()
+        if Controls['SeqParFitEqs']: DoParEqFit(event)
+        
+    def EditParFitEq(event):
+        'Edit an existing parametric equation'
+        choices = sorted(Controls['SeqParFitEqs'].keys())
+        txtlst = [Controls['SeqParFitEqs'][i].GetDepVar()+' = '+i for i in choices]
+        if len(choices) == 1:
+            selected = 0
+        else:
+            selected = ItemSelector(
+                txtlst,G2frame.dataFrame,
+                multiple=False,
+                title='Select a parametric equation to edit',
+                header='Edit equation')
+        if selected is not None:
+            dlg = G2exG.ExpressionDialog(
+                G2frame.dataDisplay,indepVarDict,
+                Controls['SeqParFitEqs'][choices[selected]],
+                depVarDict=depVarDict,
+                header="Edit the formula for this minimization function",
+                ExtraButton=['Fit',SingleParEqFit])
+            newobj = dlg.Show(True)
+            if newobj:
+                calcobj = G2obj.ExpressionCalcObj(newobj)
+                del Controls['SeqParFitEqs'][choices[selected]]
+                Controls['SeqParFitEqs'][calcobj.eObj.expression] = newobj
+                EnableParFitEqMenus()
+                if Controls['SeqParFitEqs']: DoParEqFit(event)
+
+    def AddNewParFitEq(event):
+        'Create a new parametric equation to be fit to sequential results'
+
+        # compile the variable names in previous freevars to avoid accidental name collisions
+        usedvarlist = []
+        for eq,obj in Controls['SeqParFitEqs'].items():
+            for var in obj.freeVars:
+                if obj.freeVars[var][0] not in usedvarlist: usedvarlist.append(obj.freeVars[var][0])
+
+        dlg = G2exG.ExpressionDialog(
+            G2frame.dataDisplay,indepVarDict,
+            depVarDict=depVarDict,
+            header='Define an equation to minimize in the parametric fit',
+            ExtraButton=['Fit',SingleParEqFit],
+            usedVars=usedvarlist)
+        obj = dlg.Show(True)
+        dlg.Destroy()
+        if obj:
+            calcobj = G2obj.ExpressionCalcObj(obj)
+            Controls['SeqParFitEqs'][calcobj.eObj.expression] = obj
+            EnableParFitEqMenus()
+            if Controls['SeqParFitEqs']: DoParEqFit(event)
+                                            
     def GridSetToolTip(row,col):
         '''Routine to show standard uncertainties for each element in table
         as a tooltip
@@ -4370,7 +4400,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 #calcobj.SetupCalc(PSvarDict)
                 calcobj.UpdateDict(PSvarDict)
             else:
-                PSvarDict,unused,unused = CreatePSvarDict(0,histNames[0])
+                # PATCH: this routine can go away eventually once parmDict is always in
+                # sequential refinement
+                PSvarDict,unused,unused = CreatePSvarDict(seqnum,name)
                 calcobj.SetupCalc(PSvarDict)
             valList.append(calcobj.EvalExpression())
         if not esdList:
@@ -4389,6 +4421,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         UpdateParmDict(PSvarDict)
     else:
         print 'Sequential refinement needs to be rerun to obtain ESDs for PseudoVariables'
+        # PATCH: this routine can go away eventually
         PSvarDict,unused,unused = CreatePSvarDict(0,histNames[0])
     # Also dicts of dependent (depVarDict) & independent vars (indepVarDict)
     # for Parametric fitting from the data table

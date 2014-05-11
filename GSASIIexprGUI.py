@@ -97,11 +97,20 @@ class ExpressionDialog(wx.Dialog):
       input. Ignored if None (default)
     :param list depVarDict: a dict of choices for the dependent variable to be
       fitted to the expression and their values. Ignored if None (default).
+    :param list ExtraButton: a list with two terms that define [0]: the label
+      for an extra button and [1] the callback routine to be used when the
+      button is pressed. The button will only be enabled when the OK button can be
+      used (meaning the equation/expression is valid). The default is None, meaning this
+      will not be used.
+    :param list usedVars: defines a list of previously used variable names. These names
+      will not be reused as defaults for new free variables.
+      (The default is an empty list). 
     '''
     def __init__(self, parent, parmDict, exprObj=None,
                  header='Enter restraint expression here',
                  wintitle='Expression Editor',
-                 fit=True,VarLabel=None,depVarDict=None):
+                 fit=True,VarLabel=None,depVarDict=None,
+                 ExtraButton=None,usedVars=[]):
         self.fit = fit
         self.depVarDict = depVarDict
         'dict for dependent variables'
@@ -135,7 +144,9 @@ class ExpressionDialog(wx.Dialog):
         'Expression as a text string'
         self.dependentVar = None
         'name for dependent variable selection, when depVarDict is specified'
-        
+        self.usedVars = usedVars
+        'variable names that have been used and should not be reused by default'
+
         # process dictionary of values and create an index
         for key in parmDict:
             try: # deal with values that are in lists
@@ -201,7 +212,17 @@ class ExpressionDialog(wx.Dialog):
         self.mainsizer.Add(self.varSizer,1,wx.ALL|wx.EXPAND,1)
         self.mainsizer.Add((-1,5),0,wx.EXPAND,1)
 
+        bSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnsizer = wx.StdDialogButtonSizer()
+        if ExtraButton:
+            self.ExtraBtn = wx.Button(self, wx.ID_ANY, ExtraButton[0])
+            self.ExtraBtn.Bind(wx.EVT_BUTTON,self.OnExtra)
+            self.ExtraCallBack = ExtraButton[1]
+            self.ExtraBtn.Disable()
+            bSizer.Add(self.ExtraBtn, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        else:
+            self.ExtraBtn = None
+        bSizer.Add((1,1), 1, wx.ALIGN_CENTER|wx.ALL|wx.EXPAND, 0)
         self.OKbtn = wx.Button(self, wx.ID_OK)
         self.OKbtn.SetDefault()
         self.OKbtn.Disable()
@@ -209,7 +230,8 @@ class ExpressionDialog(wx.Dialog):
         btn = wx.Button(self, wx.ID_CANCEL)
         btnsizer.AddButton(btn)
         btnsizer.Realize()
-        self.mainsizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL|wx.EXPAND, 5)
+        bSizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        self.mainsizer.Add(bSizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL|wx.EXPAND, 5)
         self.SetSizer(self.mainsizer)
         self.CenterOnParent()
         if exprObj:
@@ -235,6 +257,28 @@ class ExpressionDialog(wx.Dialog):
         #self.varbox.SetAutoLayout(1)
         #self.varbox.SetupScrolling()
         #self.mainsizer.Fit(self)
+
+    def OnExtra(self,event):
+        exprObj = G2obj.ExpressionObj()
+        exprObj.LoadExpression(
+            self.expr,
+            self.exprVarLst,
+            self.varSelect,
+            self.varName,
+            self.varValue,
+            self.varRefflag,
+            )
+        if self.depVarDict:
+            exprObj.SetDepVar(self.dependentVar)
+        self.ExtraCallBack(exprObj)
+        # put results back into displayed dialog
+        resDict = dict(exprObj.GetVariedVarVal())
+        for v,var in self.varName.items():
+            varname = "::" + var.lstrip(':').replace(' ','_').replace(':',';')
+            val =  resDict.get(varname)
+            if val:
+                self.varValue[v] = val
+        wx.CallAfter(self.ShowVars())
 
     def Show(self,mode=True):
         '''Call to use the dialog after it is created.
@@ -281,6 +325,7 @@ class ExpressionDialog(wx.Dialog):
         '''
         self.RestartTimer()
         self.OKbtn.Disable()
+        if self.ExtraBtn: self.ExtraBtn.Disable()
         event.Skip()
         return
     
@@ -466,7 +511,8 @@ class ExpressionDialog(wx.Dialog):
         sel = self.AllowedChoices[event.GetEventObject().GetSelection()]
         self.varSelect[v] = sel
         if sel == 0:
-            self.varName[v] = str(v)
+            sv = G2obj.MakeUniqueLabel(v,self.usedVars)
+            self.varName[v] = sv
             self.varValue[v] = self.varValue.get(v,0.0)
         else:
             var = self.SelectG2var(sel,v,self.parmLists[sel])
@@ -517,6 +563,7 @@ class ExpressionDialog(wx.Dialog):
         :param str msg3: msg3 is shown in a the standard font
         '''
         self.OKbtn.Disable()
+        if self.ExtraBtn: self.ExtraBtn.Disable()
         self.varSizer.Clear(True)
         self.errbox = wxscroll.ScrolledPanel(self,style=wx.HSCROLL)
         self.errbox.SetMinSize((200,130))
@@ -558,6 +605,10 @@ class ExpressionDialog(wx.Dialog):
             self.showError(*exprObj.lastError)
             return
         self.exprVarLst,pkgdict = ret
+        wx.CallAfter(self.Repaint,exprObj)
+            
+    def Repaint(self,exprObj):
+        'Redisplay the variables and continue the validation'
         self.ShowVars() # show widgets to set vars
         msg = self.CheckVars() 
         if msg:
@@ -592,6 +643,7 @@ class ExpressionDialog(wx.Dialog):
                 )
         self.setEvalResult("Expression evaluates to: "+str(s)+depVal)
         self.OKbtn.Enable()
+        if self.ExtraBtn: self.ExtraBtn.Enable()
         
 if __name__ == "__main__":
     app = wx.PySimpleApp() # create the App

@@ -1246,7 +1246,7 @@ def CompileVarDesc():
         'A([0-5])' : 'Reciprocal metric tensor component \\1',
         'Vol' : 'Unit cell volume',
         # Atom vars (p::<var>:a)
-        'dA([xyz])' : 'change to atomic coordinate, \\1',
+        'dA([xyz])$' : 'change to atomic coordinate, \\1',
         'A([xyz])$' : '\\1 fractional atomic coordinate',
         'AUiso':'Atomic isotropic displacement parameter',
         'AU([123][123])':'Atomic anisotropic displacement parameter U\\1',
@@ -1270,8 +1270,8 @@ def CompileVarDesc():
         'Lam' : 'Wavelength',
         'Polariz\.' : 'Polarization correction',
         'SH/L' : 'FCJ peak asymmetry correction',
-        '([UVW])' : 'Gaussian instrument broadening \\1',
-        '([XY])' : 'Cauchy instrument broadening \\1',
+        '([UVW])$' : 'Gaussian instrument broadening \\1',
+        '([XY])$' : 'Cauchy instrument broadening \\1',
         'Zero' : 'Debye-Scherrer zero correction',
         'nDebye' : 'Debye model background corr. terms',
         'nPeaks' : 'Fixed peak background corr. terms',
@@ -1564,9 +1564,6 @@ class G2VarObj(object):
 #==========================================================================
 # shortcut routines
 exp = np.exp
-sind = lambda x: np.sin(x*np.pi/180.)
-tand = lambda x: np.tan(x*np.pi/180.)
-cosd = lambda x: np.cos(x*np.pi/180.)
 sind = sin = s = lambda x: np.sin(x*np.pi/180.)
 cosd = cos = c = lambda x: np.cos(x*np.pi/180.)
 tand = tan = t = lambda x: np.tan(x*np.pi/180.)
@@ -1584,7 +1581,7 @@ class ExpressionObj(object):
         'The expression as a text string'
         self.assgnVars = {}
         '''A dict where keys are label names in the expression mapping to a GSAS-II
-        variable. The value is a list with a G2 variable name and derivative step size.
+        variable. The value a G2 variable name.
         Note that the G2 variable name may contain a wild-card and correspond to
         multiple values.
         '''

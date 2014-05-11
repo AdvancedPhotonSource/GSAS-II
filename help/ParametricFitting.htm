@@ -1,0 +1,2067 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
+xmlns:mv="http://macVmlSchemaUri" xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta name=Title content="">
+<meta name=Keywords content="">
+<meta http-equiv=Content-Type content="text/html; charset=macintosh">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 14">
+<meta name=Originator content="Microsoft Word 14">
+<link rel=File-List href="ParametricFitting_files/filelist.xml">
+<link rel=Edit-Time-Data href="ParametricFitting_files/editdata.mso">
+<!--[if !mso]>
+<style>
+v\:* {behavior:url(#default#VML);}
+o\:* {behavior:url(#default#VML);}
+w\:* {behavior:url(#default#VML);}
+.shape {behavior:url(#default#VML);}
+</style>
+<![endif]--><!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>B Toby</o:Author>
+  <o:LastAuthor>B Toby</o:LastAuthor>
+  <o:Revision>27</o:Revision>
+  <o:TotalTime>930</o:TotalTime>
+  <o:Created>2014-05-09T19:20:00Z</o:Created>
+  <o:LastSaved>2014-05-11T01:08:00Z</o:LastSaved>
+  <o:Pages>8</o:Pages>
+  <o:Words>1531</o:Words>
+  <o:Characters>8732</o:Characters>
+  <o:Company>Argonne National Laboratory</o:Company>
+  <o:Lines>72</o:Lines>
+  <o:Paragraphs>20</o:Paragraphs>
+  <o:CharactersWithSpaces>10243</o:CharactersWithSpaces>
+  <o:Version>14.0</o:Version>
+ </o:DocumentProperties>
+ <o:OfficeDocumentSettings>
+  <o:AllowPNG/>
+ </o:OfficeDocumentSettings>
+</xml><![endif]-->
+<link rel=themeData href="ParametricFitting_files/themedata.xml">
+<!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>156</w:Zoom>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:GrammarState>Clean</w:GrammarState>
+  <w:TrackMoves>false</w:TrackMoves>
+  <w:TrackFormatting/>
+  <w:DisplayHorizontalDrawingGridEvery>0</w:DisplayHorizontalDrawingGridEvery>
+  <w:DisplayVerticalDrawingGridEvery>0</w:DisplayVerticalDrawingGridEvery>
+  <w:UseMarginsForDrawingGridOrigin/>
+  <w:ValidateAgainstSchemas>false</w:ValidateAgainstSchemas>
+  <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid>
+  <w:IgnoreMixedContent>false</w:IgnoreMixedContent>
+  <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText>
+  <w:DoNotUnderlineInvalidXML/>
+  <w:DoNotPromoteQF/>
+  <w:LidThemeOther>EN-US</w:LidThemeOther>
+  <w:LidThemeAsian>JA</w:LidThemeAsian>
+  <w:LidThemeComplexScript>X-NONE</w:LidThemeComplexScript>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+   <w:DontGrowAutofit/>
+   <w:SplitPgBreakAndParaMark/>
+   <w:EnableOpenTypeKerning/>
+   <w:DontFlipMirrorIndents/>
+   <w:OverrideTableStyleHps/>
+   <w:UseFELayout/>
+  </w:Compatibility>
+  <m:mathPr>
+   <m:mathFont m:val="Cambria Math"/>
+   <m:brkBin m:val="before"/>
+   <m:brkBinSub m:val="&#45;-"/>
+   <m:smallFrac/>
+   <m:dispDef/>
+   <m:lMargin m:val="0"/>
+   <m:rMargin m:val="0"/>
+   <m:defJc m:val="centerGroup"/>
+   <m:wrapRight/>
+   <m:intLim m:val="subSup"/>
+   <m:naryLim m:val="subSup"/>
+  </m:mathPr></w:WordDocument>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:LatentStyles DefLockedState="false" DefUnhideWhenUsed="true"
+  DefSemiHidden="true" DefQFormat="false" DefPriority="99"
+  LatentStyleCount="276">
+  <w:LsdException Locked="false" Priority="0" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Normal"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="heading 1"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 2"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 3"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 4"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 5"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 6"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 7"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 8"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 9"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 1"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 2"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 3"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 4"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 5"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 6"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 7"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 8"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 9"/>
+  <w:LsdException Locked="false" Priority="35" QFormat="true" Name="caption"/>
+  <w:LsdException Locked="false" Priority="10" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Title"/>
+  <w:LsdException Locked="false" Priority="1" Name="Default Paragraph Font"/>
+  <w:LsdException Locked="false" Priority="11" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtitle"/>
+  <w:LsdException Locked="false" Priority="22" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Strong"/>
+  <w:LsdException Locked="false" Priority="20" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Emphasis"/>
+  <w:LsdException Locked="false" Priority="59" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Table Grid"/>
+  <w:LsdException Locked="false" UnhideWhenUsed="false" Name="Placeholder Text"/>
+  <w:LsdException Locked="false" Priority="1" UnhideWhenUsed="false"
+   QFormat="true" Name="No Spacing"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 1"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 1"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 1"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 1"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 1"/>
+  <w:LsdException Locked="false" UnhideWhenUsed="false" Name="Revision"/>
+  <w:LsdException Locked="false" Priority="34" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="List Paragraph"/>
+  <w:LsdException Locked="false" Priority="29" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Quote"/>
+  <w:LsdException Locked="false" Priority="30" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Quote"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 1"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 1"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 1"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 1"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 1"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 1"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 2"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 2"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 2"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 2"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 2"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 2"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 2"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 2"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 3"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 3"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 3"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 3"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 3"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 3"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 3"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 3"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 4"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 4"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 4"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 4"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 4"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 4"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 4"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 4"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 5"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 5"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 5"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 5"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 5"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 5"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 5"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 5"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 6"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 6"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 6"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 6"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 6"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 6"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 6"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 6"/>
+  <w:LsdException Locked="false" Priority="19" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtle Emphasis"/>
+  <w:LsdException Locked="false" Priority="21" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Emphasis"/>
+  <w:LsdException Locked="false" Priority="31" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtle Reference"/>
+  <w:LsdException Locked="false" Priority="32" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Reference"/>
+  <w:LsdException Locked="false" Priority="33" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Book Title"/>
+  <w:LsdException Locked="false" Priority="37" Name="Bibliography"/>
+  <w:LsdException Locked="false" Priority="39" QFormat="true" Name="TOC Heading"/>
+ </w:LatentStyles>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+@font-face
+	{font-family:"\FF2D\FF33 \660E\671D";
+	mso-font-charset:78;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:-536870145 1791491579 18 0 131231 0;}
+@font-face
+	{font-family:"\FF2D\FF33 \30B4\30B7\30C3\30AF";
+	mso-font-charset:78;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:-536870145 1791491579 18 0 131231 0;}
+@font-face
+	{font-family:"\FF2D\FF33 \30B4\30B7\30C3\30AF";
+	mso-font-charset:78;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:-536870145 1791491579 18 0 131231 0;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:-520092929 1073786111 9 0 415 0;}
+@font-face
+	{font-family:Cambria;
+	panose-1:2 4 5 3 5 4 6 3 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:-536870145 1073743103 0 0 415 0;}
+@font-face
+	{font-family:"Lucida Grande";
+	panose-1:2 11 6 0 4 5 2 2 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:-520090897 1342218751 0 0 447 0;}
+ /* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-parent:"";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:Cambria;
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"\FF2D\FF33 \660E\671D";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-fareast-language:JA;}
+h1
+	{mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 1 Char";
+	mso-style-next:Normal;
+	margin-top:24.0pt;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:1;
+	font-size:16.0pt;
+	font-family:Calibri;
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"\FF2D\FF33 \30B4\30B7\30C3\30AF";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#345A8A;
+	mso-themecolor:accent1;
+	mso-themeshade:181;
+	mso-font-kerning:0pt;
+	mso-fareast-language:JA;}
+h2
+	{mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 2 Char";
+	mso-style-next:Normal;
+	margin-top:10.0pt;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:2;
+	font-size:13.0pt;
+	font-family:Calibri;
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"\FF2D\FF33 \30B4\30B7\30C3\30AF";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#4F81BD;
+	mso-themecolor:accent1;
+	mso-fareast-language:JA;}
+a:link, span.MsoHyperlink
+	{mso-style-priority:99;
+	color:blue;
+	mso-themecolor:hyperlink;
+	text-decoration:underline;
+	text-underline:single;}
+a:visited, span.MsoHyperlinkFollowed
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	color:purple;
+	mso-themecolor:followedhyperlink;
+	text-decoration:underline;
+	text-underline:single;}
+p.MsoAcetate, li.MsoAcetate, div.MsoAcetate
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-link:"Balloon Text Char";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:9.0pt;
+	font-family:"Lucida Grande";
+	mso-fareast-font-family:"\FF2D\FF33 \660E\671D";
+	mso-fareast-theme-font:minor-fareast;
+	mso-fareast-language:JA;}
+p.MsoListParagraph, li.MsoListParagraph, div.MsoListParagraph
+	{mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	margin-bottom:.0001pt;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:Cambria;
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"\FF2D\FF33 \660E\671D";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-fareast-language:JA;}
+p.MsoListParagraphCxSpFirst, li.MsoListParagraphCxSpFirst, div.MsoListParagraphCxSpFirst
+	{mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-type:export-only;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	margin-bottom:.0001pt;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:Cambria;
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"\FF2D\FF33 \660E\671D";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-fareast-language:JA;}
+p.MsoListParagraphCxSpMiddle, li.MsoListParagraphCxSpMiddle, div.MsoListParagraphCxSpMiddle
+	{mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-type:export-only;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	margin-bottom:.0001pt;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:Cambria;
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"\FF2D\FF33 \660E\671D";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-fareast-language:JA;}
+p.MsoListParagraphCxSpLast, li.MsoListParagraphCxSpLast, div.MsoListParagraphCxSpLast
+	{mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-type:export-only;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	margin-bottom:.0001pt;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:Cambria;
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"\FF2D\FF33 \660E\671D";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-fareast-language:JA;}
+span.Heading1Char
+	{mso-style-name:"Heading 1 Char";
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 1";
+	mso-ansi-font-size:16.0pt;
+	mso-bidi-font-size:16.0pt;
+	font-family:Calibri;
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"\FF2D\FF33 \30B4\30B7\30C3\30AF";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#345A8A;
+	mso-themecolor:accent1;
+	mso-themeshade:181;
+	font-weight:bold;}
+span.Heading2Char
+	{mso-style-name:"Heading 2 Char";
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 2";
+	mso-ansi-font-size:13.0pt;
+	mso-bidi-font-size:13.0pt;
+	font-family:Calibri;
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"\FF2D\FF33 \30B4\30B7\30C3\30AF";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#4F81BD;
+	mso-themecolor:accent1;
+	font-weight:bold;}
+span.BalloonTextChar
+	{mso-style-name:"Balloon Text Char";
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Balloon Text";
+	mso-ansi-font-size:9.0pt;
+	mso-bidi-font-size:9.0pt;
+	font-family:"Lucida Grande";
+	mso-ascii-font-family:"Lucida Grande";
+	mso-hansi-font-family:"Lucida Grande";
+	mso-bidi-font-family:"Lucida Grande";}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
+span.GramE
+	{mso-style-name:"";
+	mso-gram-e:yes;}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	mso-default-props:yes;
+	font-size:10.0pt;
+	mso-ansi-font-size:10.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:Cambria;
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"\FF2D\FF33 \660E\671D";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;
+	mso-fareast-language:JA;}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.WordSection1
+	{page:WordSection1;}
+ /* List Definitions */
+@list l0
+	{mso-list-id:109671306;
+	mso-list-type:hybrid;
+	mso-list-template-ids:129770836 67698703 67698713 67698715 67698703 67698713 67698715 67698703 67698713 67698715;}
+@list l0:level1
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level2
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level3
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l0:level4
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level5
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level6
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l0:level7
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level8
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l0:level9
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l1
+	{mso-list-id:235746779;
+	mso-list-type:hybrid;
+	mso-list-template-ids:129770836 67698703 67698713 67698715 67698703 67698713 67698715 67698703 67698713 67698715;}
+@list l1:level1
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level2
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level3
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l1:level4
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level5
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level6
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l1:level7
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level8
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1:level9
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l2
+	{mso-list-id:584074573;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-926633506 67698703 67698713 67698715 67698703 67698713 67698715 67698703 67698713 67698715;}
+@list l2:level1
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level2
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level3
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l2:level4
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level5
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level6
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l2:level7
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level8
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l2:level9
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l3
+	{mso-list-id:786774986;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-1684491798 67698703 67698713 67698715 67698703 67698713 67698715 67698703 67698713 67698715;}
+@list l3:level1
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level2
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level3
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l3:level4
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level5
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level6
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l3:level7
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level8
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l3:level9
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l4
+	{mso-list-id:845174183;
+	mso-list-type:hybrid;
+	mso-list-template-ids:129770836 67698703 67698713 67698715 67698703 67698713 67698715 67698703 67698713 67698715;}
+@list l4:level1
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l4:level2
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l4:level3
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l4:level4
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l4:level5
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l4:level6
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l4:level7
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l4:level8
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l4:level9
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l5
+	{mso-list-id:846990097;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-926633506 67698703 67698713 67698715 67698703 67698713 67698715 67698703 67698713 67698715;}
+@list l5:level1
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l5:level2
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l5:level3
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l5:level4
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l5:level5
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l5:level6
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l5:level7
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l5:level8
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l5:level9
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l6
+	{mso-list-id:1447432924;
+	mso-list-type:hybrid;
+	mso-list-template-ids:2060980778 67698703 67698713 67698715 67698703 67698713 67698715 67698703 67698713 67698715;}
+@list l6:level1
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l6:level2
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l6:level3
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l6:level4
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l6:level5
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l6:level6
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+@list l6:level7
+	{mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l6:level8
+	{mso-level-number-format:alpha-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l6:level9
+	{mso-level-number-format:roman-lower;
+	mso-level-tab-stop:none;
+	mso-level-number-position:right;
+	text-indent:-9.0pt;}
+ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-parent:"";
+	mso-padding-alt:0in 5.4pt 0in 5.4pt;
+	mso-para-margin:0in;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:Cambria;
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:minor-latin;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:minor-latin;
+	mso-fareast-language:JA;}
+</style>
+<![endif]--><!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="1033"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=EN-US link=blue vlink=purple style='tab-interval:.5in'>
+
+<div class=WordSection1>
+
+<h1>Parametric Fitting and Pseudo Variables for Sequential Fits</h1>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Once a sequential fit has been performed, any function of
+the fit parameters from the fit and <i style='mso-bidi-font-style:normal'>their
+estimated uncertainty</i> (<span class=SpellE>s.u</span>.) can be computed by
+defining one or more “pseudo-variables” (Pseudo <span class=SpellE>Vars</span>)
+Note that the covariance matrix from the fit is used to provide appropriate
+treatment the correlation in parameters with respect to uncertainty
+estimation.<span style="mso-spacerun:yes">&nbsp; </span>In addition, parametric
+equations in terms of sample parameters such as temperature and pressure, etc. can
+be fit to either the parameters from the fit or the Pseudo Vars. </p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>This tutorial assumes that the steps in the <span
+style='mso-bidi-font-family:"Times New Roman"'><a href="SequentialTutorial.htm">Sequential
+refinement of multiple datasets</a> tutorial have already been performed. <o:p></o:p></span></p>
+
+<p class=MsoNormal><span style='mso-bidi-font-family:"Times New Roman"'><o:p>&nbsp;</o:p></span></p>
+
+<h2>Step 1. Open the previous Sequential Fit</h2>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraph style='margin-bottom:6.0pt;text-indent:-.25in;
+mso-list:l6 level1 lfo1'><![if !supportLists]><span style='mso-fareast-font-family:
+Cambria;mso-fareast-theme-font:minor-latin;mso-bidi-font-family:Cambria;
+mso-bidi-theme-font:minor-latin'><span style='mso-list:Ignore'>1.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Start
+GSAS-II</p>
+
+<p class=MsoListParagraph style='margin-bottom:6.0pt;text-indent:-.25in;
+mso-list:l6 level1 lfo1'><![if !supportLists]><span style='mso-fareast-font-family:
+Cambria;mso-fareast-theme-font:minor-latin;mso-bidi-font-family:Cambria;
+mso-bidi-theme-font:minor-latin'><span style='mso-list:Ignore'>2.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
+style='mso-bidi-font-weight:normal'>Click on the File/Open Project</b> menu
+item to load file named <span class=SpellE><span style='font-family:Courier'>SeqTut.gpx</span></span>.
+</p>
+
+<p class=MsoListParagraph style='margin-bottom:6.0pt;text-indent:-.25in;
+mso-list:l6 level1 lfo1'><![if !supportLists]><span style='mso-fareast-font-family:
+Cambria;mso-fareast-theme-font:minor-latin;mso-bidi-font-family:Cambria;
+mso-bidi-theme-font:minor-latin'><span style='mso-list:Ignore'>3.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]><b
+style='mso-bidi-font-weight:normal'>Click on the Sequential results </b>item in
+the data tree. The sequential refinement results data table is displayed, as
+below. </p>
+
+<p class=MsoListParagraph style='margin-bottom:6.0pt'><span style='mso-fareast-language:
+EN-US;mso-no-proof:yes'><!--[if gte vml 1]><v:shapetype id="_x0000_t75"
+ coordsize="21600,21600" o:spt="75" o:preferrelative="t" path="m@4@5l@4@11@9@11@9@5xe"
+ filled="f" stroked="f">
+ <v:stroke joinstyle="miter"/>
+ <v:formulas>
+  <v:f eqn="if lineDrawn pixelLineWidth 0"/>
+  <v:f eqn="sum @0 1 0"/>
+  <v:f eqn="sum 0 0 @1"/>
+  <v:f eqn="prod @2 1 2"/>
+  <v:f eqn="prod @3 21600 pixelWidth"/>
+  <v:f eqn="prod @3 21600 pixelHeight"/>
+  <v:f eqn="sum @0 0 1"/>
+  <v:f eqn="prod @6 1 2"/>
+  <v:f eqn="prod @7 21600 pixelWidth"/>
+  <v:f eqn="sum @8 21600 0"/>
+  <v:f eqn="prod @7 21600 pixelHeight"/>
+  <v:f eqn="sum @10 21600 0"/>
+ </v:formulas>
+ <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
+ <o:lock v:ext="edit" aspectratio="t"/>
+</v:shapetype><v:shape id="Picture_x0020_1" o:spid="_x0000_i1053" type="#_x0000_t75"
+ style='width:358pt;height:181pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image001.png" o:title="" croptop="2940f"
+  cropbottom="7530f" cropleft="2593f" cropright="2770f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=360 height=183
+src="ParametricFitting_files/image002.png" v:shapes="Picture_x0020_1"><![endif]></span></p>
+
+<h2>Step 2. Create a Pseudo <span class=SpellE>Var</span></h2>
+
+<p class=MsoNormal>Pseudo <span class=SpellE>Vars</span> allow computation of
+an arbitrarily defined function of combinations of the variables that are
+displayed in the sequential refinement table. Any valid Python language
+expression can be used to define this. While one can plot <i style='mso-bidi-font-style:
+normal'>a</i>, <i style='mso-bidi-font-style:normal'>b</i> and <i
+style='mso-bidi-font-style:normal'>c</i> axis lengths by clicking on the appropriate
+column of the table, to compare them one might want to scale them. Alternately,
+as will be done here, we will plot the ratio of <i style='mso-bidi-font-style:
+normal'>b</i> and <i style='mso-bidi-font-style:normal'>c</i>.</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l2 level1 lfo2'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>1.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Click on
+the Pseudo <span class=SpellE>Vars</span>/Add</b> menu item to create a new
+Pseudo Var.</p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_2" o:spid="_x0000_i1052"
+ type="#_x0000_t75" style='width:159pt;height:46pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image003.png" o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=161 height=48
+src="ParametricFitting_files/image004.png" v:shapes="Picture_x0020_2"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l2 level1 lfo2'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>2.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>A window opens to define a formula</p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_3" o:spid="_x0000_i1051"
+ type="#_x0000_t75" style='width:310pt;height:152pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image005.png" o:title="" croptop="4214f"
+  cropbottom="8982f" cropleft="3852f" cropright="3654f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=312 height=154
+src="ParametricFitting_files/image006.png" v:shapes="Picture_x0020_3"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><!--[if gte vml 1]><v:shape id="Picture_x0020_4"
+ o:spid="_x0000_s1032" type="#_x0000_t75" style='position:absolute;left:0;
+ text-align:left;margin-left:178.3pt;margin-top:846.2pt;width:229.5pt;height:86.5pt;
+ z-index:251658240;visibility:visible;mso-wrap-style:square;
+ mso-wrap-distance-left:9pt;mso-wrap-distance-top:0;mso-wrap-distance-right:9pt;
+ mso-wrap-distance-bottom:0;mso-position-horizontal:right;
+ mso-position-horizontal-relative:margin;mso-position-vertical:absolute;
+ mso-position-vertical-relative:margin'>
+ <v:imagedata src="ParametricFitting_files/image007.png" o:title=""/>
+ <w:wrap type="square" anchorx="margin" anchory="margin"/>
+</v:shape><![endif]--><![if !vml]><img width=232 height=89
+src="ParametricFitting_files/image008.png" align=right hspace=9 v:shapes="Picture_x0020_4"><![endif]>In
+this window, <b style='mso-bidi-font-weight:normal'>type a Python expression, “b/c”,</b>
+but note that the variables <b style='mso-bidi-font-weight:normal'>c</b> and <b
+style='mso-bidi-font-weight:normal'>b</b> here are arbitrary labels. After
+entering the formula, <b style='mso-bidi-font-weight:normal'>press the Validate
+button</b> or wait a few seconds and the validation will be tested
+automatically. Note that if you pause too long, while typing, an error message
+may be displayed as the incomplete formula is found to be invalid. If so, make
+corrections or keep typing until the entire expression is entered. <span
+style="mso-spacerun:yes">&nbsp;</span>The error message will sometimes show
+where error is encountered, though not in this case. </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle>When the expression is complete, a new
+table appears where the arbitrary <b style='mso-bidi-font-weight:normal'>c</b>
+and <b style='mso-bidi-font-weight:normal'>b</b> labels will be assigned.</p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_5" o:spid="_x0000_i1050"
+ type="#_x0000_t75" style='width:310pt;height:152pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image009.png" o:title="" croptop="4435f"
+  cropbottom="8537f" cropleft="3852f" cropright="3650f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=312 height=154
+src="ParametricFitting_files/image010.png" v:shapes="Picture_x0020_5"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l2 level1 lfo2'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>3.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><!--[if gte vml 1]><v:shape id="Picture_x0020_6"
+ o:spid="_x0000_s1031" type="#_x0000_t75" style='position:absolute;left:0;
+ text-align:left;margin-left:37.3pt;margin-top:1143.2pt;width:88.5pt;height:65.5pt;
+ z-index:251659264;visibility:visible;mso-wrap-style:square;
+ mso-wrap-distance-left:9pt;mso-wrap-distance-top:0;mso-wrap-distance-right:9pt;
+ mso-wrap-distance-bottom:0;mso-position-horizontal:right;
+ mso-position-horizontal-relative:margin;mso-position-vertical:absolute;
+ mso-position-vertical-relative:margin'>
+ <v:imagedata src="ParametricFitting_files/image011.png" o:title=""/>
+ <w:wrap type="square" anchorx="margin" anchory="margin"/>
+</v:shape><![endif]--><![if !vml]><img width=91 height=68
+src="ParametricFitting_files/image012.png" align=right hspace=9 v:shapes="Picture_x0020_6"><![endif]>Assign
+the label for the numerator by <b style='mso-bidi-font-weight:normal'>clicking
+on the menu button next to label b</b>; this will bring up a list of variable
+types, from this <b style='mso-bidi-font-weight:normal'>select Phase</b> to
+bring up a list of phase variables, from that list <b style='mso-bidi-font-weight:
+normal'>select variable </b><b style='mso-bidi-font-weight:normal'><span
+style='font-family:Courier'>0<span class=GramE>::</span>b</span>,</b> which is
+the <i style='mso-bidi-font-style:normal'>b</i> lattice parameter for phase 0
+(CuCr<sub>2</sub>O<sub>4</sub>). Repeat this process to select <b
+style='mso-bidi-font-weight:normal'>assign to label c variable </b><b
+style='mso-bidi-font-weight:normal'><span style='font-family:Courier'>0<span
+class=GramE>::</span>b</span></b>.</p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_8" o:spid="_x0000_i1049"
+ type="#_x0000_t75" style='width:316pt;height:129pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image013.png" o:title="" croptop="4597f"
+  cropbottom="9873f" cropleft="3348f" cropright="3506f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=318 height=131
+src="ParametricFitting_files/image014.png" v:shapes="Picture_x0020_8"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle>As each variable is set, the window shows
+the value for each variable from the first refinement and when the expression
+can be evaluated, the value for the expression, evaluated for that first
+refinement. Only when the expression can be evaluated can the OK button be
+pressed. </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_9" o:spid="_x0000_i1048"
+ type="#_x0000_t75" style='width:314pt;height:154pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image015.png" o:title="" croptop="3770f"
+  cropbottom="8549f" cropleft="3371f" cropright="3424f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=316 height=156
+src="ParametricFitting_files/image016.png" v:shapes="Picture_x0020_9"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><b style='mso-bidi-font-weight:normal'>Press
+OK</b> to close the window and add the Pseudo Var. Note that a new column
+appears at the end of the sequential refinement data table. </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_10" o:spid="_x0000_i1047"
+ type="#_x0000_t75" style='width:354pt;height:181pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image017.png" o:title="" croptop="2743f"
+  cropbottom="7533f" cropleft="2917f" cropright="3097f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=356 height=183
+src="ParametricFitting_files/image018.png" v:shapes="Picture_x0020_10"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><!--[if gte vml 1]><v:shape id="Picture_x0020_11"
+ o:spid="_x0000_s1030" type="#_x0000_t75" style='position:absolute;left:0;
+ text-align:left;margin-left:42.3pt;margin-top:666.2pt;width:93.5pt;height:39pt;
+ z-index:251660288;visibility:visible;mso-wrap-style:square;
+ mso-wrap-distance-left:9pt;mso-wrap-distance-top:0;mso-wrap-distance-right:9pt;
+ mso-wrap-distance-bottom:0;mso-position-horizontal:right;
+ mso-position-horizontal-relative:margin;mso-position-vertical:absolute;
+ mso-position-vertical-relative:margin'>
+ <v:imagedata src="ParametricFitting_files/image019.png" o:title=""/>
+ <w:wrap type="square" anchorx="margin" anchory="margin"/>
+</v:shape><![endif]--><![if !vml]><img width=96 height=41
+src="ParametricFitting_files/image020.png" align=right hspace=9 v:shapes="Picture_x0020_11"><![endif]>Also
+note that positioning the mouse above any cell in the table and waiting for a
+few <span class=GramE>seconds</span> causes the <span class=SpellE>s.u</span>. <span
+class=GramE>to</span> be shown as a tooltip. </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><b style='mso-bidi-font-weight:normal'>Double
+clicking on the column</b> will cause the pseudo <span class=SpellE>var</span> to
+be plotted:</p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_12" o:spid="_x0000_i1046"
+ type="#_x0000_t75" style='width:352pt;height:303pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image021.png" o:title="" croptop="2107f"
+  cropbottom="4939f" cropleft="3133f" cropright="3309f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=354 height=305
+src="ParametricFitting_files/image022.png" v:shapes="Picture_x0020_12"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><b style='mso-bidi-font-weight:normal'>Press
+the “s” key</b> inside the plot to <b style='mso-bidi-font-weight:normal'>select
+Temperature</b> as the x-axis. </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_13" o:spid="_x0000_i1045"
+ type="#_x0000_t75" style='width:163pt;height:156pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image023.png" o:title="" croptop="4105f"
+  cropbottom="8920f" cropleft="6109f" cropright="5911f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=165 height=158
+src="ParametricFitting_files/image024.png" v:shapes="Picture_x0020_13"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle>The plot will then appear as below:</p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpLast><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_14" o:spid="_x0000_i1044"
+ type="#_x0000_t75" style='width:353pt;height:304pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image025.png" o:title="" croptop="1859f"
+  cropbottom="5066f" cropleft="3024f" cropright="3203f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=355 height=306
+src="ParametricFitting_files/image026.png" v:shapes="Picture_x0020_14"><![endif]></span></p>
+
+<h2>Step 3: Fitting a simple parametric equation to the unit cell volume</h2>
+
+<p class=MsoNormal>In the next few steps we will fit increasingly sophisticated
+equations of state to different parameters. As a simple example, we can <b
+style='mso-bidi-font-weight:normal'>double-click on </b><b style='mso-bidi-font-weight:
+normal'><span style='font-family:Courier'>0<span class=GramE>::</span><span
+class=SpellE>Vol</span></span></b>, to plot the unit volume for the first phase
+vs. T, and fit this to a straight line. <span
+style="mso-spacerun:yes">&nbsp;</span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpFirst><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_15" o:spid="_x0000_i1043"
+ type="#_x0000_t75" style='width:356pt;height:305pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image027.png" o:title="" croptop="2107f"
+  cropbottom="4567f" cropleft="3024f" cropright="2769f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=358 height=307
+src="ParametricFitting_files/image028.png" v:shapes="Picture_x0020_15"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>1.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><!--[if gte vml 1]><v:shape id="Picture_x0020_16"
+ o:spid="_x0000_s1029" type="#_x0000_t75" style='position:absolute;left:0;
+ text-align:left;margin-left:21.8pt;margin-top:891.2pt;width:73pt;height:53pt;
+ z-index:251661312;visibility:visible;mso-wrap-style:square;
+ mso-width-percent:0;mso-height-percent:0;mso-wrap-distance-left:9pt;
+ mso-wrap-distance-top:0;mso-wrap-distance-right:9pt;
+ mso-wrap-distance-bottom:0;mso-position-horizontal:right;
+ mso-position-horizontal-relative:margin;mso-position-vertical:absolute;
+ mso-position-vertical-relative:margin;mso-width-percent:0;
+ mso-height-percent:0;mso-width-relative:margin;mso-height-relative:margin'>
+ <v:imagedata src="ParametricFitting_files/image029.png" o:title=""/>
+ <w:wrap type="square" anchorx="margin" anchory="margin"/>
+</v:shape><![endif]--><![if !vml]><img width=75 height=55
+src="ParametricFitting_files/image030.png" align=right hspace=9 v:shapes="Picture_x0020_16"><![endif]><b
+style='mso-bidi-font-weight:normal'>Click on the Parametric Fit/Add</b> <b
+style='mso-bidi-font-weight:normal'>equation</b> menu item, which opens a
+window similar to what was used before to create a Pseudo <span class=SpellE>var</span>,
+except that here an equation is defined. <span
+style="mso-spacerun:yes">&nbsp;</span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_17" o:spid="_x0000_i1042"
+ type="#_x0000_t75" style='width:311pt;height:152pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image031.png" o:title="" croptop="4213f"
+  cropbottom="8982f" cropleft="3490f" cropright="3653f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=313 height=154
+src="ParametricFitting_files/image032.png" v:shapes="Picture_x0020_17"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpLast><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>We will want to fit the unit cell volume to an equation of
+form <i style='mso-bidi-font-style:normal'>y = <span class=SpellE>mx+b</span></i>,
+where y will be the volume and x temperature and m and b will be best fit. </p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><o:p>&nbsp;</o:p></b></p>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><b
+style='mso-bidi-font-weight:normal'><span style='mso-fareast-font-family:Cambria;
+mso-fareast-theme-font:minor-latin;mso-bidi-font-family:Cambria;mso-bidi-theme-font:
+minor-latin'><span style='mso-list:Ignore'>2.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;
+</span></span></span></b><![endif]><b style='mso-bidi-font-weight:normal'>Click
+the menu button</b> to select a dependent variable for “y”. From the phase list,
+select the unit cell volume for the CuCr<sub>2</sub>O<sub>4</sub> phase, <b
+style='mso-bidi-font-weight:normal'>click on </b><b style='mso-bidi-font-weight:
+normal'><span style='font-family:Courier'>0<span class=GramE>::</span><span
+class=SpellE>Vol</span></span></b> and then <b style='mso-bidi-font-weight:
+normal'>press OK.<o:p></o:p></b></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_19" o:spid="_x0000_i1041"
+ type="#_x0000_t75" style='width:314pt;height:132pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image033.png" o:title="" croptop="3830f"
+  cropbottom="9359f" cropleft="3705f" cropright="3502f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=316 height=134
+src="ParametricFitting_files/image034.png" v:shapes="Picture_x0020_19"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_20" o:spid="_x0000_i1040"
+ type="#_x0000_t75" style='width:311pt;height:155pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image035.png" o:title="" croptop="3548f"
+  cropbottom="8549f" cropleft="3611f" cropright="3665f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=313 height=157
+src="ParametricFitting_files/image036.png" v:shapes="Picture_x0020_20"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>3.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Now we <b style='mso-bidi-font-weight:normal'>enter
+the equation</b> using Python syntax, which is simply “<b style='mso-bidi-font-weight:
+normal'><span style='font-family:Courier'>m*x + b</span></b>”, note that the
+use of spaces and the choice of labels is arbitrary. If one were to accidentally
+leave out the “<span style='font-family:Courier'>*</span>” and typed “<span
+style='font-family:Courier'>mx</span>” then that would be considered a label,
+if “<span style='font-family:Courier'>m x</span>” were typed, an error message
+would be displayed. </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_21" o:spid="_x0000_i1039"
+ type="#_x0000_t75" style='width:316pt;height:155pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image037.png" o:title="" croptop="3326f"
+  cropbottom="8766f" cropleft="3010f" cropright="3419f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=318 height=157
+src="ParametricFitting_files/image038.png" v:shapes="Picture_x0020_21"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle>Then press Validate or wait a few seconds
+and a window changes, as above, allowing assignment of the three new labels (m,
+x, and b). </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>4.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><!--[if gte vml 1]><v:shape id="Picture_x0020_22"
+ o:spid="_x0000_s1028" type="#_x0000_t75" style='position:absolute;left:0;
+ text-align:left;margin-left:43.8pt;margin-top:603.2pt;width:95pt;height:35pt;
+ z-index:251662336;visibility:visible;mso-wrap-style:square;
+ mso-wrap-distance-left:9pt;mso-wrap-distance-top:0;mso-wrap-distance-right:9pt;
+ mso-wrap-distance-bottom:0;mso-position-horizontal:right;
+ mso-position-horizontal-relative:margin;mso-position-vertical:absolute;
+ mso-position-vertical-relative:margin'>
+ <v:imagedata src="ParametricFitting_files/image039.png" o:title=""/>
+ <w:wrap type="square" anchorx="margin" anchory="margin"/>
+</v:shape><![endif]--><![if !vml]><img width=97 height=37
+src="ParametricFitting_files/image040.png" align=right hspace=9 v:shapes="Picture_x0020_22"><![endif]>Assign
+b and m as refinable parameters: <b style='mso-bidi-font-weight:normal'>Click
+on the menu button</b> next to b and <b style='mso-bidi-font-weight:normal'>select
+Free</b>. Then <b style='mso-bidi-font-weight:normal'>repeat this for m</b>. </p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_23" o:spid="_x0000_i1038"
+ type="#_x0000_t75" style='width:314pt;height:153pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image041.png" o:title="" croptop="3992f"
+  cropbottom="8541f" cropleft="3250f" cropright="3415f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=316 height=155
+src="ParametricFitting_files/image042.png" v:shapes="Picture_x0020_23"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle>It is not necessary to change the default
+variable names, the initial values, or the refine flag. </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>5.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><!--[if gte vml 1]><v:shape id="Picture_x0020_24"
+ o:spid="_x0000_s1027" type="#_x0000_t75" style='position:absolute;left:0;
+ text-align:left;margin-left:24.3pt;margin-top:837.2pt;width:75.5pt;height:26pt;
+ z-index:251663360;visibility:visible;mso-wrap-style:square;
+ mso-wrap-distance-left:9pt;mso-wrap-distance-top:0;mso-wrap-distance-right:9pt;
+ mso-wrap-distance-bottom:0;mso-position-horizontal:right;
+ mso-position-horizontal-relative:margin;mso-position-vertical:absolute;
+ mso-position-vertical-relative:margin'>
+ <v:imagedata src="ParametricFitting_files/image043.png" o:title=""/>
+ <w:wrap type="square" anchorx="margin" anchory="margin"/>
+</v:shape><![endif]--><![if !vml]><img width=78 height=28
+src="ParametricFitting_files/image044.png" align=right hspace=9 v:shapes="Picture_x0020_24"><![endif]>To
+set x as the temperature, <b style='mso-bidi-font-weight:normal'>click on the
+menu button</b> next to x, <b style='mso-bidi-font-weight:normal'>select
+Global,</b> and then <b style='mso-bidi-font-weight:normal'>select Temperature</b>
+from the list and <b style='mso-bidi-font-weight:normal'>click on OK</b>.</p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span
+style="mso-spacerun:yes">&nbsp;</span><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_25" o:spid="_x0000_i1037"
+ type="#_x0000_t75" style='width:245pt;height:109pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image045.png" o:title="" croptop="5483f"
+  cropbottom="10984f" cropleft="4191f" cropright="4159f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=247 height=111
+src="ParametricFitting_files/image046.png" v:shapes="Picture_x0020_25"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle>The window then changes, showing the values
+of the dependent variable and the expression for the first refinement, as below.<span
+style="mso-spacerun:yes">&nbsp; </span>Optionally, the values for m and b could
+be changed manually and the displayed value will be updated when Validate is
+pressed or after a short delay.</p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpLast><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_26" o:spid="_x0000_i1036"
+ type="#_x0000_t75" style='width:314pt;height:153pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image047.png" o:title="" croptop="3992f"
+  cropbottom="8541f" cropleft="3490f" cropright="3294f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=316 height=155
+src="ParametricFitting_files/image048.png" v:shapes="Picture_x0020_26"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l0 level1 lfo4'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>6.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Press the
+OK button</b> to save this parametric fit. The b and m values are then refined
+and the console shows the results:</p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.5in;mso-add-space:
+auto'><span style='font-family:Courier'>Fit Results<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.5in;mso-add-space:
+auto'><span style='font-family:Courier'><span
+style="mso-spacerun:yes">&nbsp;&nbsp; </span><span class=GramE>::</span>m<span
+style="mso-spacerun:yes">&nbsp; </span>= -0.4476(5)<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.5in;mso-add-space:
+auto'><span style='font-family:Courier'><span
+style="mso-spacerun:yes">&nbsp;&nbsp; </span><span class=GramE>::</span>b<span
+style="mso-spacerun:yes">&nbsp; </span>= 577.73(8)<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.5in;mso-add-space:
+auto'><span style='font-family:Courier'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_27" o:spid="_x0000_i1035"
+ type="#_x0000_t75" style='width:350pt;height:302pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image049.png" o:title="" croptop="2231f"
+  cropbottom="5061f" cropleft="3133f" cropright="3524f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=352 height=304
+src="ParametricFitting_files/image050.png" v:shapes="Picture_x0020_27"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle>Also, a plot shows the actual values and
+the fit. Note that while the values are close to a straight line, the deviations
+are huge compared to the estimated uncertainty values for the unit cell volume
+(shown as very small error bars, unless the plot is magnified). <span
+style="mso-spacerun:yes">&nbsp;</span>If a linear relationship had been defined
+as a constraint (as can be done with other software packages) the unit cell
+parameters would have been forced onto this line with no obvious indication
+that this was not a correct result. </p>
+
+<p class=MsoListParagraphCxSpLast><span style="mso-spacerun:yes">&nbsp;</span></p>
+
+<h2>Step 4: Examples of more complex fitting equations</h2>
+
+<p class=MsoNormal>Here we will look at how more sophisticated Python capabilities
+can be used to fit more complex behavior. <span
+style="mso-spacerun:yes">&nbsp;</span></p>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l1 level1 lfo6'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>1.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Optionally <b style='mso-bidi-font-weight:normal'>Double-click
+on the </b><b style='mso-bidi-font-weight:normal'><span style='font-family:
+Courier'>0<span class=GramE>::</span>c</span> column</b>. Note the changes in
+the <i style='mso-bidi-font-style:normal'>c</i> unit cell parameter as a
+function of temperature, as shown below. </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_28" o:spid="_x0000_i1034"
+ type="#_x0000_t75" style='width:350pt;height:303pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image051.png" o:title="" croptop="658f"
+  cropbottom="2861f" cropleft="1709f" cropright="1878f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=352 height=305
+src="ParametricFitting_files/image052.png" v:shapes="Picture_x0020_28"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l1 level1 lfo6'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>2.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>We will now fit <i style='mso-bidi-font-style:
+normal'>c</i> as a function of form 1/(1 + <span class=SpellE><span
+class=GramE>exp</span></span><span class=GramE>[</span>k(t-t<sub>0</sub>)]). <b
+style='mso-bidi-font-weight:normal'>Click on the Parametric Fit/Add</b> <b
+style='mso-bidi-font-weight:normal'>equation</b> menu item (as before). For the
+dependent variable, <b style='mso-bidi-font-weight:normal'>click on Phase</b>
+and then <b style='mso-bidi-font-weight:normal'>select </b><b style='mso-bidi-font-weight:
+normal'><span style='font-family:Courier'>0<span class=GramE>::</span>c</span></b>.
+<span style="mso-spacerun:yes">&nbsp;</span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l1 level1 lfo6'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>3.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>We then <b style='mso-bidi-font-weight:normal'>enter
+expression</b></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:.5in'><span class=GramE><span
+style='font-family:Courier'>b</span></span><span style='font-family:Courier'> +
+c / (1+math.exp(k*(t-t0)))<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpLast>Note that use of spaces here are arbitrary,
+but all parentheses are required. Also note that the exponential function [<span
+class=SpellE><span class=GramE>exp</span></span><span class=GramE>(</span>x) or
+e<sup>x</sup>] is supplied in Python in the math and <span class=SpellE>numpy</span>
+modules as <span class=SpellE>math.exp</span>(), <span class=SpellE>numpy.exp</span>().
+Both of these can be used as well as the convenience abbreviation of <span
+class=SpellE><span class=GramE>np.exp</span></span><span class=GramE>(</span>).
+Further, there are also a small number of common functions that are defined
+without the prefix for convenience [these include pi, <span class=SpellE><span
+class=GramE>exp</span></span><span class=GramE>(</span>), <span class=SpellE>sqrt</span>(),
+<span class=SpellE>sind</span>(), <span class=SpellE>cosd</span>(), <span
+class=SpellE>tand</span>() where d indicates an argument in degrees.]<o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l1 level1 lfo6'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>4.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Assign
+free variables to b, c, k and t0</b>, similar as to what was done before. Note
+that the<b style='mso-bidi-font-weight:normal'> </b>variable name for the <span
+style='font-family:Courier'>b</span> label was set automatically to <span
+style='font-family:Courier'>b_1</span>. If the same variable name (<span
+style='font-family:Courier'>b</span>) <span class=GramE>was</span> used again
+here, the same value would be used to fit both equations, which is certainly
+not what we want here. <span style="mso-spacerun:yes">&nbsp;</span>Finally,
+since this equation is too complex to fit without some reasonable starting
+values, specify an approximate value for the vicinity of where <i
+style='mso-bidi-font-style:normal'>c</i> starts to change, <b style='mso-bidi-font-weight:
+normal'>enter 120 for </b><b style='mso-bidi-font-weight:normal'><span
+style='font-family:Courier'>t0</span>.</b></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_40" o:spid="_x0000_i1033"
+ type="#_x0000_t75" style='width:317pt;height:171pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image053.png" o:title="" croptop="3272f"
+  cropbottom="7856f" cropleft="3218f" cropright="3436f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=319 height=173
+src="ParametricFitting_files/image054.png" v:shapes="Picture_x0020_40"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l1 level1 lfo6'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>5.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Optionally, <b style='mso-bidi-font-weight:normal'>press
+the Fit button</b> to see if the equation can be refined with starting values
+of zero for the other three parameters.<span style="mso-spacerun:yes">&nbsp;
+</span>A fit is obtained and is plotted. </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span
+style="mso-spacerun:yes">&nbsp;</span><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_41" o:spid="_x0000_i1032"
+ type="#_x0000_t75" style='width:317pt;height:169pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image055.png" o:title="" croptop="3477f"
+  cropbottom="8265f" cropleft="3218f" cropright="3436f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=319 height=171
+src="ParametricFitting_files/image056.png" v:shapes="Picture_x0020_41"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l1 level1 lfo6'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>6.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Press OK</b>
+to add this equation to the parametric fits and both equations are refit (and
+if the label for b had not been changed, applying the constraint that b must be
+the same for both equations.) </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_32" o:spid="_x0000_i1031"
+ type="#_x0000_t75" style='width:353pt;height:301pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image057.png" o:title="" croptop="2602f"
+  cropbottom="4943f" cropleft="3024f" cropright="3097f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=355 height=303
+src="ParametricFitting_files/image058.png" v:shapes="Picture_x0020_32"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l1 level1 lfo6'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>7.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>We will now try a more complex equation for the
+same data, where we set the value to <span style='font-family:Courier'>b</span>
+for temperatures less than <span style='font-family:Courier'>t0</span> and a critical
+phenomenon formulism [(t-t<sub>0</sub>)<sup>-a</sup>] for temperatures above <span
+style='font-family:Courier'>t0</span>. To do this we use the Python syntax “<span
+style='font-family:Courier'>x1 if <span class=SpellE>testexp</span> else x2</span>”
+which is <span style='font-family:Courier'>x1</span> where the test expression (<span
+class=SpellE><span style='font-family:Courier'>testexp</span></span> here) is <span
+style='font-family:Courier'>True</span> and <span style='font-family:Courier'>x2</span>
+elsewhere. Thus we can use an expression such as:</p>
+
+<p class=MsoListParagraphCxSpMiddle><span
+style="mso-spacerun:yes">&nbsp;</span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
+auto'><span class=GramE><span style='font-family:Courier'>b</span></span><span
+style='font-family:Courier'> if t &lt;= t0 else b + c * (1-(t-t0)**d)<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
+auto'><span style='font-family:Courier'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle>This may be easier to read with the
+inclusion of extra parentheses (that have no effect on the execution):</p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
+auto'><span class=GramE><span style='font-family:Courier'>b</span></span><span
+style='font-family:Courier'> if (t &lt;= t0) else (b + c * (1-(t-t0)**d))<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
+auto'><span style='font-family:Courier'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle>As before, <b style='mso-bidi-font-weight:
+normal'>add an equation </b>(or edit an existing one), <b style='mso-bidi-font-weight:
+normal'>set the dependent variable</b> to <span style='font-family:Courier'>0<span
+class=GramE>::</span>c</span>, <b style='mso-bidi-font-weight:normal'>enter the
+expression</b> and <b style='mso-bidi-font-weight:normal'>assign the free and
+fixed variables</b>, as before. <b style='mso-bidi-font-weight:normal'>Set the
+exponent and the t0</b> values to initial values of -0.025 and 120, respectively,
+and turn off their refinement flags. Then <b style='mso-bidi-font-weight:normal'>press
+Fit.</b></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_42" o:spid="_x0000_i1030"
+ type="#_x0000_t75" style='width:316pt;height:169pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image059.png" o:title="" croptop="3691f"
+  cropbottom="7919f" cropleft="2889f" cropright="3536f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=318 height=171
+src="ParametricFitting_files/image060.png" v:shapes="Picture_x0020_42"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle>Then <b style='mso-bidi-font-weight:normal'>turn
+refinement of t0 back on</b> and <b style='mso-bidi-font-weight:normal'>press
+OK</b>. The resulting fit shows the trends quite well: </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_35" o:spid="_x0000_i1029"
+ type="#_x0000_t75" style='width:351pt;height:302pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image061.png" o:title="" croptop="2354f"
+  cropbottom="4937f" cropleft="3349f" cropright="3198f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=353 height=304
+src="ParametricFitting_files/image062.png" v:shapes="Picture_x0020_35"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpLast><o:p>&nbsp;</o:p></p>
+
+<h2>Step 5: Fitting to a Pseudo <span class=SpellE>Var</span></h2>
+
+<p class=MsoNormal>One can fit a function to a pseudo <span class=SpellE>var</span>,
+just as to a direct variable. If we look at the plot shown in Step 2, it
+appears there are two regions. We can treat the lower range as a power-law
+growth, <span class=SpellE>T<sup>k</sup></span>, and the upper region as linear
+(m*T + b). </p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l4 level1 lfo7'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>1.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>As before, <b style='mso-bidi-font-weight:normal'>add
+an equation </b>(or edit an existing one). For the dependent variable, <b
+style='mso-bidi-font-weight:normal'>select Global</b> to bring up that
+selection of variables and <b style='mso-bidi-font-weight:normal'>select b/c </b>and
+<b style='mso-bidi-font-weight:normal'>press OK. </b></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l4 level1 lfo7'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>2.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Then <b style='mso-bidi-font-weight:normal'>enter
+the equation</b> as </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='margin-left:1.0in;mso-add-space:
+auto'><span style='font-family:Courier;mso-bidi-font-family:"Lucida Grande";
+color:black'>(<span class=GramE>o1</span> + (a1*T)**k) if T &lt; 120 else (o2 +
+a2*T</span><span style='font-family:Courier'>)<o:p></o:p></span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle style='text-indent:-.25in;mso-list:l4 level1 lfo7'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>3.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Assign
+the free and fixed variables</b>, as shown below. Note that the exponent (k) and
+scaling factor (a1<span class=GramE>),</span> cannot start as zero<b
+style='mso-bidi-font-weight:normal'>. </b></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpLast><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_44" o:spid="_x0000_i1028"
+ type="#_x0000_t75" style='width:332pt;height:186pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image063.png" o:title="" croptop="3190f"
+  cropbottom="8105f" cropleft="3416f" cropright="3246f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=334 height=188
+src="ParametricFitting_files/image064.png" v:shapes="Picture_x0020_44"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpFirst style='text-indent:-.25in;mso-list:l4 level1 lfo7'><![if !supportLists]><span
+style='mso-fareast-font-family:Cambria;mso-fareast-theme-font:minor-latin;
+mso-bidi-font-family:Cambria;mso-bidi-theme-font:minor-latin'><span
+style='mso-list:Ignore'>4.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Press the
+Fit button</b> and note that all the free variables are adjusted </p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_45" o:spid="_x0000_i1027"
+ type="#_x0000_t75" style='width:334pt;height:189pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image065.png" o:title="" croptop="2815f"
+  cropbottom="7542f" cropleft="3074f" cropright="3244f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=336 height=191
+src="ParametricFitting_files/image066.png" v:shapes="Picture_x0020_45"><![endif]></span><span
+style="mso-spacerun:yes">&nbsp;</span></p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle>Also, that the plotted result is close to the
+values from the refinement.</p>
+
+<p class=MsoListParagraphCxSpMiddle><o:p>&nbsp;</o:p></p>
+
+<p class=MsoListParagraphCxSpMiddle><span style='mso-fareast-language:EN-US;
+mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_48" o:spid="_x0000_i1026"
+ type="#_x0000_t75" style='width:349pt;height:302pt;visibility:visible;
+ mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image067.png" o:title="" croptop="2231f"
+  cropbottom="5061f" cropleft="3350f" cropright="3415f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=351 height=304
+src="ParametricFitting_files/image068.png" v:shapes="Picture_x0020_48"><![endif]></span></p>
+
+<p class=MsoListParagraphCxSpLast><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal style='margin-left:.25in'><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>This completes this tutorial on use of Pseudo <span
+class=SpellE>Vars</span> and parametric fitting. </p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2>Use of externally defined routines</h2>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>The parametric refinement section of GSAS-II is intended to
+be quite flexible, but for very complex fitting, a user may wish to define a
+custom Python function. This can be done in a separate module that defines a Python
+function that can be called here. As an example of that, if we create a file
+called fittest.py that is in any directory in the Python path (for example in
+the GSAS-II source directory) and place a routine <span class=SpellE><span
+style='font-family:Courier'>fitfxn</span></span> in that module:</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><!--[if gte vml 1]><o:wrapblock><v:shapetype id="_x0000_t202"
+  coordsize="21600,21600" o:spt="202" path="m0,0l0,21600,21600,21600,21600,0xe">
+  <v:stroke joinstyle="miter"/>
+  <v:path gradientshapeok="t" o:connecttype="rect"/>
+ </v:shapetype><v:shape id="Text_x0020_Box_x0020_47" o:spid="_x0000_s1026"
+  type="#_x0000_t202" style='position:absolute;margin-left:136.25pt;
+  margin-top:-73.95pt;width:218.15pt;height:82.3pt;z-index:251664384;
+  visibility:visible;mso-wrap-style:none;mso-width-percent:0;
+  mso-height-percent:0;mso-wrap-distance-left:9pt;mso-wrap-distance-top:0;
+  mso-wrap-distance-right:9pt;mso-wrap-distance-bottom:0;
+  mso-position-horizontal:absolute;mso-position-horizontal-relative:margin;
+  mso-position-vertical:absolute;mso-position-vertical-relative:margin;
+  mso-width-percent:0;mso-height-percent:0;mso-width-relative:margin;
+  mso-height-relative:margin;v-text-anchor:top' o:gfxdata="UEsDBBQABgAIAAAAIQDkmcPA+wAAAOEBAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbJSRQU7DMBBF
+90jcwfIWJQ5dIISSdEHaJSBUDjCyJ4nVZGx53NDeHictG4SKWNrj9//TuFwfx0FMGNg6quR9XkiB
+pJ2x1FXyY7fNHqXgCGRgcISVPCHLdX17U+5OHlkkmriSfYz+SSnWPY7AufNIadK6MEJMx9ApD3oP
+HapVUTwo7SgixSzOGbIuG2zhMESxOabrs0nCpXg+v5urKgneD1ZDTKJqnqpfuYADXwEnMj/ssotZ
+nsglnHvr+e7S8JpWE6xB8QYhvsCYPJQJrHDlGqfz65Zz2ciZa1urMW8Cbxbqr2zjPing9N/wJmHv
+OH2nq+WD6i8AAAD//wMAUEsDBBQABgAIAAAAIQAjsmrh1wAAAJQBAAALAAAAX3JlbHMvLnJlbHOk
+kMFqwzAMhu+DvYPRfXGawxijTi+j0GvpHsDYimMaW0Yy2fr28w6DZfS2o36h7xP//vCZFrUiS6Rs
+YNf1oDA78jEHA++X49MLKKk2e7tQRgM3FDiMjw/7My62tiOZYxHVKFkMzLWWV63FzZisdFQwt81E
+nGxtIwddrLvagHro+2fNvxkwbpjq5A3wye9AXW6lmf+wU3RMQlPtHCVN0xTdPaoObMsc3ZFtwjdy
+jWY5YDXgWTQO1LKu/Qj6vn74p97TRz7jutV+h4zrj1dvuhy/AAAA//8DAFBLAwQUAAYACAAAACEA
+ksn9LecCAAA4BgAADgAAAGRycy9lMm9Eb2MueG1srFRNb9swDL0P2H8QdE9tZ06TGHUKN0GGAUVb
+rB16VmQpMaYvSGribNh/HyXHSdbtsA672BRJUeR7JK+uWynQllnXaFXi7CLFiCmq60atS/zlaTmY
+YOQ8UTURWrES75nD17P37652pmBDvdGiZhZBEOWKnSnxxntTJImjGyaJu9CGKTBybSXxcLTrpLZk
+B9GlSIZpepnstK2N1ZQ5B9pFZ8SzGJ9zRv095455JEoMufn4tfG7Ct9kdkWKtSVm09BDGuQfspCk
+UfDoMdSCeIJebPNbKNlQq53m/oJqmWjOG8piDVBNlr6q5nFDDIu1ADjOHGFy/y8svds+WNTUJc7H
+GCkigaMn1np0o1sEKsBnZ1wBbo8GHH0LeuC51ztQhrJbbmX4Q0EI7ID0/ohuiEZBOZx8GA3HI4wo
+2LI0Hw2ziH9yum6s8x+ZligIJbZAX0SVbG+dh1TAtXcJrym9bISIFAoVFE6Lpg66eLDr1VxYtCXA
+fb6cZDeLkDbEOHODU3eVxWbpniEF5AxiiBKyj0R+n4/Gw2o8mg4uq1E2yLN0MqiqdDhYLKu0SvPl
+fJrf/IB0JcnyYgctZaAhA5YA2VKQ9YG+YP47/iShv3R7liWxz7oiIHAspk81CTx1fETJ7wULBQj1
+mXFgONIScQmzxY7IEEqZ8pHRCAZ4By8OKL7l4sE/QhahfMvlDvz+Za388bJslLaxB+JKOKVdf+1T
+5p0/gHFWdxB9u2oBqyCudL2H9rW6WwDO0GUDLXZLnH8gFiYeOha2mL+HDxd6V2J9kDDaaPvtT/rg
+D0SCFaNAd4kVrDiMxCcFAzrN8jwsnHjIoXXgYM8tq3OLepFzDW2awbY0NIrB34te5FbLZ1h1VXgT
+TERReLnEvhfnvttqsCopq6roBCvGEH+rHg0NoQM3YXye2mdizWHGPPTPne43DSlejVrnG24qXb14
+zZs4hydMD7DDeordeFilYf+dn6PXaeHPfgIAAP//AwBQSwMEFAAGAAgAAAAhACzp+tXiAAAACwEA
+AA8AAABkcnMvZG93bnJldi54bWxMj0FLw0AQhe+C/2EZwYu0m4TYtDGbIoKCIEKjHnrbJGMSzM6m
+u9s2/nvHkx6H+Xjve8V2NqM4ofODJQXxMgKB1Nh2oE7B+9vjYg3CB02tHi2hgm/0sC0vLwqdt/ZM
+OzxVoRMcQj7XCvoQplxK3/RotF/aCYl/n9YZHfh0nWydPnO4GWUSRStp9EDc0OsJH3psvqqjUaDT
+zr1O8RPdpHuL1Ud9eH7ZHZS6vprv70AEnMMfDL/6rA4lO9X2SK0Xo4IkS24ZVbCI02wDgpEs3vC8
+mtlVBrIs5P8N5Q8AAAD//wMAUEsBAi0AFAAGAAgAAAAhAOSZw8D7AAAA4QEAABMAAAAAAAAAAAAA
+AAAAAAAAAFtDb250ZW50X1R5cGVzXS54bWxQSwECLQAUAAYACAAAACEAI7Jq4dcAAACUAQAACwAA
+AAAAAAAAAAAAAAAsAQAAX3JlbHMvLnJlbHNQSwECLQAUAAYACAAAACEAksn9LecCAAA4BgAADgAA
+AAAAAAAAAAAAAAAsAgAAZHJzL2Uyb0RvYy54bWxQSwECLQAUAAYACAAAACEALOn61eIAAAALAQAA
+DwAAAAAAAAAAAAAAAAA/BQAAZHJzL2Rvd25yZXYueG1sUEsFBgAAAAAEAAQA8wAAAE4GAAAAAA==
+" filled="f" strokecolor="#4f81bd">
+  <v:textbox>
+   <![if !mso]>
+   <table cellpadding=0 cellspacing=0 width="100%">
+    <tr>
+     <td><![endif]>
+     <div>
+     <p class=MsoNormal><span style='font-family:Courier'># <span class=GramE>file</span>
+     fittest.py<o:p></o:p></span></p>
+     <p class=MsoNormal><span class=SpellE><span class=GramE><span
+     style='font-family:Courier'>def</span></span></span><span
+     style='font-family:Courier'> <span class=SpellE>fitfxn</span>(T,o1,o2,a1,a2,k):<o:p></o:p></span></p>
+     <p class=MsoNormal><span style='font-family:Courier'><span
+     style="mso-spacerun:yes">&nbsp;&nbsp;&nbsp; </span><span class=GramE>if</span>
+     T &lt; 120:<o:p></o:p></span></p>
+     <p class=MsoNormal><span style='font-family:Courier'><span
+     style="mso-spacerun:yes">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+     </span><span class=GramE>return</span> o1 + (a1*T)**k<o:p></o:p></span></p>
+     <p class=MsoNormal><span style='font-family:Courier'><span
+     style="mso-spacerun:yes">&nbsp;&nbsp;&nbsp; </span><span class=GramE>else</span>:<o:p></o:p></span></p>
+     <p class=MsoNormal><span style='font-family:Courier'><span
+     style="mso-spacerun:yes">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+     </span><span class=GramE>return</span> o2 + a2*T<o:p></o:p></span></p>
+     <p class=MsoNormal><span style='font-family:Courier'><o:p>&nbsp;</o:p></span></p>
+     </div>
+     <![if !mso]></td>
+    </tr>
+   </table>
+   <![endif]></v:textbox>
+  <w:wrap type="topAndBottom" anchorx="margin" anchory="margin"/>
+ </v:shape><![endif]--><![if !vml]><span style='mso-ignore:vglayout'>
+ <table cellpadding=0 cellspacing=0 align=left>
+  <tr>
+   <td width=136 height=0></td>
+  </tr>
+  <tr>
+   <td></td>
+   <td><img width=221 height=85 src="ParametricFitting_files/image069.png"
+   alt="Text Box: # file fittest.py&#13;def fitfxn(T,o1,o2,a1,a2,k):&#13;    if T &lt; 120:&#13;        return o1 + (a1*T)**k&#13;    else:&#13;        return o2 + a2*T&#13;&#13;"
+   v:shapes="Text_x0020_Box_x0020_47"></td>
+  </tr>
+ </table>
+ </span><![endif]><!--[if gte vml 1]></o:wrapblock><![endif]--><br
+style='mso-ignore:vglayout' clear=ALL>
+</p>
+
+<p class=MsoNormal>The function <span class=SpellE><span style='font-family:
+Courier'>fittest.fitfxn</span></span> can then be used to duplicate the
+previous example: </p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-fareast-language:EN-US;mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_47" o:spid="_x0000_i1025" type="#_x0000_t75" style='width:315pt;
+ height:185pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="ParametricFitting_files/image070.png" o:title="" croptop="3393f"
+  cropbottom="7847f" cropleft="3471f" cropright="3290f"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=317 height=187
+src="ParametricFitting_files/image071.png" v:shapes="Picture_x0020_47"><![endif]></span></p>
+
+</div>
+
+</body>
+
+</html>

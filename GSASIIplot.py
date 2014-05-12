@@ -442,9 +442,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     plottype = plotType
     def OnPlotKeyPress(event):
         newPlot = False
-        if event.key == 'w' and 'PWDR' in plottype:
+        if event.key == 'w':
             G2frame.Weight = not G2frame.Weight
-            if not G2frame.Weight:
+            if not G2frame.Weight and 'PWDR' in plottype:
                 G2frame.SinglePlot = True
             newPlot = True
         elif event.key == 'e' and 'SASD' in plottype:
@@ -480,10 +480,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             G2frame.Offset = [0,0]
         elif event.key == 'c' and 'PWDR' in plottype:
             newPlot = True
-            G2frame.Contour = not G2frame.Contour
             if not G2frame.Contour:
                 G2frame.SinglePlot = False
                 G2frame.Offset = [0.,0.]
+            else:
+                G2frame.SinglePlot = True                
+            G2frame.Contour = not G2frame.Contour
         elif event.key == 'q': 
             if 'PWDR' in plottype:
                 newPlot = True
@@ -845,7 +847,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         else:
             Plot.set_xlabel(r'$TOF, \mathsf{\mu}$s',fontsize=16)            
     if G2frame.Weight:
-        Plot.set_ylabel(r'$\mathsf{I/\sigma(I)}$',fontsize=16)
+        if 'PWDR' in plottype:
+            Plot.set_ylabel(r'$\mathsf{I/\sigma(I)}$',fontsize=16)
+        elif 'SASD' in plottype:
+            Plot.set_ylabel(r'$\mathsf{\Delta(I)/\sigma(I)}$',fontsize=16)
     else:
         if 'C' in ParmList[0]['Type'][0]:
             if 'PWDR' in plottype:
@@ -861,8 +866,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         ContourZ = []
         ContourY = []
         Nseq = 0
-    if len(PlotList) < 2:
-        G2frame.Contour = False
     for N,Pattern in enumerate(PlotList):
         Parms = ParmList[N]
         Sample = SampleList[N]
@@ -947,13 +950,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         YB = Y
                         ZB = Z+B
                     Plot.set_yscale("log",nonposy='mask')
-                    Plot.set_ylim(bottom=np.min(np.trim_zeros(YB))/2.,top=np.max(Y)*2.)
+                    if np.any(W>0.):
+                        Plot.set_ylim(bottom=np.min(np.trim_zeros(W))/2.,top=np.max(Y)*2.)
+                    else:
+                        Plot.set_ylim(bottom=np.min(np.trim_zeros(YB))/2.,top=np.max(Y)*2.)
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
                         Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
-                        Plot.plot(X,W,colors[(N+2)%6],picker=False)
+                        Plot.plot(X,W,colors[(N+2)%6],picker=False)     #background
                     elif 'SASD' in plottype:
                         Plot.set_xscale("log",nonposx='mask')
                         Plot.set_yscale("log",nonposy='mask')
@@ -966,7 +972,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                                     ecolor=colors[N%6],picker=3.,clip_on=False)
                         else:
                             Plot.plot(X,YB,colors[N%6]+'+',picker=3.,clip_on=False)
-                        Plot.plot(X,W,colors[(N+2)%6],picker=False)
+                        Plot.plot(X,W,colors[(N+2)%6],picker=False)     #const. background
                         Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
                 elif G2frame.Weight and 'PWDR' in plottype:
                     DY = xye[1]*np.sqrt(xye[2])

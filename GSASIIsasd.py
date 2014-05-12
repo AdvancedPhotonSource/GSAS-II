@@ -992,7 +992,7 @@ def SetScale(Data,refData):
     Beg = np.max([rx[0],x[0],Limits[1][0],refLimits[1][0]])
     Fin = np.min([rx[-1],x[-1],Limits[1][1],refLimits[1][1]])
     iBeg = np.searchsorted(x,Beg)
-    iFin = np.searchsorted(x,Fin)
+    iFin = np.searchsorted(x,Fin)+1        #include last point
     sum = np.sum(y[iBeg:iFin])
     refsum = np.sum(np.interp(x[iBeg:iFin],rx,ry,0,0))
     Sample['Scale'][0] = refSample['Scale'][0]*refsum/sum
@@ -1000,21 +1000,18 @@ def SetScale(Data,refData):
 def Bestimate(G,Rg,P):
     return (G*P/Rg**P)*np.exp(scsp.gammaln(P/2))
     
-def SmearData(Ic,Q,slitLen):
-    Qtemp = np.concatenate([Q,20*Q])
-    Ictemp = np.concatenate([Ic,np.zeros_like(Ic)])
-    print Ictemp
-    Icsm = np.zeros_like(Qtemp)
+def SmearData(Ic,Q,slitLen,Back):
     Np = Q.shape[0]
+    Qtemp = np.concatenate([Q,Q[-1]+20*Q])
+    Ictemp = np.concatenate([Ic,Ic[-1]*(1-(Qtemp[Np:]-Qtemp[Np])/(20*Qtemp[Np-1]))])
+    Icsm = np.zeros_like(Q)
     Qsm = 2*slitLen*(np.interp(np.arange(2*Np)/2.,np.arange(Np),Q)-Q[0])/(Q[-1]-Q[0])
     Sp = np.searchsorted(Qsm,slitLen)
-    for i in range(Np):
-        Ism = np.interp(np.sqrt(Q[i]**2+Qsm**2),Qtemp,Ictemp)
-        print Ism
-        raise Exception
-        Icsm[i] = np.sum(Ism[:Sp])
+    DQsm = np.diff(Qsm)[:Sp]
+    Ism = np.interp(np.sqrt(Q[:,np.newaxis]**2+Qsm**2),Qtemp,Ictemp)
+    Icsm = np.sum((Ism[:,:Sp]*DQsm),axis=1)
     Icsm /= slitLen
-    return Icsm   #for now
+    return Icsm
     
 ###############################################################################
 #### Size distribution
@@ -1047,7 +1044,7 @@ def SizeDistribution(Profile,ProfDict,Limits,Sample,data):
     Qmax = Limits[1][1]
     wtFactor = ProfDict['wtFactor']
     Ibeg = np.searchsorted(Q,Qmin)
-    Ifin = np.searchsorted(Q,Qmax)
+    Ifin = np.searchsorted(Q,Qmax)+1        #include last point
     BinMag = np.zeros_like(Bins)
     Ic[:] = 0.
     Gmat = G_matrix(Q[Ibeg:Ifin],Bins,Contrast,shapes[Shape][0],shapes[Shape][1],args=Parms)
@@ -1224,7 +1221,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
         Ic += parmDict['Back']  #/parmDict['Scale']
         slitLen = Sample['SlitLen']
         if slitLen:
-            Ic = SmearData(Ic,Q,slitLen)
+            Ic = SmearData(Ic,Q,slitLen,parmDict['Back'])
         return Ic
         
     Q,Io,wt,Ic,Ib,Ifb = Profile[:6]
@@ -1232,7 +1229,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
     Qmax = Limits[1][1]
     wtFactor = ProfDict['wtFactor']
     Ibeg = np.searchsorted(Q,Qmin)
-    Ifin = np.searchsorted(Q,Qmax)
+    Ifin = np.searchsorted(Q,Qmax)+1    #include last point
     Ic[:] = 0
     levelTypes,parmDict,varyList,values = GetModelParms()
     if varyList:
@@ -1300,7 +1297,7 @@ def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
     Qmax = Limits[1][1]
     wtFactor = ProfDict['wtFactor']
     Ibeg = np.searchsorted(Q,Qmin)
-    Ifin = np.searchsorted(Q,Qmax)
+    Ifin = np.searchsorted(Q,Qmax)+1    #include last point
     Ib[:] = Back[0]
     Ic[:] = 0
     Rbins = []
@@ -1376,7 +1373,7 @@ def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
     Ic[Ibeg:Ifin] += Back[0]
     slitLen = Sample['SlitLen']
     if slitLen:
-        Ic[Ibeg:Ifin] = SmearData(Ic,Q,slitLen)[Ibeg:Ifin]
+        Ic[Ibeg:Ifin] = SmearData(Ic,Q,slitLen,Back[0])[Ibeg:Ifin]
     sasdData['Size Calc'] = [Rbins,Dist]
     
 def MakeDiamDist(DistName,nPoints,cutoff,distDict):

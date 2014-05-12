@@ -1108,6 +1108,8 @@ src="ParametricFitting_files/image002.png" v:shapes="Picture_x0020_1"><![endif]>
 
 <h2>Step 2. Create a Pseudo <span class=SpellE>Var</span></h2>
 
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
 <p class=MsoNormal>Pseudo <span class=SpellE>Vars</span> allow computation of
 an arbitrarily defined function of combinations of the variables that are
 displayed in the sequential refinement table. Any valid Python language
@@ -1342,6 +1344,8 @@ mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_14" o:spid="_x00
 src="ParametricFitting_files/image026.png" v:shapes="Picture_x0020_14"><![endif]></span></p>
 
 <h2>Step 3: Fitting a simple parametric equation to the unit cell volume</h2>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
 <p class=MsoNormal>In the next few steps we will fit increasingly sophisticated
 equations of state to different parameters. As a simple example, we can <b
@@ -1601,13 +1605,15 @@ the fit. Note that while the values are close to a straight line, the deviations
 are huge compared to the estimated uncertainty values for the unit cell volume
 (shown as very small error bars, unless the plot is magnified). <span
 style="mso-spacerun:yes">&nbsp;</span>If a linear relationship had been defined
-as a constraint (as can be done with other software packages) the unit cell
+as a constraint (as can be done with other software packages) <I>the unit cell
 parameters would have been forced onto this line with no obvious indication
-that this was not a correct result. </p>
+that this was not a correct result.</I> </p>
 
 <p class=MsoListParagraphCxSpLast><span style="mso-spacerun:yes">&nbsp;</span></p>
 
 <h2>Step 4: Examples of more complex fitting equations</h2>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
 <p class=MsoNormal>Here we will look at how more sophisticated Python capabilities
 can be used to fit more complex behavior. <span
@@ -1838,6 +1844,8 @@ src="ParametricFitting_files/image062.png" v:shapes="Picture_x0020_35"><![endif]
 
 <h2>Step 5: Fitting to a Pseudo <span class=SpellE>Var</span></h2>
 
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
 <p class=MsoNormal>One can fit a function to a pseudo <span class=SpellE>var</span>,
 just as to a direct variable. If we look at the plot shown in Step 2, it
 appears there are two regions. We can treat the lower range as a power-law
@@ -1940,111 +1948,35 @@ class=SpellE>Vars</span> and parametric fitting. </p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
-<h2>Use of externally defined routines</h2>
+<h2>Advanced Use: Externally-Defined Functions</h2>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
 <p class=MsoNormal>The parametric refinement section of GSAS-II is intended to
 be quite flexible, but for very complex fitting, a user may wish to define a
-custom Python function. This can be done in a separate module that defines a Python
-function that can be called here. As an example of that, if we create a file
-called fittest.py that is in any directory in the Python path (for example in
-the GSAS-II source directory) and place a routine <span class=SpellE><span
-style='font-family:Courier'>fitfxn</span></span> in that module:</p>
+custom Python function. Such a function can be defined in a separate
+module that will be accessed with a parametric equation (or pseudo
+var).</p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
-<p class=MsoNormal><!--[if gte vml 1]><o:wrapblock><v:shapetype id="_x0000_t202"
-  coordsize="21600,21600" o:spt="202" path="m0,0l0,21600,21600,21600,21600,0xe">
-  <v:stroke joinstyle="miter"/>
-  <v:path gradientshapeok="t" o:connecttype="rect"/>
- </v:shapetype><v:shape id="Text_x0020_Box_x0020_47" o:spid="_x0000_s1026"
-  type="#_x0000_t202" style='position:absolute;margin-left:136.25pt;
-  margin-top:-73.95pt;width:218.15pt;height:82.3pt;z-index:251664384;
-  visibility:visible;mso-wrap-style:none;mso-width-percent:0;
-  mso-height-percent:0;mso-wrap-distance-left:9pt;mso-wrap-distance-top:0;
-  mso-wrap-distance-right:9pt;mso-wrap-distance-bottom:0;
-  mso-position-horizontal:absolute;mso-position-horizontal-relative:margin;
-  mso-position-vertical:absolute;mso-position-vertical-relative:margin;
-  mso-width-percent:0;mso-height-percent:0;mso-width-relative:margin;
-  mso-height-relative:margin;v-text-anchor:top' o:gfxdata="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
-" filled="f" strokecolor="#4f81bd">
-  <v:textbox>
-   <![if !mso]>
-   <table cellpadding=0 cellspacing=0 width="100%">
-    <tr>
-     <td><![endif]>
-     <div>
-     <p class=MsoNormal><span style='font-family:Courier'># <span class=GramE>file</span>
-     fittest.py<o:p></o:p></span></p>
-     <p class=MsoNormal><span class=SpellE><span class=GramE><span
-     style='font-family:Courier'>def</span></span></span><span
-     style='font-family:Courier'> <span class=SpellE>fitfxn</span>(T,o1,o2,a1,a2,k):<o:p></o:p></span></p>
-     <p class=MsoNormal><span style='font-family:Courier'><span
-     style="mso-spacerun:yes">&nbsp;&nbsp;&nbsp; </span><span class=GramE>if</span>
-     T &lt; 120:<o:p></o:p></span></p>
-     <p class=MsoNormal><span style='font-family:Courier'><span
-     style="mso-spacerun:yes">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-     </span><span class=GramE>return</span> o1 + (a1*T)**k<o:p></o:p></span></p>
-     <p class=MsoNormal><span style='font-family:Courier'><span
-     style="mso-spacerun:yes">&nbsp;&nbsp;&nbsp; </span><span class=GramE>else</span>:<o:p></o:p></span></p>
-     <p class=MsoNormal><span style='font-family:Courier'><span
-     style="mso-spacerun:yes">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-     </span><span class=GramE>return</span> o2 + a2*T<o:p></o:p></span></p>
-     <p class=MsoNormal><span style='font-family:Courier'><o:p>&nbsp;</o:p></span></p>
-     </div>
-     <![if !mso]></td>
-    </tr>
-   </table>
-   <![endif]></v:textbox>
-  <w:wrap type="topAndBottom" anchorx="margin" anchory="margin"/>
- </v:shape><![endif]--><![if !vml]><span style='mso-ignore:vglayout'>
- <table cellpadding=0 cellspacing=0 align=left>
-  <tr>
-   <td width=136 height=0></td>
-  </tr>
-  <tr>
-   <td></td>
-   <td><img width=221 height=85 src="ParametricFitting_files/image069.png"
-   alt="Text Box: # file fittest.py&#13;def fitfxn(T,o1,o2,a1,a2,k):&#13;    if T &lt; 120:&#13;        return o1 + (a1*T)**k&#13;    else:&#13;        return o2 + a2*T&#13;&#13;"
-   v:shapes="Text_x0020_Box_x0020_47"></td>
-  </tr>
- </table>
- </span><![endif]><!--[if gte vml 1]></o:wrapblock><![endif]--><br
-style='mso-ignore:vglayout' clear=ALL>
-</p>
+<p class=MsoNormal>As an example of that, if we create a file called
+<span class=SpellE><span style='font-family:Courier'>fittest.py</span></span>
+and locate that file in any directory in the Python path (most simply,
+in the directory where the project file,
+<span class=SpellE><span
+style='font-family:Courier'>SeqTut.gpx</span></span>,
+is located) and place a routine <span class=SpellE><span
+style='font-family:Courier'>fitfxn</span></span> in that module:</p>
+
+<blockquote><blockquote><PRE>
+# file fittest.py
+def fitfxn(T,o1,o2,a1,a2,k):
+    if T < 120:
+        return o1 + (a1*T)**k
+    else:
+        return o2 + a2*T
+</PRE></blockquote></blockquote>
 
 <p class=MsoNormal>The function <span class=SpellE><span style='font-family:
 Courier'>fittest.fitfxn</span></span> can then be used to duplicate the
@@ -2059,6 +1991,14 @@ previous example: </p>
   cropbottom="7847f" cropleft="3471f" cropright="3290f"/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=317 height=187
 src="ParametricFitting_files/image071.png" v:shapes="Picture_x0020_47"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Note that module <span class=SpellE><span style='font-family:
+Courier'>fittest</span></span> is automatically located and loaded,
+provided it is found in the path. No changes to the standard
+distributed GSAS-II code is needed. Care to avoid use of a module name
+already found in GSAS-II or Python is wise.</p>
 
 </div>
 

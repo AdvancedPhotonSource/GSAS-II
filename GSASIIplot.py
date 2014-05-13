@@ -771,20 +771,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if G2frame.logPlot:
             if 'PWDR' in plottype:
                 Page.Choice = (' key press','n: log(I) off','l: offset left','r: offset right','o: reset offset',
-                    'c: contour on','q: toggle q plot','s: toggle single plot','+: no selection')
+                    'c: contour on','q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
             elif 'SASD' in plottype:
-                Page.Choice = (' key press','b: toggle subtract background','n: semilog on',
+                Page.Choice = (' key press','b: toggle subtract background file','n: semilog on',
                     'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
-                    'q: toggle S(q) plot','s: toggle single plot','+: no selection')
+                    'q: toggle S(q) plot','s: toggle single plot','w: toggle (Io-Ic)/sig plot','+: no selection')
         else:
             if 'PWDR' in plottype:
                 Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
                     'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
                     'q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
             elif 'SASD' in plottype:
-                Page.Choice = (' key press','b: toggle subtract background','n: loglog on','e: toggle error bars',
+                Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
                     'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
-                    'q: toggle S(q) plot','s: toggle single plot','+: no selection')
+                    'q: toggle S(q) plot','s: toggle single plot','w: toggle (Io-Ic)/sig plot','+: no selection')
 
     Page.keyPress = OnPlotKeyPress    
     PickId = G2frame.PickId
@@ -1000,14 +1000,19 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Plot.axhline(0.,color=wx.BLACK)
                 else:
                     if G2frame.SubBack:
-                        DifLine = Plot.plot(Xum,Y-W,colors[N%6]+'+',picker=1.,clip_on=False)  #Io-Ib
-                        Plot.plot(X,Z-W,colors[(N+1)%6],picker=False)               #Ic-Ib
+                        if 'PWDR' in plottype:
+                            Plot.plot(Xum,Y-W,colors[N%6]+'+',picker=False,clip_on=False)  #Io-Ib
+                            Plot.plot(X,Z-W,colors[(N+1)%6],picker=False)               #Ic-Ib
+                        else:
+                            Plot.plot(X,YB,colors[N%6]+'+',picker=3.,clip_on=False)
+                            Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
                     else:
-                        ObsLine = Plot.plot(Xum,Y,colors[N%6]+'+',picker=3.,clip_on=False)    #Io
-                        Plot.plot(X,Z,colors[(N+1)%6],picker=False)                 #Ic
-                        if G2frame.logPlot:
-                            Plot.set_yscale("log",nonposy='mask')
-                            Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
+                        if 'PWDR' in plottype:
+                            ObsLine = Plot.plot(Xum,Y,colors[N%6]+'+',picker=3.,clip_on=False)    #Io
+                            Plot.plot(X,Z,colors[(N+1)%6],picker=False)                 #Ic
+                        else:
+                            Plot.plot(X,YB,colors[N%6]+'+',picker=3.,clip_on=False)
+                            Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
                     if 'PWDR' in plottype:
                         Plot.plot(X,W,colors[(N+2)%6],picker=False)                 #Ib
                         DifLine = Plot.plot(X,D,colors[(N+3)%6],picker=1.)                 #Io-Ic

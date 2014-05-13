@@ -133,8 +133,8 @@ def FitEllipse(xy):
 def FitDetector(rings,varyList,parmDict,Print=True):
     'Needs a doc string'
         
-    def CalibPrint(ValSig):
-        print 'Image Parameters:'
+    def CalibPrint(ValSig,chisq):
+        print 'Image Parameters: chi**2: %12.3g'%(chisq)
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
@@ -205,7 +205,7 @@ def FitDetector(rings,varyList,parmDict,Print=True):
             sigList[i] = sig[varyList.index(name)]
     ValSig = zip(names,fmt,vals,sig)
     if Print:
-        CalibPrint(ValSig)
+        CalibPrint(ValSig,chisq)
     return chisq
                     
 def ImageLocalMax(image,w,Xpix,Ypix):

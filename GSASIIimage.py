@@ -133,8 +133,8 @@ def FitEllipse(xy):
 def FitDetector(rings,varyList,parmDict,Print=True):
     'Needs a doc string'
         
-    def CalibPrint(ValSig,chisq):
-        print 'Image Parameters: chi**2: %12.3g'%(chisq)
+    def CalibPrint(ValSig,chisq,Npts):
+        print 'Image Parameters: chi**2: %12.3g, Np: %d'%(chisq,Npts)
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
@@ -188,7 +188,7 @@ def FitDetector(rings,varyList,parmDict,Print=True):
         Q = np.sqrt(2.)*R0*R1*np.sqrt(R-2.*zdis**2*npsind(phi0-phi)**2)
         P = 2.*R0**2*zdis*npcosd(phi0-phi)
         Rcalc = (P+Q)/R
-        M = Robs-Rcalc
+        M = (Robs-Rcalc)*10.        #why 10? does make "chi**2" more reasonable
         return M
         
     names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
@@ -205,7 +205,7 @@ def FitDetector(rings,varyList,parmDict,Print=True):
             sigList[i] = sig[varyList.index(name)]
     ValSig = zip(names,fmt,vals,sig)
     if Print:
-        CalibPrint(ValSig,chisq)
+        CalibPrint(ValSig,chisq,rings.shape[0])
     return chisq
                     
 def ImageLocalMax(image,w,Xpix,Ypix):
@@ -571,7 +571,7 @@ def ImageCalibrate(self,data):
     data['rings'] = []
     outE = FitEllipse(ring)
     fmt  = '%s X: %.3f, Y: %.3f, phi: %.3f, R1: %.3f, R2: %.3f'
-    fmt2 = '%s X: %.3f, Y: %.3f, phi: %.3f, R1: %.3f, R2: %.3f, chi^2: %.3f, N: %d'
+    fmt2 = '%s X: %.3f, Y: %.3f, phi: %.3f, R1: %.3f, R2: %.3f, chi**2: %.3f, Np: %d'
     if outE:
         print fmt%('start ellipse: ',outE[0][0],outE[0][1],outE[1],outE[2][0],outE[2][1])
         ellipse = outE

@@ -1399,8 +1399,8 @@ def UpdateSampleGrid(G2frame,data):
         refProfile = G2frame.PatternTree.GetItemPyData(refId)[1]
         refData = [refProfile,refLimits,refSample]
         G2sasd.SetScale(Data,refData)
+        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=True)
         UpdateSampleGrid(G2frame,data)       
-        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
         
     def OnSampleCopy(event):
         histType,copyNames = SetCopyNames(histName,data['Type'],
@@ -1482,7 +1482,8 @@ def UpdateSampleGrid(G2frame,data):
                     sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
                     sampleData.update(copy.deepcopy(copyDict))
         finally:
-            dlg.Destroy()
+            dlg.Destroy()            
+        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
 
     def OnSampleFlagCopy(event):
         histType,copyNames = SetCopyNames(histName,data['Type'])

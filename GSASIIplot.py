@@ -659,7 +659,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         
     def OnRelease(event):
         if G2frame.itemPicked is None: return
-        if DifLine[0].get_label() in str(G2frame.itemPicked):
+        if DifLine[0] and DifLine[0].get_label() in str(G2frame.itemPicked):
             ypos = event.ydata
             G2frame.delOffset = -ypos/Ymax
             G2frame.itemPicked = None
@@ -936,7 +936,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             else:
                 X += G2frame.Offset[1]*.005*N
             Xum = ma.getdata(X)
-            
+            DifLine = ['']
             if ifpicked:
                 Z = xye[3]+offset*N
                 if 'PWDR' in plottype:

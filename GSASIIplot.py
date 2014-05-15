@@ -2453,7 +2453,7 @@ def OnStartNewDzero(G2frame):
     :param str eventkey: a single letter ('a') that
       triggers the addition of a d-zero.    
     '''
-    G2frame.dataFrame.GetStatusBar().SetStatusText('Add strain ring active - LB pick d-zero value',1)
+    G2frame.dataFrame.GetStatusBar().SetStatusText('Add strain ring active - LB pick d-zero value',0)
     StrSta = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Stress/Strain'))
 

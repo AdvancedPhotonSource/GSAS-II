@@ -1,0 +1,1925 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 14">
+<meta name=Originator content="Microsoft Word 14">
+<link rel=File-List href="Small%20Angle%20Image%20Processing_files/filelist.xml">
+<link rel=Edit-Time-Data
+href="Small%20Angle%20Image%20Processing_files/editdata.mso">
+<!--[if !mso]>
+<style>
+v\:* {behavior:url(#default#VML);}
+o\:* {behavior:url(#default#VML);}
+w\:* {behavior:url(#default#VML);}
+.shape {behavior:url(#default#VML);}
+</style>
+<![endif]--><!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>Von Dreele</o:Author>
+  <o:LastAuthor>Von Dreele</o:LastAuthor>
+  <o:Revision>9</o:Revision>
+  <o:TotalTime>2395</o:TotalTime>
+  <o:Created>2014-05-13T20:30:00Z</o:Created>
+  <o:LastSaved>2014-05-14T21:32:00Z</o:LastSaved>
+  <o:Pages>18</o:Pages>
+  <o:Words>1995</o:Words>
+  <o:Characters>11378</o:Characters>
+  <o:Company>Argonne National Laboratory</o:Company>
+  <o:Lines>94</o:Lines>
+  <o:Paragraphs>26</o:Paragraphs>
+  <o:CharactersWithSpaces>13347</o:CharactersWithSpaces>
+  <o:Version>14.00</o:Version>
+ </o:DocumentProperties>
+ <o:OfficeDocumentSettings>
+  <o:AllowPNG/>
+ </o:OfficeDocumentSettings>
+</xml><![endif]-->
+<link rel=dataStoreItem
+href="Small%20Angle%20Image%20Processing_files/item0033.xml"
+target="Small%20Angle%20Image%20Processing_files/props034.xml">
+<link rel=themeData
+href="Small%20Angle%20Image%20Processing_files/themedata.thmx">
+<link rel=colorSchemeMapping
+href="Small%20Angle%20Image%20Processing_files/colorschememapping.xml">
+<!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>110</w:Zoom>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:GrammarState>Clean</w:GrammarState>
+  <w:TrackMoves>false</w:TrackMoves>
+  <w:TrackFormatting/>
+  <w:PunctuationKerning/>
+  <w:ValidateAgainstSchemas/>
+  <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid>
+  <w:IgnoreMixedContent>false</w:IgnoreMixedContent>
+  <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText>
+  <w:DoNotPromoteQF/>
+  <w:LidThemeOther>EN-US</w:LidThemeOther>
+  <w:LidThemeAsian>X-NONE</w:LidThemeAsian>
+  <w:LidThemeComplexScript>X-NONE</w:LidThemeComplexScript>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+   <w:DontGrowAutofit/>
+   <w:SplitPgBreakAndParaMark/>
+   <w:EnableOpenTypeKerning/>
+   <w:DontFlipMirrorIndents/>
+   <w:OverrideTableStyleHps/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+  <m:mathPr>
+   <m:mathFont m:val="Cambria Math"/>
+   <m:brkBin m:val="before"/>
+   <m:brkBinSub m:val="&#45;-"/>
+   <m:smallFrac m:val="off"/>
+   <m:dispDef/>
+   <m:lMargin m:val="0"/>
+   <m:rMargin m:val="0"/>
+   <m:defJc m:val="centerGroup"/>
+   <m:wrapIndent m:val="1440"/>
+   <m:intLim m:val="subSup"/>
+   <m:naryLim m:val="undOvr"/>
+  </m:mathPr></w:WordDocument>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:LatentStyles DefLockedState="false" DefUnhideWhenUsed="true"
+  DefSemiHidden="true" DefQFormat="false" DefPriority="99"
+  LatentStyleCount="267">
+  <w:LsdException Locked="false" Priority="0" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Normal"/>
+  <w:LsdException Locked="false" Priority="9" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="heading 1"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 2"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 3"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 4"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 5"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 6"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 7"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 8"/>
+  <w:LsdException Locked="false" Priority="9" QFormat="true" Name="heading 9"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 1"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 2"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 3"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 4"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 5"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 6"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 7"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 8"/>
+  <w:LsdException Locked="false" Priority="39" Name="toc 9"/>
+  <w:LsdException Locked="false" Priority="35" QFormat="true" Name="caption"/>
+  <w:LsdException Locked="false" Priority="10" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Title"/>
+  <w:LsdException Locked="false" Priority="1" Name="Default Paragraph Font"/>
+  <w:LsdException Locked="false" Priority="11" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtitle"/>
+  <w:LsdException Locked="false" Priority="22" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Strong"/>
+  <w:LsdException Locked="false" Priority="20" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Emphasis"/>
+  <w:LsdException Locked="false" Priority="59" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Table Grid"/>
+  <w:LsdException Locked="false" UnhideWhenUsed="false" Name="Placeholder Text"/>
+  <w:LsdException Locked="false" Priority="1" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="No Spacing"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 1"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 1"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 1"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 1"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 1"/>
+  <w:LsdException Locked="false" UnhideWhenUsed="false" Name="Revision"/>
+  <w:LsdException Locked="false" Priority="34" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="List Paragraph"/>
+  <w:LsdException Locked="false" Priority="29" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Quote"/>
+  <w:LsdException Locked="false" Priority="30" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Quote"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 1"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 1"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 1"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 1"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 1"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 1"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 1"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 2"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 2"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 2"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 2"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 2"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 2"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 2"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 2"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 2"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 2"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 3"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 3"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 3"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 3"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 3"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 3"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 3"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 3"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 3"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 3"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 4"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 4"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 4"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 4"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 4"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 4"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 4"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 4"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 4"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 4"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 5"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 5"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 5"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 5"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 5"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 5"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 5"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 5"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 5"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 5"/>
+  <w:LsdException Locked="false" Priority="60" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Shading Accent 6"/>
+  <w:LsdException Locked="false" Priority="61" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light List Accent 6"/>
+  <w:LsdException Locked="false" Priority="62" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Light Grid Accent 6"/>
+  <w:LsdException Locked="false" Priority="63" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="64" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Shading 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="65" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="66" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium List 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="67" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 1 Accent 6"/>
+  <w:LsdException Locked="false" Priority="68" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 2 Accent 6"/>
+  <w:LsdException Locked="false" Priority="69" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Medium Grid 3 Accent 6"/>
+  <w:LsdException Locked="false" Priority="70" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Dark List Accent 6"/>
+  <w:LsdException Locked="false" Priority="71" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Shading Accent 6"/>
+  <w:LsdException Locked="false" Priority="72" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful List Accent 6"/>
+  <w:LsdException Locked="false" Priority="73" SemiHidden="false"
+   UnhideWhenUsed="false" Name="Colorful Grid Accent 6"/>
+  <w:LsdException Locked="false" Priority="19" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtle Emphasis"/>
+  <w:LsdException Locked="false" Priority="21" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Emphasis"/>
+  <w:LsdException Locked="false" Priority="31" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Subtle Reference"/>
+  <w:LsdException Locked="false" Priority="32" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Intense Reference"/>
+  <w:LsdException Locked="false" Priority="33" SemiHidden="false"
+   UnhideWhenUsed="false" QFormat="true" Name="Book Title"/>
+  <w:LsdException Locked="false" Priority="37" Name="Bibliography"/>
+  <w:LsdException Locked="false" Priority="39" QFormat="true" Name="TOC Heading"/>
+ </w:LatentStyles>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:-536870145 1073786111 1 0 415 0;}
+@font-face
+	{font-family:Tahoma;
+	panose-1:2 11 6 4 3 5 4 4 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:-520081665 -1073717157 41 0 66047 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-parent:"";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;}
+h1
+	{mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 1 Char";
+	mso-margin-top-alt:auto;
+	margin-right:0in;
+	mso-margin-bottom-alt:auto;
+	margin-left:0in;
+	mso-pagination:widow-orphan;
+	mso-outline-level:1;
+	font-size:24.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	font-weight:bold;}
+h2
+	{mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 2 Char";
+	mso-margin-top-alt:auto;
+	margin-right:0in;
+	mso-margin-bottom-alt:auto;
+	margin-left:0in;
+	mso-pagination:widow-orphan;
+	mso-outline-level:2;
+	font-size:18.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	font-weight:bold;}
+h3
+	{mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 3 Char";
+	mso-margin-top-alt:auto;
+	margin-right:0in;
+	mso-margin-bottom-alt:auto;
+	margin-left:0in;
+	mso-pagination:widow-orphan;
+	mso-outline-level:3;
+	font-size:13.5pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	font-weight:bold;}
+h4
+	{mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 4 Char";
+	mso-style-next:Normal;
+	margin-top:10.0pt;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:4;
+	font-size:13.0pt;
+	font-family:"Cambria","serif";
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#4F81BD;
+	mso-themecolor:accent1;
+	font-weight:bold;
+	font-style:italic;}
+h5
+	{mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 5 Char";
+	mso-margin-top-alt:auto;
+	margin-right:0in;
+	mso-margin-bottom-alt:auto;
+	margin-left:0in;
+	mso-pagination:widow-orphan;
+	mso-outline-level:5;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	color:#4F4FFF;
+	font-weight:bold;}
+a:link, span.MsoHyperlink
+	{mso-style-priority:99;
+	color:blue;
+	text-decoration:underline;
+	text-underline:single;}
+a:visited, span.MsoHyperlinkFollowed
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	color:purple;
+	text-decoration:underline;
+	text-underline:single;}
+p.MsoDocumentMap, li.MsoDocumentMap, div.MsoDocumentMap
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-link:"Document Map Char";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:8.0pt;
+	font-family:"Tahoma","sans-serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;}
+p
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-margin-top-alt:auto;
+	margin-right:0in;
+	mso-margin-bottom-alt:auto;
+	margin-left:0in;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;}
+pre
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-link:"HTML Preformatted Char";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt;
+	font-size:10.0pt;
+	font-family:"Courier New";
+	mso-fareast-font-family:"Times New Roman";}
+p.MsoAcetate, li.MsoAcetate, div.MsoAcetate
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-link:"Balloon Text Char";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:8.0pt;
+	font-family:"Tahoma","sans-serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;}
+span.MsoPlaceholderText
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-unhide:no;
+	color:gray;}
+p.MsoNoSpacing, li.MsoNoSpacing, div.MsoNoSpacing
+	{mso-style-noshow:yes;
+	mso-style-priority:1;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-parent:"";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;}
+p.MsoListParagraph, li.MsoListParagraph, div.MsoListParagraph
+	{mso-style-noshow:yes;
+	mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	margin-bottom:.0001pt;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;}
+p.MsoListParagraphCxSpFirst, li.MsoListParagraphCxSpFirst, div.MsoListParagraphCxSpFirst
+	{mso-style-noshow:yes;
+	mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-type:export-only;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	margin-bottom:.0001pt;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;}
+p.MsoListParagraphCxSpMiddle, li.MsoListParagraphCxSpMiddle, div.MsoListParagraphCxSpMiddle
+	{mso-style-noshow:yes;
+	mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-type:export-only;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	margin-bottom:.0001pt;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;}
+p.MsoListParagraphCxSpLast, li.MsoListParagraphCxSpLast, div.MsoListParagraphCxSpLast
+	{mso-style-noshow:yes;
+	mso-style-priority:34;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-type:export-only;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:.5in;
+	margin-bottom:.0001pt;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;}
+span.MsoIntenseReference
+	{mso-style-priority:32;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	font-variant:small-caps;
+	color:#C0504D;
+	mso-themecolor:accent2;
+	letter-spacing:.25pt;
+	font-weight:bold;
+	text-decoration:underline;
+	text-underline:single;}
+span.Heading1Char
+	{mso-style-name:"Heading 1 Char";
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 1";
+	mso-ansi-font-size:24.0pt;
+	mso-bidi-font-size:24.0pt;
+	font-family:"Times New Roman","serif";
+	mso-ascii-font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:"Times New Roman";
+	mso-bidi-font-family:"Times New Roman";
+	mso-font-kerning:18.0pt;
+	font-weight:bold;}
+span.Heading2Char
+	{mso-style-name:"Heading 2 Char";
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 2";
+	mso-ansi-font-size:18.0pt;
+	mso-bidi-font-size:18.0pt;
+	font-family:"Times New Roman","serif";
+	mso-ascii-font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:"Times New Roman";
+	mso-bidi-font-family:"Times New Roman";
+	font-weight:bold;}
+span.Heading3Char
+	{mso-style-name:"Heading 3 Char";
+	mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 3";
+	mso-ansi-font-size:13.5pt;
+	mso-bidi-font-size:13.5pt;
+	font-family:"Times New Roman","serif";
+	mso-ascii-font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:"Times New Roman";
+	mso-bidi-font-family:"Times New Roman";
+	font-weight:bold;}
+span.Heading4Char
+	{mso-style-name:"Heading 4 Char";
+	mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 4";
+	mso-ansi-font-size:13.0pt;
+	mso-bidi-font-size:13.0pt;
+	font-family:"Cambria","serif";
+	mso-ascii-font-family:Cambria;
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:Cambria;
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#4F81BD;
+	mso-themecolor:accent1;
+	font-weight:bold;
+	font-style:italic;}
+span.Heading5Char
+	{mso-style-name:"Heading 5 Char";
+	mso-style-noshow:yes;
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 5";
+	mso-ansi-font-size:12.0pt;
+	mso-bidi-font-size:12.0pt;
+	font-family:"Times New Roman","serif";
+	mso-ascii-font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:"Times New Roman";
+	mso-bidi-font-family:"Times New Roman";
+	color:#4F4FFF;
+	font-weight:bold;}
+span.HTMLPreformattedChar
+	{mso-style-name:"HTML Preformatted Char";
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"HTML Preformatted";
+	font-family:"Courier New";
+	mso-ascii-font-family:"Courier New";
+	mso-fareast-font-family:"Times New Roman";
+	mso-hansi-font-family:"Courier New";
+	mso-bidi-font-family:"Courier New";}
+span.DocumentMapChar
+	{mso-style-name:"Document Map Char";
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Document Map";
+	mso-ansi-font-size:8.0pt;
+	mso-bidi-font-size:8.0pt;
+	font-family:"Tahoma","sans-serif";
+	mso-ascii-font-family:Tahoma;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:Tahoma;
+	mso-bidi-font-family:Tahoma;}
+span.BalloonTextChar
+	{mso-style-name:"Balloon Text Char";
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Balloon Text";
+	mso-ansi-font-size:8.0pt;
+	mso-bidi-font-size:8.0pt;
+	font-family:"Tahoma","sans-serif";
+	mso-ascii-font-family:Tahoma;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:Tahoma;
+	mso-bidi-font-family:Tahoma;}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
+span.GramE
+	{mso-style-name:"";
+	mso-gram-e:yes;}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	mso-default-props:yes;
+	font-size:10.0pt;
+	mso-ansi-font-size:10.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:"Calibri","sans-serif";
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Calibri;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.0in 1.0in 1.0in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.WordSection1
+	{page:WordSection1;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-parent:"";
+	mso-padding-alt:0in 5.4pt 0in 5.4pt;
+	mso-para-margin:0in;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Calibri","sans-serif";
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;}
+table.MsoTableGrid
+	{mso-style-name:"Table Grid";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-priority:59;
+	mso-style-unhide:no;
+	border:solid windowtext 1.0pt;
+	mso-border-alt:solid windowtext .5pt;
+	mso-padding-alt:0in 5.4pt 0in 5.4pt;
+	mso-border-insideh:.5pt solid windowtext;
+	mso-border-insidev:.5pt solid windowtext;
+	mso-para-margin:0in;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Calibri","sans-serif";
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;}
+</style>
+<![endif]--><!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="1027"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+  <o:rules v:ext="edit">
+   <o:r id="V:Rule1" type="connector" idref="#Straight_x0020_Arrow_x0020_Connector_x0020_21"/>
+  </o:rules>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=EN-US link=blue vlink=purple style='tab-interval:.5in'>
+
+<div class=WordSection1>
+
+<h1><strong>Small Angle X-Ray Data – Image Processing<o:p></o:p></strong></h1>
+
+<p class=MsoNormal style='mso-layout-grid-align:none;text-autospace:none'>In
+this tutorial you will reduce 2D SAXS data to create 1D absolute scaled data.
+The data were collected at APS on beam line 15ID on some polymer base materials
+to be used for liquid crystal displays. The processing has several steps including
+detector calibration (i.e. determine sample-detector distance &amp; tilt),
+integration and scaling to an absolute scaled glassy carbon measurement. The
+data were collected at a wavelength of 1.0332Å with a <span class=SpellE>MarCCD</span>
+detector placed ~570mm from the sample. Note that menu entries are listed in
+bold face below as <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:
+minor-latin'>Help/About GSAS-II</span></b>, which lists first the name of the
+menu (here <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'>Help</span></b>)
+and second the name of the entry in the menu (here <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin;mso-bidi-font-family:Calibri;
+mso-bidi-theme-font:minor-latin'>About GSAS-II</span></b>).<span
+style='mso-spacerun:yes'>  </span><span style='mso-fareast-font-family:Calibri;
+mso-fareast-theme-font:minor-latin;mso-bidi-font-weight:bold;mso-bidi-font-style:
+italic'><o:p></o:p></span></p>
+
+<p class=MsoNormal>If you have not done so already, <a
+href="Starting%20GSAS.htm">start GSAS-II</a>.</p>
+
+<h2>Step 1: Detector calibration</h2>
+
+<p class=MsoNormal>The detector position is determined by using an image
+collected from silver <span class=SpellE>behenate</span>; do <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Data/Read
+Image data…</span></b> and a file selection dialog box will appear</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shapetype
+ id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t"
+ path="m@4@5l@4@11@9@11@9@5xe" filled="f" stroked="f">
+ <v:stroke joinstyle="miter"/>
+ <v:formulas>
+  <v:f eqn="if lineDrawn pixelLineWidth 0"/>
+  <v:f eqn="sum @0 1 0"/>
+  <v:f eqn="sum 0 0 @1"/>
+  <v:f eqn="prod @2 1 2"/>
+  <v:f eqn="prod @3 21600 pixelWidth"/>
+  <v:f eqn="prod @3 21600 pixelHeight"/>
+  <v:f eqn="sum @0 0 1"/>
+  <v:f eqn="prod @6 1 2"/>
+  <v:f eqn="prod @7 21600 pixelWidth"/>
+  <v:f eqn="sum @8 21600 0"/>
+  <v:f eqn="prod @7 21600 pixelHeight"/>
+  <v:f eqn="sum @10 21600 0"/>
+ </v:formulas>
+ <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
+ <o:lock v:ext="edit" aspectratio="t"/>
+</v:shapetype><v:shape id="_x0000_i1065" type="#_x0000_t75" style='width:537pt;
+ height:397.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image001.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=716 height=530
+src="Small%20Angle%20Image%20Processing_files/image001.png" v:shapes="_x0000_i1065"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Go to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Exercises/Small angle/Image reduction</span></b>
+and select <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>AgBehenate_003.tif</span></b> with either a mouse button double click
+or <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Open</span></b>;
+the image will appear</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_16" o:spid="_x0000_i1064" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image002.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image002.png" v:shapes="Picture_x0020_16"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>And the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Image controls</span></b> window will show</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="_x0000_i1063" type="#_x0000_t75" style='width:472.5pt;height:388.5pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image003.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=518
+src="Small%20Angle%20Image%20Processing_files/image003.png" v:shapes="_x0000_i1063"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Note the default <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Type of image data</span></b> is <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>PWDR -
+powder diffraction data</span></b>; you will change that <span
+style='mso-no-proof:yes'>now.</span> Select <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>SASD – small angle scattering
+data</span></b> (the window will change). Enter the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>wavelength</span></b> (<b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>1.0332</span></b>),
+and select the <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Calibrant</span></b></span> (near bottom of
+window) as <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Ag <span class=SpellE>behenate</span></span></b>. Note that the
+calibration info for Ag <span class=SpellE>behenate</span> was read from a
+python file – <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>GSASII/ImageCalibrants.py</span></b>. If you have a <span
+class=SpellE>calibrant</span> that isn’t in this file you should enter it in
+the file <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>UserCalibrants.py</span></b>;
+just follow the format of the examples within <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>ImageCalibrants.py</span></b>.
+You should move the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Max intensity</span></b> slider to near the
+middle of the range – that will improve the image. When done the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Image
+controls</span></b> window should look like</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="_x0000_i1062" type="#_x0000_t75" style='width:472.5pt;height:388.5pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image004.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=518
+src="Small%20Angle%20Image%20Processing_files/image004.png" v:shapes="_x0000_i1062"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>And the image will be</p>
+
+<p class=MsoNormal><!--[if gte vml 1]><v:shapetype id="_x0000_t32" coordsize="21600,21600"
+ o:spt="32" o:oned="t" path="m,l21600,21600e" filled="f">
+ <v:path arrowok="t" fillok="f" o:connecttype="none"/>
+ <o:lock v:ext="edit" shapetype="t"/>
+</v:shapetype><v:shape id="Straight_x0020_Arrow_x0020_Connector_x0020_21"
+ o:spid="_x0000_s1026" type="#_x0000_t32" style='position:absolute;
+ margin-left:177pt;margin-top:214.5pt;width:48pt;height:15.75pt;flip:y;
+ z-index:251659264;visibility:visible;mso-wrap-style:square;
+ mso-width-percent:0;mso-height-percent:0;mso-wrap-distance-left:9pt;
+ mso-wrap-distance-top:0;mso-wrap-distance-right:9pt;
+ mso-wrap-distance-bottom:0;mso-position-horizontal:absolute;
+ mso-position-horizontal-relative:text;mso-position-vertical:absolute;
+ mso-position-vertical-relative:text;mso-width-percent:0;mso-height-percent:0;
+ mso-width-relative:page;mso-height-relative:page' o:gfxdata="UEsDBBQABgAIAAAAIQC2gziS/gAAAOEBAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbJSRQU7DMBBF
+90jcwfIWJU67QAgl6YK0S0CoHGBkTxKLZGx5TGhvj5O2G0SRWNoz/78nu9wcxkFMGNg6quQqL6RA
+0s5Y6ir5vt9lD1JwBDIwOMJKHpHlpr69KfdHjyxSmriSfYz+USnWPY7AufNIadK6MEJMx9ApD/oD
+OlTrorhX2lFEilmcO2RdNtjC5xDF9pCuTyYBB5bi6bQ4syoJ3g9WQ0ymaiLzg5KdCXlKLjvcW893
+SUOqXwnz5DrgnHtJTxOsQfEKIT7DmDSUCaxw7Rqn8787ZsmRM9e2VmPeBN4uqYvTtW7jvijg9N/y
+JsXecLq0q+WD6m8AAAD//wMAUEsDBBQABgAIAAAAIQA4/SH/1gAAAJQBAAALAAAAX3JlbHMvLnJl
+bHOkkMFqwzAMhu+DvYPRfXGawxijTi+j0GvpHsDYimMaW0Yy2fr2M4PBMnrbUb/Q94l/f/hMi1qR
+JVI2sOt6UJgd+ZiDgffL8ekFlFSbvV0oo4EbChzGx4f9GRdb25HMsYhqlCwG5lrLq9biZkxWOiqY
+22YiTra2kYMu1l1tQD30/bPm3wwYN0x18gb45AdQl1tp5j/sFB2T0FQ7R0nTNEV3j6o9feQzro1i
+OWA14Fm+Q8a1a8+Bvu/d/dMb2JY5uiPbhG/ktn4cqGU/er3pcvwCAAD//wMAUEsDBBQABgAIAAAA
+IQBC+GEV6wEAACkEAAAOAAAAZHJzL2Uyb0RvYy54bWysU02P0zAQvSPxHyzfadIgKoiarlAXuKxg
+RYG717EbC9tjjU2T/nvGThs+pZUQFyv2zHsz781kezM5y04KowHf8fWq5kx5Cb3xx45//vT22UvO
+YhK+Fxa86vhZRX6ze/pkO4ZWNTCA7RUyIvGxHUPHh5RCW1VRDsqJuIKgPAU1oBOJrnisehQjsTtb
+NXW9qUbAPiBIFSO93s5Bviv8WiuZPmgdVWK249RbKieW8yGf1W4r2iOKMBh5aUP8QxdOGE9FF6pb
+kQT7huYPKmckQgSdVhJcBVobqYoGUrOuf1NzGERQRQuZE8NiU/x/tPL96R6Z6TverDnzwtGMDgmF
+OQ6JvUaEke3Be/IRkFEK+TWG2BJs7+8xK5aTP4Q7kF8jxapfgvkSw5w2aXRMWxO+0JoUq0g8m8ok
+zssk1JSYpMdN/WpT07wkhWjMdfMiV65Em2ly1YAxvVPgWP7oeLy0vPQ6lxCnu5hm4BWQwdbnMwlj
+3/iepXMg0SJrvRTJ8aJkbr7ISGerZuxHpckwavJ5kVFWVe0tspOgJRNSKp+ahYmyM0wbaxdg/Tjw
+kp+hqqzxAm4eBy+IUhl8WsDOeMC/EaSpzJYc1nP+1YFZd7bgAfrzPV6HTPtYBnL5d/LC/3wv8B9/
++O47AAAA//8DAFBLAwQUAAYACAAAACEAgdKpXd8AAAALAQAADwAAAGRycy9kb3ducmV2LnhtbEyP
+wU7DMBBE70j8g7VI3KjTklQQ4lQVohfEpS1FHLfxkgTidRS7Tfh7lhPc3mhHszPFanKdOtMQWs8G
+5rMEFHHlbcu1gdf95uYOVIjIFjvPZOCbAqzKy4sCc+tH3tJ5F2slIRxyNNDE2Odah6ohh2Hme2K5
+ffjBYRQ51NoOOEq46/QiSZbaYcvyocGeHhuqvnYnZ6B9Gt/senw/7A/Ovnxuts/zYNGY66tp/QAq
+0hT/zPBbX6pDKZ2O/sQ2qM7AbZbKlmggXdwLiCPNEoGjwDLJQJeF/r+h/AEAAP//AwBQSwECLQAU
+AAYACAAAACEAtoM4kv4AAADhAQAAEwAAAAAAAAAAAAAAAAAAAAAAW0NvbnRlbnRfVHlwZXNdLnht
+bFBLAQItABQABgAIAAAAIQA4/SH/1gAAAJQBAAALAAAAAAAAAAAAAAAAAC8BAABfcmVscy8ucmVs
+c1BLAQItABQABgAIAAAAIQBC+GEV6wEAACkEAAAOAAAAAAAAAAAAAAAAAC4CAABkcnMvZTJvRG9j
+LnhtbFBLAQItABQABgAIAAAAIQCB0qld3wAAAAsBAAAPAAAAAAAAAAAAAAAAAEUEAABkcnMvZG93
+bnJldi54bWxQSwUGAAAAAAQABADzAAAAUQUAAAAA
+" strokecolor="#c0504d [3205]" strokeweight="3pt">
+ <v:stroke endarrow="open"/>
+ <v:shadow on="t" color="black" opacity="22937f" origin=",.5" offset="0,.63889mm"/>
+ <o:lock v:ext="edit" shapetype="f"/>
+</v:shape><![endif]--><![if !vml]><span style='mso-ignore:vglayout;position:
+absolute;z-index:251659264;margin-left:234px;margin-top:274px;width:73px;
+height:38px'><img width=73 height=38
+src="Small%20Angle%20Image%20Processing_files/image005.png" v:shapes="Straight_x0020_Arrow_x0020_Connector_x0020_21"></span><![endif]><span
+style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="_x0000_i1061" type="#_x0000_t75"
+ style='width:525pt;height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image006.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image006.png" v:shapes="_x0000_i1061"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Next select <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Operations/Calibrate</span></b> from the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Image
+Controls</span></b> menu; a bit of instruction will appear on the status line
+of this window. Select 5 points on the innermost ring (arrowed above); a small
+red cross will appear at each selection point. Press the right mouse button to
+finish; calibration will proceed. A sequence of concentric red rings will
+appear; they will switch to blue when calibration is finished. Select <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Show ring
+picks</span></b> (near bottom right of <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Image Controls</span></b> window). The <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Image
+Controls</span></b> window will show the results of the calibration</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="_x0000_i1060" type="#_x0000_t75" style='width:472.5pt;height:388.5pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image007.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=518
+src="Small%20Angle%20Image%20Processing_files/image007.png" v:shapes="_x0000_i1060"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>And the plot will show the points (very sparse!) used in the
+calibration calculations.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_23" o:spid="_x0000_i1059" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image008.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image008.png" v:shapes="Picture_x0020_23"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>You would like to use more points from just the visible rings.
+I suggest you change <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Min ring I/<span class=SpellE><span
+class=GramE>Ib</span></span></span></b> to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>0.5</span></b> and <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Min <span class=SpellE>calib</span>
+d-spacing</span></b> to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>10.0</span></b>. Do <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Operations/Recalibrate</span></b>;
+more points will be used and they will be limited to the 5 visible rings in the
+pattern.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="_x0000_i1058" type="#_x0000_t75" style='width:525pt;height:450pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image009.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image009.png" v:shapes="_x0000_i1058"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>And give the calibration result as</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_25" o:spid="_x0000_i1057" type="#_x0000_t75" style='width:472.5pt;
+ height:388.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image010.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=518
+src="Small%20Angle%20Image%20Processing_files/image010.png" v:shapes="Picture_x0020_25"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>You will need this calibration information to process the
+other images in this tutorial. To save it for future use do <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Operations/Save
+controls</span></b>; a file dialog will appear</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_26" o:spid="_x0000_i1056" type="#_x0000_t75" style='width:537pt;
+ height:397.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image011.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=716 height=530
+src="Small%20Angle%20Image%20Processing_files/image011.png" v:shapes="Picture_x0020_26"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Makeup a file name (no extension needed) for this; I chose <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>SASD</span></b>.
+Press <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Save</span></b>
+and the file <span class=SpellE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>SASD.imctrl</span></b></span> will be written
+to the local directory.</p>
+
+<p class=MsoNormal>If you are continuing on to the next step do <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>File/New
+Project</span></b> (don’t bother saving the project file unless you want it; we
+will not need it here); otherwise you can exit GSAS-II.</p>
+
+<h2>Step 2: Data image integration</h2>
+
+<p class=MsoNormal>The objective here is to read in the four polymer sample
+images, a glassy carbon image, an empty container image and a dark image. The
+images will be integrated after creating masks to remove the beam stop and
+other objectionable parts of the images. If you have not done so already, <a
+href="Starting%20GSAS.htm">start GSAS-II</a>. </p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>First do <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Data/Read image data…</span></b>, go to <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Exercises/Small
+angle/Image reduction</span></b> and select all images except <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>AgBehenate_003.tif</span></b>;
+then press <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Open</span></b> to read all of them. The GSAS-II data tree window
+will show entries for 7 images and will expand the last one</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_11" o:spid="_x0000_i1055" type="#_x0000_t75" style='width:300pt;
+ height:308.25pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image013.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=400 height=411
+src="Small%20Angle%20Image%20Processing_files/image013.png" v:shapes="Picture_x0020_11"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Notice that the Dark, Empty and GC (glassy carbon) are all
+5s images and the Sa1-4 ones are 40s images; this time information is needed
+later to obtain correct scaling. First select the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>IMG GC_5s_200.tif</span></b>
+entry from the tree and expand it (press the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>+</span></b> box); then select <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Image
+controls</span></b>. The data window (<b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Image Controls</span></b>) will show the
+default settings.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_12" o:spid="_x0000_i1054" type="#_x0000_t75" style='width:472.5pt;
+ height:388.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image014.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=518
+src="Small%20Angle%20Image%20Processing_files/image014.png" v:shapes="Picture_x0020_12"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Do <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Operations/Load controls</span></b> from the
+menu; a file selection dialog will appear showing the available *.<span
+class=SpellE>imctrl</span> files (the one you made in Step 1 should be seen).</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_13" o:spid="_x0000_i1053" type="#_x0000_t75" style='width:537pt;
+ height:397.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image015.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=716 height=530
+src="Small%20Angle%20Image%20Processing_files/image015.png" v:shapes="Picture_x0020_13"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Select it and press <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Open</span></b>; the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Image Controls</span></b> window
+will be redrawn with the settings obtained in <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Step 1: Detector calibration</span></b></p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_14" o:spid="_x0000_i1052" type="#_x0000_t75" style='width:472.5pt;
+ height:388.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image016.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=518
+src="Small%20Angle%20Image%20Processing_files/image016.png" v:shapes="Picture_x0020_14"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span class=GramE>and</span> the image will be that of
+glassy carbon. Changing the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Max intensity</span></b> slider on the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Image
+Controls</span></b> window will show that the image from the <span
+class=SpellE>MarCCD</span> is circular and slightly offset from the beam
+center. A beam stop shadow is evident as well as an arc-like fault in the image
+(toward the upper left corner of the image). We will sort those out later.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_15" o:spid="_x0000_i1051" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image017.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image017.png" v:shapes="Picture_x0020_15"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>The next step we will be doing is to set up the integration
+controls. The <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Dark image</span></b> is <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>IMG Dark_5s_003.tif</span></b>, the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Background
+image</span></b> is <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>IMG Empty_5s_014.tif</span></b>; select these
+two. The <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>multipliers</span></b>
+for each are <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>-1.0</span></b> because their exposures were the same as this
+glassy carbon image (5s). Next check the boxes for <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Show integration limits?</span></b>
+<span class=GramE>and</span> <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Do full integration?</span></b> A pair of
+circles with a connecting diagonal line will appear on the plot. Set the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Inner/Outer
+2-theta</span></b> values to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>0.5</span></b> and <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>9.0</span></b>, respectively, and
+set the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Start
+azimuth</span></b> to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>0</span></b>. Set the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>No. 2-theta bins</span></b> to <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>250</span></b>,
+which is more appropriate for small angle scattering, and set the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Bin style:
+Constant step bins in</span></b> to <span class=GramE><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>log(</span></b></span><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>q)</span></b>.
+You should also check the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Apply sample transmission?</span></b> <span
+class=GramE>and</span> <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Apply polarization?</span></b> <span
+class=GramE>boxes</span>; enter the measured <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>transmission</span></b> (<b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>0.818</span></b>)
+for the glassy carbon sample. When done the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Image Controls</span></b> data
+window should look like</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_29" o:spid="_x0000_i1050" type="#_x0000_t75" style='width:472.5pt;
+ height:388.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image018.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=518
+src="Small%20Angle%20Image%20Processing_files/image018.png" v:shapes="Picture_x0020_29"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>And the plot should look like</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_28" o:spid="_x0000_i1049" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image019.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image019.png" v:shapes="Picture_x0020_28"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Now copy these controls to the other images. Do <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Operations/Copy
+controls</span></b> and select just the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Sa1-4</span></b> data names. </p>
+
+<p class=MsoNormal>We now need to go to the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Image Controls</span></b> for
+each of <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Sa1-Sa4</span></b>
+to enter the correct transmission for each and change the Dark &amp; Background
+<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>multipliers</span></b>
+to account for the different exposure times. Start with <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>IMG Sa1_40s_067.tif</span></b>
+and change <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>transmission</span></b> to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>0.943</span></b> and the two <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>multipliers</span></b>
+to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>-8.0</span></b>.
+Then go to <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>IMG Sa2_40s_069.tif</span></b> and change <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>transmission</span></b> to <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>0.979</span></b>;
+<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>multipliers</span></b>
+to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>-8.0</span></b>.
+Next go <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>to IMG Sa3_40s_059.tif</span></b>
+and change <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>transmission</span></b> to <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>0.960</span></b>; <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>multipliers</span></b> to <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>-8.0</span></b>.
+Finally, go to <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>IMG Sa4_40s_061.tif</span></b> and change <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>transmission</span></b> to <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>0.968</span></b>;
+<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>multipliers</span></b>
+to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>-8.0</span></b>.
+The <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Image
+Controls</span></b> data window for this should look like<o:p></o:p></p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_38" o:spid="_x0000_i1048" type="#_x0000_t75" style='width:472.5pt;
+ height:388.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image020.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=630 height=518
+src="Small%20Angle%20Image%20Processing_files/image020.png" v:shapes="Picture_x0020_38"><![endif]></span><o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>This is a reasonable time to save the project; do <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>File/Save
+project as…</span></b> from the main GSAS-II data tree menu. Choose a file name
+(I assumed <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>image</span></b>) and it will be written on the local file
+directory. </p>
+
+<p class=MsoNormal>As noted earlier, this image contains some unwanted features;
+so let’s create masks to remove them. Select <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Masks</span></b> from the GSAS-II
+data tree under <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>IMG GC_5s_200.tif</span></b>; the data window will show</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_17" o:spid="_x0000_i1047" type="#_x0000_t75" style='width:337.5pt;
+ height:99.75pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image021.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=450 height=133
+src="Small%20Angle%20Image%20Processing_files/image021.png" v:shapes="Picture_x0020_17"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>To mask out the regions beyond the circular <span
+class=SpellE>MarCCD</span> image change the <span class=GramE><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Lower<span
+style='mso-spacerun:yes'>  </span><span class=SpellE>threshhold</span></span></b></span>
+from <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>0</span></b>
+to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>1</span></b>;
+the image will be redrawn with these regions in red</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_30" o:spid="_x0000_i1046" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image022.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image022.png" v:shapes="Picture_x0020_30"><![endif]></span><o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>These are now excluded. The status line for the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Masks</span></b>
+data window gives the directions for adding additional masks. You can make arcs
+(we’ll use that here), rings, spots (this too) and polygons (this as well) as
+masks. These enclose areas to be excluded. The frame works in the opposite
+sense in that everything outside the frame is excluded (NB: only one frame is
+allowed). So let’s first mask the bad arc in the upper left – zoom in on that
+part of the image</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_19" o:spid="_x0000_i1045" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image023.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image023.png" v:shapes="Picture_x0020_19"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>To add the mask 1: be sure the focus is on the image and the
+zoom buttons are off, 2: type <span class=GramE><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>a</span></b> to</span> activate
+the arc mask entry 3: press the left mouse button (<b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>LB</span></b>) with the cursor
+centered on the bad arc. The <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Masks</span></b> window will show a new entry
+</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_20" o:spid="_x0000_i1044" type="#_x0000_t75" style='width:337.5pt;
+ height:135pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image024.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=450 height=180
+src="Small%20Angle%20Image%20Processing_files/image024.png" v:shapes="Picture_x0020_20"><![endif]></span><span
+style='mso-spacerun:yes'> </span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span class=GramE>and</span> an arc mask will be drawn on
+the plot.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_22" o:spid="_x0000_i1043" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image025.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image025.png" v:shapes="Picture_x0020_22"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>You can change the angular width of the arc by changing <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>thickness</span></b>
+in the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Masks</span></b>
+data window, you can change the angular range of the arc by dragging either end
+of the arc, and you can move the arc <span
+style='mso-spacerun:yes'> </span>along a constant 2&#920; angle by dragging on any
+point inside the mask. The curvature is centered on the beam center position and
+follows a constant 2&#920; curve established by the detector calibration.<span
+style='mso-no-proof:yes'> <!--[if gte vml 1]><v:shape id="Picture_x0020_34"
+ o:spid="_x0000_i1042" type="#_x0000_t75" style='width:525pt;height:450pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image026.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image026.png" v:shapes="Picture_x0020_34"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Next let’s deal with the beam stop. I’m going to use both a
+polygon and a spot to cover it. Move the zoom area to be around the center, make
+sure the zoom buttons are off, enter ‘<b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>s</span></b>’ on the plot and press mouse <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>LB</span></b>
+with the cursor positioned where you want the spot. A 1mm diameter red circle
+will appear on the plot</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_35" o:spid="_x0000_i1041" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image027.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image027.png" v:shapes="Picture_x0020_35"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>And the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Masks</span></b> window will have new
+information</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_24" o:spid="_x0000_i1040" type="#_x0000_t75" style='width:337.5pt;
+ height:170.25pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image028.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=450 height=227
+src="Small%20Angle%20Image%20Processing_files/image028.png" v:shapes="Picture_x0020_24"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>You can change the diameter of the spot, I used <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>7.0</span></b>;
+the plot now shows a ring that just covers the beam stop. You may have to drag
+it a bit (Hint: drag the center of the spot) to get it well centered.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_36" o:spid="_x0000_i1039" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image029.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image029.png" v:shapes="Picture_x0020_36"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Next we need to mask the stick holding the beam stop; we’ll
+use a 4 sided polygon for this. Adjust the zoom &amp; position so you can see
+the entire beam stop stick. Make sure all zoom buttons are off, press ‘<b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>p</span></b>’
+on the plot, then press the mouse <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>LB</span></b> at four points in succession
+around the beam stop stick. A line segment for the polygon will be drawn
+following your mouse clicks. Finally press the mouse <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>RB</span></b> to close the
+polygon. You should see something like</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_37" o:spid="_x0000_i1038" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image030.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image030.png" v:shapes="Picture_x0020_37"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>You can adjust the position of the polygon vertices by
+closely dragging it with mouse <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>LB</span></b> pressed; a new vertex can be
+added by dragging an existing vertex with the mouse <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>RB</span></b> pressed. If you
+drag one vertex onto another, they are merged and cannot be separated.</p>
+
+<p class=MsoNormal>We want to use these masks for all the Sa1-4 images. <span
+class=GramE>Do</span> <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Operations/Copy mask</span></b>; a <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Copy mask
+information</span></b> dialog box will appear. Select the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Sa1-4</span></b> items and press <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Ok</span></b>.
+Here is a useful place to save your project; do <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>File/Save project</span></b> from
+the main GSAS-II data tree menu.</p>
+
+<h2>Step 3: Integration of images</h2>
+
+<p class=MsoNormal>We are now ready to integrate the glassy carbon and the four
+<span class=GramE>Sa</span> images. Select any Image Controls and then do
+Operations/Integrate all. A selection dialog will appear; select only the GC
+and Sa1-Sa4 data sets and press Ok. The image integration will proceed; a
+progress bar shows as each one is done. Five SASD data items will appear on the
+GSAS-II data tree; the last one (<b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>SASD Sa4_40s_061.tif <span class=SpellE>Azm</span>=45.00</span></b>)
+will be expanded and plotted.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_39" o:spid="_x0000_i1037" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image031.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image031.png" v:shapes="Picture_x0020_39"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Pretty obviously the SASD pattern is down to background at Q~0.25Å<sup>-1</sup>;
+the other Sa1-Sa4 patterns are similar. The glassy carbon pattern extends
+nicely to the highest Q (~1.0Å<sup>-1</sup>) measured.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_40" o:spid="_x0000_i1036" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image032.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image032.png" v:shapes="Picture_x0020_40"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2>Step 4: Scaling of SASD patterns</h2>
+
+<p class=MsoNormal>To set this data on an absolute scale, we compare it to an
+absolute scaled glassy carbon scan. One of these is in the same directory as
+the image data; do <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Import/Small Angle Data/ from <span
+class=GramE>q(</span>A-1) step X-ray QIE data file</span></b> and select <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>GC
+calibrated data.txt</span></b> from the file selection dialog. You will need to
+select <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>any <span
+class=GramE>file(</span>*.*)</span></b> to see it. A <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Is <span class=GramE>this the</span>
+file you want</span></b> dialog will appear – respond <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Yes</span></b> to read the file;
+it will be plotted.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_41" o:spid="_x0000_i1035" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image033.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image033.png" v:shapes="Picture_x0020_41"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>If you <span class=GramE>enter ‘<b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>s</span></b>’</span> on the plot
+window, all of the SASD patterns will be plotted together (I’ve adjusted the
+zoom to see them all).</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_42" o:spid="_x0000_i1034" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image034.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image034.png" v:shapes="Picture_x0020_42"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Clearly the measured image data need to be scaled down to
+have them on absolute scale. First is to discover the scaling between the two
+glassy carbon patterns. Go to the measured one (<b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>SASD GC_5s_200.tif</span></b>)
+and select <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Sample Parameters</span></b>.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_43" o:spid="_x0000_i1033" type="#_x0000_t75" style='width:291.75pt;
+ height:388.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image035.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=389 height=518
+src="Small%20Angle%20Image%20Processing_files/image035.png" v:shapes="Picture_x0020_43"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>We will change <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Histogram scale factor</span></b> by
+comparison with the absolute glassy carbon scan. Do <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Command/Set scale</span></b> from
+the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Sample
+Parameters</span></b> menu; a <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Reference histogram</span></b> dialog will
+appear.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_44" o:spid="_x0000_i1032" type="#_x0000_t75" style='width:259.5pt;
+ height:252pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image036.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=346 height=336
+src="Small%20Angle%20Image%20Processing_files/image036.png" v:shapes="Picture_x0020_44"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Select <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>SASD GC calibrated data.txt</span></b> (shown
+in blue above) and press <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Ok</span></b>; the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>GC_5s_200.tif</span></b> data
+will be rescaled to the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>GC calibrated data</span></b> and the <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Histogram
+scale factor</span></b> will be changed to the new scaling factor (<b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>0.0008536</span></b>).
+The plot will be redrawn with the scaled data.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_45" o:spid="_x0000_i1031" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image037.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image037.png" v:shapes="Picture_x0020_45"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>The divergence at high Q is probably from a background
+contribution to the standard that is not present in our measured one. Next we
+have to apply this scale factor to the Sa1-Sa4 data sets. Do <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Command/Copy
+selected…</span></b> from the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Sample Parameters</span></b> menu; a <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Select
+sample parameters</span></b> dialog will appear</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_46" o:spid="_x0000_i1030" type="#_x0000_t75" style='width:240pt;
+ height:232.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image038.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=320 height=310
+src="Small%20Angle%20Image%20Processing_files/image038.png" v:shapes="Picture_x0020_46"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Select only <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Histogram scale factor</span></b> and press <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Ok</span></b>;
+a <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Copy sample
+parameters</span></b> dialog will appear</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_47" o:spid="_x0000_i1029" type="#_x0000_t75" style='width:240pt;
+ height:232.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image039.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=320 height=310
+src="Small%20Angle%20Image%20Processing_files/image039.png" v:shapes="Picture_x0020_47"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Select only the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Sa1-Sa4</span></b> data sets and press <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Ok</span></b>.
+The copy will occur and the plot redrawn</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_48" o:spid="_x0000_i1028" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image040.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image040.png" v:shapes="Picture_x0020_48"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>I’ve changed the zoom to show all the data. We are not quite
+done; the scales for the Sa1-Sa4 data sets have to be further reduced by a
+factor of 8 to account for the longer exposure time. Select SASD
+Sa1_40s_067.tif from the GSAS-II data tree, expand it and choose Sample
+Parameters</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_49" o:spid="_x0000_i1027" type="#_x0000_t75" style='width:291.75pt;
+ height:388.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image041.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=389 height=518
+src="Small%20Angle%20Image%20Processing_files/image041.png" v:shapes="Picture_x0020_49"><![endif]></span><o:p></o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>The data items here can take simple mathematical expressions
+so change Histogram scale factor to 0.0008536/8 and press Enter. The value will
+change to 0.0001067 and the plot redrawn.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_50" o:spid="_x0000_i1026" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image042.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image042.png" v:shapes="Picture_x0020_50"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Next do Command/Copy selected as before to copy this new
+scale factor to the other <span class=GramE>Sa</span> data sets. The plot will
+again be redrawn</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_51" o:spid="_x0000_i1025" type="#_x0000_t75" style='width:525pt;
+ height:450pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="Small%20Angle%20Image%20Processing_files/image043.png"
+  o:title=""/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
+src="Small%20Angle%20Image%20Processing_files/image043.png" v:shapes="Picture_x0020_51"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal>Everything is now on absolute scale and these polymer
+samples are quite weak small angle <span class=SpellE>scatterers</span>. This
+is a good point to do a <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>File/Save project</span></b> from the main
+GSAS-II data tree menu. You can try to fit unified &amp; <span class=SpellE>Porod</span>
+models to them following the procedures demonstrated in the <strong><span
+style='font-weight:normal;mso-bidi-font-weight:bold'><a
+href="Fitting%20Small%20Angle%20Scattering%20Data.htm"><span style='mso-bidi-font-weight:
+normal'>Fitting Small Angle X-Ray Data</span></a> tutorial. I’d set the high Q
+limit to about 0.25Å<sup>-1</sup> as above that is only noisy background.</span></strong></p>
+
+</div>
+
+</body>
+
+</html>

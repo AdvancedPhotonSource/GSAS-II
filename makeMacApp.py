@@ -23,7 +23,88 @@ def Usage():
     print("\n\tUsage: python "+sys.argv[0]+" [<GSAS-II script>]\n")
     sys.exit()
 
+def RunPython(image,cmd):
+    'Run a command in a python image'
+    try:
+        err=None
+        p = subprocess.Popen([image,'-c',cmd],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        out = p.stdout.read()
+        err = p.stderr.read()
+        p.communicate()
+        return out,err
+    except Exception(err):
+        return '','Exception = '+err
+
 project="GSAS-II"
+AppleScript = ''
+'''Contains an AppleScript to start GSAS-II launching python and the
+GSAS-II python script
+'''
+
+AppleScript += '''(*   GSAS-II AppleScript by B. Toby (brian.toby@anl.gov)
+     It can launch GSAS-II by double clicking or by dropping a data file
+     or folder over the app.
+     It runs GSAS-II in a terminal window.
+*)
+
+(* test if a file is present and exit with an error message if it is not  *)
+on TestFilePresent(appwithpath)
+	tell application "System Events"
+		if (file appwithpath exists) then
+		else
+			display dialog "Error: file " & appwithpath & " not found. If you have moved this file recreate the AppleScript with bootstrap.py." with icon caution buttons {{"Quit"}}
+			return
+		end if
+	end tell
+end TestFilePresent
+
+(* 
+------------------------------------------------------------------------
+this section responds to a double-click. No file is supplied to GSAS-II
+------------------------------------------------------------------------ 
+*)
+on run
+	set python to "{:s}"
+	set appwithpath to "{:s}"
+	set env to "{:s}"
+	TestFilePresent(appwithpath)
+	TestFilePresent(python)
+	tell application "Terminal"
+		activate
+		do script env & python & " " & appwithpath & "; exit"
+	end tell
+end run
+
+(*
+-----------------------------------------------------------------------------------------------
+this section handles starting with files dragged into the AppleScript
+ o it goes through the list of file(s) dragged in
+ o then it converts the colon-delimited macintosh file location to a POSIX filename
+ o for every non-directory file dragged into the icon, it starts GSAS-II, passing the file name
+------------------------------------------------------------------------------------------------
+*)
+
+on open names
+	set python to "{:s}"
+	set appwithpath to "{:s}"
+	set env to "{:s}"
+ 
+	TestFilePresent(appwithpath)
+	repeat with filename in names
+		set filestr to (filename as string)
+		if filestr ends with ":" then
+                        (* should not happen, skip directories *)
+		else
+			(* if this is an input file, open it *)
+			set filename to the quoted form of the POSIX path of filename
+			tell application "Terminal"
+				activate
+				do script env & python & " " & appwithpath & " " & filename & "; exit"
+			end tell
+		end if
+	end repeat
+end open
+'''
 
 if __name__ == '__main__':
     # find the main GSAS-II script if not on command line
@@ -58,86 +139,44 @@ if __name__ == '__main__':
         elif os.path.exists(os.path.join(pythonpath,'Resources')):
             break
         pythonpath,top = os.path.split(pythonpath)
+        pythonapp = os.path.join(pythonpath,'Resources','Python.app','Contents','MacOS','Python')
+        if not os.path.exists(pythonapp): 
+            print("\nSorry, failed to find a Python app in "+str(pythonapp))
+            pythonapp = sys.executable
     else:
         print("\nSorry, failed to find a Resources directory associated with "+str(sys.executable))
-        sys.exit()
-    pythonapp = os.path.join(pythonpath,'Resources','Python.app','Contents','MacOS','Python')
-    if not os.path.exists(pythonapp): 
-        print("\nSorry, failed to find a Python app in "+str(pythonapp))
-        sys.exit()
+        pythonapp = sys.executable
 
-    # new name to call python
-    newpython =  os.path.join(apppath,"Contents","MacOS",project)
+    # create a link to the python app, but named to match the project
+    if os.path.exists('/tmp/testpython'): os.remove('/tmp/testpython')
+    os.symlink(pythonapp,'/tmp/testpython')
+    # test if it runs
+    testout,errout = RunPython('/tmp/testpython','import numpy; import wx; print("OK")')
+    os.remove('/tmp/testpython')
+    #print testout,errout
+    if testout.strip() != "OK":
+        print 'Run of python app failed, assuming Canopy <=1.4'
+        pythonapp = sys.executable
+        # switch to pythonw
+        if os.path.split(pythonapp)[1].lower() == 'python':
+            pythonapp = os.path.join(os.path.split(pythonapp)[0],'pythonw')
+        newpython = pythonapp
+    else:
+        # new name to call python
+        newpython =  os.path.join(apppath,"Contents","MacOS",project)
 
+    print sys.executable
+    print newpython
+    print pythonapp
+    #sys.exit()
+    
     if os.path.exists(apppath): # cleanup
         print("\nRemoving old "+project+" app ("+str(apppath)+")")
         shutil.rmtree(apppath)
 
-    # create an AppleScript that launches python with the requested app
-    AppleScript = '''(*   GSAS-II AppleScript by B. Toby (brian.toby@anl.gov)
-     It can launch GSAS-II by double clicking or by dropping a data file
-     or folder over the app.
-     It runs GSAS-II in a terminal window.
-*)
-
-(* test if a file is present and exit with an error message if it is not  *)
-on TestFilePresent(appwithpath)
-	tell application "System Events"
-		if (file appwithpath exists) then
-		else
-			display dialog "Error: file " & appwithpath & " not found. If you have moved this file recreate the AppleScript with bootstrap.py." with icon caution buttons {{"Quit"}}
-			return
-		end if
-	end tell
-end TestFilePresent
-
-(* 
-------------------------------------------------------------------------
-this section responds to a double-click. No file is supplied to GSAS-II
------------------------------------------------------------------------- 
-*)
-on run
-	set python to "{:s}"
-	set appwithpath to "{:s}"
-	TestFilePresent(appwithpath)
-	TestFilePresent(python)
-	tell application "Terminal"
-		activate
-		do script python & " " & appwithpath & "; exit"
-	end tell
-end run
-
-(*
------------------------------------------------------------------------------------------------
-this section handles starting with files dragged into the AppleScript
- o it goes through the list of file(s) dragged in
- o then it converts the colon-delimited macintosh file location to a POSIX filename
- o for every non-directory file dragged into the icon, it starts GSAS-II, passing the file name
-------------------------------------------------------------------------------------------------
-*)
-
-on open names
-	set python to "{:s}"
-	set appwithpath to "{:s}"
-	TestFilePresent(appwithpath)
-	repeat with filename in names
-		set filestr to (filename as string)
-		if filestr ends with ":" then
-                        (* should not happen, skip directories *)
-		else
-			(* if this is an input file, open it *)
-			set filename to the quoted form of the POSIX path of filename
-			tell application "Terminal"
-				activate
-				do script python & " " & appwithpath & " " & filename & "; exit"
-			end tell
-		end if
-	end repeat
-end open
-'''
     shell = os.path.join("/tmp/","appscrpt.script")
     f = open(shell, "w")
-    f.write(AppleScript.format(newpython,script,newpython,script))
+    f.write(AppleScript.format(newpython,script,'',newpython,script,''))
     f.close()
 
     try: 
@@ -149,7 +188,7 @@ end open
         sys.exit()
 
     # create a link to the python app, but named to match the project
-    os.symlink(pythonapp,newpython)
+    if pythonapp != newpython: os.symlink(pythonapp,newpython)
 
     # change the icon
     oldicon = os.path.join(apppath,"Contents","Resources","droplet.icns")
@@ -162,6 +201,7 @@ end open
         'CFBundleTypeExtensions': ['gpx'],
         'CFBundleTypeName': 'GSAS-II project',
         'CFBundleTypeRole': 'Editor'}]
+    
     plistlib.writePlist(d,os.path.join(apppath,"Contents",'Info.plist'))
 
     print("\nCreated "+project+" app ("+str(apppath)+

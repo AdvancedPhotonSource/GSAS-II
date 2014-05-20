@@ -864,6 +864,10 @@ def GetTifData(filename,imageOnly=False):
 #    
 def ProjFileOpen(G2frame):
     'Read a GSAS-II project file and load into the G2 data tree'
+    if not os.path.exists(G2frame.GSASprojectfile):
+        print ('\n*** Error attempt to open project file that does not exist:\n   '+
+               str(G2frame.GSASprojectfile))
+        return
     file = open(G2frame.GSASprojectfile,'rb')
     print 'load from file: ',G2frame.GSASprojectfile
     G2frame.SetTitle("GSAS-II data tree: "+

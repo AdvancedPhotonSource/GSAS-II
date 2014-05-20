@@ -3325,6 +3325,9 @@ class GSASIImain(wx.App):
         treat this like a File/Open project menu action.
         Should be ignored on other platforms
         '''
+        # PATCH: Canopy 1.4 script main seems dropped on app; ignore .py files
+        if os.path.splitext(filename)[1] == '.py': return
+        # end PATCH
         self.main.OnFileOpen(None,filename)
 
 def main():

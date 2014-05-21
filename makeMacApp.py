@@ -132,21 +132,16 @@ if __name__ == '__main__':
     iconfile = os.path.join(scriptdir,'gsas2.icns') # optional icon file
 
     # find the python application; must be an OS X app
-    pythonpath,top = os.path.split(os.path.realpath(sys.executable))
+    pythonpath = os.path.realpath(sys.executable)
+    top = True
     while top:
-        if 'Resources' in pythonpath:
-            pass
-        elif os.path.exists(os.path.join(pythonpath,'Resources')):
-            break
-        pythonpath,top = os.path.split(pythonpath)
         pythonapp = os.path.join(pythonpath,'Resources','Python.app','Contents','MacOS','Python')
-        if not os.path.exists(pythonapp): 
-            print("\nSorry, failed to find a Python app in "+str(pythonapp))
-            pythonapp = sys.executable
+        if os.path.exists(pythonapp): break
+        pythonpath,top = os.path.split(pythonpath)
     else:
         print("\nSorry, failed to find a Resources directory associated with "+str(sys.executable))
         pythonapp = sys.executable
-
+    
     # create a link to the python app, but named to match the project
     if os.path.exists('/tmp/testpython'): os.remove('/tmp/testpython')
     os.symlink(pythonapp,'/tmp/testpython')
@@ -155,21 +150,23 @@ if __name__ == '__main__':
     os.remove('/tmp/testpython')
     #print testout,errout
     if testout.strip() != "OK":
-        print 'Run of python app failed, assuming Canopy <=1.4'
+        print 'Run of python app failed, resorting to non-app version of Python, Alas!'
         pythonapp = sys.executable
-        # switch to pythonw
-        if os.path.split(pythonapp)[1].lower() == 'python':
-            pythonapp = os.path.join(os.path.split(pythonapp)[0],'pythonw')
+        # is this brain-dead Canopy 1.4.0, if so, switch to pythonw
+        try:
+            import canopy.version
+            if canopy.version.version == '1.4.0':
+                print 'using pythonw for Canopy 1.4.0'
+                pythonapp = os.path.join(os.path.split(pythonapp)[0],'pythonw')
+                if not os.path.exists(pythonapp):
+                    raise Exception('no pythonw here: '+pythonapp)
+        except ImportError:
+            pass
         newpython = pythonapp
     else:
         # new name to call python
         newpython =  os.path.join(apppath,"Contents","MacOS",project)
 
-    print sys.executable
-    print newpython
-    print pythonapp
-    #sys.exit()
-    
     if os.path.exists(apppath): # cleanup
         print("\nRemoving old "+project+" app ("+str(apppath)+")")
         shutil.rmtree(apppath)

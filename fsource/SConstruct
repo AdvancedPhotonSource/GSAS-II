@@ -200,13 +200,18 @@ elif 'install' in COMMAND_LINE_TARGETS:
 # specified on the command line
 if FCompiler == 'gfortran':
     if FORTpath == "": FORTpath = GFORTpath
-    if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check"'
-#    if sys.platform == "linux2":
-#        if FORTflags == "": FORTflags = ' -w -O2 -fPIC'
     if sys.platform == "linux2" and PlatformBits == '64bit':
         if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m64'
+        if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"'# --arch="-arch x86_64"'
     elif sys.platform == "linux2":
         if FORTflags == "": FORTflags = ' -w -O2 -fPIC -m32'
+        if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m32"'
+    elif sys.platform == "darwin" and PlatformBits == '64bit':
+        LDFLAGS += " -arch x86_64 -m64"
+        if FORTflags == "": FORTflags = ' -w -O2 -m64'
+        if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m64"'
+    elif sys.platform == "darwin":
+        if F2PYflags == "": F2PYflags = '--fcompiler=gnu95 --f77exec=gfortran --f77flags="-fno-range-check -m32"'
 elif FCompiler == 'g77':
     if FORTpath == "": FORTpath = G77path
     if sys.platform == "win32":

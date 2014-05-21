@@ -204,6 +204,7 @@ def UpdateConstraints(G2frame,data):
     #reload(G2gd)
     ###################################################
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
+    G2obj.IndexAllIds(Histograms,Phases)
     ##################################################################################
     # patch: convert old-style (str) variables in constraints to G2VarObj objects
     for key,value in data.items():

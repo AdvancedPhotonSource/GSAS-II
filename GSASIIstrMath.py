@@ -2115,8 +2115,8 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     if np.any(pVals):
         pSum = np.sum(pWt*pVals**2)
         for name in pWsum:
-            print '  Penalty function for %8s = %.3f'%(name,pWsum[name])
-        print 'Total penalty function: %.3f on %d terms'%(pSum,len(pVals))
+            print '  Penalty function for %8s = %12.5g'%(name,pWsum[name])
+        print 'Total penalty function: %12.5g on %d terms'%(pSum,len(pVals))
         Nobs += len(pVals)
         M = np.concatenate((M,np.sqrt(pWt)*pVals))
     return M

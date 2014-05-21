@@ -494,7 +494,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         generalData['Pawley dmin'] = dmin
                 except ValueError:
                     pass
-                pawlVal.SetValue("%.3f"%(generalData['Pawley dmin']))          #reset in case of error                
+                pawlVal.SetValue("%.5f"%(generalData['Pawley dmin']))          #reset in case of error                
             
             def OnPawleyNegWt(event):
                 try:
@@ -512,7 +512,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pawlRef.Bind(wx.EVT_CHECKBOX,OnPawleyRef)
             pawleySizer.Add(pawlRef,0,WACV)
             pawleySizer.Add(wx.StaticText(General,label=' Pawley dmin: '),0,WACV)
-            pawlVal = wx.TextCtrl(General,value='%.3f'%(generalData['Pawley dmin']),style=wx.TE_PROCESS_ENTER)
+            pawlVal = wx.TextCtrl(General,value='%.5f'%(generalData['Pawley dmin']),style=wx.TE_PROCESS_ENTER)
             pawlVal.Bind(wx.EVT_TEXT_ENTER,OnPawleyVal)        
             pawlVal.Bind(wx.EVT_KILL_FOCUS,OnPawleyVal)
             pawleySizer.Add(pawlVal,0,WACV)

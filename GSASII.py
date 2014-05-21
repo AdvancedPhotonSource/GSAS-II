@@ -704,7 +704,7 @@ class GSASII(wx.Frame):
         # look up which format was requested
         reqrdr = self.ImportMenuId.get(event.GetId())
         rdlist = self.OnImportGeneric(reqrdr,self.ImportSfactReaderlist,
-            'Structure Factor')
+            'Structure Factor',multiple=True)
         if len(rdlist) == 0: return
         self.CheckNotebook()
         newHistList = []
@@ -1021,9 +1021,12 @@ class GSASII(wx.Frame):
                             Icoeff += [float(S) for S in s]
                             s = Iparm['INS  1IECOF'+str(i+1)].split()
                             Iesd += [float(S) for S in s]
+                        NT = 10
                         for i in range(8):
-                            s = Iparm['INS  1IECOR'+str(i+1)].split()
-                            Icovar += [float(S) for S in s]
+                            s = Iparm['INS  1IECOR'+str(i+1)]
+                            if i == 7:
+                                NT = 8
+                            Icovar += [float(s[6*j:6*j+6]) for j in range(NT)]
                         Inst2['Icoeff'] = Icoeff
                         Inst2['Iesd'] = Iesd
                         Inst2['Icovar'] = Icovar

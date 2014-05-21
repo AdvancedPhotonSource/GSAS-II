@@ -48,7 +48,7 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
-            formatName = 'F containing HKL',
+            formatName = 'HKL containing F',
             longFormatName = 'Simple [hkl, Fo, sig(Fo)] Structure factor text file'
             )
 
@@ -89,7 +89,7 @@ class HKLF2_ReaderClass(G2IO.ImportStructFactor):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
-            formatName = u'F\u00b2 containing HKL',
+            formatName = u'HKL containing F\u00b2',
             longFormatName = u'Simple [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
             )
 
@@ -116,6 +116,54 @@ class HKLF2_ReaderClass(G2IO.ImportStructFactor):
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.UpdateControls(Type='Fosq',FcalcPresent=False) # set Fobs type & if Fcalc values are loaded
             self.UpdateParameters(Type='SXC',Wave=None) # histogram type
+            return True
+        except Exception as detail:
+            self.errors += '\n  '+str(detail)
+            print '\n\n'+self.formatName+' read error: '+str(detail) # for testing
+            import traceback
+            traceback.print_exc(file=sys.stdout)
+            return False
+
+class NT_HKLF2_ReaderClass(G2IO.ImportStructFactor):
+    'Routines to import neutron TOF F**2, sig(F**2) reflections from a HKLF file'
+    def __init__(self):
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.hkl','.HKL'),
+            strictExtension=False,
+            formatName = u'Neutron TOF HKL containing F\u00b2',
+            longFormatName = u'Neutron TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
+            )
+
+    def ContentsValidator(self, filepointer):
+        'Make sure file contains the expected columns on numbers'
+        return ColumnValidator(self, filepointer)
+
+    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        'Read the file'
+        try:
+            oldNo = -1
+            Banks = []
+            for line,S in enumerate(filepointer):
+                if S[0] == '#': continue       #ignore comments, if any
+                bankNo = S.split()[5]
+                if bankNo != oldNo:
+                    Banks.append([])
+                    
+            for line,S in enumerate(filepointer):
+                self.errors = '  Error reading line '+str(line+1)
+                if S[0] == '#': continue       #ignore comments, if any
+                h,k,l,Fo,sigFo = S.split()
+                h,k,l = [int(h),int(k),int(l)]
+                if not any([h,k,l]):
+                    break
+                Fo = float(Fo)
+                sigFo = float(sigFo)
+                # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
+                self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0])
+            self.errors = 'Error after reading reflections (unexpected!)'
+            self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+            self.UpdateControls(Type='Fosq',FcalcPresent=False) # set Fobs type & if Fcalc values are loaded
+            self.UpdateParameters(Type='SNT',Wave=None) # histogram type
             return True
         except Exception as detail:
             self.errors += '\n  '+str(detail)

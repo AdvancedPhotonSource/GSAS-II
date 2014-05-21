@@ -305,10 +305,13 @@ def GetEdfData(filename,imageOnly=False):
     head = File.read(3072)
     lines = head.split('\n')
     sizexy = [0,0]
-    pixSize = [0,0]
+    pixSize = [154,154]     #Pixium4700?
     cent = [0,0]
+    wave = 1.54187  #default <CuKa>
+    dist = 1000.
     head = ['European detector data',]
     for line in lines:
+        line = line.replace(';',' ').strip()
         fields = line.split()
         if 'Dim_1' in line:
             sizexy[0] = int(fields[2])
@@ -316,7 +319,7 @@ def GetEdfData(filename,imageOnly=False):
             sizexy[1] = int(fields[2])
         elif 'DataType' in line:
             dType = fields[2]
-        elif 'refined_wavelength' in line:
+        elif 'wavelength' in line:
             wave = float(fields[2])
         elif 'Size' in line:
             imSize = int(fields[2])
@@ -334,10 +337,14 @@ def GetEdfData(filename,imageOnly=False):
             dist = float(fields[2])
         if line:
             head.append(line)
+        else:   #blank line at end of header
+            break  
     File.seek(fileSize-imSize)
     if dType == 'UnsignedShort':        
         image = np.array(ar.array('H',File.read(imSize)),dtype=np.int32)
     elif dType == 'UnsignedInt':
+        image = np.array(ar.array('L',File.read(imSize)),dtype=np.int32)
+    elif dType == 'UnsignedLong':
         image = np.array(ar.array('L',File.read(imSize)),dtype=np.int32)        
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
@@ -1409,6 +1416,7 @@ class ImportBaseclass(object):
         # used for readers that will use multiple passes to read
         # more than one data block
         self.repeat = False
+        self.selections = []
         self.repeatcount = 0
         self.readfilename = '?'
         #print 'created',self.__class__

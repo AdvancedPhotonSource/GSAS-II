@@ -209,13 +209,13 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         rdbuffer = kwarg.get('buffer')
         title = ''
         comments = None
-        selections = None
+#        selections = None
 
         # reload previously saved values
         if self.repeat and rdbuffer is not None:
             Banks = rdbuffer.get('Banks')
             Pos = rdbuffer.get('Pos')
-            selections = rdbuffer.get('selections')
+            self.selections = rdbuffer.get('selections')
             comments = rdbuffer.get('comments')
 
         # read through the file and find the beginning of each bank
@@ -239,7 +239,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                     if i==1 and S[:4].lower() == 'inst' and ':' in S:
                         # 2nd line is instrument parameter file (optional)
                         self.errors = 'Error reading instrument parameter filename'
-                        self.instparm = S.split(':')[1].strip()
+                        self.instparm = S.split(':')[1].strip('[]').strip()
                         continue
                     if S[0] == '#': # allow comments anywhere in the file
                         # comments in fact should only preceed BANK lines
@@ -272,28 +272,29 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             return False
         elif len(Banks) == 1: # only one Bank, don't ask
             selblk = 0
-        elif self.repeat and selections is not None:
+        elif self.repeat and self.selections is not None:
             # we were called to repeat the read
-            #print 'debug: repeat #',self.repeatcount,'selection',selections[self.repeatcount]
-            selblk = selections[self.repeatcount]
+            #print 'debug: repeat #',self.repeatcount,'selection',self.selections[self.repeatcount]
+            selblk = self.selections[self.repeatcount]
             self.repeatcount += 1
-            if self.repeatcount >= len(selections): self.repeat = False
+            if self.repeatcount >= len(self.selections): self.repeat = False
         else:                       # choose from options
-            selections = self.MultipleBlockSelector(
-                Banks,
-                ParentFrame=ParentFrame,
-                title='Select Bank(s) to read from the list below',
-                size=(600,100),
-                header='Dataset Selector')
-            if len(selections) == 0: return False
-            selblk = selections[0] # select first in list
-            if len(selections) > 1: # prepare to loop through again
+            if not len(self.selections):    #use previous selection, otherwise...
+                self.selections = self.MultipleBlockSelector(
+                    Banks,
+                    ParentFrame=ParentFrame,
+                    title='Select Bank(s) to read from the list below',
+                    size=(600,100),
+                    header='Dataset Selector')
+            if len(self.selections) == 0: return False
+            selblk = self.selections[0] # select first in list
+            if len(self.selections) > 1: # prepare to loop through again
                 self.repeat = True
                 self.repeatcount = 1
                 if rdbuffer is not None:
                     rdbuffer['Banks'] = Banks
                     rdbuffer['Pos'] = Pos
-                    rdbuffer['selections'] = selections
+                    rdbuffer['selections'] = self.selections
                     rdbuffer['comments'] = comments
 
         # got a selection, now read it
@@ -342,6 +343,21 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                     self.Sample['Gonio. radius'] = float(S.split('=')[1])
                 except:
                     pass
+            elif 'Omega' in S.split('=')[0] or 'Theta' in S.split('=')[0]:  #HIPD weirdness
+                try:
+                    self.Sample['Omega'] = float(S.split('=')[1])
+                except:
+                    pass
+            elif 'Chi' in S.split('=')[0]:
+                try:
+                    self.Sample['Chi'] = float(S.split('=')[1])
+                except:
+                    pass                    
+            elif 'Phi' in S.split('=')[0]:
+                try:
+                    self.Sample['Phi'] = float(S.split('=')[1])
+                except:
+                    pass                    
         self.Sample['Temperature'] = Temperature
         return True        
 

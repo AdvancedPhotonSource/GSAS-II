@@ -564,7 +564,7 @@ def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     bij = Mast*Uij.T
     if not len(refDict['FF']):
         if 'N' in calcControls[hfx+'histType']:
-            dat = G2el.getBLvalues(BLtables)
+            dat = G2el.getBLvalues(BLtables)        #will need wave here for anom. neutron b's
         else:
             dat = G2el.getFFvalues(FFtables,0.)        
         refDict['FF']['El'] = dat.keys()

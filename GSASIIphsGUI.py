@@ -168,7 +168,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['AngleRadii'].append(Info['Arad'])
                 generalData['vdWRadii'].append(Info['Vdrad'])
                 if atom[ct] in generalData['Isotope']:
-                    generalData['AtomMass'].append(Info['Isotopes'][generalData['Isotope'][atom[ct]]][0])
+                    generalData['AtomMass'].append(Info['Isotopes'][generalData['Isotope'][atom[ct]]]['Mass'])
                 else:
                     generalData['Isotope'][atom[ct]] = 'Nat. Abund.'
                     generalData['AtomMass'].append(Info['Mass'])
@@ -179,7 +179,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         for i,elem in enumerate(generalData['AtomTypes']):
             F000X += generalData['NoAtoms'][elem]*generalData['Z']
             isotope = generalData['Isotope'][elem]
-            F000N += generalData['NoAtoms'][elem]*generalData['Isotopes'][elem][isotope][1]
+            F000N += generalData['NoAtoms'][elem]*generalData['Isotopes'][elem][isotope]['SL'][0]
         generalData['F000X'] = F000X
         generalData['F000N'] = F000N
        
@@ -405,13 +405,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         def ElemSizer():
             
-            def OnIsotope(event):
+            def OnIsotope(event):   #how can I update Atom weight on isotope change?
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
                 isotope = Obj.GetValue()
                 generalData['Isotope'][item] = isotope
                 indx = generalData['AtomTypes'].index(item)
-                data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope][0]
+                data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope]['Mass']
                 density,mattCoeff = G2mth.getDensity(generalData)
                 denSizer[1].SetValue('%.3f'%(density))
                 if denSizer[2]:

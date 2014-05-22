@@ -18,9 +18,10 @@ import os.path
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import numpy as np
+import atmdata
 
 def GetFormFactorCoeff(El):
-    """Read X-ray form factor coefficients from `atomdata.asc` file
+    """Read X-ray form factor coefficients from `atomdata.py` file
 
     :param str El: element 1-2 character symbol, case irrevelant
     :return: `FormFactors`: list of form factor dictionaries
@@ -34,28 +35,12 @@ def GetFormFactorCoeff(El):
     * `fc`: C coefficient
     
     """
-    ElS = El.upper()
-    ElS = ElS.rjust(2)
-    filename = os.path.join(os.path.split(__file__)[0],'atmdata.dat')
-    try:
-        FFdata = open(filename,'Ur')
-    except:
-        print "**** ERROR - File atmdata.dat not found in directory %s" % sys.path[0]
-        sys.exit()
-    S = '1'
-    FormFactors = []
-    while S:
-        S = FFdata.readline()
-        if S[3:5] == ElS:
-            if S[5:6] != '_' and S[8] not in ['N','M']:
-                Z=int(S[:2])
-                Symbol = S[3:7].strip()
-                S = S[12:]
-                fa = (float(S[:7]),float(S[14:21]),float(S[28:35]),float(S[42:49]))
-                fb = (float(S[7:14]),float(S[21:28]),float(S[35:42]),float(S[49:56]))
-                FormFac = {'Symbol':Symbol,'Z':Z,'fa':fa,'fb':fb,'fc':float(S[56:63])}
-                FormFactors.append(FormFac)               
-    FFdata.close()
+    
+    Els = El.capitalize().strip()
+    valences = [ky for ky in atmdata.XrayFF.keys() if Els == ky.split('+')[0].split('-')[0]]
+    FormFactors = [atmdata.XrayFF[val] for val in valences]
+    for Sy,FF in zip(valences,FormFactors):
+        FF.update({'Symbol':Sy.upper()})
     return FormFactors
     
 def GetFFtable(atomTypes):
@@ -84,7 +69,11 @@ def GetBLtable(General):
     isotopes = General['Isotopes']
     isotope = General['Isotope']
     for El in atomTypes:
-        BLtable[El] = [isotope[El],isotopes[El][isotope[El]]]
+        ElS = El.split('+')[0].split('-')[0]
+        if 'Nat' in isotope[El]:
+            BLtable[El] = [isotope[El],atmdata.AtmBlens[ElS+'_']]
+        else:
+            BLtable[El] = [isotope[El],atmdata.AtmBlens[ElS+'_'+isotope[El]]]
     return BLtable
         
 def getFFvalues(FFtables,SQ,ifList=False):
@@ -104,11 +93,11 @@ def getBLvalues(BLtables,ifList=False):
     if ifList:
         BLvals = []
         for El in BLtables:
-            BLvals.append(BLtables[El][1][1])
+            BLvals.append(BLtables[El][1]['SL'][0])
     else:
         BLvals = {}
         for El in BLtables:
-            BLvals[El] = BLtables[El][1][1]
+            BLvals[El] = BLtables[El][1]['SL'][0]
     return BLvals
         
 def GetFFC5(ElSym):
@@ -158,58 +147,30 @@ def FixValence(El):
     if '-0' in El:
         El = El.split('-0')[0]
     return El
-        
+    
 def GetAtomInfo(El):
-    'reads element information from file atmdata.dat'
+    'reads element information from atmdata.py'
     import ElementTable as ET
-    Elements = []
-    for elem in ET.ElTable:
-        Elements.append(elem[0][0])
-    if len(El) in [2,4]:
-        ElS = El.upper()[:2].rjust(2)
-    else:
-        ElS = El.upper()[:1].rjust(2)
-    filename = os.path.join(os.path.split(__file__)[0],'atmdata.dat')
-    try:
-        FFdata = open(filename,'Ur')
-    except:
-        print '**** ERROR - File atmdata.dat not found in directory %s' % sys.path[0]
-        sys.exit()
-    S = '1'
+    Elements = [elem[0][0] for elem in ET.ElTable]
     AtomInfo = {}
-    Isotopes = {}
-    Mass = []
-    while S:
-        S = FFdata.readline()
-        if S[3:5] == ElS:
-            if S[5:6] == '_':
-                if not Mass:                                 #picks 1st one; natural abundance or 1st isotope
-                    Mass = float(S[10:19])
-                if S[6] in [' ','1','2','3','4','5','6','7','8','9']:                        
-                    isoName = S[6:9]
-                    if isoName == '   ':
-                        isoName = 'Nat. Abund.'              #natural abundance
-                    if S[76:78] in ['LS','BW']:     #special anomalous scattering length info
-                        St = [S[19:25],S[25:31],S[31:38],S[38:44],S[44:50],
-                            S[50:56],S[56:62],S[62:68],S[68:74],]
-                        Vals = []
-                        for item in St:
-                            if item.strip():
-                                Vals.append(float(item.strip()))
-                        Isotopes[isoName.rstrip()] = Vals                        
-                    else:
-                        Isotopes[isoName.rstrip()] = [float(S[10:19]),float(S[19:25])]
-                elif S[5:9] == '_SIZ':
-                    Z=int(S[:2])
-                    Symbol = S[3:5].strip().lower().capitalize()
-                    Drad = float(S[12:22])
-                    Arad = float(S[22:32])
-                    Vdrad = float(S[32:38])
-                    Color = ET.ElTable[Elements.index(Symbol)][6]
-    FFdata.close()
-    AtomInfo={'Symbol':Symbol,'Isotopes':Isotopes,'Mass':Mass,'Z':Z,'Drad':Drad,'Arad':Arad,'Vdrad':Vdrad,'Color':Color}    
+    ElS = El.split('+')[0].split('-')[0]
+    AtomInfo.update(dict(zip(['Drad','Arad','Vdrad','Hbrad'],atmdata.AtmSize[ElS])))
+    AtomInfo['Symbol'] = El
+    AtomInfo['Color'] = ET.ElTable[Elements.index(ElS)][6]
+    AtomInfo['Z'] = atmdata.XrayFF[El]['Z']
+    isotopes = [ky for ky in atmdata.AtmBlens.keys() if ElS == ky.split('_')[0]]
+    isotopes.sort()
+    AtomInfo['Mass'] = atmdata.AtmBlens[isotopes[0]]['Mass']    #default to nat. abund.
+    AtomInfo['Isotopes'] = {}
+    for isotope in isotopes:
+        data = atmdata.AtmBlens[isotope]
+        if isotope == ElS+'_':
+            if data['SL']:
+                AtomInfo['Isotopes']['Nat. Abund.'] = data
+        else:
+            AtomInfo['Isotopes'][isotope.split('_')[1]] = data
     return AtomInfo
-      
+        
 def GetXsectionCoeff(El):
     """Read atom orbital scattering cross sections for fprime calculations via Cromer-Lieberman algorithm
 

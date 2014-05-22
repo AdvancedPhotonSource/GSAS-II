@@ -20,6 +20,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import numpy as np
 import atmdata
 
+getElSym = lambda sym: sym.split('+')[0].split('-')[0]
 def GetFormFactorCoeff(El):
     """Read X-ray form factor coefficients from `atomdata.py` file
 
@@ -37,7 +38,7 @@ def GetFormFactorCoeff(El):
     """
     
     Els = El.capitalize().strip()
-    valences = [ky for ky in atmdata.XrayFF.keys() if Els == ky.split('+')[0].split('-')[0]]
+    valences = [ky for ky in atmdata.XrayFF.keys() if Els == getElSym(ky)]
     FormFactors = [atmdata.XrayFF[val] for val in valences]
     for Sy,FF in zip(valences,FormFactors):
         FF.update({'Symbol':Sy.upper()})
@@ -52,7 +53,7 @@ def GetFFtable(atomTypes):
     '''
     FFtable = {}
     for El in atomTypes:
-        FFs = GetFormFactorCoeff(El.split('+')[0].split('-')[0])
+        FFs = GetFormFactorCoeff(getElSym(El))
         for item in FFs:
             if item['Symbol'] == El.upper():
                 FFtable[El] = item
@@ -69,7 +70,7 @@ def GetBLtable(General):
     isotopes = General['Isotopes']
     isotope = General['Isotope']
     for El in atomTypes:
-        ElS = El.split('+')[0].split('-')[0]
+        ElS = getElSym(El)
         if 'Nat' in isotope[El]:
             BLtable[El] = [isotope[El],atmdata.AtmBlens[ElS+'_']]
         else:
@@ -153,7 +154,7 @@ def GetAtomInfo(El):
     import ElementTable as ET
     Elements = [elem[0][0] for elem in ET.ElTable]
     AtomInfo = {}
-    ElS = El.split('+')[0].split('-')[0]
+    ElS = getElSym(El)
     AtomInfo.update(dict(zip(['Drad','Arad','Vdrad','Hbrad'],atmdata.AtmSize[ElS])))
     AtomInfo['Symbol'] = El
     AtomInfo['Color'] = ET.ElTable[Elements.index(ElS)][6]
@@ -271,33 +272,21 @@ def GetMagFormFacCoeff(El):
     * 'nfc': NC coefficient
     
     """
-    ElS = El.upper()
-    ElS = ElS.rjust(2)
-    filename = os.path.join(os.path.split(__file__)[0],'atmdata.dat')
-    try:
-        FFdata = open(filename,'Ur')
-    except:
-        print '**** ERROR - File atmdata.dat not found in directory %s' % sys.path[0]
-        sys.exit()
-    S = '1'
     MagFormFactors = []
-    while S:
-        S = FFdata.readline()
-        if S[3:5] == ElS:
-            if S[8:9] == 'M':
-                SN = FFdata.readline()               #'N' is assumed to follow 'M' in Atomdata.asc
-                Z=int(S[:2])
-                Symbol = S[3:7]
-                S = S[12:]
-                SN = SN[12:]
-                mfa = (float(S[:7]),float(S[14:21]),float(S[28:35]),float(S[42:49]))
-                mfb = (float(S[7:14]),float(S[21:28]),float(S[35:42]),float(S[49:56]))
-                nfa = (float(SN[:7]),float(SN[14:21]),float(SN[28:35]),float(SN[42:49]))
-                nfb = (float(SN[7:14]),float(SN[21:28]),float(SN[35:42]),float(SN[49:56]))
-                FormFac = {'Symbol':Symbol,'Z':Z,'mfa':mfa,'nfa':nfa,'mfb':mfb,'nfb':nfb,
-                    'mfc':float(S[56:63]),'nfc':float(SN[56:63])}
-                MagFormFactors.append(FormFac)
-    FFdata.close()
+    mags = [ky for ky in atmdata.MagFF.keys() if El == getElSym(ky)]
+    for mag in mags:
+        magData = {}
+        data = atmdata.MagFF[mag]
+        magData['Symbol'] = mag
+        magData['Z'] = atmdata.XrayFF[getElSym(mags)]['Z']
+        magData['mfa'] = [data['M'][i] for i in [0,2,4,6]]
+        magdata['mfb'] = [data['M'][i] for i in [1,3,5,7]]
+        magdata['mfc'] = data['M'][8]
+        magData['nfa'] = [data['N'][i] for i in [0,2,4,6]]
+        magdata['nfb'] = [data['N'][i] for i in [1,3,5,7]]
+        magdata['nfc'] = data['N'][8]
+        magdata['g-fac'] = data['N'][9]
+        MagFormFactors.append(magdata)
     return MagFormFactors
 
 def ScatFac(El, SQ):

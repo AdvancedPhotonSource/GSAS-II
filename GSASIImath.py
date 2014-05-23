@@ -712,7 +712,7 @@ def getSyXYZ(XYZ,ops,SGData):
         else:
             oprs = op.split('+')
             unit = [0,0,0]
-            if oprs[1]:
+            if len(oprs)>1:
                 unit = np.array(list(eval(oprs[1])))
             syop =int(oprs[0])
             inv = syop/abs(syop)

@@ -337,7 +337,6 @@ def BlenRes(Elist,BLtables,wave):
 #    Emev = 81.80703/wave**2
 #    for BL in BLdata:
 #        if len(BL) >= 6:
-#            Emev = 81.80703/wave**2
 #            G2 = BL[5]**2
 #            T = [Emev-BL[4],0,0]
 #            D = [T**2+G2,0,0]

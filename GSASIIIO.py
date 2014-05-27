@@ -1605,9 +1605,6 @@ class ImportStructFactor(ImportBaseclass):
     should load :attr:`RefDict` item ``'RefList'`` with the reflection list,
     and set :attr:`Parameters` with the instrument parameters
     (initialized with :meth:`InitParameters` and set with :meth:`UpdateParameters`).
-    Also, set :attr:`Controls`, 
-    which specifies how the histogram is plotted
-    (initialized with :meth:`InitControls` and set with :meth:`UpdateControls`).
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
         strictExtension=False,):
@@ -1618,10 +1615,8 @@ class ImportStructFactor(ImportBaseclass):
         self.Parameters = []
         'self.Parameters is a list with two dicts for data parameter settings'
         self.InitParameters()
-        self.Controls = {}
-        'self.Controls is a dict with plotting controls'
-        self.InitControls() # initialize the above
         self.RefDict = {'RefList':[],'FF':[]}
+        self.Banks = []             #for multi bank data (usually TOF)
         '''self.RefDict is a dict containing the reflection information, as read from the file.
         Item 'RefList' contains the reflection information. See the
         :ref:`Single Crystal Reflection Data Structure<XtalRefl_table>`
@@ -1633,23 +1628,8 @@ class ImportStructFactor(ImportBaseclass):
         'Reinitialize the Reader to initial settings'
         ImportBaseclass.ReInitialize(self)
         self.InitParameters()
-        self.InitControls()
         self.RefDict = {'RefList':[],'FF':[]}
-
         
-    def InitControls(self):
-        'initialize the controls structure'
-        self.Controls = { # dictionary with plotting controls
-            'Type' : 'Fosq',
-            'ifFc' : False,    # 
-            'HKLmax' : [None,None,None],
-            'HKLmin' : [None,None,None],
-            'FoMax' : None,   # maximum observed structure factor as Fo
-            'Zone' : '001',
-            'Layer' : 0,
-            'Scale' : 1.0,
-            }
-
     def InitParameters(self):
         'initialize the instrument parameters structure'
         Lambda = 0.70926
@@ -1665,38 +1645,7 @@ class ImportStructFactor(ImportBaseclass):
             self.Parameters[0]['Type'] = [Type,Type]
         if Wave is not None:
             self.Parameters[0]['Lam'] = [Wave,Wave]
-            
-    def UpdateControls(self,Type='Fosq',FcalcPresent=False):
-        '''Scan through the reflections to update the Controls dictionary
-        '''
-        self.Controls['Type'] = Type
-        self.Controls['ifFc'] = FcalcPresent
-        HKLmax = [None,None,None]
-        HKLmin = [None,None,None]
-        Fo2max = None
-        for refl in self.RefDict['RefList']:
-            HKL = refl[:3]
-            if Fo2max is None:
-                Fo2max = refl[8]
-            else:
-                Fo2max = max(Fo2max,refl[8])
-            for i,hkl in enumerate(HKL):
-                if HKLmax[i] is None:
-                    HKLmax[i] = hkl
-                    HKLmin[i] = hkl
-                else:
-                    HKLmax[i] = max(HKLmax[i],hkl)
-                    HKLmin[i] = min(HKLmin[i],hkl)
-        self.Controls['HKLmax'] = HKLmax
-        self.Controls['HKLmin'] = HKLmin
-        if Type ==  'Fosq':
-            self.Controls['FoMax'] = np.sqrt(Fo2max)
-        elif Type ==  'Fo':
-            self.Controls['FoMax'] = Fo2max
-        else:
-            print "Unsupported Struct Fact type in ImportStructFactor.UpdateControls"
-            raise Exception,"Unsupported Struct Fact type in ImportStructFactor.UpdateControls"
-
+                       
 ######################################################################
 class ImportPowderData(ImportBaseclass):
     '''Defines a base class for the reading of files with powder data.

@@ -721,24 +721,36 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
             HistName = 'HKLF '+HistName
             # make new histogram names unique
-            HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
-            print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
-            if not rd.RefDict.get('FF'):
-                rd.RefDict['FF'] = [{} for i in range(len(rd.RefDict['RefList']))]
-            Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
             valuesdict = {
                 'wtFactor':1.0,
                 'Dummy':False,
                 'ranId':ran.randint(0,sys.maxint),
                 }
-            self.PatternTree.SetItemPyData(Id,[valuesdict,rd.RefDict])
-            Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
-            self.PatternTree.SetItemPyData(Sub,rd.Parameters)
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='HKL Plot Controls'),
-                rd.Controls)
-            self.PatternTree.SetItemPyData(
-                self.PatternTree.AppendItem(Id,text='Reflection List'),[])  #dummy entry for GUI use
+            if len(rd.Banks):
+                for Bank in rd.Banks:
+                    HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
+                    print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
+                    Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
+                    if not Bank['RefDict'].get('FF'):
+                        Bank['RefDict']['FF'] = [{} for i in range(len(Bank['RefDict']['RefList']))]
+                    self.PatternTree.SetItemPyData(Id,[valuesdict,Bank['RefDict']])
+                    Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
+                    self.PatternTree.SetItemPyData(Sub,copy.copy(rd.Parameters))
+                    self.PatternTree.SetItemPyData(
+                        self.PatternTree.AppendItem(Id,text='Reflection List'),[])  #dummy entry for GUI use
+            else:
+                HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
+                print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
+                if not rd.RefDict.get('FF'):
+                    rd.RefDict['FF'] = [{} for i in range(len(rd.RefDict['RefList']))]
+                Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
+                print rd.RefDict
+                self.PatternTree.SetItemPyData(Id,[valuesdict,rd.RefDict])
+                Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
+                self.PatternTree.SetItemPyData(Sub,rd.Parameters)
+                self.PatternTree.SetItemPyData(
+                    self.PatternTree.AppendItem(Id,text='Reflection List'),[])  #dummy entry for GUI use
+                
             self.PatternTree.SelectItem(Id)
             self.PatternTree.Expand(Id)
             self.Sngl = True
@@ -1640,9 +1652,7 @@ class GSASII(wx.Frame):
         pathlist = sys.path
         filelist = []
         for path in pathlist:
-            for filename in glob.iglob(os.path.join(
-                path,
-                "G2export*.py")):
+            for filename in glob.iglob(os.path.join(path,"G2export*.py")):
                 filelist.append(filename)    
         filelist = sorted(list(set(filelist))) # remove duplicates
         exporterlist = []

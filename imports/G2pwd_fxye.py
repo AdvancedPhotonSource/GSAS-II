@@ -64,7 +64,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             y = []
             w = []
             S = File.readline()
-            while S and S[:4] != 'BANK':
+            while S and S[:4] != 'BANK' and S[0] != '#':
                 vals = S.split()
                 x.append(float(vals[0])/100.)               #CW: from centidegrees to degrees
                 f = float(vals[1])
@@ -85,7 +85,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             y = []
             w = []
             S = File.readline()
-            while S and S[:4] != 'BANK':
+            while S and S[:4] != 'BANK' and S[0] != '#':
                 vals = S.split()
                 x.append(float(vals[0])/100.)               #CW: from centidegrees to degrees
                 f = float(vals[1])
@@ -113,7 +113,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             w = []
             S = File.readline()
             j = 0
-            while S and S[:4] != 'BANK':
+            while S and S[:4] != 'BANK' and S[0] != '#':
                 for i in range(0,80,16):
                     xi = start+step*j
                     yi = sfloat(S[i:i+8])
@@ -147,7 +147,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             w = []
             S = File.readline()
             j = 0
-            while S and S[:4] != 'BANK':
+            while S and S[:4] != 'BANK' and S[0] != '#':
                 for i in range(0,80,8):
                     xi = start+step*j
                     ni = max(sint(S[i:i+2]),1)

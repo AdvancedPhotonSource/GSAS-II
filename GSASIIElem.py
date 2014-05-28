@@ -166,8 +166,7 @@ def GetAtomInfo(El):
     for isotope in isotopes:
         data = atmdata.AtmBlens[isotope]
         if isotope == ElS+'_':
-            if data['SL']:
-                AtomInfo['Isotopes']['Nat. Abund.'] = data
+            AtomInfo['Isotopes']['Nat. Abund.'] = data
         else:
             AtomInfo['Isotopes'][isotope.split('_')[1]] = data
     return AtomInfo

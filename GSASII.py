@@ -969,15 +969,26 @@ class GSASII(wx.Frame):
                     names = ['Type','Lam1','Lam2','Zero','I(L2)/I(L1)','Polariz.','U','V','W','X','Y','SH/L','Azimuth']
                     codes = [0,0,0,0,0,0]
                 data.extend(v)
-                v1 = Iparm['INS  1PRCF1 '].split()                                                  
-                v = Iparm['INS  1PRCF11'].split()
-                data.extend([float(v[0]),float(v[1]),float(v[2])])                  #get GU, GV & GW - always here
-                azm = float(Iparm.get('INS  1DETAZM','0.0'))
-                v = Iparm['INS  1PRCF12'].split()
-                if v1[0] == 3:
-                    data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],azm)])  #get LX, LY, S+H/L & azimuth
+                if 'INS  1PRCF  ' in Iparm:
+                    v1 = Iparm['INS  1PRCF  '].split()                                                  
+                    v = Iparm['INS  1PRCF 1'].split()
+                    data.extend([float(v[0]),float(v[1]),float(v[2])])                  #get GU, GV & GW - always here
+                    azm = float(Iparm.get('INS  1DETAZM','0.0'))
+                    v = Iparm['INS  1PRCF 2'].split()
+                    if v1[0] == 3:
+                        data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],azm)])  #get LX, LY, S+H/L & azimuth
+                    else:
+                        data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file                    
                 else:
-                    data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
+                    v1 = Iparm['INS  1PRCF1 '].split()                                                  
+                    v = Iparm['INS  1PRCF11'].split()
+                    data.extend([float(v[0]),float(v[1]),float(v[2])])                  #get GU, GV & GW - always here
+                    azm = float(Iparm.get('INS  1DETAZM','0.0'))
+                    v = Iparm['INS  1PRCF12'].split()
+                    if v1[0] == 3:
+                        data.extend([float(v[0]),float(v[1]),float(v[2])+float(v[3],azm)])  #get LX, LY, S+H/L & azimuth
+                    else:
+                        data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
                 codes.extend([0,0,0,0,0,0,0])
                 return [G2IO.makeInstDict(names,data,codes),{}]
             elif 'T' in DataType:
@@ -991,20 +1002,36 @@ class GSASII(wx.Frame):
                 data.extend([G2IO.sfloat(s[1]),])               #2-theta for bank
                 s = Iparm['INS  1 ICONS'].split()
                 data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),G2IO.sfloat(s[2])])    #difC, difA, Zero
-                s = Iparm['INS  1PRCF1 '].split()
-                pfType = int(s[0])
-                s = Iparm['INS  1PRCF11'].split()
-                if abs(pfType) == 1:
-                    data.extend([G2IO.sfloat(s[1]),G2IO.sfloat(s[2]),G2IO.sfloat(s[3])])
-                    s = Iparm['INS  1PRCF12'].split()
-                    data.extend([0.0,0.0,G2IO.sfloat(s[1]),0.0,0.0,0.0,azm])
-                elif abs(pfType) in [3,4,5]:
-                    data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),G2IO.sfloat(s[2])])
-                    if abs(pfType) == 4:
-                        data.extend([0.0,0.0,G2IO.sfloat(s[3]),0.0,0.0,0.0,azm])
-                    else:
+                if 'INS  1PRCF  ' in Iparm:
+                    s = Iparm['INS  1PRCF  '].split()
+                    pfType = int(s[0])
+                    s = Iparm['INS  1PRCF 1'].split()
+                    if abs(pfType) == 1:
+                        data.extend([G2IO.sfloat(s[1]),G2IO.sfloat(s[2]),G2IO.sfloat(s[3])])
+                        s = Iparm['INS  1PRCF 2'].split()
+                        data.extend([0.0,0.0,G2IO.sfloat(s[1]),0.0,0.0,0.0,azm])
+                    elif abs(pfType) in [3,4,5]:
+                        data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),G2IO.sfloat(s[2])])
+                        if abs(pfType) == 4:
+                            data.extend([0.0,0.0,G2IO.sfloat(s[3]),0.0,0.0,0.0,azm])
+                        else:
+                            s = Iparm['INS  1PRCF 2'].split()
+                            data.extend([0.0,0.0,G2IO.sfloat(s[0]),0.0,0.0,0.0,azm])                       
+                else:
+                    s = Iparm['INS  1PRCF1 '].split()
+                    pfType = int(s[0])
+                    s = Iparm['INS  1PRCF11'].split()
+                    if abs(pfType) == 1:
+                        data.extend([G2IO.sfloat(s[1]),G2IO.sfloat(s[2]),G2IO.sfloat(s[3])])
                         s = Iparm['INS  1PRCF12'].split()
-                        data.extend([0.0,0.0,G2IO.sfloat(s[0]),0.0,0.0,0.0,azm])                       
+                        data.extend([0.0,0.0,G2IO.sfloat(s[1]),0.0,0.0,0.0,azm])
+                    elif abs(pfType) in [3,4,5]:
+                        data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),G2IO.sfloat(s[2])])
+                        if abs(pfType) == 4:
+                            data.extend([0.0,0.0,G2IO.sfloat(s[3]),0.0,0.0,0.0,azm])
+                        else:
+                            s = Iparm['INS  1PRCF12'].split()
+                            data.extend([0.0,0.0,G2IO.sfloat(s[0]),0.0,0.0,0.0,azm])                       
                 Inst1 = G2IO.makeInstDict(names,data,codes)
                 Inst2 = {}
                 if pfType < 0:

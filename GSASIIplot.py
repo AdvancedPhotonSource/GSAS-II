@@ -461,21 +461,21 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if not G2frame.logPlot:
                     G2frame.Offset[0] = 0
                 newPlot = True
-        elif event.key == 'u':
+        elif event.key == 'u' and (G2frame.Contour or not G2frame.SinglePlot):
             if G2frame.Contour:
                 G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
             elif G2frame.Offset[0] < 100.:
                 G2frame.Offset[0] += 1.
-        elif event.key == 'd':
+        elif event.key == 'd' and not G2frame.SinglePlot:
             if G2frame.Contour:
                 G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
             elif G2frame.Offset[0] > 0.:
                 G2frame.Offset[0] -= 1.
-        elif event.key == 'l':
+        elif event.key == 'l' and not G2frame.SinglePlot:
             G2frame.Offset[1] -= 1.
-        elif event.key == 'r':
+        elif event.key == 'r' and not G2frame.SinglePlot:
             G2frame.Offset[1] += 1.
-        elif event.key == 'o':
+        elif event.key == 'o' and not G2frame.SinglePlot:
             G2frame.Cmax = 1.0
             G2frame.Offset = [0,0]
         elif event.key == 'c' and 'PWDR' in plottype:
@@ -493,7 +493,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             elif 'SASD' in plottype:
                 newPlot = True
                 G2frame.sqPlot = not G2frame.sqPlot        
-        elif event.key == 's':
+        elif event.key == 'm':
             if G2frame.Contour:
                 choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
                 choice.sort()
@@ -770,21 +770,39 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     else:
         if G2frame.logPlot:
             if 'PWDR' in plottype:
-                Page.Choice = (' key press','n: log(I) off','l: offset left','r: offset right','o: reset offset',
-                    'c: contour on','q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
+                if G2frame.SinglePlot:
+                    Page.Choice = (' key press','n: log(I) off',
+                        'c: contour on','q: toggle q plot','m: toggle multidata plot','w: toggle divide by sig','+: no selection')
+                else:
+                    Page.Choice = (' key press','n: log(I) off',
+                        'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
+                        'c: contour on','q: toggle q plot','m: toggle multidata plot','w: toggle divide by sig','+: no selection')
             elif 'SASD' in plottype:
-                Page.Choice = (' key press','b: toggle subtract background file','n: semilog on',
-                    'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
-                    'q: toggle S(q) plot','s: toggle single plot','w: toggle (Io-Ic)/sig plot','+: no selection')
+                if G2frame.SinglePlot:
+                    Page.Choice = (' key press','b: toggle subtract background file','n: semilog on',
+                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
+                else:
+                    Page.Choice = (' key press','b: toggle subtract background file','n: semilog on',
+                        'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
+                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
         else:
             if 'PWDR' in plottype:
-                Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
-                    'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
-                    'q: toggle q plot','s: toggle single plot','w: toggle divide by sig','+: no selection')
+                if G2frame.SinglePlot:
+                    Page.Choice = (' key press',
+                        'b: toggle subtract background','n: log(I) on','c: contour on',
+                        'q: toggle q plot','m: toggle multidata plot','w: toggle divide by sig','+: no selection')
+                else:
+                    Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
+                        'u: offset up','o: reset offset','b: toggle subtract background','n: log(I) on','c: contour on',
+                        'q: toggle q plot','m: toggle multidata plot','w: toggle divide by sig','+: no selection')
             elif 'SASD' in plottype:
-                Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
-                    'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
-                    'q: toggle S(q) plot','s: toggle single plot','w: toggle (Io-Ic)/sig plot','+: no selection')
+                if G2frame.SinglePlot:
+                    Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
+                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
+                else:
+                    Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
+                        'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
+                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
 
     Page.keyPress = OnPlotKeyPress    
     PickId = G2frame.PickId

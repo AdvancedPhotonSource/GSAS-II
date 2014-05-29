@@ -1939,6 +1939,7 @@ class GSASII(wx.Frame):
         self.logPlot = False
         self.qPlot = False
         self.sqPlot = False
+        self.SqrtPlot = False
         self.ErrorBars = False
         self.Contour = False
         self.Legend = False

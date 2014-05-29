@@ -461,6 +461,28 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if not G2frame.logPlot:
                     G2frame.Offset[0] = 0
                 newPlot = True
+        elif event.key == 's' and 'PWDR' in plottype:
+            if G2frame.Contour:
+                choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+                choice.sort()
+                dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelection()
+                    G2frame.ContourColor = choice[sel]
+                else:
+                    G2frame.ContourColor = 'Paired'
+                dlg.Destroy()
+            elif G2frame.SinglePlot:
+                G2frame.SqrtPlot = not G2frame.SqrtPlot
+                if G2frame.SqrtPlot:
+                    G2frame.delOffset = .002
+                    G2frame.refOffset = -10.0
+                    G2frame.refDelt = .001
+                else:
+                    G2frame.delOffset = .02
+                    G2frame.refOffset = -100.0
+                    G2frame.refDelt = .01
+            newPlot = True
         elif event.key == 'u' and (G2frame.Contour or not G2frame.SinglePlot):
             if G2frame.Contour:
                 G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
@@ -494,18 +516,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 newPlot = True
                 G2frame.sqPlot = not G2frame.sqPlot        
         elif event.key == 'm':
-            if G2frame.Contour:
-                choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
-                choice.sort()
-                dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
-                if dlg.ShowModal() == wx.ID_OK:
-                    sel = dlg.GetSelection()
-                    G2frame.ContourColor = choice[sel]
-                else:
-                    G2frame.ContourColor = 'Paired'
-                dlg.Destroy()
-            else:
-                G2frame.SinglePlot = not G2frame.SinglePlot                
+            G2frame.SqrtPlot = False
+            G2frame.SinglePlot = not G2frame.SinglePlot                
             newPlot = True
         elif event.key == '+':
             if G2frame.PickId:
@@ -789,7 +801,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             if 'PWDR' in plottype:
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press',
-                        'b: toggle subtract background','n: log(I) on','c: contour on',
+                        'b: toggle subtract background','n: log(I) on','s: toggle sqrt plot','c: contour on',
                         'q: toggle q plot','m: toggle multidata plot','w: toggle divide by sig','+: no selection')
                 else:
                     Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
@@ -878,7 +890,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     else:
         if 'C' in ParmList[0]['Type'][0]:
             if 'PWDR' in plottype:
-                Plot.set_ylabel('$Intensity$',fontsize=16)
+                if G2frame.SqrtPlot:
+                    Plot.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
+                else:
+                    Plot.set_ylabel('$Intensity$',fontsize=16)
             elif 'SASD' in plottype:
                 if G2frame.sqPlot:
                     Plot.set_ylabel('$S(Q)=I*Q^{4}$',fontsize=16)
@@ -920,7 +935,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if not lenX:
             lenX = len(X)
         if 'PWDR' in plottype:
-            Y = xye[1]+offset*N
+            if G2frame.SqrtPlot:
+                Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))
+            else:
+                Y = xye[1]+offset*N
         elif 'SASD' in plottype:
             B = xye[5]
             if G2frame.sqPlot:
@@ -956,10 +974,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Xum = ma.getdata(X)
             DifLine = ['']
             if ifpicked:
-                Z = xye[3]+offset*N
+                if G2frame.SqrtPlot:
+                    Z = np.where(xye[3]>=0.,np.sqrt(xye[3]),-np.sqrt(-xye[3]))
+                else:
+                    Z = xye[3]+offset*N
                 if 'PWDR' in plottype:
-                    W = xye[4]+offset*N
-                    D = xye[5]-Ymax*G2frame.delOffset  #powder background
+                    if G2frame.SqrtPlot:
+                        W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))
+                        D = np.where(xye[5],(Y-Z),0.)-Ymax*G2frame.delOffset
+                    else:
+                        W = xye[4]+offset*N
+                        D = xye[5]-Ymax*G2frame.delOffset  #powder background
                 elif 'SASD' in plottype:
                     if G2frame.sqPlot:
                         W = xye[4]*X**4

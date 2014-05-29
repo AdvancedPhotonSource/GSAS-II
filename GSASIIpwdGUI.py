@@ -310,12 +310,18 @@ def UpdatePeakGrid(G2frame, data):
         mags = ymask[indx]
         poss = x[indx]
         refs = zip(poss,mags)
-        refs = G2mth.sortArray(refs,0,reverse=True)
+        if 'C' in Inst['Type'][0]:    
+            refs = G2mth.sortArray(refs,0,reverse=True)     #small 2-Thetas first
+        else:   #'T'OF
+            refs = G2mth.sortArray(refs,0,reverse=False)    #big TOFs first
         for i,ref1 in enumerate(refs):
             for ref2 in refs[i+1:]:
                 if abs(ref2[0]-ref1[0]) < 0.1*G2pwd.getFWHM(ref1[0],inst):
-                    del(refs[i])    
-        refs = G2mth.sortArray(refs,1,reverse=True)
+                    del(refs[i])
+        if 'C' in Inst['Type'][0]:    
+            refs = G2mth.sortArray(refs,1,reverse=True)
+        else:   #'T'OF
+            refs = G2mth.sortArray(refs,1,reverse=False)
         for pos,mag in refs:
             data.append(G2mth.setPeakparms(inst,inst2,pos,mag))
         UpdatePeakGrid(G2frame,data)
@@ -526,6 +532,8 @@ def UpdatePeakGrid(G2frame, data):
         T.append(peak[0])
     D = dict(zip(T,data))
     T.sort()
+    if 'T' in Inst['Type'][0]:  #want big TOF's first
+        T.reverse()
     X = []
     for key in T: X.append(D[key])
     data = X
@@ -1705,8 +1713,6 @@ def UpdateIndexPeaksGrid(G2frame, data):
     '''
     IndexId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    wave = G2mth.getWave(Inst)
-    
     def RefreshIndexPeaksGrid(event):
         r,c =  event.GetRow(),event.GetCol()
         data = G2frame.IndexPeaksTable.GetData()
@@ -1723,7 +1729,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
         data = []
         peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
         for peak in peaks:
-            dsp = wave/(2.0*sind((peak[0]-Inst['Zero'][1])/2.0))
+            dsp = G2lat.Pos2dsp(Inst,peak[0])
             data.append([peak[0],peak[2],True,False,0,0,0,dsp,0.0])
         G2frame.PatternTree.SetItemPyData(IndexId,data)
         UpdateIndexPeaksGrid(G2frame,data)
@@ -1771,7 +1777,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
                     G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
                     G2indx.IndexPeaks(data,G2frame.HKL)
                     for hkl in G2frame.HKL:
-                        hkl.append(2.0*asind(wave/(2.*hkl[3]))+Inst['Zero'][1])             
+                        hkl.append(G2mth.Dsp2pos(Inst,hkl[3]))
     rowLabels = []
     for i in range(len(data)): rowLabels.append(str(i+1))
     colLabels = ['position','intensity','use','indexed','h','k','l','d-obs','d-calc']
@@ -1809,7 +1815,10 @@ def UpdateUnitCellsGrid(G2frame, data):
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
         'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','P -1']
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    wave = G2mth.getWave(Inst)
+    if 'C' in Inst['Type'][0]:
+        wave = G2mth.getWave(Inst)
+    else:
+        difC = Inst['difC'][1]
     
     def SetLattice(controls):
         ibrav = bravaisSymb.index(controls[5])
@@ -1922,10 +1931,13 @@ def UpdateUnitCellsGrid(G2frame, data):
         ibrav = bravaisSymb.index(controls[5])
         spc = controls[13]
         SGData = G2spc.SpcGroup(spc)[1]
-        dmin = wave/(2.0*sind(limits[1]/2.0))
+        if 'C' in Inst['Type'][0]:
+            dmin = G2lat.Pos2dsp(Inst,limits[1])
+        else:
+            dmin = G2lat.Pos2dsp(Inst,limits[0])
         G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A)
         for hkl in G2frame.HKL:
-            hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'][1])             
+            hkl.append(G2lat.Dsp2pos(Inst,hkl[3])++controls[1])
         if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
@@ -1990,7 +2002,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         dmin = G2indx.getDmin(peaks)-0.005
         G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A)
         G2indx.IndexPeaks(peaks,G2frame.HKL)
-        Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks,wave,ibrav,A,controls[1],controls[0])            
+        Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks,wave,ibrav,A,controls[1],controls[0])  #TOF?          
         controls[1] = Zero
         controls[6:12] = G2lat.A2cell(Aref)
         controls[12] = G2lat.calc_V(Aref)
@@ -2006,7 +2018,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         print 'unindexed lines = ',X20
         cellPrint(ibrav,Aref)
         for hkl in G2frame.HKL:
-            hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'][1])             
+            hkl.append(G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
         if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
@@ -2032,7 +2044,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             return
         G2frame.dataFrame.CopyCell.Enable(False)
         G2frame.dataFrame.RefineCell.Enable(False)
-        OK,dmin,newcells = G2indx.DoIndexPeaks(peaks,wave,controls,bravais)
+        OK,dmin,newcells = G2indx.DoIndexPeaks(peaks,controls,bravais)
         cells = keepcells+newcells
         cells = G2indx.sortM20(cells)
         cells[0][10] = True
@@ -2043,7 +2055,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             if bestCell[0] > 10.:
                 G2frame.HKL = G2lat.GenHBravais(dmin,bestCell[2],G2lat.cell2A(bestCell[3:9]))
                 for hkl in G2frame.HKL:
-                    hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'][1])             
+                    hkl.append(G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
                 if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
                     G2plt.PlotPowderLines(G2frame)
                 else:
@@ -2069,7 +2081,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 A = G2lat.cell2A(cells[r][3:9])
                 G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
                 for hkl in G2frame.HKL:
-                    hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'][1])             
+                    hkl.append(G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
                 if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
                     G2plt.PlotPowderLines(G2frame)
                 else:
@@ -2267,7 +2279,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 A = G2lat.cell2A(cell[3:9])
                 G2frame.HKL = G2lat.GenHBravais(dmin,cell[2],A)
                 for hkl in G2frame.HKL:
-                    hkl.append(2.0*asind(wave/(2.*hkl[3]))+controls[1]+Inst['Zero'][1])             
+                    hkl.append(G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
             table.append(row)
         UnitCellsTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         gridDisplay = G2gd.GSGrid(G2frame.bottom)

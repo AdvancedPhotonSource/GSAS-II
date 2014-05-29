@@ -413,6 +413,28 @@ def permutations(items):
 #for these: H = [h,k,l]; A is as used in calc_rDsq; G - inv metric tensor, g - metric tensor; 
 #           cell - a,b,c,alp,bet,gam in A & deg
    
+def Pos2dsp(Inst,pos):
+    ''' convert powder pattern position (2-theta or TOF, musec) to d-spacing
+    ignores secondary effects (e.g. difA in TOF)
+    '''
+    if 'C' in Inst['Type'][0]:
+        wave = G2mth.getWave(Inst)
+        dsp = wave/(2.0*sind((pos-Inst['Zero'][1])/2.0))
+    else:   #'T'OF - ignore difA
+        dsp = (pos-Inst['Zero'][1])/difC
+    return dsp
+    
+def Dsp2pos(Inst,dsp):
+    ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)
+    ignores secondary effects (e.g. difA in TOF) - maybe later?
+    '''
+    if 'C' in Inst['Type'][0]:
+        wave = G2mth.getWave(Inst)
+        pos = 2.0*asind(wave/(2.*dsp))+Inst['Zero'][1]             
+    else:   #'T'OF - ignore difA
+        pos = Inst['difC'][1]*dsp+Inst['Zero'][1]
+    return pos             
+   
 def calc_rDsq(H,A):
     'needs doc string'
     rdsq = H[0]*H[0]*A[0]+H[1]*H[1]*A[1]+H[2]*H[2]*A[2]+H[0]*H[1]*A[3]+H[0]*H[2]*A[4]+H[1]*H[2]*A[5]

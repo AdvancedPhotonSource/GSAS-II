@@ -551,8 +551,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         except ValueError:      #avoid bad value in asin beyond upper limit
                             pass
                     dsp = 0.0
-                    if abs(xpos) > 0.:
-                        if 'PWDR' in plottype:                  #avoid possible singularity at beam center
+                    if abs(xpos) > 0.:                  #avoid possible singularity at beam center
+                        if 'PWDR' in plottype:
                             dsp = wave/(2.*sind(abs(xpos)/2.0))
                             q = 2.*np.pi/dsp
                         elif 'SASD' in plottype:
@@ -565,7 +565,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                             G2frame.G2plotNB.status.SetStatusText('d =%9.5f q = %9.5f pattern ID =%5d'%(dsp,q,int(ypos)),1)
                     else:
                         if 'PWDR' in plottype:
-                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                            if G2frame.SqrtPlot:
+                                G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
+                            else:
+                                G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
                         elif 'SASD' in plottype:
                             G2frame.G2plotNB.status.SetStatusText('d =%9.5f q = %9.5f Intensity =%12.5g'%(dsp,q,ypos),1)
                 else:       #TOF neutrons
@@ -576,7 +579,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     if G2frame.Contour:
                         G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
                     else:
-                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                        if G2frame.SqrtPlot:
+                            G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
+                        else:
+                            G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
                 if G2frame.itemPicked:
                     Page.canvas.SetToolTipString('%9.5f'%(xpos))
                 if G2frame.PickId:
@@ -893,14 +899,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if G2frame.SqrtPlot:
                     Plot.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
                 else:
-                    Plot.set_ylabel('$Intensity$',fontsize=16)
+                    Plot.set_ylabel(r'$Intensity$',fontsize=16)
             elif 'SASD' in plottype:
                 if G2frame.sqPlot:
-                    Plot.set_ylabel('$S(Q)=I*Q^{4}$',fontsize=16)
+                    Plot.set_ylabel(r'$S(Q)=I*Q^{4}$',fontsize=16)
                 else:
-                    Plot.set_ylabel('$Intensity, cm^{-1}$',fontsize=16)
+                    Plot.set_ylabel(r'$Intensity, cm^{-1}$',fontsize=16)
         else:
-            Plot.set_ylabel('Normalized intensity',fontsize=16)
+            if G2frame.SqrtPlot:
+                Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
+            else:
+                Plot.set_ylabel(r'$Normalized\ intensity$',fontsize=16)
     if G2frame.Contour:
         ContourZ = []
         ContourY = []

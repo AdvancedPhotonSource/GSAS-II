@@ -488,7 +488,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
             elif G2frame.Offset[0] < 100.:
                 G2frame.Offset[0] += 1.
-        elif event.key == 'd' and not G2frame.SinglePlot:
+        elif event.key == 'd' and (G2frame.Contour or not G2frame.SinglePlot):
             if G2frame.Contour:
                 G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
             elif G2frame.Offset[0] > 0.:
@@ -1149,7 +1149,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
-    olderr = np.seterr(invalid='warn') #ugh - this removes a matplotlib error for mouse clicks in log plots                  
+    olderr = np.seterr(invalid='ignore') #ugh - this removes a matplotlib error for mouse clicks in log plots
+    # and sqrt(-ve) in np.where usage               
 #    G2frame.Pwdr = True
     
 ################################################################################

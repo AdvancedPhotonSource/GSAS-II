@@ -33,6 +33,7 @@ import math
 import numpy as np
 import numpy.linalg as nl
 import GSASIIpath
+import GSASIImath as G2mth
 GSASIIpath.SetVersionNumber("$Revision$")
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)

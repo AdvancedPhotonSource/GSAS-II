@@ -132,12 +132,12 @@ found.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>RevString</strong> (<em>str</em>) &#8211; something like &#8220;$Revision: 1047 $&#8221;
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>RevString</strong> (<em>str</em>) &#8211; something like &#8220;$Revision: 1355 $&#8221;
 that is set by subversion when the file is retrieved from subversion.</td>
 </tr>
 </tbody>
 </table>
-<p>Place <tt class="docutils literal"><span class="pre">GSASIIpath.SetVersionNumber(&quot;$Revision:</span> <span class="pre">1047</span> <span class="pre">$&quot;)</span></tt> in every python
+<p>Place <tt class="docutils literal"><span class="pre">GSASIIpath.SetVersionNumber(&quot;$Revision:</span> <span class="pre">1355</span> <span class="pre">$&quot;)</span></tt> in every python
 file.</p>
 </dd></dl>
 
@@ -325,7 +325,7 @@ executable file.</td>
 <dl class="function">
 <dt id="GSASIIElem.GetAtomInfo">
 <tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetAtomInfo</tt><big>(</big><em>El</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#GetAtomInfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.GetAtomInfo" title="Permalink to this definition">¶</a></dt>
-<dd><p>reads element information from file atmdata.dat</p>
+<dd><p>reads element information from atmdata.py</p>
 </dd></dl>
 
 <dl class="function">
@@ -379,7 +379,7 @@ executable file.</td>
 <dl class="function">
 <dt id="GSASIIElem.GetFormFactorCoeff">
 <tt class="descclassname">GSASIIElem.</tt><tt class="descname">GetFormFactorCoeff</tt><big>(</big><em>El</em><big>)</big><a class="reference internal" href="_modules/GSASIIElem.html#GetFormFactorCoeff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIElem.GetFormFactorCoeff" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read X-ray form factor coefficients from <cite>atomdata.asc</cite> file</p>
+<dd><p>Read X-ray form factor coefficients from <cite>atomdata.py</cite> file</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -640,6 +640,13 @@ defined by metric tensor G</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIlattice.Dsp2pos">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Dsp2pos</tt><big>(</big><em>Inst</em>, <em>dsp</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Dsp2pos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Dsp2pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert d-spacing to powder pattern position (2-theta or TOF, musec)
+ignores secondary effects (e.g. difA in TOF) - maybe later?</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIlattice.Flnh">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Flnh</tt><big>(</big><em>Start</em>, <em>SHCoef</em>, <em>phi</em>, <em>beta</em>, <em>SGData</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Flnh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Flnh" title="Permalink to this definition">¶</a></dt>
 <dd><p>needs doc string</p>
@@ -832,6 +839,13 @@ The math works the same either way.</p>
 <dt id="GSASIIlattice.OdfChk">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">OdfChk</tt><big>(</big><em>SGLaue</em>, <em>L</em>, <em>M</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#OdfChk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.OdfChk" title="Permalink to this definition">¶</a></dt>
 <dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.Pos2dsp">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Pos2dsp</tt><big>(</big><em>Inst</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Pos2dsp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Pos2dsp" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert powder pattern position (2-theta or TOF, musec) to d-spacing
+ignores secondary effects (e.g. difA in TOF)</p>
 </dd></dl>
 
 <dl class="function">
@@ -1148,7 +1162,7 @@ unit cell constants</p>
 
 <dl class="data">
 <dt id="GSASIIlattice.selftestlist">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x1da2530&gt;, &lt;function test1 at 0x1da2570&gt;, &lt;function test2 at 0x1da25b0&gt;, &lt;function test3 at 0x1da25f0&gt;, &lt;function test4 at 0x1da2630&gt;, &lt;function test5 at 0x1da2670&gt;, &lt;function test6 at 0x1da26b0&gt;, &lt;function test7 at 0x1da26f0&gt;, &lt;function test8 at 0x1da2730&gt;, &lt;function test9 at 0x1da2770&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x5c66630&gt;, &lt;function test1 at 0x5c66670&gt;, &lt;function test2 at 0x5c666b0&gt;, &lt;function test3 at 0x5c666f0&gt;, &lt;function test4 at 0x5c66730&gt;, &lt;function test5 at 0x5c66770&gt;, &lt;function test6 at 0x5c667b0&gt;, &lt;function test7 at 0x5c667f0&gt;, &lt;function test8 at 0x5c66830&gt;, &lt;function test9 at 0x5c66870&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1596,7 +1610,7 @@ Should return resultant string - C. SGData - dictionary using entries:</p>
 
 <dl class="data">
 <dt id="GSASIIspc.selftestlist">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x5cda130&gt;, &lt;function test1 at 0x5cda170&gt;, &lt;function test2 at 0x5cda1b0&gt;, &lt;function test3 at 0x5cda1f0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x5c80230&gt;, &lt;function test1 at 0x5c80270&gt;, &lt;function test2 at 0x5c802b0&gt;, &lt;function test3 at 0x5c802f0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 

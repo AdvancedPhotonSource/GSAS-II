@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIImath - major mathematics routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-04-18 10:22:29 -0500 (Fri, 18 Apr 2014) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1282 $</span>
+<span class="c"># $Date: 2014-05-23 12:45:28 -0500 (Fri, 23 May 2014) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 1363 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $</span>
-<span class="c"># $Id: GSASIImath.py 1282 2014-04-18 15:22:29Z toby $</span>
+<span class="c"># $Id: GSASIImath.py 1363 2014-05-23 17:45:28Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIImath: computation module*</span>
@@ -78,7 +78,7 @@
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1282 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1363 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIElem</span> <span class="kn">as</span> <span class="nn">G2el</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
@@ -764,7 +764,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">oprs</span> <span class="o">=</span> <span class="n">op</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;+&#39;</span><span class="p">)</span>
             <span class="n">unit</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">oprs</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">oprs</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
                 <span class="n">unit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">oprs</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
             <span class="n">syop</span> <span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">oprs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
             <span class="n">inv</span> <span class="o">=</span> <span class="n">syop</span><span class="o">/</span><span class="nb">abs</span><span class="p">(</span><span class="n">syop</span><span class="p">)</span>

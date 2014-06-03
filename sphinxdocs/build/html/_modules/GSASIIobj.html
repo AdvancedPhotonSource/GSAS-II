@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIobj - data objects for GSAS-II</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-04-21 15:38:39 -0500 (Mon, 21 Apr 2014) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1294 $</span>
+<span class="c"># $Date: 2014-05-21 12:59:59 -0500 (Wed, 21 May 2014) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 1359 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIobj.py $</span>
-<span class="c"># $Id: GSASIIobj.py 1294 2014-04-21 20:38:39Z toby $</span>
+<span class="c"># $Id: GSASIIobj.py 1359 2014-05-21 17:59:59Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
@@ -895,7 +895,7 @@
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1294 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1359 $&quot;</span><span class="p">)</span>
 
 <span class="n">DefaultControls</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s">&#39;deriv type&#39;</span><span class="p">:</span><span class="s">&#39;analytic Hessian&#39;</span><span class="p">,</span>    <span class="c">#default controls</span>
@@ -997,10 +997,12 @@
 <span class="sd">    Note: this code assumes that the atom random Id (ranId) is the last </span>
 <span class="sd">    element each atom record.</span>
 
-<span class="sd">    This is called in two places (only) :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`</span>
-<span class="sd">    (which loads the histograms and phases from a GPX file) and</span>
+<span class="sd">    This is called in three places (only) :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`</span>
+<span class="sd">    (which loads the histograms and phases from a GPX file),</span>
 <span class="sd">    :meth:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`</span>
-<span class="sd">    (which loads the histograms and phases from the data tree.)</span>
+<span class="sd">    (which loads the histograms and phases from the data tree.) and</span>
+<span class="sd">    :meth:`GSASII.GSASIIconstrGUI.UpdateConstraints`</span>
+<span class="sd">    (which displays &amp; edits the constraints in a GUI)</span>
 
 <span class="sd">    TODO: do we need a lookup for rigid body variables?</span>
 <span class="sd">    &#39;&#39;&#39;</span>
@@ -1177,12 +1179,15 @@
         
     <span class="n">l</span> <span class="o">=</span> <span class="n">getVarDescr</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">l</span><span class="p">:</span>
-        <span class="c">#return (&quot;invalid variable name (&quot;+str(varname)+&quot;)!&quot;),&quot;&quot;</span>
-        <span class="k">return</span> <span class="s">&quot;invalid variable name!&quot;</span><span class="p">,</span><span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s">&quot;invalid variable name (&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;)!&quot;</span><span class="p">),</span><span class="s">&quot;&quot;</span>
+<span class="c">#        return &quot;invalid variable name!&quot;,&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
         <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;(variable needs a definition!)&quot;</span>
 
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>         <span class="c">#SASD variable name!</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;component:&#39;</span><span class="o">+</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">s</span><span class="p">,</span><span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
     <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># HAP: keep short</span>
         <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
@@ -1242,11 +1247,13 @@
 <span class="sd">    :returns: a six element list as [`p`,`h`,`name`,`a1`,`a2`,`description`],</span>
 <span class="sd">      where `p`, `h`, `a1`, `a2` are str values or `None`, for the phase number,</span>
 <span class="sd">      the histogram number and the atom number; `name` will always be</span>
-<span class="sd">      an str; and `description` is str or `None`.</span>
+<span class="sd">      a str; and `description` is str or `None`.</span>
 <span class="sd">      If the variable name is incorrectly formed (for example, wrong</span>
 <span class="sd">      number of colons), `None` is returned instead of a list.</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">l</span> <span class="o">=</span> <span class="n">varname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>     <span class="c">#SASD parameter name</span>
+        <span class="k">return</span> <span class="n">varname</span><span class="p">,</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">getDescr</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
         <span class="n">l</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">]</span>
     <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
@@ -1293,7 +1300,8 @@
         <span class="s">&#39;A([0-5])&#39;</span> <span class="p">:</span> <span class="s">&#39;Reciprocal metric tensor component </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;Vol&#39;</span> <span class="p">:</span> <span class="s">&#39;Unit cell volume&#39;</span><span class="p">,</span>
         <span class="c"># Atom vars (p::&lt;var&gt;:a)</span>
-        <span class="s">&#39;dA([xyz])&#39;</span> <span class="p">:</span> <span class="s">&#39;change to atomic position </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;dA([xyz])$&#39;</span> <span class="p">:</span> <span class="s">&#39;change to atomic coordinate, </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;A([xyz])$&#39;</span> <span class="p">:</span> <span class="s">&#39;</span><span class="se">\\</span><span class="s">1 fractional atomic coordinate&#39;</span><span class="p">,</span>
         <span class="s">&#39;AUiso&#39;</span><span class="p">:</span><span class="s">&#39;Atomic isotropic displacement parameter&#39;</span><span class="p">,</span>
         <span class="s">&#39;AU([123][123])&#39;</span><span class="p">:</span><span class="s">&#39;Atomic anisotropic displacement parameter U</span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;Afrac&#39;</span><span class="p">:</span> <span class="s">&#39;Atomic occupancy parameter&#39;</span><span class="p">,</span>
@@ -1316,8 +1324,8 @@
         <span class="s">&#39;Lam&#39;</span> <span class="p">:</span> <span class="s">&#39;Wavelength&#39;</span><span class="p">,</span>
         <span class="s">&#39;Polariz\.&#39;</span> <span class="p">:</span> <span class="s">&#39;Polarization correction&#39;</span><span class="p">,</span>
         <span class="s">&#39;SH/L&#39;</span> <span class="p">:</span> <span class="s">&#39;FCJ peak asymmetry correction&#39;</span><span class="p">,</span>
-        <span class="s">&#39;([UVW])&#39;</span> <span class="p">:</span> <span class="s">&#39;Gaussian instrument broadening </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
-        <span class="s">&#39;([XY])&#39;</span> <span class="p">:</span> <span class="s">&#39;Cauchy instrument broadening </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;([UVW])$&#39;</span> <span class="p">:</span> <span class="s">&#39;Gaussian instrument broadening </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
+        <span class="s">&#39;([XY])$&#39;</span> <span class="p">:</span> <span class="s">&#39;Cauchy instrument broadening </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
         <span class="s">&#39;Zero&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye-Scherrer zero correction&#39;</span><span class="p">,</span>
         <span class="s">&#39;nDebye&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye model background corr. terms&#39;</span><span class="p">,</span>
         <span class="s">&#39;nPeaks&#39;</span> <span class="p">:</span> <span class="s">&#39;Fixed peak background corr. terms&#39;</span><span class="p">,</span>
@@ -1329,6 +1337,30 @@
         <span class="s">&#39;RBR([TLS])([123AB][123AB])&#39;</span> <span class="p">:</span> <span class="s">&#39;Residue rigid body group disp. param.&#39;</span><span class="p">,</span>
         <span class="c"># Global vars (::&lt;var&gt;)</span>
         <span class="s">&#39;constr([0-9]*)&#39;</span> <span class="p">:</span> <span class="s">&#39;Parameter from constraint&#39;</span><span class="p">,</span>
+        <span class="c"># SASD vars (l:&lt;var&gt;;l = component)</span>
+        <span class="s">&#39;Aspect ratio&#39;</span> <span class="p">:</span> <span class="s">&#39;Particle aspect ratio&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Length&#39;</span> <span class="p">:</span> <span class="s">&#39;Cylinder length&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Diameter&#39;</span> <span class="p">:</span> <span class="s">&#39;Cylinder/disk diameter&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Thickness&#39;</span> <span class="p">:</span> <span class="s">&#39;Disk thickness&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Dist&#39;</span> <span class="p">:</span> <span class="s">&#39;Interparticle distance&#39;</span><span class="p">,</span>
+        <span class="s">&#39;VolFr&#39;</span> <span class="p">:</span> <span class="s">&#39;Dense scatterer volume fraction&#39;</span><span class="p">,</span>
+        <span class="s">&#39;epis&#39;</span> <span class="p">:</span> <span class="s">&#39;Sticky sphere epsilon&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Sticky&#39;</span> <span class="p">:</span> <span class="s">&#39;Stickyness&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Depth&#39;</span> <span class="p">:</span> <span class="s">&#39;Well depth&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Width&#39;</span> <span class="p">:</span> <span class="s">&#39;Well width&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Volume&#39;</span> <span class="p">:</span> <span class="s">&#39;Particle volume&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Radius&#39;</span> <span class="p">:</span> <span class="s">&#39;Sphere/cylinder/disk radius&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Mean&#39;</span> <span class="p">:</span> <span class="s">&#39;Particle mean radius&#39;</span><span class="p">,</span>
+        <span class="s">&#39;StdDev&#39;</span> <span class="p">:</span> <span class="s">&#39;Standard deviation in Mean&#39;</span><span class="p">,</span>
+        <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="s">&#39;Guinier prefactor&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Rg&#39;</span><span class="p">:</span> <span class="s">&#39;Guinier radius of gyration&#39;</span><span class="p">,</span>
+        <span class="s">&#39;B&#39;</span><span class="p">:</span> <span class="s">&#39;Porod prefactor&#39;</span><span class="p">,</span>
+        <span class="s">&#39;P&#39;</span><span class="p">:</span> <span class="s">&#39;Porod power&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Cutoff&#39;</span><span class="p">:</span> <span class="s">&#39;Porod cutoff&#39;</span><span class="p">,</span>
+        <span class="s">&#39;PkInt&#39;</span><span class="p">:</span> <span class="s">&#39;Bragg peak intensity&#39;</span><span class="p">,</span>
+        <span class="s">&#39;PkPos&#39;</span><span class="p">:</span> <span class="s">&#39;Bragg peak position&#39;</span><span class="p">,</span>
+        <span class="s">&#39;PkSig&#39;</span><span class="p">:</span> <span class="s">&#39;Bragg peak sigma&#39;</span><span class="p">,</span>
+        <span class="s">&#39;PkGam&#39;</span><span class="p">:</span> <span class="s">&#39;Bragg peak gamma&#39;</span><span class="p">,</span>   
         <span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">VarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="n">reVarDesc</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span>
@@ -1586,9 +1618,6 @@
 <span class="c">#==========================================================================</span>
 <span class="c"># shortcut routines</span></div>
 <span class="n">exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span>
-<span class="n">sind</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
-<span class="n">tand</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
-<span class="n">cosd</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
 <span class="n">sind</span> <span class="o">=</span> <span class="n">sin</span> <span class="o">=</span> <span class="n">s</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
 <span class="n">cosd</span> <span class="o">=</span> <span class="n">cos</span> <span class="o">=</span> <span class="n">c</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
 <span class="n">tand</span> <span class="o">=</span> <span class="n">tan</span> <span class="o">=</span> <span class="n">t</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
@@ -1606,7 +1635,7 @@
         <span class="s">&#39;The expression as a text string&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="sd">&#39;&#39;&#39;A dict where keys are label names in the expression mapping to a GSAS-II</span>
-<span class="sd">        variable. The value is a list with a G2 variable name and derivative step size.</span>
+<span class="sd">        variable. The value a G2 variable name.</span>
 <span class="sd">        Note that the G2 variable name may contain a wild-card and correspond to</span>
 <span class="sd">        multiple values.</span>
 <span class="sd">        &#39;&#39;&#39;</span>
@@ -1615,16 +1644,16 @@
 <span class="sd">        parameter. The value is a list with:</span>
 
 <span class="sd">         * a name assigned to the parameter</span>
-<span class="sd">         * a value for to the parameter</span>
-<span class="sd">         * a derivative step size and</span>
+<span class="sd">         * a value for to the parameter and</span>
 <span class="sd">         * a flag to determine if the variable is refined.</span>
 <span class="sd">        &#39;&#39;&#39;</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">depVar</span> <span class="o">=</span> <span class="bp">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">lastError</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
         <span class="sd">&#39;&#39;&#39;Shows last encountered error in processing expression</span>
 <span class="sd">        (list of 1-3 str values)&#39;&#39;&#39;</span>
 
-<div class="viewcode-block" id="ExpressionObj.LoadExpression"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.LoadExpression">[docs]</a>    <span class="k">def</span> <span class="nf">LoadExpression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">expr</span><span class="p">,</span><span class="n">exprVarLst</span><span class="p">,</span><span class="n">varSelect</span><span class="p">,</span><span class="n">varName</span><span class="p">,</span><span class="n">varValue</span><span class="p">,</span><span class="n">varStep</span><span class="p">,</span><span class="n">varRefflag</span><span class="p">):</span>
+<div class="viewcode-block" id="ExpressionObj.LoadExpression"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.LoadExpression">[docs]</a>    <span class="k">def</span> <span class="nf">LoadExpression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">expr</span><span class="p">,</span><span class="n">exprVarLst</span><span class="p">,</span><span class="n">varSelect</span><span class="p">,</span><span class="n">varName</span><span class="p">,</span><span class="n">varValue</span><span class="p">,</span><span class="n">varRefflag</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Load the expression and associated settings into the object. Raises</span>
 <span class="sd">        an exception if the expression is not parsed, if not all functions</span>
 <span class="sd">        are defined or if not all needed parameter labels in the expression</span>
@@ -1640,8 +1669,6 @@
 <span class="sd">          and non-zero for expression labels linked to G2 variables.</span>
 <span class="sd">        :param dict varName: Defines a name (str) associated with each free parameter</span>
 <span class="sd">        :param dict varValue: Defines a value (float) associated with each free parameter</span>
-<span class="sd">        :param dict varStep: Defines a derivative step size (float) for each</span>
-<span class="sd">          parameter labels found in the expression</span>
 <span class="sd">        :param dict varRefflag: Defines a refinement flag (bool)</span>
 <span class="sd">          associated with each free parameter</span>
 <span class="sd">        &#39;&#39;&#39;</span>
@@ -1654,17 +1681,13 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="n">varName</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">),</span>
                     <span class="n">varValue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">),</span>
-                    <span class="n">varStep</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">),</span>
                     <span class="n">varRefflag</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">),</span>
                     <span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">],</span>
-                    <span class="n">varStep</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="p">),</span>
-                    <span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">CheckVars</span><span class="p">()</span>
 </div>
-<div class="viewcode-block" id="ExpressionObj.EditExpression"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.EditExpression">[docs]</a>    <span class="k">def</span> <span class="nf">EditExpression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exprVarLst</span><span class="p">,</span><span class="n">varSelect</span><span class="p">,</span><span class="n">varName</span><span class="p">,</span><span class="n">varValue</span><span class="p">,</span><span class="n">varStep</span><span class="p">,</span><span class="n">varRefflag</span><span class="p">):</span>
+<div class="viewcode-block" id="ExpressionObj.EditExpression"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.EditExpression">[docs]</a>    <span class="k">def</span> <span class="nf">EditExpression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">exprVarLst</span><span class="p">,</span><span class="n">varSelect</span><span class="p">,</span><span class="n">varName</span><span class="p">,</span><span class="n">varValue</span><span class="p">,</span><span class="n">varRefflag</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Load the expression and associated settings from the object into</span>
 <span class="sd">        arrays used for editing.</span>
 
@@ -1673,8 +1696,6 @@
 <span class="sd">          and non-zero for expression labels linked to G2 variables.</span>
 <span class="sd">        :param dict varName: Defines a name (str) associated with each free parameter</span>
 <span class="sd">        :param dict varValue: Defines a value (float) associated with each free parameter</span>
-<span class="sd">        :param dict varStep: Defines a derivative step size (float) for each</span>
-<span class="sd">          parameter labels found in the expression</span>
 <span class="sd">        :param dict varRefflag: Defines a refinement flag (bool)</span>
 <span class="sd">          associated with each free parameter</span>
 
@@ -1684,17 +1705,31 @@
             <span class="n">varSelect</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">varValue</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">varStep</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
-            <span class="n">varRefflag</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">varRefflag</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">:</span>
             <span class="n">varSelect</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">varStep</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">varName</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">expression</span>
 </div>
 <div class="viewcode-block" id="ExpressionObj.GetVaried"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.GetVaried">[docs]</a>    <span class="k">def</span> <span class="nf">GetVaried</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="s">&#39;Returns the names of the free parameters that will be refined&#39;</span>
-        <span class="k">return</span> <span class="p">[</span><span class="s">&quot;::&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">3</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s">&quot;::&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">2</span><span class="p">]]</span>
+</div>
+<div class="viewcode-block" id="ExpressionObj.GetVariedVarVal"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.GetVariedVarVal">[docs]</a>    <span class="k">def</span> <span class="nf">GetVariedVarVal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&#39;Returns the names and values of the free parameters that will be refined&#39;</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="s">&quot;::&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">2</span><span class="p">]]</span>
+</div>
+<div class="viewcode-block" id="ExpressionObj.UpdateVariedVars"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.UpdateVariedVars">[docs]</a>    <span class="k">def</span> <span class="nf">UpdateVariedVars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">varyList</span><span class="p">,</span><span class="n">values</span><span class="p">):</span>
+        <span class="s">&#39;Updates values for the free parameters (after a refinement); only updates refined vars&#39;</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">2</span><span class="p">]:</span> <span class="k">continue</span>
+            <span class="k">if</span> <span class="s">&quot;::&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">varyList</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="n">indx</span> <span class="o">=</span> <span class="n">varyList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s">&quot;::&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">indx</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="ExpressionObj.GetIndependentVars"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.GetIndependentVars">[docs]</a>    <span class="k">def</span> <span class="nf">GetIndependentVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&#39;Returns the names of the required independent parameters used in expression&#39;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="ExpressionObj.CheckVars"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.CheckVars">[docs]</a>    <span class="k">def</span> <span class="nf">CheckVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Check that the expression can be parsed, all functions are</span>
@@ -1736,7 +1771,7 @@
 <span class="sd">        saving an error message, so that this can be used for testing prior</span>
 <span class="sd">        to the save. </span>
 
-<span class="sd">        :returns: a list of variables used variables</span>
+<span class="sd">        :returns: a list of used variables</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lastError</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">)</span>
         <span class="kn">import</span> <span class="nn">ast</span>
@@ -1756,7 +1791,7 @@
                     <span class="n">fxnobj</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
                     <span class="k">return</span> <span class="n">pkgdict</span><span class="p">,</span><span class="n">fxnobj</span>
                 <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="bp">None</span>
+                    <span class="k">return</span> <span class="bp">None</span><span class="p">,</span><span class="bp">None</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">fxnobj</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -1854,7 +1889,14 @@
                 <span class="k">return</span>
             <span class="n">pkgdict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fxndict</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">varlist</span><span class="p">,</span><span class="n">pkgdict</span>
-
+</div>
+<div class="viewcode-block" id="ExpressionObj.GetDepVar"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.GetDepVar">[docs]</a>    <span class="k">def</span> <span class="nf">GetDepVar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s">&#39;return the dependent variable, or None&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">depVar</span>
+</div>
+<div class="viewcode-block" id="ExpressionObj.SetDepVar"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionObj.SetDepVar">[docs]</a>    <span class="k">def</span> <span class="nf">SetDepVar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">var</span><span class="p">):</span>
+        <span class="s">&#39;Set the dependent variable, if used&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">depVar</span> <span class="o">=</span> <span class="n">var</span>
 <span class="c">#==========================================================================</span></div></div>
 <div class="viewcode-block" id="ExpressionCalcObj"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionCalcObj">[docs]</a><span class="k">class</span> <span class="nc">ExpressionCalcObj</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;An object used to evaluate an expression from a :class:`ExpressionObj`</span>
@@ -1872,10 +1914,6 @@
         <span class="sd">&#39;&#39;&#39;dict that defines values for labels used in expression and packages</span>
 <span class="sd">        referenced by functions</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="sd">&#39;&#39;&#39;Contains step sizes for derivatives for variables used in the expression;</span>
-<span class="sd">        if a variable is not included in this the derivatives will be computed as zero</span>
-<span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="sd">&#39;&#39;&#39;Lookup table that specifies the expression label name that is</span>
 <span class="sd">        tied to a particular GSAS-II parameters in the parmDict.</span>
@@ -1889,7 +1927,11 @@
 <span class="sd">        indexed by the expression label name. (Used for only for diagnostics</span>
 <span class="sd">        not evaluation of expression.)</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        
+        <span class="c"># Patch: for old-style expressions with a (now removed step size)</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">],</span> <span class="nb">basestring</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
 <div class="viewcode-block" id="ExpressionCalcObj.SetupCalc"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionCalcObj.SetupCalc">[docs]</a>    <span class="k">def</span> <span class="nf">SetupCalc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parmDict</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Do all preparations to use the expression for computation.</span>
 <span class="sd">        Adds the free parameter values to the parameter dict (parmDict).</span>
@@ -1913,7 +1955,6 @@
             
         <span class="c"># set up the dicts needed to speed computations</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">varLookup</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">:</span>
@@ -1922,24 +1963,18 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">varLookup</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">varname</span>
             <span class="k">if</span> <span class="n">parmsInList</span><span class="p">:</span>
-                <span class="n">parmDict</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">3</span><span class="p">]]</span>
+                <span class="n">parmDict</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">2</span><span class="p">]]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">parmDict</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">3</span><span class="p">]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">freeVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">:</span>
-            <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">varname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">varname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">assgnVars</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
             <span class="k">if</span> <span class="s">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">varname</span><span class="p">:</span>
                 <span class="n">varlist</span> <span class="o">=</span> <span class="n">LookupWildCard</span><span class="p">(</span><span class="n">varname</span><span class="p">,</span><span class="n">parmDict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">varlist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;No variables match &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varlist</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                        <span class="p">[</span><span class="n">step</span> <span class="k">if</span> <span class="n">var1</span> <span class="o">==</span> <span class="n">var</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">var1</span> <span class="ow">in</span> <span class="n">varlist</span><span class="p">]</span>
-                        <span class="p">)</span>
                 <span class="k">if</span> <span class="n">parmsInList</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">parmDict</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">varlist</span><span class="p">])</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -1952,18 +1987,33 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">varname</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;No value for variable &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fxnpkgdict</span><span class="p">)</span>
 </div>
+<div class="viewcode-block" id="ExpressionCalcObj.UpdateVars"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionCalcObj.UpdateVars">[docs]</a>    <span class="k">def</span> <span class="nf">UpdateVars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">varList</span><span class="p">,</span><span class="n">valList</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Update the dict for the expression with a set of values</span>
+<span class="sd">        :param list varList: a list of variable names</span>
+<span class="sd">        :param list valList: a list of corresponding values</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">var</span><span class="p">,</span><span class="n">val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">varList</span><span class="p">,</span><span class="n">valList</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">var</span><span class="p">,</span><span class="s">&#39;undefined: &#39;</span><span class="o">+</span><span class="n">var</span><span class="p">)]</span> <span class="o">=</span> <span class="n">val</span>
+</div>
+<div class="viewcode-block" id="ExpressionCalcObj.UpdateDict"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionCalcObj.UpdateDict">[docs]</a>    <span class="k">def</span> <span class="nf">UpdateDict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parmDict</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Update the dict for the expression with values in a dict</span>
+<span class="sd">        :param list parmDict: a dict of values some of which may be in use here</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="p">[</span><span class="n">var</span><span class="p">]]</span> <span class="o">=</span> <span class="n">parmDict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+            </div>
 <div class="viewcode-block" id="ExpressionCalcObj.EvalExpression"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionCalcObj.EvalExpression">[docs]</a>    <span class="k">def</span> <span class="nf">EvalExpression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Evaluate an expression. Note that the expression</span>
 <span class="sd">        and mapping are taken from the :class:`ExpressionObj` expression object</span>
 <span class="sd">        and the parameter values were specified in :meth:`SetupCalc`.</span>
 <span class="sd">        :returns: a single value for the expression. If parameter</span>
 <span class="sd">        values are arrays (for example, from wild-carded variable names),</span>
-<span class="sd">        the sum of the resulting expression is return.</span>
+<span class="sd">        the sum of the resulting expression is returned.</span>
 
 <span class="sd">        For example, if the expression is ``&#39;A*B&#39;``,</span>
 <span class="sd">        where A is 2.0 and B maps to ``&#39;1::Afrac:*&#39;``, which evaluates to::</span>
@@ -1978,32 +2028,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
             <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">val</span>
-</div>
-<div class="viewcode-block" id="ExpressionCalcObj.EvalDeriv"><a class="viewcode-back" href="../GSASIIobj.html#GSASIIobj.ExpressionCalcObj.EvalDeriv">[docs]</a>    <span class="k">def</span> <span class="nf">EvalDeriv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">varname</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Evaluate the expression derivative with respect to a</span>
-<span class="sd">        GSAS-II variable name. </span>
 
-<span class="sd">        :param str varname: a G2 variable name (will not have a wild-card)</span>
-<span class="sd">        :returns: the derivative</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">if</span> <span class="n">varname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span>
-        <span class="k">if</span> <span class="n">varname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="p">:</span> <span class="k">return</span> <span class="mf">0.0</span>
-        <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">derivStep</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span>
-        <span class="n">lbl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lblLookup</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="c"># what label does this map to in expression?</span>
-        <span class="n">origval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="n">origval</span> <span class="o">+</span> <span class="n">step</span>
-        <span class="n">val1</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compiledExpr</span><span class="p">,</span><span class="nb">globals</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="n">origval</span> <span class="o">-</span> <span class="n">step</span>
-        <span class="n">val2</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compiledExpr</span><span class="p">,</span><span class="nb">globals</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">lbl</span><span class="p">]</span> <span class="o">=</span> <span class="n">origval</span> <span class="c"># reset back to central value</span>
-
-        <span class="n">val</span> <span class="o">=</span> <span class="p">(</span><span class="n">val1</span> <span class="o">-</span> <span class="n">val2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">step</span><span class="p">))</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
-            <span class="n">val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">val</span>
 </div></div>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="c"># test equation evaluation</span>
@@ -2012,15 +2037,15 @@
         <span class="k">print</span> <span class="n">calcobj</span><span class="o">.</span><span class="n">eObj</span><span class="o">.</span><span class="n">expression</span><span class="p">,</span><span class="s">&#39;=&#39;</span><span class="p">,</span><span class="n">calcobj</span><span class="o">.</span><span class="n">EvalExpression</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">calcobj</span><span class="o">.</span><span class="n">varLookup</span><span class="p">):</span>
             <span class="k">print</span> <span class="s">&quot;  &quot;</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="s">&#39;=&#39;</span><span class="p">,</span><span class="n">calcobj</span><span class="o">.</span><span class="n">exprDict</span><span class="p">[</span><span class="n">v</span><span class="p">],</span><span class="s">&#39;=&#39;</span><span class="p">,</span><span class="n">calcobj</span><span class="o">.</span><span class="n">varLookup</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
-        <span class="k">print</span> <span class="s">&#39;  Derivatives&#39;</span>
-        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">calcobj</span><span class="o">.</span><span class="n">derivStep</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">print</span> <span class="s">&#39;    d(Expr)/d(&#39;</span><span class="o">+</span><span class="n">v</span><span class="o">+</span><span class="s">&#39;) =&#39;</span><span class="p">,</span><span class="n">calcobj</span><span class="o">.</span><span class="n">EvalDeriv</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="c"># print &#39;  Derivatives&#39;</span>
+        <span class="c"># for v in calcobj.derivStep.keys():</span>
+        <span class="c">#     print &#39;    d(Expr)/d(&#39;+v+&#39;) =&#39;,calcobj.EvalDeriv(v)</span>
 
     <span class="n">obj</span> <span class="o">=</span> <span class="n">ExpressionObj</span><span class="p">()</span>
 
     <span class="n">obj</span><span class="o">.</span><span class="n">expression</span> <span class="o">=</span> <span class="s">&quot;A*np.exp(B)&quot;</span>
-    <span class="n">obj</span><span class="o">.</span><span class="n">assgnVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;0::Afrac:1&#39;</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">]}</span>
-    <span class="n">obj</span><span class="o">.</span><span class="n">freeVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">u&#39;A&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="bp">True</span><span class="p">]}</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">assgnVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;B&#39;</span><span class="p">:</span> <span class="s">&#39;0::Afrac:1&#39;</span><span class="p">}</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">freeVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">u&#39;A&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="bp">True</span><span class="p">]}</span>
     <span class="c">#obj.CheckVars()</span>
     <span class="n">parmDict2</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;0::Afrac:0&#39;</span><span class="p">:[</span><span class="mf">0.0</span><span class="p">,</span><span class="bp">True</span><span class="p">],</span> <span class="s">&#39;0::Afrac:1&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="bp">False</span><span class="p">]}</span>
     <span class="n">calcobj</span> <span class="o">=</span> <span class="n">ExpressionCalcObj</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
@@ -2028,8 +2053,8 @@
     <span class="n">showEQ</span><span class="p">(</span><span class="n">calcobj</span><span class="p">)</span>
 
     <span class="n">obj</span><span class="o">.</span><span class="n">expression</span> <span class="o">=</span> <span class="s">&quot;A*np.exp(B)&quot;</span>
-    <span class="n">obj</span><span class="o">.</span><span class="n">assgnVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;0::Afrac:*&#39;</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">]}</span>
-    <span class="n">obj</span><span class="o">.</span><span class="n">freeVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">u&#39;Free Prm A&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">,</span> <span class="bp">True</span><span class="p">]}</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">assgnVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;B&#39;</span><span class="p">:</span> <span class="s">&#39;0::Afrac:*&#39;</span><span class="p">}</span>
+    <span class="n">obj</span><span class="o">.</span><span class="n">freeVars</span> <span class="o">=</span>  <span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">u&#39;Free Prm A&#39;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="bp">True</span><span class="p">]}</span>
     <span class="c">#obj.CheckVars()</span>
     <span class="n">parmDict1</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;0::Afrac:0&#39;</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s">&#39;0::Afrac:1&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
     <span class="n">calcobj</span> <span class="o">=</span> <span class="n">ExpressionCalcObj</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>

@@ -328,7 +328,7 @@ def CalcPDF(data,inst,xydata):
 
 def factorize(num):
     ''' Provide prime number factors for integer num
-    Returns dictionary of prime factors (keys) & power for each (data)
+    :returns: dictionary of prime factors (keys) & power for each (data)
     '''
     factors = {}
     orig = num
@@ -454,7 +454,11 @@ class fcjde_gen(st.rv_continuous):
 fcjde = fcjde_gen(name='fcjde',shapes='t,s,dx')
                 
 def getWidthsCW(pos,sig,gam,shl):
-    'needs a doc string'
+    '''Compute the peak widths used for computing the range of a peak
+    for constant wavelength data.
+    On low-angle side, 10 FWHM are used, on high-angle side 15 are used
+    (for peaks above 90 deg, these are reversed.)
+    '''
     widths = [np.sqrt(sig)/100.,gam/200.]
     fwhm = 2.355*widths[0]+2.*widths[1]
     fmin = 10.*(fwhm+shl*abs(npcosd(pos)))

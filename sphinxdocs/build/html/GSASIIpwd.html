@@ -248,7 +248,7 @@ values corresponding to keys in varylist</p>
 <dt id="GSASIIpwd.factorize">
 <tt class="descclassname">GSASIIpwd.</tt><tt class="descname">factorize</tt><big>(</big><em>num</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwd.html#factorize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwd.factorize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provide prime number factors for integer num
-Returns dictionary of prime factors (keys) &amp; power for each (data)</p>
+:returns: dictionary of prime factors (keys) &amp; power for each (data)</p>
 </dd></dl>
 
 <dl class="class">
@@ -352,7 +352,10 @@ L: sample to detector opening distance</li>
 <dl class="function">
 <dt id="GSASIIpwd.getWidthsCW">
 <tt class="descclassname">GSASIIpwd.</tt><tt class="descname">getWidthsCW</tt><big>(</big><em>pos</em>, <em>sig</em>, <em>gam</em>, <em>shl</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwd.html#getWidthsCW"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwd.getWidthsCW" title="Permalink to this definition">¶</a></dt>
-<dd><p>needs a doc string</p>
+<dd><p>Compute the peak widths used for computing the range of a peak
+for constant wavelength data.
+On low-angle side, 10 FWHM are used, on high-angle side 15 are used
+(for peaks above 90 deg, these are reversed.)</p>
 </dd></dl>
 
 <dl class="function">

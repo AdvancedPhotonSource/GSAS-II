@@ -120,6 +120,19 @@ The script path may be specified relative to the current path or given
 an absolute path, but will be accessed via an absolute path. 
 If no arguments are supplied, the GSASII.py script is assumed to be in the
 same directory as this file.</p>
+<dl class="data">
+<dt id="makeMacApp.AppleScript">
+<tt class="descclassname">makeMacApp.</tt><tt class="descname">AppleScript</tt><em class="property"> = '(*   GSAS-II AppleScript by B. Toby (brian.toby&#64;anl.gov)\n     It can launch GSAS-II by double clicking or by dropping a data file\n     or folder over the app.\n     It runs GSAS-II in a terminal window.\n*)\n\n(* test if a file is present and exit with an error message if it is not  *)\non TestFilePresent(appwithpath)\n\ttell application &quot;System Events&quot;\n\t\tif (file appwithpath exists) then\n\t\telse\n\t\t\tdisplay dialog &quot;Error: file &quot; &amp; appwithpath &amp; &quot; not found. If you have moved this file recreate the AppleScript with bootstrap.py.&quot; with icon caution buttons {{&quot;Quit&quot;}}\n\t\t\treturn\n\t\tend if\n\tend tell\nend TestFilePresent\n\n(* \n------------------------------------------------------------------------\nthis section responds to a double-click. No file is supplied to GSAS-II\n------------------------------------------------------------------------ \n*)\non run\n\tset python to &quot;{:s}&quot;\n\tset appwithpath to &quot;{:s}&quot;\n\tset env to &quot;{:s}&quot;\n\tTestFilePresent(appwithpath)\n\tTestFilePresent(python)\n\ttell application &quot;Terminal&quot;\n\t\tactivate\n\t\tdo script env &amp; python &amp; &quot; &quot; &amp; appwithpath &amp; &quot;; exit&quot;\n\tend tell\nend run\n\n(*\n-----------------------------------------------------------------------------------------------\nthis section handles starting with files dragged into the AppleScript\n o it goes through the list of file(s) dragged in\n o then it converts the colon-delimited macintosh file location to a POSIX filename\n o for every non-directory file dragged into the icon, it starts GSAS-II, passing the file name\n------------------------------------------------------------------------------------------------\n*)\n\non open names\n\tset python to &quot;{:s}&quot;\n\tset appwithpath to &quot;{:s}&quot;\n\tset env to &quot;{:s}&quot;\n \n\tTestFilePresent(appwithpath)\n\trepeat with filename in names\n\t\tset filestr to (filename as string)\n\t\tif filestr ends with &quot;:&quot; then\n                        (* should not happen, skip directories *)\n\t\telse\n\t\t\t(* if this is an input file, open it *)\n\t\t\tset filename to the quoted form of the POSIX path of filename\n\t\t\ttell application &quot;Terminal&quot;\n\t\t\t\tactivate\n\t\t\t\tdo script env &amp; python &amp; &quot; &quot; &amp; appwithpath &amp; &quot; &quot; &amp; filename &amp; &quot;; exit&quot;\n\t\t\tend tell\n\t\tend if\n\tend repeat\nend open\n'</em><a class="headerlink" href="#makeMacApp.AppleScript" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains an AppleScript to start GSAS-II launching python and the
+GSAS-II python script</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="makeMacApp.RunPython">
+<tt class="descclassname">makeMacApp.</tt><tt class="descname">RunPython</tt><big>(</big><em>image</em>, <em>cmd</em><big>)</big><a class="reference internal" href="_modules/makeMacApp.html#RunPython"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#makeMacApp.RunPython" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a command in a python image</p>
+</dd></dl>
+
 </div>
 <span class="target" id="module-unit_tests"></span><div class="section" id="unit-tests-self-test-module">
 <h2><em>unit_tests: Self-test Module</em><a class="headerlink" href="#unit-tests-self-test-module" title="Permalink to this headline">¶</a></h2>

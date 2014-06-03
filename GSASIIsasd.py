@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 *GSASII small angle calculation module*
-==================================
+=======================================
 
 '''
 ########### SVN repository information ###################
@@ -473,17 +473,17 @@ def HardSpheresSF(Q,args):
     return 1./(1.-C)
         
 def SquareWellSF(Q,args):
-    ''' Computes structure factor for not dilute monodisperse hard sphere with a
+    '''Computes structure factor for not dilute monodisperse hard sphere with a
     square well potential interaction. 
     Refs.: SHARMA,SHARMA, PHYSICA 89A,(1977),212
     
-    param float Q: Q value array (A-1)
-    param array args: [float R, float VolFrac, float depth, float width]: 
+    :param float Q: Q value array (A-1)
+    :param array args: [float R, float VolFrac, float depth, float width]: 
         interparticle distance, volume fraction (<0.08), well depth (e/kT<1.5kT),
         well width
-    returns numpy array S(Q)
-    well depth > 0 attractive & values outside above limits nonphysical cf. 
-    Monte Carlo simulations 
+    :returns: numpy array S(Q)
+      well depth > 0 attractive & values outside above limits nonphysical cf. 
+      Monte Carlo simulations 
     '''
     R,VolFr,Depth,Width = args 
     eta = VolFr

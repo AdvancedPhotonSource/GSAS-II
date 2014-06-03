@@ -53,11 +53,11 @@
 <span class="c">#!/usr/bin/env python</span>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-01-10 14:46:36 -0600 (Fri, 10 Jan 2014) $</span>
+<span class="c"># $Date: 2014-05-06 12:19:05 -0500 (Tue, 06 May 2014) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1191 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_csv.py $</span>
-<span class="c"># $Id: G2export_csv.py 1191 2014-01-10 20:46:36Z vondreele $</span>
+<span class="c"># $Revision: 1329 $</span>
+<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/exports/G2export_pwdr.py $</span>
+<span class="c"># $Id: G2export_pwdr.py 1329 2014-05-06 17:19:05Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*Module G2export_pwdr: Export powder input files*</span>
@@ -69,7 +69,7 @@
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1191 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1329 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIIO</span> <span class="kn">as</span> <span class="nn">G2IO</span>
 <span class="kn">import</span> <span class="nn">GSASIIpy3</span> <span class="kn">as</span> <span class="nn">G2py3</span>
 <span class="kn">import</span> <span class="nn">GSASIIobj</span> <span class="kn">as</span> <span class="nn">G2obj</span>
@@ -197,7 +197,9 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">OpenFile</span><span class="p">()</span>
             <span class="n">histblk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Histograms</span><span class="p">[</span><span class="n">hist</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&#39;# &#39;</span><span class="o">+</span><span class="n">hist</span><span class="p">[</span><span class="mi">5</span><span class="p">:])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&#39;/*&#39;</span><span class="p">)</span>    <span class="c">#The ugly c comment delimiter used in topas!</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&#39;# &#39;</span><span class="o">+</span><span class="n">hist</span><span class="p">[</span><span class="mi">5</span><span class="p">:])</span>  <span class="c">#evidently this by itself fails in topas</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&#39;*/&#39;</span><span class="p">)</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
             <span class="c"># convert weights to sigmas; use largest weight as minimum esd</span>
             <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">histblk</span><span class="p">[</span><span class="s">&#39;Data&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])))</span>

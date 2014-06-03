@@ -297,14 +297,15 @@ specified for <tt class="xref py py-data docutils literal"><span class="pre">cho
 <dt id="GSASIIgrid.G2CheckBox">
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2CheckBox</tt><big>(</big><em>parent</em>, <em>label</em>, <em>loc</em>, <em>key</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2CheckBox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2CheckBox" title="Permalink to this definition">¶</a></dt>
 <dd><p>A customized version of a CheckBox that automatically initializes
-the control to match a supplied</p>
+the control to a supplied list or dict entry and updates that
+entry as the widget is used.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>parent</strong> (<em>wx.Panel</em>) &#8211; name of panel or frame that will be
-the parent to the TextCtrl. Can be None.</li>
+the parent to the widget. Can be None.</li>
 <li><strong>label</strong> (<em>str</em>) &#8211; text to put on check button</li>
 <li><strong>loc</strong> (<em>dict/list</em>) &#8211; the dict or list with the initial value to be
 placed in the CheckBox.</li>
@@ -313,6 +314,40 @@ edited by the CheckBox. The <tt class="docutils literal"><span class="pre">loc[k
 The CheckBox will be initialized from this value.
 If the value is anything other that True (or 1), it will be taken as
 False.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.G2ChoiceButton">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2ChoiceButton</tt><big>(</big><em>parent</em>, <em>choiceList</em>, <em>indLoc</em>, <em>indKey</em>, <em>strLoc=None</em>, <em>strKey=None</em>, <em>onChoice=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2ChoiceButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2ChoiceButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>A customized version of a wx.Choice that automatically initializes
+the control to match a supplied value and saves the choice directly
+into an array or list. Optionally a function can be called each time a
+choice is selected.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parent</strong> (<em>wx.Panel</em>) &#8211; name of panel or frame that will be
+the parent to the widget. Can be None.</li>
+<li><strong>choiceList</strong> (<em>list</em>) &#8211; a list or tuple of choices to offer the user.</li>
+<li><strong>indLoc</strong> (<em>dict/list</em>) &#8211; a dict or list with the initial value to be
+placed in the Choice button.</li>
+<li><strong>indKey</strong> (<em>int/str</em>) &#8211; the dict key or the list index for the value to be
+edited by the Choice button. The <tt class="docutils literal"><span class="pre">indLoc[indKey]</span></tt> element must exist.
+The value for this should be None or an integer in range(len(choiceList)).
+The Choice button will be initialized to the choice corresponding to the
+value in this element if not None.</li>
+<li><strong>strLoc</strong> (<em>dict/list</em>) &#8211; a dict or list with the string value corresponding to
+indLoc/indKey. Default (None) means that this is not used.</li>
+<li><strong>strKey</strong> (<em>int/str</em>) &#8211; the dict key or the list index for the string value 
+The <tt class="docutils literal"><span class="pre">strLoc[strKey]</span></tt> element must exist or strLoc must be None (default).</li>
+<li><strong>onChoice</strong> (<em>function</em>) &#8211; name of a</li>
 </ul>
 </td>
 </tr>
@@ -427,6 +462,22 @@ the presence of the eponymous buttons in the dialog.</li>
 <dt id="GSASIIgrid.GSGrid">
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">GSGrid</tt><big>(</big><em>parent</em>, <em>name=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GSGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GSGrid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Basic wx.Grid implementation</p>
+<dl class="method">
+<dt id="GSASIIgrid.GSGrid.InstallGridToolTip">
+<tt class="descname">InstallGridToolTip</tt><big>(</big><em>rowcolhintcallback</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GSGrid.InstallGridToolTip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GSGrid.InstallGridToolTip" title="Permalink to this definition">¶</a></dt>
+<dd><p>code to display a tooltip for each item on a grid
+from <a class="reference external" href="http://wiki.wxpython.org/wxGrid%20ToolTips">http://wiki.wxpython.org/wxGrid%20ToolTips</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rowcolhintcallback</strong> (<em>function</em>) &#8211; a routine that returns a text
+string depending on the selected row and column</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -1551,22 +1602,18 @@ for an explanation on how to use import classes in general. The specifics
 for reading a structure factor histogram require that
 the <tt class="docutils literal"><span class="pre">Reader()</span></tt> routine in the import
 class need to do only a few things: It
-should load <a class="reference internal" href="#GSASIIIO.ImportStructFactor.RefDict" title="GSASIIIO.ImportStructFactor.RefDict"><tt class="xref py py-attr docutils literal"><span class="pre">RefDict</span></tt></a> item <tt class="docutils literal"><span class="pre">'RefList'</span></tt> with the reflection list,
+should load <tt class="xref py py-attr docutils literal"><span class="pre">RefDict</span></tt> item <tt class="docutils literal"><span class="pre">'RefList'</span></tt> with the reflection list,
 and set <a class="reference internal" href="#GSASIIIO.ImportStructFactor.Parameters" title="GSASIIIO.ImportStructFactor.Parameters"><tt class="xref py py-attr docutils literal"><span class="pre">Parameters</span></tt></a> with the instrument parameters
-(initialized with <a class="reference internal" href="#GSASIIIO.ImportStructFactor.InitParameters" title="GSASIIIO.ImportStructFactor.InitParameters"><tt class="xref py py-meth docutils literal"><span class="pre">InitParameters()</span></tt></a> and set with <a class="reference internal" href="#GSASIIIO.ImportStructFactor.UpdateParameters" title="GSASIIIO.ImportStructFactor.UpdateParameters"><tt class="xref py py-meth docutils literal"><span class="pre">UpdateParameters()</span></tt></a>).
-Also, set <a class="reference internal" href="#GSASIIIO.ImportStructFactor.Controls" title="GSASIIIO.ImportStructFactor.Controls"><tt class="xref py py-attr docutils literal"><span class="pre">Controls</span></tt></a>, 
-which specifies how the histogram is plotted
-(initialized with <a class="reference internal" href="#GSASIIIO.ImportStructFactor.InitControls" title="GSASIIIO.ImportStructFactor.InitControls"><tt class="xref py py-meth docutils literal"><span class="pre">InitControls()</span></tt></a> and set with <a class="reference internal" href="#GSASIIIO.ImportStructFactor.UpdateControls" title="GSASIIIO.ImportStructFactor.UpdateControls"><tt class="xref py py-meth docutils literal"><span class="pre">UpdateControls()</span></tt></a>).</p>
+(initialized with <a class="reference internal" href="#GSASIIIO.ImportStructFactor.InitParameters" title="GSASIIIO.ImportStructFactor.InitParameters"><tt class="xref py py-meth docutils literal"><span class="pre">InitParameters()</span></tt></a> and set with <a class="reference internal" href="#GSASIIIO.ImportStructFactor.UpdateParameters" title="GSASIIIO.ImportStructFactor.UpdateParameters"><tt class="xref py py-meth docutils literal"><span class="pre">UpdateParameters()</span></tt></a>).</p>
 <dl class="attribute">
-<dt id="GSASIIIO.ImportStructFactor.Controls">
-<tt class="descname">Controls</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIIO.ImportStructFactor.Controls" title="Permalink to this definition">¶</a></dt>
-<dd><p>self.Controls is a dict with plotting controls</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="GSASIIIO.ImportStructFactor.InitControls">
-<tt class="descname">InitControls</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.InitControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.InitControls" title="Permalink to this definition">¶</a></dt>
-<dd><p>initialize the controls structure</p>
+<dt id="GSASIIIO.ImportStructFactor.Banks">
+<tt class="descname">Banks</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIIO.ImportStructFactor.Banks" title="Permalink to this definition">¶</a></dt>
+<dd><p>self.RefDict is a dict containing the reflection information, as read from the file.
+Item &#8216;RefList&#8217; contains the reflection information. See the
+<a class="reference internal" href="GSASIIobj.html#xtalrefl-table"><em>Single Crystal Reflection Data Structure</em></a>
+for the contents of each row. Dict element &#8216;FF&#8217;
+contains the form factor values for each element type; if this entry
+is left as initialized (an empty list) it will be initialized as needed later.</p>
 </dd></dl>
 
 <dl class="method">
@@ -1585,23 +1632,6 @@ which specifies how the histogram is plotted
 <dt id="GSASIIIO.ImportStructFactor.ReInitialize">
 <tt class="descname">ReInitialize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.ReInitialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.ReInitialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reinitialize the Reader to initial settings</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="GSASIIIO.ImportStructFactor.RefDict">
-<tt class="descname">RefDict</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIIO.ImportStructFactor.RefDict" title="Permalink to this definition">¶</a></dt>
-<dd><p>self.RefDict is a dict containing the reflection information, as read from the file.
-Item &#8216;RefList&#8217; contains the reflection information. See the
-<a class="reference internal" href="GSASIIobj.html#xtalrefl-table"><em>Single Crystal Reflection Data Structure</em></a>
-for the contents of each row. Dict element &#8216;FF&#8217;
-contains the form factor values for each element type; if this entry
-is left as initialized (an empty list) it will be initialized as needed later.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="GSASIIIO.ImportStructFactor.UpdateControls">
-<tt class="descname">UpdateControls</tt><big>(</big><em>Type='Fosq'</em>, <em>FcalcPresent=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor.UpdateControls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor.UpdateControls" title="Permalink to this definition">¶</a></dt>
-<dd><p>Scan through the reflections to update the Controls dictionary</p>
 </dd></dl>
 
 <dl class="method">

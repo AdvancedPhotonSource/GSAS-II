@@ -120,6 +120,12 @@ returns float:volume (A^3)</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIsasd.DiluteSF">
+<tt class="descclassname">GSASIIsasd.</tt><tt class="descname">DiluteSF</tt><big>(</big><em>Q</em>, <em>args=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIsasd.html#DiluteSF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIsasd.DiluteSF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default: no structure factor correction for dilute system</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIsasd.G_matrix">
 <tt class="descclassname">GSASIIsasd.</tt><tt class="descname">G_matrix</tt><big>(</big><em>q</em>, <em>r</em>, <em>contrast</em>, <em>FFfxn</em>, <em>Volfxn</em>, <em>args=()</em><big>)</big><a class="reference internal" href="_modules/GSASIIsasd.html#G_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIsasd.G_matrix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the response matrix <span class="math">\(G(Q,r)\)</span></p>
@@ -166,6 +172,17 @@ returns float: Normal distribution</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIsasd.HardSpheresSF">
+<tt class="descclassname">GSASIIsasd.</tt><tt class="descname">HardSpheresSF</tt><big>(</big><em>Q</em>, <em>args</em><big>)</big><a class="reference internal" href="_modules/GSASIIsasd.html#HardSpheresSF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIsasd.HardSpheresSF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes structure factor for not dilute monodisperse hard spheres
+Refs.: PERCUS,YEVICK PHYS. REV. 110 1 (1958),THIELE J. CHEM PHYS. 39 474 (1968),
+WERTHEIM  PHYS. REV. LETT. 47 1462 (1981)</p>
+<p>param float Q: Q value array (A-1)
+param array args: [float R, float VolFrac]: interparticle distance &amp; volume fraction
+returns numpy array S(Q)</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIsasd.IPG">
 <tt class="descclassname">GSASIIsasd.</tt><tt class="descname">IPG</tt><big>(</big><em>datum</em>, <em>sigma</em>, <em>G</em>, <em>Bins</em>, <em>Dbins</em>, <em>IterMax</em>, <em>Qvec=</em><span class="optional">[</span><span class="optional">]</span>, <em>approach=0.8</em>, <em>Power=-1</em>, <em>report=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIsasd.html#IPG"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIsasd.IPG" title="Permalink to this definition">¶</a></dt>
 <dd><p>An implementation of the Interior-Point Gradient method of 
@@ -180,6 +197,18 @@ Problem addressed: Total Non-Negative Least Squares (TNNLS)
 :param float Qvec: data positions for Power = 0-4
 :param float approach: 0.8 default fitting parameter
 :param int Power: 0-4 for Q^Power weighting, -1 to use input sigma</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIsasd.InterPrecipitateSF">
+<tt class="descclassname">GSASIIsasd.</tt><tt class="descname">InterPrecipitateSF</tt><big>(</big><em>Q</em>, <em>args</em><big>)</big><a class="reference internal" href="_modules/GSASIIsasd.html#InterPrecipitateSF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIsasd.InterPrecipitateSF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes structure factor for precipitates in a matrix
+Refs.: E-Wen Huang, Peter K. Liaw, Lionel Porcar, Yun Liu, Yee-Lang Liu, 
+Ji-Jung Kai, and Wei-Ren Chen,APPLIED PHYSICS LETTERS 93, 161904 (2008)
+R. Giordano, A. Grasso, and J. Teixeira, Phys. Rev. A 43, 6894    1991    
+param float Q: Q value array (A-1)
+param array args: [float R, float VolFr]: &#8220;radius&#8221; &amp; volume fraction
+returns numpy array S(Q)</p>
 </dd></dl>
 
 <dl class="function">
@@ -324,6 +353,44 @@ returns float: form factors as array as needed</p>
 param float R: radius along 2 axes of spheroid
 param array args: [float AR]: aspect ratio so radius of 3rd axis = R*AR
 returns float: volume</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIsasd.SquareWellSF">
+<tt class="descclassname">GSASIIsasd.</tt><tt class="descname">SquareWellSF</tt><big>(</big><em>Q</em>, <em>args</em><big>)</big><a class="reference internal" href="_modules/GSASIIsasd.html#SquareWellSF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIsasd.SquareWellSF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes structure factor for not dilute monodisperse hard sphere with a
+square well potential interaction. 
+Refs.: SHARMA,SHARMA, PHYSICA 89A,(1977),212</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Q</strong> (<em>float</em>) &#8211; Q value array (A-1)</li>
+<li><strong>args</strong> (<em>array</em>) &#8211; [float R, float VolFrac, float depth, float width]: 
+interparticle distance, volume fraction (&lt;0.08), well depth (e/kT&lt;1.5kT),
+well width</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">numpy array S(Q)
+well depth &gt; 0 attractive &amp; values outside above limits nonphysical cf. 
+Monte Carlo simulations</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIsasd.StickyHardSpheresSF">
+<tt class="descclassname">GSASIIsasd.</tt><tt class="descname">StickyHardSpheresSF</tt><big>(</big><em>Q</em>, <em>args</em><big>)</big><a class="reference internal" href="_modules/GSASIIsasd.html#StickyHardSpheresSF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIsasd.StickyHardSpheresSF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes structure factor for not dilute monodisperse hard spheres
+Refs.: PERCUS,YEVICK PHYS. REV. 110 1 (1958),THIELE J. CHEM PHYS. 39 474 (1968),
+WERTHEIM  PHYS. REV. LETT. 47 1462 (1981)</p>
+<p>param float Q: Q value array (A-1)
+param array args: [float R, float VolFrac]: sphere radius &amp; volume fraction
+returns numpy array S(Q)</p>
 </dd></dl>
 
 <dl class="function">

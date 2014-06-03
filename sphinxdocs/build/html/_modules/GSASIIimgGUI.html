@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASII - image data display routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-04-11 10:17:01 -0500 (Fri, 11 Apr 2014) $</span>
+<span class="c"># $Date: 2014-05-06 16:41:45 -0500 (Tue, 06 May 2014) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1274 $</span>
+<span class="c"># $Revision: 1331 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIimgGUI.py $</span>
-<span class="c"># $Id: GSASIIimgGUI.py 1274 2014-04-11 15:17:01Z vondreele $</span>
+<span class="c"># $Id: GSASIIimgGUI.py 1331 2014-05-06 21:41:45Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIimgGUI: Image GUI*</span>
@@ -74,7 +74,7 @@
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">cPickle</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1274 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1331 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIimage</span> <span class="kn">as</span> <span class="nn">G2img</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 <span class="kn">import</span> <span class="nn">GSASIIplot</span> <span class="kn">as</span> <span class="nn">G2plt</span>
@@ -164,8 +164,11 @@
                     <span class="n">backImage</span> <span class="o">+=</span> <span class="n">BdarkImage</span><span class="o">*</span><span class="n">BdarkScale</span>                
                 <span class="n">sumImg</span> <span class="o">+=</span> <span class="n">backImage</span><span class="o">*</span><span class="n">backScale</span>
             <span class="n">G2frame</span><span class="o">.</span><span class="n">Integrate</span> <span class="o">=</span> <span class="n">G2img</span><span class="o">.</span><span class="n">ImageIntegrate</span><span class="p">(</span><span class="n">sumImg</span><span class="p">,</span><span class="n">data</span><span class="p">,</span><span class="n">masks</span><span class="p">,</span><span class="n">blkSize</span><span class="p">,</span><span class="n">dlg</span><span class="p">)</span>
-    <span class="c">#        G2plt.PlotIntegration(G2frame,newPlot=True)</span>
-            <span class="n">G2IO</span><span class="o">.</span><span class="n">SaveIntegration</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PickId</span><span class="p">,</span><span class="n">data</span><span class="p">)</span>
+<span class="c">#            G2plt.PlotIntegration(G2frame,newPlot=True)</span>
+            <span class="n">Id</span> <span class="o">=</span> <span class="n">G2IO</span><span class="o">.</span><span class="n">SaveIntegration</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PickId</span><span class="p">,</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternId</span> <span class="o">=</span> <span class="n">Id</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
+            <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">Expand</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">MakePDF</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">Enable</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
@@ -192,6 +195,7 @@
                     <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>                    <span class="c">#the &#39;All IMG&#39; is True</span>
                         <span class="n">result</span> <span class="o">=</span> <span class="n">TextList</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
                         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="n">G2frame</span><span class="o">.</span><span class="n">EnablePlot</span> <span class="o">=</span> <span class="bp">False</span>
                     <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
                         <span class="n">ifintegrate</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="nb">id</span> <span class="o">=</span> <span class="n">item</span>
                         <span class="k">if</span> <span class="n">ifintegrate</span><span class="p">:</span>
@@ -227,10 +231,15 @@
                                     <span class="n">G2frame</span><span class="o">.</span><span class="n">Integrate</span> <span class="o">=</span> <span class="n">G2img</span><span class="o">.</span><span class="n">ImageIntegrate</span><span class="p">(</span><span class="n">image</span><span class="o">+</span><span class="n">backImage</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Masks</span><span class="p">,</span><span class="n">blkSize</span><span class="p">,</span><span class="n">dlgp</span><span class="p">)</span>
                                 <span class="k">else</span><span class="p">:</span>
                                     <span class="n">G2frame</span><span class="o">.</span><span class="n">Integrate</span> <span class="o">=</span> <span class="n">G2img</span><span class="o">.</span><span class="n">ImageIntegrate</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Masks</span><span class="p">,</span><span class="n">blkSize</span><span class="p">,</span><span class="n">dlgp</span><span class="p">)</span>
-<span class="c">#                               G2plt.PlotIntegration(G2frame,newPlot=True,event=event)</span>
-                                <span class="n">G2IO</span><span class="o">.</span><span class="n">SaveIntegration</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">Id</span><span class="p">,</span><span class="n">Data</span><span class="p">)</span>
+                                <span class="n">pId</span> <span class="o">=</span> <span class="n">G2IO</span><span class="o">.</span><span class="n">SaveIntegration</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span><span class="n">Id</span><span class="p">,</span><span class="n">Data</span><span class="p">)</span>
                             <span class="k">finally</span><span class="p">:</span>
                                 <span class="n">dlgp</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">G2frame</span><span class="o">.</span><span class="n">EnablePlot</span> <span class="o">=</span> <span class="bp">True</span>
+                        <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">pId</span><span class="p">)</span>
+                        <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">Expand</span><span class="p">(</span><span class="n">pId</span><span class="p">)</span>
+                        <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternId</span> <span class="o">=</span> <span class="n">pId</span>
+                        
             <span class="k">finally</span><span class="p">:</span>
                 <span class="n">dlg</span><span class="o">.</span><span class="n">Destroy</span><span class="p">()</span>
         

@@ -52,11 +52,11 @@
   <h1>Source code for GSASIIstrIO</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-04-19 10:28:10 -0500 (Sat, 19 Apr 2014) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1287 $</span>
+<span class="c"># $Date: 2014-05-22 13:07:10 -0500 (Thu, 22 May 2014) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 1360 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIstrIO.py $</span>
-<span class="c"># $Id: GSASIIstrIO.py 1287 2014-04-19 15:28:10Z toby $</span>
+<span class="c"># $Id: GSASIIstrIO.py 1360 2014-05-22 18:07:10Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIstrIO: structure I/O routines*</span>
@@ -76,7 +76,7 @@
 <span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="kn">as</span> <span class="nn">nl</span>
 <span class="kn">import</span> <span class="nn">scipy.optimize</span> <span class="kn">as</span> <span class="nn">so</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1287 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1360 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIElem</span> <span class="kn">as</span> <span class="nn">G2el</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -799,11 +799,13 @@
         <span class="k">for</span> <span class="n">Ename</span> <span class="ow">in</span> <span class="n">BLtable</span><span class="p">:</span>
             <span class="n">bldata</span> <span class="o">=</span> <span class="n">BLtable</span><span class="p">[</span><span class="n">Ename</span><span class="p">]</span>
             <span class="n">isotope</span> <span class="o">=</span> <span class="n">bldata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">mass</span> <span class="o">=</span> <span class="n">bldata</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">blen</span> <span class="o">=</span> <span class="n">bldata</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">bres</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bldata</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="n">bres</span> <span class="o">=</span> <span class="n">bldata</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">:]</span>
+            <span class="n">mass</span> <span class="o">=</span> <span class="n">bldata</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;Mass&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s">&#39;SL&#39;</span> <span class="ow">in</span> <span class="n">bldata</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">blen</span> <span class="o">=</span> <span class="n">bldata</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;SL&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">bres</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">blen</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">bres</span> <span class="o">=</span> <span class="n">bldata</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;BW-LS&#39;</span><span class="p">]</span>
             <span class="n">line</span> <span class="o">=</span> <span class="s">&#39; </span><span class="si">%8s%11s</span><span class="s"> </span><span class="si">%10.3f</span><span class="s"> </span><span class="si">%8.3f</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">Ename</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span><span class="n">isotope</span><span class="o">.</span><span class="n">center</span><span class="p">(</span><span class="mi">11</span><span class="p">),</span><span class="n">mass</span><span class="p">,</span><span class="n">blen</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">bres</span><span class="p">:</span>
                 <span class="n">line</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="si">%10.5g</span><span class="s">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
@@ -1329,8 +1331,7 @@
     <span class="n">sigMat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">dadg</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">vcov</span><span class="p">,</span><span class="n">dadg</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
     <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">sigMat</span><span class="p">)</span>
     <span class="n">CS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">var</span><span class="o">&gt;</span><span class="mf">0.</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var</span><span class="p">),</span><span class="mf">0.</span><span class="p">)</span>
-    <span class="n">cellSig</span> <span class="o">=</span> <span class="p">[</span><span class="n">CS</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">CS</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">CS</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">CS</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span><span class="n">CS</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="n">CS</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="n">sigVol</span><span class="p">]</span>  <span class="c">#exchange sig(alp) &amp; sig(gam) to get in right order</span>
-    <span class="k">return</span> <span class="n">cellSig</span>            
+    <span class="k">return</span> <span class="p">[</span><span class="n">CS</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">CS</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">CS</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">CS</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span><span class="n">CS</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="n">CS</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span><span class="n">sigVol</span><span class="p">]</span>  <span class="c">#exchange sig(alp) &amp; sig(gam) to get in right order</span>
     </div>
 <div class="viewcode-block" id="SetPhaseData"><a class="viewcode-back" href="../GSASIIstruc.html#GSASIIstrIO.SetPhaseData">[docs]</a><span class="k">def</span> <span class="nf">SetPhaseData</span><span class="p">(</span><span class="n">parmDict</span><span class="p">,</span><span class="n">sigDict</span><span class="p">,</span><span class="n">Phases</span><span class="p">,</span><span class="n">RBIds</span><span class="p">,</span><span class="n">covData</span><span class="p">,</span><span class="n">RestraintDict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">pFile</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="s">&#39;needs a doc string&#39;</span>

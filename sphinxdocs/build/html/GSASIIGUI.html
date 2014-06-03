@@ -370,7 +370,7 @@ which is used to evaluate the expression against a supplied parameter dictionary
 the user is asked to assign parameters from the dictionary to each variable.</p>
 <dl class="class">
 <dt id="GSASIIexprGUI.ExpressionDialog">
-<em class="property">class </em><tt class="descclassname">GSASIIexprGUI.</tt><tt class="descname">ExpressionDialog</tt><big>(</big><em>parent</em>, <em>parmDict</em>, <em>exprObj=None</em>, <em>header='Enter restraint expression here'</em>, <em>wintitle='Expression Editor'</em>, <em>fit=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIexprGUI.</tt><tt class="descname">ExpressionDialog</tt><big>(</big><em>parent</em>, <em>parmDict</em>, <em>exprObj=None</em>, <em>header='Enter restraint expression here'</em>, <em>wintitle='Expression Editor'</em>, <em>fit=True</em>, <em>VarLabel=None</em>, <em>depVarDict=None</em>, <em>ExtraButton=None</em>, <em>usedVars=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog" title="Permalink to this definition">¶</a></dt>
 <dd><p>A wx.Dialog that allows a user to input an arbitrary expression
 to be evaluated and possibly minimized.</p>
 <p>To do this, the user assigns a new (free) or existing
@@ -404,8 +404,20 @@ defaults to &#8220;Expression Editor&#8221;</li>
 <li><strong>header</strong> (<em>str</em>) &#8211; String placed at top of dialog to tell the user
 what they will do here; default is &#8220;Enter restraint expression here&#8221;</li>
 <li><strong>fit</strong> (<em>bool</em>) &#8211; determines if the expression will be used in fitting (default=True).
-If set to False, derivate step values and refinement flags are not shown
+If set to False, and refinement flags are not shown
 and Free parameters are not offered as an assignment option.</li>
+<li><strong>VarLabel</strong> (<em>str</em>) &#8211; an optional variable label to include before the expression
+input. Ignored if None (default)</li>
+<li><strong>depVarDict</strong> (<em>list</em>) &#8211; a dict of choices for the dependent variable to be
+fitted to the expression and their values. Ignored if None (default).</li>
+<li><strong>ExtraButton</strong> (<em>list</em>) &#8211; a list with two terms that define [0]: the label
+for an extra button and [1] the callback routine to be used when the
+button is pressed. The button will only be enabled when the OK button can be
+used (meaning the equation/expression is valid). The default is None, meaning this
+will not be used.</li>
+<li><strong>usedVars</strong> (<em>list</em>) &#8211; defines a list of previously used variable names. These names
+will not be reused as defaults for new free variables.
+(The default is an empty list).</li>
 </ul>
 </td>
 </tr>
@@ -427,6 +439,12 @@ symbol used in <tt class="xref py py-data docutils literal"><span class="pre">se
 </dd></dl>
 
 <dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.GetDepVar">
+<tt class="descname">GetDepVar</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.GetDepVar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.GetDepVar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the name of the dependent variable, when depVarDict is used.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASIIexprGUI.ExpressionDialog.OnChar">
 <tt class="descname">OnChar</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.OnChar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.OnChar" title="Permalink to this definition">¶</a></dt>
 <dd><p>Called as each character is entered. Cancels any running timer
@@ -443,6 +461,13 @@ an expression</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.OnDepChoice">
+<tt class="descname">OnDepChoice</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.OnDepChoice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.OnDepChoice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Respond to a selection of a variable type for a label in
+an expression</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASIIexprGUI.ExpressionDialog.OnValidate">
 <tt class="descname">OnValidate</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.OnValidate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.OnValidate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Respond to a press of the Validate button or when a variable
@@ -450,8 +475,22 @@ is associated with a label (in <a class="reference internal" href="#GSASIIexprGU
 </dd></dl>
 
 <dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.Repaint">
+<tt class="descname">Repaint</tt><big>(</big><em>exprObj</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.Repaint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.Repaint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Redisplay the variables and continue the validation</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIexprGUI.ExpressionDialog.RestartTimer">
+<tt class="descname">RestartTimer</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.RestartTimer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.RestartTimer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels any running timer and starts a new one.
+The timer causes a check of syntax after 2 seconds unless there is further input.
+Disables the OK button until a validity check is complete.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="GSASIIexprGUI.ExpressionDialog.SelectG2var">
-<tt class="descname">SelectG2var</tt><big>(</big><em>sel</em>, <em>var</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.SelectG2var"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.SelectG2var" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">SelectG2var</tt><big>(</big><em>sel</em>, <em>var</em>, <em>parmList</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog.SelectG2var"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.SelectG2var" title="Permalink to this definition">¶</a></dt>
 <dd><p>Offer a selection of a GSAS-II variable.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -479,6 +518,18 @@ where 1 is used for Phase variables, and 2 for Histogram/Phase vars,
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.depVarDict">
+<tt class="descname">depVarDict</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.depVarDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>dict for dependent variables</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.dependentVar">
+<tt class="descname">dependentVar</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.dependentVar" title="Permalink to this definition">¶</a></dt>
+<dd><p>name for dependent variable selection, when depVarDict is specified</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -530,6 +581,12 @@ section is shown in an equally-spaced font.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.usedVars">
+<tt class="descname">usedVars</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.usedVars" title="Permalink to this definition">¶</a></dt>
+<dd><p>variable names that have been used and should not be reused by default</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="GSASIIexprGUI.ExpressionDialog.varName">
 <tt class="descname">varName</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.varName" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name assigned to each variable</p>
@@ -556,17 +613,35 @@ when the option is selected.</li>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="GSASIIexprGUI.ExpressionDialog.varStep">
-<tt class="descname">varStep</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.varStep" title="Permalink to this definition">¶</a></dt>
-<dd><p>Step size for each variable</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="GSASIIexprGUI.ExpressionDialog.varValue">
 <tt class="descname">varValue</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.varValue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Value for a variable (Free parameters only)</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIexprGUI.IndexParmDict">
+<tt class="descclassname">GSASIIexprGUI.</tt><tt class="descname">IndexParmDict</tt><big>(</big><em>parmDict</em>, <em>wildcard</em><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#IndexParmDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.IndexParmDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Separate the parameters in parmDict into list of keys by parameter
+type.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>parmDict</strong> (<em>dict</em>) &#8211; a dict with GSAS-II parameters</li>
+<li><strong>wildcard</strong> (<em>bool</em>) &#8211; True if wildcard versions of parameters should
+be generated and added to the lists</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a dict of lists where key 1 is a list of phase parameters,
+2 is histogram/phase parms, 3 is histogram parms and 4 are global parameters</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>

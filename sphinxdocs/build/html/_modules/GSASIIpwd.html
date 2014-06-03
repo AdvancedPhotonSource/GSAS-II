@@ -380,7 +380,7 @@
 </div>
 <div class="viewcode-block" id="factorize"><a class="viewcode-back" href="../GSASIIpwd.html#GSASIIpwd.factorize">[docs]</a><span class="k">def</span> <span class="nf">factorize</span><span class="p">(</span><span class="n">num</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; Provide prime number factors for integer num</span>
-<span class="sd">    Returns dictionary of prime factors (keys) &amp; power for each (data)</span>
+<span class="sd">    :returns: dictionary of prime factors (keys) &amp; power for each (data)</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">factors</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">orig</span> <span class="o">=</span> <span class="n">num</span>
@@ -506,7 +506,11 @@
 <span class="n">fcjde</span> <span class="o">=</span> <span class="n">fcjde_gen</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;fcjde&#39;</span><span class="p">,</span><span class="n">shapes</span><span class="o">=</span><span class="s">&#39;t,s,dx&#39;</span><span class="p">)</span>
                 
 <div class="viewcode-block" id="getWidthsCW"><a class="viewcode-back" href="../GSASIIpwd.html#GSASIIpwd.getWidthsCW">[docs]</a><span class="k">def</span> <span class="nf">getWidthsCW</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span><span class="n">sig</span><span class="p">,</span><span class="n">gam</span><span class="p">,</span><span class="n">shl</span><span class="p">):</span>
-    <span class="s">&#39;needs a doc string&#39;</span>
+    <span class="sd">&#39;&#39;&#39;Compute the peak widths used for computing the range of a peak</span>
+<span class="sd">    for constant wavelength data.</span>
+<span class="sd">    On low-angle side, 10 FWHM are used, on high-angle side 15 are used</span>
+<span class="sd">    (for peaks above 90 deg, these are reversed.)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">widths</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span><span class="o">/</span><span class="mf">100.</span><span class="p">,</span><span class="n">gam</span><span class="o">/</span><span class="mf">200.</span><span class="p">]</span>
     <span class="n">fwhm</span> <span class="o">=</span> <span class="mf">2.355</span><span class="o">*</span><span class="n">widths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">2.</span><span class="o">*</span><span class="n">widths</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">fmin</span> <span class="o">=</span> <span class="mf">10.</span><span class="o">*</span><span class="p">(</span><span class="n">fwhm</span><span class="o">+</span><span class="n">shl</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="n">npcosd</span><span class="p">(</span><span class="n">pos</span><span class="p">)))</span>

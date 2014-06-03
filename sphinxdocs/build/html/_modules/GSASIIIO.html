@@ -52,11 +52,11 @@
   <h1>Source code for GSASIIIO</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-04-18 13:10:27 -0500 (Fri, 18 Apr 2014) $</span>
+<span class="c"># $Date: 2014-05-27 12:14:59 -0500 (Tue, 27 May 2014) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1285 $</span>
+<span class="c"># $Revision: 1364 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $</span>
-<span class="c"># $Id: GSASIIIO.py 1285 2014-04-18 18:10:27Z vondreele $</span>
+<span class="c"># $Id: GSASIIIO.py 1364 2014-05-27 17:14:59Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIIO: Misc I/O routines*</span>
@@ -81,7 +81,7 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1285 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1364 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -357,10 +357,13 @@
     <span class="n">head</span> <span class="o">=</span> <span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">3072</span><span class="p">)</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
     <span class="n">sizexy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">pixSize</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">pixSize</span> <span class="o">=</span> <span class="p">[</span><span class="mi">154</span><span class="p">,</span><span class="mi">154</span><span class="p">]</span>     <span class="c">#Pixium4700?</span>
     <span class="n">cent</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">wave</span> <span class="o">=</span> <span class="mf">1.54187</span>  <span class="c">#default &lt;CuKa&gt;</span>
+    <span class="n">dist</span> <span class="o">=</span> <span class="mf">1000.</span>
     <span class="n">head</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;European detector data&#39;</span><span class="p">,]</span>
     <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;;&#39;</span><span class="p">,</span><span class="s">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
         <span class="k">if</span> <span class="s">&#39;Dim_1&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
             <span class="n">sizexy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
@@ -368,7 +371,7 @@
             <span class="n">sizexy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
         <span class="k">elif</span> <span class="s">&#39;DataType&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
             <span class="n">dType</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="s">&#39;refined_wavelength&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="s">&#39;wavelength&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
             <span class="n">wave</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
         <span class="k">elif</span> <span class="s">&#39;Size&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
             <span class="n">imSize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
@@ -386,10 +389,14 @@
             <span class="n">dist</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
             <span class="n">head</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>   <span class="c">#blank line at end of header</span>
+            <span class="k">break</span>  
     <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">fileSize</span><span class="o">-</span><span class="n">imSize</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">dType</span> <span class="o">==</span> <span class="s">&#39;UnsignedShort&#39;</span><span class="p">:</span>        
         <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">imSize</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">dType</span> <span class="o">==</span> <span class="s">&#39;UnsignedInt&#39;</span><span class="p">:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;L&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">imSize</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">dType</span> <span class="o">==</span> <span class="s">&#39;UnsignedLong&#39;</span><span class="p">:</span>
         <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;L&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">imSize</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>        
     <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">image</span><span class="p">,(</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
     <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pixelSize&#39;</span><span class="p">:</span><span class="n">pixSize</span><span class="p">,</span><span class="s">&#39;wavelength&#39;</span><span class="p">:</span><span class="n">wave</span><span class="p">,</span><span class="s">&#39;distance&#39;</span><span class="p">:</span><span class="n">dist</span><span class="p">,</span><span class="s">&#39;center&#39;</span><span class="p">:</span><span class="n">cent</span><span class="p">,</span><span class="s">&#39;size&#39;</span><span class="p">:</span><span class="n">sizexy</span><span class="p">}</span>
@@ -916,6 +923,10 @@
 <span class="c">#    </span></div>
 <div class="viewcode-block" id="ProjFileOpen"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ProjFileOpen">[docs]</a><span class="k">def</span> <span class="nf">ProjFileOpen</span><span class="p">(</span><span class="n">G2frame</span><span class="p">):</span>
     <span class="s">&#39;Read a GSAS-II project file and load into the G2 data tree&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GSASprojectfile</span><span class="p">):</span>
+        <span class="k">print</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">*** Error attempt to open project file that does not exist:</span><span class="se">\n</span><span class="s">   &#39;</span><span class="o">+</span>
+               <span class="nb">str</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GSASprojectfile</span><span class="p">))</span>
+        <span class="k">return</span>
     <span class="nb">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GSASprojectfile</span><span class="p">,</span><span class="s">&#39;rb&#39;</span><span class="p">)</span>
     <span class="k">print</span> <span class="s">&#39;load from file: &#39;</span><span class="p">,</span><span class="n">G2frame</span><span class="o">.</span><span class="n">GSASprojectfile</span>
     <span class="n">G2frame</span><span class="o">.</span><span class="n">SetTitle</span><span class="p">(</span><span class="s">&quot;GSAS-II data tree: &quot;</span><span class="o">+</span>
@@ -1037,7 +1048,7 @@
             <span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Trans&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;SampleAbs&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">parms</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;LXC&#39;</span><span class="p">,</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;wavelength&#39;</span><span class="p">],</span><span class="mf">0.0</span><span class="p">,</span><span class="n">Azms</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
         <span class="n">Y</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">Integrate</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
-        <span class="n">W</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">Y</span>                    <span class="c">#probably not true</span>
+        <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Y</span><span class="o">&gt;</span><span class="mf">0.</span><span class="p">,</span><span class="mf">1.</span><span class="o">/</span><span class="n">Y</span><span class="p">,</span><span class="mf">1.e-6</span><span class="p">)</span>                    <span class="c">#probably not true</span>
         <span class="n">Id</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Comments&#39;</span><span class="p">),</span><span class="n">Comments</span><span class="p">)</span>                    
         <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Limits&#39;</span><span class="p">),[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">Xminmax</span><span class="p">),</span><span class="n">Xminmax</span><span class="p">])</span>
@@ -1066,9 +1077,7 @@
         <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span>
             <span class="n">Id</span><span class="p">,[</span><span class="n">valuesdict</span><span class="p">,</span>
                 <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Y</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">W</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)]])</span>
-    <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SelectItem</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
-    <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">Expand</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span>
-    <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternId</span> <span class="o">=</span> <span class="n">Id</span>
+    <span class="k">return</span> <span class="n">Id</span>       <span class="c">#last powder pattern generated</span>
             
 <span class="c"># def powderFxyeSave(G2frame,exports,powderfile):</span>
 <span class="c">#     &#39;Save a powder histogram as a GSAS FXYE file&#39;</span>
@@ -1459,6 +1468,7 @@
         <span class="c"># used for readers that will use multiple passes to read</span>
         <span class="c"># more than one data block</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selections</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeatcount</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">readfilename</span> <span class="o">=</span> <span class="s">&#39;?&#39;</span>
         <span class="c">#print &#39;created&#39;,self.__class__</span>
@@ -1647,9 +1657,6 @@
 <span class="sd">    should load :attr:`RefDict` item ``&#39;RefList&#39;`` with the reflection list,</span>
 <span class="sd">    and set :attr:`Parameters` with the instrument parameters</span>
 <span class="sd">    (initialized with :meth:`InitParameters` and set with :meth:`UpdateParameters`).</span>
-<span class="sd">    Also, set :attr:`Controls`, </span>
-<span class="sd">    which specifies how the histogram is plotted</span>
-<span class="sd">    (initialized with :meth:`InitControls` and set with :meth:`UpdateControls`).</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">formatName</span><span class="p">,</span><span class="n">longFormatName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">extensionlist</span><span class="o">=</span><span class="p">[],</span>
         <span class="n">strictExtension</span><span class="o">=</span><span class="bp">False</span><span class="p">,):</span>
@@ -1660,10 +1667,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Parameters</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="s">&#39;self.Parameters is a list with two dicts for data parameter settings&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">InitParameters</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Controls</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="s">&#39;self.Controls is a dict with plotting controls&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">InitControls</span><span class="p">()</span> <span class="c"># initialize the above</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Banks</span> <span class="o">=</span> <span class="p">[]</span>             <span class="c">#for multi bank data (usually TOF)</span>
         <span class="sd">&#39;&#39;&#39;self.RefDict is a dict containing the reflection information, as read from the file.</span>
 <span class="sd">        Item &#39;RefList&#39; contains the reflection information. See the</span>
 <span class="sd">        :ref:`Single Crystal Reflection Data Structure&lt;XtalRefl_table&gt;`</span>
@@ -1675,23 +1680,8 @@
         <span class="s">&#39;Reinitialize the Reader to initial settings&#39;</span>
         <span class="n">ImportBaseclass</span><span class="o">.</span><span class="n">ReInitialize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">InitParameters</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">InitControls</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
-
         </div>
-<div class="viewcode-block" id="ImportStructFactor.InitControls"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportStructFactor.InitControls">[docs]</a>    <span class="k">def</span> <span class="nf">InitControls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="s">&#39;initialize the controls structure&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Controls</span> <span class="o">=</span> <span class="p">{</span> <span class="c"># dictionary with plotting controls</span>
-            <span class="s">&#39;Type&#39;</span> <span class="p">:</span> <span class="s">&#39;Fosq&#39;</span><span class="p">,</span>
-            <span class="s">&#39;ifFc&#39;</span> <span class="p">:</span> <span class="bp">False</span><span class="p">,</span>    <span class="c"># </span>
-            <span class="s">&#39;HKLmax&#39;</span> <span class="p">:</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">],</span>
-            <span class="s">&#39;HKLmin&#39;</span> <span class="p">:</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">],</span>
-            <span class="s">&#39;FoMax&#39;</span> <span class="p">:</span> <span class="bp">None</span><span class="p">,</span>   <span class="c"># maximum observed structure factor as Fo</span>
-            <span class="s">&#39;Zone&#39;</span> <span class="p">:</span> <span class="s">&#39;001&#39;</span><span class="p">,</span>
-            <span class="s">&#39;Layer&#39;</span> <span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s">&#39;Scale&#39;</span> <span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
-            <span class="p">}</span>
-</div>
 <div class="viewcode-block" id="ImportStructFactor.InitParameters"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportStructFactor.InitParameters">[docs]</a>    <span class="k">def</span> <span class="nf">InitParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="s">&#39;initialize the instrument parameters structure&#39;</span>
         <span class="n">Lambda</span> <span class="o">=</span> <span class="mf">0.70926</span>
@@ -1707,38 +1697,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">Parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Type</span><span class="p">,</span><span class="n">Type</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">Wave</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;Lam&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Wave</span><span class="p">,</span><span class="n">Wave</span><span class="p">]</span>
-            </div>
-<div class="viewcode-block" id="ImportStructFactor.UpdateControls"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportStructFactor.UpdateControls">[docs]</a>    <span class="k">def</span> <span class="nf">UpdateControls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">Type</span><span class="o">=</span><span class="s">&#39;Fosq&#39;</span><span class="p">,</span><span class="n">FcalcPresent</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Scan through the reflections to update the Controls dictionary</span>
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Controls</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Type</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Controls</span><span class="p">[</span><span class="s">&#39;ifFc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FcalcPresent</span>
-        <span class="n">HKLmax</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">]</span>
-        <span class="n">HKLmin</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">,</span><span class="bp">None</span><span class="p">]</span>
-        <span class="n">Fo2max</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="k">for</span> <span class="n">refl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span><span class="p">[</span><span class="s">&#39;RefList&#39;</span><span class="p">]:</span>
-            <span class="n">HKL</span> <span class="o">=</span> <span class="n">refl</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">Fo2max</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="n">Fo2max</span> <span class="o">=</span> <span class="n">refl</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">Fo2max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">Fo2max</span><span class="p">,</span><span class="n">refl</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">hkl</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">HKL</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">HKLmax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                    <span class="n">HKLmax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">hkl</span>
-                    <span class="n">HKLmin</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">hkl</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">HKLmax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">HKLmax</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">hkl</span><span class="p">)</span>
-                    <span class="n">HKLmin</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">HKLmin</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">hkl</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Controls</span><span class="p">[</span><span class="s">&#39;HKLmax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">HKLmax</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Controls</span><span class="p">[</span><span class="s">&#39;HKLmin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">HKLmin</span>
-        <span class="k">if</span> <span class="n">Type</span> <span class="o">==</span>  <span class="s">&#39;Fosq&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">Controls</span><span class="p">[</span><span class="s">&#39;FoMax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Fo2max</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">Type</span> <span class="o">==</span>  <span class="s">&#39;Fo&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">Controls</span><span class="p">[</span><span class="s">&#39;FoMax&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fo2max</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&quot;Unsupported Struct Fact type in ImportStructFactor.UpdateControls&quot;</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span><span class="s">&quot;Unsupported Struct Fact type in ImportStructFactor.UpdateControls&quot;</span>
-
+                       
 <span class="c">######################################################################</span></div></div>
 <div class="viewcode-block" id="ImportPowderData"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportPowderData">[docs]</a><span class="k">class</span> <span class="nc">ImportPowderData</span><span class="p">(</span><span class="n">ImportBaseclass</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Defines a base class for the reading of files with powder data.</span>
@@ -1866,6 +1825,7 @@
 <span class="sd">                np.array(w), # 1/sig(intensity)^2 values (weights)</span>
 <span class="sd">                np.array(yc), # calc. intensities (zero)</span>
 <span class="sd">                np.array(yd), # obs-calc profiles</span>
+<span class="sd">                np.array(yb), # preset bkg</span>
 <span class="sd">        &#39;&#39;&#39;</span>                            
         <span class="bp">self</span><span class="o">.</span><span class="n">comments</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idstring</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>

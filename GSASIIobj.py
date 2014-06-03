@@ -945,11 +945,11 @@ def IndexAllIds(Histograms,Phases):
     Note: this code assumes that the atom random Id (ranId) is the last 
     element each atom record.
 
-    This is called in three places (only) :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`
+    This is called in three places (only): :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`
     (which loads the histograms and phases from a GPX file),
-    :meth:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`
+    :meth:`~GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`
     (which loads the histograms and phases from the data tree.) and
-    :meth:`GSASII.GSASIIconstrGUI.UpdateConstraints
+    :meth:`GSASIIconstrGUI.UpdateConstraints`
     (which displays & edits the constraints in a GUI)
 
     TODO: do we need a lookup for rigid body variables?

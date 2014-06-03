@@ -53,11 +53,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIconstrGUI - constraint GUI routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-03-12 15:46:47 -0500 (Wed, 12 Mar 2014) $</span>
-<span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1247 $</span>
+<span class="c"># $Date: 2014-05-21 12:59:59 -0500 (Wed, 21 May 2014) $</span>
+<span class="c"># $Author: vondreele $</span>
+<span class="c"># $Revision: 1359 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIconstrGUI.py $</span>
-<span class="c"># $Id: GSASIIconstrGUI.py 1247 2014-03-12 20:46:47Z toby $</span>
+<span class="c"># $Id: GSASIIconstrGUI.py 1359 2014-05-21 17:59:59Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIconstrGUI: Constraint GUI routines*</span>
@@ -76,7 +76,7 @@
 <span class="kn">import</span> <span class="nn">numpy.ma</span> <span class="kn">as</span> <span class="nn">ma</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1247 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1359 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIElem</span> <span class="kn">as</span> <span class="nn">G2elem</span>
 <span class="kn">import</span> <span class="nn">GSASIIElemGUI</span> <span class="kn">as</span> <span class="nn">G2elemGUI</span>
 <span class="kn">import</span> <span class="nn">GSASIIstrIO</span> <span class="kn">as</span> <span class="nn">G2stIO</span>
@@ -256,6 +256,7 @@
     <span class="c">#reload(G2gd)</span>
     <span class="c">###################################################</span>
     <span class="n">Histograms</span><span class="p">,</span><span class="n">Phases</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">GetUsedHistogramsAndPhasesfromTree</span><span class="p">()</span>
+    <span class="n">G2obj</span><span class="o">.</span><span class="n">IndexAllIds</span><span class="p">(</span><span class="n">Histograms</span><span class="p">,</span><span class="n">Phases</span><span class="p">)</span>
     <span class="c">##################################################################################</span>
     <span class="c"># patch: convert old-style (str) variables in constraints to G2VarObj objects</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>

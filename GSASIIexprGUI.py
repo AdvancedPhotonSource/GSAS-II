@@ -30,7 +30,8 @@ import GSASIIobj as G2obj
 
 def IndexParmDict(parmDict,wildcard):
     '''Separate the parameters in parmDict into list of keys by parameter
-    type
+    type.
+    
     :param dict parmDict: a dict with GSAS-II parameters
     :param bool wildcard: True if wildcard versions of parameters should
       be generated and added to the lists

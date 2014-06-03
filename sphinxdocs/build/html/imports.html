@@ -439,7 +439,7 @@ The distributed routines are:</p>
 provided to read from files containing F or F<sup>2</sup> values.</p>
 <dl class="function">
 <dt id="G2sfact.ColumnValidator">
-<tt class="descclassname">G2sfact.</tt><tt class="descname">ColumnValidator</tt><big>(</big><em>parent</em>, <em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2sfact.html#ColumnValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.ColumnValidator" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">G2sfact.</tt><tt class="descname">ColumnValidator</tt><big>(</big><em>parent</em>, <em>filepointer</em>, <em>nCol=5</em><big>)</big><a class="reference internal" href="_modules/G2sfact.html#ColumnValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.ColumnValidator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Validate a file to check that it contains columns of numbers</p>
 </dd></dl>
 
@@ -474,6 +474,24 @@ provided to read from files containing F or F<sup>2</sup> values.</p>
 <dl class="method">
 <dt id="G2sfact.HKLF_ReaderClass.Reader">
 <tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**unused</em><big>)</big><a class="reference internal" href="_modules/G2sfact.html#HKLF_ReaderClass.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.HKLF_ReaderClass.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the file</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="G2sfact.NT_HKLF2_ReaderClass">
+<em class="property">class </em><tt class="descclassname">G2sfact.</tt><tt class="descname">NT_HKLF2_ReaderClass</tt><a class="reference internal" href="_modules/G2sfact.html#NT_HKLF2_ReaderClass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.NT_HKLF2_ReaderClass" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routines to import neutron TOF F**2, sig(F**2) reflections from a HKLF file</p>
+<dl class="method">
+<dt id="G2sfact.NT_HKLF2_ReaderClass.ContentsValidator">
+<tt class="descname">ContentsValidator</tt><big>(</big><em>filepointer</em><big>)</big><a class="reference internal" href="_modules/G2sfact.html#NT_HKLF2_ReaderClass.ContentsValidator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.NT_HKLF2_ReaderClass.ContentsValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make sure file contains the expected columns on numbers &amp; count number of data blocks - &#8220;Banks&#8221;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="G2sfact.NT_HKLF2_ReaderClass.Reader">
+<tt class="descname">Reader</tt><big>(</big><em>filename</em>, <em>filepointer</em>, <em>ParentFrame=None</em>, <em>**unused</em><big>)</big><a class="reference internal" href="_modules/G2sfact.html#NT_HKLF2_ReaderClass.Reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#G2sfact.NT_HKLF2_ReaderClass.Reader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Read the file</p>
 </dd></dl>
 

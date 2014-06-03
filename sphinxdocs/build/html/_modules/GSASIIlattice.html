@@ -75,17 +75,18 @@
 <span class="sd">:math:`Q = 2 \\pi d^* = 2 \\pi / d`</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-02 15:42:53 -0500 (Wed, 02 Oct 2013) $</span>
+<span class="c"># $Date: 2014-05-30 17:27:15 -0500 (Fri, 30 May 2014) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1075 $</span>
+<span class="c"># $Revision: 1372 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIlattice.py $</span>
-<span class="c"># $Id: GSASIIlattice.py 1075 2013-10-02 20:42:53Z vondreele $</span>
+<span class="c"># $Id: GSASIIlattice.py 1372 2014-05-30 22:27:15Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="kn">as</span> <span class="nn">nl</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1075 $&quot;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1372 $&quot;</span><span class="p">)</span>
 <span class="c"># trig functions in degrees</span>
 <span class="n">sind</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
 <span class="n">asind</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">180.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
@@ -464,6 +465,28 @@
 <span class="c">#reflection generation routines</span>
 <span class="c">#for these: H = [h,k,l]; A is as used in calc_rDsq; G - inv metric tensor, g - metric tensor; </span>
 <span class="c">#           cell - a,b,c,alp,bet,gam in A &amp; deg</span>
+   </div>
+<div class="viewcode-block" id="Pos2dsp"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.Pos2dsp">[docs]</a><span class="k">def</span> <span class="nf">Pos2dsp</span><span class="p">(</span><span class="n">Inst</span><span class="p">,</span><span class="n">pos</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; convert powder pattern position (2-theta or TOF, musec) to d-spacing</span>
+<span class="sd">    ignores secondary effects (e.g. difA in TOF)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="s">&#39;C&#39;</span> <span class="ow">in</span> <span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">wave</span> <span class="o">=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">getWave</span><span class="p">(</span><span class="n">Inst</span><span class="p">)</span>
+        <span class="n">dsp</span> <span class="o">=</span> <span class="n">wave</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">sind</span><span class="p">((</span><span class="n">pos</span><span class="o">-</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mf">2.0</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>   <span class="c">#&#39;T&#39;OF - ignore difA</span>
+        <span class="n">dsp</span> <span class="o">=</span> <span class="p">(</span><span class="n">pos</span><span class="o">-</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="n">difC</span>
+    <span class="k">return</span> <span class="n">dsp</span>
+    </div>
+<div class="viewcode-block" id="Dsp2pos"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.Dsp2pos">[docs]</a><span class="k">def</span> <span class="nf">Dsp2pos</span><span class="p">(</span><span class="n">Inst</span><span class="p">,</span><span class="n">dsp</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; convert d-spacing to powder pattern position (2-theta or TOF, musec)</span>
+<span class="sd">    ignores secondary effects (e.g. difA in TOF) - maybe later?</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="s">&#39;C&#39;</span> <span class="ow">in</span> <span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">wave</span> <span class="o">=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">getWave</span><span class="p">(</span><span class="n">Inst</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">asind</span><span class="p">(</span><span class="n">wave</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">dsp</span><span class="p">))</span><span class="o">+</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>             
+    <span class="k">else</span><span class="p">:</span>   <span class="c">#&#39;T&#39;OF - ignore difA</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">Inst</span><span class="p">[</span><span class="s">&#39;difC&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">+</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">pos</span>             
    </div>
 <div class="viewcode-block" id="calc_rDsq"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.calc_rDsq">[docs]</a><span class="k">def</span> <span class="nf">calc_rDsq</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">A</span><span class="p">):</span>
     <span class="s">&#39;needs doc string&#39;</span>

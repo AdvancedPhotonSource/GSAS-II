@@ -475,7 +475,7 @@ def HardSpheresSF(Q,args):
 def SquareWellSF(Q,args):
     '''Computes structure factor for not dilute monodisperse hard sphere with a
     square well potential interaction. 
-    Refs.: SHARMA,SHARMA, PHYSICA 89A,(1977),212
+    Refs.: SHARMA,SHARMA, PHYSICA 89A,(1977),213-
     
     :param float Q: Q value array (A-1)
     :param array args: [float R, float VolFrac, float depth, float width]: 
@@ -1371,7 +1371,7 @@ def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
             Rbins.append([])
             Dist.append([])
     Ic[Ibeg:Ifin] += Back[0]
-    slitLen = Sample['SlitLen']
+    slitLen = Sample.get('SlitLen',0.)
     if slitLen:
         Ic[Ibeg:Ifin] = SmearData(Ic,Q,slitLen,Back[0])[Ibeg:Ifin]
     sasdData['Size Calc'] = [Rbins,Dist]

@@ -533,12 +533,13 @@ def ImageRecalibrate(self,data,masks):
     rings = np.concatenate((data['rings']),axis=0)
     if data['DetDepthRef']:
         varyList.append('dep')
-    FitDetector(rings,varyList,parmDict)
+    chisq = FitDetector(rings,varyList,parmDict)
     data['distance'] = parmDict['dist']
     data['center'] = [parmDict['det-X'],parmDict['det-Y']]
     data['rotation'] = np.mod(parmDict['phi'],360.0)
     data['tilt'] = parmDict['tilt']
     data['DetDepth'] = parmDict['dep']
+    data['chisq'] = chisq
     N = len(data['ellipses'])
     data['ellipses'] = []           #clear away individual ellipse fits
     for H in HKL[:N]:
@@ -715,6 +716,7 @@ def ImageCalibrate(self,data):
                 data['rotation'] = parmDict['phi']
                 data['tilt'] = parmDict['tilt']
                 data['DetDepth'] = parmDict['dep']
+                data['chisq'] = chisq
                 elcent,phi,radii = ellipse = GetEllipse(dsp,data)
                 print fmt2%('fitted ellipse:   ',elcent[0],elcent[1],phi,radii[0],radii[1],chisq,len(rings))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))

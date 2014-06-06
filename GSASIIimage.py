@@ -939,7 +939,6 @@ def CalcStrSta(StrSta,Controls):
 
     wave = Controls['wavelength']
     phi = StrSta['Sample phi']
-    E = StrSta['strain']
     StaType = StrSta['Type']
     for ring in StrSta['d-zero']:
         Eij = ring['Emat']

@@ -289,6 +289,7 @@ def UpdateImageControls(G2frame,data,masks):
                         save[key] = eval(val)
                     S = File.readline()
                 data.update(save)
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(Data))
                 UpdateImageControls(G2frame,data,masks)
                 G2plt.PlotExposedImage(G2frame,event=event)
                 
@@ -1128,8 +1129,7 @@ def UpdateMasks(G2frame,data):
                     S = File.readline()
                 data.update(save)
                 UpdateMasks(G2frame,data)
-                G2plt.PlotExposedImage(G2frame,event=event)
-                
+                G2plt.PlotExposedImage(G2frame,event=event)                
                 File.close()
         finally:
             dlg.Destroy()
@@ -1404,13 +1404,28 @@ def UpdateStressStrain(G2frame,data):
                     for i,item in enumerate(result):
                         ifcopy,name,id = item
                         if ifcopy:
-                            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'),copy.deepcopy(Data))
+                            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'),copy.deepcopy(data))
             finally:
                 dlg.Destroy()
 
     def OnLoadStrSta(event):
-        print 'Load stress/strain data - does nothing yet'
-        event.Skip()
+        dlg = wx.FileDialog(G2frame, 'Choose stress/strain file', '.', '', 
+            'image control files (*.strsta)|*.strsta',wx.OPEN|wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'r')
+                S = File.read()
+                data = eval(S)
+                Controls = G2frame.PatternTree.GetItemPyData(
+                    G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
+                G2img.FitStrSta(G2frame.ImageZ,data,Controls)
+                UpdateStressStrain(G2frame,data)
+                G2plt.PlotExposedImage(G2frame,event=event)
+                G2plt.PlotStrain(G2frame,data,newPlot=True)
+                File.close()
+        finally:
+            dlg.Destroy()
 
     def OnSaveStrSta(event):
         dlg = wx.FileDialog(G2frame, 'Choose stress/strain file', '.', '', 
@@ -1424,16 +1439,16 @@ def UpdateStressStrain(G2frame,data):
                 keys2 = ['Dset','Dcalc','pixLimit','cutoff','Emat']
                 File.write('{\n\t')
                 for key in keys:
-                    if key in 'strain':
-                        File.write("'"+key+"':["+str(data[key][0])+','+str(data[key][1])+','+str(data[key][2])+'],')
+                    if key in 'Type':
+                        File.write("'"+key+"':'"+data[key]+"',")
                     else:
                         File.write("'"+key+"':"+str(data[key])+',')
                 File.write('\n\t'+"'d-zero':[\n")
                 for data2 in data['d-zero']:
                     File.write('\t\t{')
                     for key in keys2:
-                        File.write("'"+key+"':"+':'+str(data2[key])+',')
-                    File.write("'ImxyObs':[[],[]],'ImtaObs':[[],[]],'Imtacalc':[[],[]]},\n")
+                        File.write("'"+key+"':"+str(data2[key])+',')
+                    File.write("'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]]},\n")
                 File.write('\t]\n}')
                 File.close()
         finally:

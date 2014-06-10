@@ -975,45 +975,45 @@ def SaveIntegration(G2frame,PickId,data):
         for i,azm in enumerate(azms[:-1]):
             Azms.append((azms[i+1]+azm)/2.)
     for i,azm in enumerate(azms[:-1]):
-        name += " Azm= %.2f"%(Azms[i])
+        Aname = name+" Azm= %.2f"%(Azms[i])
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         nOcc = 0
         while item:
             Name = G2frame.PatternTree.GetItemText(item)
-            if name in Name:
+            if Aname in Name:
                 nOcc += 1
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
         if nOcc:
-            name += '(%d)'%(nOcc)
+            Aname += '(%d)'%(nOcc)
         Sample = G2pdG.SetDefaultSample()
         Sample['Gonio. radius'] = data['distance']
         Sample['Omega'] = data['GonioAngles'][0]
         Sample['Chi'] = data['GonioAngles'][1]
         Sample['Phi'] = data['GonioAngles'][2]
-        if 'PWDR' in name:
+        if 'PWDR' in Aname:
             parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]    #set polarization for synchrotron radiation!
-        elif 'SASD' in name:
+        elif 'SASD' in Aname:
             Sample['Trans'] = data['SampleAbs'][0]
             parms = ['LXC',data['wavelength'],0.0,Azms[i]]
         Y = G2frame.Integrate[0][i]
         W = np.where(Y>0.,1./Y,1.e-6)                    #probably not true
-        Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=name)
+        Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=Aname)
         G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
         G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
-        if 'PWDR' in name:
+        if 'PWDR' in Aname:
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Background'),[['chebyschev',1,3,1.0,0.0,0.0],
                 {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
         inst = [dict(zip(names,zip(parms,parms,codes))),{}]
         for item in inst[0]:
             inst[0][item] = list(inst[0][item])
         G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Instrument Parameters'),inst)
-        if 'PWDR' in name:
+        if 'PWDR' in Aname:
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Peak List'),[])
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Index Peak List'),[])
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Unit Cells List'),[])
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Reflection Lists'),{})
-        elif 'SASD' in name:             
+        elif 'SASD' in Aname:             
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Substances'),G2pdG.SetDefaultSubstances())
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
             G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Models'),G2pdG.SetDefaultSASDModel())

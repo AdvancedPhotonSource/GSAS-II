@@ -289,7 +289,7 @@ def UpdateImageControls(G2frame,data,masks):
                         save[key] = eval(val)
                     S = File.readline()
                 data.update(save)
-                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(Data))
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(data))
                 UpdateImageControls(G2frame,data,masks)
                 G2plt.PlotExposedImage(G2frame,event=event)
                 

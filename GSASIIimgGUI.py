@@ -390,7 +390,7 @@ def UpdateImageControls(G2frame,data,masks):
             minVal.SetValue('%.0f'%(data['range'][1][0]))
             G2plt.PlotExposedImage(G2frame,event=event)
             
-        maxSizer = wx.FlexGridSizer(2,3,0,5)
+        maxSizer = wx.FlexGridSizer(0,3,0,5)
         maxSizer.AddGrowableCol(1,1)
         maxSizer.SetFlexibleDirection(wx.HORIZONTAL)
         sqrtDeltZero = math.sqrt(data['range'][0][1]-max(0.0,data['range'][0][0]))
@@ -438,7 +438,7 @@ def UpdateImageControls(G2frame,data,masks):
                 pass
             penVal.SetValue("%6.3f" % (data['DetDepth']))          #reset in case of error                      
             
-        calibSizer = wx.FlexGridSizer(5,2,5,5)
+        calibSizer = wx.FlexGridSizer(0,2,5,5)
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibration coefficients'),0,WACV)    
         calibSizer.Add((5,0),0)        
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Beam center X,Y'),0,WACV)
@@ -613,7 +613,7 @@ def UpdateImageControls(G2frame,data,masks):
                 pass
             polaVal.SetValue('%.3f'%(data['PolaVal'][0]))
                            
-        dataSizer = wx.FlexGridSizer(5,2,5,3)
+        dataSizer = wx.FlexGridSizer(0,2,5,3)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Integration coefficients'),0,WACV)    
         dataSizer.Add((5,0),0)
         if 'PWDR' in data['type']:
@@ -750,7 +750,7 @@ def UpdateImageControls(G2frame,data,masks):
                 pass
             darkMult.SetValue("%.3f" % (data['dark image'][1]))          #reset in case of error 
         
-        backSizer = wx.FlexGridSizer(1,4,5,5)
+        backSizer = wx.FlexGridSizer(0,4,5,5)
 
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Dark image'),0,WACV)
         Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
@@ -824,7 +824,7 @@ def UpdateImageControls(G2frame,data,masks):
                 data['setRings'] = True
             G2plt.PlotExposedImage(G2frame,event=event)
     
-        calibSizer = wx.FlexGridSizer(2,3,5,5)
+        calibSizer = wx.FlexGridSizer(0,3,5,5)
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)    
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibrant '),0,WACV)
         calSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['calibrant'],choices=calList,
@@ -950,7 +950,7 @@ def UpdateImageControls(G2frame,data,masks):
     mainSizer.Add(MaxSizer(),0,wx.ALIGN_LEFT|wx.EXPAND)
     
     mainSizer.Add((5,5),0)
-    DataSizer = wx.FlexGridSizer(1,2,5,5)
+    DataSizer = wx.FlexGridSizer(0,2,5,5)
     DataSizer.Add(CalibCoeffSizer(),0)
     DataSizer.Add(IntegrateSizer(),0)        
     mainSizer.Add(DataSizer,0)
@@ -1197,7 +1197,7 @@ def UpdateMasks(G2frame,data):
     frame = data['Frames']             #3+ x,y pairs
     arcs = data['Arcs']                 #radius, start/end azimuth, thickness
     
-    littleSizer = wx.FlexGridSizer(2,3,0,5)
+    littleSizer = wx.FlexGridSizer(0,3,0,5)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Lower/Upper limits '),0,WACV)
     Text = wx.TextCtrl(G2frame.dataDisplay,value=("%8d" % (thresh[0][0])),style=wx.TE_READONLY)
     littleSizer.Add(Text,0,WACV)
@@ -1220,7 +1220,7 @@ def UpdateMasks(G2frame,data):
     spotIds = []
     delSpotId = []
     if spots:
-        littleSizer = wx.FlexGridSizer(len(spots)+2,3,0,5)
+        littleSizer = wx.FlexGridSizer(0,3,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Spot masks:'),0,WACV)
         littleSizer.Add((5,0),0)
         littleSizer.Add((5,0),0)
@@ -1249,7 +1249,7 @@ def UpdateMasks(G2frame,data):
     ringIds = []
     delRingId = []
     if rings:
-        littleSizer = wx.FlexGridSizer(len(rings)+2,3,0,5)
+        littleSizer = wx.FlexGridSizer(0,3,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Ring masks:'),0,WACV)
         littleSizer.Add((5,0),0)
         littleSizer.Add((5,0),0)
@@ -1278,7 +1278,7 @@ def UpdateMasks(G2frame,data):
     arcIds = []
     delArcId = []
     if arcs:
-        littleSizer = wx.FlexGridSizer(len(rings)+2,4,0,5)
+        littleSizer = wx.FlexGridSizer(0,4,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Arc masks:'),0,WACV)
         littleSizer.Add((5,0),0)
         littleSizer.Add((5,0),0)
@@ -1315,7 +1315,7 @@ def UpdateMasks(G2frame,data):
     delPolyId = []
     delFrameId = []
     if polygons:
-        littleSizer = wx.FlexGridSizer(len(polygons)+2,2,0,5)
+        littleSizer = wx.FlexGridSizer(0,2,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Polygon masks:'),0,WACV)
         littleSizer.Add((5,0),0)
         for polygon in polygons:
@@ -1331,7 +1331,7 @@ def UpdateMasks(G2frame,data):
                 littleSizer.Add(polyDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     if frame:
-        littleSizer = wx.FlexGridSizer(3,2,0,5)
+        littleSizer = wx.FlexGridSizer(0,2,0,5)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Frame mask:'),0,
             WACV)
         littleSizer.Add((5,0),0)
@@ -1590,7 +1590,7 @@ def UpdateStressStrain(G2frame,data):
             
         Indx = {}
         delIndx = []    
-        dzeroSizer = wx.FlexGridSizer(1,8,5,5)
+        dzeroSizer = wx.FlexGridSizer(0,8,5,5)
         for id,dzero in enumerate(data['d-zero']):
             dzeroSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=(' d-zero #%d: '%(id))),0,WACV)
             dZero = wx.TextCtrl(G2frame.dataDisplay,-1,value=('%.5f'%(dzero['Dset'])),

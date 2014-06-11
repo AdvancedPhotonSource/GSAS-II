@@ -381,7 +381,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for cellGUI in cellGUIlist:
                 if laue in cellGUI[0]:
                     useGUI = cellGUI
-            cellSizer = wx.FlexGridSizer(2,useGUI[1]+1,5,5)
+            cellSizer = wx.FlexGridSizer(0,useGUI[1]+1,5,5)
             if PWDR:
                 cellRef = wx.CheckBox(General,-1,label='Refine unit cell:')
                 cellSizer.Add(cellRef,0,WACV)
@@ -417,7 +417,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if denSizer[2]:
                     denSizer[2].SetValue('%.3f'%(mattCoeff))
                 
-            elemSizer = wx.FlexGridSizer(8,len(generalData['AtomTypes'])+1,1,1)
+            elemSizer = wx.FlexGridSizer(0,len(generalData['AtomTypes'])+1,1,1)
             elemSizer.Add(wx.StaticText(General,label=' Elements'),0,WACV)
             for elem in generalData['AtomTypes']:
                 typTxt = wx.TextCtrl(General,value=elem,style=wx.TE_READONLY)
@@ -1698,11 +1698,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         panel1 = wxscroll.ScrolledPanel(
             dlg, wx.ID_ANY,#size=(100,200),
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-        subSizer1 = wx.FlexGridSizer(rows=1,cols=2,hgap=5,vgap=2)
+        subSizer1 = wx.FlexGridSizer(cols=2,hgap=5,vgap=2)
         panel2 = wxscroll.ScrolledPanel(
             dlg, wx.ID_ANY,#size=(100,200),
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-        subSizer2 = wx.FlexGridSizer(rows=1,cols=3,hgap=5,vgap=2)
+        subSizer2 = wx.FlexGridSizer(cols=3,hgap=5,vgap=2)
         subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,'Parameter name  '))
         subSizer1.Add(wx.StaticText(panel1,wx.ID_ANY,' value'),0,wx.ALIGN_RIGHT)
         subSizer2.Add((-1,-1))
@@ -2783,7 +2783,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
             
             slopSizer = wx.BoxSizer(wx.HORIZONTAL)
-            slideSizer = wx.FlexGridSizer(7,2)
+            slideSizer = wx.FlexGridSizer(0,2)
             slideSizer.AddGrowableCol(1,1)
     
             cameraPosTxt = wx.StaticText(drawOptions,-1,
@@ -3165,7 +3165,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             0,WACV)
         mainSizer.Add(titleSizer,0)
         mainSizer.Add((0,5),0)
-        shSizer = wx.FlexGridSizer(1,6,5,5)
+        shSizer = wx.FlexGridSizer(0,6,5,5)
         shSizer.Add(wx.StaticText(Texture,-1,'Texture model: '),0,WACV)
         shModel = wx.ComboBox(Texture,-1,value=textureData['Model'],choices=shModels,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -3186,7 +3186,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         shSizer.Add(shShow,0,WACV)
         mainSizer.Add(shSizer,0,0)
         mainSizer.Add((0,5),0)
-        PTSizer = wx.FlexGridSizer(2,4,5,5)
+        PTSizer = wx.FlexGridSizer(0,4,5,5)
         PTSizer.Add(wx.StaticText(Texture,-1,' Texture plot type: '),0,WACV)
         choices = ['Axial pole distribution','Pole figure','Inverse pole figure']            
         pfType = wx.ComboBox(Texture,-1,value=str(textureData['PlotType']),choices=choices,
@@ -3223,7 +3223,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if textureData['SHShow']:
             mainSizer.Add(wx.StaticText(Texture,-1,'Spherical harmonic coefficients: '),0,WACV)
             mainSizer.Add((0,5),0)
-            ODFSizer = wx.FlexGridSizer(2,8,2,2)
+            ODFSizer = wx.FlexGridSizer(0,8,2,2)
             ODFIndx = {}
             ODFkeys = textureData['SH Coeff'][1].keys()
             ODFkeys.sort()
@@ -3445,7 +3445,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 item = Indx[Obj.GetId()]
                 RBObj['ThermalMotion'][2][item] = Obj.GetValue()
             
-            thermSizer = wx.FlexGridSizer(1,9,5,5)
+            thermSizer = wx.FlexGridSizer(0,9,5,5)
             model = RBObj['ThermalMotion']
             if model[0] == 'Uiso':
                 names = ['Uiso',]
@@ -3520,7 +3520,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 except ValueError:
                     pass
                 
-            topSizer = wx.FlexGridSizer(2,6,5,5)
+            topSizer = wx.FlexGridSizer(0,6,5,5)
             Orig = RBObj['Orig'][0]
             Orien,OrienV = G2mth.Q2AVdeg(RBObj['Orient'][0])
             Orien = [Orien,]
@@ -3600,7 +3600,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             resrbSizer.Add(topLine)
             resrbSizer.Add(LocationSizer(RBObj,'Residue'))
             resrbSizer.Add(wx.StaticText(RigidBodies,-1,'Torsions:'),0,WACV)
-            torSizer = wx.FlexGridSizer(1,6,5,5)
+            torSizer = wx.FlexGridSizer(0,6,5,5)
             for itors,tors in enumerate(RBObj['Torsions']):
                 torSizer.Add(wx.StaticText(RigidBodies,-1,'Torsion '+'%d'%(itors)),0,WACV)
                 torsTxt = wx.TextCtrl(RigidBodies,-1,value='%.3f'%(tors[0]),style=wx.TE_PROCESS_ENTER)
@@ -3944,7 +3944,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 mainSizer.Add(wx.StaticText(RigidBodies,-1,'Locate rigid body : '+rbName),
                     0,WACV)
                 mainSizer.Add((5,5),0)
-                OriSizer = wx.FlexGridSizer(1,5,5,5)
+                OriSizer = wx.FlexGridSizer(0,5,5,5)
                 OriSizer.Add(wx.StaticText(RigidBodies,-1,'Origin x,y,z: '),0,WACV)
                 for ix,x in enumerate(Orig):
                     origX = wx.StaticText(RigidBodies,-1,'%10.5f'%(x))
@@ -3963,7 +3963,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 data['testRBObj']['Sizers']['Osizers'] = Osizers
                 mainSizer.Add(OriSizer)
                 mainSizer.Add((5,5),0)
-                RefSizer = wx.FlexGridSizer(1,7,5,5)
+                RefSizer = wx.FlexGridSizer(0,7,5,5)
                 if len(atomData):
                     RefSizer.Add(wx.StaticText(RigidBodies,-1,'Location setting: Select match to'),0,WACV)
                     for i in [0,1,2]:
@@ -3984,7 +3984,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     AtNames = data['testRBObj']['AtNames']
                     rbAtTypes = data['testRBObj']['rbAtTypes']
                     rbSeq = RBData['Residue'][rbId]['rbSeq']
-                    TorSizer = wx.FlexGridSizer(1,4)
+                    TorSizer = wx.FlexGridSizer(0,4)
                     TorSizer.AddGrowableCol(1,1)
                     for t,[torsion,seq] in enumerate(zip(Torsions,rbSeq)):
                         torName = ''
@@ -4256,7 +4256,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 
         def atomSizer(model):
             
-            atomsizer = wx.FlexGridSizer(1,7,5,5)
+            atomsizer = wx.FlexGridSizer(0,7,5,5)
             atomsizer.Add(wx.StaticText(MCSA,-1,' Atom: '+model['name']+': '),0,WACV)
             for ix,item in enumerate(['x','y','z']):
                 posRef = wx.CheckBox(MCSA,-1,label=item+': ')
@@ -4328,7 +4328,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.PlotStructure(G2frame,data)
             
             rbsizer = wx.BoxSizer(wx.VERTICAL)
-            rbsizer1 = wx.FlexGridSizer(1,7,5,5)
+            rbsizer1 = wx.FlexGridSizer(0,7,5,5)
             rbsizer1.Add(wx.StaticText(MCSA,-1,model['Type']+': '+model['name']+': '),0,WACV)
             for ix,item in enumerate(['x','y','z']):
                 posRef = wx.CheckBox(MCSA,-1,label=item+': ')
@@ -4355,7 +4355,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 posRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
                 rbsizer1.Add(posRange,0,WACV)
                 
-            rbsizer2 = wx.FlexGridSizer(1,6,5,5)
+            rbsizer2 = wx.FlexGridSizer(0,6,5,5)
             Ori = model['Ori'][0]
             rbsizer2.Add(wx.StaticText(MCSA,-1,'Oa: '),0,WACV)
             angVal = wx.TextCtrl(MCSA,-1,'%.5f'%(Ori[0]),style=wx.TE_PROCESS_ENTER)
@@ -4396,7 +4396,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if model['Type'] == 'Residue':
                 atNames = RBData['Residue'][model['RBId']]['atNames']
                 rbsizer.Add(wx.StaticText(MCSA,-1,'Torsions:'),0,WACV)
-                rbsizer3 = wx.FlexGridSizer(1,8,5,5)
+                rbsizer3 = wx.FlexGridSizer(0,8,5,5)
                 for it,tor in enumerate(model['Tor'][0]):
                     iBeg,iFin = RBData['Residue'][model['RBId']]['rbSeq'][it][:2]
                     name = atNames[iBeg]+'-'+atNames[iFin]

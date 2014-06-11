@@ -675,7 +675,7 @@ def UpdateBackground(G2frame,data):
         topSizer.Add((5,0),0)
         backSizer.Add(topSizer)
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background coefficients:'),0,WACV)
-        bakSizer = wx.FlexGridSizer(1,5,5,5)
+        bakSizer = wx.FlexGridSizer(0,5,5,5)
         for i,value in enumerate(data[0][3:]):
             bakVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.4f'%(value),style=wx.TE_PROCESS_ENTER)
             bakSizer.Add(bakVal,0,WACV)
@@ -1166,8 +1166,8 @@ def UpdateInstrumentGrid(G2frame,data):
     G2gd.SetDataMenuBar(G2frame)
     G2frame.dataFrame.SetLabel('Instrument Parameters')
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-    topSizer = wx.FlexGridSizer(1,6,5,5)
-    instSizer = wx.FlexGridSizer(2,6,5,5)
+    topSizer = wx.FlexGridSizer(0,6,5,5)
+    instSizer = wx.FlexGridSizer(0,6,5,5)
     topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Histogram Type: '+insVal['Type']),0,WACV)
 #    topSizer.Add((5,5),0)
     if 'P' in insVal['Type']:                   #powder data
@@ -1640,7 +1640,7 @@ def UpdateSampleGrid(G2frame,data):
         mainSizer.Add(nameSizer,0,wx.EXPAND,1)
         mainSizer.Add((5,5),0)
 
-    parmSizer = wx.FlexGridSizer(10,2,5,0)
+    parmSizer = wx.FlexGridSizer(0,2,5,0)
     for key,lbl,nDig in parms:
         if 'list' in str(type(data[key])):
             parmRef = G2gd.G2CheckBox(G2frame.dataDisplay,' '+lbl,data[key],1)
@@ -1668,7 +1668,7 @@ def UpdateSampleGrid(G2frame,data):
         rho = [0.,0.]
         anomrho = [0.,0.]
         mu = 0.
-        subSizer = wx.FlexGridSizer(1,4,5,5)
+        subSizer = wx.FlexGridSizer(0,4,5,5)
         Substances = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Substances'))
         for id,item in enumerate(data['Materials']):
@@ -2169,7 +2169,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Indexing controls: '),0,WACV)
     mainSizer.Add((5,5),0)
-    littleSizer = wx.FlexGridSizer(2,5,5,5)
+    littleSizer = wx.FlexGridSizer(0,5,5,5)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max Nc/Nobs '),0,WACV)
     NcNo = wx.SpinCtrl(G2frame.dataDisplay)
     NcNo.SetRange(1,6)
@@ -2186,7 +2186,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Select Bravais Lattices for indexing: '),
         0,WACV)
     mainSizer.Add((5,5),0)
-    littleSizer = wx.FlexGridSizer(2,7,5,5)
+    littleSizer = wx.FlexGridSizer(0,7,5,5)
     bravList = []
     bravs = zip(bravais,bravaisNames)
     for brav,bravName in bravs:
@@ -2231,7 +2231,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         if ibrav in cellGUI[0]:
             useGUI = cellGUI
     cellList = []
-    littleSizer = wx.FlexGridSizer(2,useGUI[1],5,5)
+    littleSizer = wx.FlexGridSizer(0,useGUI[1],5,5)
     for txt,fmt,ifEdit,Id in useGUI[2]:
         littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=txt),0,WACV)
         if ifEdit:          #a,b,c,etc.
@@ -2593,7 +2593,7 @@ def UpdateSubstanceGrid(G2frame,data):
                 substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='        Not applicable'),
                     0,WACV)
             else:    
-                elSizer = wx.FlexGridSizer(1,6,5,5)
+                elSizer = wx.FlexGridSizer(0,6,5,5)
                 Substance = data['Substances'][name]
                 Elems = Substance['Elements']
                 for El in Elems:    #do elements as pull downs for isotopes for neutrons
@@ -2605,7 +2605,7 @@ def UpdateSubstanceGrid(G2frame,data):
                     num.Bind(wx.EVT_KILL_FOCUS,OnValueChange)
                     elSizer.Add(num,0,WACV)
                 substSizer.Add(elSizer,0)
-                vdsSizer = wx.FlexGridSizer(1,4,5,5)
+                vdsSizer = wx.FlexGridSizer(0,4,5,5)
                 vdsSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Volume: '),
                     0,WACV)
                 vol = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(Substance['Volume']),style=wx.TE_PROCESS_ENTER)
@@ -2939,7 +2939,7 @@ def UpdateModelsGrid(G2frame,data):
             
         sizeSizer = wx.BoxSizer(wx.VERTICAL)
         sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Size distribution parameters: '),0,WACV)
-        binSizer = wx.FlexGridSizer(1,7,5,5)
+        binSizer = wx.FlexGridSizer(0,7,5,5)
         binSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' No. size bins: '),0,WACV)
         bins = ['50','100','150','200']
         nbins = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['Nbins']),choices=bins,
@@ -3154,7 +3154,7 @@ def UpdateModelsGrid(G2frame,data):
             return sizeSizer
             
         def ParmSizer():
-            parmSizer = wx.FlexGridSizer(1,3,5,5)
+            parmSizer = wx.FlexGridSizer(0,3,5,5)
             parmSizer.AddGrowableCol(2,1)
             parmSizer.SetFlexibleDirection(wx.HORIZONTAL)
             Parms = level[level['Controls']['DistType']]
@@ -3789,7 +3789,7 @@ def UpdatePDFGrid(G2frame,data):
 #    dataSizer.Add(polaVal,0)    
 #    mainSizer.Add(dataSizer,0)
     mainSizer.Add((5,5),0)
-    fileSizer = wx.FlexGridSizer(3,6,5,1)
+    fileSizer = wx.FlexGridSizer(0,6,5,1)
     select = ['Sample Bkg.','Container']
     if data['Container']['Name']:
         select.append('Container Bkg.')
@@ -3803,7 +3803,7 @@ def UpdatePDFGrid(G2frame,data):
     ElList = data['ElList']
     Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
     Trans = G2pwd.Transmission(data['Geometry'],Abs*data['Pack'],data['Diam'])
-    elemSizer = wx.FlexGridSizer(3,3,5,1)
+    elemSizer = wx.FlexGridSizer(0,3,5,1)
     for El in ElList:
         FillElemSizer(elemSizer,ElList[El])
     mainSizer.Add(elemSizer,0)

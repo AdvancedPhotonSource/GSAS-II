@@ -951,7 +951,7 @@ class ScrolledMultiEditor(wx.Dialog):
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
         cols = 3
         if CopyButton: cols += 1
-        subSizer = wx.FlexGridSizer(rows=len(dictlst),cols=cols,hgap=2,vgap=2)
+        subSizer = wx.FlexGridSizer(cols=cols,hgap=2,vgap=2)
         self.ValidatedControlsList = [] # make list of TextCtrls
         for i,(d,k) in enumerate(zip(dictlst,elemlst)):
             if i >= len(prelbl): # label before TextCtrl, or put in a blank
@@ -1195,7 +1195,7 @@ class DisAglDialog(wx.Dialog):
             0,WACV|wx.LEFT,10)
         mainSizer.Add((10,10),1)
         
-        radiiSizer = wx.FlexGridSizer(2,3,5,5)
+        radiiSizer = wx.FlexGridSizer(0,3,5,5)
         radiiSizer.Add(wx.StaticText(self.panel,-1,' Type'),0,WACV)
         radiiSizer.Add(wx.StaticText(self.panel,-1,'Bond radii'),0,WACV)
         radiiSizer.Add(wx.StaticText(self.panel,-1,'Angle radii'),0,WACV)
@@ -1213,7 +1213,7 @@ class DisAglDialog(wx.Dialog):
             aRadii.Bind(wx.EVT_KILL_FOCUS,self.OnRadiiVal)
             radiiSizer.Add(aRadii,0,WACV)
         mainSizer.Add(radiiSizer,0,wx.EXPAND)
-        factorSizer = wx.FlexGridSizer(2,2,5,5)
+        factorSizer = wx.FlexGridSizer(0,2,5,5)
         Names = ['Bond','Angle']
         for i,name in enumerate(Names):
             factorSizer.Add(wx.StaticText(self.panel,-1,name+' search factor'),0,WACV)
@@ -1858,7 +1858,7 @@ class ShowLSParms(wx.Dialog):
         if len(varyList) != len(fullVaryList):
             num = len(fullVaryList) - len(varyList)
             mainSizer.Add(wx.StaticText(self,wx.ID_ANY,' + '+str(num)+' parameters are varied via constraints'))
-        subSizer = wx.FlexGridSizer(rows=len(parmDict)+1,cols=4,hgap=2,vgap=2)
+        subSizer = wx.FlexGridSizer(cols=4,hgap=2,vgap=2)
         parmNames = parmDict.keys()
         parmNames.sort()
         subSizer.Add((-1,-1))

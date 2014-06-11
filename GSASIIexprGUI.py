@@ -391,7 +391,7 @@ class ExpressionDialog(wx.Dialog):
             wx.StaticText(self.varbox,wx.ID_ANY,
                           'Assignment of variables to labels:'),
             0,wx.EXPAND|wx.ALIGN_CENTER,0)
-        GridSiz = wx.FlexGridSizer(len(self.exprVarLst)+1,5,2,2)
+        GridSiz = wx.FlexGridSizer(0,5,2,2)
         GridSiz.Add(
             wx.StaticText(self.varbox,wx.ID_ANY,'label',style=wx.CENTER),
             0,wx.ALIGN_CENTER)

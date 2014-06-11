@@ -111,7 +111,7 @@ class ConstraintDialog(wx.Dialog):
         mainSizer.Add((10,10),1)
         mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
         mainSizer.Add((10,10),1)
-        dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=3,hgap=2,vgap=2)
+        dataGridSizer = wx.FlexGridSizer(cols=3,hgap=2,vgap=2)
         self.OkBtn = wx.Button(panel,wx.ID_OK)
         for id in range(len(self.data)):
             lbl1 = lbl = str(self.data[id][1])
@@ -734,7 +734,7 @@ def UpdateConstraints(G2frame,data):
         :param wx.Panel pageDisplay: parent panel for sizer
         :returns: wx.Sizer created by method
         '''
-        constSizer = wx.FlexGridSizer(1,6,0,0)
+        constSizer = wx.FlexGridSizer(0,6,0,0)
         maxlen = 70 # characters before wrapping a constraint
         for Id,item in enumerate(data[name]):
             refineflag = False
@@ -1031,7 +1031,7 @@ def UpdateRigidBodies(G2frame,data):
     Indx = {}
     resList = []
     plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],}
-
+    
     def OnPageChanged(event):
         global resList
         resList = []
@@ -1827,11 +1827,11 @@ def UpdateRigidBodies(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ)
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
-    G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
 
     VectorRB = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(VectorRB,'Vector rigid bodies')
     ResidueRB = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(ResidueRB,'Residue rigid bodies')
     UpdateVectorRB()
+    G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     

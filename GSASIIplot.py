@@ -3267,10 +3267,10 @@ def PlotStructure(G2frame,data):
     Wt = np.array([255,255,255])
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
-    wxGreen = wx.Color(0,255,0)
+    wxGreen = wx.Colour(0,255,0)
     Bl = np.array([0,0,255])
     Or = np.array([255,128,0])
-    wxOrange = wx.Color(255,128,0)
+    wxOrange = wx.Colour(255,128,0)
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
@@ -3886,7 +3886,7 @@ def PlotStructure(G2frame,data):
         
     def RenderLabel(x,y,z,label,r,color,matRot):
         '''
-        color wx.Color object
+        color wx.Colour object
         '''       
         glPushMatrix()
         glTranslate(x,y,z)

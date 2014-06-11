@@ -625,7 +625,7 @@ def UpdateDData(G2frame,DData,data):
     def EllSizeDataSizer():
         parms = zip(['S11','S22','S33','S12','S13','S23'],UseList[item]['Size'][4],
             UseList[item]['Size'][5],range(6))
-        dataSizer = wx.FlexGridSizer(1,6,5,5)
+        dataSizer = wx.FlexGridSizer(0,6,5,5)
         for Pa,val,ref,id in parms:
             sizeRef = wx.CheckBox(DData,-1,label=Pa)
             sizeRef.thisown = False
@@ -647,7 +647,7 @@ def UpdateDData(G2frame,DData,data):
             UseList[item]['Mustrain'][4] = numb*[0.0,]
             UseList[item]['Mustrain'][5] = numb*[False,]
         parms = zip(Snames,UseList[item]['Mustrain'][4],UseList[item]['Mustrain'][5],range(numb))
-        dataSizer = wx.FlexGridSizer(1,6,5,5)
+        dataSizer = wx.FlexGridSizer(0,6,5,5)
         for Pa,val,ref,id in parms:
             strainRef = wx.CheckBox(DData,-1,label=Pa)
             strainRef.thisown = False
@@ -663,7 +663,7 @@ def UpdateDData(G2frame,DData,data):
         return dataSizer
 
     def HstrainSizer():
-        hstrainSizer = wx.FlexGridSizer(1,6,5,5)
+        hstrainSizer = wx.FlexGridSizer(0,6,5,5)
         Hsnames = G2spc.HStrainNames(SGData)
         parms = zip(Hsnames,UseList[item]['HStrain'][0],UseList[item]['HStrain'][1],range(len(Hsnames)))
         for Pa,val,ref,id in parms:
@@ -681,7 +681,7 @@ def UpdateDData(G2frame,DData,data):
         return hstrainSizer
         
     def PoTopSizer(POData):
-        poSizer = wx.FlexGridSizer(1,6,5,5)
+        poSizer = wx.FlexGridSizer(0,6,5,5)
         choice = ['March-Dollase','Spherical harmonics']
         POtype = choice[['MD','SH'].index(POData[0])]
         poSizer.Add(wx.StaticText(DData,-1,' Preferred orientation model '),0,WACV)
@@ -730,7 +730,7 @@ def UpdateDData(G2frame,DData,data):
         textJ = G2lat.textureIndex(POData[5])
         mainSizer.Add(wx.StaticText(DData,-1,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ)),0,WACV)
         mainSizer.Add((0,5),0)
-        ODFSizer = wx.FlexGridSizer(2,8,2,2)
+        ODFSizer = wx.FlexGridSizer(0,8,2,2)
         ODFIndx = {}
         ODFkeys = POData[5].keys()
         ODFkeys.sort()

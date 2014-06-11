@@ -307,7 +307,7 @@ class scanCCD(wx.Frame):
                 data['skip'] = int(skipFile.GetValue())
                             
             colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
-            colorSizer = wx.FlexGridSizer(1,5,5,5)
+            colorSizer = wx.FlexGridSizer(0,5,5,5)
             colorSizer.Add(wx.StaticText(self.SCCDPanel,label=' Color bar '),0,wx.ALIGN_CENTER_VERTICAL)
             colSel = wx.ComboBox(self.SCCDPanel,value=data['color'],choices=colorList,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
@@ -344,7 +344,7 @@ class scanCCD(wx.Frame):
                 self.maxSel.SetValue(int(100*value/data['range'][0]))
                 self.PlotImage()
             
-            maxSizer = wx.FlexGridSizer(1,3,0,5)
+            maxSizer = wx.FlexGridSizer(0,3,0,5)
             maxSizer.AddGrowableCol(1,1)
             maxSizer.SetFlexibleDirection(wx.HORIZONTAL)
             maxSizer.Add(wx.StaticText(parent=self.SCCDPanel,label=' Max intensity'),0,
@@ -370,7 +370,7 @@ class scanCCD(wx.Frame):
                 data[ObjIndx[Obj.GetId()]] = value
                 self.PlotImage()
             
-            zSizer = wx.FlexGridSizer(1,4,5,5)
+            zSizer = wx.FlexGridSizer(0,4,5,5)
             zSizer.Add(wx.StaticText(self.SCCDPanel,label='Upper intensity mask:'),0,wx.ALIGN_CENTER_VERTICAL)
             zMax = wx.TextCtrl(self.SCCDPanel,value='%d'%(data['Zmax']))
             zMax.Bind(wx.EVT_TEXT_ENTER,OnZValue)
@@ -410,7 +410,7 @@ class scanCCD(wx.Frame):
                 Obj.SetValue('%.3f'%(value))
                 self.PlotImage()
             
-            zeroSizer = wx.FlexGridSizer(1,6,5,5)
+            zeroSizer = wx.FlexGridSizer(0,6,5,5)
             zeroSizer.Add(wx.StaticText(self.SCCDPanel,label='X-zero:'),0,wx.ALIGN_CENTER_VERTICAL)
             zMax = wx.TextCtrl(self.SCCDPanel,value='%.3f'%(data['Zeros'][0]))
             zMax.Bind(wx.EVT_TEXT_ENTER,OnZeroValue)
@@ -444,7 +444,7 @@ class scanCCD(wx.Frame):
                 Obj.SetValue('%d'%(value))
                 self.PlotImage()
             
-            TBLRsizer = wx.FlexGridSizer(2,4,5,5)
+            TBLRsizer = wx.FlexGridSizer(0,4,5,5)
             for i,item in enumerate(['Bottom','Top']): 
                 TBLRsizer.Add(wx.StaticText(self.SCCDPanel,label=item+' limit, pixels:'),0,wx.ALIGN_CENTER_VERTICAL)
                 TBlim = wx.TextCtrl(self.SCCDPanel,value='%d'%(data['TBlimits'][i]))
@@ -473,7 +473,7 @@ class scanCCD(wx.Frame):
                     data['LRlimits'][item] = npixel
                 self.PlotImage()
             
-            scanSizer = wx.FlexGridSizer(1,6,5,5)
+            scanSizer = wx.FlexGridSizer(0,6,5,5)
             for i,item in enumerate(['Lower 2-th','Upper 2-th','2-th step']):
                 scanSizer.Add(wx.StaticText(self.SCCDPanel,label=item+':'),0,wx.ALIGN_CENTER_VERTICAL)
                 scanParm = wx.TextCtrl(self.SCCDPanel,value='%.3f'%(data['2thScan'][i]))

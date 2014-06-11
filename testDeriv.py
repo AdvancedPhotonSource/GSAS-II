@@ -126,7 +126,7 @@ class testDeriv(wx.Frame):
         varylist = self.varylist
         use = self.use
         delt = self.delt
-        mainSizer = wx.FlexGridSizer(1,8,5,5)
+        mainSizer = wx.FlexGridSizer(0,8,5,5)
         for id,[ck,name,d] in enumerate(zip(use,varylist,delt)):
             useVal = wx.CheckBox(self.testDerivPanel,label=name)
             useVal.SetValue(ck)

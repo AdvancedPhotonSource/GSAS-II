@@ -2177,7 +2177,7 @@ class GSASII(wx.Frame):
             mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
             mainSizer.Add((10,10),1)
             ncols = len(data)/40+1
-            dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=ncols,hgap=2,vgap=2)
+            dataGridSizer = wx.FlexGridSizer(cols=ncols,hgap=2,vgap=2)
             for id,item in enumerate(self.data):
                 ckbox = wx.CheckBox(panel,id,item[1])
                 ckbox.Bind(wx.EVT_CHECKBOX,self.OnCopyChange)                    
@@ -2228,7 +2228,7 @@ class GSASII(wx.Frame):
             mainSizer.Add((10,10),1)
             mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
             mainSizer.Add((10,10),1)
-            dataGridSizer = wx.FlexGridSizer(rows=len(data),cols=2,hgap=2,vgap=2)
+            dataGridSizer = wx.FlexGridSizer(cols=2,hgap=2,vgap=2)
             for id,item in enumerate(self.data[:-1]):
                 name = wx.TextCtrl(panel,-1,item[1],size=wx.Size(200,20))
                 name.SetEditable(False)
@@ -3361,16 +3361,18 @@ class GSASIImain(wx.App):
         #self.main.PatternTree.SelectItem(Id)
         # end DEBUG
         return True
-    def MacOpenFile(self, filename):
-        '''Called on Mac every time a file is dropped on the app when it is running,
-        treat this like a File/Open project menu action.
-        Should be ignored on other platforms
-        '''
-        # PATCH: Canopy 1.4 script main seems dropped on app; ignore .py files
-        if os.path.splitext(filename)[1] == '.py': return
-        # end PATCH
-        self.main.OnFileOpen(None,filename)
-
+    # def MacOpenFile(self, filename):
+    #     '''Called on Mac every time a file is dropped on the app when it is running,
+    #     treat this like a File/Open project menu action.
+    #     Should be ignored on other platforms
+    #     '''
+    #     # PATCH: Canopy 1.4 script main seems dropped on app; ignore .py files
+    #     print 'MacOpen',filename
+    #     if os.path.splitext(filename)[1] == '.py': return
+    #     # end PATCH
+    #     self.main.OnFileOpen(None,filename)
+    # removed because this gets triggered when a file is on the command line in canopy 1.4 -- not likely used anyway
+    
 def main():
     '''Start up the GSAS-II application'''
     #application = GSASIImain() # don't redirect output, someday we

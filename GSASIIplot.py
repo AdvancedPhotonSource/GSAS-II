@@ -2640,7 +2640,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         pixelSize = Data['pixelSize']
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
-        pixLimit = Data['pixLimit']
+#        pixLimit = Data['pixLimit']    #can be too tight
+        pixLimit = 20       #this makes the search box 40x40 pixels
         if G2frame.itemPicked is None and PickName == 'Image Controls' and len(G2frame.ImageZ):
             Xpos = event.xdata
             if not (Xpos and G2frame.ifGetRing):                   #got point out of frame

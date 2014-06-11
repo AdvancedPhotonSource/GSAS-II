@@ -82,11 +82,18 @@ class G2PlotOgl(wx.Panel):
     'needs a doc string'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         self.figure = wx.Panel.__init__(self,parent,id=id,**kwargs)
-        if 'win' in sys.platform:           #Windows already double buffered
+        if 'win' in sys.platform:           #Windows (& Mac) already double buffered
             self.canvas = wx.glcanvas.GLCanvas(self,-1,**kwargs)
         else:                               #fix from Jim Hester for X systems
             attribs = (wx.glcanvas.WX_GL_DOUBLEBUFFER,)         
             self.canvas = wx.glcanvas.GLCanvas(self,-1,attribList=attribs,**kwargs)
+        # create GL context for wx > 2.8
+        i,j= wx.__version__.split('.')[0:2]
+        if int(i)+int(j)/10. > 2.8:
+            self.context = wx.glcanvas.GLContext(self.canvas)
+            self.canvas.SetCurrent(self.context)
+        else:
+            self.context = None
         self.camera = {}
         sizer=wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas,1,wx.EXPAND)
@@ -4122,8 +4129,9 @@ def PlotStructure(G2frame,data):
                 Backbone = Backbones[chain]
                 RenderBackbone(Backbone,BackboneColor,bondR)
 #        print time.time()-time0
+        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
         Page.canvas.SwapBuffers()
-       
+        
     def OnSize(event):
         Draw('size')
         
@@ -4417,6 +4425,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             RenderSphere(x,y,z,radius,color)
             RenderBonds(x,y,z,Bonds[iat],0.05,color)
             RenderLabel(x,y,z,'  '+atNames[iat],matRot)
+        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
         Page.canvas.SwapBuffers()
 
     def OnSize(event):

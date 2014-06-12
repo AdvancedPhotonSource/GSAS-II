@@ -3628,16 +3628,23 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         '''Make a dictionary of the sample parameters are not the same over the
         refinement series.
         '''
-        sampleParmDict = {'Temperature':[],'Pressure':[],
-                          'FreePrm1':[],'FreePrm2':[],'FreePrm3':[],}
+        if 'IMG' in histNames[0]:
+            sampleParmDict = {'Sample load':[],}
+        else:
+            sampleParmDict = {'Temperature':[],'Pressure':[],
+                              'FreePrm1':[],'FreePrm2':[],'FreePrm3':[],}
         Controls = G2frame.PatternTree.GetItemPyData(
             GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
         sampleParm = {}
         for name in histNames:
-            Id = GetPatternTreeItemId(G2frame,G2frame.root,name)
-            sampleData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
-            for item in sampleParmDict:
-                sampleParmDict[item].append(sampleData[item])
+            if 'IMG' in name:
+                for item in sampleParmDict:
+                    sampleParmDict[item].append(data[name]['parmDict'][item])
+            else:
+                Id = GetPatternTreeItemId(G2frame,G2frame.root,name)
+                sampleData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+                for item in sampleParmDict:
+                    sampleParmDict[item].append(sampleData[item])
         for item in sampleParmDict:
             frstValue = sampleParmDict[item][0]
             if np.any(np.array(sampleParmDict[item])-frstValue):
@@ -4285,12 +4292,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     Types = []
     nRows = len(histNames)
     # start with Rwp values
-    colList += [[data[name]['Rvals']['Rwp'] for name in histNames]]
-    colSigs += [None]
-    colLabels += ['Rwp']
-    Types += [wg.GRID_VALUE_FLOAT+':10,3',]
+    if 'IMG ' not in histNames[0][:4]:
+        colList += [[data[name]['Rvals']['Rwp'] for name in histNames]]
+        colSigs += [None]
+        colLabels += ['Rwp']
+        Types += [wg.GRID_VALUE_FLOAT+':10,3',]
     # add % change in Chi^2 in last cycle
-    if 'SASD' not in histNames[0]:
+    if histNames[0][:4] not in ['SASD','IMG ']:
         colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
         colSigs += [None]
         colLabels += [u'\u0394\u03C7\u00B2 (%)']
@@ -4456,7 +4464,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     else:
         G2frame.dataFrame.setSizePosLeft([700,350])
     # highlight unconverged shifts 
-    if 'SASD' not in histNames[0]:
+    if histNames[0][:4] not in ['SASD','IMG ']:
         for row,name in enumerate(histNames):
             deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
             if deltaChi > 10.:
@@ -4621,9 +4629,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
     Size[1] += 10
     G2frame.dataFrame.setSizePosLeft(Size)
     G2frame.PatternTree.SetItemPyData(item,data)
-    if kind == 'PWDR':
-        G2plt.PlotPatterns(G2frame,plotType=kind,newPlot=True)
-    elif kind == 'SASD':
+    if kind in ['PWDR','SASD']:
         G2plt.PlotPatterns(G2frame,plotType=kind,newPlot=True)
     elif kind == 'HKLF':
         refList = data[1]['RefList']

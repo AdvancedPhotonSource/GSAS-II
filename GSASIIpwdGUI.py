@@ -2803,12 +2803,12 @@ def UpdateModelsGrid(G2frame,data):
                 if sel:
                     CopyForward = True
                 else:
-                    G2frame.seqReverse = True
+                    Reverse = True
         dlg.Destroy()
         dlg = wx.ProgressDialog('SASD Sequential fit','Data set name = '+names[0],len(names), 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         wx.BeginBusyCursor()
-        if G2frame.seqReverse:
+        if Reverse:
             names.reverse()
         try:
             for i,name in enumerate(names):
@@ -2825,7 +2825,7 @@ def UpdateModelsGrid(G2frame,data):
                 ILimits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Limits'))
                 IInst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Instrument Parameters'))
                 IfOK,result,varyList,sig,Rvals,covMatrix,parmDict,Msg = G2sasd.ModelFit(IProfile,IProfDict,ILimits,ISample,IModel)
-                JModel = copy.copy(IModel)
+                JModel = copy.deepcopy(IModel)
                 if not IfOK:
                     G2frame.ErrorDialog('Failed sequential refinement for data '+name,
                         ' Msg: '+Msg+'\nYou need to rethink your selection of parameters\n'+    \
@@ -2833,6 +2833,8 @@ def UpdateModelsGrid(G2frame,data):
                     SeqResult['histNames'] = names[:i]
                     dlg.Destroy()
                     break
+                else:
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Models'),copy.deepcopy(IModel))
                 
                 G2sasd.ModelFxn(IProfile,IProfDict,ILimits,ISample,IModel)
                 SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,

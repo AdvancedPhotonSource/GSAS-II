@@ -2128,7 +2128,7 @@ class GSASII(wx.Frame):
                         Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Stress/Strain'),
-                            {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'strain':np.zeros((3,3))})
+                            {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'Sample load':0.0})
                         self.PatternTree.SetItemPyData(Id,[Npix,imagefile])
                         self.PickId = Id
                         self.Image = Id

@@ -1385,11 +1385,11 @@ def UpdateStressStrain(G2frame,data):
                 name = G2frame.PatternTree.GetItemText(id)
                 Names.append(name)
                 if 'IMG' in name:
+                    Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'))
                     if id == G2frame.Image:
                         Source = name
-                        Data = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain')))
                     else:
-                        TextList.append([False,name,id])
+                        TextList.append([False,name,id,Data.get('Sample load',0.0)])
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
             if len(TextList) == 1:
                 G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "IMG" pattern')
@@ -1402,9 +1402,11 @@ def UpdateStressStrain(G2frame,data):
                         result = TextList[1:]
                         for item in result: item[0] = True
                     for i,item in enumerate(result):
-                        ifcopy,name,id = item
+                        ifcopy,name,id,load = item
                         if ifcopy:
-                            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'),copy.deepcopy(data))
+                            Data = copy.deepcopy(data)
+                            Data['Sample load'] = load
+                            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'),Data)
             finally:
                 dlg.Destroy()
 
@@ -1435,7 +1437,7 @@ def UpdateStressStrain(G2frame,data):
                 filename = dlg.GetPath()
                 File = open(filename,'w')
                 save = {}
-                keys = ['Type','Sample phi','Sample z']
+                keys = ['Type','Sample phi','Sample z','Sample load']
                 keys2 = ['Dset','Dcalc','pixLimit','cutoff','Emat']
                 File.write('{\n\t')
                 for key in keys:
@@ -1463,39 +1465,64 @@ def UpdateStressStrain(G2frame,data):
         G2plt.PlotExposedImage(G2frame,event=event)
         G2plt.PlotStrain(G2frame,data,newPlot=True)
         
-    def OnAllFitStrSta(event):
+    def OnFitAllStrSta(event):
         TextList = [[False,'All IMG',0]]
         Names = []
         if G2frame.PatternTree.GetCount():
-            id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-            while id:
-                name = G2frame.PatternTree.GetItemText(id)
-                Names.append(name)
-                if 'IMG' in name:
-                    TextList.append([False,name,id])
-                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            if len(TextList) == 1:
+            choices = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+            if len(choices) == 1:
                 G2frame.ErrorDialog('Nothing to fit','There must some "IMG" patterns')
                 return
-            dlg = G2frame.CopyDialog(G2frame,'Stress/Strain fitting','Select images to fit:',TextList)
+            sel = []
+            dlg = G2gd.G2MultiChoiceDialog(G2frame,'Stress/Strain fitting','Select images to fit:',choices)
+            dlg.SetSelections(sel)
+            names = []
+            if dlg.ShowModal() == wx.ID_OK:
+                for sel in dlg.GetSelections():
+                    names.append(choices[sel])
+            dlg.Destroy()
+            SeqResult = {'histNames':names,}
+            dlg = wx.ProgressDialog('Sequential IMG Strain fit','Data set name = '+names[0],len(names), 
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)          
+            wx.BeginBusyCursor()
             try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetData()
-                    if result[0][0]:                    #the 'All IMG' is True
-                        result = TextList[1:]
-                        for item in result: item[0] = True
-                    for item in result:
-                        ifFit,name,id = item
-                        if ifFit:
-                            Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls'))
-                            StaCtrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'))
-                            id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
-                            Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
-                            image = G2IO.GetImageData(G2frame,imagefile,True)
-                            G2img.FitStrSta(image,StaCtrls,Controls)
-                            G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)
+                for i,name in enumerate(names):
+                    print ' Sequential strain fit for ',name
+                    GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
+                    if not GoOn:
+                        break
+                    Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                    Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Image Controls'))
+                    StaCtrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Stress/Strain'))
+                    id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
+                    Npix,imagefile = G2frame.PatternTree.GetItemPyData(Id)
+                    image = G2IO.GetImageData(G2frame,imagefile,True)
+                    G2img.FitStrSta(image,StaCtrls,Controls)
+                    G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)
+                    parmDict = {'Sample load':StaCtrls['Sample load'],}
+                    varyNames = ['e11','e12','e22']
+                    sig = []
+                    varyList = []
+                    variables = []
+                    for i,item in enumerate(StaCtrls['d-zero']):
+                        variables += item['Emat']
+                        sig += item['Esig']
+                        varyList += ['%d%s%s'%(i,':',Name) for Name in varyNames]
+                        parmDict['%d:Dcalc'%(i)] = item['Dcalc']
+                    SeqResult[name] = {'variables':variables,'varyList':varyList,'sig':sig,'Rvals':[],
+                        'covMatrix':[],'title':name,'parmDict':parmDict}
+                else:
+                    dlg.Destroy()
+                    print ' ***** Sequential strain refinement successful *****'
             finally:
-                dlg.Destroy()
+                wx.EndBusyCursor()    
+            Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results')
+            if Id:
+                G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+            else:
+                Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential results')
+                G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+            G2frame.PatternTree.SelectItem(Id)
             print 'All images fitted'
         
     def SamSizer():
@@ -1519,6 +1546,14 @@ def UpdateStressStrain(G2frame,data):
             data['Sample z'] = value
             samZ.SetValue("%.3f" % (data['Sample z']))
                 
+        def OnSamLoad(event):
+            try:
+                value = float(samLoad.GetValue())
+            except ValueError:
+                value = data['Sample load']
+            data['Sample load'] = value
+            samLoad.SetValue("%.3f" % (data['Sample load']))
+                
         samSizer = wx.BoxSizer(wx.HORIZONTAL)
         samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Strain type: '),0,WACV)
         strType = wx.ComboBox(G2frame.dataDisplay,value=data['Type'],choices=['True','Conventional'],
@@ -1539,6 +1574,13 @@ def UpdateStressStrain(G2frame,data):
         samSizer.Add(samZ,0,WACV)
         samZ.Bind(wx.EVT_TEXT_ENTER,OnSamZ)
         samZ.Bind(wx.EVT_KILL_FOCUS,OnSamZ)
+        samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample load(MPa): '),0,WACV)
+        samLoad = wx.TextCtrl(G2frame.dataDisplay,-1,value=("%.3f" % (data['Sample load'])),
+            style=wx.TE_PROCESS_ENTER)
+        samSizer.Add(samLoad,0,WACV)
+        samLoad.Bind(wx.EVT_TEXT_ENTER,OnSamLoad)
+        samLoad.Bind(wx.EVT_KILL_FOCUS,OnSamLoad)
+
         return samSizer
         
     def DzeroSizer():
@@ -1631,6 +1673,11 @@ def UpdateStressStrain(G2frame,data):
             dzeroSizer.Add((5,5),0)             
         return dzeroSizer
         
+# patches
+    if 'Sample load' not in data:
+        data['Sample load'] = 0.0
+# end patches
+    
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     Controls = G2frame.PatternTree.GetItemPyData(
@@ -1639,7 +1686,7 @@ def UpdateStressStrain(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAppendDzero, id=G2gd.wxID_APPENDDZERO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnUpdateDzero, id=G2gd.wxID_UPDATEDZERO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitStrSta, id=G2gd.wxID_STRSTAFIT)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAllFitStrSta, id=G2gd.wxID_STRSTAALLFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitAllStrSta, id=G2gd.wxID_STRSTAALLFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyStrSta, id=G2gd.wxID_STRSTACOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadStrSta, id=G2gd.wxID_STRSTALOAD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveStrSta, id=G2gd.wxID_STRSTASAVE)    

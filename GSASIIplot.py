@@ -446,7 +446,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     '''
     global HKL
     global exclLines
+    global DifLine
+    global Ymax
     plottype = plotType
+    
     def OnPlotKeyPress(event):
         newPlot = False
         if event.key == 'w':

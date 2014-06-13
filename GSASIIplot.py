@@ -3206,7 +3206,7 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
 ##### PlotStructure
 ################################################################################
             
-def PlotStructure(G2frame,data):
+def PlotStructure(G2frame,data,firstCall=False):
     '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
     thermal motion ellipsoids and polyhedra
     '''
@@ -4138,6 +4138,7 @@ def PlotStructure(G2frame,data):
     def OnFocus(event):         #not needed?? Bind commented out below
         Draw('focus')
         
+    # PlotStructure execution starts here
     try:
         plotNum = G2frame.G2plotNB.plotList.index(generalData['Name'])
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)        
@@ -4175,7 +4176,8 @@ def PlotStructure(G2frame,data):
     except:
         pass
     Draw('main')
-        
+    if firstCall: Draw('main') # draw twice the first time that graphics are displayed
+
 ################################################################################
 #### Plot Rigid Body
 ################################################################################

@@ -5322,7 +5322,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataDrawOptions)
             FillSelectPageMenu(G2frame.dataFrame.DataDrawOptions)
             UpdateDrawOptions()
-            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
+            wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Draw Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DrawAtomsMenu)
             FillSelectPageMenu(G2frame.dataFrame.DrawAtomsMenu)
@@ -5345,7 +5345,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRCHIRAL)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineRB, id=G2gd.wxID_DRAWDEFINERB)
             UpdateDrawAtoms()
-            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
+            wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'RB Models':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodiesMenu)
             FillSelectPageMenu(G2frame.dataFrame.RigidBodiesMenu)
@@ -5369,7 +5369,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
             FillMapPeaksGrid()
-            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
+            wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'MC/SA':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MCSAMenu)
             FillSelectPageMenu(G2frame.dataFrame.MCSAMenu)
@@ -5379,7 +5379,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAmove, id=G2gd.wxID_MOVEMCSA)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnClearResults, id=G2gd.wxID_MCSACLEARRESULTS)
             UpdateMCSA()                        
-            wx.CallAfter(G2plt.PlotStructure,G2frame,data)
+            wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Texture':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.TextureMenu)
             FillSelectPageMenu(G2frame.dataFrame.TextureMenu)

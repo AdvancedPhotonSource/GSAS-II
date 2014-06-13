@@ -4967,6 +4967,15 @@ def HorizontalLine(sizer,parent):
     line = wx.StaticLine(parent,-1, size=(-1,3), style=wx.LI_HORIZONTAL)
     sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
 
+def HowDidIgetHere():
+    '''Show a traceback with calls that brought us to the current location.
+    Used for debugging.
+    '''
+    import traceback
+    print 70*'*'    
+    for i in traceback.format_list(traceback.extract_stack()[:-1]): print(i.strip.rstrip())
+    print 70*'*'    
+        
 if __name__ == '__main__':
     app = wx.PySimpleApp()
     frm = wx.Frame(None) # create a frame

@@ -3226,6 +3226,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Bonds[j].append(-Dx[j]/2.)
         return Bonds
 
+    # PlotStructure initialization here
     ForthirdPI = 4.0*math.pi/3.0
     generalData = data['General']
     cell = generalData['Cell'][1:7]
@@ -3640,21 +3641,23 @@ def PlotStructure(G2frame,data,firstCall=False):
         SetRBOrigText()
         
     def SetRotation(newxy):
-#first get rotation vector in screen coords. & angle increment        
+        'Perform a rotation in x-y space due to a left-mouse drag'
+    #first get rotation vector in screen coords. & angle increment        
         oldxy = drawingData['oldxy']
         if not len(oldxy): oldxy = list(newxy)
         dxy = newxy-oldxy
         drawingData['oldxy'] = list(newxy)
         V = np.array([dxy[1],dxy[0],0.])
         A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
-# next transform vector back to xtal coordinates via inverse quaternion
-# & make new quaternion
+        if not A: return # nothing changed, nothing to do
+    # next transform vector back to xtal coordinates via inverse quaternion
+    # & make new quaternion
         Q = drawingData['Quaternion']
         V = G2mth.prodQVQ(G2mth.invQ(Q),np.inner(Bmat,V))
         DQ = G2mth.AVdeg2Q(A,V)
         Q = G2mth.prodQQ(Q,DQ)
         drawingData['Quaternion'] = Q
-# finally get new view vector - last row of rotation matrix
+    # finally get new view vector - last row of rotation matrix
         VD = np.inner(Bmat,G2mth.Q2Mat(Q)[2])
         VD /= np.sqrt(np.sum(VD**2))
         drawingData['viewDir'] = VD
@@ -4141,7 +4144,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     def OnFocus(event):         #not needed?? Bind commented out below
         Draw('focus')
         
-    # PlotStructure execution starts here
+    # PlotStructure execution starts here (N.B. initialization above)
     try:
         plotNum = G2frame.G2plotNB.plotList.index(generalData['Name'])
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)        

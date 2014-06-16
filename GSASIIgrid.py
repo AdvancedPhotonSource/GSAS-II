@@ -4764,6 +4764,10 @@ def MovePatternTreeToGrid(G2frame,item):
             G2restG.UpdateRestraints(G2frame,data,Phases,phaseName)
         elif 'IMG' in G2frame.PatternTree.GetItemText(item):
             G2frame.Image = item
+            G2frame.dataFrame.SetTitle('Image Data')
+            data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId( \
+                G2frame,item,'Image Controls'))
+            G2imG.UpdateImageData(G2frame,data)
             G2plt.PlotImage(G2frame,newPlot=True)
         elif 'PKS' in G2frame.PatternTree.GetItemText(item):
             G2plt.PlotPowderLines(G2frame)

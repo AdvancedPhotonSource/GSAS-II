@@ -386,7 +386,7 @@ def GetGEsumData(filename,imageOnly=False):
             image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
             nframes -= 1
     image = np.reshape(image,(sizexy[1],sizexy[0]))
-    data = {'pixelSize':(200,200),'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}  
+    data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}  
     File.close()    
     if imageOnly:
         return image
@@ -590,7 +590,7 @@ def GetTifData(filename,imageOnly=False):
         marFrame = rmf.marFrame(File,byteOrd,IFD)
         image = np.flipud(np.array(np.asarray(marFrame.image),dtype=np.int32))
         tifType = marFrame.filetitle
-        pixy = (marFrame.pixelsizeX/1000.0,marFrame.pixelsizeY/1000.0)
+        pixy = [marFrame.pixelsizeX/1000.0,marFrame.pixelsizeY/1000.0]
         head = marFrame.outputHead()
 # extract resonable wavelength from header
         wavelength = marFrame.sourceWavelength*1e-5
@@ -618,7 +618,7 @@ def GetTifData(filename,imageOnly=False):
         if 'PILATUS' in S:
             tifType = 'Pilatus'
             dataType = 0
-            pixy = (172,172)
+            pixy = [172,172]
             File.seek(4096)
             if not imageOnly:
                 print 'Read Pilatus tiff file: ',filename
@@ -627,14 +627,14 @@ def GetTifData(filename,imageOnly=False):
         else:
             if IFD[258][2][0] == 16:
                 tifType = 'GE'
-                pixy = (200,200)
+                pixy = [200,200]
                 File.seek(8)
                 if not imageOnly:
                     print 'Read GE-detector tiff file: ',filename
                 image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 32:
                 tifType = 'CHESS'
-                pixy = (200,200)
+                pixy = [200,200]
                 File.seek(8)
                 if not imageOnly:
                     print 'Read CHESS-detector tiff file: ',filename
@@ -642,14 +642,14 @@ def GetTifData(filename,imageOnly=False):
             
     elif 262 in IFD and IFD[262][2][0] > 4:
         tifType = 'DND'
-        pixy = (158,158)
+        pixy = [158,158]
         File.seek(512)
         if not imageOnly:
             print 'Read DND SAX/WAX-detector tiff file: ',filename
         image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     elif sizexy == [1536,1536]:
         tifType = 'APS Gold'
-        pixy = (150,150)
+        pixy = [150,150]
         File.seek(64)
         if not imageOnly:
             print 'Read Gold tiff file:',filename
@@ -658,7 +658,7 @@ def GetTifData(filename,imageOnly=False):
         if IFD[273][2][0] == 8:
             if IFD[258][2][0] == 32:
                 tifType = 'PE'
-                pixy = (200,200)
+                pixy = [200,200]
                 File.seek(8)
                 if not imageOnly:
                     print 'Read APS PE-detector tiff file: ',filename
@@ -669,10 +669,10 @@ def GetTifData(filename,imageOnly=False):
                 
         elif IFD[273][2][0] == 4096:
             if sizexy[0] == 3072:
-                pixy =  (73,73)
+                pixy =  [73,73]
                 tifType = 'MAR225'            
             else:
-                pixy = (158,158)
+                pixy = [158,158]
                 tifType = 'MAR325'            
             File.seek(4096)
             if not imageOnly:
@@ -689,14 +689,14 @@ def GetTifData(filename,imageOnly=False):
         if IFD[273][2][0] == 8:
             if IFD[258][2][0] == 16:
                 tifType = 'scanCCD'
-                pixy = (9,9)
+                pixy = [9,9]
                 File.seek(8)
                 if not imageOnly:
                     print 'Read APS scanCCD tiff file: ',filename
                 image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
         elif IFD[273][2][0] == 4096:
             tifType = 'Rayonix'
-            pixy = (73.242,73.242)
+            pixy = [73.242,73.242]
             File.seek(4096)
             if not imageOnly:
                 print 'Read Rayonix MX300HE tiff file: ',filename

@@ -38,6 +38,49 @@ sind = lambda x: math.sin(x*math.pi/180.)
 tand = lambda x: math.tan(x*math.pi/180.)
 cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
+    
+################################################################################
+##### Image Data
+################################################################################
+def UpdateImageData(G2frame,data):
+    
+    def OnPixVal(event):
+        Obj = event.GetEventObject()
+        id = Indx[Obj.GetId()]
+        try:
+            data['pixelSize'][id] = min(500,max(10,float(Obj.GetValue())))
+        except ValueError:
+            pass
+        Obj.SetValue('%.3f'%(data['pixelSize'][id]))
+        G2plt.PlotExposedImage(G2frame,newPlot=True,event=event)
+        
+        
+        
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    if not G2frame.dataFrame.GetStatusBar():
+        G2frame.dataFrame.CreateStatusBar()
+    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,
+        label='Do not change anything here unless you are absolutely sure!'),0,WACV)
+    pixSize = wx.FlexGridSizer(0,4,5,5)
+    pixLabels = [u'Pixel X-dimension (\xb5m)',u'Pixel Y-dimension (\xb5m)']
+    Indx = {}
+    for i,[pixLabel,pix] in enumerate(zip(pixLabels,data['pixelSize'])):
+        pixSize.Add(wx.StaticText(G2frame.dataDisplay,label=pixLabel),0,WACV)
+        pixVal = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(pix),style=wx.TE_PROCESS_ENTER)
+        Indx[pixVal.GetId()] = i
+        pixVal.Bind(wx.EVT_TEXT_ENTER,OnPixVal)
+        pixVal.Bind(wx.EVT_KILL_FOCUS,OnPixVal)
+        pixSize.Add(pixVal,0,WACV)
+    mainSizer.Add(pixSize,0)
+    
+    mainSizer.Layout()    
+    G2frame.dataDisplay.SetSizer(mainSizer)
+    fitSize = mainSizer.Fit(G2frame.dataFrame)
+    G2frame.dataFrame.setSizePosLeft(fitSize)
+    G2frame.dataDisplay.SetSize(fitSize)
 
 ################################################################################
 ##### Image Controls
@@ -62,7 +105,6 @@ def UpdateImageControls(G2frame,data,masks):
         elif 'SASD' in data['type']:
             data['binType'] = 'log(q)'
 #end patch
-
     
 # Menu items
             

@@ -881,6 +881,8 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     else:
         H1 = LRazm
     H0 /= npcosd(H2[:-1])           #**2? I don't think so, **1 is right for powders
+    if 'SASD' in data['Type']:
+        H0 /= npcosd(H2[:-1])           #one more for small angle scattering data?
     if data['Oblique'][1]:
         H0 /= G2pwd.Oblique(data['Oblique'][0],H2[:-1])
     if 'SASD' in data['type'] and data['PolaVal'][1]:

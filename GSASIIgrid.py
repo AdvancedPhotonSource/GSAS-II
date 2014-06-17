@@ -4837,9 +4837,9 @@ def MovePatternTreeToGrid(G2frame,item):
         G2frame.PickId = item
         G2frame.Image = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(item)
-        G2imG.UpdateStressStrain(G2frame,data)
         G2plt.PlotImage(G2frame)
         G2plt.PlotStrain(G2frame,data,newPlot=True)
+        G2imG.UpdateStressStrain(G2frame,data)
     elif G2frame.PatternTree.GetItemText(item) == 'PDF Controls':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         for i in G2frame.ExportPDF: i.Enable(True)

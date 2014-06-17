@@ -20,7 +20,6 @@ import matplotlib as mpl
 import math
 import time
 import copy
-import cPickle
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIimage as G2img
@@ -234,7 +233,6 @@ def UpdateImageControls(G2frame,data,masks):
                 dlg.Destroy()
         
     def OnCopyControls(event):
-        import copy
         TextList = [[False,'All IMG',0]]
         Names = []
         if G2frame.PatternTree.GetCount():
@@ -245,7 +243,8 @@ def UpdateImageControls(G2frame,data,masks):
                 if 'IMG' in name:
                     if id == G2frame.Image:
                         Source = name
-                        Data = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')))
+                        Data = copy.deepcopy(data)
+#                        Data = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')))
                         Data['showLines'] = True
                         Data['ring'] = []
                         Data['rings'] = []
@@ -277,6 +276,7 @@ def UpdateImageControls(G2frame,data,masks):
                             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls'),copy.deepcopy(Data))
             finally:
                 dlg.Destroy()
+                G2frame.PatternTree.SelectItem(G2frame.PickId)
                 
     def OnSaveControls(event):
         dlg = wx.FileDialog(G2frame, 'Choose image controls file', '.', '', 
@@ -623,7 +623,6 @@ def UpdateImageControls(G2frame,data,masks):
             G2plt.PlotExposedImage(G2frame,event=event)
             
         def OnSetDefault(event):
-            import copy
             if data['setDefault']:
                 G2frame.imageDefault = {}
                 data['setDefault'] = False
@@ -1097,7 +1096,6 @@ def UpdateMasks(G2frame,data):
         G2plt.PlotExposedImage(G2frame,event=event)
 
     def OnCopyMask(event):
-        import copy
         TextList = [[False,'All IMG',0]]
         Names = []
         if G2frame.PatternTree.GetCount():
@@ -1418,8 +1416,7 @@ def UpdateStressStrain(G2frame,data):
         UpdateStressStrain(G2frame,data)
             
     def OnCopyStrSta(event):
-        import copy
-        TextList = [[False,'All IMG',0]]
+        TextList = [[False,'All IMG',0,0]]
         Names = []
         if G2frame.PatternTree.GetCount():
             id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)

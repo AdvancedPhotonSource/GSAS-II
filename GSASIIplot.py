@@ -2517,8 +2517,9 @@ def OnStartNewDzero(G2frame):
       triggers the addition of a d-zero.    
     '''
     G2frame.dataFrame.GetStatusBar().SetStatusText('Add strain ring active - LB pick d-zero value',0)
-    StrSta = G2frame.PatternTree.GetItemPyData(
-        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Stress/Strain'))
+    G2frame.PickId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Stress/Strain')
+    data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
+    return data
 
 def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     '''Plot of 2D detector images as contoured plot. Also plot calibration ellipses,
@@ -2527,7 +2528,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     from matplotlib.patches import Ellipse,Arc,Circle,Polygon
     import numpy.ma as ma
     Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
-    global Data,Masks
+    global Data,Masks,StrSta
     colors=['b','g','r','c','m','k']
     Data = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
@@ -2597,7 +2598,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         elif PickName == 'Stress/Strain':
             if event.key in ['a',]:
                 G2frame.StrainKey = event.key
-                OnStartNewDzero(G2frame)
+                StrSta = OnStartNewDzero(G2frame)
                 PlotImage(G2frame,newPlot=False)
                 
         elif PickName == 'Image Controls':

@@ -281,7 +281,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
             return Comments,Data,Npix,Image
         
 def PutG2Image(filename,Comments,Data,Npix,image):
-    'Write an image as a python pickle'
+    'Write an image as a python pickle - might be better as an .edf file?'
     File = open(filename,'wb')
     cPickle.dump([Comments,Data,Npix,image],File,1)
     File.close()

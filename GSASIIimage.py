@@ -947,7 +947,7 @@ def CalcStrSta(StrSta,Controls):
         E = [[Eij[0],Eij[1],0],[Eij[1],Eij[2],0],[0,0,0]]
         th,azm = ring['ImtaObs']
         th0 = np.ones_like(azm)*npasind(wave/(2.*ring['Dset']))
-        V = np.sum(np.sum(E*calcFij(90.,phi,azm,th0).T/1.e6,axis=2),axis=1)
+        V = -np.sum(np.sum(E*calcFij(90.,phi,azm,th0).T/1.e6,axis=2),axis=1)
         if StaType == 'True':
             ring['ImtaCalc'] = np.array([np.exp(V)*ring['Dset'],azm])
         else:
@@ -998,7 +998,7 @@ def FitStrain(rings,p0,dset,wave,phi,StaType):
         E = np.array([[p[0],p[1],0],[p[1],p[2],0],[0,0,0]])
         dspo,azm,dsp = xyd
         th = npasind(wave/(2.0*dspo))
-        V = np.sum(np.sum(E*calcFij(90.,phi,azm,th).T/1.e6,axis=2),axis=1)
+        V = -np.sum(np.sum(E*calcFij(90.,phi,azm,th).T/1.e6,axis=2),axis=1)
         if StaType == 'True':
             dspc = dset*np.exp(V)
         else:

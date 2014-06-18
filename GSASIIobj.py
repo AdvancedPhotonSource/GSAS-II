@@ -1131,7 +1131,7 @@ def VarDescr(varname):
 #        return "invalid variable name!",""
 
     if not l[-1]:
-        l[-1] = "(variable needs a definition!)"
+        l[-1] = "(variable needs a definition! Set it in CompileVarDesc)"
 
     if len(l) == 3:         #SASD variable name!
         s = 'component:'+l[1]
@@ -1308,7 +1308,11 @@ def CompileVarDesc():
         'PkInt': 'Bragg peak intensity',
         'PkPos': 'Bragg peak position',
         'PkSig': 'Bragg peak sigma',
-        'PkGam': 'Bragg peak gamma',   
+        'PkGam': 'Bragg peak gamma',
+        # strain vars e11, e22, e12
+        'e11' : 'strain tensor e11',
+        'e22' : 'strain tensor e22',
+        'e12' : 'strain tensor e12',
         }.items():
         VarDesc[key] = value
         reVarDesc[re.compile(key)] = value

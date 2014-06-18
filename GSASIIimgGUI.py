@@ -482,12 +482,13 @@ def UpdateImageControls(G2frame,data,masks):
             
         calibSizer = wx.FlexGridSizer(0,2,5,5)
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibration coefficients'),0,WACV)    
-        calibSizer.Add((5,0),0)        
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Beam center X,Y'),0,WACV)
+        calibSizer.Add((5,0),0)
         cent = data['center']
-        centText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%7.2f,%7.2f" % (cent[0],cent[1])),style=wx.TE_READONLY)
-        centText.SetBackgroundColour(VERY_LIGHT_GREY)
-        calibSizer.Add(centText,0,WACV)        
+        for axis,cnt in zip(['X','Y'],cent):
+            calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Beam center '+axis),0,WACV)
+            centText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%7.2f" % (cnt)),style=wx.TE_READONLY)
+            centText.SetBackgroundColour(VERY_LIGHT_GREY)
+            calibSizer.Add(centText,0,WACV)        
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Wavelength'),0,WACV)
         waveSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%7.5f" % (data['wavelength'])),
             style=wx.TE_PROCESS_ENTER)
@@ -1614,11 +1615,9 @@ def UpdateStressStrain(G2frame,data):
         samZ.Bind(wx.EVT_TEXT_ENTER,OnSamZ)
         samZ.Bind(wx.EVT_KILL_FOCUS,OnSamZ)
         samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample load(MPa): '),0,WACV)
-        samLoad = wx.TextCtrl(G2frame.dataDisplay,-1,value=("%.3f" % (data['Sample load'])),
-            style=wx.TE_PROCESS_ENTER)
+        samLoad = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Sample load',
+                nDig=[8,3],typeHint=float,)
         samSizer.Add(samLoad,0,WACV)
-        samLoad.Bind(wx.EVT_TEXT_ENTER,OnSamLoad)
-        samLoad.Bind(wx.EVT_KILL_FOCUS,OnSamLoad)
 
         return samSizer
         

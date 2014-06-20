@@ -1138,6 +1138,8 @@ def VarDescr(varname):
         return s,l[-1]
     s = ""
     if l[0] is not None and l[1] is not None: # HAP: keep short
+        if l[2] == "Scale": # fix up ambigous name
+            l[5] = "Phase fraction"
         if l[0] == '*':
             lbl = 'all'
         else:
@@ -1153,35 +1155,38 @@ def VarDescr(varname):
         else:
             hlbl = 'Hist='+hlbl
         s = "Ph="+str(lbl)+" * "+str(hlbl)
-    elif l[2] == 'Back': # background parameters are "special", alas
-        s = 'Hist='+ShortHistNames.get(l[1],'? #'+str(l[1]))
-        l[-1] += ' #'+str(l[3])
-    elif l[4] is not None: # rigid body parameter
-        lbl = ShortPhaseNames.get(l[0],'phase?')
-        s = "Res #"+str(l[3])+" body #"+str(l[4])+" in "+str(lbl)
-    elif l[3] is not None: # atom parameter, 
-        lbl = ShortPhaseNames.get(l[0],'phase?')
-        try:
-            albl = LookupAtomLabel(l[0],l[3])[0]
-        except KeyError:
-            albl = 'Atom?'
-        s = "Atom "+str(albl)+" in "+str(lbl)
-    elif l[0] == '*':
-        s = "All phases "
-    elif l[0] is not None:
-        lbl = ShortPhaseNames.get(l[0],'phase?')
-        s = "Phase "+str(lbl)
-    elif l[1] == '*':
-        s = 'All hists'
-    elif l[1] is not None:
-        hlbl = ShortHistNames.get(l[1],'? #'+str(l[1]))
-        if hlbl[:4] == 'HKLF':
-            hlbl = 'Xtl='+hlbl[5:]
-        elif hlbl[:4] == 'PWDR':
-            hlbl = 'Pwd='+hlbl[5:]
-        else:
-            hlbl = 'Hist='+hlbl
-        s = str(hlbl)
+    else:
+        if l[2] == "Scale": # fix up ambigous name: must be scale factor, since not HAP
+            l[5] = "Scale factor"
+        if l[2] == 'Back': # background parameters are "special", alas
+            s = 'Hist='+ShortHistNames.get(l[1],'? #'+str(l[1]))
+            l[-1] += ' #'+str(l[3])
+        elif l[4] is not None: # rigid body parameter
+            lbl = ShortPhaseNames.get(l[0],'phase?')
+            s = "Res #"+str(l[3])+" body #"+str(l[4])+" in "+str(lbl)
+        elif l[3] is not None: # atom parameter, 
+            lbl = ShortPhaseNames.get(l[0],'phase?')
+            try:
+                albl = LookupAtomLabel(l[0],l[3])[0]
+            except KeyError:
+                albl = 'Atom?'
+            s = "Atom "+str(albl)+" in "+str(lbl)
+        elif l[0] == '*':
+            s = "All phases "
+        elif l[0] is not None:
+            lbl = ShortPhaseNames.get(l[0],'phase?')
+            s = "Phase "+str(lbl)
+        elif l[1] == '*':
+            s = 'All hists'
+        elif l[1] is not None:
+            hlbl = ShortHistNames.get(l[1],'? #'+str(l[1]))
+            if hlbl[:4] == 'HKLF':
+                hlbl = 'Xtl='+hlbl[5:]
+            elif hlbl[:4] == 'PWDR':
+                hlbl = 'Pwd='+hlbl[5:]
+            else:
+                hlbl = 'Hist='+hlbl
+            s = str(hlbl)
     if not s:
         s = 'Global'
     return s,l[-1]
@@ -1300,19 +1305,16 @@ def CompileVarDesc():
         'Radius' : 'Sphere/cylinder/disk radius',
         'Mean' : 'Particle mean radius',
         'StdDev' : 'Standard deviation in Mean',
-        'G': 'Guinier prefactor',
-        'Rg': 'Guinier radius of gyration',
-        'B': 'Porod prefactor',
-        'P': 'Porod power',
+        'G$': 'Guinier prefactor',
+        'Rg$': 'Guinier radius of gyration',
+        'B$': 'Porod prefactor',
+        'P$': 'Porod power',
         'Cutoff': 'Porod cutoff',
         'PkInt': 'Bragg peak intensity',
         'PkPos': 'Bragg peak position',
         'PkSig': 'Bragg peak sigma',
         'PkGam': 'Bragg peak gamma',
-        # strain vars e11, e22, e12
-        'e11' : 'strain tensor e11',
-        'e22' : 'strain tensor e22',
-        'e12' : 'strain tensor e12',
+        'e([12][12])' : 'strain tensor e\1',   # strain vars e11, e22, e12
         }.items():
         VarDesc[key] = value
         reVarDesc[re.compile(key)] = value

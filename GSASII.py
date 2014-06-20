@@ -77,23 +77,13 @@ import GSASIIlattice as G2lat
 #wx inspector - use as needed
 wxInspector = False
 
-# print versions
-print "Python module versions loaded:"
-print "python:     ",sys.version[:5]
-print "wxpython:   ",wx.__version__
-print "matplotlib: ",mpl.__version__
-print "numpy:      ",np.__version__
-print "scipy:      ",sp.__version__
-print "OpenGL:     ",ogl.__version__
-try:
-    import mkl
-    print "Max threads ",mkl.get_max_threads()
-except:
-    pass
-#    print "MKL module not present"
 __version__ = '0.2.0'
 G2gd.__version__ = __version__
-print "This is GSAS-II version:     ",__version__,' revision '+str(GSASIIpath.GetVersionNumber())
+
+# PATCH: for Mavericks (OS X 10.9.x), wx produces an annoying warning about LucidaGrandeUI.
+# In case stderr has been suppressed there, redirect python error output to stdout. Nobody
+# else should care much about this. 
+sys.stderr = sys.stdout
 
 # useful degree trig functions
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -3387,4 +3377,23 @@ def main():
     application.MainLoop()
     
 if __name__ == '__main__':
+    # print versions
+    print "Python module versions loaded:"
+    print "python:     ",sys.version[:5]
+    print "wxpython:   ",wx.__version__
+    print "matplotlib: ",mpl.__version__
+    print "numpy:      ",np.__version__
+    print "scipy:      ",sp.__version__
+    print "OpenGL:     ",ogl.__version__
+    try:
+        import Image
+        print "Image (PIL):",Image.VERSION
+    except ImportError:
+        print "Image module not present; Note that PIL (Python Imaging Library) is needed for some image formats."
+    try:
+        import mkl
+        print "Max threads ",mkl.get_max_threads()
+    except:
+        pass
+    print "This is GSAS-II version:     ",__version__,' revision '+str(GSASIIpath.GetVersionNumber())
     main() # start the GUI

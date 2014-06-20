@@ -1407,7 +1407,7 @@ class SingleStringDialog(wx.Dialog):
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
-        self.valItem = wx.TextCtrl(self.panel,-1,value=str(self.value),size=size)
+        self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size)
         mainSizer.Add(self.valItem,0,wx.ALIGN_CENTER)
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(self.panel, wx.ID_OK)
@@ -3145,32 +3145,56 @@ class GSGrid(wg.Grid):
         #this is to satisfy structure drawing stuff in G2plt when focus changes
         return None
 
-    def InstallGridToolTip(self, rowcolhintcallback):
+    def InstallGridToolTip(self, rowcolhintcallback,
+                           colLblCallback=None,rowLblCallback=None):
         '''code to display a tooltip for each item on a grid
-        from http://wiki.wxpython.org/wxGrid%20ToolTips
+        from http://wiki.wxpython.org/wxGrid%20ToolTips (buggy!), expanded to
+        column and row labels using hints from
+        https://groups.google.com/forum/#!topic/wxPython-users/bm8OARRVDCs
 
         :param function rowcolhintcallback: a routine that returns a text
-          string depending on the selected row and column
+          string depending on the selected row and column, to be used in
+          explaining grid entries.
+        :param function colLblCallback: a routine that returns a text
+          string depending on the selected column, to be used in
+          explaining grid columns (if None, the default), column labels
+          do not get a tooltip.
+        :param function rowLblCallback: a routine that returns a text
+          string depending on the selected row, to be used in
+          explaining grid rows (if None, the default), row labels
+          do not get a tooltip.
         '''
-        prev_rowcol = [None,None]
-        def OnMouseMotion(evt):
-            # evt.GetRow() and evt.GetCol() would be nice to have here,
+        prev_rowcol = [None,None,None]
+        def OnMouseMotion(event):
+            # event.GetRow() and event.GetCol() would be nice to have here,
             # but as this is a mouse event, not a grid event, they are not
             # available and we need to compute them by hand.
-            x, y = self.CalcUnscrolledPosition(evt.GetPosition())
+            x, y = self.CalcUnscrolledPosition(event.GetPosition())
             row = self.YToRow(y)
             col = self.XToCol(x)
-
-            if (row,col) != prev_rowcol and row >= 0 and col >= 0:
-                prev_rowcol[:] = [row,col]
+            hinttext = ''
+            win = event.GetEventObject()
+            if [row,col,win] == prev_rowcol: # no change from last position
+                event.Skip()
+                return
+            if win == self.GetGridWindow() and row >= 0 and col >= 0:
                 hinttext = rowcolhintcallback(row, col)
-                if hinttext is None:
-                    hinttext = ''
-                self.GetGridWindow().SetToolTipString(hinttext)
-            evt.Skip()
+            elif win == self.GetGridColLabelWindow() and col >= 0:
+                if colLblCallback: hinttext = colLblCallback(col)
+            elif win == self.GetGridRowLabelWindow() and row >= 0:
+                if rowLblCallback: hinttext = rowLblCallback(row)
+            else: # this should be the upper left corner, which is empty
+                event.Skip()
+                return
+            if hinttext is None: hinttext = ''
+            win.SetToolTipString(hinttext)
+            prev_rowcol[:] = [row,col,win]
+            event.Skip()
 
         wx.EVT_MOTION(self.GetGridWindow(), OnMouseMotion)
-                                                
+        if colLblCallback: wx.EVT_MOTION(self.GetGridColLabelWindow(), OnMouseMotion)
+        if rowLblCallback: wx.EVT_MOTION(self.GetGridRowLabelWindow(), OnMouseMotion)
+                                                    
 ################################################################################
 #####  Table
 ################################################################################           
@@ -3612,7 +3636,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             * 'histNames' - list of histogram names in order as processed by Sequential Refinement
             * 'varyList' - list of variables - identical over all refinements in sequence
               note that this is the original list of variables, prior to processing
-              constraints. 
+              constraints.
+            * 'variableLabels' -- a dict of labels to be applied to each parameter
+              (this is created as an empty dict if not present in data).
             * keyed by histName - dictionaries for all data sets processed, which contains:
 
               * 'variables'- result[0] from leastsq call
@@ -3658,7 +3684,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         '''returns column label, lists of values and errors (or None) for each column in the table
         for plotting. The column label is reformatted from Unicode to MatPlotLib encoding
         '''
-        plotName = plotSpCharFix(G2frame.SeqTable.GetColLabelValue(col))
+        colName = G2frame.SeqTable.GetColLabelValue(col)
+        plotName = variableLabels.get(colName,colName)
+        plotName = plotSpCharFix(plotName)
         return plotName,colList[col],colSigs[col]
             
     def PlotSelect(event):
@@ -4183,6 +4211,32 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if colSigs[col]:
             return u'\u03c3 = '+str(colSigs[col][row])
         return ''
+    def GridColLblToolTip(col):
+        '''Define a tooltip for a column. This will be the user-entered value
+        (from data['variableLabels']) or the default name
+        '''
+        if col < 0 or col > len(colLabels):
+            print 'Illegal column #',col
+            return
+        var = colLabels[col]
+        return variableLabels.get(var,G2obj.fmtVarDescr(var))
+    def SetLabelString(event):
+        '''Define or edit the label for a column in the table, to be used
+        as a tooltip and for plotting
+        '''
+        col = event.GetCol()
+        if col < 0 or col > len(colLabels):
+            return
+        var = colLabels[col]
+        lbl = variableLabels.get(var,G2obj.fmtVarDescr(var))
+        dlg = SingleStringDialog(G2frame.dataFrame,'Set variable label',
+                                 'Set a name for variable '+var,lbl,size=(400,-1))
+        if dlg.Show():
+            variableLabels[var] = dlg.GetValue()
+            print variableLabels
+        dlg.Destroy()
+        
+    #def GridRowLblToolTip(row): return 'Row ='+str(row)
     
     # lookup table for unique cell parameters by symmetry
     cellGUIlist = [
@@ -4204,6 +4258,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     if not data:
         print 'No sequential refinement results'
         return
+    variableLabels = data.get('variableLabels',{})
+    data['variableLabels'] = variableLabels
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     Controls = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Controls'))
     # create a place to store Pseudo Vars & Parametric Fit functions, if needed
@@ -4456,6 +4512,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
     G2frame.dataDisplay.EnableEditing(False)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PlotSelect)
+    G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, SetLabelString)
     G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(True)
@@ -4468,38 +4525,13 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         for row,name in enumerate(histNames):
             deltaChi = G2frame.SeqTable.GetValue(row,deltaChiCol)
             if deltaChi > 10.:
-                G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Color(255,0,0))
+                G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Colour(255,0,0))
             elif deltaChi > 1.0:
-                G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Color(255,255,0))
-    G2frame.dataDisplay.InstallGridToolTip(GridSetToolTip)
+                G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Colour(255,255,0))
+    G2frame.dataDisplay.InstallGridToolTip(GridSetToolTip,GridColLblToolTip)
     #======================================================================
     # end UpdateSeqResults; done processing sequential results
     #======================================================================
-
-    # make dict with vars for use in PseudoVars
-    # name = histNames[0]
-    # parmDict = dict(zip(colLabels,zip(*colList)[0]))
-    # # create a dict with the refined Ax values for all phases (only)
-    # refCellDict = {var:val for var,val in data[name]['newCellDict'].values()}
-    # # compute the Ai values for each phase, updated with refined values and
-    # # with symmetry constraints applied
-    # for pId in Alist:     # loop over phases
-    #     Albls = [str(pId)+'::A'+str(i) for i in range(6)]
-    #     cellDict = {var:refCellDict.get(var,val) for var,val in zip(Albls,Alist[pId])}
-    #     zeroDict = {var:0.0 for var in Albls}
-    #     A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata[pId],cellDict,zeroDict)
-    #     parmDict.update(dict(zip(Albls,A)))
-
-#    print data[name]['varyList']
-#            
-    # print 'vars for PVar dict'
-    # for i,(var,val) in enumerate(zip(colLabels,zip(*colList)[0])):
-    #     if var in data[name]['varyList']:
-    #         print var,Dlookup.get(striphist(var),var),val,parmDict.get(Dlookup.get(striphist(var),var))
-    #         pass
-    #     #else:
-    #     #    print i,var,colSigs[i]
-    # print 'vars for PVar dict again'
     
 ################################################################################
 #####  Main PWDR panel

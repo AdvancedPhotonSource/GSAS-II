@@ -406,6 +406,8 @@ def UpdateConstraints(G2frame,data):
                             varList += [var]
                             choices.append([var,albl+plbl,meaning])
         elif page[1] == 'hap':
+            if FrstVarb.name == "Scale":
+                meaning = "Phase fraction"
             for nam in nameList:
                 for ph,plbl in zip(phaselist,phaselbl):
                     if plbl: plbl = 'For ' + plbl
@@ -420,6 +422,8 @@ def UpdateConstraints(G2frame,data):
                             varList += [var]
                             choices.append([var,plbl+hlbl,meaning])
         elif page[1] == 'hst':
+            if FrstVarb.name == "Scale":
+                meaning = "Scale factor"
             for nam in nameList:
                 for hst,hlbl in zip(histlist,histlbl):
                     if hlbl:

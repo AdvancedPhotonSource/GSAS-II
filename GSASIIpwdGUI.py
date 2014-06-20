@@ -2346,7 +2346,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()    
         G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
-        G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)   #not work yet
+        G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
         G2frame.dataFrame.SelectPhase.Enable(False)
         if len(data) > 1:
             G2frame.dataFrame.SelectPhase.Enable(True)
@@ -2362,7 +2362,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         refs = np.vstack((refList.T[:11],I100)).T
     for i in range(len(refs)): rowLabels.append(str(i))
     if HKLF:
-        colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase',]
+        colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','Ext',]
     else:
         colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','I100',]
     Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \

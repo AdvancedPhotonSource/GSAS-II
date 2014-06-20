@@ -530,7 +530,8 @@ def GetAtomFXU(pfx,calcControls,parmDict):
     return Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata
     
 def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
-    ''' Compute structure factors for all h,k,l for phase
+    ''' Not Used: here only for comparison the StructureFactor2 - faster version
+    Compute structure factors for all h,k,l for phase
     puts the result, F^2, in each ref[8] in refList
     input:
     
@@ -556,7 +557,7 @@ def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     FF = np.zeros(len(Tdata))
     if 'N' in calcControls[hfx+'histType']:
-        FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+'Lam'])
+        FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
     else:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
@@ -631,7 +632,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     FF = np.zeros(len(Tdata))
     if 'N' in calcControls[hfx+'histType']:
-        FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+'Lam'])
+        FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
     else:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
@@ -703,7 +704,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     mSize = len(Mdata)
     FF = np.zeros(len(Tdata))
     if 'N' in calcControls[hfx+'histType']:
-        FP,FPP = G2el.BlenRes(Tdata,BLtables,parmDict[hfx+'Lam'])
+        FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
     else:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
@@ -787,7 +788,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     return dFdvDict
     
 def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
-    ''' Single crystal extinction function; puts correction in ref[13] and returns
+    ''' Single crystal extinction function; puts correction in ref[11] and returns
     corrections needed for derivatives
     '''
     ref[11] = 1.0
@@ -1762,7 +1763,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             if calcControls['F**2']:
                 for iref,ref in enumerate(refDict['RefList']):
                     if ref[6] > 0:
-                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[11]
                         w = 1.0/ref[6]
                         if w*ref[5] >= calcControls['minF/sig']:
                             for j,var in enumerate(varylist):
@@ -1788,7 +1789,7 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             else:
                 for iref,ref in enumerate(refDict['RefList']):
                     if ref[5] > 0.:
-                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[11]
                         Fo = np.sqrt(ref[5])
                         Fc = np.sqrt(ref[7])
                         w = 1.0/ref[6]
@@ -1903,7 +1904,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             if calcControls['F**2']:
                 for iref,ref in enumerate(refDict['RefList']):
                     if ref[6] > 0:
-                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[11]
                         w =  1.0/ref[6]
                         if w*ref[5] >= calcControls['minF/sig']:
                             wdf[iref] = w*(ref[5]-ref[7])
@@ -1930,7 +1931,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             else:
                 for iref,ref in enumerate(refDict['RefList']):
                     if ref[5] > 0.:
-                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                        dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[11]
                         Fo = np.sqrt(ref[5])
                         Fc = np.sqrt(ref[7])
                         w = 1.0/ref[6]
@@ -2058,7 +2059,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             if calcControls['F**2']:
                 for i,ref in enumerate(refDict['RefList']):
                     if ref[6] > 0:
-                        SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                        SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[11]
                         w = 1.0/ref[6]
                         ref[7] = parmDict[phfx+'Scale']*ref[9]
                         ref[7] *= ref[11]                       #correct Fc^2 for extinction
@@ -2076,7 +2077,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             else:
                 for i,ref in enumerate(refDict['RefList']):
                     if ref[5] > 0.:
-                        SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[13]
+                        SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist) #puts correction in refl[11]
                         ref[7] = parmDict[phfx+'Scale']*ref[9]
                         ref[7] *= ref[11]                       #correct Fc^2 for extinction
                         Fo = np.sqrt(ref[5])

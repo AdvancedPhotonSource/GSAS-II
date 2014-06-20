@@ -169,7 +169,7 @@ class NT_HKLF2_ReaderClass(G2IO.ImportStructFactor):
                     self.Banks[int(bN)-1]['RefDict']['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
                 else:
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
-                    self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0])
+                    self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
             if len(self.Banks):
                 self.UpdateParameters(Type='SNT',Wave=None) # histogram type
                 for Bank in self.Banks:

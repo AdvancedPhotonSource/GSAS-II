@@ -67,9 +67,11 @@ class CIFhklReader(G2IO.ImportStructFactor):
                       )
 
         Fsignames = ('_refln_f_meas_sigma','_refln.f_meas_sigma','_refln.f_meas_sigma_au',
+                    '_refln_f_sigma',
                       )
         
         F2signames = ('_refln_f_squared_meas_sigma','_refln.f_squared_meas_sigma',
+                      '_refln_f_squared_sigma',
                       )
 
         phasenames = ('_refln_phase_calc','_refln.phase_calc',
@@ -256,7 +258,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                             HKL.append(int(item[num]))
                         except:
                             HKL.append('.')
-                    #h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
+                    #h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,Ext
                     ref = HKL+[0,0,0,0,0, 0,0,0,0,0, 0] 
                     if F2dn:
                         F2 = item[itemkeys[F2dn]]
@@ -309,7 +311,6 @@ class CIFhklReader(G2IO.ImportStructFactor):
                 self.RefDict['FF'].append({})
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.errors = 'Error during reading of dataset parameters'
-            self.UpdateControls(Type='Fosq',FcalcPresent=FcalcPresent) # set Fobs type & if Fcalc values are loaded
             if blk.get('_diffrn_radiation_probe'):
                 if blk['_diffrn_radiation_probe'] == 'neutron':
                     type = 'SNC'

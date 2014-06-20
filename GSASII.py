@@ -734,7 +734,6 @@ class GSASII(wx.Frame):
                 if not rd.RefDict.get('FF'):
                     rd.RefDict['FF'] = [{} for i in range(len(rd.RefDict['RefList']))]
                 Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
-                print rd.RefDict
                 self.PatternTree.SetItemPyData(Id,[valuesdict,rd.RefDict])
                 Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
                 self.PatternTree.SetItemPyData(Sub,rd.Parameters)

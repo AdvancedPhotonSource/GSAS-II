@@ -67,7 +67,6 @@ def GetBLtable(General):
     '''
     atomTypes = General['AtomTypes']
     BLtable = {}
-    isotopes = General['Isotopes']
     isotope = General['Isotope']
     for El in atomTypes:
         ElS = getElSym(El)
@@ -94,11 +93,17 @@ def getBLvalues(BLtables,ifList=False):
     if ifList:
         BLvals = []
         for El in BLtables:
-            BLvals.append(BLtables[El][1]['SL'][0])
+            if 'BW-LS' in El:
+                BLvals.append(BLtables[El][1]['BW-LS'][0])
+            else:
+                BLvals.append(BLtables[El][1]['SL'][0])
     else:
         BLvals = {}
         for El in BLtables:
-            BLvals[El] = BLtables[El][1]['SL'][0]
+            if 'BW-LS' in El:
+                BLvals[El] = BLtables[El][1]['BW-LS'][0]
+            else:
+                BLvals[El] = BLtables[El][1]['SL'][0]
     return BLvals
         
 def GetFFC5(ElSym):
@@ -300,63 +305,45 @@ def ScatFac(El, SQ):
     t = -fb[:,np.newaxis]*SQ
     return np.sum(fa[:,np.newaxis]*np.exp(t)[:],axis=0)+El['fc']
         
-def BlenRes(Elist,BLtables,wave):
-    FP = np.zeros(len(Elist))
-    FPP = np.zeros(len(Elist))
-    Emev = 81.80703/wave**2
-    for i,El in enumerate(Elist):
-        BL = BLtables[El]
-        if len(BL) >= 6:
+def BlenResCW(Els,BLtables,wave):
+    FP = np.zeros(len(Els))
+    FPP = np.zeros(len(Els))
+    for i,El in enumerate(Els):
+        BL = BLtables[El][1]
+        if 'BW-LS' in BL:
+            Re,Im,E0,gam,A,E1,B,E2 = BL['BW-LS'][1:]
             Emev = 81.80703/wave**2
-            G2 = BL[5]**2
-            T = [Emev-BL[4],0,0]
-            D = [T**2+G2,0,0]
-            fp = T/D
-            fpp = 1.0/D
-            if len(BL) == 8:
-                T = Emev-BL[7]
-                D = T**2+G2
-                fp += BL[6]*T/D
-                fpp += BL[6]/D
-            if len(BL) == 10:
-                T = Emev-BL[9]
-                D = T**2+G2
-                fp += BL[8]*T/D
-                fpp += BL[8]/D
-            FP[i] = (BL[2]*fp)
-            FPP[i] = (-BL[3]*fpp)
+            T0 = Emev-E0
+            T1 = Emev-E1
+            T2 = Emev-E2
+            D0 = T0**2+gam**2
+            D1 = T1**2+gam**2
+            D2 = T2**2+gam**2
+            FP[i] = Re*(T0/D0+A*T1/D1+B*T2/D2)
+            FPP[i] = Im*(1/D0+A/D1+B/D2)
         else:
-            FP[i] = 0.0
-            FPP[i] = 0.0
+            FPP[i] = BL['SL'][1]    #for Li, B, etc.
     return FP,FPP
     
-#def BlenRes(BLdata,wave):
-#    FP = []
-#    FPP = []
-#    Emev = 81.80703/wave**2
-#    for BL in BLdata:
-#        if len(BL) >= 6:
-#            G2 = BL[5]**2
-#            T = [Emev-BL[4],0,0]
-#            D = [T**2+G2,0,0]
-#            fp = T/D
-#            fpp = 1.0/D
-#            if len(BL) == 8:
-#                T = Emev-BL[7]
-#                D = T**2+G2
-#                fp += BL[6]*T/D
-#                fpp += BL[6]/D
-#            if len(BL) == 10:
-#                T = Emev-BL[9]
-#                D = T**2+G2
-#                fp += BL[8]*T/D
-#                fpp += BL[8]/D
-#            FP.append(BL[2]*fp)
-#            FPP.append(-BL[3]*fpp)
-#        else:
-#            FP.append(0.0)
-#            FPP.append(0.0)
-#    return np.array(FP),np.array(FPP)
+def BlenResTOF(El,BLtables,wave):
+#    FP = np.zeros(len(wave))
+    FPP = np.zeros(len(wave))
+    BL = BLtables[El][1]
+    print BL
+    if 'BW-LS' in BL:
+        Re,Im,E0,gam,A,E1,B,E2 = BL['BW-LS'][1:]
+        Emev = 81.80703/wave**2
+        T0 = Emev-E0
+        T1 = Emev-E1
+        T2 = Emev-E2
+        D0 = T0**2+gam**2
+        D1 = T1**2+gam**2
+        D2 = T2**2+gam**2
+        FP = Re*(T0/D0+A*T1/D1+B*T2/D2)
+        FPP = Im*(1/D0+A/D1+B/D2)
+    else:
+        FPP = np.ones(len(wave))*BL['SL'][1]    #for Li, B, etc.
+    return FP,FPP
     
 def ComptonFac(El,SQ):
     """compute Compton scattering factor

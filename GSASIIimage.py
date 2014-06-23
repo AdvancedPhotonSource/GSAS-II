@@ -77,8 +77,8 @@ def makeMat(Angle,Axis):
     :param float Angle: in degrees
     :param int Axis: 0 for rotation about x, 1 for about y, etc.
     '''
-    cs = cosd(Angle)
-    ss = sind(Angle)
+    cs = npcosd(Angle)
+    ss = npsind(Angle)
     M = np.array(([1.,0.,0.],[0.,cs,-ss],[0.,ss,cs]),dtype=np.float32)
     return np.roll(np.roll(M,Axis,axis=0),Axis,axis=1)
                     
@@ -362,32 +362,28 @@ def GetDetXYfromThAzm(Th,Azm,data):
     dsp = data['wavelength']/(2.0*npsind(Th))    
     return GetDetectorXY(dsp,azm,data)
                     
-def GetTthAzmDsp(x,y,data):
+def GetTthAzmDsp(x,y,data): #expensive
     'Needs a doc string - checked OK for ellipses & hyperbola'
-    wave = data['wavelength']
-    cent = data['center']
     tilt = data['tilt']
-    dist = data['distance']/cosd(tilt)
-    x0 = data['distance']*tand(tilt)
-    phi = data['rotation']
-    dep = data['DetDepth']
-    LRazim = data['LRazimuth']
-    azmthoff = data['azmthOff']
-    dx = np.array(x-cent[0],dtype=np.float32)
-    dy = np.array(y-cent[1],dtype=np.float32)
+    dist = data['distance']/npcosd(tilt)
+    x0 = data['distance']*nptand(tilt)
+    dx = x-data['center'][0]
+    dy = y-data['center'][1]
     D = ((dx-x0)**2+dy**2+data['distance']**2)      #sample to pixel distance
-    X = np.array(([dx,dy,np.zeros_like(dx)]),dtype=np.float32).T
-    X = np.dot(X,makeMat(phi,2))
-    Z = np.dot(X,makeMat(tilt,0)).T[2]
+    X = np.dstack([dx,dy,np.zeros_like(dx)])
+    M = makeMat(data['rotation'],2)
+    N = makeMat(tilt,0)
+    NM = np.inner(N,M)
+    Z = np.dot(X,NM).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
-    dxy = peneCorr(tth,dep,tilt,npatan2d(dy,dx))
+    dxy = peneCorr(tth,data['DetDepth'],tilt,npatan2d(dy,dx))
     DX = dist-Z+dxy
     DY = np.sqrt(dx**2+dy**2-Z**2)
     tth = npatan2d(DY,DX) 
-    dsp = wave/(2.*npsind(tth/2.))
-    azm = (npatan2d(dy,dx)+azmthoff+720.)%360.
+    dsp = data['wavelength']/(2.*npsind(tth/2.))
+    azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
     G = D/data['distance']**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    return np.array([tth,azm,G,dsp])
+    return tth,azm,G,dsp
     
 def GetTth(x,y,data):
     'Give 2-theta value for detector x,y position; calibration info in data'
@@ -397,8 +393,8 @@ def GetTthAzm(x,y,data):
     'Give 2-theta, azimuth values for detector x,y position; calibration info in data'
     return GetTthAzmDsp(x,y,data)[0:2]
     
-def GetTthAzmD(x,y,data):
-    '''Give 2-theta, azimuth & d-spacing values for detector x,y position;
+def GetTthAzmG(x,y,data):
+    '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
      calibration info in data
     '''
     return GetTthAzmDsp(x,y,data)[0:3]
@@ -743,7 +739,7 @@ def ImageCalibrate(self,data):
     G2plt.PlotImage(self,newImage=True)        
     return True
     
-def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
+def Make2ThetaAzimuthMap(data,masks,iLim,jLim,times): #most expensive part of integration!
     'Needs a doc string'
     #transforms 2D image from x,y space to 2-theta,azimuth space based on detector orientation
     pixelSize = data['pixelSize']
@@ -755,6 +751,7 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     tay = np.asfarray(tay*scaley,dtype=np.float32)
     nI = iLim[1]-iLim[0]
     nJ = jLim[1]-jLim[0]
+    t0 = time.time()
     #make position masks here
     frame = masks['Frames']
     tam = ma.make_mask_none((nI,nJ))
@@ -775,7 +772,10 @@ def Make2ThetaAzimuthMap(data,masks,iLim,jLim):
     for X,Y,diam in spots:
         tamp = ma.getmask(ma.masked_less((tax-X)**2+(tay-Y)**2,(diam/2.)**2))
         tam = ma.mask_or(tam,tamp)
-    TA = np.array(GetTthAzmD(tax,tay,data))     #includes geom. corr. as dist**2/d0**2
+    times[0] += time.time()-t0
+    t0 = time.time()
+    TA = np.array(GetTthAzmG(tax,tay,data))     #includes geom. corr. as dist**2/d0**2 - most expensive step
+    times[1] += time.time()-t0
     TA[1] = np.where(TA[1]<0,TA[1]+360,TA[1])
     return np.array(TA),tam           #2-theta, azimuth & geom. corr. arrays & position mask
 
@@ -829,23 +829,26 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     nXBlks = (Nx-1)/blkSize+1
     nYBlks = (Ny-1)/blkSize+1
     Nup = nXBlks*nYBlks*3+3
-    t0 = time.time()
+    tbeg = time.time()
     Nup = 0
     if dlg:
         dlg.Update(Nup)
+    times = [0,0,0,0,0]
     for iBlk in range(nYBlks):
         iBeg = iBlk*blkSize
         iFin = min(iBeg+blkSize,Ny)
         for jBlk in range(nXBlks):
             jBeg = jBlk*blkSize
-            jFin = min(jBeg+blkSize,Nx)                
-            TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin))           #2-theta & azimuth arrays & create position mask
-            
+            jFin = min(jBeg+blkSize,Nx)
+            # next is most expensive step!
+            TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin),times)           #2-theta & azimuth arrays & create position mask
             Nup += 1
             if dlg:
                 dlg.Update(Nup)
             Block = image[iBeg:iFin,jBeg:jFin]
+            t0 = time.time()
             tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
+            times[2] += time.time()-t0
             Nup += 1
             if dlg:
                 dlg.Update(Nup)
@@ -861,12 +864,15 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
                 tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])
             elif 'q' == data['binType']:
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
+            t0 = time.time()
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz*tad/tabs,
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
+            times[3] += time.time()-t0
             Nup += 1
             if dlg:
                 dlg.Update(Nup)
+    t0 = time.time()
     NST = np.array(NST,dtype=np.float)
     H0 = np.divide(H0,NST)
     H0 = np.nan_to_num(H0)
@@ -891,9 +897,11 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     Nup += 1
     if dlg:
         dlg.Update(Nup)
-    t1 = time.time()
+    times[4] += time.time()-t0
+    print 'Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
+        \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4])
+    print "Elapsed time:","%8.3fs"%(time.time()-tbeg)
     print 'Integration complete'
-    print "Elapsed time:","%8.3f"%(t1-t0), "s"
     return H0,H1,H2
     
 def MakeStrStaRing(ring,Image,Controls):

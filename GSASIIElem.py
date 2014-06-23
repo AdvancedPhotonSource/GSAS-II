@@ -326,7 +326,7 @@ def BlenResCW(Els,BLtables,wave):
     return FP,FPP
     
 def BlenResTOF(El,BLtables,wave):
-#    FP = np.zeros(len(wave))
+    FP = np.zeros(len(wave))
     FPP = np.zeros(len(wave))
     BL = BLtables[El][1]
     print BL

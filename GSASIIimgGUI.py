@@ -63,8 +63,9 @@ def UpdateImageData(G2frame,data):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(G2frame.dataDisplay,
         label='Do not change anything here unless you are absolutely sure!'),0,WACV)
+    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Image size: %d by %d'%(data['size'][0],data['size'][1])),0,WACV)
     pixSize = wx.FlexGridSizer(0,4,5,5)
-    pixLabels = [u'Pixel X-dimension (\xb5m)',u'Pixel Y-dimension (\xb5m)']
+    pixLabels = [u' Pixel X-dimension (\xb5m)',u' Pixel Y-dimension (\xb5m)']
     Indx = {}
     for i,[pixLabel,pix] in enumerate(zip(pixLabels,data['pixelSize'])):
         pixSize.Add(wx.StaticText(G2frame.dataDisplay,label=pixLabel),0,WACV)

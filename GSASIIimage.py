@@ -364,24 +364,30 @@ def GetDetXYfromThAzm(Th,Azm,data):
                     
 def GetTthAzmDsp(x,y,data): #expensive
     'Needs a doc string - checked OK for ellipses & hyperbola'
+    wave = data['wavelength']
+    cent = data['center']
     tilt = data['tilt']
-    dist = data['distance']/npcosd(tilt)
-    x0 = data['distance']*nptand(tilt)
-    dx = x-data['center'][0]
-    dy = y-data['center'][1]
+    dist = data['distance']/cosd(tilt)
+    x0 = data['distance']*tand(tilt)
+    phi = data['rotation']
+    dep = data['DetDepth']
+    LRazim = data['LRazimuth']
+    azmthoff = data['azmthOff']
+    dx = np.array(x-cent[0],dtype=np.float32)
+    dy = np.array(y-cent[1],dtype=np.float32)
     D = ((dx-x0)**2+dy**2+data['distance']**2)      #sample to pixel distance
-    X = np.dstack([dx.T,dy.T,np.zeros_like(dx.T)])
-    MN = -np.inner(makeMat(data['rotation'],2),makeMat(tilt,0))
-    Z = np.dot(X,MN).T[2]
+    X = np.array(([dx,dy,np.zeros_like(dx)]),dtype=np.float32).T
+    X = np.dot(X,makeMat(phi,2))
+    Z = np.dot(X,makeMat(tilt,0)).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
-    dxy = peneCorr(tth,data['DetDepth'],tilt,npatan2d(dy,dx))
+    dxy = peneCorr(tth,dep,tilt,npatan2d(dy,dx))
     DX = dist-Z+dxy
     DY = np.sqrt(dx**2+dy**2-Z**2)
     tth = npatan2d(DY,DX) 
-    dsp = data['wavelength']/(2.*npsind(tth/2.))
-    azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
+    dsp = wave/(2.*npsind(tth/2.))
+    azm = (npatan2d(dy,dx)+azmthoff+720.)%360.
     G = D/data['distance']**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
-    return tth,azm,G,dsp
+    return np.array([tth,azm,G,dsp])
     
 def GetTth(x,y,data):
     'Give 2-theta value for detector x,y position; calibration info in data'
@@ -393,9 +399,24 @@ def GetTthAzm(x,y,data):
     
 def GetTthAzmG(x,y,data):
     '''Give 2-theta, azimuth & geometric corr. values for detector x,y position;
-     calibration info in data
+     calibration info in data - only used in integration
     '''
-    return GetTthAzmDsp(x,y,data)[0:3]
+    'Needs a doc string - checked OK for ellipses & hyperbola'
+    tilt = data['tilt']
+    dist = data['distance']/npcosd(tilt)
+    x0 = data['distance']*nptand(tilt)
+    MN = -np.inner(makeMat(data['rotation'],2),makeMat(tilt,0))
+    distsq = data['distance']**2
+    dx = x-data['center'][0]
+    dy = y-data['center'][1]
+    G = ((dx-x0)**2+dy**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+    X = np.dstack([dx.T,dy.T,np.zeros_like(dx.T)])
+    Z = np.dot(X,MN).T[2]
+    tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
+    dxy = peneCorr(tth,data['DetDepth'],tilt,npatan2d(dy,dx))
+    tth = npatan2d(np.sqrt(dx**2+dy**2-Z**2),dist-Z+dxy) 
+    azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
+    return tth,azm,G
 
 def GetDsp(x,y,data):
     'Give d-spacing value for detector x,y position; calibration info in data'

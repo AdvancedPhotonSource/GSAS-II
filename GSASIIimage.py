@@ -370,11 +370,9 @@ def GetTthAzmDsp(x,y,data): #expensive
     dx = x-data['center'][0]
     dy = y-data['center'][1]
     D = ((dx-x0)**2+dy**2+data['distance']**2)      #sample to pixel distance
-    X = np.dstack([dx,dy,np.zeros_like(dx)])
-    M = makeMat(data['rotation'],2)
-    N = makeMat(tilt,0)
-    NM = np.inner(N,M)
-    Z = np.dot(X,NM).T[2]
+    X = np.dstack([dx.T,dy.T,np.zeros_like(dx.T)])
+    MN = -np.inner(makeMat(data['rotation'],2),makeMat(tilt,0))
+    Z = np.dot(X,MN).T[2]
     tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
     dxy = peneCorr(tth,data['DetDepth'],tilt,npatan2d(dy,dx))
     DX = dist-Z+dxy

@@ -2401,12 +2401,6 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
     :param function SelectX: a function that returns a selected column
       number (or None) as the X-axis selection
     '''
-    G2frame.seqXselect = SelectX
-    try:
-        G2frame.seqXaxis
-    except:
-        G2frame.seqXaxis = None
-
     def OnMotion(event):
         if event.xdata and event.ydata:                 #avoid out of frame errors
             xpos = event.xdata
@@ -2419,29 +2413,6 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             G2frame.seqXaxis = G2frame.seqXselect()
             Draw()
             
-    if fitnum is None:
-        label = 'Sequential refinement'
-    else:
-        label = 'Parametric fit #'+str(fitnum+1)
-    try:
-        plotNum = G2frame.G2plotNB.plotList.index(label)
-        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-        Page.figure.clf()
-        Plot = Page.figure.gca()
-        if not Page.IsShown():
-            Page.Show()
-    except ValueError:
-        Plot = G2frame.G2plotNB.addMpl(label).gca()
-        plotNum = G2frame.G2plotNB.plotList.index(label)
-        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
-        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-    Page.Choice = ['s to select plot x-axis',]
-    Page.keyPress = OnKeyPress
-    Page.seqYaxisList = ColumnList
-    Page.seqTableGet = TableGet
-    Page.fitvals = fitvals
-        
     def Draw():
         Page.SetFocus()
         G2frame.G2plotNB.status.SetStatusText('press s to select X axis',1)
@@ -2472,7 +2443,38 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         Plot.set_ylabel('Parameter values')
         Plot.set_xlabel(xName)
         Page.canvas.draw()            
+            
+    G2frame.seqXselect = SelectX
+    try:
+        G2frame.seqXaxis
+    except:
+        G2frame.seqXaxis = None
+
+    if fitnum is None:
+        label = 'Sequential refinement'
+    else:
+        label = 'Parametric fit #'+str(fitnum+1)
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index(label)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+        if not Page.IsShown():
+            Page.Show()
+    except ValueError:
+        Plot = G2frame.G2plotNB.addMpl(label).gca()
+        plotNum = G2frame.G2plotNB.plotList.index(label)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    Page.Choice = ['s to select plot x-axis',]
+    Page.keyPress = OnKeyPress
+    Page.seqYaxisList = ColumnList
+    Page.seqTableGet = TableGet
+    Page.fitvals = fitvals
+        
     Draw()
+    G2frame.G2plotNB.nb.SetSelection(plotNum) # raises plot tab
                 
 ################################################################################
 ##### PlotExposedImage & PlotImage

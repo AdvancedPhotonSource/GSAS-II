@@ -112,8 +112,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(10)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
-    wxID_INSTSAVE,
-] = [wx.NewId() for item in range(6)]
+    wxID_INSTSAVE, wxID_INSTONEVAL
+] = [wx.NewId() for item in range(7)]
 
 [ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_RESETSIGGAM,wxID_CLEARPEAKS,wxID_AUTOSEARCH,
 ] = [wx.NewId() for item in range(6)]
@@ -412,6 +412,11 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.result[self.key] = val
 
     def _onLoseFocus(self,event):
+        # wx 2.9 patch: may be unregistered changes since backspace is not seen
+        i,j= wx.__version__.split('.')[0:2]
+        if int(i)+int(j)/10. > 2.8:
+            if self.Validator: self.Validator.TestValid(self)
+        # end patch
         if self.evaluated:
             self.EvaluateExpression()
         elif self.result is not None: # show formatted result, as Bob wants
@@ -421,11 +426,11 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                                       tc=self,
                                       **self.OnLeaveArgs)
 
-    def _onLeaveWindow(self,event):
-        if self.evaluated:
-            self.EvaluateExpression()
-        elif self.result is not None: # show formatted result, as Bob wants
-            self._setValue(self.result[self.key])
+    # def _onLeaveWindow(self,event):
+    #     if self.evaluated:
+    #         self.EvaluateExpression()
+    #     elif self.result is not None: # show formatted result, as Bob wants
+    #         self._setValue(self.result[self.key])
 
     def EvaluateExpression(self):
         '''Show the computed value when an expression is entered to the TextCtrl
@@ -2591,6 +2596,9 @@ class DataFrame(wx.Frame):
             help='Copy instrument parameter refinement flags to other histograms')
 #        self.InstEdit.Append(help='Change radiation type (Ka12 - synch)', 
 #            id=wxID_CHANGEWAVETYPE, kind=wx.ITEM_NORMAL,text='Change radiation')
+        self.InstEdit.Append(id=wxID_INSTONEVAL, kind=wx.ITEM_NORMAL,text='Set one value',
+            help='Set one instrument parameter value across multiple histograms')
+
         self.PostfillDataMenu()
         
         # PDR / Sample Parameters
@@ -4044,7 +4052,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         
     def EnableParFitEqMenus():
         'Enables or disables the Parametric Fit menu items that require existing defs'
-        if Controls['SeqParFitEqs']:
+        if Controls['SeqParFitEqList']:
             val = True
         else:
             val = False
@@ -4070,11 +4078,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         varyValueDict = {} # dict of variables and their initial values
         calcObjList = [] # expression objects, ready to go for each data point
         if eqObj is not None:
-            eqObjDict = {eqObj.expression:eqObj}
+            eqObjList = [eqObj,]
         else:
-            eqObjDict = Controls['SeqParFitEqs']
-        for expr in eqObjDict.keys():
-            obj = eqObjDict[expr]
+            eqObjList = Controls['SeqParFitEqList']
+        for obj in eqObjList:
+            expr = obj.expression
             # assemble refined vars for this equation
             varyValueDict.update({var:val for var,val in obj.GetVariedVarVal()})
             # lookup dependent var position
@@ -4101,24 +4109,36 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         values = varyValues = [varyValueDict[key] for key in varyList]
         if not varyList:
             print 'no variables to refine!'
-        else:
-            try:
-                print 'Fit Results'
-                result = so.leastsq(ParEqEval,varyValues,full_output=True,   #ftol=Ftol,
-                                    args=(calcObjList,varyList)
-                                    )
-                values = result[0]
-                covar = result[1]
-                if covar is None:
-                    raise Exception
-                for i,(var,val) in enumerate(zip(varyList,values)):
-                    print '  ',var,' =',G2mth.ValEsd(val,np.sqrt(covar[i,i]))
-            except:
-                print 'Fit failed'
-                return
+            return
+        try:
+            result = so.leastsq(ParEqEval,varyValues,full_output=True,   #ftol=Ftol,
+                                args=(calcObjList,varyList)
+                                )
+            values = result[0]
+            covar = result[1]
+            if covar is None:
+                raise Exception
+            esdDict = {}
+            for i,avar in enumerate(varyList):
+                esdDict[avar] = np.sqrt(covar[i,i])
+        except:
+            print('====> Fit failed')
+            return
+        print('==== Fit Results ====')
+        for obj in eqObjList:
+            ind = '      '
+            print('  '+obj.GetDepVar()+' = '+obj.expression)
+            for var in obj.assgnVars:
+                print(ind+var+' = '+obj.assgnVars[var])
+            for var in obj.freeVars:
+                avar = "::"+obj.freeVars[var][0]
+                val = obj.freeVars[var][1]
+                if obj.freeVars[var][2]:
+                    print(ind+var+' = '+avar + " = " + G2mth.ValEsd(val,esdDict[avar]))
+                else:
+                    print(ind+var+' = '+avar + " =" + G2mth.ValEsd(val,0))
         # create a plot for each parametric variable
-        for fitnum,expr in enumerate(sorted(eqObjDict)):
-            obj = eqObjDict[expr]
+        for fitnum,obj in enumerate(eqObjList):
             obj.UpdateVariedVars(varyList,values)
             calcobj = G2obj.ExpressionCalcObj(obj)
             # lookup dependent var position
@@ -4141,24 +4161,21 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     def DelParFitEq(event):
         'Ask the user to select function to delete'
-        choices = sorted(Controls['SeqParFitEqs'].keys())
-        txtlst = [Controls['SeqParFitEqs'][i].GetDepVar()+' = '+i for i in choices]
+        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in Controls['SeqParFitEqList']]
         selected = ItemSelector(
             txtlst,G2frame.dataFrame,
             multiple=True,
-            title='Select a parametric equation to remove',
+            title='Select a parametric equation(s) to remove',
             header='Delete equation')
         if selected is None: return
-        for item in selected:
-            del Controls['SeqParFitEqs'][choices[item]]
+        Controls['SeqParFitEqList'] = [obj for i,obj in enumerate(Controls['SeqParFitEqList']) if i not in selected]
         EnableParFitEqMenus()
-        if Controls['SeqParFitEqs']: DoParEqFit(event)
+        if Controls['SeqParFitEqList']: DoParEqFit(event)
         
     def EditParFitEq(event):
         'Edit an existing parametric equation'
-        choices = sorted(Controls['SeqParFitEqs'].keys())
-        txtlst = [Controls['SeqParFitEqs'][i].GetDepVar()+' = '+i for i in choices]
-        if len(choices) == 1:
+        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in Controls['SeqParFitEqList']]
+        if len(txtlst) == 1:
             selected = 0
         else:
             selected = ItemSelector(
@@ -4169,24 +4186,24 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if selected is not None:
             dlg = G2exG.ExpressionDialog(
                 G2frame.dataDisplay,indepVarDict,
-                Controls['SeqParFitEqs'][choices[selected]],
+                Controls['SeqParFitEqList'][selected],
                 depVarDict=depVarDict,
                 header="Edit the formula for this minimization function",
                 ExtraButton=['Fit',SingleParEqFit])
             newobj = dlg.Show(True)
             if newobj:
                 calcobj = G2obj.ExpressionCalcObj(newobj)
-                del Controls['SeqParFitEqs'][choices[selected]]
-                Controls['SeqParFitEqs'][calcobj.eObj.expression] = newobj
+                Controls['SeqParFitEqList'][selected] = newobj
                 EnableParFitEqMenus()
-                if Controls['SeqParFitEqs']: DoParEqFit(event)
+            if Controls['SeqParFitEqList']: DoParEqFit(event)
 
     def AddNewParFitEq(event):
         'Create a new parametric equation to be fit to sequential results'
 
-        # compile the variable names in previous freevars to avoid accidental name collisions
+        # compile the variable names used in previous freevars to avoid accidental name collisions
         usedvarlist = []
-        for eq,obj in Controls['SeqParFitEqs'].items():
+        for obj in Controls['SeqParFitEqList']:
+            eq = obj.expression            
             for var in obj.freeVars:
                 if obj.freeVars[var][0] not in usedvarlist: usedvarlist.append(obj.freeVars[var][0])
 
@@ -4199,10 +4216,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         obj = dlg.Show(True)
         dlg.Destroy()
         if obj:
-            calcobj = G2obj.ExpressionCalcObj(obj)
-            Controls['SeqParFitEqs'][calcobj.eObj.expression] = obj
+            Controls['SeqParFitEqList'].append(obj)
             EnableParFitEqMenus()
-            if Controls['SeqParFitEqs']: DoParEqFit(event)
+            if Controls['SeqParFitEqList']: DoParEqFit(event)
                                             
     def GridSetToolTip(row,col):
         '''Routine to show standard uncertainties for each element in table
@@ -4264,7 +4280,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     Controls = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Controls'))
     # create a place to store Pseudo Vars & Parametric Fit functions, if needed
     if 'SeqPseudoVars' not in Controls: Controls['SeqPseudoVars'] = {}
-    if 'SeqParFitEqs' not in Controls: Controls['SeqParFitEqs'] = {}
+    if 'SeqParFitEqList' not in Controls: Controls['SeqParFitEqList'] = []
     histNames = data['histNames']
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()

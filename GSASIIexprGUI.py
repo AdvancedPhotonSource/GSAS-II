@@ -279,7 +279,7 @@ class ExpressionDialog(wx.Dialog):
             val =  resDict.get(varname)
             if val:
                 self.varValue[v] = val
-        wx.CallAfter(self.ShowVars())
+        wx.CallAfter(self.ShowVars)
 
     def Show(self,mode=True):
         '''Call to use the dialog after it is created.
@@ -288,6 +288,7 @@ class ExpressionDialog(wx.Dialog):
         '''
         self.Layout()
         self.mainsizer.Fit(self)
+        self.SendSizeEvent() # force repaint
         if self.ShowModal() == wx.ID_OK:
             # store the edit results in the object and return it
             exprObj = G2obj.ExpressionObj()
@@ -481,6 +482,8 @@ class ExpressionDialog(wx.Dialog):
         self.varbox.SetupScrolling()
         self.varbox.Refresh()
         self.Layout()
+        self.mainsizer.Fit(self)
+        self.SendSizeEvent() # force repaint
         return
 
     def OnDepChoice(self,event):

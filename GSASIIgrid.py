@@ -425,6 +425,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                                       value=self.result[self.key],
                                       tc=self,
                                       **self.OnLeaveArgs)
+        if event: event.Skip()
 
     # def _onLeaveWindow(self,event):
     #     if self.evaluated:

@@ -525,7 +525,14 @@ def GetTifData(filename,imageOnly=False):
     incorrectly in some way. 
     '''
     import struct as st
-    import Image as Im
+    try:
+        import Image as Im
+    except ImportError:
+        try:
+            from PIL import Image as Im
+        except ImportError:
+            print "PIL/pillow Image module not present. TIFs cannot be read without this"
+            raise Exception("PIL/pillow Image module not found")
     import array as ar
     import ReadMarCCDFrame as rmf
     File = open(filename,'rb')

@@ -3300,10 +3300,17 @@ def PlotStructure(G2frame,data,firstCall=False):
     ctrlDown = False
     
     def OnKeyBox(event):
-        import Image
 #        Draw()                          #make sure plot is fresh!!
         mode = cb.GetValue()
         if mode in ['jpeg','bmp','tiff',]:
+            try:
+                import Image as Im
+            except ImportError:
+                try:
+                    from PIL import Image as Im
+                except ImportError:
+                    print "PIL/pillow Image module not present. Cannot save images without this"
+                    raise Exception("PIL/pillow Image module not found")
             Fname = os.path.join(Mydir,generalData['Name']+'.'+mode)
             size = Page.canvas.GetSize()
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)

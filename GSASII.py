@@ -3388,7 +3388,11 @@ if __name__ == '__main__':
         import Image
         print "Image (PIL):",Image.VERSION
     except ImportError:
-        print "Image module not present; Note that PIL (Python Imaging Library) is needed for some image formats."
+        try:
+            from PIL import Image
+            print "pillow:     ",Image.VERSION
+        except ImportError:
+            print "Image module not present; Note that PIL (Python Imaging Library) or pillow is needed for some image operations"
     try:
         import mkl
         print "Max threads ",mkl.get_max_threads()

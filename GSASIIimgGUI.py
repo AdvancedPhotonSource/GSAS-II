@@ -776,6 +776,7 @@ def UpdateImageControls(G2frame,data,masks):
             
         def OnDarkImage(event):
             data['dark image'][0] = darkImage.GetValue()
+            G2plt.PlotExposedImage(G2frame,event=event)
 
         def OnBackMult(event):
             try:
@@ -792,6 +793,7 @@ def UpdateImageControls(G2frame,data,masks):
             except ValueError:
                 pass
             darkMult.SetValue("%.3f" % (data['dark image'][1]))          #reset in case of error 
+            G2plt.PlotExposedImage(G2frame,event=event)
         
         backSizer = wx.FlexGridSizer(0,4,5,5)
 
@@ -1522,10 +1524,11 @@ def UpdateStressStrain(G2frame,data):
                 for sel in dlg.GetSelections():
                     names.append(choices[sel])
             dlg.Destroy()
-            SeqResult = {'histNames':names,}
+            SeqResult = {}
             dlg = wx.ProgressDialog('Sequential IMG Strain fit','Data set name = '+names[0],len(names), 
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)          
             wx.BeginBusyCursor()
+            goodnames = []
             try:
                 for i,name in enumerate(names):
                     print ' Sequential strain fit for ',name
@@ -1535,9 +1538,18 @@ def UpdateStressStrain(G2frame,data):
                     Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                     Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Image Controls'))
                     StaCtrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Stress/Strain'))
+                    if not len(StaCtrls['d-zero']):
+                        continue
+                    goodnames.append(name)
                     id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
                     Npix,imagefile = G2frame.PatternTree.GetItemPyData(Id)
                     image = G2IO.GetImageData(G2frame,imagefile,True)
+                    dark = Controls['dark image']
+                    if dark[0]:
+                        darkfile = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, 
+                            G2frame.root,dark[0]))[1]
+                        darkImg = G2IO.GetImageData(G2frame,darkfile,imageOnly=True)
+                        image += dark[1]*darkImg
                     G2img.FitStrSta(image,StaCtrls,Controls)
                     G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)
                     parmDict = {'Sample load':StaCtrls['Sample load'],}
@@ -1553,6 +1565,7 @@ def UpdateStressStrain(G2frame,data):
                     SeqResult[name] = {'variables':variables,'varyList':varyList,'sig':sig,'Rvals':[],
                         'covMatrix':[],'title':name,'parmDict':parmDict}
                 else:
+                    SeqResult['histNames'] = goodnames
                     dlg.Destroy()
                     print ' ***** Sequential strain refinement successful *****'
             finally:

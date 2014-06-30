@@ -137,12 +137,12 @@ def CheckImageFile(G2frame,imagefile):
     '''
     if not ospath.exists(imagefile):
         dlg = wx.FileDialog(G2frame, 'Bad image file name; choose name', '.', '',\
-        'Any image file (*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img)\
-        |*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img|\
+        'Any image file (*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img)\
+        |*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img|\
         European detector file (*.edf)|*.edf|\
         Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|\
         MAR file (*.mar*)|*.mar*|\
-        GE Image (*.avg;*.sum)|*.avg;*.sum|\
+        GE Image (*.ge*;*.avg;*.sum)|*.ge*;*.avg;*.sum|\
         ADSC Image (*.img)|*.img|\
         All files (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
         try:
@@ -261,7 +261,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
         Image[0][0] = 0
     elif ext == '.mar3450' or ext == '.mar2300':
         Comments,Data,Npix,Image = GetMAR345Data(imagefile)
-    elif ext in ['.sum','.avg','']:
+    elif ext in ['.sum','.avg'] or 'ge' in ext:
         Comments,Data,Npix,Image = GetGEsumData(imagefile)
     elif ext == '.G2img':
         Comments,Data,Npix,Image = GetG2Image(imagefile)
@@ -365,8 +365,8 @@ def GetGEsumData(filename,imageOnly=False):
     if '.sum' in filename:
         head = ['GE detector sum data from APS 1-ID',]
         sizexy = [2048,2048]
-    elif '.avg' in filename:
-        head = ['GE detector avg data from APS 1-ID',]
+    elif '.avg' in filename or '.ge' in filename:
+        head = ['GE detector avg or ge* data from APS 1-ID',]
         sizexy = [2048,2048]
     else:
         head = ['GE detector raw data from APS 1-ID',]
@@ -378,7 +378,7 @@ def GetGEsumData(filename,imageOnly=False):
     Npix = sizexy[0]*sizexy[1]
     if '.sum' in filename:
         image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
-    elif '.avg' in filename:
+    elif '.avg' in filename or '.ge' in filename:
         image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     else:
         image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)

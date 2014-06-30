@@ -2878,6 +2878,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     except TypeError:
         pass
     size,imagefile = G2frame.PatternTree.GetItemPyData(G2frame.Image)
+    dark = Data['dark image']
+    if dark[0]:
+        darkfile = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, 
+            G2frame.root,dark[0]))[1]
     if imagefile != G2frame.oldImagefile:
         imagefile = G2IO.CheckImageFile(G2frame,imagefile)
         if not imagefile:
@@ -2885,6 +2889,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             return
         G2frame.PatternTree.SetItemPyData(G2frame.Image,[size,imagefile])
         G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,imageOnly=True)
+        if dark[0]:
+            darkImg = G2IO.GetImageData(G2frame,darkfile,imageOnly=True)
+            G2frame.ImageZ += dark[1]*darkImg
         G2frame.oldImagefile = imagefile
 
     imScale = 1

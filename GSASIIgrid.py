@@ -238,7 +238,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
       the :attr:`OnLeave` function. Defaults to ``{}``
 
     :param (other): other optional keyword parameters for the
-      wx.TextCtrl widget such as Size or Style may be specified.
+      wx.TextCtrl widget such as size or style may be specified.
 
     '''
     def __init__(self,parent,loc,key,nDig=None,notBlank=True,min=None,max=None,
@@ -309,9 +309,13 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                              ") type: "+str(type(val)))
         # When the mouse is moved away or the widget loses focus,
         # display the last saved value, if an expression
-#        self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow) #leads to weird behavior
+        #self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
         self.Bind(wx.EVT_TEXT_ENTER, self._onLoseFocus)
         self.Bind(wx.EVT_KILL_FOCUS, self._onLoseFocus)
+        # patch for wx 2.9 on Mac
+        i,j= wx.__version__.split('.')[0:2]
+        if int(i)+int(j)/10. > 2.8 and 'wxOSX' in wx.PlatformInfo:
+            self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
 
     def SetValue(self,val):
         if self.result is not None: # note that this bypasses formatting
@@ -352,7 +356,16 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self._IndicateValidity()
         if self.OKcontrol:
             self.OKcontrol(not self.invalid)
-        
+
+    def OnKeyDown(self,event):
+        'Special callback for wx 2.9+ on Mac where backspace is not processed by validator'
+        key = event.GetKeyCode()
+        if key in [wx.WXK_BACK, wx.WXK_DELETE]:
+            if self.Validator: wx.CallAfter(self.Validator.TestValid,self)
+        if key == wx.WXK_RETURN:
+            self._onLoseFocus(None)
+        event.Skip()
+                    
     def _onStringKey(self,event):
         event.Skip()
         if self.invalid: # check for validity after processing the keystroke
@@ -412,11 +425,6 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.result[self.key] = val
 
     def _onLoseFocus(self,event):
-        # wx 2.9 patch: may be unregistered changes since backspace is not seen
-        i,j= wx.__version__.split('.')[0:2]
-        if int(i)+int(j)/10. > 2.8:
-            if self.Validator: self.Validator.TestValid(self)
-        # end patch
         if self.evaluated:
             self.EvaluateExpression()
         elif self.result is not None: # show formatted result, as Bob wants
@@ -427,17 +435,11 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                                       **self.OnLeaveArgs)
         if event: event.Skip()
 
-    # def _onLeaveWindow(self,event):
-    #     if self.evaluated:
-    #         self.EvaluateExpression()
-    #     elif self.result is not None: # show formatted result, as Bob wants
-    #         self._setValue(self.result[self.key])
-
     def EvaluateExpression(self):
         '''Show the computed value when an expression is entered to the TextCtrl
         Make sure that the number fits by truncating decimal places and switching
         to scientific notation, as needed. 
-        Called on loss of focus.
+        Called on loss of focus, enter, etc..
         '''
         if self.invalid: return # don't substitute for an invalid expression
         if not self.evaluated: return # true when an expression is evaluated
@@ -834,7 +836,7 @@ class G2ChoiceButton(wx.Choice):
 ################################################################################    
 def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250),
-                             CopyButton=False):
+                             CopyButton=False, **kw):
     '''Shell routine to call a ScrolledMultiEditor dialog. See
     :class:`ScrolledMultiEditor` for parameter definitions.
 
@@ -844,7 +846,7 @@ def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
     '''
     dlg = ScrolledMultiEditor(parent,dictlst,elemlst,prelbl,postlbl,
                               title,header,size,
-                              CopyButton)
+                              CopyButton, **kw)
     if dlg.ShowModal() == wx.ID_OK:
         dlg.Destroy()
         return True
@@ -898,6 +900,13 @@ class ScrolledMultiEditor(wx.Dialog):
       of float or int values. Ignored if value is None.
     :param list sizevals: optional list of wx.Size values for each input
       widget. Ignored if value is None.
+      
+    :param tuple checkdictlst: an optional list of dicts or lists containing bool
+      values (similar to dictlst). 
+    :param tuple checkelemlst: an optional list of dicts or lists containing bool
+      key values (similar to elemlst). Must be used with checkdictlst.
+    :param string checklabel: a string to use for each checkbutton
+      
     :returns: the wx.Dialog created here. Use method .ShowModal() to display it.
     
     *Example for use of ScrolledMultiEditor:*
@@ -927,9 +936,12 @@ class ScrolledMultiEditor(wx.Dialog):
     def __init__(self,parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250),
                  CopyButton=False,
-                 minvals=[],maxvals=[],sizevals=[]):
+                 minvals=[],maxvals=[],sizevals=[],
+                 checkdictlst=[], checkelemlst=[], checklabel=""):
         if len(dictlst) != len(elemlst):
             raise Exception,"ScrolledMultiEditor error: len(dictlst) != len(elemlst) "+str(len(dictlst))+" != "+str(len(elemlst))
+        if len(checkdictlst) != len(checkelemlst):
+            raise Exception,"ScrolledMultiEditor error: len(checkdictlst) != len(checkelemlst) "+str(len(checkdictlst))+" != "+str(len(checkelemlst))
         wx.Dialog.__init__( # create dialog & sizer
             self,parent,wx.ID_ANY,title,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -937,6 +949,9 @@ class ScrolledMultiEditor(wx.Dialog):
         self.orig = []
         self.dictlst = dictlst
         self.elemlst = elemlst
+        self.checkdictlst = checkdictlst
+        self.checkelemlst = checkelemlst
+        self.StartCheckValues = [checkdictlst[i][checkelemlst[i]] for i in range(len(checkdictlst))]
         self.ButtonIndex = {}
         for d,i in zip(dictlst,elemlst):
             self.orig.append(d[i])
@@ -955,10 +970,11 @@ class ScrolledMultiEditor(wx.Dialog):
             self, wx.ID_ANY,
             size=size,
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
-        cols = 3
+        cols = 4
         if CopyButton: cols += 1
         subSizer = wx.FlexGridSizer(cols=cols,hgap=2,vgap=2)
         self.ValidatedControlsList = [] # make list of TextCtrls
+        self.CheckControlsList = [] # make list of CheckBoxes
         for i,(d,k) in enumerate(zip(dictlst,elemlst)):
             if i >= len(prelbl): # label before TextCtrl, or put in a blank
                 subSizer.Add((-1,-1)) 
@@ -988,10 +1004,16 @@ class ScrolledMultiEditor(wx.Dialog):
                                     **kargs)
             self.ValidatedControlsList.append(ctrl)
             subSizer.Add(ctrl)
-            if i >= len(postlbl): # label after TextCtrl, or put in a blank
-                subSizer.Add((-1,-1))
-            else:
+            if i < len(postlbl): # label after TextCtrl, or put in a blank
                 subSizer.Add(wx.StaticText(panel,wx.ID_ANY,str(postlbl[i])))
+            else:
+                subSizer.Add((-1,-1))
+            if i < len(checkdictlst):
+                ch = G2CheckBox(panel,checklabel,checkdictlst[i],checkelemlst[i])
+                self.CheckControlsList.append(ch)
+                subSizer.Add(ch)                    
+            else:
+                subSizer.Add((-1,-1))
         # finish up ScrolledPanel
         panel.SetSizer(subSizer)
         panel.SetAutoLayout(1)
@@ -1023,11 +1045,16 @@ class ScrolledMultiEditor(wx.Dialog):
                 continue
             d[k] = val
             ctrl.SetValue(val)
-
+        for i in range(len(self.checkdictlst)):
+            if i < n: continue
+            self.checkdictlst[i][self.checkelemlst[i]] = self.checkdictlst[n][self.checkelemlst[n]]
+            self.CheckControlsList[i].SetValue(self.checkdictlst[i][self.checkelemlst[i]])
     def _onClose(self,event):
-        'Restore original values & close the window'
+        'Used on Cancel: Restore original values & close the window'
         for d,i,v in zip(self.dictlst,self.elemlst,self.orig):
             d[i] = v
+        for i in range(len(self.checkdictlst)):
+            self.checkdictlst[i][self.checkelemlst[i]] = self.StartCheckValues[i]
         self.EndModal(wx.ID_CANCEL)
         
     def ControlOKButton(self,setvalue):
@@ -4127,6 +4154,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             return
         print('==== Fit Results ====')
         for obj in eqObjList:
+            obj.UpdateVariedVars(varyList,values)
             ind = '      '
             print('  '+obj.GetDepVar()+' = '+obj.expression)
             for var in obj.assgnVars:
@@ -4140,7 +4168,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     print(ind+var+' = '+avar + " =" + G2mth.ValEsd(val,0))
         # create a plot for each parametric variable
         for fitnum,obj in enumerate(eqObjList):
-            obj.UpdateVariedVars(varyList,values)
             calcobj = G2obj.ExpressionCalcObj(obj)
             # lookup dependent var position
             indx = colLabels.index(obj.GetDepVar())
@@ -5038,14 +5065,47 @@ if __name__ == '__main__':
     # test ScrolledMultiEditor
     #======================================================================
     # Data1 = {
-    #     'Order':1,
-    #     'omega':'string',
-    #     'chi':2.0,
-    #     'phi':'',
-    #     }
+    #      'Order':1,
+    #      'omega':'string',
+    #      'chi':2.0,
+    #      'phi':'',
+    #      }
+    # Data2 = [True,False,False,True]
     # elemlst = sorted(Data1.keys())
-    # postlbl = sorted(Data1.keys())
+    # prelbl = sorted(Data1.keys())
     # dictlst = len(elemlst)*[Data1,]
+    # Checkdictlst = len(elemlst)*[Data2,]
+    # Checkelemlst = range(len(Checkdictlst))
+    # print 'before',Data1,'\n',Data2
+    # dlg = ScrolledMultiEditor(
+    #     frm,dictlst,elemlst,prelbl,
+    #     checkdictlst=Checkdictlst,checkelemlst=Checkelemlst,
+    #     checklabel="Refine?",
+    #     header="test")
+    # if dlg.ShowModal() == wx.ID_OK:
+    #     print "OK"
+    # else:
+    #     print "Cancel"
+    # print 'after',Data1,'\n',Data2
+    # dlg.Destroy()
+    # Data3 = {
+    #      'Order':1.0,
+    #      'omega':1.1,
+    #      'chi':2.0,
+    #      'phi':2.3,
+    #      }
+    # dictlst = len(elemlst)*[Data3,]
+    # print 'before',Data3,'\n',Data2
+    # dlg = ScrolledMultiEditor(
+    #     frm,dictlst,elemlst,prelbl,
+    #     checkdictlst=Checkdictlst,checkelemlst=Checkelemlst,
+    #     checklabel="Refine?",
+    #     header="test",CopyButton=True)
+    # if dlg.ShowModal() == wx.ID_OK:
+    #     print "OK"
+    # else:
+    #     print "Cancel"
+    # print 'after',Data3,'\n',Data2
 
     # Data2 = list(range(100))
     # elemlst += range(2,6)
@@ -5097,14 +5157,12 @@ if __name__ == '__main__':
     #         print sel,choices[sel]
 
     pnl = wx.Panel(frm)
-    siz = wx.BoxSizer(wx.HORIZONTAL)
+    siz = wx.BoxSizer(wx.VERTICAL)
 
-    td = {'Goni':200.,'a':1}
-    txt = ValidatedTxtCtrl(pnl,td,'Goni')
-    siz.Add(txt)
-    txt = ValidatedTxtCtrl(pnl,td,'a')
-    siz.Add(txt)
-
+    td = {'Goni':200.,'a':1.,'calc':1./3.,'string':'s'}
+    for key in sorted(td):
+        txt = ValidatedTxtCtrl(pnl,td,key)
+        siz.Add(txt)
     pnl.SetSizer(siz)
     siz.Fit(frm)
     app.MainLoop()

@@ -451,6 +451,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     plottype = plotType
     
     def OnPlotKeyPress(event):
+        try:        #one way to check if key stroke will work on plot
+            Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
+        except TypeError:
+            G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
+            return
         newPlot = False
         if event.key == 'w':
             G2frame.Weight = not G2frame.Weight
@@ -610,7 +615,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                             Page.canvas.SetToolTipString('')
 
             except TypeError:
-                G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' powder pattern first',1)
+                G2frame.G2plotNB.status.SetStatusText('Select '+plottype+' pattern first',1)
                 
     def OnPress(event): #ugh - this removes a matplotlib error for mouse clicks in log plots                  
         olderr = np.seterr(invalid='ignore')

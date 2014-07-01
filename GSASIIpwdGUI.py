@@ -1789,18 +1789,26 @@ def UpdateIndexPeaksGrid(G2frame, data):
     G2frame.dataFrame.SetLabel('Index Peak List')
     G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)                
     G2frame.dataDisplay.SetTable(G2frame.IndexPeaksTable, True)
+    XY = []
     for r in range(G2frame.dataDisplay.GetNumberRows()):
         for c in range(G2frame.dataDisplay.GetNumberCols()):
             if c == 2:
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
             else:
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
+            if 'PNT' in Inst['Type'][0] and data[r][3]:
+                X = data[r][8]*Inst['difC'][1]
+                Y = data[r][0]
+                XY.append([X,Y])
     G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, RefreshIndexPeaksGrid)
     G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([490,300])
-  
+    if len(XY): #NB: only for TOF
+        G2plt.PlotXY(G2frame,np.array(XY),XY2=[],labelX='T-calc',labelY='Tobs-Tcalc',
+            newPlot=True,Title='Diffractometer const')
+      
 ################################################################################
 #####  Unit cells
 ################################################################################           

@@ -422,7 +422,7 @@ def Pos2dsp(Inst,pos):
         wave = G2mth.getWave(Inst)
         dsp = wave/(2.0*sind((pos-Inst['Zero'][1])/2.0))
     else:   #'T'OF - ignore difA
-        dsp = (pos-Inst['Zero'][1])/difC
+        dsp = (pos-Inst['Zero'][1])/Inst['difC'][1]
     return dsp
     
 def Dsp2pos(Inst,dsp):

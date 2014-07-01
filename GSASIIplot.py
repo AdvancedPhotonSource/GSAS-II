@@ -1446,7 +1446,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
 ##### PlotXY
 ################################################################################
             
-def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,type=''):
+def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title=''):
     '''simple plot of xy data, used for diagnostic purposes
     '''
     def OnMotion(event):
@@ -1455,12 +1455,12 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,type=''):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,type,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,Title,ypos),1)                   
             except TypeError:
-                G2frame.G2plotNB.status.SetStatusText('Select '+type+' pattern first',1)
+                G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
 
     try:
-        plotNum = G2frame.G2plotNB.plotList.index(type)
+        plotNum = G2frame.G2plotNB.plotList.index(Title)
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         if not newPlot:
             Plot = Page.figure.gca()
@@ -1469,31 +1469,31 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,type=''):
         Plot = Page.figure.gca()
     except ValueError:
         newPlot = True
-        Plot = G2frame.G2plotNB.addMpl(type).gca()
-        plotNum = G2frame.G2plotNB.plotList.index(type)
+        Plot = G2frame.G2plotNB.addMpl(Title).gca()
+        plotNum = G2frame.G2plotNB.plotList.index(Title)
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     
     Page.Choice = None
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
-    Plot.set_title(type)
-    if xLabel:
-        Plot.set_xlabel(r''+xLabel,fontsize=14)
+    Plot.set_title(Title)
+    if labelX:
+        Plot.set_xlabel(r''+labelX,fontsize=14)
     else:
         Plot.set_xlabel(r'X',fontsize=14)
-    if yLabel:
-        Plot.set_ylabel(r''+yLabel,fontsize=14)
+    if labelY:
+        Plot.set_ylabel(r''+labelY,fontsize=14)
     else:
         Plot.set_ylabel(r'Y',fontsize=14)
     colors=['b','g','r','c','m','k']
     for ixy,xy in enumerate(XY):
         X,Y = xy
-        Plot.plot(X,Y,color(ixy%6)+'+',picker=False)
+        Plot.plot(X,Y,colors[ixy%6]+'+',picker=False)
     if len(XY2):
         for ixy,xy in enumerate(XY2):
             X,Y = xy
-            Plot.plot(X,Y,color(ixy%6),picker=False)
+            Plot.plot(X,Y,colors[ixy%6],picker=False)
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

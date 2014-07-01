@@ -4491,7 +4491,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             G2mv.InitVars()
             parmDict = data[name].get('parmDict')
             if parmDict:
-                constraintInfo = data[name].get('constraintInfo')
+                constraintInfo = data[name].get('constraintInfo',[[],[],{},[],seqnum])
                 groups,parmlist,constrDict,fixedList,ihst = constraintInfo
                 varyList = data[name]['varyList']
                 parmDict = data[name]['parmDict']

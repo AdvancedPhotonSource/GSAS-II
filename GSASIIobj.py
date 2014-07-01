@@ -1315,6 +1315,7 @@ def CompileVarDesc():
         'PkSig': 'Bragg peak sigma',
         'PkGam': 'Bragg peak gamma',
         'e([12][12])' : 'strain tensor e\1',   # strain vars e11, e22, e12
+        'Dcalc': 'Calc. d-spacing',
         }.items():
         VarDesc[key] = value
         reVarDesc[re.compile(key)] = value

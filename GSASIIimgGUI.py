@@ -1560,10 +1560,12 @@ def UpdateStressStrain(G2frame,data):
                     for i,item in enumerate(StaCtrls['d-zero']):
                         variables += item['Emat']
                         sig += item['Esig']
-                        varyList += ['%d%s%s'%(i,':',Name) for Name in varyNames]
+                        varylist = ['%d%s%s'%(i,':',Name) for Name in varyNames]
+                        varyList += varylist
+                        parmDict.update(dict(zip(varylist,item['Emat'])))
                         parmDict['%d:Dcalc'%(i)] = item['Dcalc']
                     SeqResult[name] = {'variables':variables,'varyList':varyList,'sig':sig,'Rvals':[],
-                        'covMatrix':[],'title':name,'parmDict':parmDict}
+                        'covMatrix':np.eye(len(variables)),'title':name,'parmDict':parmDict}
                 else:
                     SeqResult['histNames'] = goodnames
                     dlg.Destroy()

@@ -971,7 +971,7 @@ def CalcStrSta(StrSta,Controls):
     StaType = StrSta['Type']
     for ring in StrSta['d-zero']:
         Eij = ring['Emat']
-        E = [[Eij[2],Eij[1],0],[Eij[1],Eij[0],0],[0,0,0]]
+        E = [[Eij[0],Eij[1],0],[Eij[1],Eij[2],0],[0,0,0]]
         th,azm = ring['ImtaObs']
         th0 = np.ones_like(azm)*npasind(wave/(2.*ring['Dset']))
         V = -np.sum(np.sum(E*calcFij(90.,phi,azm,th0).T/1.e6,axis=2),axis=1)
@@ -995,13 +995,13 @@ def calcFij(omg,phi,azm,th):
     a = npsind(th)*npcosd(omg)+npsind(azm)*npcosd(th)*npsind(omg)
     b = -npcosd(azm)*npcosd(th)
     c = npsind(th)*npsind(omg)-npsind(azm)*npcosd(th)*npcosd(omg)
-    d = a*npcosd(phi)-b*npsind(phi)
-    e = a*npsind(phi)+b*npcosd(phi)
+    d = a*npsind(phi)+b*npcosd(phi)
+    e = a*npcosd(phi)-b*npsind(phi)
     Fij = np.array([
         [d**2,d*e,c*d],
         [d*e,e**2,c*e],
         [c*d,c*e,c**2]])
-    return -Fij*nptand(th)
+    return -Fij
 
 def FitStrain(rings,p0,dset,wave,phi,StaType):
     'Needs a doc string'
@@ -1022,7 +1022,7 @@ def FitStrain(rings,p0,dset,wave,phi,StaType):
         print sigstr
         
     def strainCalc(p,xyd,dset,wave,phi,StaType):
-        E = np.array([[p[2],p[1],0],[p[1],p[0],0],[0,0,0]])
+        E = np.array([[p[0],p[1],0],[p[1],p[2],0],[0,0,0]])
         dspo,azm,dsp = xyd
         th = npasind(wave/(2.0*dspo))
         V = -np.sum(np.sum(E*calcFij(90.,phi,azm,th).T/1.e6,axis=2),axis=1)

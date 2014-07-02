@@ -4839,9 +4839,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             elif deltaChi > 1.0:
                 G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Colour(255,255,0))
     G2frame.dataDisplay.InstallGridToolTip(GridSetToolTip,GridColLblToolTip)
-    #======================================================================
-    # end UpdateSeqResults; done processing sequential results
-    #======================================================================
     
 ################################################################################
 #####  Main PWDR panel

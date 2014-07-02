@@ -108,11 +108,11 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(7)]
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY, wxID_SAMPLECOPY, wxID_SAMPLECOPYSOME, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
-    wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,
-] = [wx.NewId() for item in range(10)]
+    wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,wxID_SAMPLE1VAL
+] = [wx.NewId() for item in range(11)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
-    wxID_INSTSAVE, wxID_INSTONEVAL
+    wxID_INSTSAVE, wxID_INST1VAL
 ] = [wx.NewId() for item in range(7)]
 
 [ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_RESETSIGGAM,wxID_CLEARPEAKS,wxID_AUTOSEARCH,
@@ -1018,6 +1018,10 @@ class ScrolledMultiEditor(wx.Dialog):
         panel.SetSizer(subSizer)
         panel.SetAutoLayout(1)
         panel.SetupScrolling()
+        # patch for wx 2.9 on Mac
+        i,j= wx.__version__.split('.')[0:2]
+        if int(i)+int(j)/10. > 2.8 and 'wxOSX' in wx.PlatformInfo:
+            panel.SetMinSize((subSizer.GetSize()[0]+30,panel.GetSize()[1]))        
         mainSizer.Add(panel,1, wx.ALL|wx.EXPAND,1)
 
         # Sizer for OK/Close buttons. N.B. on Close changes are discarded
@@ -1934,6 +1938,181 @@ class GridFractionEditor(wg.PyGridCellEditor):
             evt.Skip()
 
 ################################################################################
+def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
+    '''Select a variable from a list, then edit it and select histograms
+    to copy it to.
+
+    :param wx.Frame G2frame: main GSAS-II frame
+    :param dict array: the array (dict or list) where values to be edited are kept
+    :param list labelLst: labels for each data item
+    :param list elemKeysLst: a list of lists of keys needed to be applied (see below)
+      to obtain the value of each parameter
+    :param list dspLst: list list of digits to be displayed (10,4) is 10 digits
+      with 4 decimal places. Can be None.
+    :param list refFlgElem: a list of lists of keys needed to be applied (see below)
+      to obtain the refine flag for each parameter or None if the parameter
+      does not have refine flag.
+
+    Example::
+      array = data 
+      labelLst = ['v1','v2']
+      elemKeysLst = [['v1'], ['v2',0]]
+      refFlgElem = [None, ['v2',1]]
+
+     * The value for v1 will be in data['v1'] and this cannot be refined while,
+     * The value for v2 will be in data['v2'][0] and its refinement flag is data['v2'][1]
+    '''
+    def unkey(dct,keylist):
+        '''dive into a nested set of dicts/lists applying keys in keylist
+        consecutively
+        '''
+        d = dct
+        for k in keylist:
+            d = d[k]
+        return d
+
+    def OnChoice(event):
+        'Respond when a parameter is selected in the Choice box'
+        valSizer.DeleteWindows()
+        lbl = event.GetString()
+        copyopts['currentsel'] = lbl
+        i = labelLst.index(lbl)
+        OKbtn.Enable(True)
+        ch.SetLabel(lbl)
+        args = {}
+        if dspLst[i]:
+            args = {'nDig':dspLst[i]}
+        Val = ValidatedTxtCtrl(
+            dlg,
+            unkey(array,elemKeysLst[i][:-1]),
+            elemKeysLst[i][-1],
+            **args)
+        copyopts['startvalue'] = unkey(array,elemKeysLst[i])
+        #unkey(array,elemKeysLst[i][:-1])[elemKeysLst[i][-1]] = 
+        valSizer.Add(Val,0,wx.LEFT,5)
+        dlg.SendSizeEvent()
+        
+    # SelectEdit1Var execution begins here
+    saveArray = copy.deepcopy(array) # keep original values
+    TreeItemType = G2frame.PatternTree.GetItemText(G2frame.PickId)
+    copyopts = {'InTable':False,"startvalue":None,'currentsel':None}        
+    hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    histList = G2pdG.GetHistsLikeSelected(G2frame)
+    if not histList:
+        G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+        return
+    dlg = wx.Dialog(G2frame.dataDisplay,wx.ID_ANY,'Set a parameter value',
+        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+    mainSizer = wx.BoxSizer(wx.VERTICAL)
+    mainSizer.Add((5,5))
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Select a parameter and set a new value'))
+    subSizer.Add((-1,-1),1,wx.EXPAND)
+    mainSizer.Add(subSizer,0,wx.EXPAND,0)
+    mainSizer.Add((0,10))
+
+    subSizer = wx.FlexGridSizer(0,2,5,0)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Parameter: '))
+    ch = wx.Choice(dlg, wx.ID_ANY, choices = sorted(labelLst))
+    ch.SetSelection(-1)
+    ch.Bind(wx.EVT_CHOICE, OnChoice)
+    subSizer.Add(ch)
+    subSizer.Add(wx.StaticText(dlg,wx.ID_ANY,'Value: '))
+    valSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add(valSizer)
+    mainSizer.Add(subSizer)
+
+    mainSizer.Add((-1,20))
+    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+    subSizer.Add(G2CheckBox(dlg, 'Edit in table ', copyopts, 'InTable'))
+    mainSizer.Add(subSizer)
+
+    btnsizer = wx.StdDialogButtonSizer()
+    OKbtn = wx.Button(dlg, wx.ID_OK,'Continue')
+    OKbtn.Enable(False)
+    OKbtn.SetDefault()
+    OKbtn.Bind(wx.EVT_BUTTON,lambda event: dlg.EndModal(wx.ID_OK))
+    btnsizer.AddButton(OKbtn)
+    btn = wx.Button(dlg, wx.ID_CANCEL)
+    btnsizer.AddButton(btn)
+    btnsizer.Realize()
+    mainSizer.Add((-1,5),1,wx.EXPAND,1)
+    mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER,0)
+    mainSizer.Add((-1,10))
+
+    dlg.SetSizer(mainSizer)
+    dlg.CenterOnParent()
+    if dlg.ShowModal() != wx.ID_OK:
+        array.update(saveArray)
+        dlg.Destroy()
+        return
+    dlg.Destroy()
+
+    copyList = []
+    lbl = copyopts['currentsel']
+    dlg = G2MultiChoiceDialog(
+        G2frame.dataFrame, 
+        'Copy parameter '+lbl+' from\n'+hst,
+        'Copy parameters', histList)
+    dlg.CenterOnParent()
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            for i in dlg.GetSelections(): 
+                copyList.append(histList[i])
+        else:
+            # reset the parameter since cancel was pressed
+            array.update(saveArray)
+            return
+    finally:
+        dlg.Destroy()
+
+    prelbl = [hst]
+    i = labelLst.index(lbl)
+    keyLst = elemKeysLst[i]
+    refkeys = refFlgElem[i]
+    dictlst = [unkey(array,keyLst[:-1])]
+    if refkeys is not None:
+        refdictlst = [unkey(array,refkeys[:-1])]
+    else:
+        refdictlst = None
+    Id = GetPatternTreeItemId(G2frame,G2frame.root,hst)
+    hstData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+    for h in copyList:
+        Id = GetPatternTreeItemId(G2frame,G2frame.root,h)
+        instData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+        if len(hstData) != len(instData) or hstData['Type'][0] != instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
+            print h+' not copied - instrument parameters not commensurate'
+            continue
+        hData = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,Id,TreeItemType))
+        if TreeItemType == 'Instrument Parameters':
+            hData = hData[0]
+        #copy the value if it is changed or we will not edit in a table
+        valNow = unkey(array,keyLst)
+        if copyopts['startvalue'] != valNow or not copyopts['InTable']:
+            unkey(hData,keyLst[:-1])[keyLst[-1]] = valNow
+        prelbl += [h]
+        dictlst += [unkey(hData,keyLst[:-1])]
+        if refdictlst is not None:
+            refdictlst += [unkey(hData,refkeys[:-1])]
+    if refdictlst is None:
+        args = {}
+    else:
+        args = {'checkdictlst':refdictlst,
+                'checkelemlst':len(dictlst)*[refkeys[-1]],
+                'checklabel':'Refine?'}
+    if copyopts['InTable']:
+        dlg = ScrolledMultiEditor(
+            G2frame.dataDisplay,dictlst,
+            len(dictlst)*[keyLst[-1]],prelbl,
+            header='Editing parameter '+lbl,
+            CopyButton=True,**args)
+        dlg.CenterOnParent()
+        if dlg.ShowModal() != wx.ID_OK:
+            array.update(saveArray)
+        dlg.Destroy()
+
+################################################################################
 class ShowLSParms(wx.Dialog):
     '''Create frame to show least-squares parameters
     '''
@@ -2687,7 +2866,7 @@ class DataFrame(wx.Frame):
             help='Copy instrument parameter refinement flags to other histograms')
 #        self.InstEdit.Append(help='Change radiation type (Ka12 - synch)', 
 #            id=wxID_CHANGEWAVETYPE, kind=wx.ITEM_NORMAL,text='Change radiation')
-        self.InstEdit.Append(id=wxID_INSTONEVAL, kind=wx.ITEM_NORMAL,text='Set one value',
+        self.InstEdit.Append(id=wxID_INST1VAL, kind=wx.ITEM_NORMAL,text='Set one value',
             help='Set one instrument parameter value across multiple histograms')
 
         self.PostfillDataMenu()
@@ -2709,6 +2888,9 @@ class DataFrame(wx.Frame):
             help='Copy selected sample parameters to other histograms')
         self.SampleEdit.Append(id=wxID_SAMPLEFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
             help='Copy sample parameter refinement flags to other histograms')
+        self.SampleEdit.Append(id=wxID_SAMPLE1VAL, kind=wx.ITEM_NORMAL,text='Set one value',
+            help='Set one sample parameter value across multiple histograms')
+
         self.PostfillDataMenu()
         self.SetScale.Enable(False)
 
@@ -5154,12 +5336,12 @@ if __name__ == '__main__':
     #      'chi':2.0,
     #      'phi':'',
     #      }
-    # Data2 = [True,False,False,True]
     # elemlst = sorted(Data1.keys())
     # prelbl = sorted(Data1.keys())
     # dictlst = len(elemlst)*[Data1,]
-    # Checkdictlst = len(elemlst)*[Data2,]
-    # Checkelemlst = range(len(Checkdictlst))
+    #Data2 = [True,False,False,True]
+    #Checkdictlst = len(Data2)*[Data2,]
+    #Checkelemlst = range(len(Checkdictlst))
     # print 'before',Data1,'\n',Data2
     # dlg = ScrolledMultiEditor(
     #     frm,dictlst,elemlst,prelbl,
@@ -5172,24 +5354,41 @@ if __name__ == '__main__':
     #     print "Cancel"
     # print 'after',Data1,'\n',Data2
     # dlg.Destroy()
-    # Data3 = {
-    #      'Order':1.0,
-    #      'omega':1.1,
-    #      'chi':2.0,
-    #      'phi':2.3,
-    #      }
-    # dictlst = len(elemlst)*[Data3,]
-    # print 'before',Data3,'\n',Data2
-    # dlg = ScrolledMultiEditor(
-    #     frm,dictlst,elemlst,prelbl,
-    #     checkdictlst=Checkdictlst,checkelemlst=Checkelemlst,
-    #     checklabel="Refine?",
-    #     header="test",CopyButton=True)
-    # if dlg.ShowModal() == wx.ID_OK:
-    #     print "OK"
-    # else:
-    #     print "Cancel"
-    # print 'after',Data3,'\n',Data2
+    Data3 = {
+         'Order':1.0,
+         'omega':1.1,
+         'chi':2.0,
+         'phi':2.3,
+         'Order1':1.0,
+         'omega1':1.1,
+         'chi1':2.0,
+         'phi1':2.3,
+         'Order2':1.0,
+         'omega2':1.1,
+         'chi2':2.0,
+         'phi2':2.3,
+         }
+    elemlst = sorted(Data3.keys())
+    dictlst = len(elemlst)*[Data3,]
+    prelbl = elemlst[:]
+    prelbl[0]="this is a much longer label to stretch things out"
+    Data2 = len(elemlst)*[False,]
+    Data2[1] = Data2[3] = True
+    Checkdictlst = len(elemlst)*[Data2,]
+    Checkelemlst = range(len(Checkdictlst))
+    #print 'before',Data3,'\n',Data2
+    #print dictlst,"\n",elemlst
+    #print Checkdictlst,"\n",Checkelemlst
+    dlg = ScrolledMultiEditor(
+        frm,dictlst,elemlst,prelbl,
+        checkdictlst=Checkdictlst,checkelemlst=Checkelemlst,
+        checklabel="Refine?",
+        header="test",CopyButton=True)
+    if dlg.ShowModal() == wx.ID_OK:
+        print "OK"
+    else:
+        print "Cancel"
+    #print 'after',Data3,'\n',Data2
 
     # Data2 = list(range(100))
     # elemlst += range(2,6)

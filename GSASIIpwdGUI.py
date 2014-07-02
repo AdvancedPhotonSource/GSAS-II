@@ -40,6 +40,7 @@ import GSASIIgrid as G2gd
 import GSASIIElemGUI as G2elemGUI
 import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
+import GSASIIexprGUI as G2exG
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WACV = wx.ALIGN_CENTER_VERTICAL
 Pwr10 = unichr(0x0b9)+unichr(0x0b0)
@@ -927,31 +928,6 @@ def UpdateInstrumentGrid(G2frame,data):
                 good.append(key)
         return good
         
-    keys = keycheck(data.keys())
-    if 'P' in data['Type'][0]:          #powder data
-        insVal = dict(zip(keys,[data[key][1] for key in keys]))
-        insDef = dict(zip(keys,[data[key][0] for key in keys]))
-        insRef = dict(zip(keys,[data[key][2] for key in keys]))
-        if 'NC' in data['Type'][0]:
-            del(insDef['Polariz.'])
-            del(insVal['Polariz.'])
-            del(insRef['Polariz.'])
-    elif 'S' in data['Type'][0]:                               #single crystal data
-        insVal = dict(zip(keys,[data[key][1] for key in keys]))
-        insDef = dict(zip(keys,[data[key][0] for key in keys]))
-        insRef = {}
-    elif 'L' in data['Type'][0]:                               #low angle data
-        insVal = dict(zip(keys,[data[key][1] for key in keys]))
-        insDef = dict(zip(keys,[data[key][0] for key in keys]))
-        insRef = {}
-    ValObj = {}
-    RefObj = {}
-    waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
-        'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'MoKa':[0.70926,0.713543],
-        'AgKa':[0.559363,0.563775]}
-    Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
-            G2frame.PatternId,'Instrument Parameters'))[1]
-        
     def inst2data(inst,ref,data):
         for item in data:
             try:
@@ -1029,7 +1005,7 @@ def UpdateInstrumentGrid(G2frame,data):
                                                 
     def OnReset(event):
         insVal.update(insDef)
-        data = updateData(insVal,insRef)
+        updateData(insVal,insRef)
         RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
         UpdateInstrumentGrid(G2frame,data)
         G2plt.PlotPeakWidths(G2frame)
@@ -1089,88 +1065,283 @@ def UpdateInstrumentGrid(G2frame,data):
                 instData.update(data)
             else:
                 print item+' not copied - instrument parameters not commensurate'
-        
-    def OnWaveChange(event):
-        if 'Lam' in insVal:
-            data['Lam1'] = [waves['CuKa'][0],waves['CuKa'][0],0]
-            data['Lam2'] = [waves['CuKa'][1],waves['CuKa'][1],0]
-            data['I(L2)/I(L1)'] = [0.5,0.5,0]
-            del(data['Lam'])
-        else:
-            data['Lam'] = [data['Lam1'][0],data['Lam1'][0],0]
-            del(data['Lam1'])
-        wx.CallAfter(UpdateInstrumentGrid,data)
-                
-    def OnLamPick(event):
-        lamType = lamPick.GetValue()
-        insVal['Lam1'] = waves[lamType][0]
-        insVal['Lam2'] = waves[lamType][1]
-        data = updateData(insVal,insRef)
-        UpdateInstrumentGrid(G2frame,data)
-                 
-    def OnRatValue(event):
-        try:
-            value = float(ratVal.GetValue())
-            if value < 0:
-                raise ValueError
-        except ValueError:
-            value = insVal['I(L2)/I(L1)']
-        insVal['I(L2)/I(L1)'] = value
-        ratVal.SetValue('%10.4f'%(value))
-        data = updateData(insVal,insRef)
-        
-    def OnRatRef(event):
-        insRef['I(L2)/I(L1)'] = ratRef.GetValue()
-        data = updateData(insVal,insRef)
-        
-    def OnWaveValue(event):
-        try:
-            value = float(waveVal.GetValue())
-            if value < 0:
-                raise ValueError
-        except ValueError:
-            value = insVal['Lam']
-        insVal['Lam'] = value
-        waveVal.SetValue('%10.6f'%(value))
-        data = updateData(insVal,insRef)
-        
-    def OnWaveRef(event):
-        insRef['Lam'] = waveRef.GetValue()
-        data = updateData(insVal,insRef)
-        
-    def OnItemValue(event):
-        Obj = event.GetEventObject()
-        item,fmt = ValObj[Obj.GetId()]
-        try:
-            value = float(Obj.GetValue())
-        except ValueError:
-            value = insVal[item]
-        insVal[item] = value
-        Obj.SetValue(fmt%(value))
-        data = updateData(insVal,insRef)
-        G2plt.PlotPeakWidths(G2frame)
+                         
+    def AfterChange(invalid,value,tc):
+        if invalid: return
+        updateData(insVal,insRef)
         
     def OnItemRef(event):
         Obj = event.GetEventObject()
         item = RefObj[Obj.GetId()]
         insRef[item] = Obj.GetValue()
-        data = updateData(insVal,insRef)
+        updateData(insVal,insRef)
+
+    def OnCopy1Val(event):
+        '''Select one instrument parameter value to edit and copy to many histograms
+        optionally allow values to be edited in a table
+        '''
+        updateData(insVal,insRef)
+        G2gd.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
+        insVal.update({key:data[key][1] for key in instkeys})
+        insRef.update({key:data[key][2] for key in instkeys})
+        wx.CallAfter(MakeParameterWindow)
+        
+    def lblWdef(lbl,dec,val):
+        'Label parameter showing the default value'
+        fmt = "%15."+str(dec)+"f"
+        return " " + lbl + " (" + (fmt % val).strip() + "): "
+
+    def RefineBox(item):
+        'Define a refine checkbox with binding'
+        wid = wx.CheckBox(G2frame.dataDisplay,label=' Refine?  ')
+        wid.SetValue(bool(insRef[item]))
+        RefObj[wid.GetId()] = item
+        wid.Bind(wx.EVT_CHECKBOX, OnItemRef)
+        return wid
+
+    def OnLamPick(event):
+        data['Source'][1] = lamType = event.GetEventObject().GetValue()
+        insVal['Lam1'] = waves[lamType][0]
+        insVal['Lam2'] = waves[lamType][1]
+        updateData(insVal,insRef)
+        i,j= wx.__version__.split('.')[0:2]
+        if int(i)+int(j)/10. > 2.8:
+            pass # repaint crashes wxpython 2.9
+            wx.CallLater(100, MakeParameterWindow)
+            #wx.CallAfter(MakeParameterWindow)
+        else:
+            wx.CallAfter(MakeParameterWindow)
+
+    def MakeParameterWindow():
+        'Displays the Instrument parameters in the datadisplay frame'
+        if G2frame.dataDisplay:
+            G2frame.dataFrame.Clear()
+        G2frame.dataFrame.SetLabel('Instrument Parameters')
+        G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        instSizer = wx.FlexGridSizer(0,6,5,5)
+        subSizer = wx.BoxSizer(wx.HORIZONTAL)
+        subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Histogram Type: '+insVal['Type']),0,WACV)
+        mainSizer.Add(subSizer)
+        labelLst[:],elemKeysLst[:],dspLst[:],refFlgElem[:] = [],[],[],[]
+        if 'P' in insVal['Type']:                   #powder data
+            if 'C' in insVal['Type']:               #constant wavelength
+                labelLst.append('Azimuth angle')
+                elemKeysLst.append(['Azimuth',1])
+                dspLst.append([10,2])
+                refFlgElem.append(None)                   
+                if 'Lam1' in insVal:
+                    subSizer = wx.BoxSizer(wx.HORIZONTAL)
+                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Azimuth: '),0,WACV)
+                    txt = '%7.2f'%(insVal['Azimuth'])
+                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
+                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'   Ka1/Ka2: '),0,WACV)
+                    txt = u'  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])
+                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
+                    waveSizer = wx.BoxSizer(wx.HORIZONTAL)
+                    waveSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Source type: '),0,WACV)
+                    # PATCH?: for now at least, Source is not saved anywhere before here
+                    if 'Source' not in data: data['Source'] = ['CuKa','?']
+                    choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','MoKa','AgKa']
+                    lamPick = wx.ComboBox(G2frame.dataDisplay,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
+                    waveSizer.Add(lamPick,0)
+                    subSizer.Add(waveSizer,0)
+                    mainSizer.Add(subSizer)
+                    instSizer.Add(wx.StaticText(
+                        G2frame.dataDisplay,-1,
+                        lblWdef('I(L2)/I(L1)',4,insDef['I(L2)/I(L1)'])),
+                        0,WACV)
+                    key = 'I(L2)/I(L1)'
+                    labelLst.append(key)
+                    elemKeysLst.append([key,1])
+                    dspLst.append([10,4])
+                    refFlgElem.append([key,2])                   
+                    ratVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
+                    instSizer.Add(ratVal,0)
+                    instSizer.Add(RefineBox(key),0,WACV)
+                    instSizer.Add((5,5),0)
+                    instSizer.Add((5,5),0)
+                    instSizer.Add((5,5),0)                
+                else: # single wavelength
+                    instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Azimuth: '),0,WACV)
+                    txt = '%7.2f'%(insVal['Azimuth'])
+                    instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
+                    instSizer.Add((5,5),0)
+                    key = 'Lam'
+                    instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),
+                        0,WACV)
+                    waveVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                    labelLst.append(u'Lam (\xc5)')
+                    elemKeysLst.append([key,1])
+                    dspLst.append([10,6])
+                    instSizer.Add(waveVal,0,WACV)
+                    if ifHisto:
+                        refFlgElem.append([key,2])                   
+                        instSizer.Add(RefineBox(key),0,WACV)
+                    else:
+                        refFlgElem.append(None)                   
+                        instSizer.Add((5,5),0)
+                for item in ['Zero','Polariz.']:
+                    if item in insDef:
+                        labelLst.append(item)
+                        elemKeysLst.append([item,1])
+                        dspLst.append([10,4])
+                        instSizer.Add(
+                            wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,4,insDef[item])),
+                            0,WACV)
+                        itemVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
+                        instSizer.Add(itemVal,0,WACV)
+                        if ifHisto:
+                            refFlgElem.append([item,2])
+                            instSizer.Add(RefineBox(item),0,WACV)
+                        else:
+                            refFlgElem.append(None)                   
+                            instSizer.Add((5,5),0)
+                    else:                           #skip Polariz. for neutrons
+                        instSizer.Add((5,5),0)
+                        instSizer.Add((5,5),0)
+                        instSizer.Add((5,5),0)
+                for item in ['U','V','W','','X','Y','SH/L']:
+                    if item == '':
+                        instSizer.Add((5,5),0)
+                        instSizer.Add((5,5),0)
+                        instSizer.Add((5,5),0)
+                        continue
+                    nDig = (10,3)
+                    if item == 'SH/L':
+                        nDig = (10,5)
+                    labelLst.append(item)
+                    elemKeysLst.append([item,1])
+                    dspLst.append(nDig)
+                    refFlgElem.append([item,2])
+                    instSizer.Add(
+                        wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,nDig[1],insDef[item])),
+                        0,WACV)
+                    itemVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
+                    instSizer.Add(itemVal,0,WACV)
+                    instSizer.Add(RefineBox(item),0,WACV)
+            else:                                   #time of flight (neutrons)
+                subSizer = wx.BoxSizer(wx.HORIZONTAL)
+                subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  2-theta: '),0,WACV)
+                txt = '%7.2f'%(insVal['2-theta'])
+                subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
+                labelLst.append('2-theta')
+                elemKeysLst.append(['2-theta',1])
+                dspLst.append([10,2])
+                refFlgElem.append(None)                   
+                if 'Pdabc' in Inst2:
+                    Items = ['sig-0','sig-1','X','Y']
+                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  difC: '),0,WACV)
+                    txt = '%8.2f'%(insVal['difC'])
+                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
+                    labelLst.append('difC')
+                    elemKeysLst.append(['difC',1])
+                    dspLst.append([10,2])
+                    refFlgElem.append(None)
+                    subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  alpha, beta: fixed by table'),0,WACV)
+                else:
+                    Items = ['difC','difA','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','X','Y']
+                mainSizer.Add(subSizer)
+                for item in Items:
+                    nDig = (10,3)
+                    fmt = '%10.3f'
+                    if 'beta' in item:
+                        fmt = '%12.4g'
+                        nDig = (12,4)
+                    Fmt = ' %s: ('+fmt+')'
+                    instSizer.Add(
+                            wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,nDig[1],insDef[item])),
+                            0,WACV)
+                    itemVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
+                    instSizer.Add(itemVal,0,WACV)
+                    labelLst.append(item)
+                    elemKeysLst.append([item,1])
+                    dspLst.append(nDig)
+                    if not ifHisto and item in ['difC','difA','Zero',]:
+                        refFlgElem.append(None)
+                        instSizer.Add((5,5),0)
+                    else:
+                        refFlgElem.append([item,2])
+                        instSizer.Add(RefineBox(item),0,WACV)
+        elif 'S' in insVal['Type']:                       #single crystal data
+            if 'C' in insVal['Type']:               #constant wavelength
+                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
+                    0,WACV)
+                waveVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=6,typeHint=float,OnLeave=AfterChange)
+                instSizer.Add(waveVal,0,WACV)
+                labelLst.append(u'Lam (\xc5)')
+                elemKeysLst.append(['Lam',1])
+                dspLst.append([10,6])
+                refFlgElem.append(None)
+            else:                                   #time of flight (neutrons)
+                pass                                #for now
+        elif 'L' in insVal['Type']:
+            if 'C' in insVal['Type']:        
+                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
+                    0,WACV)
+                waveVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=6,typeHint=float,OnLeave=AfterChange)
+                instSizer.Add(waveVal,0,WACV)
+                labelLst.append(u'Lam (\xc5)')
+                elemKeysLst.append(['Lam',1])
+                dspLst.append([10,6])
+                refFlgElem.append(None)
+                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Azimuth: %7.2f'%(insVal['Azimuth'])),0,WACV)
+                labelLst.append('Azimuth angle')
+                elemKeysLst.append(['Azimuth',1])
+                dspLst.append([10,2])
+                refFlgElem.append(None)                   
+            else:                                   #time of flight (neutrons)
+                pass                                #for now
+
+        mainSizer.Add(instSizer,0)
+        mainSizer.Layout()    
+        G2frame.dataDisplay.SetSizer(mainSizer)
+        G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
+        G2frame.dataFrame.SendSizeEvent()  # this causes a frame repaint, even if the size does not change!
+        # end of MakeParameterWindow
                 
-    if G2frame.dataDisplay:
-        G2frame.dataFrame.Clear()
+    # beginning of UpdateInstrumentGrid code    
+    labelLst,elemKeysLst,dspLst,refFlgElem = [],[],[],[]
+    instkeys = keycheck(data.keys())
+    if 'P' in data['Type'][0]:          #powder data
+        insVal = dict(zip(instkeys,[data[key][1] for key in instkeys]))
+        insDef = dict(zip(instkeys,[data[key][0] for key in instkeys]))
+        insRef = dict(zip(instkeys,[data[key][2] for key in instkeys]))
+        if 'NC' in data['Type'][0]:
+            del(insDef['Polariz.'])
+            del(insVal['Polariz.'])
+            del(insRef['Polariz.'])
+    elif 'S' in data['Type'][0]:                               #single crystal data
+        insVal = dict(zip(instkeys,[data[key][1] for key in instkeys]))
+        insDef = dict(zip(instkeys,[data[key][0] for key in instkeys]))
+        insRef = {}
+    elif 'L' in data['Type'][0]:                               #low angle data
+        insVal = dict(zip(instkeys,[data[key][1] for key in instkeys]))
+        insDef = dict(zip(instkeys,[data[key][0] for key in instkeys]))
+        insRef = {}
+    ValObj = {}
+    RefObj = {}
+    waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
+        'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'MoKa':[0.70926,0.713543],
+        'AgKa':[0.559363,0.563775]}
+    Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+            G2frame.PatternId,'Instrument Parameters'))[1]        
     try:
         histoName = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[-1]
         ifHisto = IsHistogramInAnyPhase(G2frame,histoName)
     except TypeError:       #PKS data never used in a phase as data
         ifhisto = False
     G2gd.SetDataMenuBar(G2frame)
-    G2frame.dataFrame.SetLabel('Instrument Parameters')
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
-    topSizer = wx.FlexGridSizer(0,6,5,5)
-    instSizer = wx.FlexGridSizer(0,6,5,5)
-    topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Histogram Type: '+insVal['Type']),0,WACV)
-#    topSizer.Add((5,5),0)
+    #patch
     if 'P' in insVal['Type']:                   #powder data
+        if 'C' in insVal['Type']:               #constant wavelength
+            if 'Azimuth' not in insVal:
+                insVal['Azimuth'] = 0.0
+                insDef['Azimuth'] = 0.0
+                insRef['Azimuth'] = False
+    #end of patch
+    if 'P' in insVal['Type']:                   #powder data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.InstMenu)
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()
@@ -1179,148 +1350,10 @@ def UpdateInstrumentGrid(G2frame,data):
         G2frame.Bind(wx.EVT_MENU,OnReset,id=G2gd.wxID_INSTPRMRESET)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)
         G2frame.Bind(wx.EVT_MENU,OnInstFlagCopy,id=G2gd.wxID_INSTFLAGCOPY)
-        G2frame.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)        
-        if 'C' in insVal['Type']:               #constant wavelength
-            #patch
-            if 'Azimuth' not in insVal:
-                insVal['Azimuth'] = 0.0
-                insDef['Azimuth'] = 0.0
-                insRef['Azimuth'] = False
-            #end of patch
-            topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Azimuth: %7.2f'%(insVal['Azimuth'])),0,WACV)
-            if 'Lam1' in insVal:
-                topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Ka1/Ka2:'),
-                        0,WACV)
-                topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u'  %8.6f/%8.6f\xc5'%(insVal['Lam1'],insVal['Lam2'])),
-                        0,WACV)
-                waveSizer = wx.BoxSizer(wx.HORIZONTAL)
-                waveSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Select: '),0,WACV)
-                choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','MoKa','AgKa']
-                lamPick = wx.ComboBox(G2frame.dataDisplay,value=' ',choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
-                waveSizer.Add(lamPick,0)
-                topSizer.Add(waveSizer,0)
-                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' I(L2)/I(L1): (%10.4f)'%(insDef['I(L2)/I(L1)'])),
-                        0,WACV)
-                ratVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.4f'%(insVal['I(L2)/I(L1)']),style=wx.TE_PROCESS_ENTER)
-                ratVal.Bind(wx.EVT_TEXT_ENTER,OnRatValue)
-                ratVal.Bind(wx.EVT_KILL_FOCUS,OnRatValue)
-                instSizer.Add(ratVal,0)
-                ratRef = wx.CheckBox(G2frame.dataDisplay,label=' Refine?')
-                ratRef.SetValue(bool(insRef['I(L2)/I(L1)']))
-                ratRef.Bind(wx.EVT_CHECKBOX, OnRatRef)
-                instSizer.Add(ratRef,0,WACV)
-                
-            else:
-                topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
-                    0,WACV)
-                waveVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.6f'%(insVal['Lam']),style=wx.TE_PROCESS_ENTER)
-                waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveValue)
-                waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveValue)
-                topSizer.Add(waveVal,0,WACV)
-                if ifHisto:
-                    waveRef = wx.CheckBox(G2frame.dataDisplay,label=' Refine?')
-                    waveRef.SetValue(bool(insRef['Lam']))
-                    waveRef.Bind(wx.EVT_CHECKBOX, OnWaveRef)
-                    topSizer.Add(waveRef,0,WACV)
-            for item in ['Zero','Polariz.']:
-                fmt = '%10.4f'
-                Fmt = ' %s: ('+fmt+')'
-                if item in insDef:
-                    instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,Fmt%(item,insDef[item])),
-                            0,WACV)
-                    itemVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,fmt%(insVal[item]),style=wx.TE_PROCESS_ENTER)
-                    ValObj[itemVal.GetId()] = [item,fmt]
-                    itemVal.Bind(wx.EVT_TEXT_ENTER,OnItemValue)
-                    itemVal.Bind(wx.EVT_KILL_FOCUS,OnItemValue)
-                    instSizer.Add(itemVal,0,WACV)
-                    if ifHisto:
-                        itemRef = wx.CheckBox(G2frame.dataDisplay,wx.ID_ANY,label=' Refine?')
-                        itemRef.SetValue(bool(insRef[item]))
-                        RefObj[itemRef.GetId()] = item
-                        itemRef.Bind(wx.EVT_CHECKBOX, OnItemRef)
-                        instSizer.Add(itemRef,0,WACV)
-                    else:
-                        instSizer.Add((5,5),0)
-                else:                           #skip Polariz. for neutrons
-                    instSizer.Add((5,5),0)
-                    instSizer.Add((5,5),0)
-                    instSizer.Add((5,5),0)
-            for item in ['U','V','W','X','Y','SH/L']:
-                fmt = '%10.3f'
-                if item == 'SH/L':
-                    fmt = '%10.5f'
-                Fmt = ' %s: ('+fmt+')'
-                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,Fmt%(item,insDef[item])),
-                        0,WACV)
-                itemVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,fmt%(insVal[item]),style=wx.TE_PROCESS_ENTER)
-                ValObj[itemVal.GetId()] = [item,fmt]
-                itemVal.Bind(wx.EVT_TEXT_ENTER,OnItemValue)
-                itemVal.Bind(wx.EVT_KILL_FOCUS,OnItemValue)
-                instSizer.Add(itemVal,0,WACV)
-                itemRef = wx.CheckBox(G2frame.dataDisplay,wx.ID_ANY,label=' Refine?')
-                itemRef.SetValue(bool(insRef[item]))
-                RefObj[itemRef.GetId()] = item
-                itemRef.Bind(wx.EVT_CHECKBOX, OnItemRef)
-                instSizer.Add(itemRef,0,WACV)
-        else:                                   #time of flight (neutrons)
-            topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Azimuth: %7.2f'%(insVal['Azimuth'])),0,WACV)
-            topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' 2-theta: %7.2f'%(insVal['2-theta'])),0,WACV)
-            if 'Pdabc' in Inst2:
-                Items = ['sig-0','sig-1','X','Y']
-                topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' difC: %8.2f'%(insVal['difC'])),0,WACV)
-                topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' alpha, beta: fixed by table'),0,WACV)
-            else:
-                Items = ['difC','difA','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','X','Y']
-            for item in Items:
-                fmt = '%10.3f'
-                if 'beta' in item:
-                    fmt = '%12.4g'
-                Fmt = ' %s: ('+fmt+')'
-                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,Fmt%(item,insDef[item])),
-                        0,WACV)
-                itemVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,fmt%(insVal[item]),style=wx.TE_PROCESS_ENTER)
-                ValObj[itemVal.GetId()] = [item,fmt]
-                itemVal.Bind(wx.EVT_TEXT_ENTER,OnItemValue)
-                itemVal.Bind(wx.EVT_KILL_FOCUS,OnItemValue)
-                instSizer.Add(itemVal,0,WACV)
-                if not ifHisto and item in ['difC','difA','Zero',]:
-                    instSizer.Add((5,5),0)
-                else:
-                    itemRef = wx.CheckBox(G2frame.dataDisplay,wx.ID_ANY,label=' Refine?')
-                    itemRef.SetValue(bool(insRef[item]))
-                    RefObj[itemRef.GetId()] = item
-                    itemRef.Bind(wx.EVT_CHECKBOX, OnItemRef)
-                    instSizer.Add(itemRef,0,WACV)
+        #G2frame.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)        
+        G2frame.Bind(wx.EVT_MENU,OnCopy1Val,id=G2gd.wxID_INST1VAL)
+    MakeParameterWindow()
         
-    elif 'S' in insVal['Type']:                       #single crystal data
-        if 'C' in insVal['Type']:               #constant wavelength
-            instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
-                0,WACV)
-            waveVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.6f'%(insVal['Lam']),style=wx.TE_PROCESS_ENTER)
-            waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveValue)
-            waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveValue)
-            instSizer.Add(waveVal,0,WACV)
-        else:                                   #time of flight (neutrons)
-            pass                                #for now
-    elif 'L' in insVal['Type']:
-        if 'C' in insVal['Type']:        
-            instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
-                0,WACV)
-            waveVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.6f'%(insVal['Lam']),style=wx.TE_PROCESS_ENTER)
-            waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveValue)
-            waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveValue)
-            instSizer.Add(waveVal,0,WACV)
-            instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Azimuth: %7.2f'%(insVal['Azimuth'])),0,WACV)
-        else:                                   #time of flight (neutrons)
-            pass                                #for now
-        
-    mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(topSizer,0)
-    mainSizer.Add(instSizer,0)
-    mainSizer.Layout()    
-    G2frame.dataDisplay.SetSizer(mainSizer)
-    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
     
 ################################################################################
 #####  Sample parameters
@@ -1557,6 +1590,11 @@ def UpdateSampleGrid(G2frame,data):
             data['Materials'][not id][key] = 1.-value
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
 
+    def OnCopy1Val(event):
+        'Select one value to copy to many histograms and optionally allow values to be edited in a table'
+        G2gd.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
+        wx.CallAfter(UpdateSampleGrid,G2frame,data)
+        
     ######## DEBUG #######################################################
     #import GSASIIpwdGUI
     #reload(GSASIIpwdGUI)
@@ -1573,6 +1611,7 @@ def UpdateSampleGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnSampleFlagCopy, id=G2gd.wxID_SAMPLEFLAGCOPY)
     G2frame.Bind(wx.EVT_MENU, OnSampleSave, id=G2gd.wxID_SAMPLESAVE)
     G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2gd.wxID_SAMPLELOAD)
+    G2frame.Bind(wx.EVT_MENU, OnCopy1Val, id=G2gd.wxID_SAMPLE1VAL)
     if 'SASD' in histName:
         G2frame.dataFrame.SetScale.Enable(True)
     if not G2frame.dataFrame.GetStatusBar():
@@ -1608,8 +1647,9 @@ def UpdateSampleGrid(G2frame,data):
         data['Trans'] = 1.0
     if 'SlitLen' not in data and 'SASD' in histName:
         data['SlitLen'] = 0.0
+    data['InstrName'] = data.get('InstrName','')
 #patch end
-    
+    labelLst,elemKeysLst,dspLst,refFlgElem = [],[],[],[]
     parms = SetupSampleLabels(histName,data.get('Type'))
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1621,12 +1661,16 @@ def UpdateSampleGrid(G2frame,data):
     nameSizer.Add(wx.StaticText(G2frame.dataDisplay,wx.ID_ANY,' Instrument Name'),
                 0,WACV)
     nameSizer.Add((-1,-1),1,wx.EXPAND,1)
-    instNameVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,data.get('InstrName',''),
+    instNameVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,data['InstrName'],
                               size=(200,-1),style=wx.TE_PROCESS_ENTER)        
     nameSizer.Add(instNameVal)
     instNameVal.Bind(wx.EVT_CHAR,OnNameVal)
     mainSizer.Add(nameSizer,0,wx.EXPAND,1)
     mainSizer.Add((5,5),0)
+    labelLst.append('Instrument Name')
+    elemKeysLst.append(['InstrName'])
+    dspLst.append(None)
+    refFlgElem.append(None)
 
     if 'PWDR' in histName:
         nameSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1642,16 +1686,22 @@ def UpdateSampleGrid(G2frame,data):
 
     parmSizer = wx.FlexGridSizer(0,2,5,0)
     for key,lbl,nDig in parms:
+        labelLst.append(lbl.strip().strip(':').strip())
+        dspLst.append(nDig)
         if 'list' in str(type(data[key])):
             parmRef = G2gd.G2CheckBox(G2frame.dataDisplay,' '+lbl,data[key],1)
             parmSizer.Add(parmRef,0,WACV|wx.EXPAND)
             parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data[key],0,
                 nDig=nDig,typeHint=float,OnLeave=AfterChange)
+            elemKeysLst.append([key,0])
+            refFlgElem.append([key,1])
         else:
             parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' '+lbl),
                 0,WACV|wx.EXPAND)
             parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,
                 typeHint=float,OnLeave=AfterChange)
+            elemKeysLst.append([key])
+            refFlgElem.append(None)
         parmSizer.Add(parmVal,1,wx.EXPAND)
     Info = {}
 
@@ -1662,6 +1712,11 @@ def UpdateSampleGrid(G2frame,data):
         parmSizer.Add(parmVal,1,wx.EXPAND)
         parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,typeHint=float)
         parmSizer.Add(parmVal,1,wx.EXPAND)
+        labelLst.append(Controls[key])
+        dspLst.append(None)
+        elemKeysLst.append([key])
+        refFlgElem.append(None)
+        
     mainSizer.Add(parmSizer,1,wx.EXPAND)
     mainSizer.Add((0,5),0)    
     if 'SASD' in histName:

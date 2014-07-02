@@ -134,10 +134,10 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_GLOBALTHERM,
 ] = [wx.NewId() for item in range(9)]
 
-[ wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_PLOTSEQSEL,
+[ wxID_RENAMESEQSEL,wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_PLOTSEQSEL,
   wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,
   wxADDPARFIT,wxDELPARFIT,wxEDITPARFIT,wxDOPARFIT,
-] = [wx.NewId() for item in range(10)]
+] = [wx.NewId() for item in range(11)]
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
@@ -1471,6 +1471,67 @@ class SingleStringDialog(wx.Dialog):
         return self.value
 
 ################################################################################
+class MultiStringDialog(wx.Dialog):
+    '''Dialog to obtain a multi string values from user
+    
+    :param wx.Frame parent: name of parent frame
+    :param str title: title string for dialog
+    :param str prompts: strings to tell use what they are inputting
+    :param str values: default input values, if any
+    '''
+    def __init__(self,parent,title,prompts,values=[]):      #,size=(200,-1)?
+        
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
+                           pos=wx.DefaultPosition,
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        self.values = values
+        self.prompts = prompts
+        self.CenterOnParent()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        promptSizer = wx.FlexGridSizer(0,2,5,5)
+        self.Indx = {}
+        for prompt,value in zip(prompts,values):
+            promptSizer.Add(wx.StaticText(self.panel,-1,prompt),0,WACV)
+            valItem = wx.TextCtrl(self.panel,-1,value=value,style=wx.TE_PROCESS_ENTER)
+            self.Indx[valItem.GetId()] = prompt
+            valItem.Bind(wx.EVT_TEXT,self.newValue)
+            promptSizer.Add(valItem,0,WACV)
+        mainSizer.Add(promptSizer,0)
+        btnsizer = wx.StdDialogButtonSizer()
+        OKbtn = wx.Button(self.panel, wx.ID_OK)
+        OKbtn.SetDefault()
+        btnsizer.AddButton(OKbtn)
+        btn = wx.Button(self.panel, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def newValue(self,event):
+        Obj = event.GetEventObject()
+        item = self.Indx[Obj.GetId()]
+        id = self.prompts.index(item)
+        self.values[id] = Obj.GetValue()
+
+    def Show(self):
+        '''Use this method after creating the dialog to post it
+        :returns: True if the user pressed OK; False if the User pressed Cancel
+        '''
+        if self.ShowModal() == wx.ID_OK:
+            return True
+        else:
+            return False
+
+    def GetValues(self):
+        '''Use this method to get the value entered by the user
+        :returns: string entered by user
+        '''
+        return self.values
+
+################################################################################
 
 class G2MultiChoiceDialog(wx.Dialog):
     '''A dialog similar to MultiChoiceDialog except that buttons are
@@ -2540,6 +2601,8 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.SequentialMenu,helpType='Sequential',helpLbl='Sequential Refinement')
         self.SequentialFile = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialFile, title='Selected Cols')
+        self.SequentialFile.Append(id=wxID_RENAMESEQSEL, kind=wx.ITEM_NORMAL,text='Rename',
+            help='Rename selected sequential refinement columns')
         self.SequentialFile.Append(id=wxID_SAVESEQSEL, kind=wx.ITEM_NORMAL,text='Save as text',
             help='Save selected sequential refinement results as a text file')
         self.SequentialFile.Append(id=wxID_SAVESEQSELCSV, kind=wx.ITEM_NORMAL,text='Save as CSV',
@@ -3754,6 +3817,25 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 'Select columns',
                 'No columns or rows selected in table. Click on row or column labels to select fields for plotting.'
                 )
+                
+    def OnRenameSelSeq(event):
+        cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
+        colNames = [G2frame.SeqTable.GetColLabelValue(c) for c in cols]
+        newNames = colNames[:]
+        for i,name in enumerate(colNames):
+            if name in variableLabels:
+                newNames[i] = variableLabels[name]
+        if not cols:
+            G2frame.ErrorDialog('Select columns',
+                'No columns selected in table. Click on column labels to select fields for rename.')
+            return
+        dlg = MultiStringDialog(G2frame.dataDisplay,'Set column names',colNames,newNames)
+        if dlg.Show():
+            newNames = dlg.GetValues()            
+            variableLabels.update(dict(zip(colNames,newNames))) 
+        dlg.Destroy()
+        UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+        G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
             
     def OnSaveSelSeqCSV(event):
         'export the selected columns to a .csv file from menu command'
@@ -4255,6 +4337,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if colSigs[col]:
             return u'\u03c3 = '+str(colSigs[col][row])
         return ''
+        
     def GridColLblToolTip(col):
         '''Define a tooltip for a column. This will be the user-entered value
         (from data['variableLabels']) or the default name
@@ -4264,6 +4347,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             return
         var = colLabels[col]
         return variableLabels.get(var,G2obj.fmtVarDescr(var))
+        
     def SetLabelString(event):
         '''Define or edit the label for a column in the table, to be used
         as a tooltip and for plotting
@@ -4277,7 +4361,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                                  'Set a name for variable '+var,lbl,size=(400,-1))
         if dlg.Show():
             variableLabels[var] = dlg.GetValue()
-            print variableLabels
         dlg.Destroy()
         
     #def GridRowLblToolTip(row): return 'Row ='+str(row)
@@ -4371,6 +4454,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
         Status.SetStatusText('')
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnRenameSelSeq, id=wxID_RENAMESEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=wxID_SAVESEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeqCSV, id=wxID_SAVESEQSELCSV)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotSelSeq, id=wxID_PLOTSEQSEL)

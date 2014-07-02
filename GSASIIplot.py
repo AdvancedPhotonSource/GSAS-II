@@ -2406,6 +2406,8 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
     :param function SelectX: a function that returns a selected column
       number (or None) as the X-axis selection
     '''
+    global Title,xLabel,yLabel
+    xLabel = yLabel = Title = ''
     def OnMotion(event):
         if event.xdata and event.ydata:                 #avoid out of frame errors
             xpos = event.xdata
@@ -2414,13 +2416,22 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             Page.canvas.SetToolTipString(msg)
 
     def OnKeyPress(event):
+        global Title,xLabel,yLabel
         if event.key == 's':
             G2frame.seqXaxis = G2frame.seqXselect()
             Draw()
+        elif event.key == 't':
+            dlg = G2gd.MultiStringDialog(G2frame,'Set titles & labels',[' Title ',' x-Label ',' y-Label '],
+                [Title,xLabel,yLabel])
+            if dlg.Show():
+                Title,xLabel,yLabel = dlg.GetValues()
+            dlg.Destroy()
+            Draw()
             
     def Draw():
+        global Title,xLabel,yLabel
         Page.SetFocus()
-        G2frame.G2plotNB.status.SetStatusText('press s to select X axis',1)
+        G2frame.G2plotNB.status.SetStatusText('press s to select X axis, t to change titles',1)
         Plot.clear()
         if G2frame.seqXaxis is not None:    
             xName,X,Xsig = Page.seqTableGet(G2frame.seqXaxis)
@@ -2445,8 +2456,18 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             Plot.plot(X,Page.fitvals,label='Fit')
             
         Plot.legend(loc='best')
-        Plot.set_ylabel('Parameter values')
-        Plot.set_xlabel(xName)
+        if Title:
+            Plot.set_title(Title)
+        else:
+            Plot.set_title('')
+        if xLabel:
+            Plot.set_xlabel(xLabel)
+        else:
+            Plot.set_xlabel(xName)
+        if yLabel:
+            Plot.set_ylabel(yLabel)
+        else:
+            Plot.set_ylabel('Parameter values')
         Page.canvas.draw()            
             
     G2frame.seqXselect = SelectX
@@ -2472,7 +2493,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-    Page.Choice = ['s to select plot x-axis',]
+    Page.Choice = ['s - select x-axis','t - change titles',]
     Page.keyPress = OnKeyPress
     Page.seqYaxisList = ColumnList
     Page.seqTableGet = TableGet

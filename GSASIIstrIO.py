@@ -2215,7 +2215,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         for item in insKeys:
             insName = pfx+item
             instDict[insName] = Inst[item][1]
-            if Inst[item][2]:
+            if len(Inst[item]) > 2 and Inst[item][2]:
                 insVary.append(insName)
 #        instDict[pfx+'X'] = max(instDict[pfx+'X'],0.001)
 #        instDict[pfx+'Y'] = max(instDict[pfx+'Y'],0.001)

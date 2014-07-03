@@ -1840,7 +1840,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
                     G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
                     G2indx.IndexPeaks(data,G2frame.HKL)
                     for hkl in G2frame.HKL:
-                        hkl.append(G2mth.Dsp2pos(Inst,hkl[3]))
+                        hkl.append(G2lat.Dsp2pos(Inst,hkl[3]))
     rowLabels = []
     for i in range(len(data)): rowLabels.append(str(i+1))
     colLabels = ['position','intensity','use','indexed','h','k','l','d-obs','d-calc']

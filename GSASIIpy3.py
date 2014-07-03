@@ -62,7 +62,8 @@ def FormatPadValue(val,maxdigits=None):
     
 
 def FormatValue(val,maxdigits=None):
-    '''Format a float to fit in ``maxdigits[0]`` spaces with maxdigits[1] after decimal.
+    '''Format a float to fit in at most ``maxdigits[0]`` spaces with maxdigits[1] after decimal.
+    Note that this code has been hacked from FormatSigFigs and may have unused sections. 
 
     :param float val: number to be formatted.
 
@@ -75,28 +76,31 @@ def FormatValue(val,maxdigits=None):
         digits = [10,2]
     else:
         digits = list(maxdigits)
-    # does the standard str() conversion fit?
-    string = str(val)
-    if len(string) <= digits[0]: return string.strip()
-    # negative numbers, leave room for a sign
-    if val < 0: digits[0] -= 1
+    string = ("{:."+str(digits[1])+"f}").format(val).strip() # will standard .f formatting work?
+    if len(string) <= digits[0]:
+        if digits[1] > 0: # strip off extra zeros on right side
+            string = string.rstrip('0')
+            if string[-1] == '.': string += "0"
+        return string
+    if val < 0: digits[0] -= 1 # negative numbers, reserve space for the sign
     decimals = digits[0] - digits[1]
-    if abs(val) < 1e-99 or abs(val) > 1e99:
-        decimals = min(digits[0]-6,digits[1])
-        fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}" # create format string
-    elif abs(val) < 1e-9 or abs(val) > 1e9:
-        decimals = min(digits[0]-5,digits[1])
-        fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}"
+    if abs(val) > 1e99: # for very large numbers, use scientific notation and use all digits
+        fmt = "{" + (":{:d}.{:d}g".format(digits[0],digits[0]-6))+"}"
+    elif abs(val) > 1e9:
+        fmt = "{" + (":{:d}.{:d}g".format(digits[0],digits[0]-5))+"}"
     elif abs(val) < 10**(4-decimals): # make sure at least 4 decimals show
+        # this clause is probably no longer needed since the number probably shows as 0.0
         decimals = min(digits[0]-5,digits[1])
         fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}"
-    elif abs(val) >= 10**decimals: # deal with large numbers in smaller spaces
-        decimals = min(digits[0]-5,digits[1])
+    elif abs(val) >= 10**(decimals-1): # deal with large numbers in smaller spaces
+        decimals = max(0,digits[0]-5)
         fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}"
     elif abs(val) < 1: # use f format for small numbers
+        # this clause is probably no longer needed since the number probably shows as 0.0
         decimals = min(digits[0]-3,digits[1])
         fmt = "{" + (":{:d}.{:d}f".format(digits[0],decimals))+"}"
     else: # in range where g formatting should do what I want
+        # used? 
         decimals = digits[0] - 1
         fmt = "{" + (":{:d}.{:d}g".format(digits[0],decimals))+"}"
     try:

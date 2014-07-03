@@ -1302,6 +1302,14 @@ def UpdateInstrumentGrid(G2frame,data):
         # end of MakeParameterWindow
                 
     # beginning of UpdateInstrumentGrid code    
+    #patch: make sure all parameter items are lists
+    patched = 0
+    for key in data:
+        if type(data[key]) is tuple:
+            data[key] = list(data[key])
+            patched += 1
+    if patched: print patched,' instrument parameters changed from tuples'
+    #end of patch
     labelLst,elemKeysLst,dspLst,refFlgElem = [],[],[],[]
     instkeys = keycheck(data.keys())
     if 'P' in data['Type'][0]:          #powder data

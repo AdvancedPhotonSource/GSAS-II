@@ -135,9 +135,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(9)]
 
 [ wxID_RENAMESEQSEL,wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_PLOTSEQSEL,
-  wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,
+  wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,wxCOPYPARFIT,
   wxADDPARFIT,wxDELPARFIT,wxEDITPARFIT,wxDOPARFIT,
-] = [wx.NewId() for item in range(11)]
+] = [wx.NewId() for item in range(12)]
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
@@ -2806,6 +2806,9 @@ class DataFrame(wx.Frame):
             id=wxADDPARFIT, kind=wx.ITEM_NORMAL,text='Add equation',
             help='Add a new equation to minimize')
         self.SequentialPfit.Append(
+            id=wxCOPYPARFIT, kind=wx.ITEM_NORMAL,text='Copy equation',
+            help='Copy an equation to minimize - edit it next')
+        self.SequentialPfit.Append(
             id=wxDELPARFIT, kind=wx.ITEM_NORMAL,text='Delete equation',
             help='Delete an equation for parametric minimization')
         self.SequentialPfit.Append(
@@ -4014,7 +4017,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         dlg = MultiStringDialog(G2frame.dataDisplay,'Set column names',colNames,newNames)
         if dlg.Show():
             newNames = dlg.GetValues()            
-            variableLabels.update(dict(zip(colNames,newNames))) 
+            variableLabels.update(dict(zip(colNames,newNames)))
+        data['variableLabels'] = variableLabels 
         dlg.Destroy()
         UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
         G2plt.PlotSelectedSequence(G2frame,cols,GetColumnInfo,SelectXaxis)
@@ -4495,7 +4499,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         # compile the variable names used in previous freevars to avoid accidental name collisions
         usedvarlist = []
         for obj in Controls['SeqParFitEqList']:
-            eq = obj.expression            
             for var in obj.freeVars:
                 if obj.freeVars[var][0] not in usedvarlist: usedvarlist.append(obj.freeVars[var][0])
 
@@ -4510,6 +4513,39 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if obj:
             Controls['SeqParFitEqList'].append(obj)
             EnableParFitEqMenus()
+            if Controls['SeqParFitEqList']: DoParEqFit(event)
+                
+    def CopyParFitEq(event):
+        'Copy an existing parametric equation to be fit to sequential results'
+        # compile the variable names used in previous freevars to avoid accidental name collisions
+        usedvarlist = []
+        for obj in Controls['SeqParFitEqList']:
+            for var in obj.freeVars:
+                if obj.freeVars[var][0] not in usedvarlist: usedvarlist.append(obj.freeVars[var][0])
+        txtlst = [obj.GetDepVar()+' = '+obj.expression for obj in Controls['SeqParFitEqList']]
+        if len(txtlst) == 1:
+            selected = 0
+        else:
+            selected = ItemSelector(
+                txtlst,G2frame.dataFrame,
+                multiple=False,
+                title='Select a parametric equation to copy',
+                header='Copy equation')
+        if selected is not None:
+            newEqn = copy.deepcopy(Controls['SeqParFitEqList'][selected])
+            for var in newEqn.freeVars:
+                newEqn.freeVars[var][0] = G2obj.MakeUniqueLabel(newEqn.freeVars[var][0],usedvarlist)
+            dlg = G2exG.ExpressionDialog(
+                G2frame.dataDisplay,indepVarDict,
+                newEqn,
+                depVarDict=depVarDict,
+                header="Edit the formula for this minimization function",
+                ExtraButton=['Fit',SingleParEqFit])
+            newobj = dlg.Show(True)
+            if newobj:
+                calcobj = G2obj.ExpressionCalcObj(newobj)
+                Controls['SeqParFitEqList'].append(newobj)
+                EnableParFitEqMenus()
             if Controls['SeqParFitEqList']: DoParEqFit(event)
                                             
     def GridSetToolTip(row,col):
@@ -4644,6 +4680,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataFrame.Bind(wx.EVT_MENU, DelPseudoVar, id=wxDELSEQVAR)
     G2frame.dataFrame.Bind(wx.EVT_MENU, EditPseudoVar, id=wxEDITSEQVAR)
     G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewParFitEq, id=wxADDPARFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, CopyParFitEq, id=wxCOPYPARFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, DelParFitEq, id=wxDELPARFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, EditParFitEq, id=wxEDITPARFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, DoParEqFit, id=wxDOPARFIT)

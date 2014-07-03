@@ -52,7 +52,7 @@ def FormatPadValue(val,maxdigits=None):
     if maxdigits is None:
         digits = [10,2]
     else:
-        digits = maxdigits
+        digits = list(maxdigits)
     fmt = '{:'+str(digits[0])+'}'
     s = fmt.format(FormatValue(val,digits))
     if s[-1] == ' ':
@@ -74,7 +74,7 @@ def FormatValue(val,maxdigits=None):
     if maxdigits is None:
         digits = [10,2]
     else:
-        digits = maxdigits
+        digits = list(maxdigits)
     # does the standard str() conversion fit?
     string = str(val)
     if len(string) <= digits[0]: return string.strip()

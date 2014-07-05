@@ -1055,11 +1055,6 @@ def UpdateRigidBodies(G2frame,data):
             G2frame.dataFrame.RigidBodyMenu.Insert(0,G2frame.dataFrame.ResidueRBMenu,title='Edit')
             G2frame.Page = [page,'rrb']
             UpdateResidueRB()
-        elif text == 'Z-matrix rigid bodies':
-            G2frame.dataFrame.RigidBodyMenu.Remove(0)
-            G2frame.dataFrame.RigidBodyMenu.Insert(0,G2frame.dataFrame.ZMatrixRBMenu,title='Edit')
-            G2frame.Page = [page,'zrb']
-            UpdateZMatrixRB()
             
     def getMacroFile(macName):
         defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')

@@ -918,6 +918,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 costh = cosd(theta)
                 if sigName in varyList:
                     sig = parmDict[sigName]
+                    dsdU = dsdV = dsdW = 0
                 else:
                     sig = G2mth.getCWsig(parmDict,theta)
                     dsdU,dsdV,dsdW = G2mth.getCWsigDeriv(theta)
@@ -925,6 +926,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 gamName = 'gam'+str(iPeak)
                 if gamName in varyList:
                     gam = parmDict[gamName]
+                    dgdX = dgdY = 0
                 else:
                     gam = G2mth.getCWgam(parmDict,theta)
                     dgdX,dgdY = G2mth.getCWgamDeriv(theta)
@@ -993,6 +995,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 else:
                     if len(Pdabc):
                         alp = np.interp(dsp,Pdabc[0],Pdabc[1])
+                        dad0 = 0
                     else:
                         alp = G2mth.getTOFalpha(parmDict,dsp)
                         dada0 = G2mth.getTOFalphaDeriv(dsp)
@@ -1002,18 +1005,21 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 else:
                     if len(Pdabc):
                         bet = np.interp(dsp,Pdabc[0],Pdabc[2])
+                        dbdb0 = dbdb1 = dbdb2 = 0
                     else:
                         bet = G2mth.getTOFbeta(parmDict,dsp)
                         dbdb0,dbdb1,dbdb2 = G2mth.getTOFbetaDeriv(dsp)
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList:
                     sig = parmDict[sigName]
+                    dsds0 = dsds1 = dsds2 = 0
                 else:
                     sig = G2mth.getTOFsig(parmDict,dsp)
                     dsds0,dsds1,dsds2 = G2mth.getTOFsigDeriv(dsp)
                 gamName = 'gam'+str(iPeak)
                 if gamName in varyList:
                     gam = parmDict[gamName]
+                    dsdX = dsdY = 0
                 else:
                     gam = G2mth.getTOFgamma(parmDict,dsp)
                     dsdX,dsdY = G2mth.getTOFgammaDeriv(dsp)
@@ -1282,7 +1288,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
     def GetPeaksParms(Inst,parmDict,Peaks,varyList):
         if 'C' in Inst['Type'][0]:
             names = ['pos','int','sig','gam']
-        else:
+        else:   #'T'
             names = ['pos','int','alp','bet','sig','gam']
         for i,peak in enumerate(Peaks):
             pos = parmDict['pos'+str(i)]
@@ -1311,7 +1317,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
         print 'Peak coefficients:'
         if 'C' in dataType:
             names = ['pos','int','sig','gam']
-        else:
+        else:   #'T'
             names = ['pos','int','alp','bet','sig','gam']            
         head = 13*' '
         for name in names:

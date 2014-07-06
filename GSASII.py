@@ -55,8 +55,10 @@ except ImportError:
     from setuptools.command import easy_install
     install_with_easyinstall('PyOpenGl')
     print('*******************************************************')         
-    print('OpenGL has been installed. Please restart GSAS-II')
+    print('OpenGL has been installed. Restarting GSAS-II')
     print('*******************************************************')         
+    loc = os.path.dirname(__file__)
+    subprocess.Popen([sys.executable,os.path.join(loc,'GSASII.py')])
     sys.exit()
     
 # load the GSAS routines

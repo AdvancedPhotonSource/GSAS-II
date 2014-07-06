@@ -82,6 +82,33 @@ def GetVersionNumber():
     '''
     return version
 
+def LoadConfigFile(filename):
+    '''Read a GSAS-II configuration file.
+    Comments (starting with "%") are removed, as are empty lines
+    
+    :param str filename: base file name (such as 'file.dat'). Files with this name
+      are located from the path and the contents of each are concatenated.
+    :returns: a list containing each non-empty (after removal of comments) line
+      found in every matching config file.
+    '''
+    info = []
+    for path in sys.path:
+        fil = os.path.join(path,filename)
+        if not os.path.exists(fil): continue
+        try:
+            i = 0
+            fp = open(fil,'r')
+            for line in fp:
+                expr = line.split('#')[0].strip()
+                if expr:
+                    info.append(expr)
+                    i += 1
+            print(str(i)+' lines read from config file '+fil)
+        finally:
+            fp.close()
+    return info
+
+
 # routines to interface with subversion
 def whichsvn():
     '''Returns a path to the subversion exe file, if any is found.

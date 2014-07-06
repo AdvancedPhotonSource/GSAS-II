@@ -18,12 +18,18 @@ which is used to evaluate the expression against a supplied parameter dictionary
 The expression is parsed to find variables used in the expression and then
 the user is asked to assign parameters from the dictionary to each variable.
 
+Default expressions are read from file DefaultExpressions.txt using
+:func:`GSASIIpath.LoadConfigFile`.
+
 '''
 import re
 import sys
 import wx
+import os.path
 import wx.lib.scrolledpanel as wxscroll
 import numpy as np
+import GSASIIpath
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIgrid as G2gd
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
@@ -59,6 +65,17 @@ def IndexParmDict(parmDict,wildcard):
         parmLists[i].sort()
     return parmLists
 
+#==========================================================================
+defaultExpressions = None
+def LoadDefaultExpressions():
+    '''Read a configuration file with default expressions from all files named
+    DefaultExpressions.txt found in the path. Duplicates are removed and
+    expressions are sorted alphabetically
+    '''
+    global defaultExpressions
+    if defaultExpressions is not None: return # run this routine only once
+    defaultExpressions = sorted(list(set(GSASIIpath.LoadConfigFile('DefaultExpressions.txt'))))
+    
 #==========================================================================
 class ExpressionDialog(wx.Dialog):
     '''A wx.Dialog that allows a user to input an arbitrary expression
@@ -147,6 +164,8 @@ class ExpressionDialog(wx.Dialog):
         'name for dependent variable selection, when depVarDict is specified'
         self.usedVars = usedVars
         'variable names that have been used and should not be reused by default'
+        defSize = (620,340) # seems like a good size
+        'Starting size for dialog'
 
         # process dictionary of values and create an index
         for key in parmDict:
@@ -163,9 +182,9 @@ class ExpressionDialog(wx.Dialog):
         self.parmLists = IndexParmDict(self.parmDict,self.fit)
         self.timer = wx.Timer()
         self.timer.Bind(wx.EVT_TIMER,self.OnValidate)
-
+        LoadDefaultExpressions()
         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
-        wx.Dialog.__init__(self, parent, wx.ID_ANY, wintitle, style=style)
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, wintitle, style=style, size=defSize)
         self.mainsizer = wx.BoxSizer(wx.VERTICAL)
         label = wx.StaticText(self,  wx.ID_ANY, header)
         self.mainsizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
@@ -193,8 +212,13 @@ class ExpressionDialog(wx.Dialog):
             label = wx.StaticText(self,  wx.ID_ANY, ' = ')
             self.exsizer.Add(label, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.exCtrl = wx.TextCtrl(self,  wx.ID_ANY, size=(150,-1),style=wx.TE_PROCESS_ENTER)
+        #self.exCtrl = wx.TextCtrl(self,  wx.ID_ANY, size=(150,-1),style=wx.TE_PROCESS_ENTER)
+        self.exCtrl = wx.ComboBox(self, wx.ID_ANY, "", (90, 50), (160, -1),
+                                  defaultExpressions,
+                                  wx.CB_DROPDOWN| wx.TE_PROCESS_ENTER
+                         )
         self.exCtrl.Bind(wx.EVT_CHAR, self.OnChar)
+        self.exCtrl.Bind(wx.EVT_COMBOBOX, self.OnValidate)
         self.exCtrl.Bind(wx.EVT_TEXT_ENTER, self.OnValidate)
         self.exsizer.Add(self.exCtrl, 1, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
         #self.mainsizer.Add(self.exCtrl, 0, wx.ALL|wx.EXPAND, 5)
@@ -252,7 +276,7 @@ class ExpressionDialog(wx.Dialog):
                     
         self.exCtrl.SetValue(self.expr)
         self.OnValidate(None)
-        self.SetMinSize((620,300)) # seems like a good size
+        self.SetMinSize(defSize) 
         #self.errbox.SetAutoLayout(1)
         #self.errbox.SetupScrolling()
         #self.varbox.SetAutoLayout(1)
@@ -287,7 +311,7 @@ class ExpressionDialog(wx.Dialog):
         :returns: None (On Cancel) or a new :class:`~GSASIIobj.ExpressionObj`
         '''
         self.Layout()
-        self.mainsizer.Fit(self)
+        #self.mainsizer.Fit(self)
         self.SendSizeEvent() # force repaint
         if self.ShowModal() == wx.ID_OK:
             # store the edit results in the object and return it
@@ -482,7 +506,7 @@ class ExpressionDialog(wx.Dialog):
         self.varbox.SetupScrolling()
         self.varbox.Refresh()
         self.Layout()
-        self.mainsizer.Fit(self)
+        #self.mainsizer.Fit(self)
         self.SendSizeEvent() # force repaint
         return
 

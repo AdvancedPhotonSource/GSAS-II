@@ -1,0 +1,4 @@
+# GSAS-II Configuration File
+# This contains expressions to be used as default options for the expression editor
+m*x+b  # fit a straight line
+a*x**2 + b*x + c # fit a quadradic

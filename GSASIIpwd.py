@@ -790,19 +790,19 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
         while True:
             try:
                 pos = parmDict['pos'+str(iPeak)]
-                theta = (pos-parmDict['Zero'])/2.0
+                tth = (pos-parmDict['Zero'])
                 intens = parmDict['int'+str(iPeak)]
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList:
                     sig = parmDict[sigName]
                 else:
-                    sig = G2mth.getCWsig(parmDict,theta)
+                    sig = G2mth.getCWsig(parmDict,tth)
                 sig = max(sig,0.001)          #avoid neg sigma
                 gamName = 'gam'+str(iPeak)
                 if gamName in varyList:
                     gam = parmDict[gamName]
                 else:
-                    gam = G2mth.getCWgam(parmDict,theta)
+                    gam = G2mth.getCWgam(parmDict,tth)
                 gam = max(gam,0.001)             #avoid neg gamma
                 Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
                 iBeg = np.searchsorted(xdata,pos-fmin)
@@ -911,25 +911,23 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
         while True:
             try:
                 pos = parmDict['pos'+str(iPeak)]
-                theta = (pos-parmDict['Zero'])/2.0
+                tth = (pos-parmDict['Zero'])
                 intens = parmDict['int'+str(iPeak)]
                 sigName = 'sig'+str(iPeak)
-                tanth = tand(theta)
-                costh = cosd(theta)
                 if sigName in varyList:
                     sig = parmDict[sigName]
                     dsdU = dsdV = dsdW = 0
                 else:
-                    sig = G2mth.getCWsig(parmDict,theta)
-                    dsdU,dsdV,dsdW = G2mth.getCWsigDeriv(theta)
+                    sig = G2mth.getCWsig(parmDict,tth)
+                    dsdU,dsdV,dsdW = G2mth.getCWsigDeriv(tth)
                 sig = max(sig,0.001)          #avoid neg sigma
                 gamName = 'gam'+str(iPeak)
                 if gamName in varyList:
                     gam = parmDict[gamName]
                     dgdX = dgdY = 0
                 else:
-                    gam = G2mth.getCWgam(parmDict,theta)
-                    dgdX,dgdY = G2mth.getCWgamDeriv(theta)
+                    gam = G2mth.getCWgam(parmDict,tth)
+                    dgdX,dgdY = G2mth.getCWgamDeriv(tth)
                 gam = max(gam,0.001)             #avoid neg gamma
                 Wd,fmin,fmax = getWidthsCW(pos,sig,gam,shl)
                 iBeg = np.searchsorted(xdata,pos-fmin)

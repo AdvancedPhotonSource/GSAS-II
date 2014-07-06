@@ -3421,6 +3421,9 @@ class GSGrid(wg.Grid):
     def Clear(self):
         wg.Grid.ClearGrid(self)
         
+    def SetCellReadOnly(self,r,c,readonly=True):
+        self.SetReadOnly(r,c,isReadOnly=readonly)
+        
     def SetCellStyle(self,r,c,color="white",readonly=True):
         self.SetCellBackgroundColour(r,c,color)
         self.SetReadOnly(r,c,isReadOnly=readonly)
@@ -4377,6 +4380,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             eqObjList = [eqObj,]
         else:
             eqObjList = Controls['SeqParFitEqList']
+        UseFlags = G2frame.SeqTable.GetColValues(0)         
         for obj in eqObjList:
             expr = obj.expression
             # assemble refined vars for this equation
@@ -4391,6 +4395,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             indepVars = obj.GetIndependentVars()
             # loop over each datapoint
             for j,row in enumerate(zip(*colList)):
+                if not UseFlags[j]: continue
                 # assemble equations to fit
                 calcobj = G2obj.ExpressionCalcObj(obj)
                 # prepare a dict of needed independent vars for this expression
@@ -4689,11 +4694,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     #-----------------------------------------------------------------------------------
     # build up the data table by columns -----------------------------------------------
-    colList = []
-    colSigs = []
-    colLabels = []
-    Types = []
     nRows = len(histNames)
+    colList = [nRows*[True]]
+    colSigs = [None]
+    colLabels = ['Use']
+    Types = [wg.GRID_VALUE_BOOL]
     # start with Rwp values
     if 'IMG ' not in histNames[0][:4]:
         colList += [[data[name]['Rvals']['Rwp'] for name in histNames]]
@@ -4854,10 +4859,14 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     
     G2frame.dataDisplay = GSGrid(parent=G2frame.dataFrame)
     G2frame.SeqTable = Table(
-        [c for c in zip(*colList)],     # convert from columns to rows
+        [list(c) for c in zip(*colList)],     # convert from columns to rows
         colLabels=colLabels,rowLabels=histNames,types=Types)
     G2frame.dataDisplay.SetTable(G2frame.SeqTable, True)
-    G2frame.dataDisplay.EnableEditing(False)
+    #G2frame.dataDisplay.EnableEditing(False)
+    # make all but first column read-only
+    for c in range(1,len(colLabels)):
+        for r in range(nRows):
+            G2frame.dataDisplay.SetCellReadOnly(r,c)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_LEFT_DCLICK, PlotSelect)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_LABEL_RIGHT_CLICK, SetLabelString)
     G2frame.dataDisplay.SetRowLabelSize(8*len(histNames[0]))       #pretty arbitrary 8

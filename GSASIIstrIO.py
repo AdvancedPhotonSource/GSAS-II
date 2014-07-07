@@ -2286,7 +2286,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         insKeys = Inst.keys()
         insKeys.sort()
         for item in insKeys:
-            if item != 'Type':
+            if item not in ['Type','Source']:
                 ptlbls += '%12s' % (item)
                 ptstr += '%12.6f' % (Inst[item][1])
                 if item in ['Lam1','Lam2','Azimuth']:
@@ -2504,7 +2504,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
         insKeys = instSig.keys()
         insKeys.sort()
         for name in insKeys:
-            if name not in  ['Type','Lam1','Lam2','Azimuth']:
+            if name not in  ['Type','Lam1','Lam2','Azimuth','Source']:
                 ptlbls += '%12s' % (name)
                 ptstr += '%12.6f' % (Inst[name][1])
                 if instSig[name]:

@@ -1995,133 +1995,151 @@ def PeaksUnique(data,Ind):
 ################################################################################
 
 def getCWsig(ins,pos):
-    '''default doc string
+    '''get CW peak profile sigma
     
-    :param type name: description
-    
-    :returns: type name: description
+    :param dict ins: instrument parameters with at least 'U', 'V', & 'W' 
+    as values only
+    :param float pos: 2-theta of peak
+    :returns: float getCWsig: peak sigma
     
     '''
     tp = tand(pos/2.0)
     return ins['U']*tp**2+ins['V']*tp+ins['W']
     
 def getCWsigDeriv(pos):
-    '''default doc string
+    '''get derivatives of CW peak profile sigma wrt U,V, & W
     
-    :param type name: description
+    :param float pos: 2-theta of peak
     
-    :returns: type name: description
+    :returns: list getCWsigDeriv: d(sig)/dU, d(sig)/dV & d(sig)/dW
     
     '''
     tp = tand(pos/2.0)
     return tp**2,tp,1.0
     
 def getCWgam(ins,pos):
-    '''default doc string
+    '''get CW peak profile gamma
     
-    :param type name: description
-    
-    :returns: type name: description
+    :param dict ins: instrument parameters with at least 'X' & 'Y' 
+    as values only
+    :param float pos: 2-theta of peak
+    :returns: float getCWgam: peak gamma
     
     '''
     return ins['X']/cosd(pos/2.0)+ins['Y']*tand(pos/2.0)
     
 def getCWgamDeriv(pos):
-    '''default doc string
+    '''get derivatives of CW peak profile gamma wrt X & Y
     
-    :param type name: description
+    :param float pos: 2-theta of peak
     
-    :returns: type name: description
+    :returns: list getCWgamDeriv: d(gam)/dX & d(gam)/dY
     
     '''
     return 1./cosd(pos/2.0),tand(pos/2.0)
     
 def getTOFsig(ins,dsp):
-    '''default doc string
+    '''get TOF peak profile sigma
     
-    :param type name: description
+    :param dict ins: instrument parameters with at least 'sig-0', 'sig-1' & 'sig-q'
+    as values only
+    :param float dsp: d-spacing of peak
     
-    :returns: type name: description
+    :returns: float getTOFsig: peak sigma
     
     '''
     return ins['sig-0']+ins['sig-1']*dsp**2+ins['sig-q']*dsp
     
 def getTOFsigDeriv(dsp):
-    '''default doc string
+    '''get derivatives of TOF peak profile gamma wrt sig-0, sig-1, & sig-q
     
-    :param type name: description
+    :param float dsp: d-spacing of peak
     
-    :returns: type name: description
+    :returns: list getTOFsigDeriv: d(sig0/d(sig-0), d(sig)/d(sig-1) & d(sig)/d(sig-q)
     
     '''
     return 1.0,dsp**2,dsp
     
 def getTOFgamma(ins,dsp):
-    '''default doc string
+    '''get TOF peak profile gamma
     
-    :param type name: description
+    :param dict ins: instrument parameters with at least 'X' & 'Y'
+    as values only
+    :param float dsp: d-spacing of peak
     
-    :returns: type name: description
+    :returns: float getTOFgamma: peak gamma
     
     '''
     return ins['X']*dsp+ins['Y']*dsp**2
     
 def getTOFgammaDeriv(dsp):
-    '''default doc string
+    '''get derivatives of TOF peak profile gamma wrt X & Y
     
-    :param type name: description
+    :param float dsp: d-spacing of peak
     
-    :returns: type name: description
+    :returns: list getTOFgammaDeriv: d(gam)/dX & d(gam)/dY
     
     '''
     return dsp,dsp**2
     
 def getTOFbeta(ins,dsp):
-    '''default doc string
+    '''get TOF peak profile beta
     
-    :param type name: description
+    :param dict ins: instrument parameters with at least 'beat-0', 'beta-1' & 'beta-q'
+    as values only
+    :param float dsp: d-spacing of peak
     
-    :returns: type name: description
+    :returns: float getTOFbeta: peak beat
     
     '''
     return ins['beta-0']+ins['beta-1']/dsp**4+ins['beta-q']/dsp
     
 def getTOFbetaDeriv(dsp):
-    '''default doc string
+    '''get derivatives of TOF peak profile beta wrt beta-0, beta-1, & beat-q
     
-    :param type name: description
+    :param float dsp: d-spacing of peak
     
-    :returns: type name: description
+    :returns: list getTOFbetaDeriv: d(beta)/d(beat-0), d(beta)/d(beta-1) & d(beta)/d(beta-q)
     
     '''
     return 1.0,1./dsp**4,1./dsp
     
 def getTOFalpha(ins,dsp):
-    '''default doc string
+    '''get TOF peak profile alpha
     
-    :param type name: description
+    :param dict ins: instrument parameters with at least 'alpha'
+    as values only
+    :param float dsp: d-spacing of peak
     
-    :returns: type name: description
+    :returns: flaot getTOFalpha: peak alpha
     
     '''
     return ins['alpha']/dsp
     
 def getTOFalphaDeriv(dsp):
-    '''default doc string
+    '''get derivatives of TOF peak profile beta wrt alpha
     
-    :param type name: description
+    :param float dsp: d-spacing of peak
     
-    :returns: type name: description
+    :returns: float getTOFalphaDeriv: d(alp)/d(alpha)
     
     '''
     return 1./dsp
     
 def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
-    '''default doc string
+    '''set starting peak parameters for single peak fits from plot selection or auto selection
     
-    :param type name: description
+    :param dict Parms: instrument parameters dictionary
+    :param dict Parms2: table lookup for TOF profile coefficients
+    :param float pos: peak position in 2-theta, TOF or Q (ifQ=True)
+    :param float mag: peak top magnitude from pick
+    :param bool ifQ: True if pos in Q
+    :param bool useFit: True if use fitted CW Parms values (not defaults)
     
-    :returns: type name: description
+    :returns: list XY: peak list entry:
+        for CW: [pos,0,mag,1,sig,0,gam,0]
+        for TOF: [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
+        NB: mag refinement set by default, all others off
     
     '''
     ind = 0

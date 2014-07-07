@@ -2905,7 +2905,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     except TypeError:
         pass
     size,imagefile = G2frame.PatternTree.GetItemPyData(G2frame.Image)
-    dark = Data['dark image']
+    dark = Data.get('dark image',[0,''])
     if dark[0]:
         darkfile = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, 
             G2frame.root,dark[0]))[1]

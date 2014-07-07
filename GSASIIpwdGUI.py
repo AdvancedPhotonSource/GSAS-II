@@ -1268,7 +1268,7 @@ def UpdateInstrumentGrid(G2frame,data):
             if 'C' in insVal['Type']:               #constant wavelength
                 instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
                     0,WACV)
-                waveVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=6,typeHint=float,OnLeave=AfterChange)
+                waveVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
                 labelLst.append(u'Lam (\xc5)')
                 elemKeysLst.append(['Lam',1])
@@ -1280,7 +1280,7 @@ def UpdateInstrumentGrid(G2frame,data):
             if 'C' in insVal['Type']:        
                 instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
                     0,WACV)
-                waveVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=6,typeHint=float,OnLeave=AfterChange)
+                waveVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
                 labelLst.append(u'Lam (\xc5)')
                 elemKeysLst.append(['Lam',1])
@@ -3807,7 +3807,7 @@ def UpdatePDFGrid(G2frame,data):
         print 'Done calculating PDF:'
         Status.SetStatusText('PDF computed')
         for plot in auxPlot:
-            G2plt.PlotXY(G2frame,plot[:2],type=plot[2])
+            G2plt.PlotXY(G2frame,plot[:2],Title=plot[2])
         
         G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')
         G2plt.PlotISFG(G2frame,newPlot=True,type='S(Q)')

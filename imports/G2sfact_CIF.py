@@ -52,6 +52,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                       )
         
         F2datanames = ('_refln_f_squared_meas','_refln.f_squared_meas',
+            '_refln_intensity_meas','_refln.intensity_meas',
                       )
 
         Idatanames = ('_refln_intensity_meas','_refln.intensity_meas',
@@ -72,7 +73,8 @@ class CIFhklReader(G2IO.ImportStructFactor):
         
         F2signames = ('_refln_f_squared_meas_sigma','_refln.f_squared_meas_sigma',
                       '_refln_f_squared_sigma',
-                      )
+                      '_refln_intensity_meas_sigma','_refln.intensity_meas_sigma',
+                      '_refln.intensity_sigma',)
 
         phasenames = ('_refln_phase_calc','_refln.phase_calc',
                       )
@@ -134,7 +136,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                 choice = []
                 for blknm in blklist:
                     choice.append('')
-                    # accumumlate some info about this phase
+                    # accumulate some info about this phase
                     choice[-1] += blknm + ': '
                     for i in phasenamefields: # get a name for the phase
                         name = cf[blknm].get(i)
@@ -324,7 +326,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
             elif blk.get('_diffrn_radiation.wavelength'):
                 wave = float(blk['_diffrn_radiation.wavelength'])
             else:
-                wave = None
+                wave = 1.5418
             self.UpdateParameters(Type=type,Wave=wave) # histogram type
             return True
         except Exception as detail:

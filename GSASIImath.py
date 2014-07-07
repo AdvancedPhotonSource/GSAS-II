@@ -1453,7 +1453,7 @@ def adjHKLmax(SGData,Hmax):
     else:
         Hmax[0] = ((Hmax[0]+2)/4)*4
         Hmax[1] = ((Hmax[1]+2)/4)*4
-        Hmax[2] = ((Hmax[2]+1)/4)*4
+        Hmax[2] = ((Hmax[2]+2)/4)*4
 
 def OmitMap(data,reflDict,pgbar=None):
     '''default doc string

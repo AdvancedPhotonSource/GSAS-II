@@ -2456,6 +2456,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             Plot.plot(X,Page.fitvals,label='Fit')
             
         Plot.legend(loc='best')
+        print Title,xLabel,yLabel
         if Title:
             Plot.set_title(Title)
         else:

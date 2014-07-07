@@ -931,10 +931,10 @@ def UpdateConstraints(G2frame,data):
         panel.SetSizer(Siz,True)
         Size = Siz.GetMinSize()
         Size[0] += 40
-        Size[1] += 20
+        Size[1] = max(Size[1],450) + 20
         panel.SetSize(Size)
         panel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-#        Size[1] = min(500,Size[1])
+        Size[1] = min(500,Size[1])
         G2frame.dataFrame.setSizePosLeft(Size)
 #        G2frame.dataFrame.SetSize((500,250)) # set frame size here
 

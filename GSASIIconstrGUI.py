@@ -929,9 +929,14 @@ def UpdateConstraints(G2frame,data):
         Siz.Add((5,5),0)
         Siz.Add(MakeConstraintsSizer(typ,panel))
         panel.SetSizer(Siz,True)
-        G2frame.dataFrame.SetSize((500,250)) # set frame size here
-        panel.SetAutoLayout(1)
-        panel.SetupScrolling()
+        Size = Siz.GetMinSize()
+        Size[0] += 40
+        Size[1] += 20
+        panel.SetSize(Size)
+        panel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+#        Size[1] = min(500,Size[1])
+        G2frame.dataFrame.setSizePosLeft(Size)
+#        G2frame.dataFrame.SetSize((500,250)) # set frame size here
 
     def OnPageChanged(event):
         '''Called when a tab is pressed or when a "select tab" menu button is
@@ -993,14 +998,13 @@ def UpdateConstraints(G2frame,data):
 
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame)
     # note that order of pages is hard-coded in RaisePage
-    wxstyle = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER
-    PhaseConstr = wxscroll.ScrolledPanel(G2frame.dataDisplay, wx.ID_ANY,style=wxstyle)
+    PhaseConstr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(PhaseConstr,'Phase constraints')
-    HAPConstr = wxscroll.ScrolledPanel(G2frame.dataDisplay, wx.ID_ANY,style=wxstyle)
+    HAPConstr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(HAPConstr,'Histogram/Phase constraints')
-    HistConstr = wxscroll.ScrolledPanel(G2frame.dataDisplay, wx.ID_ANY,style=wxstyle)
+    HistConstr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(HistConstr,'Histogram constraints')
-    GlobalConstr = wxscroll.ScrolledPanel(G2frame.dataDisplay, wx.ID_ANY,style=wxstyle)
+    GlobalConstr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(GlobalConstr,'Global constraints')
     OnPageChanged(None) # show initial page
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)

@@ -1111,6 +1111,7 @@ def UpdateMasks(G2frame,data):
                     if id == G2frame.Image:
                         Source = name
                         Mask = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Masks')))
+                        Mask.pop('Thresholds')  #remove Thresholds from source mask
                     else:
                         TextList.append([False,name,id])
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
@@ -1128,8 +1129,8 @@ def UpdateMasks(G2frame,data):
                         ifcopy,name,id = item
                         if ifcopy:
                             mask = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'))
-                            Mask['Thresholds'][0] = mask['Thresholds'][0]
-                            Mask['Thresholds'][1][1] = min(mask['Thresholds'][1][1],Mask['Thresholds'][1][1])
+#                            Mask['Thresholds'][0] = mask['Thresholds'][0]
+#                            Mask['Thresholds'][1][1] = min(mask['Thresholds'][1][1],Mask['Thresholds'][1][1])
                             mask.update(Mask)                                
                             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'),copy.deepcopy(mask))
             finally:

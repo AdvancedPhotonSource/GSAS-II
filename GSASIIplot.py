@@ -960,7 +960,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             lenX = len(X)
         if 'PWDR' in plottype:
             if G2frame.SqrtPlot:
+                olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                 Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))
+                np.seterr(invalid=olderr['invalid'])
             else:
                 Y = xye[1]+offset*N
         elif 'SASD' in plottype:

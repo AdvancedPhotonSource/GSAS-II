@@ -2083,7 +2083,6 @@ class GSASII(wx.Frame):
                             Data['ellipses'] = []
                             Data['calibrant'] = ''
                             Data['GonioAngles'] = [0.,0.,0.]
-                            Data['DetDepth'] = 0.
                             Data['DetDepthRef'] = False
                         else:
                             Data['type'] = 'PWDR'

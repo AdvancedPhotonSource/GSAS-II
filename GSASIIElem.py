@@ -20,7 +20,7 @@ GSASIIpath.SetVersionNumber("$Revision$")
 import numpy as np
 import atmdata
 
-getElSym = lambda sym: sym.split('+')[0].split('-')[0]
+getElSym = lambda sym: sym.split('+')[0].split('-')[0].capitalize()
 def GetFormFactorCoeff(El):
     """Read X-ray form factor coefficients from `atomdata.py` file
 

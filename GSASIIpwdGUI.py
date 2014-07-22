@@ -2475,7 +2475,7 @@ def UpdateSubstanceGrid(G2frame,data):
         subst = substFile.Substances[name]
         ElList = subst['Elements'].keys()
         for El in ElList:
-            Info = G2elem.GetAtomInfo(El.strip().upper())
+            Info = G2elem.GetAtomInfo(El.strip().capitalize())
             Info.update(subst['Elements'][El])
             data['Substances'][name]['Elements'][El] = Info
             if 'Volume' in subst:
@@ -2572,7 +2572,7 @@ def UpdateSubstanceGrid(G2frame,data):
         dlg = G2elemGUI.PickElements(G2frame,ElList)
         if dlg.ShowModal() == wx.ID_OK:
             for El in dlg.Elem:
-                El = El.strip().upper()
+                El = El.strip().capitalize()
                 Info = G2elem.GetAtomInfo(El)
                 Info.update({'Num':1})
                 data['Substances'][name]['Elements'][El] = Info
@@ -3762,7 +3762,7 @@ def UpdatePDFGrid(G2frame,data):
         if PE.ShowModal() == wx.ID_OK:
             El = PE.Elem
             if El not in ElList and El != 'None':
-                ElemSym = El.strip().upper()                
+                ElemSym = El.strip().capitalize()                
                 FpMu = G2elem.FPcalc(G2elem.GetXsectionCoeff(ElemSym), keV)
                 ElData = G2elem.GetFormFactorCoeff(ElemSym)[0]
                 ElData['FormulaNo'] = 0.0

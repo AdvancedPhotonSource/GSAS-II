@@ -22,17 +22,17 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>vondreele</o:Author>
   <o:LastAuthor>Von Dreele</o:LastAuthor>
-  <o:Revision>2</o:Revision>
-  <o:TotalTime>1</o:TotalTime>
+  <o:Revision>4</o:Revision>
+  <o:TotalTime>14</o:TotalTime>
   <o:Created>2014-07-21T14:56:00Z</o:Created>
-  <o:LastSaved>2014-07-21T14:56:00Z</o:LastSaved>
+  <o:LastSaved>2014-07-23T17:41:00Z</o:LastSaved>
   <o:Pages>10</o:Pages>
-  <o:Words>2223</o:Words>
-  <o:Characters>12672</o:Characters>
+  <o:Words>2239</o:Words>
+  <o:Characters>12763</o:Characters>
   <o:Company>Argonne National Laboratory</o:Company>
-  <o:Lines>105</o:Lines>
+  <o:Lines>106</o:Lines>
   <o:Paragraphs>29</o:Paragraphs>
-  <o:CharactersWithSpaces>14866</o:CharactersWithSpaces>
+  <o:CharactersWithSpaces>14973</o:CharactersWithSpaces>
   <o:Version>14.00</o:Version>
  </o:DocumentProperties>
 </xml><![endif]-->
@@ -44,6 +44,8 @@ href="Charge%20Flipping%20in%20GSAS_files/colorschememapping.xml">
 <!--[if gte mso 9]><xml>
  <w:WordDocument>
   <w:Zoom>156</w:Zoom>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:GrammarState>Clean</w:GrammarState>
   <w:TrackMoves>false</w:TrackMoves>
   <w:TrackFormatting/>
   <w:ValidateAgainstSchemas/>
@@ -785,6 +787,12 @@ p.msochpdefault, li.msochpdefault, div.msochpdefault
 	mso-fareast-font-family:"Times New Roman";
 	mso-fareast-theme-font:minor-fareast;
 	mso-bidi-font-family:Calibri;}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
+span.GramE
+	{mso-style-name:"";
+	mso-gram-e:yes;}
 .MsoChpDefault
 	{mso-style-type:export-only;
 	mso-default-props:yes;
@@ -1225,22 +1233,22 @@ ul
 <div class=WordSection1>
 
 <h1><span style='mso-fareast-font-family:"Times New Roman"'>Charge Flipping in
-GSAS-II - jadarite<o:p></o:p></span></h1>
+GSAS-II - <span class=SpellE>jadarite</span><o:p></o:p></span></h1>
 
 <h1><span style='mso-fareast-font-family:"Times New Roman"'>Prerequisite: <o:p></o:p></span></h1>
 
 <p class=MsoNormal>In this exercise you will use GSAS-II to solve the structure
-of jadarite (aka “kryptonite”) from powder diffraction data via charge flipping.
-This structure was originally solved by Pam Whitfield from laboratory powder
-data in the space group P2<sub>1</sub>/c. </p>
+of <span class=SpellE>jadarite</span> (aka “kryptonite”) from powder
+diffraction data via charge flipping. This structure was originally solved by
+Pam Whitfield from laboratory powder data in the space group P2<sub>1</sub>/c. </p>
 
 <p class=MsoNormal>If you have not done so already, <a
 href="Starting%20GSAS.htm">start GSAS-II</a> and open the GSAS-II project file
-(I called it jadarite.gpx) you saved from the second part of the <a
-href="Fit%20Peaks.htm#kryptonite_peak_fit">peak fitting-indexing exercise</a>.
-If you didn’t do that exercise, do it now.</p>
+(I called it <span class=SpellE>jadarite.gpx</span>) you saved from the second
+part of the <a href="Fit%20Peaks.htm#kryptonite_peak_fit">peak fitting-indexing
+exercise</a>. If you didn’t do that exercise, do it now.</p>
 
-<h2>Step 1. Setup for Pawley refinement</h2>
+<h2><span class=GramE>Step 1.</span> Setup for Pawley refinement</h2>
 
 <p class=MsoNormal>There are a number of steps that must be done in preparation
 for a Pawley refinement after having completed the unit cell indexing and new
@@ -1260,11 +1268,11 @@ symbol;mso-symbol-font-family:Symbol'>Q</span></span>. It is an area relatively
 clear of peaks and makes a good place to end the calculations with a reflection
 set of ~1Å resolution as needed for charge flipping. Enter <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>24</span></b> for <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Tmax</span></b>
-as the upper limit and make a note of the exact d-spacing (0.9945Å) using the
-mouse cursor on the plot.</p>
+minor-latin;mso-hansi-theme-font:minor-latin'>24</span></b> for <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Tmax</span></b></span> as the upper limit and make a note of the
+exact d-spacing (0.9945Å) using the mouse cursor on the plot.</p>
 
 <p class=MsoListParagraph style='text-indent:-.25in;mso-list:l5 level1 lfo2'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>2.<span
@@ -1288,10 +1296,10 @@ We will refine them again later.</p>
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>3.<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>Select
 <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Sample Parameters</span></b>
-and uncheck refinement of <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Histogram scale factor</span></b>.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Sample
+Parameters</span></b> and uncheck refinement of <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Histogram scale factor</span></b>.</p>
 
 <p class=MsoListParagraph style='text-indent:-.25in;mso-list:l5 level1 lfo2'><![if !supportLists]><span
 style='mso-fareast-font-family:"Times New Roman"'><span style='mso-list:Ignore'>4.<span
@@ -1305,7 +1313,8 @@ normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
 minor-latin;mso-hansi-theme-font:minor-latin'>Do Pawley refinement</span></b>
 box and enter the d-spacing (0.9945) into the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>Pawley dmin</span></b> box.</p>
+minor-latin;mso-hansi-theme-font:minor-latin'>Pawley <span class=SpellE>dmin</span></span></b>
+box.</p>
 
 <p class=MsoNormal>When done the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
@@ -1367,27 +1376,30 @@ src="Charge%20Flipping%20in%20GSAS_files/image006.gif" v:shapes="Picture_x0020_2
 
 <p class=MsoNormal>I’ve stretched the window slightly to see the entire
 contents. This is the location for all the phase dependent parameters for this
-histogram. Notice that it includes phase fraction, size &amp; mustrain as well
-as preferred orientation, elastic strain and extinction corrections. The
-Babinet correction is intended for protein work where a significant region of
-the structure is disordered solvent. There are buttons for plotting size and
-mustrain surfaces</p>
+histogram. Notice that it includes phase fraction, size &amp; <span
+class=SpellE>mustrain</span> as well as preferred orientation, elastic strain
+and extinction corrections. The <span class=SpellE>Babinet</span> correction is
+intended for protein work where a significant region of the structure is
+disordered solvent. There are buttons for plotting size and <span class=SpellE>mustrain</span>
+surfaces</p>
 
-<p class=MsoNormal>and preferred orientation correction curves.</p>
+<p class=MsoNormal><span class=GramE>and</span> preferred orientation
+correction curves.</p>
 
 <p class=MsoNormal>Next find the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Pawley reflections</span></b> tab; it will be
-empty except for column headings. Do <b style='mso-bidi-font-weight:normal'><span
+empty except for column headings. <span class=GramE>Do</span> <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Operations/Pawley
+create</span></b>; this makes the reflection set over the range covered by
+setting <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Pawley <span
+class=SpellE>dmin</span></span></b>. The table should list reflections 0-629.
+Select and check the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Operations/Pawley create</span></b>; this
-makes the reflection set over the range covered by setting <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>Pawley dmin</span></b>. The table
-should list reflections 0-629. Select and check the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>refine</span></b> column using
-the same technique you used for the peak list. </p>
+mso-hansi-theme-font:minor-latin'>refine</span></b> column using the same
+technique you used for the peak list. </p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_4" o:spid="_x0000_i1044" type="#_x0000_t75" style='width:375pt;
@@ -1407,19 +1419,19 @@ minor-latin;mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b> on
 the main GSAS-II data tree window. Before it begins a backup of the project
 file is made; the name will be jadarite.bck0.gpx. It can be used to recover
 from a bad refinement. A progress dialog box will appear showing the residual
-as the refinement proceeds. My refinement completed with Rwp ~15.5%; a dialog
-box appears asking if you wish to load the result. Press <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>OK</span></b>. To see the plot
-select the PWDR line in the GSAS-II data tree (I’ve adjusted the width and
-height).</p>
+as the refinement proceeds. My refinement completed with <span class=SpellE>Rwp</span>
+~15.5%; a dialog box appears asking if you wish to load the result. Press <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>OK</span></b>.
+To see the plot select the PWDR line in the GSAS-II data tree (I’ve adjusted the
+width and height).</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="Picture_x0020_7" o:spid="_x0000_i1043" type="#_x0000_t75" style='width:525pt;
- height:450pt;visibility:visible;mso-wrap-style:square'>
+ id="_x0000_i1043" type="#_x0000_t75" style='width:525pt;height:450pt;
+ visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Charge%20Flipping%20in%20GSAS_files/image009.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=700 height=600
-src="Charge%20Flipping%20in%20GSAS_files/image010.gif" v:shapes="Picture_x0020_7"><![endif]></span></p>
+src="Charge%20Flipping%20in%20GSAS_files/image010.gif" v:shapes="_x0000_i1043"><![endif]></span></p>
 
 <p class=MsoNormal>It is evident from examining the plot that improvement can
 be had by refining the lattice parameters. Go to <b style='mso-bidi-font-weight:
@@ -1443,13 +1455,14 @@ minor-latin;mso-hansi-theme-font:minor-latin'> V</span></b>,<b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> W</span></b>,<b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> X </span></b>&amp;<b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> Y</span></b>.
-Repeat <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b>;
-I obtained an improved residual of 9.7% with a much better fit at the high
-angle part of the pattern.</p>
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'> <span
+class=GramE>X</span> </span></b>&amp;<b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'> Y</span></b>. Repeat <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b>; I
+obtained an improved residual of 9.7% with a much better fit at the high angle
+part of the pattern.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_8" o:spid="_x0000_i1042" type="#_x0000_t75" style='width:525pt;
@@ -1534,11 +1547,11 @@ to stop the charge flipping; a peak list and a drawing of the solution will
 appear. One of my runs gave</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
- id="_x0000_i1041" type="#_x0000_t75" style='width:337.5pt;height:225pt;
- visibility:visible;mso-wrap-style:square'>
+ id="Picture_x0020_7" o:spid="_x0000_i1041" type="#_x0000_t75" style='width:337.5pt;
+ height:225pt;visibility:visible;mso-wrap-style:square'>
  <v:imagedata src="Charge%20Flipping%20in%20GSAS_files/image013.png" o:title=""/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=450 height=300
-src="Charge%20Flipping%20in%20GSAS_files/image014.gif" v:shapes="_x0000_i1041"><![endif]></span></p>
+src="Charge%20Flipping%20in%20GSAS_files/image014.gif" v:shapes="Picture_x0020_7"><![endif]></span></p>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
@@ -1583,23 +1596,25 @@ for the structure but pay attention to the location of symmetry elements.</p>
 <p class=MsoNormal>The next step is to extract the unique peak positions from
 the map and make atoms out of them. The map peak list is sorted with the
 highest peak first; you can change the sorting to be along any of the column
-headings in the table by a single click on the desired heading. The <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>dzero</span></b>
-column gives the distance of each peak from the origin. The menu items under
-Map peaks give you several tools to aid in the peak selection process, we will
-just use a couple in this example. I have chosen to proceed by sorting the
-atoms by <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>dzero</span></b>,
-selecting all and then finding the unique ones. </p>
+headings in the table by a single click on the desired heading. The <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>dzero</span></b></span> column gives the distance of each peak
+from the origin. The menu items under Map peaks give you several tools to aid
+in the peak selection <span class=GramE>process,</span> we will just use a
+couple in this example. I have chosen to proceed by sorting the atoms by <span
+class=SpellE><b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>dzero</span></b></span>, selecting all and then finding the unique
+ones. </p>
 
 <p class=MsoListParagraph style='margin-left:.75in;text-indent:-.25in;
 mso-list:l0 level1 lfo6'><![if !supportLists]><span style='mso-fareast-font-family:
 "Times New Roman"'><span style='mso-list:Ignore'>1.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Do a single click on the <b style='mso-bidi-font-weight:
-normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>dzero</span></b> column heading.
-This will sort the peaks in increasing distance from the origin.</p>
+</span></span></span><![endif]>Do a single click on the <span class=SpellE><b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>dzero</span></b></span>
+column heading. This will sort the peaks in increasing distance from the origin.</p>
 
 <p class=MsoListParagraph style='margin-left:.75in;text-indent:-.25in;
 mso-list:l0 level1 lfo6'><![if !supportLists]><span style='mso-fareast-font-family:
@@ -1652,17 +1667,25 @@ src="Charge%20Flipping%20in%20GSAS_files/image022.gif" v:shapes="Picture_x0020_1
 <p class=MsoNormal>The atom names indicate the peak magnitude to aid
 identification (M100 for the largest in the <b style='mso-bidi-font-weight:
 normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
-minor-latin;mso-hansi-theme-font:minor-latin'>Map peaks</span></b> table which
-may not be one of those moved to the <b style='mso-bidi-font-weight:normal'><span
+minor-latin;mso-hansi-theme-font:minor-latin'>Map peaks</span></b> table which may
+not be one of those moved to the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Atoms</span></b> table). You can hand sort
 them by selecting a row with the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Alt</span></b> key down and then selecting a
-position in the table with the <b style='mso-bidi-font-weight:normal'><span
+mso-hansi-theme-font:minor-latin'>Alt</span></b> key (or <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Shift/Ctrl</span></b> keys) down
+and then selecting a position in the table with the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Alt</span></b> key still down. On
+Linux machines the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Alt</span></b> key still down. My list is now
-</p>
+mso-hansi-theme-font:minor-latin'>Alt</span></b> key may have been hijacked by
+the operating system; use <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>Shift/Ctrl</span></b> instead to move atoms. My
+list is now </p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_12" o:spid="_x0000_i1036" type="#_x0000_t75" style='width:525pt;
@@ -1738,9 +1761,11 @@ mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Map
 peaks/Clear peaks</span></b> in the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Map peaks</span></b> tab) and clear the
-charge flip map (do <b style='mso-bidi-font-weight:normal'><span
+charge flip map (do <span class=GramE><b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Clear map</span></b> in the <b
+mso-hansi-theme-font:minor-latin'>Clear</span></b></span><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'> map</span></b> in the <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>General</span></b>
 tab). After dressing up the drawing by making the Na atom van der Waals spheres
@@ -1756,18 +1781,18 @@ and the rest as balls and sticks I have a nice drawing of the structure
 src="Charge%20Flipping%20in%20GSAS_files/image030.jpg" v:shapes="Picture_x0020_15"><![endif]></span></p>
 
 <p class=MsoNormal>Save the project file; the next step is to complete the
-structure by finding the Li and H atoms and then doing the Rietveld refinement
-on the completed structure.</p>
+structure by finding the Li and H atoms and then doing the <span class=SpellE>Rietveld</span>
+refinement on the completed structure.</p>
 
 <h2>Step 5 Complete the structure</h2>
 
 <p class=MsoNormal>To complete the structure you will need to perform a
-preliminary Rietveld refinement. This will make the atom positions more
-accurate and prepare a set of calculated structure factors needed to generate a
-difference Fourier map good enough to reveal the Li atom position and maybe the
-H-atom as well. There are a number of steps needed to set all the controls from
-the previous Pawley refinement to get a successful start for the Rietveld
-refinement.</p>
+preliminary <span class=SpellE>Rietveld</span> refinement. This will make the
+atom positions more accurate and prepare a set of calculated structure factors
+needed to generate a difference Fourier map good enough to reveal the Li atom
+position and maybe the H-atom as well. There are a number of steps needed to
+set all the controls from the previous Pawley refinement to get a successful
+start for the <span class=SpellE>Rietveld</span> refinement.</p>
 
 <p class=MsoListParagraph style='margin-left:.75in;text-indent:-.25in;
 mso-list:l4 level1 lfo10'><![if !supportLists]><span style='mso-fareast-font-family:
@@ -1814,9 +1839,9 @@ refinement!</p>
 <p class=MsoNormal>Now do <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b> from the main
-GSAS-II data tree menu; all that was refined is scale and background. I got a
-Rwp ~31%. The plot shows clear intensity differences; the atom positions
-obviously need refinement.</p>
+GSAS-II data tree menu; all that was refined is scale and background. I got <span
+class=GramE>a</span> <span class=SpellE>Rwp</span> ~31%. The plot shows clear
+intensity differences; the atom positions obviously need refinement.</p>
 
 <p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
  id="Picture_x0020_16" o:spid="_x0000_i1032" type="#_x0000_t75" style='width:525pt;
@@ -1852,11 +1877,12 @@ src="Charge%20Flipping%20in%20GSAS_files/image034.gif" v:shapes="Picture_x0020_1
 
 <p class=MsoNormal>Do <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Calculate/Refine </span></b>again; my Rwp is
-now ~15%. You can now safely refine lattice parameters (in the <b
+mso-hansi-theme-font:minor-latin'>Calculate/Refine </span></b>again; my <span
+class=SpellE>Rwp</span> is now ~15%. You can now safely refine lattice
+parameters (in the <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>General</span></b> tab for <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>General</span></b>
-tab for <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Phases/kryptonite</span></b>)
 and the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Instrument
@@ -1867,26 +1893,29 @@ normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
 minor-latin;mso-hansi-theme-font:minor-latin'>V</span></b>, <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>W</span></b>,
-<b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>X</span></b>
-&amp; <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+<span class=GramE><b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>X</span></b></span> &amp; <b
+style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Y</span></b>.
 My refinement improved slightly to Rwp~14.5%. Let’s see if a difference Fourier
 map will show anything.<br>
 Go to the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Phases/kryptonite
-General</span></b> tab ; the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>Fourier map controls</span></b> are midway
-down the window.</p>
+General</span></b> <span class=GramE>tab ;</span> the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>Fourier map controls</span></b>
+are midway down the window.</p>
 
 <p class=MsoListParagraph style='margin-left:.75in;text-indent:-.25in;
 mso-list:l2 level1 lfo12'><![if !supportLists]><span style='mso-fareast-font-family:
 "Times New Roman"'><span style='mso-list:Ignore'>1.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Select <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>delt-F</span></b> for the <b
+</span></span></span><![endif]>Select <span class=SpellE><b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>delt</span></b></span><b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
+mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>-F</span></b>
+for the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Map type</span></b>.</p>
 
 <p class=MsoListParagraph style='margin-left:.75in;text-indent:-.25in;
@@ -1941,18 +1970,19 @@ src="Charge%20Flipping%20in%20GSAS_files/image036.gif" v:shapes="Picture_x0020_1
 </v:shape><![endif]--><![if !vml]><img border=0 width=466 height=399
 src="Charge%20Flipping%20in%20GSAS_files/image038.jpg" v:shapes="Picture_x0020_20"><![endif]></span></p>
 
-<p class=MsoNormal>What is drawn here are green dots whose size are
-proportional to the electron density. These are the Li atom positions. There
-are several ways within GSAS-II to add it to the atom list. One is to do <b
-style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Compute/Search
-map</span></b> in the <b style='mso-bidi-font-weight:normal'><span
-style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
-mso-hansi-theme-font:minor-latin'>General</span></b> tab and then find them in
-the <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>Map peaks</span></b>
-tab much the same way we did earlier in this exercise. Another is to get the
-atom position directly from the map, we will do that now.</p>
+<p class=MsoNormal>What <span class=GramE>is</span> drawn here are green dots
+whose size are proportional to the electron density. These are the Li atom
+positions. There are several ways within GSAS-II to add it to the atom list.
+One is to do <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Compute/Search map</span></b> in the <b style='mso-bidi-font-weight:
+normal'><span style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:
+minor-latin;mso-hansi-theme-font:minor-latin'>General</span></b> tab and then
+find them in the <b style='mso-bidi-font-weight:normal'><span style='font-family:
+"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
+minor-latin'>Map peaks</span></b> tab much the same way we did earlier in this
+exercise. Another is to get the atom position directly from the map, we will do
+that now.</p>
 
 <p class=MsoListParagraph style='margin-left:.75in;text-indent:-.25in;
 mso-list:l3 level1 lfo14'><![if !supportLists]><span style='mso-fareast-font-family:
@@ -2027,15 +2057,16 @@ mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>X</span></b>
 for the Li atom and repeat <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>Calculate/Refine</span></b> from the main
-GSAS-II data tree window. My residual Rwp dropped to ~11.3%. Next set all <b
+GSAS-II data tree window. My residual <span class=SpellE>Rwp</span> dropped to
+~11.3%. Next set all <b style='mso-bidi-font-weight:normal'><span
+style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
+mso-hansi-theme-font:minor-latin'>refine</span></b> flags to <b
 style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
-mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>refine</span></b>
-flags to <b style='mso-bidi-font-weight:normal'><span style='font-family:"Calibri","sans-serif";
 mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:minor-latin'>XU</span></b>
 and repeat <b style='mso-bidi-font-weight:normal'><span style='font-family:
 "Calibri","sans-serif";mso-ascii-theme-font:minor-latin;mso-hansi-theme-font:
-minor-latin'>Calculate/Refine</span></b>. My residual is now Rwp ~10.8%. Maybe
-we can find the H-atom.</p>
+minor-latin'>Calculate/Refine</span></b>. My residual is now <span
+class=SpellE>Rwp</span> ~10.8%. Maybe we can find the H-atom.</p>
 
 <p class=MsoNormal>From the <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
@@ -2071,8 +2102,9 @@ minor-latin;mso-hansi-theme-font:minor-latin'>H</span></b> (I know it is H alrea
 but this step changes the name from <b style='mso-bidi-font-weight:normal'><span
 style='font-family:"Calibri","sans-serif";mso-ascii-theme-font:minor-latin;
 mso-hansi-theme-font:minor-latin'>UNK</span></b>). Repeat the Calculate/Refine
-without varying any of the H-atom parameters; my final Rwp = 10.69% (you don’t
-get much improvement for adding an H-atom to an oxide structure).</p>
+without varying any of the H-atom parameters; my final <span class=SpellE>Rwp</span>
+= 10.69% (you don’t get much improvement for adding an H-atom to an oxide
+structure).</p>
 
 </div>
 

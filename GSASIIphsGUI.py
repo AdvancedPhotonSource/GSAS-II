@@ -1089,19 +1089,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
         def RowSelect(event):
             r,c =  event.GetRow(),event.GetCol()
-            if not event.AltDown():
+            if not (event.AltDown() or (event.ShiftDown() and event.ControlDown())):
                 Atoms.frm = -1
                 G2frame.dataFrame.SetStatusText('')                    
             if r < 0 and c < 0:
                 if Atoms.IsSelection():
                     Atoms.ClearSelection()
             elif c < 0:                   #only row clicks
-                if event.ControlDown():                    
+                if event.ControlDown() and not event.ShiftDown():                    
                     if r in Atoms.GetSelectedRows():
                         Atoms.DeselectRow(r)
                     else:
                         Atoms.SelectRow(r,True)
-                elif event.ShiftDown():
+                elif event.ShiftDown() and not event.ControlDown():
                     indxs = Atoms.GetSelectedRows()
                     Atoms.ClearSelection()
                     ibeg = 0
@@ -1109,7 +1109,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         ibeg = indxs[-1]
                     for row in range(ibeg,r+1):
                         Atoms.SelectRow(row,True)
-                elif event.AltDown():
+                elif event.AltDown() or (event.ShiftDown() and event.ControlDown()):
                     if atomData[r][-1] in rbAtmDict:
                         G2frame.dataFrame.SetStatusText('**** ERROR - atom is in a rigid body and can not be moved ****')
                         Atoms.frm = -1

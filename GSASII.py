@@ -983,16 +983,16 @@ class GSASII(wx.Frame):
                 codes.extend([0,0,0,0,0,0,0])
                 return [G2IO.makeInstDict(names,data,codes),{}]
             elif 'T' in DataType:
-                names = ['Type','2-theta','difC','difA','Zero','alpha','beta-0','beta-1',
+                names = ['Type','2-theta','difC','difA','difB','Zero','alpha','beta-0','beta-1',
                     'beta-q','sig-0','sig-1','sig-q','X','Y','Azimuth']
-                codes = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                codes = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
                 azm = 0.
                 if 'INS  1DETAZM' in Iparm:
                     azm = float(Iparm['INS  1DETAZM'])
                 s = Iparm['INS  1BNKPAR'].split()
                 data.extend([G2IO.sfloat(s[1]),])               #2-theta for bank
                 s = Iparm['INS  1 ICONS'].split()
-                data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),G2IO.sfloat(s[2])])    #difC, difA, Zero
+                data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),0.0,G2IO.sfloat(s[2])])    #difC,difA,difB,Zero
                 if 'INS  1PRCF  ' in Iparm:
                     s = Iparm['INS  1PRCF  '].split()
                     pfType = int(s[0])

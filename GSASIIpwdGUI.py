@@ -908,8 +908,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
-    G2frame.dataFrame.setSizePosLeft([230,260])
-                                
+    G2frame.dataFrame.setSizePosLeft([230,260])                                
     
 ################################################################################
 #####  Instrument parameters
@@ -924,7 +923,7 @@ def UpdateInstrumentGrid(G2frame,data):
         for key in keys:
             if key in ['Type','U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','Polariz.',
-                'Lam','Azimuth','2-theta','difC','difA','Zero','Lam1','Lam2']:
+                'Lam','Azimuth','2-theta','difC','difA','difB','Zero','Lam1','Lam2']:
                 good.append(key)
         return good
         
@@ -1241,7 +1240,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     refFlgElem.append(None)
                     subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  alpha, beta: fixed by table'),0,WACV)
                 else:
-                    Items = ['difC','difA','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','X','Y']
+                    Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','X','Y']
                 mainSizer.Add(subSizer)
                 for item in Items:
                     nDig = (10,3)
@@ -1258,7 +1257,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     labelLst.append(item)
                     elemKeysLst.append([item,1])
                     dspLst.append(nDig)
-                    if not ifHisto and item in ['difC','difA','Zero',]:
+                    if not ifHisto and item in ['difC','difA','difB','Zero',]:
                         refFlgElem.append(None)
                         instSizer.Add((5,5),0)
                     else:
@@ -1348,6 +1347,11 @@ def UpdateInstrumentGrid(G2frame,data):
                 insVal['Azimuth'] = 0.0
                 insDef['Azimuth'] = 0.0
                 insRef['Azimuth'] = False
+        if 'T' in insVal['Type']:
+            if 'difB' not in insVal:
+                insVal['difB'] = 0.0
+                insDef['difB'] = 0.0
+                insRef['difB'] = False
     #end of patch
     if 'P' in insVal['Type']:                   #powder data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.InstMenu)
@@ -1860,9 +1864,9 @@ def UpdateIndexPeaksGrid(G2frame, data):
             else:
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
             if 'PNT' in Inst['Type'][0] and data[r][3]:
-                X = data[r][8]*Inst['difC'][1]
+                X = G2lat.Dsp2pos(Inst,data[r][8])
                 Y = data[r][0]
-                XY.append([X,Y])
+                XY.append([X,Y-X])
     G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, RefreshIndexPeaksGrid)
     G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
     G2frame.dataDisplay.SetMargins(0,0)
@@ -1995,6 +1999,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnHklShow(event):
         PatternId = G2frame.PatternId
         PickId = G2frame.PickId    
+        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
         limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
         controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
@@ -2004,9 +2009,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         SGData = G2spc.SpcGroup(spc)[1]
         if 'C' in Inst['Type'][0]:
             dmin = G2lat.Pos2dsp(Inst,limits[1])
-        else:
+        else:   #TOF - use other limit!
             dmin = G2lat.Pos2dsp(Inst,limits[0])
         G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A)
+        G2indx.IndexPeaks(peaks,G2frame.HKL)
         for hkl in G2frame.HKL:
             hkl.append(G2lat.Dsp2pos(Inst,hkl[3])++controls[1])
         if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):

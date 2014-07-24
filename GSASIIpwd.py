@@ -1234,14 +1234,14 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
                     if 'C' in Inst['Type'][0]:
                         parmDict[sigName] = G2mth.getCWsig(parmDict,pos)
                     else:
-                        dsp = G2mth.Pos2dsp(Inst,pos)
+                        dsp = G2lat.Pos2dsp(Inst,pos)
                         parmDict[sigName] = G2mth.getTOFsig(parmDict,dsp)
                 gamName = 'gam'+str(iPeak)
                 if gamName not in varyList:
                     if 'C' in Inst['Type'][0]:
                         parmDict[gamName] = G2mth.getCWgam(parmDict,pos)
                     else:
-                        dsp = G2mth.Pos2dsp(Inst,pos)
+                        dsp = G2lat.Pos2dsp(Inst,pos)
                         parmDict[gamName] = G2mth.getTOFgamma(parmDict,dsp)
                 iPeak += 1
             except KeyError:

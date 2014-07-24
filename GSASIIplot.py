@@ -4204,7 +4204,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     Font = Page.GetFont()
     Page.SetFocus()
     Page.Choice = None
-    if mapData['Flip']:
+    if mapData.get('Flip',False):
         choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2',
             'u: roll up','d: roll down','l: roll left','r: roll right']
     else:

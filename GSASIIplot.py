@@ -255,7 +255,8 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     def OnSCKeyPress(event):
         i = zones.index(Data['Zone'])
         newPlot = False
-        typeChoice = {'1':'|DFsq|>sig','3':'|DFsq|>3sig','w':'|DFsq|/sig','f':'Fo','s':'Fosq'}
+        pwdrChoice = {'f':'Fo','s':'Fosq','i':'Unit Fc'}
+        hklfChoice = {'1':'|DFsq|>sig','3':'|DFsq|>3sig','w':'|DFsq|/sig','f':'Fo','s':'Fosq','i':'Unit Fc'}
         if event.key == 'h':
             Data['Zone'] = '100'
             newPlot = True
@@ -275,9 +276,13 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             Data['Layer'] = max(Data['Layer']-1,HKLmin[i])
         elif event.key == '0':
             Data['Layer'] = 0
-        elif event.key in typeChoice and 'HKLF' in Name:
-            Data['Type'] = typeChoice[event.key]            
+            Data['Scale'] = 1.0
+        elif event.key in hklfChoice and 'HKLF' in Name:
+            Data['Type'] = hklfChoice[event.key]            
             newPlot = True
+        elif event.key in pwdrChoice and 'PWDR' in Name:
+            Data['Type'] = pwdrChoice[event.key]            
+            newPlot = True       
         PlotSngl(G2frame,newPlot,Data,hklRef,Title)
 
     def OnSCMotion(event):
@@ -336,16 +341,12 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         Page.canvas.mpl_connect('motion_notify_event', OnSCMotion)
         Page.canvas.mpl_connect('key_press_event', OnSCKeyPress)
         Page.keyPress = OnSCKeyPress
+        Page.Choice = (' key press','u: increase scale','d: decrease scale',
+            'h: select 100 zone','k: select 010 zone','l: select 001 zone',
+            'f: select Fo','s: select Fosq','i: select unit Fc',
+            '+: increase index','-: decrease index','0: zero layer',)
         if 'HKLF' in Name:
-            Page.Choice = (' key press','u: increase scale','d: decrease scale',
-                'f: select Fo','s: select Fosq','w: select |DFsq|/sig',
-                '1: select |DFsq|>sig','3 select |DFsq|>3sig',
-                'h: select 100 zone','k: select 010 zone','l: select 001 zone',
-                '+: increase index','-: decrease index','0: zero layer',)
-        else:    
-            Page.Choice = (' key press','u: increase scale','d: decrease scale',
-                'h: select 100 zone','k: select 010 zone','l: select 001 zone',
-                '+: increase index','-: decrease index','0: zero layer',)
+            Page.Choice += ('w: select |DFsq|/sig','1: select |DFsq|>sig','3: select |DFsq|>3sig',)
     Page.SetFocus()
     
     G2frame.G2plotNB.status.SetStatusText('Use K-box to set plot controls',1)
@@ -362,7 +363,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     zones = ['100','010','001']
     pzone = [[1,2],[0,2],[0,1]]
     izone = zones.index(Data['Zone'])
-    Plot.set_title(Data['Type']+' '+Title)
+    Plot.set_title(Data['Type']+' for '+Title)
     HKL = []
     HKLF = []
     time0 = time.time()
@@ -385,6 +386,13 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 A = scale*math.sqrt(max(0,Fosq))/FoMax
                 B = scale*math.sqrt(max(0,Fcsq))/FoMax
                 C = abs(A-B)
+            elif Type == 'Unit Fc':
+                A = scale/2
+                B = scale/2
+                C = 0.0
+                if Fcsq and Fosq > 0:
+                    A *= min(1.0,Fosq/Fcsq)
+                    C = abs(A-B)
             elif Type == '|DFsq|/sig':
                 if sig > 0.:
                     A = (Fosq-Fcsq)/(3*sig)

@@ -144,8 +144,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_MODELUNDO,wxID_MODELFITALL,wxID_MODELCOPYFLAGS,
 ] = [wx.NewId() for item in range(12)]
 
-[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,
-] = [wx.NewId() for item in range(2)]
+[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,
+] = [wx.NewId() for item in range(3)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
@@ -2819,15 +2819,28 @@ class DataFrame(wx.Frame):
             help='Perform a parametric minimization')
         self.PostfillDataMenu()
             
-        # Powder 
-        self.HistMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.HistMenu,helpType='PWD Analysis',helpLbl='Powder Fit Error Analysis')
+        # PWDR & SASD
+        self.PWDRMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.PWDRMenu,helpType='PWDR Analysis',helpLbl='Powder Fit Error Analysis')
         self.ErrorAnal = wx.Menu(title='')
-        self.HistMenu.Append(menu=self.ErrorAnal,title='Commands')
+        self.PWDRMenu.Append(menu=self.ErrorAnal,title='Commands')
         self.ErrorAnal.Append(id=wxID_PWDANALYSIS,kind=wx.ITEM_NORMAL,text='Error Analysis',
             help='Error analysis on powder pattern')
         self.ErrorAnal.Append(id=wxID_PWDCOPY,kind=wx.ITEM_NORMAL,text='Copy params',
-            help='Error analysis on powder pattern')
+            help='Copy of PWDR parameters')
+        self.PostfillDataMenu()
+            
+        # HKLF 
+        self.HKLFMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.HKLFMenu,helpType='HKLF Analysis',helpLbl='HKLF Fit Error Analysis')
+        self.ErrorAnal = wx.Menu(title='')
+        self.HKLFMenu.Append(menu=self.ErrorAnal,title='Commands')
+        self.ErrorAnal.Append(id=wxID_PWDANALYSIS,kind=wx.ITEM_NORMAL,text='Error Analysis',
+            help='Error analysis on single crystal data')
+        self.ErrorAnal.Append(id=wxID_PWD3DHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot 3D HKLs',
+            help='Plot HKLs from single crystal data in 3D')
+        self.ErrorAnal.Append(id=wxID_PWDCOPY,kind=wx.ITEM_NORMAL,text='Copy params',
+            help='Copy of HKLF parameters')
         self.PostfillDataMenu()
             
         # PDR / Limits
@@ -2956,6 +2969,8 @@ class DataFrame(wx.Frame):
             kind=wx.ITEM_NORMAL,text='Select phase')
         self.ReflEdit.Append(id=wxID_PWDHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot HKLs',
             help='Plot HKLs from powder pattern')
+        self.ReflEdit.Append(id=wxID_PWD3DHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot 3D HKLs',
+            help='Plot HKLs from powder pattern in 3D')
         self.PostfillDataMenu()
         
         #SASD & REFL/ Substance editor
@@ -4934,6 +4949,19 @@ def UpdatePWHKPlot(G2frame,kind,item):
             [(Tmin,Tmax),[Tmin,Tmax]])
         UpdatePWHKPlot(G2frame,kind,item) # redisplay data screen
 
+    def OnPlot3DHKL(event):
+        refList = data[1]['RefList']
+        phaseName = data[0].get('0::Name','no phase')
+        FoMax = np.max(refList.T[8])
+        Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
+        Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
+        Vpoint = [int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))]
+        controls = {'Type' : 'Fosq','Iscale' : False,'HKLmax' : Hmax,'HKLmin' : Hmin,
+            'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
+            'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,
+            'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]}}
+        G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
+        
     def OnErrorAnalysis(event):
         G2plt.PlotDeltSig(G2frame,kind)
         
@@ -4965,9 +4993,15 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #end patches
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
-    SetDataMenuBar(G2frame,G2frame.dataFrame.HistMenu)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=wxID_PWDANALYSIS)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, onCopySelectedItems, id=wxID_PWDCOPY)
+    if kind in ['PWDR','SASD']:
+        SetDataMenuBar(G2frame,G2frame.dataFrame.PWDRMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=wxID_PWDANALYSIS)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, onCopySelectedItems, id=wxID_PWDCOPY)
+    elif kind in ['HKLF',]:
+        SetDataMenuBar(G2frame,G2frame.dataFrame.HKLFMenu)
+#        G2frame.dataFrame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=wxID_PWDANALYSIS)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=wxID_PWD3DHKLPLOT)
+#        G2frame.dataFrame.Bind(wx.EVT_MENU, onCopySelectedItems, id=wxID_PWDCOPY)
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -5019,7 +5053,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
     elif kind == 'HKLF':
         refList = data[1]['RefList']
         FoMax = np.max(refList.T[5])
-        controls = {'Type' : 'Fo','ifFc' : True,     
+        controls = {'Type' : 'Fosq','ifFc' : True,     
             'HKLmax' : [int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))],
             'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],
             'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,}

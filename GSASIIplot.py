@@ -246,7 +246,7 @@ class GSASIItoolbar(Toolbar):
 ################################################################################
             
 def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
-    '''Single crystal structure factor plotting package - displays zone of reflections as rings proportional
+    '''Structure factor plotting package - displays zone of reflections as rings proportional
         to F, F**2, etc. as requested
     '''
     from matplotlib.patches import Circle,CirclePolygon
@@ -255,7 +255,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     def OnSCKeyPress(event):
         i = zones.index(Data['Zone'])
         newPlot = False
-        pwdrChoice = {'f':'Fo','s':'Fosq','i':'Unit Fc'}
+        pwdrChoice = {'f':'Fo','s':'Fosq','u':'Unit Fc'}
         hklfChoice = {'1':'|DFsq|>sig','3':'|DFsq|>3sig','w':'|DFsq|/sig','f':'Fo','s':'Fosq','i':'Unit Fc'}
         if event.key == 'h':
             Data['Zone'] = '100'
@@ -266,7 +266,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         elif event.key == 'l':
             Data['Zone'] = '001'
             newPlot = True
-        elif event.key == 'u':
+        elif event.key == 'i':
             Data['Scale'] *= 1.1
         elif event.key == 'd':
             Data['Scale'] /= 1.1
@@ -341,9 +341,9 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         Page.canvas.mpl_connect('motion_notify_event', OnSCMotion)
         Page.canvas.mpl_connect('key_press_event', OnSCKeyPress)
         Page.keyPress = OnSCKeyPress
-        Page.Choice = (' key press','u: increase scale','d: decrease scale',
+        Page.Choice = (' key press','i: increase scale','d: decrease scale',
             'h: select 100 zone','k: select 010 zone','l: select 001 zone',
-            'f: select Fo','s: select Fosq','i: select unit Fc',
+            'f: select Fo','s: select Fosq','u: select unit Fc',
             '+: increase index','-: decrease index','0: zero layer',)
         if 'HKLF' in Name:
             Page.Choice += ('w: select |DFsq|/sig','1: select |DFsq|>sig','3: select |DFsq|>3sig',)
@@ -442,6 +442,380 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         Plot.set_xlim((HKLmin[pzone[izone][0]],HKLmax[pzone[izone][0]]))
         Plot.set_ylim((HKLmin[pzone[izone][1]],HKLmax[pzone[izone][1]]))
         Page.canvas.draw()
+        
+################################################################################
+##### Plot3DSngl
+################################################################################
+
+def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
+    '''3D Structure factor plotting package - displays reflections as rings proportional
+        to F, F**2, etc. as requested as 3D array
+    '''
+
+    def OnKeyBox(event):
+        mode = cb.GetValue()
+        if mode in ['jpeg','bmp','tiff',]:
+            try:
+                import Image as Im
+            except ImportError:
+                try:
+                    from PIL import Image as Im
+                except ImportError:
+                    print "PIL/pillow Image module not present. Cannot save images without this"
+                    raise Exception("PIL/pillow Image module not found")
+            Fname = os.path.join(Mydir,generalData['Name']+'.'+mode)
+            size = Page.canvas.GetSize()
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            if mode in ['jpeg',]:
+                Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
+                im = Image.new("RGBA", (size[0],size[1]))
+            else:
+                Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
+                im = Image.new("RGB", (size[0],size[1]))
+            im.fromstring(Pix)
+            im.save(Fname,mode)
+            cb.SetValue(' save as/key:')
+            G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
+        else:
+            event.key = cb.GetValue()[0]
+            cb.SetValue(' save as/key:')
+            wx.CallAfter(OnKey,event)
+        Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
+        
+    def OnKey(event):           #on key UP!!
+        Choice = {'F':'Fo','S':'Fosq','U':'Unit','D':'dFsq','W':'dFsq/sig'}
+        try:
+            keyCode = event.GetKeyCode()
+            if keyCode > 255:
+                keyCode = 0
+            key = chr(keyCode)
+        except AttributeError:       #if from OnKeyBox above
+            key = str(event.key).upper()
+        if key in ['C']:
+            drawingData['viewPoint'][0] = drawingData['default']
+            drawingData['viewDir'] = [0,0,1]
+            drawingData['oldxy'] = []
+            V0 = np.array([0,0,1])
+            V = np.inner(Amat,V0)
+            V /= np.sqrt(np.sum(V**2))
+            A = np.arccos(np.sum(V*V0))
+            Q = G2mth.AV2Q(A,[0,1,0])
+            drawingData['Quaternion'] = Q
+            Q = drawingData['Quaternion']
+        elif key == '+':
+            Data['Scale'] *= 1.25
+        elif key == '-':
+            Data['Scale'] /= 1.25
+        elif key == '0':
+            Data['Scale'] = 1.0
+        elif key == 'I':
+            Data['Iscale'] = not Data['Iscale']
+        elif key in Choice:
+            Data['Type'] = Choice[key]            
+        Draw('key')
+            
+    Name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    if Title != 'no phase':
+        generalData = G2frame.GetPhaseData()[Title]['General']
+        cell = generalData['Cell'][1:7]
+    else:
+        cell = [10,10,10,90,90,90]
+    drawingData = Data['Drawing']
+    defaultViewPt = copy.copy(drawingData['viewPoint'])
+    Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
+    Gmat,gmat = G2lat.cell2Gmat(cell)
+    invcell = G2lat.Gmat2cell(Gmat)
+    A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+    B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+    drawingData['Quaternion'] = G2mth.AV2Q(2*np.pi,np.inner(Bmat,[0,0,1]))
+    Wt = np.array([255,255,255])
+    Rd = np.array([255,0,0])
+    Gr = np.array([0,255,0])
+    wxGreen = wx.Colour(0,255,0)
+    Bl = np.array([0,0,255])
+    Or = np.array([255,128,0])
+    wxOrange = wx.Colour(255,128,0)
+    uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
+    uEdges = np.array([
+        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]]])
+    uColors = [Rd,Gr,Bl]
+    
+    def FillHKLRC():
+        R = np.zeros(len(hklRef))
+        C = []
+        HKL = []
+        RC = []
+        for i,refl in enumerate(hklRef):
+            H = np.array(refl[:3])
+            if 'HKLF' in Name:
+                Fosq,sig,Fcsq = refl[5:8]
+            else:
+                Fosq,sig,Fcsq = refl[8],1.0,refl[9]
+            HKL.append(H)
+            if Data['Type'] == 'Unit':
+                R[i] = 0.1
+                C.append(Gr)
+            elif Data['Type'] == 'Fosq':
+                if Fosq > 0:
+                    R[i] = Fosq
+                    C.append(Gr)
+                else:
+                    R[i] = -Fosq
+                    C.append(Rd)
+            elif Data['Type'] == 'Fo':
+                if Fosq > 0:
+                    R[i] = np.sqrt(Fosq)
+                    C.append(Gr)
+                else:
+                    R[i] = np.sqrt(-Fosq)
+                    C.append(Rd)
+            elif Data['Type'] == 'dFsq/sig':
+                dFsig = (Fosq-Fcsq)/sig
+                if dFsig > 0:
+                    R[i] = dFsig
+                    C.append(Gr)
+                else:
+                    R[i] = -dFsig
+                    C.append(Rd)
+            elif Data['Type'] == 'dFsq':
+                dF = Fosq-Fcsq
+                if dF > 0:
+                    R[i] = dF
+                    C.append(Gr)
+                else:
+                    R[i] = -dF
+                    C.append(Rd)
+        R /= np.max(R)
+        R *= Data['Scale']
+        if Data['Iscale']:
+            R = np.where(R<=1.,R,1.)
+            C = np.array(C)
+            C = (C.T*R).T
+            R = np.ones_like(R)*0.1     
+        return HKL,zip(list(R),C)
+
+    def SetTranslation(newxy):
+#first get translation vector in screen coords.       
+        oldxy = drawingData['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        drawingData['oldxy'] = list(newxy)
+        V = np.array([-dxy[0],dxy[1],0.])
+#then transform to rotated crystal coordinates & apply to view point        
+        Q = drawingData['Quaternion']
+        V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
+        Tx,Ty,Tz = drawingData['viewPoint'][0]
+        Tx += V[0]*0.1
+        Ty += V[1]*0.1
+        Tz += V[2]*0.1
+        drawingData['viewPoint'][0] =  Tx,Ty,Tz
+        
+    def SetRotation(newxy):
+        'Perform a rotation in x-y space due to a left-mouse drag'
+    #first get rotation vector in screen coords. & angle increment        
+        oldxy = drawingData['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        drawingData['oldxy'] = list(newxy)
+        V = np.array([dxy[1],dxy[0],0.])
+        A = 0.25*np.sqrt(dxy[0]**2+dxy[1]**2)
+        if not A: return # nothing changed, nothing to do
+    # next transform vector back to xtal coordinates via inverse quaternion
+    # & make new quaternion
+        Q = drawingData['Quaternion']
+        V = G2mth.prodQVQ(G2mth.invQ(Q),np.inner(Bmat,V))
+        DQ = G2mth.AVdeg2Q(A,V)
+        Q = G2mth.prodQQ(Q,DQ)
+        drawingData['Quaternion'] = Q
+    # finally get new view vector - last row of rotation matrix
+        VD = np.inner(Bmat,G2mth.Q2Mat(Q)[2])
+        VD /= np.sqrt(np.sum(VD**2))
+        drawingData['viewDir'] = VD
+        
+    def SetRotationZ(newxy):                        
+#first get rotation vector (= view vector) in screen coords. & angle increment        
+        View = glGetIntegerv(GL_VIEWPORT)
+        cent = [View[2]/2,View[3]/2]
+        oldxy = drawingData['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        drawingData['oldxy'] = list(newxy)
+        V = drawingData['viewDir']
+        A = [0,0]
+        A[0] = dxy[1]*.25
+        A[1] = dxy[0]*.25
+        if newxy[0] > cent[0]:
+            A[0] *= -1
+        if newxy[1] < cent[1]:
+            A[1] *= -1        
+# next transform vector back to xtal coordinates & make new quaternion
+        Q = drawingData['Quaternion']
+        V = np.inner(Amat,V)
+        Qx = G2mth.AVdeg2Q(A[0],V)
+        Qy = G2mth.AVdeg2Q(A[1],V)
+        Q = G2mth.prodQQ(Q,Qx)
+        Q = G2mth.prodQQ(Q,Qy)
+        drawingData['Quaternion'] = Q
+
+    def OnMouseDown(event):
+        xy = event.GetPosition()
+        drawingData['oldxy'] = list(xy)
+        
+    def OnMouseMove(event):
+        if event.ShiftDown():           #don't want any inadvertant moves when picking
+            return
+        newxy = event.GetPosition()
+                                
+        if event.Dragging():
+            if event.LeftIsDown():
+                SetRotation(newxy)
+                Q = drawingData['Quaternion']
+            elif event.RightIsDown():
+                SetTranslation(newxy)
+                Tx,Ty,Tz = drawingData['viewPoint'][0]
+            elif event.MiddleIsDown():
+                SetRotationZ(newxy)
+                Q = drawingData['Quaternion']
+            Draw('move')
+        
+    def OnMouseWheel(event):
+        if event.ShiftDown():
+            return
+        drawingData['cameraPos'] += event.GetWheelRotation()/120.
+        drawingData['cameraPos'] = max(0.1,min(20.00,drawingData['cameraPos']))
+        Draw('wheel')
+        
+    def SetBackground():
+        R,G,B,A = Page.camera['backColor']
+        glClearColor(R,G,B,A)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        
+    def SetLights():
+        glEnable(GL_DEPTH_TEST)
+        glShadeModel(GL_SMOOTH)
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
+        glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
+        glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
+        
+    def RenderUnitVectors(x,y,z):
+        xyz = np.array([x,y,z])
+        glEnable(GL_COLOR_MATERIAL)
+        glLineWidth(1)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glBegin(GL_LINES)
+        for line,color in zip(uEdges,uColors):
+            glColor3ubv(color)
+            glVertex3fv(-line[1])
+            glVertex3fv(line[1])
+        glEnd()
+        glPopMatrix()
+        glColor4ubv([0,0,0,0])
+        glDisable(GL_COLOR_MATERIAL)
+                
+    def RenderDots(XYZ,RC):
+        glEnable(GL_COLOR_MATERIAL)
+        XYZ = np.array(XYZ)
+        glPushMatrix()
+        for xyz,rc in zip(XYZ,RC):
+            x,y,z = xyz
+            r,c = rc
+            glColor3ubv(c)
+            glPointSize(r*50)
+            glBegin(GL_POINTS)
+            glVertex3fv(xyz)
+            glEnd()
+        glPopMatrix()
+        glColor4ubv([0,0,0,0])
+        glDisable(GL_COLOR_MATERIAL)
+        
+    def Draw(caller=''):
+#useful debug?        
+#        if caller:
+#            print caller
+# end of useful debug
+        G2frame.G2plotNB.status.SetStatusText('Plot type = %s for %s'%(Data['Type'],Name),1)
+        VS = np.array(Page.canvas.GetSize())
+        aspect = float(VS[0])/float(VS[1])
+        cPos = drawingData['cameraPos']
+        Zclip = drawingData['Zclip']*cPos/20.
+        Q = drawingData['Quaternion']
+        Tx,Ty,Tz = drawingData['viewPoint'][0]
+        G,g = G2lat.cell2Gmat(cell)
+        GS = G
+        GS[0][1] = GS[1][0] = math.sqrt(GS[0][0]*GS[1][1])
+        GS[0][2] = GS[2][0] = math.sqrt(GS[0][0]*GS[2][2])
+        GS[1][2] = GS[2][1] = math.sqrt(GS[1][1]*GS[2][2])
+        
+        HKL,RC = FillHKLRC()
+        
+        SetBackground()
+        glInitNames()
+        glPushName(0)
+        
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glViewport(0,0,VS[0],VS[1])
+        gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
+        gluLookAt(0,0,cPos,0,0,0,0,1,0)
+        SetLights()            
+            
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        matRot = G2mth.Q2Mat(Q)
+        matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
+        glMultMatrixf(matRot.T)
+        glMultMatrixf(B4mat.T)
+        glTranslate(-Tx,-Ty,-Tz)
+        x,y,z = drawingData['viewPoint'][0]
+        RenderUnitVectors(x,y,z)
+        RenderUnitVectors(0,0,0)
+        RenderDots(HKL,RC)
+        time0 = time.time()
+#        glEnable(GL_BLEND)
+#        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+#        glDisable(GL_BLEND)
+        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
+        Page.canvas.SwapBuffers()
+
+    # PlotStructure execution starts here (N.B. initialization above)
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index('3D Structure Factors')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)        
+    except ValueError:
+        Plot = G2frame.G2plotNB.addOgl('3D Structure Factors')
+        plotNum = G2frame.G2plotNB.plotList.index('3D Structure Factors')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.views = False
+        view = False
+        altDown = False
+    Font = Page.GetFont()
+    Page.SetFocus()
+    Page.Choice = None
+    choice = [' save as/key:','jpeg','tiff','bmp','c: recenter to default','+: increase scale',
+    '-: decrease scale','f: Fobs','s: Fobs**2','u: unit','d: Fo-Fc','w: DF/sig','i: toggle intensity scaling']
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
+    cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
+    cb.SetValue(' save as/key:')
+    Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
+    Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_MIDDLE_DOWN, OnMouseDown)
+    Page.canvas.Bind(wx.EVT_KEY_UP, OnKey)
+    Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
+#    Page.canvas.Bind(wx.EVT_SIZE, OnSize)
+    Page.camera['position'] = drawingData['cameraPos']
+    Page.camera['viewPoint'] = np.inner(Amat,drawingData['viewPoint'][0])
+    Page.camera['backColor'] = np.array(list(drawingData['backColor'])+[0,])/255.
+    try:
+        Page.canvas.SetCurrent()
+    except:
+        pass
+    Draw('main')
+#    if firstCall: Draw('main') # draw twice the first time that graphics are displayed
+
        
 ################################################################################
 ##### PlotPatterns

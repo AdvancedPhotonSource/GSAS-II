@@ -2406,11 +2406,22 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             
         def OnPlotHKL(event):
             FoMax = np.max(refList.T[8])
-            controls = {'Type' : 'Fo','ifFc' : True,     
-                'HKLmax' : [int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))],
-                'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],
+            Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
+            Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
+            controls = {'Type' : 'Fo','ifFc' : True,'HKLmax' : Hmax,'HKLmin' : Hmin,
                 'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,}
             G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
+            
+        def OnPlot3DHKL(event):
+            FoMax = np.max(refList.T[8])
+            Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
+            Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
+            Vpoint = [int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))]
+            controls = {'Type':'Fosq','Iscale':False,'HKLmax':Hmax,'HKLmin':Hmin,
+                'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
+                'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,
+                'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]}}
+            G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
@@ -2424,6 +2435,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             Status = G2frame.dataFrame.CreateStatusBar()    
         G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
         G2frame.dataFrame.SelectPhase.Enable(False)
         if len(data) > 1:
             G2frame.dataFrame.SelectPhase.Enable(True)

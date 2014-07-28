@@ -427,14 +427,23 @@ def Pos2dsp(Inst,pos):
     
 def Dsp2pos(Inst,dsp):
     ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)
-    ignores secondary effects (e.g. difA in TOF) - maybe later?
     '''
     if 'C' in Inst['Type'][0]:
         wave = G2mth.getWave(Inst)
         pos = 2.0*asind(wave/(2.*dsp))+Inst['Zero'][1]             
     else:   #'T'OF
         pos = Inst['difC'][1]*dsp+Inst['Zero'][1]+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]*dsp**3
-    return pos             
+    return pos
+    
+def getPeakPos(dataType,parmdict,dsp):
+    ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)
+    '''
+    if 'C' in dataType:
+        pos = 2.0*asind(parmdict['Lam']/(2.*dsp))+parmdict['Zero']
+    else:   #'T'OF
+        pos = parmdict['difC']*dsp+parmdict['difA']*dsp**2+parmdict['difB']*dsp**3+parmdict['Zero']
+    return pos
+                   
    
 def calc_rDsq(H,A):
     'needs doc string'

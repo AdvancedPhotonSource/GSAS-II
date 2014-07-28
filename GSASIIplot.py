@@ -1827,6 +1827,67 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         Page.canvas.draw()
         
 ################################################################################
+##### PlotCalib
+################################################################################
+            
+def PlotCalib(G2frame,Inst,XY,newPlot=False):
+    '''plot of CW or TOF peak calibration
+    '''
+    def OnMotion(event):
+        xpos = event.xdata
+        if xpos:                                        #avoid out of frame mouse position
+            ypos = event.ydata
+            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            try:
+                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,Title,ypos),1)                   
+            except TypeError:
+                G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
+
+    Title = 'Position calibration'
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index(Title)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        if not newPlot:
+            Plot = Page.figure.gca()
+            xylim = Plot.get_xlim(),Plot.get_ylim()
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+    except ValueError:
+        newPlot = True
+        Plot = G2frame.G2plotNB.addMpl(Title).gca()
+        plotNum = G2frame.G2plotNB.plotList.index(Title)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    
+    Page.Choice = None
+    Page.SetFocus()
+    G2frame.G2plotNB.status.DestroyChildren()
+    Plot.set_title(Title)
+    Plot.set_xlabel(r'd-spacing',fontsize=14)
+    if 'C' in Inst['Type'][0]:
+        Plot.set_ylabel(r'$\mathsf{\Delta(2\theta)}$',fontsize=14)
+    else:
+        Plot.set_ylabel(r'$\mathsf{\Delta}T/T$',fontsize=14)
+    colors=['b','g','r','c','m','k']
+    for ixy,xy in enumerate(XY):
+        X,Y = xy
+        Yc = G2lat.Dsp2pos(Inst,X)
+        if 'C' in Inst['Type'][0]:
+            Y = Y-Yc
+        else:
+            Y = (Y-Yc)/Yc
+        Plot.plot(X,Y,'k+',picker=False)
+    if not newPlot:
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
+        xylim = []
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
+    else:
+        Page.canvas.draw()
+
+################################################################################
 ##### PlotXY
 ################################################################################
             

@@ -398,7 +398,7 @@ def UpdatePeakGrid(G2frame, data):
         Size = dlg.GetSize()
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,inst2,data,oneCycle,controls,dlg)
+            sigDict = G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,inst2,data,oneCycle,controls,dlg)
         finally:
             wx.EndBusyCursor()    
         UpdatePeakGrid(G2frame,peaks)
@@ -946,7 +946,22 @@ def UpdateInstrumentGrid(G2frame,data):
             for peak in peaks:
                 newpeaks.append(G2mth.setPeakparms(data,Inst2,peak[0],peak[2]))
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'),newpeaks)
-                    
+            
+    def OnCalibrate(event):
+        IndexPeaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
+        if not len(IndexPeaks):
+            G2frame.ErrorDialog('Can not calibrate','Index Peak List empty')
+            return
+#        Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+        G2pwd.DoCalibInst(IndexPeaks,data)
+        UpdateInstrumentGrid(G2frame,data)
+        XY = []
+        for peak in IndexPeaks:
+            if peak[2] and peak[3]:
+                XY.append([peak[8],peak[0]])
+        if len(XY):
+            G2plt.PlotCalib(G2frame,data,XY,newPlot=True)
+
     def OnLoad(event):
         '''Loads instrument parameters from a G2 .instprm file
         in response to the Instrument Parameters-Operations/Load Profile menu
@@ -1175,12 +1190,14 @@ def UpdateInstrumentGrid(G2frame,data):
                     elemKeysLst.append([key,1])
                     dspLst.append([10,6])
                     instSizer.Add(waveVal,0,WACV)
-                    if ifHisto:
-                        refFlgElem.append([key,2])                   
-                        instSizer.Add(RefineBox(key),0,WACV)
-                    else:
-                        refFlgElem.append(None)                   
-                        instSizer.Add((5,5),0)
+                    refFlgElem.append([key,2])                   
+                    instSizer.Add(RefineBox(key),0,WACV)
+#                    if ifHisto:
+#                        refFlgElem.append([key,2])                   
+#                        instSizer.Add(RefineBox(key),0,WACV)
+#                    else:
+#                        refFlgElem.append(None)                   
+#                        instSizer.Add((5,5),0)
                 for item in ['Zero','Polariz.']:
                     if item in insDef:
                         labelLst.append(item)
@@ -1191,12 +1208,14 @@ def UpdateInstrumentGrid(G2frame,data):
                             0,WACV)
                         itemVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
                         instSizer.Add(itemVal,0,WACV)
-                        if ifHisto:
-                            refFlgElem.append([item,2])
-                            instSizer.Add(RefineBox(item),0,WACV)
-                        else:
-                            refFlgElem.append(None)                   
-                            instSizer.Add((5,5),0)
+                        refFlgElem.append([item,2])
+                        instSizer.Add(RefineBox(item),0,WACV)
+#                        if ifHisto:
+#                            refFlgElem.append([item,2])
+#                            instSizer.Add(RefineBox(item),0,WACV)
+#                        else:
+#                            refFlgElem.append(None)                   
+#                            instSizer.Add((5,5),0)
                     else:                           #skip Polariz. for neutrons
                         instSizer.Add((5,5),0)
                         instSizer.Add((5,5),0)
@@ -1257,12 +1276,14 @@ def UpdateInstrumentGrid(G2frame,data):
                     labelLst.append(item)
                     elemKeysLst.append([item,1])
                     dspLst.append(nDig)
-                    if not ifHisto and item in ['difC','difA','difB','Zero',]:
-                        refFlgElem.append(None)
-                        instSizer.Add((5,5),0)
-                    else:
-                        refFlgElem.append([item,2])
-                        instSizer.Add(RefineBox(item),0,WACV)
+                    refFlgElem.append([item,2])
+                    instSizer.Add(RefineBox(item),0,WACV)
+#                    if not ifHisto and item in ['difC','difA','difB','Zero',]:
+#                        refFlgElem.append(None)
+#                        instSizer.Add((5,5),0)
+#                    else:
+#                        refFlgElem.append([item,2])
+#                        instSizer.Add(RefineBox(item),0,WACV)
         elif 'S' in insVal['Type']:                       #single crystal data
             if 'C' in insVal['Type']:               #constant wavelength
                 instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
@@ -1356,7 +1377,8 @@ def UpdateInstrumentGrid(G2frame,data):
     if 'P' in insVal['Type']:                   #powder data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.InstMenu)
         if not G2frame.dataFrame.GetStatusBar():
-            Status = G2frame.dataFrame.CreateStatusBar()
+            Status = G2frame.dataFrame.CreateStatusBar()            
+        G2frame.Bind(wx.EVT_MENU,OnCalibrate,id=G2gd.wxID_INSTCALIB)
         G2frame.Bind(wx.EVT_MENU,OnLoad,id=G2gd.wxID_INSTLOAD)
         G2frame.Bind(wx.EVT_MENU,OnSave,id=G2gd.wxID_INSTSAVE)
         G2frame.Bind(wx.EVT_MENU,OnReset,id=G2gd.wxID_INSTPRMRESET)
@@ -1863,18 +1885,15 @@ def UpdateIndexPeaksGrid(G2frame, data):
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
             else:
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
-            if 'PNT' in Inst['Type'][0] and data[r][3]:
-                X = G2lat.Dsp2pos(Inst,data[r][8])
-                Y = data[r][0]
-                XY.append([X,Y-X])
+        if data[r][2] and data[r][3]:
+            XY.append([data[r][8],data[r][0]])
     G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, RefreshIndexPeaksGrid)
     G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([490,300])
-    if len(XY): #NB: only for TOF
-        G2plt.PlotXY(G2frame,np.array(XY),XY2=[],labelX='T-calc',labelY='Tobs-Tcalc',
-            newPlot=True,Title='Diffractometer const')
+    if len(XY):
+        G2plt.PlotCalib(G2frame,Inst,XY,newPlot=True)
       
 ################################################################################
 #####  Unit cells

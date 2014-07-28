@@ -1122,6 +1122,92 @@ def SetBackgroundParms(Background):
     backDict.update(peaksDict)
     backVary += peaksVary    
     return bakType,backDict,backVary
+    
+def DoCalibInst(IndexPeaks,Inst):
+    
+    def SetInstParms():
+        dataType = Inst['Type'][0]
+        insVary = []
+        insNames = []
+        insVals = []
+        for parm in Inst:
+            insNames.append(parm)
+            insVals.append(Inst[parm][1])
+            if parm in ['Lam','difC','difA','difB','Zero',]:
+                if Inst[parm][2]:
+                    insVary.append(parm)
+        instDict = dict(zip(insNames,insVals))
+        return dataType,instDict,insVary
+        
+    def GetInstParms(parmDict,Inst,varyList):
+        for name in Inst:
+            Inst[name][1] = parmDict[name]
+        
+    def InstPrint(Inst,sigDict):
+        print 'Instrument Parameters:'
+        if 'C' in Inst['Type'][0]:
+            ptfmt = "%12.6f"
+        else:
+            ptfmt = "%12.3f"
+        ptlbls = 'names :'
+        ptstr =  'values:'
+        sigstr = 'esds  :'
+        for parm in Inst:
+            if parm in  ['Lam','difC','difA','difB','Zero',]:
+                ptlbls += "%s" % (parm.center(12))
+                ptstr += ptfmt % (Inst[parm][1])
+                if parm in sigDict:
+                    sigstr += ptfmt % (sigDict[parm])
+                else:
+                    sigstr += 12*' '
+        print ptlbls
+        print ptstr
+        print sigstr
+        
+    def errPeakPos(values,peakDsp,peakPos,peakWt,dataType,parmDict,varyList):
+        parmDict.update(zip(varyList,values))
+        return np.sqrt(peakWt)*(G2lat.getPeakPos(dataType,parmDict,peakDsp)-peakPos)
+
+    peakPos = []
+    peakDsp = []
+    peakWt = []
+    for peak in IndexPeaks:
+        if peak[2] and peak[3]:
+            peakPos.append(peak[0])
+            peakDsp.append(peak[8])
+            peakWt.append(1/peak[1])
+    peakPos = np.array(peakPos)
+    peakDsp = np.array(peakDsp)
+    peakWt = np.array(peakWt)
+    dataType,insDict,insVary = SetInstParms()
+    parmDict = {}
+    parmDict.update(insDict)
+    varyList = insVary
+    while True:
+        begin = time.time()
+        values =  np.array(Dict2Values(parmDict, varyList))
+        result = so.leastsq(errPeakPos,values,full_output=True,ftol=0.0001,
+            args=(peakDsp,peakPos,peakWt,dataType,parmDict,varyList))
+        ncyc = int(result[2]['nfev']/2)
+        runtime = time.time()-begin    
+        chisq = np.sum(result[2]['fvec']**2)
+        Values2Dict(parmDict, varyList, result[0])
+        GOF = chisq/(len(peakPos)-len(varyList))       #reduced chi^2
+        print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',len(peakPos),' Number of parameters: ',len(varyList)
+        print 'calib time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
+        print 'chi**2 = %12.6g, reduced chi**2 = %6.2f'%(chisq,GOF)
+        try:
+            sig = np.sqrt(np.diag(result[1])*GOF)
+            if np.any(np.isnan(sig)):
+                print '*** Least squares aborted - some invalid esds possible ***'
+            break                   #refinement succeeded - finish up!
+        except ValueError:          #result[1] is None on singular matrix
+            print '**** Refinement failed - singular matrix ****'
+        return
+        
+    sigDict = dict(zip(varyList,sig))
+    GetInstParms(parmDict,Inst,varyList)
+    InstPrint(Inst,sigDict)
             
 def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,controls=None,dlg=None):
     'needs a doc string'
@@ -1410,7 +1496,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
                         break
         elif FitPgm == 'BFGS':
             print 'Other program here'
-            return
+            return {}
         
     sigDict = dict(zip(varyList,sig))
     yb[xBeg:xFin] = getBackground('',parmDict,bakType,x[xBeg:xFin])
@@ -1422,6 +1508,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
     InstPrint(Inst,sigDict)
     GetPeaksParms(Inst,parmDict,Peaks,varyList)    
     PeaksPrint(dataType,parmDict,sigDict,varyList)
+    return sigDict
 
 def calcIncident(Iparm,xdata):
     'needs a doc string'

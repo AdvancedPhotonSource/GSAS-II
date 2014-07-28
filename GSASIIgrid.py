@@ -112,8 +112,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(11)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
-    wxID_INSTSAVE, wxID_INST1VAL
-] = [wx.NewId() for item in range(7)]
+    wxID_INSTSAVE, wxID_INST1VAL, wxID_INSTCALIB,
+] = [wx.NewId() for item in range(8)]
 
 [ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_RESETSIGGAM,wxID_CLEARPEAKS,wxID_AUTOSEARCH,
 ] = [wx.NewId() for item in range(6)]
@@ -2870,6 +2870,8 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.InstMenu,helpType='Instrument Parameters')
         self.InstEdit = wx.Menu(title='')
         self.InstMenu.Append(menu=self.InstEdit, title='Operations')
+        self.InstEdit.Append(help='Calibrate from indexed peaks', 
+            id=wxID_INSTCALIB, kind=wx.ITEM_NORMAL,text='Calibrate')
         self.InstEdit.Append(help='Reset instrument profile parameters to default', 
             id=wxID_INSTLOAD, kind=wx.ITEM_NORMAL,text='Load profile...')
         self.InstEdit.Append(help='Load instrument profile parameters from file', 

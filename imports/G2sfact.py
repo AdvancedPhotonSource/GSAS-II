@@ -24,7 +24,7 @@ def ColumnValidator(parent, filepointer,nCol=5):
     'Validate a file to check that it contains columns of numbers'
     l = filepointer.readline()
     line = 1
-    while '#' in l[0]:        #get past comments, if any
+    while l[0] in ['#','(']:        #get past comments & fortran formats, if any
         l = filepointer.readline()        
         line += 1
     for i in range(10): # scan a few lines
@@ -32,7 +32,7 @@ def ColumnValidator(parent, filepointer,nCol=5):
         if len(S) < nCol:
             parent.errors = 'line '+str(line)+': invalid input\n'+l
             return False
-        for v in S:
+        for v in S[:nCol]:
             try:
                 float(v)
             except ValueError:
@@ -158,6 +158,67 @@ class NT_HKLF2_ReaderClass(G2IO.ImportStructFactor):
                 if S[0] == '#': continue       #ignore comments, if any
                 data = S.split()
                 h,k,l,Fo,sigFo,bN,wave,tbar = data[:8]  #bN = 1..., 6 dir cos next                    
+                h,k,l = [int(h),int(k),int(l)]
+                if not any([h,k,l]):
+                    break
+                Fo = float(Fo)
+                sigFo = float(sigFo)
+                wave = float(wave)
+                tbar = float(tbar)
+                if len(self.Banks):
+                    self.Banks[int(bN)-1]['RefDict']['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+                else:
+                # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
+                    self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+            if len(self.Banks):
+                self.UpdateParameters(Type='SNT',Wave=None) # histogram type
+                for Bank in self.Banks:
+                    Bank['RefDict']['RefList'] = np.array(Bank['RefDict']['RefList'])                    
+            else:
+                self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+                self.errors = 'Error after reading reflections (unexpected!)'
+                self.UpdateParameters(Type='SNT',Wave=None) # histogram type
+            return True
+        except Exception as detail:
+            self.errors += '\n  '+str(detail)
+            print '\n\n'+self.formatName+' read error: '+str(detail) # for testing
+            import traceback
+            traceback.print_exc(file=sys.stdout)
+            return False
+
+class NT_JANA2K_ReaderClass(G2IO.ImportStructFactor):
+    'Routines to import neutron TOF F**2, sig(F**2) reflections from a JANA2000 file'
+    def __init__(self):
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.int','.INT'),
+            strictExtension=False,
+            formatName = u'Neutron TOF JANA2000 F\u00b2',
+            longFormatName = u'Neutron TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
+            )
+
+    def ContentsValidator(self, filepointer):
+        'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
+        oldNo = -1
+        for line,S in enumerate(filepointer):
+            if not S:   #empty line terminates read
+                break
+            if S[0] in ['#','(']: continue       #ignore comments & fortran format line
+            bankNo = S.split()[5]
+            if bankNo != oldNo:
+                self.Banks.append({'RefDict':{'RefList':[],}})
+                oldNo = bankNo
+        filepointer.seek(0)
+        return ColumnValidator(self, filepointer,nCol=10)
+
+    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        'Read the file'
+        filepointer.seek(0)
+        try:
+            for line,S in enumerate(filepointer):
+                self.errors = '  Error reading line '+str(line+1)
+                if S[0] in ['#','(']: continue       #ignore comments & fortran format line
+                data = S.split()
+                h,k,l,Fo,sigFo,bN,wave,x,x,tbar = data[:10]  #bN = 1..., 6 dir cos next                    
                 h,k,l = [int(h),int(k),int(l)]
                 if not any([h,k,l]):
                     break

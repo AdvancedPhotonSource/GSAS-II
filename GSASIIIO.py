@@ -1635,6 +1635,7 @@ class ImportStructFactor(ImportBaseclass):
         'Reinitialize the Reader to initial settings'
         ImportBaseclass.ReInitialize(self)
         self.InitParameters()
+        self.Banks = []             #for multi bank data (usually TOF)
         self.RefDict = {'RefList':[],'FF':[]}
         
     def InitParameters(self):

@@ -1027,7 +1027,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     if G2frame.qPlot:                              #qplot - convert back to 2-theta
                         xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
-                data.append(XY)
+                data['peaks'].append(XY)
+                data['sigDict'] = {}    #now invalid
                 G2pdG.UpdatePeakGrid(G2frame,data)
                 PlotPatterns(G2frame,plotType=plottype)
             else:                                                   #picked a peak list line
@@ -1118,12 +1119,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 PeakId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                 data = G2frame.PatternTree.GetItemPyData(PeakId)
                 if event.button == 3:
-                    del data[lineNo-2]
+                    del data['peaks'][lineNo-2]
                 else:
                     if G2frame.qPlot:
-                        data[lineNo-2][0] = 2.0*asind(wave*xpos/(4*math.pi))
+                        data['peaks'][lineNo-2][0] = 2.0*asind(wave*xpos/(4*math.pi))
                     else:
-                        data[lineNo-2][0] = xpos
+                        data['peaks'][lineNo-2][0] = xpos
+                    data['sigDict'] = {}        #no longer valid
                 G2frame.PatternTree.SetItemPyData(PeakId,data)
                 G2pdG.UpdatePeakGrid(G2frame,data)
         elif G2frame.PatternTree.GetItemText(PickId) in ['Models',] and xpos:
@@ -1473,7 +1475,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
                     Page.canvas.SetToolTipString(tip)
                     data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
-                    for item in data:
+                    for item in data['peaks']:
                         if G2frame.qPlot:
                             if 'C' in Parms['Type'][0]:
                                 Lines.append(Plot.axvline(4*math.pi*sind(item[0]/2.)/wave,color=colors[N%6],picker=2.))
@@ -1508,7 +1510,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         else:
             difC = Parms['difC'][1]
         if G2frame.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
-            peaks = np.array((G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))))
+            peaks = np.array((G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))))[0]
             for peak in peaks:
                 if G2frame.qPlot:
                     Plot.axvline(4*np.pi*sind(peak[0]/2.0)/wave,color='b')
@@ -1830,7 +1832,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
 ##### PlotCalib
 ################################################################################
             
-def PlotCalib(G2frame,Inst,XY,newPlot=False):
+def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
     '''plot of CW or TOF peak calibration
     '''
     def OnMotion(event):
@@ -1842,6 +1844,21 @@ def PlotCalib(G2frame,Inst,XY,newPlot=False):
                 G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,Title,ypos),1)                   
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
+            found = []
+            wid = 1
+            view = Page.toolbar._views.forward()
+            if view:
+                view = view[0][:2]
+                wid = view[1]-view[0]
+            found = XY[np.where(np.fabs(XY.T[0]-xpos) < 0.005*wid)]
+            if len(found):
+                pos = found[0][1]
+                if 'C' in Inst['Type'][0]: 
+                    Page.canvas.SetToolTipString('position=%.4f'%(pos))
+                else:
+                    Page.canvas.SetToolTipString('position=%.2f'%(pos))
+            else:
+                Page.canvas.SetToolTipString('')
 
     Title = 'Position calibration'
     try:
@@ -1874,14 +1891,18 @@ def PlotCalib(G2frame,Inst,XY,newPlot=False):
         Yc = G2lat.Dsp2pos(Inst,X)
         if 'C' in Inst['Type'][0]:
             Y = Y-Yc
+            E = Sigs[ixy]
         else:
             Y = (Y-Yc)/Yc
-        Plot.plot(X,Y,'k+',picker=False)
+            E = Sigs[ixy]/Yc
+        if E:
+            Plot.errorbar(X,Y,ecolor='k',yerr=E)
+        Plot.plot(X,Y,'kx',picker=3)
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
         Plot.set_ylim(xylim[1])
-        xylim = []
+#        xylim = []
         Page.toolbar.push_current()
         Page.toolbar.draw()
     else:
@@ -2100,7 +2121,7 @@ def PlotPowderLines(G2frame):
     Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
     PickId = G2frame.PickId
     PatternId = G2frame.PatternId
-    peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
+    peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))[0]
     for peak in peaks:
         Plot.axvline(peak[0],color='b')
     HKL = np.array(G2frame.HKL)
@@ -2138,11 +2159,7 @@ def PlotPeakWidths(G2frame):
         lam = G2mth.getWave(Parms)
     else:
         difC = Parms['difC'][0]
-    peakID = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List')
-    if peakID:
-        peaks = G2frame.PatternTree.GetItemPyData(peakID)
-    else:
-        peaks = []
+    peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))['peaks']
     
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Peak Widths')

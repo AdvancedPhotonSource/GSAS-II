@@ -1280,10 +1280,10 @@ class GSASII(wx.Frame):
                 rd.Sample)
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Peak List')
-                ,[])
+                ,{'peaks':[],'sigDict':{}})
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Index Peak List'),
-                [])
+                [[],[]])
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Unit Cells List'),
                 [])
@@ -1456,10 +1456,10 @@ class GSASII(wx.Frame):
             rd.Sample)
         self.PatternTree.SetItemPyData(
             self.PatternTree.AppendItem(Id,text='Peak List')
-            ,[])
+            ,{'peaks':[],'sigDict':{}})
         self.PatternTree.SetItemPyData(
             self.PatternTree.AppendItem(Id,text='Index Peak List'),
-            [])
+            [[],[]])
         self.PatternTree.SetItemPyData(
             self.PatternTree.AppendItem(Id,text='Unit Cells List'),
             [])
@@ -2029,7 +2029,7 @@ class GSASII(wx.Frame):
                 inst = [G2IO.makeInstDict(names,data,codes),{}]
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),inst)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),comments)
-                self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),peaks)
+                self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[peaks,[]])
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
                 self.PatternTree.Expand(Id)
                 self.PatternTree.SelectItem(Id)
@@ -2370,8 +2370,8 @@ class GSASII(wx.Frame):
                             {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),Inst)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Sample Parameters'),Sample)
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),[])
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[])
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Peak List'),{'peaks':[],'sigDict':{}})
+                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[[],[]])
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Reflection Lists'),{})             
                         self.PatternTree.SelectItem(Id)
@@ -2810,7 +2810,7 @@ class GSASII(wx.Frame):
                         while item2:
                             name2 = self.PatternTree.GetItemText(item2)
                             if name2 == 'Peak List':
-                                peaks = self.PatternTree.GetItemPyData(item2)
+                                peaks = self.PatternTree.GetItemPyData(item2)['peaks']
                                 file.write("%s \n" % (name+' Peak List'))                
                                 for peak in peaks:
                                     file.write("%10.5f %12.2f %10.3f %10.3f \n" % \

@@ -324,7 +324,7 @@ def UpdatePeakGrid(G2frame, data):
         else:   #'T'OF
             refs = G2mth.sortArray(refs,1,reverse=False)
         for pos,mag in refs:
-            data.append(G2mth.setPeakparms(inst,inst2,pos,mag))
+            data['peaks'].append(G2mth.setPeakparms(inst,inst2,pos,mag))
         UpdatePeakGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame,plotType='PWDR')        
     
@@ -369,7 +369,7 @@ def UpdatePeakGrid(G2frame, data):
         dlg = wx.MessageDialog(G2frame,'Delete all peaks?','Clear peak list',wx.OK|wx.CANCEL)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                peaks = []
+                peaks = {'peaks':[],'sigDict':{}}
         finally:
             dlg.Destroy()
         UpdatePeakGrid(G2frame,peaks)
@@ -398,9 +398,10 @@ def UpdatePeakGrid(G2frame, data):
         Size = dlg.GetSize()
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            sigDict = G2pwd.DoPeakFit(FitPgm,peaks,background,limits,inst,inst2,data,oneCycle,controls,dlg)
+            peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,oneCycle,controls,dlg)
         finally:
             wx.EndBusyCursor()    
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),peaks)
         UpdatePeakGrid(G2frame,peaks)
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         print 'finished'
@@ -411,12 +412,12 @@ def UpdatePeakGrid(G2frame, data):
         PickId = G2frame.PickId
         Inst,Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
-        if not peaks:
+        if not peaks['peaks']:
             G2frame.ErrorDialog('No peaks!','Nothing to do!')
             return
-        newpeaks = []
-        for peak in peaks:
-            newpeaks.append(G2mth.setPeakparms(Inst,Inst2,peak[0],peak[2]))
+        newpeaks = {'peaks':[],'sigDict':{}}
+        for peak in peaks['peaks']:
+            newpeaks['peaks'].append(G2mth.setPeakparms(Inst,Inst2,peak[0],peak[2]))
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),newpeaks)
         UpdatePeakGrid(G2frame,newpeaks)
                 
@@ -424,14 +425,14 @@ def UpdatePeakGrid(G2frame, data):
         r,c =  event.GetRow(),event.GetCol()
         
         event.StopPropagation()
-        data = G2frame.PeakTable.GetData()
+        data['peaks'] = G2frame.PeakTable.GetData()
         T = []
-        for peak in data:T.append(peak[0])
-        D = dict(zip(T,data))
+        for peak in data['peaks']:T.append(peak[0])
+        D = dict(zip(T,data['peaks']))
         T.sort()
         X = []
         for key in T: X.append(D[key])
-        data = X        
+        data['peaks'] = X        
         
     def setBackgroundColors():
        for r in range(G2frame.dataDisplay.GetNumberRows()):
@@ -471,8 +472,6 @@ def UpdatePeakGrid(G2frame, data):
                 G2frame.PatternTree.SetItemPyData(G2frame.PickId,data[:-nDel])
                 G2frame.dataDisplay.ForceRefresh()
                 setBackgroundColors()
-                if not len(G2frame.PatternTree.GetItemPyData(G2frame.PickId)): 
-                    G2frame.dataFrame.PeakFit.Enable(False)
                         
         elif colList:
             G2frame.dataDisplay.ClearSelection()
@@ -480,18 +479,18 @@ def UpdatePeakGrid(G2frame, data):
             for col in colList:
                 if G2frame.PeakTable.GetTypeName(0,col) == wg.GRID_VALUE_BOOL:
                     if key == 89: #'Y'
-                        for row in range(G2frame.PeakTable.GetNumberRows()): data[row][col]=True
+                        for row in range(G2frame.PeakTable.GetNumberRows()): data['peaks'][row][col]=True
                     elif key == 78:  #'N'
-                        for row in range(G2frame.PeakTable.GetNumberRows()): data[row][col]=False
+                        for row in range(G2frame.PeakTable.GetNumberRows()): data['peaks'][row][col]=False
         elif selectList:
             G2frame.dataDisplay.ClearSelection()
             key = event.GetKeyCode()
             for row,col in selectList:
                 if G2frame.PeakTable.GetTypeName(row,col) == wg.GRID_VALUE_BOOL:
                     if key == 89: #'Y'
-                        data[row][col]=True
+                        data['peaks'][row][col]=True
                     elif key == 78:  #'N'
-                        data[row][col]=False
+                        data['peaks'][row][col]=False
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
             
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PeakMenu)
@@ -504,15 +503,19 @@ def UpdatePeakGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, OnOneCycle, id=G2gd.wxID_LSQONECYCLE)
     G2frame.Bind(wx.EVT_MENU, OnClearPeaks, id=G2gd.wxID_CLEARPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnResetSigGam, id=G2gd.wxID_RESETSIGGAM)
-    G2frame.dataFrame.PeakFit.Enable(False)
-    if data:
+    if data['peaks']:
+        G2frame.dataFrame.AutoSearch.Enable(False)
         G2frame.dataFrame.PeakFit.Enable(True)
         G2frame.dataFrame.PFOneCycle.Enable(True)
+    else:
+        G2frame.dataFrame.PeakFit.Enable(False)
+        G2frame.dataFrame.PFOneCycle.Enable(False)
+        G2frame.dataFrame.AutoSearch.Enable(True)
     G2frame.PickTable = []
     rowLabels = []
     PatternId = G2frame.PatternId
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))[0]
-    for i in range(len(data)): rowLabels.append(str(i+1))
+    for i in range(len(data['peaks'])): rowLabels.append(str(i+1))
     if 'C' in Inst['Type'][0]:
         colLabels = ['position','refine','intensity','refine','sigma','refine','gamma','refine']
         Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,
@@ -529,17 +532,17 @@ def UpdatePeakGrid(G2frame, data):
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
     T = []
-    for peak in data:
+    for peak in data['peaks']:
         T.append(peak[0])
-    D = dict(zip(T,data))
+    D = dict(zip(T,data['peaks']))
     T.sort()
     if 'T' in Inst['Type'][0]:  #want big TOF's first
         T.reverse()
     X = []
     for key in T: X.append(D[key])
-    data = X
+    data['peaks'] = X
     G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
-    G2frame.PeakTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    G2frame.PeakTable = G2gd.Table(data['peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Peak List')
     G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)
     G2frame.dataDisplay.SetTable(G2frame.PeakTable, True)
@@ -943,24 +946,34 @@ def UpdateInstrumentGrid(G2frame,data):
         if doAnyway or event.GetRow() == 1:
             peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
             newpeaks = []
-            for peak in peaks:
+            for peak in peaks['peaks']:
                 newpeaks.append(G2mth.setPeakparms(data,Inst2,peak[0],peak[2]))
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'),newpeaks)
+            peaks['peaks'] = newpeaks
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'),peaks)
             
     def OnCalibrate(event):
         IndexPeaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
-        if not len(IndexPeaks):
+        if not len(IndexPeaks[0]):
             G2frame.ErrorDialog('Can not calibrate','Index Peak List empty')
             return
-#        Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-        G2pwd.DoCalibInst(IndexPeaks,data)
+        Ok = False
+        for peak in IndexPeaks[0]:
+            if peak[2] and peak[3]:
+                Ok = True
+        if not Ok:
+            G2frame.ErrorDialog('Can not calibrate','Index Peak List not indexed')
+            return            
+        G2pwd.DoCalibInst(IndexPeaks[0],data)
         UpdateInstrumentGrid(G2frame,data)
         XY = []
-        for peak in IndexPeaks:
+        Sigs = []
+        for ip,peak in enumerate(IndexPeaks[0]):
             if peak[2] and peak[3]:
                 XY.append([peak[8],peak[0]])
+                Sigs.append(IndexPeaks[1][ip])
         if len(XY):
-            G2plt.PlotCalib(G2frame,data,XY,newPlot=True)
+            XY = np.array(XY)
+            G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
 
     def OnLoad(event):
         '''Loads instrument parameters from a G2 .instprm file
@@ -1804,22 +1817,29 @@ def UpdateIndexPeaksGrid(G2frame, data):
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     def RefreshIndexPeaksGrid(event):
         r,c =  event.GetRow(),event.GetCol()
-        data = G2frame.IndexPeaksTable.GetData()
+        peaks = G2frame.IndexPeaksTable.GetData()
         if c == 2:
-            if data[r][c]:
-                data[r][c] = False
+            if peaks[r][c]:
+                peaks[r][c] = False
             else:
-                data[r][c] = True
-            G2frame.IndexPeaksTable.SetData(data)
-            G2frame.PatternTree.SetItemPyData(IndexId,data)
+                peaks[r][c] = True
+            G2frame.IndexPeaksTable.SetData(peaks)
+            G2frame.PatternTree.SetItemPyData(IndexId,[peaks,data[1]])
             G2frame.dataDisplay.ForceRefresh()
             
     def OnReload(event):
-        data = []
-        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
-        for peak in peaks:
+        peaks = []
+        sigs = []
+        Peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
+        for ip,peak in enumerate(Peaks['peaks']):
             dsp = G2lat.Pos2dsp(Inst,peak[0])
-            data.append([peak[0],peak[2],True,False,0,0,0,dsp,0.0])
+            peaks.append([peak[0],peak[2],True,False,0,0,0,dsp,0.0])
+            try:
+                sig = Peaks['sigDict']['pos'+str(ip)]
+            except KeyError:
+                sig = 0.
+            sigs.append(sig)
+        data = [peaks,sigs]
         G2frame.PatternTree.SetItemPyData(IndexId,data)
         UpdateIndexPeaksGrid(G2frame,data)
         
@@ -1839,9 +1859,9 @@ def UpdateIndexPeaksGrid(G2frame, data):
             for col in colList:
                 if G2frame.IndexPeaksTable.GetColLabelValue(col) in ['use','refine']:
                     if key == 89: #'Y'
-                        for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[row][col]=True
+                        for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[0][row][col]=True
                     elif key == 78:  #'N'
-                        for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[row][col]=False
+                        for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[0][row][col]=False
             
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
@@ -1852,7 +1872,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
         G2frame.Bind(wx.EVT_MENU, OnReload, id=G2gd.wxID_INDXRELOAD)
     G2frame.dataFrame.IndexPeaks.Enable(False)
     G2frame.IndexPeaksTable = []
-    if data:
+    if len(data[0]):
         G2frame.dataFrame.IndexPeaks.Enable(True)
         cells = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'))
         if cells:
@@ -1864,36 +1884,43 @@ def UpdateIndexPeaksGrid(G2frame, data):
                     ibrav = cell[2]
                     A = G2lat.cell2A(cell[3:9])
                     G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
-                    G2indx.IndexPeaks(data,G2frame.HKL)
+                    G2indx.IndexPeaks(data[0],G2frame.HKL)
                     for hkl in G2frame.HKL:
                         hkl.append(G2lat.Dsp2pos(Inst,hkl[3]))
     rowLabels = []
-    for i in range(len(data)): rowLabels.append(str(i+1))
+    for i in range(len(data[0])): rowLabels.append(str(i+1))
     colLabels = ['position','intensity','use','indexed','h','k','l','d-obs','d-calc']
     Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
         wg.GRID_VALUE_BOOL,wg.GRID_VALUE_LONG,wg.GRID_VALUE_LONG,wg.GRID_VALUE_LONG,
         wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5']
     G2frame.PatternTree.SetItemPyData(IndexId,data)
-    G2frame.IndexPeaksTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    G2frame.IndexPeaksTable = G2gd.Table(data[0],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Index Peak List')
     G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)                
     G2frame.dataDisplay.SetTable(G2frame.IndexPeaksTable, True)
     XY = []
+    Sigs = []
     for r in range(G2frame.dataDisplay.GetNumberRows()):
         for c in range(G2frame.dataDisplay.GetNumberCols()):
             if c == 2:
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=False)
             else:
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
-        if data[r][2] and data[r][3]:
-            XY.append([data[r][8],data[r][0]])
+        if data[0][r][2] and data[0][r][3]:
+            XY.append([data[0][r][8],data[0][r][0]])
+            try:
+                sig = data[1][r]
+            except IndexError:
+                sig = 0.
+            Sigs.append(sig)
     G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, RefreshIndexPeaksGrid)
     G2frame.dataDisplay.Bind(wx.EVT_KEY_DOWN, KeyEditPickGrid)                 
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([490,300])
     if len(XY):
-        G2plt.PlotCalib(G2frame,Inst,XY,newPlot=True)
+        XY = np.array(XY)
+        G2plt.PlotCalib(G2frame,Inst,XY,Sigs,newPlot=True)
       
 ################################################################################
 #####  Unit cells
@@ -2018,7 +2045,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnHklShow(event):
         PatternId = G2frame.PatternId
         PickId = G2frame.PickId    
-        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
+        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))[0]
         limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
         controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
@@ -2086,7 +2113,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         PatternId = G2frame.PatternId
         PickId = G2frame.PickId    
         peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
-        if not peaks:
+        if not peaks[0]:
             G2frame.ErrorDialog('No peaks!', 'Nothing to refine!')
             return        
         print 'Refine cell'
@@ -2097,8 +2124,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         SGData = G2spc.SpcGroup(controls[13])[1]
         dmin = G2indx.getDmin(peaks)-0.005
         G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A)
-        G2indx.IndexPeaks(peaks,G2frame.HKL)
-        Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks,wave,ibrav,A,controls[1],controls[0])  #TOF?          
+        G2indx.IndexPeaks(peaks[0],G2frame.HKL)
+        if 'C' in Inst['Type'][0]:
+            Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks[0],wave,ibrav,A,controls[1],controls[0])
+        else:   #'T'OF
+            Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])            
         controls[1] = Zero
         controls[6:12] = G2lat.A2cell(Aref)
         controls[12] = G2lat.calc_V(Aref)
@@ -2140,7 +2170,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             return
         G2frame.dataFrame.CopyCell.Enable(False)
         G2frame.dataFrame.RefineCell.Enable(False)
-        OK,dmin,newcells = G2indx.DoIndexPeaks(peaks,controls,bravais)
+        OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais)
         cells = keepcells+newcells
         cells = G2indx.sortM20(cells)
         cells[0][10] = True

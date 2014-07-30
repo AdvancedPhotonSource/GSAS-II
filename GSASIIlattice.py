@@ -460,6 +460,11 @@ def calc_rDsqZ(H,A,Z,tth,lam):
     rdsq = calc_rDsq(H,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
+def calc_rDsqT(H,A,Z,tof,difC):
+    'needs doc string'
+    rdsq = calc_rDsq(H,A)+Z/difC
+    return rdsq
+       
 def MaxIndex(dmin,A):
     'needs doc string'
     Hmax = [0,0,0]

@@ -335,8 +335,33 @@ def FitHKLZ(wave,ibrav,peaks,A,Z,Zref,Pwr):
     A = Values2A(ibrav,result[0][:6])
     if Zref:
         Z = result[0][-1]
-    
+        
     return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Zref,Pwr)**2),A,Z,result
+    
+def FitHKLT(difC,ibrav,peaks,A,Z,Zref,Pwr):
+    'needs a doc string'
+    
+    def errFit(values,ibrav,d,H,tof,difC,Zref,Pwr):
+        Zero = Z
+        if Zref:    
+            Zero = values[-1]
+        A = Values2A(ibrav,values[:6])
+        Qo = 1./d**2
+        Qc = G2lat.calc_rDsqT(H,A,Zero,tof,difC)
+        return (Qo-Qc)*d**Pwr
+    
+    Peaks = np.array(peaks).T
+    
+    values = A2values(ibrav,A)
+    if Zref:
+        values.append(Z)
+    result = so.leastsq(errFit,values,full_output=True,ftol=0.0001,factor=0.001,
+        args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],difC,Zref,Pwr))
+    A = Values2A(ibrav,result[0][:6])
+    if Zref:
+        Z = result[0][-1]
+    
+    return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],difC,Zref,Pwr)**2),A,Z,result
                
 def rotOrthoA(A):
     'needs a doc string'
@@ -391,6 +416,18 @@ def refinePeaksZ(peaks,wave,ibrav,A,Zero,ZeroRef):
     Peaks = np.array(peaks).T
     H = Peaks[4:7]
     Peaks[8] = 1./np.sqrt(G2lat.calc_rDsqZ(H,Aref,Z,Peaks[0],wave))
+    peaks = Peaks.T    
+    HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
+    M20,X20 = calc_M20(peaks,HKL)
+    return len(HKL),M20,X20,Aref,Z
+    
+def refinePeaksT(peaks,difC,ibrav,A,Zero,ZeroRef):
+    'needs a doc string'
+    dmin = getDmin(peaks)
+    OK,smin,Aref,Z,result = FitHKLT(difC,ibrav,peaks,A,Zero,ZeroRef,0)
+    Peaks = np.array(peaks).T
+    H = Peaks[4:7]
+    Peaks[8] = 1./np.sqrt(G2lat.calc_rDsqT(H,Aref,Z,Peaks[0],difC))
     peaks = Peaks.T    
     HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
     M20,X20 = calc_M20(peaks,HKL)

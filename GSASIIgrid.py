@@ -2933,6 +2933,7 @@ class DataFrame(wx.Frame):
         self.UnDo.Enable(False)
         self.PeakFit.Enable(False)
         self.PFOneCycle.Enable(False)
+        self.AutoSearch.Enable(True)
         
         # PDR / Index Peak List
         self.IndPeaksMenu = wx.MenuBar()
@@ -5276,6 +5277,11 @@ def MovePatternTreeToGrid(G2frame,item):
         for i in G2frame.ExportPeakList: i.Enable(True)
         G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
+#patch
+        if isinstance(data,list):
+            data = {'peaks':data,'sigDict':{}}
+            G2frame.PatternTree.SetItemPyData(item,data)
+#end patch
         G2pdG.UpdatePeakGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Background':
@@ -5331,6 +5337,11 @@ def MovePatternTreeToGrid(G2frame,item):
         for i in G2frame.ExportPeakList: i.Enable(True)
         G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
+#patch
+        if len(data) != 2:
+            data = [data,[]]
+            G2frame.PatternTree.SetItemPyData(item,data)
+#end patch
         G2pdG.UpdateIndexPeaksGrid(G2frame,data)
         if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)

@@ -10,7 +10,7 @@ from __future__ import division
 import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-# de
+# declare symbol (pi) and functions allowed in expressions
 sind = sin = s = lambda x: np.sin(x*np.pi/180.)
 cosd = cos = c = lambda x: np.cos(x*np.pi/180.)
 tand = tan = t = lambda x: np.tan(x*np.pi/180.)
@@ -76,8 +76,11 @@ def FormatValue(val,maxdigits=None):
         digits = [10,2]
     else:
         digits = list(maxdigits)
-    string = ("{:."+str(digits[1])+"f}").format(val).strip() # will standard .f formatting work?
+    fmt="{:."+str(digits[1])+"f}"
+    string = fmt.format(float(val)).strip() # will standard .f formatting work?
     if len(string) <= digits[0]:
+        if ':' in string: # deal with weird bug where a colon pops up in a number when formatting (EPD 7.3.2!)
+            string = str(val)
         if digits[1] > 0: # strip off extra zeros on right side
             string = string.rstrip('0')
             if string[-1] == '.': string += "0"

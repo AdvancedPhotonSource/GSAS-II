@@ -3399,5 +3399,8 @@ if __name__ == '__main__':
         print "Max threads ",mkl.get_max_threads()
     except:
         pass
+    import platform
+    print "Platform info:",sys.platform,platform.architecture()[0],platform.machine()
+    #print "wxPython description",wx.PlatformInfo
     print "This is GSAS-II version:     ",__version__,' revision '+str(GSASIIpath.GetVersionNumber())
     main() # start the GUI

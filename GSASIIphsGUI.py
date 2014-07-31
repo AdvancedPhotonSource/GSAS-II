@@ -93,25 +93,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     '''
 
-#patch
-    if 'RBModels' not in data:
-        data['RBModels'] = {}
-    if 'MCSA' not in data:
-        data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[.8,1.2],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
-    if isinstance(data['MCSA']['Results'],dict):
-        data['MCSA']['Results'] = []
-#end patch    
-
-    global rbAtmDict   
-    rbAtmDict = {}
-    if G2frame.dataDisplay:
-        G2frame.dataDisplay.Destroy()
-    PhaseName = G2frame.PatternTree.GetItemText(Item)
-    G2gd.SetDataMenuBar(G2frame)
-    G2frame.dataFrame.SetLabel('Phase Data for '+PhaseName)
-    G2frame.dataFrame.CreateStatusBar()
-    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
-    G2frame.dataDisplay.gridList = [] # list of all grids in notebook
     # UpdatePhaseData execution continues below
     
     def SetupGeneral():
@@ -5279,6 +5260,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         ChangePage(page)
         
     def ChangePage(page):
+        # development: Log Tab Selection
+        #G2gd.LogTabPress(G2frame,page)
         text = G2frame.dataDisplay.GetPageText(page)
 #        print 'Select',page,text
         if text == 'General':
@@ -5397,7 +5380,26 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         else:
             G2gd.SetDataMenuBar(G2frame)
 
-    # UpdatePhaseData execution continues here
+    # UpdatePhaseData execution starts here
+#patch
+    if 'RBModels' not in data:
+        data['RBModels'] = {}
+    if 'MCSA' not in data:
+        data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[.8,1.2],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
+    if isinstance(data['MCSA']['Results'],dict):
+        data['MCSA']['Results'] = []
+#end patch    
+
+    global rbAtmDict   
+    rbAtmDict = {}
+    if G2frame.dataDisplay:
+        G2frame.dataDisplay.Destroy()
+    PhaseName = G2frame.PatternTree.GetItemText(Item)
+    G2gd.SetDataMenuBar(G2frame)
+    G2frame.dataFrame.SetLabel('Phase Data for '+PhaseName)
+    G2frame.dataFrame.CreateStatusBar()
+    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
+    G2frame.dataDisplay.gridList = [] # list of all grids in notebook
     Pages = []    
     wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
     G2frame.dataDisplay.gridList = []
@@ -5437,11 +5439,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     Pages.append('Pawley reflections')
     G2frame.dataFrame.AtomCompute.ISOcalc.Enable('ISODISTORT' in data)
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
-    SetupGeneral()    
-    GeneralData = data['General']
-    if oldPage is None:
+    if oldPage is None or oldPage == 0:
         ChangePage(0)
     elif oldPage:
+        SetupGeneral()    # not sure why one might need this when moving from phase to phase; but does not hurt
         G2frame.dataDisplay.SetSelection(oldPage)
-    else:
-        ChangePage(0)

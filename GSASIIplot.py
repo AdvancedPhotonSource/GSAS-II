@@ -4653,7 +4653,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     # PlotStructure execution starts here (N.B. initialization above)
     try:
         plotNum = G2frame.G2plotNB.plotList.index(generalData['Name'])
-        Page = G2frame.G2plotNB.nb.GetPage(plotNum)        
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
     except ValueError:
         Plot = G2frame.G2plotNB.addOgl(generalData['Name'])
         plotNum = G2frame.G2plotNB.plotList.index(generalData['Name'])
@@ -4661,6 +4661,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         Page.views = False
         view = False
         altDown = False
+    G2frame.G2plotNB.nb.SetSelection(plotNum) # make sure plot tab is raised for wx >2.8
     Font = Page.GetFont()
     Page.SetFocus()
     Page.Choice = None

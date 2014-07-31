@@ -3386,12 +3386,17 @@ if __name__ == '__main__':
     print "scipy:      ",sp.__version__
     print "OpenGL:     ",ogl.__version__
     try:
-        import Image
-        print "Image (PIL):",Image.VERSION
+        from PIL import Image
+        try:
+            from PIL import PILLOW_VERSION
+            version = PILLOW_VERSION
+        except:
+            version = Image.VERSION
+        print "pillow:     ",version
     except ImportError:
         try:
-            from PIL import Image
-            print "pillow:     ",Image.VERSION
+            import Image
+            print "Image (PIL):",Image.VERSION
         except ImportError:
             print "Image module not present; Note that PIL (Python Imaging Library) or pillow is needed for some image operations"
     try:

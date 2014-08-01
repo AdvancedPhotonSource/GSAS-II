@@ -2159,8 +2159,16 @@ def PlotPeakWidths(G2frame):
         lam = G2mth.getWave(Parms)
     else:
         difC = Parms['difC'][0]
-    peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))['peaks']
-    
+    try:  # PATCH: deal with older peak lists, before changed to dict to implement TOF
+        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))['peaks']
+    except TypeError:
+        print "Your peak list needs reformatting...",
+        item = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List')
+        G2frame.PatternTree.SelectItem(item)  
+        item = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters')
+        G2frame.PatternTree.SelectItem(item)
+        print "done"
+        return
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Peak Widths')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)

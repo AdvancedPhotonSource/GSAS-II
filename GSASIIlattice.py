@@ -1202,11 +1202,14 @@ def Flnh(Start,SHCoef,phi,beta,SGData):
     return ODFln
     
 def polfcal(ODFln,SamSym,psi,gam):
-    'needs doc string'
+    '''Perform a pole figure computation.
+    Note that the the number of gam values must either be 1 or must
+    match psi. Updated for numpy 1.8.0
+    '''
     import pytexture as ptx
     RSQPI = 0.5641895835478
     SQ2 = 1.414213562373
-    PolVal = np.ones_like(gam)
+    PolVal = np.ones_like(psi)
     for term in ODFln:
         if abs(ODFln[term][1]) > 1.e-3:
             l,m,n = eval(term.strip('C'))
@@ -1221,7 +1224,7 @@ def polfcal(ODFln,SamSym,psi,gam):
                     Ksl = RSQPI*psrs*cosd(m*gam)
                 else:
                     Ksl = RSQPI*psrs/SQ2
-            PolVal += ODFln[term][1]*Ksl 
+            PolVal += ODFln[term][1]*Ksl
     return PolVal
     
 def invpolfcal(ODFln,SGData,phi,beta):

@@ -74,6 +74,7 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
                 #self.RefDict['FF'].append({}) # now done in OnImportSfact
             self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+            self.RefDict['Type'] = 'SXC'
             self.UpdateParameters(Type='SXC',Wave=None) # histogram type
             return True
         except Exception as detail:
@@ -114,6 +115,7 @@ class HKLF2_ReaderClass(G2IO.ImportStructFactor):
                 #self.RefDict['FF'].append({}) # now done in OnImportSfact
             self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+            self.RefDict['Type'] = 'SXC'
             self.UpdateParameters(Type='SXC',Wave=None) # histogram type
             return True
         except Exception as detail:
@@ -173,9 +175,11 @@ class NT_HKLF2_ReaderClass(G2IO.ImportStructFactor):
             if len(self.Banks):
                 self.UpdateParameters(Type='SNT',Wave=None) # histogram type
                 for Bank in self.Banks:
-                    Bank['RefDict']['RefList'] = np.array(Bank['RefDict']['RefList'])                    
+                    Bank['RefDict']['RefList'] = np.array(Bank['RefDict']['RefList'])
+                    Bank['RefDict']['Type'] = 'SNT'                    
             else:
                 self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+                self.RefDict['Type'] = 'SNT'
                 self.errors = 'Error after reading reflections (unexpected!)'
                 self.UpdateParameters(Type='SNT',Wave=None) # histogram type
             return True
@@ -234,9 +238,11 @@ class NT_JANA2K_ReaderClass(G2IO.ImportStructFactor):
             if len(self.Banks):
                 self.UpdateParameters(Type='SNT',Wave=None) # histogram type
                 for Bank in self.Banks:
-                    Bank['RefDict']['RefList'] = np.array(Bank['RefDict']['RefList'])                    
+                    Bank['RefDict']['RefList'] = np.array(Bank['RefDict']['RefList'])
+                    Bank['RefDict']['Type'] = 'SNT'                    
             else:
                 self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+                self.RefDict['Type'] = 'SNT'
                 self.errors = 'Error after reading reflections (unexpected!)'
                 self.UpdateParameters(Type='SNT',Wave=None) # histogram type
             return True

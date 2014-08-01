@@ -12,6 +12,8 @@
     HSTRY 10 GENLES  Win32  Jan 30 15:32:35 2013                                
     HSTRY 11 GENLES  Win32  Apr 18 15:20:59 2013                                
     HSTRY 12 EXPEDT  Win32  May 02 11:05:24 2013             L  L               
+    HSTRY 13 GENLES  Win32  May 02 11:05:28 2013                                
+    HSTRY 14 EXPEDT  Win32  Jul 30 15:03:20 2014             L   O              
   DSGL CDAT1  DRAD ARAD NOFO                                                    
   FOUR CDAT1  PTSN X    1 NOPR   0.00      999.99                               
   GNLS  RUN on Oct 09 15:28:00 2011    Total cycles run   9       5994.5        
@@ -127,4 +129,4 @@ INST 1CHIR     1.
 INST 1OMGR     1.                                                               
 INST 1PHIR    -1.                                                               
 ZZZZZZZZZZZZ  Last EXP file record                                              
-    HSTRY 13 GENLES  Win32  May 02 11:05:28 2013                                
+    HSTRY 15 GENLES  Win32  Jul 30 15:03:24 2014                                

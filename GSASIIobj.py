@@ -1270,7 +1270,10 @@ def CompileVarDesc():
         'MD' : 'March-Dollase coef.',
         'Mustrain;.*' : 'Microstrain coef.',
         'Size;.*' : 'Crystallite size value',
-        'eA' : '?',
+        'eA' : 'Cubic mustrain value',
+        'Ep' : 'Primary extinction',
+        'Es' : 'Secondary type II extinction',
+        'Eg' : 'Secondary type I extinction',
         #Histogram vars (:h:<var>)
         'Absorption' : 'Absorption coef.',
         'Displace([XY])' : 'Debye-Scherrer sample displacement \\1',

@@ -98,9 +98,31 @@ atan2d = lambda x,y: 180.*math.atan2(y,x)/math.pi
 def create(parent):
     return GSASII(parent)
 
+def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
+    if dType in ['SXC','SNC']:
+        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
+            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
+            'Extinction':['Lorentzian','None', {'Tbar':0.1,'Cos2TM':0.955,
+            'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}]}
+    elif dType == 'SNT':
+        return {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
+            'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
+            'Extinction':['Lorentzian','None', {
+            'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}]}
+    elif 'P' in dType:
+        return {'Histogram':histoName,'Show':False,'Scale':[1.0,False],
+            'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
+            'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
+                [1.,1.,1.,0.,0.,0.],6*[False,]],
+            'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
+                NShkl*[0.01,],NShkl*[False,]],
+            'HStrain':[NDij*[0.0,],NDij*[False,]],                          
+            'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
+
 class GSASII(wx.Frame):
     '''Define the main GSAS-II frame and its associated menu items
     '''
+    
     def _Add_FileMenuItems(self, parent):
         item = parent.Append(
             help='Open a GSAS-II project file (*.gpx)', id=wx.ID_ANY,
@@ -624,14 +646,6 @@ class GSASII(wx.Frame):
             for i in result:
                 histoName = TextList[i]
                 if histoName in HKLFlist:
-                    UseList[histoName] = {
-                        'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-                        'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-                        'Extinction':['Lorentzian','None', {'Tbar':0.1,'Cos2TM':0.955,
-                                                            'Eg':[1.e-10,False],
-                                                            'Es':[1.e-10,False],
-                                                            'Ep':[1.e-10,False]},]
-                        }
                     #redo UpdateHKLFdata(histoName) here:
                     Id = G2gd.GetPatternTreeItemId(self,self.root,histoName)
                     refDict,reflData = self.PatternTree.GetItemPyData(Id)
@@ -640,20 +654,13 @@ class GSASII(wx.Frame):
                         H = list(ref[:3])
                         ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
                         iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
+                    UseList[histoName] = SetDefaultDData(refDict['Type'],histoName)
                 elif histoName in PWDRlist:
-                    UseList[histoName] = {
-                        'Histogram':histoName,'Show':False,
-                        'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
-                        'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
-                                [1.,1.,1.,0.,0.,0.],6*[False,]],
-                        'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
-                                    NShkl*[0.01,],NShkl*[False,]],
-                        'HStrain':[NDij*[0.0,],NDij*[False,]],                          
-                        'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
                     Id = G2gd.GetPatternTreeItemId(self,self.root,histoName)
                     refList = self.PatternTree.GetItemPyData(
                         G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'))
                     refList[generalData['Name']] = []
+                    UseList[histoName] = SetDefaultDData('PWDR',histoName,NShkl=NShkl,NDij=NDij)
                 else:
                     raise Exception('Unexpected histogram '+str(histoName))
         wx.EndBusyCursor()
@@ -713,13 +720,9 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
             HistName = 'HKLF '+HistName
             # make new histogram names unique
-            valuesdict = {
-                'wtFactor':1.0,
-                'Dummy':False,
-                'ranId':ran.randint(0,sys.maxint),
-                }
             if len(rd.Banks):
                 for Bank in rd.Banks:
+                    valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxint),}
                     HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
                     print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
                     Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
@@ -731,6 +734,7 @@ class GSASII(wx.Frame):
                     self.PatternTree.SetItemPyData(
                         self.PatternTree.AppendItem(Id,text='Reflection List'),[])  #dummy entry for GUI use
             else:
+                valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxint),}
                 HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
                 print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
                 if not rd.RefDict.get('FF'):
@@ -773,20 +777,11 @@ class GSASII(wx.Frame):
             generalData = data['General']
             SGData = generalData['SGData']
             UseList = data['Histograms']
-            NShkl = len(G2spc.MustrainNames(SGData))
-            NDij = len(G2spc.HStrainNames(SGData))
             for histoName in newHistList:
-                UseList[histoName] = {
-                    'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-                    'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-                    'Extinction':['Lorentzian','None', {'Tbar':0.1,'Cos2TM':0.955,
-                                                        'Eg':[1.e-10,False],
-                                                        'Es':[1.e-10,False],
-                                                        'Ep':[1.e-10,False]},]
-                    }
                 #redo UpdateHKLFdata(histoName) here:
                 Id = G2gd.GetPatternTreeItemId(self,self.root,histoName)
                 refDict,reflData = self.PatternTree.GetItemPyData(Id)
+                UseList[histoName] = SetDefaultDData(refDict['Type'],histoName)
                 G,g = G2lat.cell2Gmat(generalData['Cell'][1:7])
                 for iref,ref in enumerate(reflData['RefList']):
                     H = list(ref[:3])
@@ -1325,15 +1320,7 @@ class GSASII(wx.Frame):
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
             for histoName in newHistList:
-                UseList[histoName] = {
-                    'Histogram':histoName,'Show':False,
-                    'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
-                    'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
-                            [1.,1.,1.,0.,0.,0.],6*[False,]],
-                    'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
-                                NShkl*[0.01,],NShkl*[False,]],
-                    'HStrain':[NDij*[0.0,],NDij*[False,]],                          
-                    'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
+                UseList[histoName] = SetDefaultDData('PWDR',histoName,NShkl=NShkl,NDij=NDij)
                 Id = G2gd.GetPatternTreeItemId(self,self.root,histoName)
                 refList = self.PatternTree.GetItemPyData(
                     G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'))
@@ -1495,15 +1482,7 @@ class GSASII(wx.Frame):
             UseList = data['Histograms']
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
-            UseList[HistName] = {
-                'Histogram':HistName,'Show':False,
-                'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
-                'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
-                        [1.,1.,1.,0.,0.,0.],6*[False,]],
-                'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
-                            NShkl*[0.01,],NShkl*[False,]],
-                'HStrain':[NDij*[0.0,],NDij*[False,]],                          
-                'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
+            UseList[HistName] = SetDefaultDData('PWDR',histoName,NShkl=NShkl,NDij=NDij)
             Id = G2gd.GetPatternTreeItemId(self,self.root,HistName)
             refList = self.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'))

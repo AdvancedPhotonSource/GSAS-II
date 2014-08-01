@@ -162,7 +162,10 @@ def UpdateDData(G2frame,DData,data):
         Obj = event.GetEventObject()
         hist = Indx[Obj.GetId()]
         sourceDict = UseList[hist]
-        copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
+        if 'HKLF' in sourceDict['Histogram']:
+            copyNames = ['Scale','Extinction','Babinet']
+        else:  #PWDR  
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
         copyDict = {}
         for name in copyNames: 
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
@@ -184,11 +187,19 @@ def UpdateDData(G2frame,DData,data):
         hist = Indx[Obj.GetId()]
         sourceDict = UseList[hist]
         copyDict = {}
-        copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
+        if 'HKLF' in sourceDict['Histogram']:
+            copyNames = ['Scale','Extinction','Babinet']
+        else:  #PWDR  
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
         babNames = ['BabA','BabU']
         for name in copyNames:
             if name in ['Scale','Extinction','HStrain']:
-                copyDict[name] = sourceDict[name][1]
+                if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
+                    copyDict[name] = {}
+                    for item in ['Eg','Es','Ep']:
+                        copyDict[name][item] = sourceDict[name][2][item][1]
+                else:
+                    copyDict[name] = sourceDict[name][1]
             elif name in ['Size','Mustrain']:
                 copyDict[name] = [sourceDict[name][0],sourceDict[name][2],sourceDict[name][4]]
             elif name == 'Pref.Ori.':
@@ -215,7 +226,11 @@ def UpdateDData(G2frame,DData,data):
                         UseList[item]
                         for name in copyNames:
                             if name in ['Scale','Extinction','HStrain']:
-                                UseList[item][name][1] = copy.copy(copyDict[name])
+                                if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
+                                    for itm in ['Eg','Es','Ep']:
+                                        UseList[item][name][2][itm][1] = copy.copy(copyDict[name][itm])                                  
+                                else:
+                                    UseList[item][name][1] = copy.copy(copyDict[name])
                             elif name in ['Size','Mustrain']:
                                 UseList[item][name][0] = copy.copy(copyDict[name][0])
                                 UseList[item][name][2] = copy.copy(copyDict[name][1])
@@ -778,22 +793,23 @@ def UpdateDData(G2frame,DData,data):
         extSizer.Add(typeSizer,0,WACV)
         if UseList[item]['Extinction'][1] != 'None':
             extSizer.Add((0,5),)
-            valSizer =wx.BoxSizer(wx.HORIZONTAL)
-            valSizer.Add(wx.StaticText(DData,-1,' Tbar(mm):'),0,WACV)
-            tbarVal = wx.TextCtrl(DData,wx.ID_ANY,
-                '%.3f'%(UseList[item]['Extinction'][2]['Tbar']),style=wx.TE_PROCESS_ENTER)
-            Indx[tbarVal.GetId()] = item
-            tbarVal.Bind(wx.EVT_TEXT_ENTER,OnTbarVal)
-            tbarVal.Bind(wx.EVT_KILL_FOCUS,OnTbarVal)
-            valSizer.Add(tbarVal,0,WACV)
-            valSizer.Add(wx.StaticText(DData,-1,' cos(2ThM):'),0,WACV)
-            cos2tm = wx.TextCtrl(DData,wx.ID_ANY,
-                '%.3f'%(UseList[item]['Extinction'][2]['Cos2TM']),style=wx.TE_PROCESS_ENTER)
-            Indx[cos2tm.GetId()] = item
-            cos2tm.Bind(wx.EVT_TEXT_ENTER,OnCos2TM)
-            cos2tm.Bind(wx.EVT_KILL_FOCUS,OnCos2TM)
-            valSizer.Add(cos2tm,0,WACV)
-            extSizer.Add(valSizer,0,WACV)
+            if 'Tbar' in UseList[item]['Extinction'][2]:       #skipped for TOF   
+                valSizer =wx.BoxSizer(wx.HORIZONTAL)
+                valSizer.Add(wx.StaticText(DData,-1,' Tbar(mm):'),0,WACV)
+                tbarVal = wx.TextCtrl(DData,wx.ID_ANY,
+                    '%.3f'%(UseList[item]['Extinction'][2]['Tbar']),style=wx.TE_PROCESS_ENTER)
+                Indx[tbarVal.GetId()] = item
+                tbarVal.Bind(wx.EVT_TEXT_ENTER,OnTbarVal)
+                tbarVal.Bind(wx.EVT_KILL_FOCUS,OnTbarVal)
+                valSizer.Add(tbarVal,0,WACV)
+                valSizer.Add(wx.StaticText(DData,-1,' cos(2ThM):'),0,WACV)
+                cos2tm = wx.TextCtrl(DData,wx.ID_ANY,
+                    '%.3f'%(UseList[item]['Extinction'][2]['Cos2TM']),style=wx.TE_PROCESS_ENTER)
+                Indx[cos2tm.GetId()] = item
+                cos2tm.Bind(wx.EVT_TEXT_ENTER,OnCos2TM)
+                cos2tm.Bind(wx.EVT_KILL_FOCUS,OnCos2TM)
+                valSizer.Add(cos2tm,0,WACV)
+                extSizer.Add(valSizer,0,WACV)
             val2Sizer =wx.BoxSizer(wx.HORIZONTAL)
             if 'Primary' in UseList[item]['Extinction'][1]:
                 Ekey = ['Ep',]

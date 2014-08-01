@@ -74,7 +74,7 @@ def SetPhaseWindow(mainFrame,phasePage,mainSizer):
     phasePage.SetSize(Size)
     phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
     mainFrame.setSizePosLeft(Size)
-
+    
 def UpdatePhaseData(G2frame,Item,data,oldPage):
     '''Create the data display window contents when a phase is clicked on
     in the main (data tree) window.

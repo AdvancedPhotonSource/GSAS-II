@@ -556,7 +556,7 @@ def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     BLtables = calcControls['BLtables']
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     FF = np.zeros(len(Tdata))
-    if 'N' in calcControls[hfx+'histType']:
+    if 'NC' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
     else:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
@@ -571,6 +571,8 @@ def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         refDict['FF']['El'] = dat.keys()
         refDict['FF']['FF'] = np.zeros((len(refDict['RefList']),len(dat)))   
     for iref,refl in enumerate(refDict['RefList']):
+        if 'NT' in calcControls[hfx+'histType']:
+            FP,FPP = G2el.BlenResCW(Tdata,BLtables,refl[12])
         fbs = np.array([0,0])
         H = refl[:3]
         SQ = 1./(2.*refl[4])**2
@@ -631,9 +633,9 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     BLtables = calcControls['BLtables']
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     FF = np.zeros(len(Tdata))
-    if 'N' in calcControls[hfx+'histType']:
+    if 'NC' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
-    else:
+    elif 'X' in calcControls[hfx+'histType']:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
     Uij = np.array(G2lat.U6toUij(Uijdata))
@@ -661,6 +663,10 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         H = refl.T[:3]
         SQ = 1./(2.*refl.T[4])**2
         SQfactor = 4.0*SQ*twopisq
+        if 'T' in calcControls[hfx+'histType']:
+            FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[12])
+            FP = np.repeat(FP.T,len(SGT),axis=0)
+            FPP = np.repeat(FPP.T,len(SGT),axis=0)
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT),axis=0)
@@ -795,27 +801,34 @@ def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
     dervCor = 1.0
     dervDict = {}
     if calcControls[phfx+'EType'] != 'None':
-        cos2T = 1.0-0.5*(parmDict[hfx+'Lam']/ref[4])**2         #cos(2theta)
+        SQ = 1/(4.*ref[4]**2)
+        if 'C' in parmDict[hfx+'Type']:            
+            cos2T = 1.0-2.*SQ*parmDict[hfx+'Lam']**2           #cos(2theta)
+        else:   #'T'
+            cos2T = 1.0-2.*SQ*ref[12]**2                       #cos(2theta)            
         if 'SXC' in parmDict[hfx+'Type']:
             AV = 7.9406e5/parmDict[pfx+'Vol']**2
             PL = np.sqrt(1.0-cos2T**2)/parmDict[hfx+'Lam']
             P12 = (calcControls[phfx+'Cos2TM']+cos2T**4)/(calcControls[phfx+'Cos2TM']+cos2T**2)
+            PLZ = AV*P12*ref[7]*parmDict[hfx+'Lam']**2
         elif 'SNT' in parmDict[hfx+'Type']:
             AV = 1.e7/parmDict[pfx+'Vol']**2
-            PL = 1./(4.*refl[4]**2)
-            P12 = 1.0
+            PL = SQ
+            PLZ = AV*ref[7]*ref[12]**2
         elif 'SNC' in parmDict[hfx+'Type']:
             AV = 1.e7/parmDict[pfx+'Vol']**2
             PL = np.sqrt(1.0-cos2T**2)/parmDict[hfx+'Lam']
-            P12 = 1.0
+            PLZ = AV*ref[7]*parmDict[hfx+'Lam']**2
             
-        PLZ = AV*P12*parmDict[hfx+'Lam']**2*ref[7]
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5
         else:
-            PLZ *= calcControls[phfx+'Tbar']
-                        
+            if 'C' in parmDict[hfx+'Type']:
+                PLZ *= calcControls[phfx+'Tbar']
+            else: #'T'
+                PLZ *= ref[13]
         if 'Primary' in calcControls[phfx+'EType']:
+            PLZ *= 1.5
             PSIG = parmDict[phfx+'Ep']
         elif 'I & II' in calcControls[phfx+'EType']:
             PSIG = parmDict[phfx+'Eg']/np.sqrt(1.+(parmDict[phfx+'Es']*PL/parmDict[phfx+'Eg'])**2)
@@ -843,7 +856,7 @@ def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
             extCor = np.sqrt(PF4)
             PF3 = 0.5*(CL+2.*AL*PF/(1.+BL*PF)-AL*PF**2*BL/(1.+BL*PF)**2)/(PF4*extCor)
 
-        dervCor = (1.+PF)*PF3
+        dervCor = (1.+PF)*PF3   #extinction corr for other derivatives
         if 'Primary' in calcControls[phfx+'EType'] and phfx+'Ep' in varyList:
             dervDict[phfx+'Ep'] = -ref[7]*PLZ*PF3
         if 'II' in calcControls[phfx+'EType'] and phfx+'Es' in varyList:
@@ -1892,7 +1905,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             refDict = Histogram['Data']
             time0 = time.time()
             dFdvDict = StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
-            print 'sf-deriv time: %.3f'%(time.time()-time0)
+#            print 'sf-deriv time: %.3f'%(time.time()-time0)
             ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
             dMdvh = np.zeros((len(varylist),len(refDict['RefList'])))
             dependentVars = G2mv.GetDependentVars()
@@ -1915,9 +1928,9 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                                 if var in dFdvDict:
                                     depDerivDict[var][iref] = w*dFdvDict[var][iref]*dervCor*parmDict[phfx+'Scale']
                             if phfx+'Scale' in varylist:
-                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]    #*dervCor
                             elif phfx+'Scale' in dependentVars:
-                                depDerivDict[phfx+'Scale'][iref] = w*ref[9]*dervCor
+                                depDerivDict[phfx+'Scale'][iref] = w*ref[9] #*dervCor
                             for item in ['Ep','Es','Eg']:
                                 if phfx+item in varylist:
                                     dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
@@ -1925,9 +1938,9 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                                     depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
                             for item in ['BabA','BabU']:
                                 if phfx+item in varylist:
-                                    dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']  #*dervCor
                                 elif phfx+item in dependentVars:
-                                    depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
+                                    depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']   #*dervCor
             else:
                 for iref,ref in enumerate(refDict['RefList']):
                     if ref[5] > 0.:
@@ -1948,18 +1961,18 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                             elif phfx+'Scale' in dependentVars:
                                 depDerivDict[phfx+'Scale'][iref] = w*ref[9]*dervCor                           
                             for item in ['Ep','Es','Eg']:
-                                if phfx+item in varylist:
-                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
-                                elif phfx+item in dependentVars:
-                                    depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
+                                if phfx+item in varylist and dervDict:
+                                   dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']/dervCor
+                                elif phfx+item in dependentVars and dervDict:
+                                    depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']/dervCor
                             for item in ['BabA','BabU']:
                                 if phfx+item in varylist:
-                                    dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']  #*dervCor
                                 elif phfx+item in dependentVars:
-                                    depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
+                                    depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']   #*dervCor
             # now process derivatives in constraints
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdvh)
-            print 'matrix build time: %.3f'%(time.time()-time0)
+#            print 'matrix build time: %.3f'%(time.time()-time0)
 
             if dlg:
                 dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
@@ -2048,7 +2061,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             refDict = Histogram['Data']
             time0 = time.time()
             StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
-            print 'sf-calc time: %.3f'%(time.time()-time0)
+#            print 'sf-calc time: %.3f'%(time.time()-time0)
             df = np.zeros(len(refDict['RefList']))
             sumwYo = 0
             sumFo = 0

@@ -315,19 +315,20 @@ class CIFhklReader(G2IO.ImportStructFactor):
             self.errors = 'Error during reading of dataset parameters'
             if blk.get('_diffrn_radiation_probe'):
                 if blk['_diffrn_radiation_probe'] == 'neutron':
-                    type = 'SNC'
+                    Type = 'SNC'
             elif blk.get('_diffrn_radiation.probe'):
                 if blk['_diffrn_radiation.probe'] == 'neutron':
-                    type = 'SNC'
+                    Type = 'SNC'
             else:
                 type = 'SXC'
+            self.RefDict['Type'] = Type
             if blk.get('_diffrn_radiation_wavelength'):
                 wave = float(blk['_diffrn_radiation_wavelength'])
             elif blk.get('_diffrn_radiation.wavelength'):
                 wave = float(blk['_diffrn_radiation.wavelength'])
             else:
                 wave = 1.5418
-            self.UpdateParameters(Type=type,Wave=wave) # histogram type
+            self.UpdateParameters(Type=Type,Wave=wave) # histogram type
             return True
         except Exception as detail:
             self.errors += '\n  '+str(detail)

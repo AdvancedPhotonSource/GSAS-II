@@ -2505,7 +2505,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','I100',]
     Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
         2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
-        [wg.GRID_VALUE_FLOAT+':10,2',]
+        [wg.GRID_VALUE_FLOAT+':10,3',]
     G2frame.PeakTable = G2gd.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
     G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)

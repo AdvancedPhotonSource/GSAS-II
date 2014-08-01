@@ -151,18 +151,18 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
             if Print: print "converged"
             break
         icycle += 1
-    else:       #after last cycle or if zero cycles
-        M = func(x0,*args)
-        nfev += 1
-        Yvec,Amat = Hess(x0,*args)
-        Adiag = np.sqrt(np.diag(Amat))
-        Anorm = np.outer(Adiag,Adiag)
-        Amatlam = Amat*(One+Lam)/Anorm              #scale Amat to Marquardt array        
+    M = func(x0,*args)
+    nfev += 1
+    Yvec,Amat = Hess(x0,*args)
+    Adiag = np.sqrt(np.diag(Amat))
+    Anorm = np.outer(Adiag,Adiag)
+    Lam = np.eye(Amat.shape[0])*lam
+    Amatlam = Amat/Anorm  #*(One+Lam)              #don't scale Amat to Marquardt array        
     try:
-        Bmat = nl.inv(Amatlam)*(One+Lam)/Anorm      #rescale Bmat to Marquardt array
+        Bmat = nl.inv(Amatlam)/Anorm  #*(One+Lam)      #don't rescale Bmat to Marquardt array
         return [x0,Bmat,{'num cyc':icycle,'fvec':M,'nfev':nfev,'lamMax':lamMax,'psing':[], 'Converged': ifConverged, 'DelChi2':deltaChi2}]
     except nl.LinAlgError:
-        print 'ouch #2 linear algebra error in LS'
+        print 'ouch #2 linear algebra error in making v-cov matrix'
         psing = []
         if maxcyc:
             psing = list(np.where(np.diag(nl.qr(Amat)[1]) < 1.e-14)[0])

@@ -325,24 +325,24 @@ def BlenResCW(Els,BLtables,wave):
             FPP[i] = BL['SL'][1]    #for Li, B, etc.
     return FP,FPP
     
-def BlenResTOF(El,BLtables,wave):
-    FP = np.zeros(len(wave))
-    FPP = np.zeros(len(wave))
-    BL = BLtables[El][1]
-    print BL
-    if 'BW-LS' in BL:
-        Re,Im,E0,gam,A,E1,B,E2 = BL['BW-LS'][1:]
-        Emev = 81.80703/wave**2
-        T0 = Emev-E0
-        T1 = Emev-E1
-        T2 = Emev-E2
-        D0 = T0**2+gam**2
-        D1 = T1**2+gam**2
-        D2 = T2**2+gam**2
-        FP = Re*(T0/D0+A*T1/D1+B*T2/D2)
-        FPP = Im*(1/D0+A/D1+B/D2)
-    else:
-        FPP = np.ones(len(wave))*BL['SL'][1]    #for Li, B, etc.
+def BlenResTOF(Els,BLtables,wave):
+    FP = np.zeros((len(Els),len(wave)))
+    FPP = np.zeros((len(Els),len(wave)))
+    BL = [BLtables[el][1] for el in Els]
+    for i,El in enumerate(Els):
+        if 'BW-LS' in BL[i]:
+            Re,Im,E0,gam,A,E1,B,E2 = BL[i]['BW-LS'][1:]
+            Emev = 81.80703/wave**2
+            T0 = Emev-E0
+            T1 = Emev-E1
+            T2 = Emev-E2
+            D0 = T0**2+gam**2
+            D1 = T1**2+gam**2
+            D2 = T2**2+gam**2
+            FP[i] = Re*(T0/D0+A*T1/D1+B*T2/D2)
+            FPP[i] = Im*(1/D0+A/D1+B/D2)
+        else:
+            FPP[i] = np.ones(len(wave))*BL[i]['SL'][1]    #for Li, B, etc.
     return FP,FPP
     
 def ComptonFac(El,SQ):

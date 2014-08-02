@@ -49,7 +49,7 @@ class testDeriv(wx.Frame):
 
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='testDeriv', parent=parent,
-            size=wx.Size(460, 250),style=wx.DEFAULT_FRAME_STYLE, title='Test Derivatives')
+            size=wx.Size(460, 250),style=wx.DEFAULT_FRAME_STYLE, title='Test Jacobian Derivatives')
         self.testDerivMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
         self.File.Append(help='Open testDeriv.dat', id=wxID_FILEOPEN,

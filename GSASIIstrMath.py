@@ -1791,14 +1791,14 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                                 depDerivDict[phfx+'Scale'][iref] = w*ref[9]*dervCor
                             for item in ['Ep','Es','Eg']:
                                 if phfx+item in varylist:
-                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/dervCor  #*parmDict[phfx+'Scale']
                                 elif phfx+item in dependentVars:
-                                    depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
+                                    depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/dervCor   #*parmDict[phfx+'Scale']
                             for item in ['BabA','BabU']:
                                 if phfx+item in varylist:
-                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervCor*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervCor*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
                                 elif phfx+item in dependentVars:
-                                    depDerivDict[phfx+item][iref] = w*dervCor*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']
+                                    depDerivDict[phfx+item][iref] = w*dervCor*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
             else:
                 for iref,ref in enumerate(refDict['RefList']):
                     if ref[5] > 0.:
@@ -1819,9 +1819,9 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                                 depDerivDict[phfx+'Scale'][iref] = w*ref[9]*dervCor                           
                             for item in ['Ep','Es','Eg']:
                                 if phfx+item in varylist:
-                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/dervCor  #*parmDict[phfx+'Scale']
                                 elif phfx+item in dependentVars:
-                                    depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
+                                    depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/dervCor   #*parmDict[phfx+'Scale']
                             for item in ['BabA','BabU']:
                                 if phfx+item in varylist:
                                     dMdvh[varylist.index(phfx+item)][iref] = w*dervCor*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']
@@ -1928,19 +1928,19 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                                 if var in dFdvDict:
                                     depDerivDict[var][iref] = w*dFdvDict[var][iref]*dervCor*parmDict[phfx+'Scale']
                             if phfx+'Scale' in varylist:
-                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]    #*dervCor
+                                dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor
                             elif phfx+'Scale' in dependentVars:
-                                depDerivDict[phfx+'Scale'][iref] = w*ref[9] #*dervCor
+                                depDerivDict[phfx+'Scale'][iref] = w*ref[9]*dervCor
                             for item in ['Ep','Es','Eg']:
                                 if phfx+item in varylist:
-                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/dervCor  #*parmDict[phfx+'Scale']
                                 elif phfx+item in dependentVars:
-                                    depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']
+                                    depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/dervCor   #*parmDict[phfx+'Scale']
                             for item in ['BabA','BabU']:
                                 if phfx+item in varylist:
-                                    dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']  #*dervCor
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
                                 elif phfx+item in dependentVars:
-                                    depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']   #*dervCor
+                                    depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
             else:
                 for iref,ref in enumerate(refDict['RefList']):
                     if ref[5] > 0.:
@@ -1959,17 +1959,17 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                             if phfx+'Scale' in varylist:
                                 dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor
                             elif phfx+'Scale' in dependentVars:
-                                depDerivDict[phfx+'Scale'][iref] = w*ref[9]*dervCor                           
+                                depDerivDict[phfx+'Scale'][iref] = w*ref[9]*dervCor                          
                             for item in ['Ep','Es','Eg']:
                                 if phfx+item in varylist and dervDict:
-                                   dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']/dervCor
+                                   dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]   #*parmDict[phfx+'Scale']
                                 elif phfx+item in dependentVars and dervDict:
-                                    depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]*parmDict[phfx+'Scale']/dervCor
+                                    depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]   #*parmDict[phfx+'Scale']
                             for item in ['BabA','BabU']:
                                 if phfx+item in varylist:
-                                    dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']  #*dervCor
+                                    dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
                                 elif phfx+item in dependentVars:
-                                    depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']   #*dervCor
+                                    depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
             # now process derivatives in constraints
             G2mv.Dict2Deriv(varylist,depDerivDict,dMdvh)
 #            print 'matrix build time: %.3f'%(time.time()-time0)

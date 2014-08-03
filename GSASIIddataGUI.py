@@ -195,7 +195,7 @@ def UpdateDData(G2frame,DData,data):
         for name in copyNames:
             if name in ['Scale','Extinction','HStrain']:
                 if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
-                    copyDict[name] = {}
+                    copyDict[name] = {name:[sourceDict[name][:1]]}
                     for item in ['Eg','Es','Ep']:
                         copyDict[name][item] = sourceDict[name][2][item][1]
                 else:
@@ -227,8 +227,9 @@ def UpdateDData(G2frame,DData,data):
                         for name in copyNames:
                             if name in ['Scale','Extinction','HStrain']:
                                 if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
+                                    UseList[item][name][:1] = copy.copy(sourceDict[name][:1])
                                     for itm in ['Eg','Es','Ep']:
-                                        UseList[item][name][2][itm][1] = copy.copy(copyDict[name][itm])                                  
+                                        UseList[item][name][2][itm][1] = copy.copy(copyDict[name][itm])
                                 else:
                                     UseList[item][name][1] = copy.copy(copyDict[name])
                             elif name in ['Size','Mustrain']:

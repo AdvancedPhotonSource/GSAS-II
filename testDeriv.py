@@ -49,7 +49,7 @@ class testDeriv(wx.Frame):
 
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='testDeriv', parent=parent,
-            size=wx.Size(460, 250),style=wx.DEFAULT_FRAME_STYLE, title='Test Jacobian Derivatives')
+            size=wx.Size(750, 250),style=wx.DEFAULT_FRAME_STYLE, title='Test Jacobian Derivatives')
         self.testDerivMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
         self.File.Append(help='Open testDeriv.dat', id=wxID_FILEOPEN,
@@ -141,7 +141,7 @@ class testDeriv(wx.Frame):
 #        mainSizer.Layout()
         self.testDerivPanel.SetSizer(mainSizer)    
         Size = mainSizer.Fit(self.testDerivPanel)
-        Size[0] = 700
+        Size[0] = 750
         Size[1] = max(Size[1],290) + 35
         self.testDerivPanel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         self.testDerivPanel.SetSize(Size)
@@ -162,6 +162,7 @@ class testDeriv(wx.Frame):
                 self.varylist,self.calcControls,self.pawleyLookup,None)
             hplot.plot(dMdV[self.varylist.index(name)],'b',label='analytic deriv')
             if name in self.varylist:
+                print 'parameter:',name,self.values[self.varylist.index(name)],delt
                 self.values[self.varylist.index(name)] -= delt
                 M0 = G2stMth.errRefine(self.values,self.HistoPhases,self.parmDict,
                     self.varylist,self.calcControls,self.pawleyLookup,None)

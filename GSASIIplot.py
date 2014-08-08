@@ -873,11 +873,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2frame.SqrtPlot = not G2frame.SqrtPlot
                 if G2frame.SqrtPlot:
                     G2frame.delOffset = .002
-                    G2frame.refOffset = -10.0
+                    G2frame.refOffset = -1.0
                     G2frame.refDelt = .001
                 else:
                     G2frame.delOffset = .02
-                    G2frame.refOffset = -100.0
+                    G2frame.refOffset = -1.0
                     G2frame.refDelt = .01
             newPlot = True
         elif event.key == 'u' and (G2frame.Contour or not G2frame.SinglePlot):
@@ -1885,7 +1885,6 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
         Plot.set_ylabel(r'$\mathsf{\Delta(2\theta)}$',fontsize=14)
     else:
         Plot.set_ylabel(r'$\mathsf{\Delta}T/T$',fontsize=14)
-    colors=['b','g','r','c','m','k']
     for ixy,xy in enumerate(XY):
         X,Y = xy
         Yc = G2lat.Dsp2pos(Inst,X)
@@ -1898,6 +1897,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
         if E:
             Plot.errorbar(X,Y,ecolor='k',yerr=E)
         Plot.plot(X,Y,'kx',picker=3)
+        Plot.axhline(0.,color='r',linestyle='--')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

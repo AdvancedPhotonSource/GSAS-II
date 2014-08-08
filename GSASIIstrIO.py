@@ -238,12 +238,13 @@ def GetFprime(controlDict,Histograms):
             Histogram = Histograms[histogram]
             hId = Histogram['hId']
             hfx = ':%d:'%(hId)
-            keV = controlDict[hfx+'keV']
-            for El in FFtables:
-                Orbs = G2el.GetXsectionCoeff(El.split('+')[0].split('-')[0])
-                FP,FPP,Mu = G2el.FPcalc(Orbs, keV)
-                FFtables[El][hfx+'FP'] = FP
-                FFtables[El][hfx+'FPP'] = FPP                
+            if 'X' in controlDict[hfx+'histType']:
+                keV = controlDict[hfx+'keV']
+                for El in FFtables:
+                    Orbs = G2el.GetXsectionCoeff(El.split('+')[0].split('-')[0])
+                    FP,FPP,Mu = G2el.FPcalc(Orbs, keV)
+                    FFtables[El][hfx+'FP'] = FP
+                    FFtables[El][hfx+'FPP'] = FPP                
             
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
@@ -1717,13 +1718,15 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
             if 'PWDR' in histogram:
                 limits = Histogram['Limits'][1]
                 inst = Histogram['Instrument Parameters'][0]
-                Zero = inst['Zero'][1]
+                Zero = inst['Zero'][0]
                 if 'C' in inst['Type'][1]:
                     try:
                         wave = inst['Lam'][1]
                     except KeyError:
                         wave = inst['Lam1'][1]
                     dmin = wave/(2.0*sind(limits[1]/2.0))
+                elif 'T' in inst['Type'][0]:
+                    dmin = limits[0]/inst['difC'][1]
                 pfx = str(pId)+':'+str(hId)+':'
                 for item in ['Scale','Extinction']:
                     hapDict[pfx+item] = hapData[item][0]
@@ -1809,11 +1812,16 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         if 'C' in inst['Type'][0]:
                             pos = 2.0*asind(wave/(2.0*d))+Zero
                             if limits[0] < pos < limits[1]:
-                                refList.append([h,k,l,mul,d,pos,0.0,0.0,0.0,0.0,0.0,0.0])
+                                refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0])
                                 Uniq.append(uniq)
                                 Phi.append(phi)
-                        else:
-                            raise ValueError 
+                        elif 'T' in inst['Type'][0]:
+                            pos = inst['difC'][1]*d+inst['difA'][1]*d**2+inst['difB'][1]*d**3+Zero
+                            if limits[0] < pos < limits[1]:
+                                wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
+                                refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0,wave])
+                                Uniq.append(uniq)
+                                Phi.append(phi)
                     Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{}}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]
@@ -2217,9 +2225,8 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             instDict[insName] = Inst[item][1]
             if len(Inst[item]) > 2 and Inst[item][2]:
                 insVary.append(insName)
-#        instDict[pfx+'X'] = max(instDict[pfx+'X'],0.001)
-#        instDict[pfx+'Y'] = max(instDict[pfx+'Y'],0.001)
-        instDict[pfx+'SH/L'] = max(instDict[pfx+'SH/L'],0.0005)
+        if 'C' in dataType:
+            instDict[pfx+'SH/L'] = max(instDict[pfx+'SH/L'],0.0005)
         return dataType,instDict,insVary
         
     def GetSampleParms(hId,Sample):
@@ -2280,22 +2287,31 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         
     def PrintInstParms(Inst):
         print >>pFile,'\n Instrument Parameters:'
-        ptlbls = ' name  :'
-        ptstr =  ' value :'
-        varstr = ' refine:'
         insKeys = Inst.keys()
         insKeys.sort()
-        for item in insKeys:
-            if item not in ['Type','Source']:
-                ptlbls += '%12s' % (item)
-                ptstr += '%12.6f' % (Inst[item][1])
-                if item in ['Lam1','Lam2','Azimuth']:
-                    varstr += 12*' '
-                else:
-                    varstr += '%12s' % (str(bool(Inst[item][2])))
-        print >>pFile,ptlbls
-        print >>pFile,ptstr
-        print >>pFile,varstr
+        iBeg = 0
+        Ok = True
+        while Ok:
+            ptlbls = ' name  :'
+            ptstr =  ' value :'
+            varstr = ' refine:'
+            iFin = min(iBeg+9,len(insKeys))
+            for item in insKeys[iBeg:iFin]:
+                if item not in ['Type','Source']:
+                    ptlbls += '%12s' % (item)
+                    ptstr += '%12.6f' % (Inst[item][1])
+                    if item in ['Lam1','Lam2','Azimuth','fltPath','2-theta',]:
+                        varstr += 12*' '
+                    else:
+                        varstr += '%12s' % (str(bool(Inst[item][2])))
+            print >>pFile,ptlbls
+            print >>pFile,ptstr
+            print >>pFile,varstr
+            iBeg = iFin
+            if iBeg == len(insKeys):
+                Ok = False
+            else:
+                print >>pFile,'\n'
         
     def PrintSampleParms(Sample):
         print >>pFile,'\n Sample Parameters:'
@@ -2346,10 +2362,11 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             Inst = Histogram['Instrument Parameters'][0]
             Type,instDict,insVary = GetInstParms(hId,Inst)
             controlDict[pfx+'histType'] = Type
-            if pfx+'Lam1' in instDict:
-                controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam1']
-            else:
-                controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam']            
+            if 'XC' in Type:
+                if pfx+'Lam1' in instDict:
+                    controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam1']
+                else:
+                    controlDict[pfx+'keV'] = 12.397639/instDict[pfx+'Lam']            
             histDict.update(instDict)
             histVary += insVary
             
@@ -2382,8 +2399,9 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             controlDict[pfx+'wtFactor'] = Histogram['wtFactor']
             Inst = Histogram['Instrument Parameters'][0]
             controlDict[pfx+'histType'] = Inst['Type'][0]
-            histDict[pfx+'Lam'] = Inst['Lam'][1]
-            controlDict[pfx+'keV'] = 12.397639/histDict[pfx+'Lam']                    
+            if 'X' in Inst['Type'][0]:
+                histDict[pfx+'Lam'] = Inst['Lam'][1]
+                controlDict[pfx+'keV'] = 12.397639/histDict[pfx+'Lam']                    
     return histVary,histDict,controlDict
     
 def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
@@ -2497,26 +2515,33 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
                 print >>pFile,sigstr
         
     def PrintInstParmsSig(Inst,instSig):
-        ptlbls = ' names :'
-        ptstr =  ' value :'
-        sigstr = ' sig   :'
         refine = False
         insKeys = instSig.keys()
         insKeys.sort()
-        for name in insKeys:
-            if name not in  ['Type','Lam1','Lam2','Azimuth','Source']:
-                ptlbls += '%12s' % (name)
-                ptstr += '%12.6f' % (Inst[name][1])
-                if instSig[name]:
-                    refine = True
-                    sigstr += '%12.6f' % (instSig[name])
-                else:
-                    sigstr += 12*' '
-        if refine:
-            print >>pFile,'\n Instrument Parameters:'
-            print >>pFile,ptlbls
-            print >>pFile,ptstr
-            print >>pFile,sigstr
+        iBeg = 0
+        Ok = True
+        while Ok:
+            ptlbls = ' names :'
+            ptstr =  ' value :'
+            sigstr = ' sig   :'
+            iFin = min(iBeg+9,len(insKeys))
+            for name in insKeys[iBeg:iFin]:
+                if name not in  ['Type','Lam1','Lam2','Azimuth','Source','fltPath']:
+                    ptlbls += '%12s' % (name)
+                    ptstr += '%12.6f' % (Inst[name][1])
+                    if instSig[name]:
+                        refine = True
+                        sigstr += '%12.6f' % (instSig[name])
+                    else:
+                        sigstr += 12*' '
+            if refine:
+                print >>pFile,'\n Instrument Parameters:'
+                print >>pFile,ptlbls
+                print >>pFile,ptstr
+                print >>pFile,sigstr
+            iBeg = iFin
+            if iBeg == len(insKeys):
+                Ok = False
         
     def PrintSampleParmsSig(Sample,sampleSig):
         ptlbls = ' names :'

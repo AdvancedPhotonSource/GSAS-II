@@ -978,13 +978,17 @@ class GSASII(wx.Frame):
                 codes.extend([0,0,0,0,0,0,0])
                 return [G2IO.makeInstDict(names,data,codes),{}]
             elif 'T' in DataType:
-                names = ['Type','2-theta','difC','difA','difB','Zero','alpha','beta-0','beta-1',
-                    'beta-q','sig-0','sig-1','sig-q','X','Y','Azimuth']
-                codes = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                names = ['Type','fltPath','2-theta','difC','difA', 'difB','Zero','alpha','beta-0','beta-1',
+                    'beta-q','sig-0','sig-1','sig-q','X', 'Y','Azimuth',]
+                codes = [0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,]
                 azm = 0.
                 if 'INS  1DETAZM' in Iparm:
                     azm = float(Iparm['INS  1DETAZM'])
+                s = Iparm['INS   FPATH1'].split()
+                fltPath0 = G2IO.sfloat(s[0])
                 s = Iparm['INS  1BNKPAR'].split()
+                fltPath1 = G2IO.sfloat(s[0])
+                data.extend([fltPath0+fltPath1,])               #Flight path source-sample-detector
                 data.extend([G2IO.sfloat(s[1]),])               #2-theta for bank
                 s = Iparm['INS  1 ICONS'].split()
                 data.extend([G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),0.0,G2IO.sfloat(s[2])])    #difC,difA,difB,Zero
@@ -1888,7 +1892,7 @@ class GSASII(wx.Frame):
         self.TreeItemDelete = False
         self.Offset = [0.0,0.0]
         self.delOffset = .02
-        self.refOffset = -100.0
+        self.refOffset = -1.0
         self.refDelt = .01
         self.Weight = False
         self.IparmName = ''  # to be removed when SelectPowderData & GetInstrumentFile is
@@ -2790,10 +2794,18 @@ class GSASII(wx.Frame):
                             name2 = self.PatternTree.GetItemText(item2)
                             if name2 == 'Peak List':
                                 peaks = self.PatternTree.GetItemPyData(item2)['peaks']
-                                file.write("%s \n" % (name+' Peak List'))                
+                                file.write("%s \n" % (name+' Peak List'))
+                                if len(peaks[0]) == 8:
+                                    file.write('%10s %12s %10s %10s\n'%('pos','int','sig','gam'))
+                                else:
+                                    file.write('%10s %12s %10s %10s %10s %10s\n'%('pos','int','alp','bet','sig','gam'))                                    
                                 for peak in peaks:
-                                    file.write("%10.5f %12.2f %10.3f %10.3f \n" % \
-                                        (peak[0],peak[2],peak[4],peak[6]))
+                                    if len(peak) == 8:  #CW
+                                        file.write("%10.5f %12.2f %10.3f %10.3f \n" % \
+                                            (peak[0],peak[2],peak[4],peak[6]))
+                                    else:               #TOF - more cols
+                                        file.write("%10.5f %12.2f %10.3f %10.3f %10.3f %10.3f\n" % \
+                                            (peak[0],peak[2],peak[4],peak[6],peak[8],peak[10]))
                             item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            
                 file.close()

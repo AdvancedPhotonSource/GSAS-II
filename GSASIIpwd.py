@@ -560,7 +560,7 @@ def getBackground(pfx,parmDict,bakType,xdata):
                 bakVals[i] = parmDict[pfx+'Back:'+str(i)]
             bakInt = si.interp1d(bakPos,bakVals,'linear')
             yb = bakInt(xdata)
-    if 'difC' in parmDict:
+    if pfx+'difC' in parmDict:
         ff = 1.
     else:        
         try:
@@ -601,18 +601,18 @@ def getBackground(pfx,parmDict,bakType,xdata):
             break        
     return yb
     
-def getBackgroundDerv(pfx,parmDict,bakType,xdata):
+def getBackgroundDerv(hfx,parmDict,bakType,xdata):
     'needs a doc string'
     nBak = 0
     while True:
-        key = pfx+'Back:'+str(nBak)
+        key = hfx+'Back:'+str(nBak)
         if key in parmDict:
             nBak += 1
         else:
             break
     dydb = np.zeros(shape=(nBak,len(xdata)))
-    dyddb = np.zeros(shape=(3*parmDict[pfx+'nDebye'],len(xdata)))
-    dydpk = np.zeros(shape=(4*parmDict[pfx+'nPeaks'],len(xdata)))
+    dyddb = np.zeros(shape=(3*parmDict[hfx+'nDebye'],len(xdata)))
+    dydpk = np.zeros(shape=(4*parmDict[hfx+'nPeaks'],len(xdata)))
     cw = np.diff(xdata)
     cw = np.append(cw,cw[-1])
 
@@ -649,13 +649,13 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
                     dydb[i] = np.where(xdata>bakPos[i],
                         np.where(xdata<bakPos[i+1],(bakPos[i+1]-xdata)/(bakPos[i+1]-bakPos[i]),0.),
                         np.where(xdata>bakPos[i-1],(xdata-bakPos[i-1])/(bakPos[i]-bakPos[i-1]),0.))
-    if 'difC' in parmDict:
+    if hfx+'difC' in parmDict:
         ff = 1.
     else:
         try:
-            wave = parmDict[pfx+'Lam']
+            wave = parmDict[hfx+'Lam']
         except KeyError:
-            wave = parmDict[pfx+'Lam1']
+            wave = parmDict[hfx+'Lam1']
         q = 4.0*np.pi*npsind(xdata/2.0)/wave
         SQ = (q/(4*np.pi))**2
         FF = G2elem.GetFormFactorCoeff('Si')[0]
@@ -663,9 +663,11 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
     iD = 0        
     while True:
         try:
-            dbA = parmDict[pfx+'DebyeA:'+str(iD)]
-            dbR = parmDict[pfx+'DebyeR:'+str(iD)]
-            dbU = parmDict[pfx+'DebyeU:'+str(iD)]
+            if hfx+'difC' in parmDict:
+                q = 2*np.pi*parmDict[hfx+'difC']/xdata
+            dbA = parmDict[hfx+'DebyeA:'+str(iD)]
+            dbR = parmDict[hfx+'DebyeR:'+str(iD)]
+            dbU = parmDict[hfx+'DebyeU:'+str(iD)]
             sqr = np.sin(q*dbR)/(q*dbR)
             cqr = np.cos(q*dbR)
             temp = np.exp(-dbU*q**2)
@@ -678,10 +680,10 @@ def getBackgroundDerv(pfx,parmDict,bakType,xdata):
     iD = 0
     while True:
         try:
-            pkP = parmDict[pfx+'BkPkpos;'+str(iD)]
-            pkI = parmDict[pfx+'BkPkint;'+str(iD)]
-            pkS = parmDict[pfx+'BkPksig;'+str(iD)]
-            pkG = parmDict[pfx+'BkPkgam;'+str(iD)]
+            pkP = parmDict[hfx+'BkPkpos;'+str(iD)]
+            pkI = parmDict[hfx+'BkPkint;'+str(iD)]
+            pkS = parmDict[hfx+'BkPksig;'+str(iD)]
+            pkG = parmDict[hfx+'BkPkgam;'+str(iD)]
             shl = 0.002
             Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,shl)
             iBeg = np.searchsorted(xdata,pkP-fmin)
@@ -1171,11 +1173,11 @@ def DoCalibInst(IndexPeaks,Inst):
     peakPos = []
     peakDsp = []
     peakWt = []
-    for peak in IndexPeaks:
+    for peak,sig in zip(IndexPeaks[0],IndexPeaks[1]):
         if peak[2] and peak[3]:
             peakPos.append(peak[0])
             peakDsp.append(peak[8])
-            peakWt.append(1/peak[1])
+            peakWt.append(1/sig**2)
     peakPos = np.array(peakPos)
     peakDsp = np.array(peakDsp)
     peakWt = np.array(peakWt)

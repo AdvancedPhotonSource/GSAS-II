@@ -86,7 +86,7 @@ def SetDefaultSample():
         'Trans':1.0,                            #measured transmission
         'SlitLen':0.0,                          #Slit length - in Q(A-1)
         }
-def SetupSampleLabels(histName,dataType):
+def SetupSampleLabels(histName,dataType,histType):
     '''Setup a list of labels and number formatting for use in
     labeling sample parameters.
     :param str histName: Name of histogram, ("PWDR ...")
@@ -94,12 +94,15 @@ def SetupSampleLabels(histName,dataType):
     '''
     parms = []
     parms.append(['Scale','Histogram scale factor: ',[10,4]])
-    parms.append(['Gonio. radius','Goniometer radius (mm): ',[10,3]])
+    if 'C' in histType:
+        parms.append(['Gonio. radius','Goniometer radius (mm): ',[10,3]])
     if 'PWDR' in histName:
         if dataType == 'Debye-Scherrer':
             parms += [['DisplaceX',u'Sample X displ. perp. to beam (\xb5m): ',[10,3]],
                 ['DisplaceY',u'Sample Y displ. || to beam (\xb5m): ',[10,3]],
                 ['Absorption',u'Sample absorption (\xb5\xb7r): ',[10,4]],]
+            if 'T' in histType:
+                parms[-1] = ['Absorption',u'Sample absorption (\xb5\xb7r/l): ',[10,4]]
         elif dataType == 'Bragg-Brentano':
             parms += [['Shift',u'Sample displacement(\xb5m): ',[10,4]],
                 ['Transparency',u'Sample transparency(1/\xb5eff, cm): ',[10,3]],
@@ -926,7 +929,7 @@ def UpdateInstrumentGrid(G2frame,data):
         for key in keys:
             if key in ['Type','U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','Polariz.',
-                'Lam','Azimuth','2-theta','difC','difA','difB','Zero','Lam1','Lam2']:
+                'Lam','Azimuth','2-theta','fltPath','difC','difA','difB','Zero','Lam1','Lam2']:
                 good.append(key)
         return good
         
@@ -963,7 +966,7 @@ def UpdateInstrumentGrid(G2frame,data):
         if not Ok:
             G2frame.ErrorDialog('Can not calibrate','Index Peak List not indexed')
             return            
-        G2pwd.DoCalibInst(IndexPeaks[0],data)
+        G2pwd.DoCalibInst(IndexPeaks,data)
         UpdateInstrumentGrid(G2frame,data)
         XY = []
         Sigs = []
@@ -1254,6 +1257,13 @@ def UpdateInstrumentGrid(G2frame,data):
                     instSizer.Add(RefineBox(item),0,WACV)
             else:                                   #time of flight (neutrons)
                 subSizer = wx.BoxSizer(wx.HORIZONTAL)
+                subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Fligth path: '),0,WACV)
+                txt = '%8.3f'%(insVal['fltPath'])
+                subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
+                labelLst.append('flight path')
+                elemKeysLst.append(['fltpath',1])
+                dspLst.append([10,2])
+                refFlgElem.append(None)                   
                 subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  2-theta: '),0,WACV)
                 txt = '%7.2f'%(insVal['2-theta'])
                 subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
@@ -1272,9 +1282,16 @@ def UpdateInstrumentGrid(G2frame,data):
                     refFlgElem.append(None)
                     subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  alpha, beta: fixed by table'),0,WACV)
                 else:
-                    Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','X','Y']
+                    Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','','X','Y']
+                mainSizer.Add((5,5),0)
                 mainSizer.Add(subSizer)
+                mainSizer.Add((5,5),0)
                 for item in Items:
+                    if item == '':
+                        instSizer.Add((5,5),0)
+                        instSizer.Add((5,5),0)
+                        instSizer.Add((5,5),0)
+                        continue
                     nDig = (10,3)
                     fmt = '%10.3f'
                     if 'beta' in item:
@@ -1291,12 +1308,6 @@ def UpdateInstrumentGrid(G2frame,data):
                     dspLst.append(nDig)
                     refFlgElem.append([item,2])
                     instSizer.Add(RefineBox(item),0,WACV)
-#                    if not ifHisto and item in ['difC','difA','difB','Zero',]:
-#                        refFlgElem.append(None)
-#                        instSizer.Add((5,5),0)
-#                    else:
-#                        refFlgElem.append([item,2])
-#                        instSizer.Add(RefineBox(item),0,WACV)
         elif 'S' in insVal['Type']:                       #single crystal data
             if 'C' in insVal['Type']:               #constant wavelength
                 instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
@@ -1526,7 +1537,7 @@ def UpdateSampleGrid(G2frame,data):
             return
         # Assemble a list of item labels
         TextTable = {key:label for key,label,dig in
-                     SetupSampleLabels(hst,data.get('Type'))
+                     SetupSampleLabels(hst,data.get('Type'),Inst['Type'][0])
                      }
         # get flexible labels
         TextTable.update({
@@ -1647,6 +1658,8 @@ def UpdateSampleGrid(G2frame,data):
     #reload(GSASIIpwdGUI)
     #reload(G2gd)
     ######################################################################
+    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+            G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     histName = G2frame.PatternTree.GetItemText(G2frame.PatternId)
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
@@ -1697,7 +1710,7 @@ def UpdateSampleGrid(G2frame,data):
     data['InstrName'] = data.get('InstrName','')
 #patch end
     labelLst,elemKeysLst,dspLst,refFlgElem = [],[],[],[]
-    parms = SetupSampleLabels(histName,data.get('Type'))
+    parms = SetupSampleLabels(histName,data.get('Type'),Inst['Type'][0])
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     topSizer = wx.BoxSizer(wx.HORIZONTAL)
     topSizer.Add((-1,-1),1,wx.EXPAND,1)
@@ -1723,7 +1736,10 @@ def UpdateSampleGrid(G2frame,data):
         nameSizer = wx.BoxSizer(wx.HORIZONTAL)
         nameSizer.Add(wx.StaticText(G2frame.dataDisplay,wx.ID_ANY,' Diffractometer type: '),
                     0,WACV)
-        choices = ['Debye-Scherrer','Bragg-Brentano',]
+        if 'T' in Inst['Type'][0]:
+            choices = ['Debye-Scherrer',]
+        else:
+            choices = ['Debye-Scherrer','Bragg-Brentano',]
         histoType = wx.ComboBox(G2frame.dataDisplay,wx.ID_ANY,value=data['Type'],choices=choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         histoType.Bind(wx.EVT_COMBOBOX, OnHistoType)
@@ -2122,7 +2138,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
         SGData = G2spc.SpcGroup(controls[13])[1]
-        dmin = G2indx.getDmin(peaks)-0.005
+        dmin = G2indx.getDmin(peaks[0])-0.005
         G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A)
         G2indx.IndexPeaks(peaks[0],G2frame.HKL)
         if 'C' in Inst['Type'][0]:
@@ -2474,6 +2490,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
+    Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     rowLabels = []
     if HKLF:
         G2gd.SetDataMenuBar(G2frame)
@@ -2493,19 +2510,29 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             I100 = refList.T[8]*refList.T[11]
         except TypeError:
             refList = np.array([refl[:11] for refl in data[G2frame.RefList]])
-            I100 = refList.T[8]*np.array([refl[13] for refl in data[G2frame.RefList]])
+            I100 = refList.T[8]*np.array([refl[11] for refl in data[G2frame.RefList]])
         Imax = np.max(I100)
         if Imax:
             I100 *= 100.0/Imax
-        refs = np.vstack((refList.T[:11],I100)).T
+        if 'C' in Inst['Type'][0]:
+            refs = np.vstack((refList.T[:11],I100)).T
+        elif 'T' in Inst['Type'][0]:
+            refs = np.vstack((refList.T[:15],I100)).T
+            
     for i in range(len(refs)): rowLabels.append(str(i))
-    if HKLF:
-        colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','Ext',]
-    else:
-        colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','I100',]
     Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
         2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
         [wg.GRID_VALUE_FLOAT+':10,3',]
+    if HKLF:
+        colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','Ext',]
+    else:
+        if 'C' in Inst['Type'][0]:
+            colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','I100',]
+            Types += [wg.GRID_VALUE_FLOAT+':10,3',]
+        elif 'T' in Inst['Type'][0]:
+            colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','I100',]
+            Types += 4*[wg.GRID_VALUE_FLOAT+':10,3',]
+            
     G2frame.PeakTable = G2gd.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
     G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)

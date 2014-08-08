@@ -1693,6 +1693,7 @@ class ImportPowderData(ImportBaseclass):
         })
     defaultIparm_lbl.append('10m TOF backscattering bank')
     defaultIparms.append({
+        'INS   FPATH1':'      9.00',
         'INS   HTYPE ':'PNT',
         'INS  1 ICONS':'   5000.00      0.00      0.00',
         'INS  1BNKPAR':'    1.0000   150.000',       
@@ -1702,6 +1703,7 @@ class ImportPowderData(ImportBaseclass):
         })
     defaultIparm_lbl.append('10m TOF 90deg bank')
     defaultIparms.append({
+        'INS   FPATH1':'      9.00',
         'INS   HTYPE ':'PNT',
         'INS  1 ICONS':'   3500.00      0.00      0.00',
         'INS  1BNKPAR':'    1.0000    90.000',       
@@ -1711,9 +1713,10 @@ class ImportPowderData(ImportBaseclass):
         })
     defaultIparm_lbl.append('63m POWGEN 90deg bank')
     defaultIparms.append({
+        'INS   FPATH1':'     60.00',
         'INS   HTYPE ':'PNT',
         'INS  1 ICONS':'  22585.80      0.00      0.00',
-        'INS  1BNKPAR':'    1.0000    90.000',       
+        'INS  1BNKPAR':'     3.169    90.000',       
         'INS  1PRCF1 ':'    1    8   0.01000',
         'INS  1PRCF11':'   0.000000E+00   1.000000E+00   3.000000E-02   4.000000E-03',
         'INS  1PRCF12':'   0.000000E+00   8.000000E+01   0.000000E+00   0.000000E+00',        

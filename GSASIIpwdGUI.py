@@ -2515,23 +2515,23 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if Imax:
             I100 *= 100.0/Imax
         if 'C' in Inst['Type'][0]:
-            refs = np.vstack((refList.T[:11],I100)).T
-        elif 'T' in Inst['Type'][0]:
             refs = np.vstack((refList.T[:15],I100)).T
+        elif 'T' in Inst['Type'][0]:
+            refs = np.vstack((refList.T[:18],I100)).T
             
     for i in range(len(refs)): rowLabels.append(str(i))
     Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
         2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
         [wg.GRID_VALUE_FLOAT+':10,3',]
     if HKLF:
-        colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','Ext',]
+        colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC',]
     else:
         if 'C' in Inst['Type'][0]:
-            colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','I100',]
-            Types += [wg.GRID_VALUE_FLOAT+':10,3',]
-        elif 'T' in Inst['Type'][0]:
-            colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','I100',]
+            colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100']
             Types += 4*[wg.GRID_VALUE_FLOAT+':10,3',]
+        elif 'T' in Inst['Type'][0]:
+            colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100']
+            Types += 7*[wg.GRID_VALUE_FLOAT+':10,3',]
             
     G2frame.PeakTable = G2gd.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)

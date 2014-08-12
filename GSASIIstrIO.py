@@ -1812,14 +1812,16 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         if 'C' in inst['Type'][0]:
                             pos = 2.0*asind(wave/(2.0*d))+Zero
                             if limits[0] < pos < limits[1]:
-                                refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0])
+                                refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0,1.0,1.0,1.0])
+                                #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
                                 Uniq.append(uniq)
                                 Phi.append(phi)
                         elif 'T' in inst['Type'][0]:
                             pos = inst['difC'][1]*d+inst['difA'][1]*d**2+inst['difB'][1]*d**3+Zero
                             if limits[0] < pos < limits[1]:
                                 wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
-                                refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0,wave])
+                                refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
+                                # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
                                 Uniq.append(uniq)
                                 Phi.append(phi)
                     Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{}}

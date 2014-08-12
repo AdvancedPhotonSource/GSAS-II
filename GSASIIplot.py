@@ -3722,7 +3722,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     '''
 
     def FindPeaksBonds(XYZ):
-        rFact = data['Drawing']['radiusFactor']
+        rFact = data['Drawing'].get('radiusFactor',0.85)    #data['Drawing'] could be empty!
         Bonds = [[] for x in XYZ]
         for i,xyz in enumerate(XYZ):
             Dx = XYZ-xyz

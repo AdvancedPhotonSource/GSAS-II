@@ -1173,6 +1173,7 @@ def GetIntensityDerv(refl,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
         dIdPola = 0.0
     dFdODF = {}
     dFdSA = [0,0,0]
+    dIdPO = {}
     if pfx+'SHorder' in parmDict:
         odfCor,dFdODF,dFdSA = SHTXcalDerv(refl,g,pfx,hfx,SGData,calcControls,parmDict)
         for iSH in dFdODF:
@@ -1629,6 +1630,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     bakType = calcControls[hfx+'bakType']
     yb = G2pwd.getBackground(hfx,parmDict,bakType,x)
     yc = np.zeros_like(yb)
+    cw = np.diff(x)
+    cw = np.append(cw,cw[-1])
         
     if 'C' in calcControls[hfx+'histType']:    
         shl = max(parmDict[hfx+'SH/L'],0.002)
@@ -1718,7 +1721,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     continue
                 elif not iBeg-iFin:     #peak above high limit - done
                     break
-                yc[iBeg:iFin] += refl[11]*refl[9]*G2pwd.getEpsVoigt(refl[5],refl[12],refl[13],refl[6],refl[7],ma.getdata(x[iBeg:iFin]))
+                yc[iBeg:iFin] += refl[11]*refl[9]*G2pwd.getEpsVoigt(refl[5],refl[12],refl[13],refl[6],refl[7],ma.getdata(x[iBeg:iFin]))/cw[iBeg:iFin]
 #        print 'profile calc time: %.3fs'%(time.time()-time0)
     return yc,yb
     
@@ -1847,7 +1850,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                 dMdpk = np.zeros(shape=(6,lenBF))
                 dMdipk = G2pwd.getdEpsVoigt(refl[5],refl[12],refl[13],refl[6],refl[7],ma.getdata(x[iBeg:iFin]))
                 for i in range(6):
-                    dMdpk[i] += cw[iBeg:iFin]*refl[11]*refl[9]*dMdipk[i]
+                    dMdpk[i] += refl[11]*refl[9]*dMdipk[i]      #cw[iBeg:iFin]*
                 dervDict = {'int':dMdpk[0],'pos':dMdpk[1],'alp':dMdpk[2],'bet':dMdpk[3],'sig':dMdpk[4],'gam':dMdpk[5]}            
             if Phase['General'].get('doPawley'):
                 dMdpw = np.zeros(len(x))

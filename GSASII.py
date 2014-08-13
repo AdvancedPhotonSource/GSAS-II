@@ -1236,8 +1236,12 @@ class GSASII(wx.Frame):
                     rd.powderdata[0] *= 100.        #put back the CW centideg correction
                 cw = np.diff(rd.powderdata[0])
                 rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
-                rd.powderdata[1] = rd.powderdata[1][:-1]/cw
-                rd.powderdata[2] = rd.powderdata[2][:-1]*cw**2  #1/var=w at this point
+                if rd.GSAS:     #NB: old GSAS wanted intensities*CW even if normalized!
+                    rd.powderdata[1] = rd.powderdata[1][:-1]/cw
+                    rd.powderdata[2] = rd.powderdata[2][:-1]*cw**2  #1/var=w at this point
+                else:       #NB: from topas/fullprof type files
+                    rd.powderdata[1] = rd.powderdata[1][:-1]
+                    rd.powderdata[2] = rd.powderdata[2][:-1]
                 if 'Itype' in Iparm2:
                     Ibeg = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][0])
                     Ifin = np.searchsorted(rd.powderdata[0],Iparm2['Tminmax'][1])

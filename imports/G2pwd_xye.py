@@ -35,6 +35,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
         'Look through the file for expected types of lines in a valid Topas file'
         gotCcomment = False
         begin = True
+        self.GSAS = False
         for i,S in enumerate(filepointer):
             if i > 1000: break
             if begin:

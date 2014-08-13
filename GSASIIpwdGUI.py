@@ -2010,19 +2010,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnSpcSel(event):
-        controls[13] = spcSel.GetString(spcSel.GetSelection())       
+        controls[13] = spcSel.GetString(spcSel.GetSelection())
         
-    def OnCellChange(event):
+    def SetCellValue(Obj,ObjId,value):
         ibrav = bravaisSymb.index(controls[5])
-        Obj = event.GetEventObject()
-        ObjId = cellList.index(Obj.GetId())
-        try:
-            value = max(1.0,float(Obj.GetValue()))
-        except ValueError:
-            if ObjId < 3:               #bad cell edge - reset
-                value = controls[6+ObjId]
-            else:                       #bad angle
-                value = 90.
         if ibrav in [0,1,2]:
             controls[6] = controls[7] = controls[8] = value
             controls[9] = controls[10] = controls[11] = 90.0
@@ -2057,6 +2048,31 @@ def UpdateUnitCellsGrid(G2frame, data):
                 Obj.SetValue("%.3f"%(controls[6+ObjId]))
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         volVal.SetValue("%.3f"%(controls[12]))
+        
+    def OnMoveCell(event):
+        Obj = event.GetEventObject()
+        ObjId = cellList.index(Obj.GetId())
+        valObj = valDict[Obj.GetId()]
+        if ObjId/2 < 3:
+            move = Obj.GetValue()*0.01
+        else:
+            move = Obj.GetValue()*0.1
+        Obj.SetValue(0)
+        value = float(valObj.GetValue())+move  
+        SetCellValue(valObj,ObjId/2,value)
+        OnHklShow(event)
+        
+    def OnCellChange(event):
+        Obj = event.GetEventObject()
+        ObjId = cellList.index(Obj.GetId())
+        try:
+            value = max(1.0,float(Obj.GetValue()))
+        except ValueError:
+            if ObjId/2 < 3:               #bad cell edge - reset
+                value = controls[6+ObjId/2]
+            else:                       #bad angle
+                value = 90.
+        SetCellValue(Obj,ObjId/2,value)
         
     def OnHklShow(event):
         PatternId = G2frame.PatternId
@@ -2373,6 +2389,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         if ibrav in cellGUI[0]:
             useGUI = cellGUI
     cellList = []
+    valDict = {}
     littleSizer = wx.FlexGridSizer(0,useGUI[1],5,5)
     for txt,fmt,ifEdit,Id in useGUI[2]:
         littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=txt),0,WACV)
@@ -2380,8 +2397,17 @@ def UpdateUnitCellsGrid(G2frame, data):
             cellVal = wx.TextCtrl(G2frame.dataDisplay,value=(fmt%(controls[6+Id])),style=wx.TE_PROCESS_ENTER)
             cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
             cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
-            littleSizer.Add(cellVal,0,WACV)
+            valSizer = wx.BoxSizer(wx.HORIZONTAL)
+            valSizer.Add(cellVal,0,WACV)
+            cellSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+            cellSpin.SetValue(0)
+            cellSpin.SetRange(-1,1)
+            cellSpin.Bind(wx.EVT_SPIN, OnMoveCell)
+            valSizer.Add(cellSpin,0,WACV)
+            littleSizer.Add(valSizer,0,WACV)
             cellList.append(cellVal.GetId())
+            cellList.append(cellSpin.GetId())
+            valDict[cellSpin.GetId()] = cellVal
         else:               #volume
             volVal = wx.TextCtrl(G2frame.dataDisplay,value=(fmt%(controls[12])),style=wx.TE_READONLY)
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)

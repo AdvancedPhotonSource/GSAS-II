@@ -69,7 +69,9 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         else:           #'numeric'
             result = so.leastsq(G2stMth.errRefine,values,full_output=True,ftol=Ftol,epsfcn=1.e-8,factor=Factor,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
-            ncyc = int(result[2]['nfev']/len(varyList))
+            ncyc = 1
+            if len(varyList):
+                ncyc = int(result[2]['nfev']/len(varyList))
 #        table = dict(zip(varyList,zip(values,result[0],(result[0]-values))))
 #        for item in table: print item,table[item]               #useful debug - are things shifting?
         runtime = time.time()-begin
@@ -95,6 +97,10 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
             break                   #refinement succeeded - finish up!
         except TypeError,FloatingPointError:          #result[1] is None on singular matrix
             IfOK = False
+            if not len(varyList):
+                covMatrix = []
+                sig = []
+                break
             print '**** Refinement failed - singular matrix ****'
             if 'Hessian' in Controls['deriv type']:
                 num = len(varyList)-1

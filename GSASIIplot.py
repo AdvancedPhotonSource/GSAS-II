@@ -947,11 +947,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
                 if 'C' in Parms['Type'][0]:
                     wave = G2mth.getWave(Parms)
-                    if (G2frame.qPlot or G2frame.dPlot) and 'PWDR' in plottype:
+                    if G2frame.qPlot and 'PWDR' in plottype:
                         try:
                             xpos = 2.0*asind(xpos*wave/(4*math.pi))
                         except ValueError:      #avoid bad value in asin beyond upper limit
                             pass
+                    elif G2frame.dPlot:
+                        dsp = xpos
+                        q = 2.*np.pi/dsp
+                        xpos = 2.0*asind(wave/(2.*dsp))
                     dsp = 0.0
                     if abs(xpos) > 0.:                  #avoid possible singularity at beam center
                         if 'PWDR' in plottype:
@@ -976,7 +980,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 else:       #TOF neutrons
                     dsp = 0.0
                     difC = Parms['difC'][1]
-                    dsp = xpos/difC             #rough approx.!
+                    if G2frame.dPlot:
+                        dsp = xpos
+                        xpos = difC*dsp
+                    elif G2frame.qPlot and 'PWDR' in plottype:
+                        dsp = 2.*np.pi/xpos
+                        xpos = difC*dsp
+                    else:
+                        dsp = xpos/difC             #rough approx.!
                     q = 2.*np.pi/dsp
                     if G2frame.Contour:
                         G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
@@ -1094,7 +1105,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         
     def OnRelease(event):
         if G2frame.itemPicked is None: return
-        if DifLine[0] and DifLine[0].get_label() in str(G2frame.itemPicked):
+        if str(DifLine[0]) == str(G2frame.itemPicked):
             ypos = event.ydata
             G2frame.delOffset = -ypos/Ymax
             G2frame.itemPicked = None

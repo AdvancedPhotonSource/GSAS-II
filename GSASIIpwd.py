@@ -479,7 +479,7 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
 def getFWHM(pos,Inst):
     'needs a doc string'
     sig = lambda Th,U,V,W: 1.17741*math.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))*math.pi/180.
-    sigTOF = lambda dsp,S0,S1,Sq:  S0+S1*dsp**2+Sq*dsp
+    sigTOF = lambda dsp,S0,S1,S2,Sq:  S0+S1*dsp**2+S2*dsp**4+Sq*dsp
     gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/180.
     gamTOF = lambda dsp,X,Y: X*dsp+Y*dsp**2
     if 'C' in Inst['Type'][0]:
@@ -487,7 +487,7 @@ def getFWHM(pos,Inst):
         g = gam(pos/2.,Inst['X'][1],Inst['Y'][1])*100.
     else:
         dsp = pos/Inst['difC'][0]
-        s = sigTOF(dsp,Inst['sig-0'][1],Inst['sig-1'][1],Inst['sig-q'][1])
+        s = sigTOF(dsp,Inst['sig-0'][1],Inst['sig-1'][1],Inst['sig-2'][1],Inst['sig-q'][1])
         g = gamTOF(dsp,Inst['X'][1],Inst['Y'][1])
     return getgamFW(g,s)
     
@@ -1012,10 +1012,10 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList:
                     sig = parmDict[sigName]
-                    dsds0 = dsds1 = dsds2 = 0
+                    dsds0 = dsds1 = dsds2 = dsds3 = 0
                 else:
                     sig = G2mth.getTOFsig(parmDict,dsp)
-                    dsds0,dsds1,dsds2 = G2mth.getTOFsigDeriv(dsp)
+                    dsds0,dsds1,dsds2,dsds3 = G2mth.getTOFsigDeriv(dsp)
                 gamName = 'gam'+str(iPeak)
                 if gamName in varyList:
                     gam = parmDict[gamName]
@@ -1062,8 +1062,10 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
                     dMdv[varyList.index('sig-0')] += dsds0*dervDict['sig']
                 if 'sig-1' in varyList:
                     dMdv[varyList.index('sig-1')] += dsds1*dervDict['sig']
+                if 'sig-2' in varyList:
+                    dMdv[varyList.index('sig-2')] += dsds2*dervDict['sig']
                 if 'sig-q' in varyList:
-                    dMdv[varyList.index('sig-q')] += dsds2*dervDict['sig']
+                    dMdv[varyList.index('sig-q')] += dsds3*dervDict['sig']
                 if 'X' in varyList:
                     dMdv[varyList.index('X')] += dsdX*dervDict['gam']
                 if 'Y' in varyList:
@@ -1301,7 +1303,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
             insNames.append(parm)
             insVals.append(Inst[parm][1])
             if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
-                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-q',] and Inst[parm][2]:
+                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',] and Inst[parm][2]:
                     insVary.append(parm)
         instDict = dict(zip(insNames,insVals))
         instDict['X'] = max(instDict['X'],0.01)
@@ -1343,7 +1345,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
         sigstr = 'esds  :'
         for parm in Inst:
             if parm in  ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
-                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-q',]:
+                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',]:
                 ptlbls += "%s" % (parm.center(12))
                 ptstr += ptfmt % (Inst[parm][1])
                 if parm in sigDict:

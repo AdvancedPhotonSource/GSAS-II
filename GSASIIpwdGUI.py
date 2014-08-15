@@ -928,7 +928,7 @@ def UpdateInstrumentGrid(G2frame,data):
         good = []
         for key in keys:
             if key in ['Type','U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
-                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','Polariz.',
+                'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','Polariz.',
                 'Lam','Azimuth','2-theta','fltPath','difC','difA','difB','Zero','Lam1','Lam2']:
                 good.append(key)
         return good
@@ -1006,8 +1006,8 @@ def UpdateInstrumentGrid(G2frame,data):
                     S = File.readline()                
                 File.close()
                 Inst,Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'))
-                inst = G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,])
-                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'),[inst,Inst2])
+                data = G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,])
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'),[data,Inst2])
                 RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
                 UpdateInstrumentGrid(G2frame,data)
                 G2plt.PlotPeakWidths(G2frame)
@@ -1272,7 +1272,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 dspLst.append([10,2])
                 refFlgElem.append(None)                   
                 if 'Pdabc' in Inst2:
-                    Items = ['sig-0','sig-1','X','Y']
+                    Items = ['sig-0','sig-1','sig-2','sig-q','X','Y']
                     subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  difC: '),0,WACV)
                     txt = '%8.2f'%(insVal['difC'])
                     subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,txt.strip()),0,WACV)
@@ -1282,7 +1282,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     refFlgElem.append(None)
                     subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  alpha, beta: fixed by table'),0,WACV)
                 else:
-                    Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','','X','Y']
+                    Items = ['difC','difA','difB','Zero','alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y']
                 mainSizer.Add((5,5),0)
                 mainSizer.Add(subSizer)
                 mainSizer.Add((5,5),0)
@@ -1392,11 +1392,11 @@ def UpdateInstrumentGrid(G2frame,data):
                 insVal['Azimuth'] = 0.0
                 insDef['Azimuth'] = 0.0
                 insRef['Azimuth'] = False
-        if 'T' in insVal['Type']:
-            if 'difB' not in insVal:
-                insVal['difB'] = 0.0
-                insDef['difB'] = 0.0
-                insRef['difB'] = False
+#        if 'T' in insVal['Type']:
+#            if 'difB' not in insVal:
+#                insVal['difB'] = 0.0
+#                insDef['difB'] = 0.0
+#                insRef['difB'] = False
     #end of patch
     if 'P' in insVal['Type']:                   #powder data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.InstMenu)

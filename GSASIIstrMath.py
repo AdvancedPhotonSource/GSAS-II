@@ -1184,8 +1184,7 @@ def GetIntensityDerv(refl,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
         POcorr,dIdPO = GetPrefOriDerv(refl,uniq,G,g,phfx,hfx,SGData,calcControls,parmDict)        
         for iPO in dIdPO:
             dIdPO[iPO] /= POcorr
-    AbsCorr = GetAbsorb(refl,hfx,calcControls,parmDict)
-    dFdAb = GetAbsorbDerv(refl,hfx,calcControls,parmDict)/AbsCorr
+    dFdAb = GetAbsorbDerv(refl,hfx,calcControls,parmDict)*refl[14]/refl[16] #wave/abs corr
     dFdEx = GetPwdrExtDerv(refl,pfx,phfx,hfx,calcControls,parmDict)
     return dIdsh,dIdsp,dIdPola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx
         
@@ -1611,7 +1610,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         return sig,gam
                 
     def GetReflSigGamTOF(refl,G,GB,phfx,calcControls,parmDict):
-        sig = parmDict[hfx+'sig-0']+parmDict[hfx+'sig-1']*refl[4]**2+parmDict[hfx+'sig-q']*refl[4]
+        sig = parmDict[hfx+'sig-0']+parmDict[hfx+'sig-1']*refl[4]**2+   \
+            parmDict[hfx+'sig-2']*refl[4]**4+parmDict[hfx+'sig-q']*refl[4]
         gam = parmDict[hfx+'X']*refl[4]+parmDict[hfx+'Y']*refl[4]**2
         Ssig,Sgam = GetSampleSigGam(refl,0.0,G,GB,hfx,phfx,calcControls,parmDict)
         sig += Ssig     #save peak sigma
@@ -1883,7 +1883,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     hfx+'Zero':[dpdZ,'pos'],hfx+'X':[refl[4],'gam'],hfx+'Y':[refl[4]**2,'gam'],
                     hfx+'alpha':[1./refl[4],'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[1./refl[4]**4,'bet'],
                     hfx+'beta-q':[1./refl[4],'bet'],hfx+'sig-0':[1.0,'sig'],hfx+'sig-1':[refl[4]**2,'sig'],
-                    hfx+'sig-q':[refl[4],'sig'],hfx+'Absorption':[dFdAb,'int'],hfx+'Extinction':[dFdEx,'int'],}
+                    hfx+'sig-2':[refl[4]**4,'sig'],hfx+'sig-q':[refl[4],'sig'],
+                    hfx+'Absorption':[dFdAb,'int'],hfx+'Extinction':[dFdEx,'int'],}
             for name in names:
                 item = names[name]
                 if name in varylist:

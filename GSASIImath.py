@@ -2048,7 +2048,7 @@ def getTOFsig(ins,dsp):
     :returns: float getTOFsig: peak sigma
     
     '''
-    return ins['sig-0']+ins['sig-1']*dsp**2+ins['sig-q']*dsp
+    return ins['sig-0']+ins['sig-1']*dsp**2+ins['sig-2']*dsp**4+ins['sig-q']*dsp
     
 def getTOFsigDeriv(dsp):
     '''get derivatives of TOF peak profile gamma wrt sig-0, sig-1, & sig-q
@@ -2058,7 +2058,7 @@ def getTOFsigDeriv(dsp):
     :returns: list getTOFsigDeriv: d(sig0/d(sig-0), d(sig)/d(sig-1) & d(sig)/d(sig-q)
     
     '''
-    return 1.0,dsp**2,dsp
+    return 1.0,dsp**2,dsp**4,dsp
     
 def getTOFgamma(ins,dsp):
     '''get TOF peak profile gamma
@@ -2161,13 +2161,13 @@ def setPeakparms(Parms,Parms2,pos,mag,ifQ=False,useFit=False):
         else:
             dsp = pos/Parms['difC'][1]
         if 'Pdabc' in Parms2:
-            for x in ['sig-0','sig-1','sig-q','X','Y']:
+            for x in ['sig-0','sig-1','sig-2','sig-q','X','Y']:
                 ins[x] = Parms[x][ind]
             Pdabc = Parms2['Pdabc'].T
             alp = np.interp(dsp,Pdabc[0],Pdabc[1])
             bet = np.interp(dsp,Pdabc[0],Pdabc[2])
         else:
-            for x in ['alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-q','X','Y']:
+            for x in ['alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y']:
                 ins[x] = Parms[x][ind]
             alp = getTOFalpha(ins,dsp)
             bet = getTOFbeta(ins,dsp)

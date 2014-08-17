@@ -2048,7 +2048,7 @@ def getTOFsig(ins,dsp):
     :returns: float getTOFsig: peak sigma
     
     '''
-    return ins['sig-0']+ins['sig-1']*dsp**2+ins['sig-2']*dsp**4+ins['sig-q']*dsp
+    return ins['sig-0']+ins['sig-1']*dsp**2+ins['sig-2']*dsp**4+ins['sig-q']/dsp**2
     
 def getTOFsigDeriv(dsp):
     '''get derivatives of TOF peak profile gamma wrt sig-0, sig-1, & sig-q
@@ -2058,7 +2058,7 @@ def getTOFsigDeriv(dsp):
     :returns: list getTOFsigDeriv: d(sig0/d(sig-0), d(sig)/d(sig-1) & d(sig)/d(sig-q)
     
     '''
-    return 1.0,dsp**2,dsp**4,dsp
+    return 1.0,dsp**2,dsp**4,1./dsp**2
     
 def getTOFgamma(ins,dsp):
     '''get TOF peak profile gamma
@@ -2092,7 +2092,7 @@ def getTOFbeta(ins,dsp):
     :returns: float getTOFbeta: peak beat
     
     '''
-    return ins['beta-0']+ins['beta-1']/dsp**4+ins['beta-q']/dsp
+    return ins['beta-0']+ins['beta-1']/dsp**4+ins['beta-q']/dsp**2
     
 def getTOFbetaDeriv(dsp):
     '''get derivatives of TOF peak profile beta wrt beta-0, beta-1, & beat-q
@@ -2102,7 +2102,7 @@ def getTOFbetaDeriv(dsp):
     :returns: list getTOFbetaDeriv: d(beta)/d(beat-0), d(beta)/d(beta-1) & d(beta)/d(beta-q)
     
     '''
-    return 1.0,1./dsp**4,1./dsp
+    return 1.0,1./dsp**4,1./dsp**2
     
 def getTOFalpha(ins,dsp):
     '''get TOF peak profile alpha

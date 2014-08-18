@@ -2551,6 +2551,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         [wg.GRID_VALUE_FLOAT+':10,3',]
     if HKLF:
         colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC',]
+        if 'T' in Inst['Type'][0]:
+            colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','wave','tbar']
+            Types += 2*[wg.GRID_VALUE_FLOAT+':10,3',]            
     else:
         if 'C' in Inst['Type'][0]:
             colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100']

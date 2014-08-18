@@ -654,7 +654,7 @@ class GSASII(wx.Frame):
                         H = list(ref[:3])
                         ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
                         iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
-                    UseList[histoName] = SetDefaultDData(refDict['Type'],histoName)
+                    UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
                 elif histoName in PWDRlist:
                     Id = G2gd.GetPatternTreeItemId(self,self.root,histoName)
                     refList = self.PatternTree.GetItemPyData(
@@ -781,7 +781,7 @@ class GSASII(wx.Frame):
                 #redo UpdateHKLFdata(histoName) here:
                 Id = G2gd.GetPatternTreeItemId(self,self.root,histoName)
                 refDict,reflData = self.PatternTree.GetItemPyData(Id)
-                UseList[histoName] = SetDefaultDData(refDict['Type'],histoName)
+                UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
                 G,g = G2lat.cell2Gmat(generalData['Cell'][1:7])
                 for iref,ref in enumerate(reflData['RefList']):
                     H = list(ref[:3])

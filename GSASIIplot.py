@@ -511,7 +511,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         elif key == 'I':
             Data['Iscale'] = not Data['Iscale']
         elif key in Choice:
-            Data['Type'] = Choice[key]            
+            Data['Type'] = Choice[key]
         Draw('key')
             
     Name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
@@ -722,7 +722,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         for xyz,rc in zip(XYZ,RC):
             x,y,z = xyz
             r,c = rc
-            glColor3ubv(c)
+            glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,c)
             glPointSize(r*50)
             glBegin(GL_POINTS)
             glVertex3fv(xyz)
@@ -774,9 +774,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         RenderUnitVectors(0,0,0)
         RenderDots(HKL,RC)
         time0 = time.time()
-#        glEnable(GL_BLEND)
-#        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
-#        glDisable(GL_BLEND)
         if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
         Page.canvas.SwapBuffers()
 

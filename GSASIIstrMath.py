@@ -821,7 +821,7 @@ def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
         elif 'SNC' in parmDict[hfx+'Type']:
             AV = 1.e7/parmDict[pfx+'Vol']**2
             PL = np.sqrt(1.0-cos2T**2)/parmDict[hfx+'Lam']
-            PLZ = AV*ref[7]*parmDict[hfx+'Lam']**2
+            PLZ = AV*ref[9]*parmDict[hfx+'Lam']**2      #Fcsq as per GSAS, why not FcTsq (ref[9])?
             
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5
@@ -829,7 +829,7 @@ def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
             if 'C' in parmDict[hfx+'Type']:
                 PLZ *= calcControls[phfx+'Tbar']
             else: #'T'
-                PLZ *= ref[13]
+                PLZ *= ref[13]      #t-bar
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5
             PSIG = parmDict[phfx+'Ep']
@@ -1126,7 +1126,7 @@ def GetIntensityCorr(refl,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     Icorr *= ExtCorr
     return Icorr,POcorr,AbsCorr,ExtCorr
     
-def GetIntensityDerv(refl,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
+def GetIntensityDerv(refl,wave,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     'Needs a doc string'    #need powder extinction derivs!
     dIdsh = 1./parmDict[hfx+'Scale']
     dIdsp = 1./parmDict[phfx+'Scale']
@@ -1148,8 +1148,12 @@ def GetIntensityDerv(refl,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
         POcorr,dIdPO = GetPrefOriDerv(refl,uniq,G,g,phfx,hfx,SGData,calcControls,parmDict)        
         for iPO in dIdPO:
             dIdPO[iPO] /= POcorr
-    dFdAb = GetAbsorbDerv(refl,hfx,calcControls,parmDict)*refl[14]/refl[16] #wave/abs corr
-    dFdEx = GetPwdrExtDerv(refl,pfx,phfx,hfx,calcControls,parmDict)/refl[17]    #/ext corr
+    if 'T' in parmDict[hfx+'Type']:
+        dFdAb = GetAbsorbDerv(refl,hfx,calcControls,parmDict)*wave/refl[16] #wave/abs corr
+        dFdEx = GetPwdrExtDerv(refl,pfx,phfx,hfx,calcControls,parmDict)/refl[17]    #/ext corr
+    else:
+        dFdAb = GetAbsorbDerv(refl,hfx,calcControls,parmDict)*wave/refl[13] #wave/abs corr
+        dFdEx = GetPwdrExtDerv(refl,pfx,phfx,hfx,calcControls,parmDict)/refl[14]    #/ext corr        
     return dIdsh,dIdsp,dIdPola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx
         
 def GetSampleSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
@@ -1776,7 +1780,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         for iref,refl in enumerate(refDict['RefList']):
             h,k,l = refl[:3]
             Uniq = np.inner(refl[:3],SGMT)
-            dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx = GetIntensityDerv(refl,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
+            dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx = GetIntensityDerv(refl,wave,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 Wd,fmin,fmax = G2pwd.getWidthsCW(refl[5],refl[6],refl[7],shl)
             else: #'T'OF
@@ -1999,10 +2003,10 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                     wdf[iref] = w*(ref[5]-ref[7])
                     for j,var in enumerate(varylist):
                         if var in dFdvDict:
-                            dMdvh[j][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*dervCor*ref[11]
+                            dMdvh[j][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]   #*dervCor
                     for var in dependentVars:
                         if var in dFdvDict:
-                            depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*dervCor*ref[11]
+                            depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]  #*dervCor
                     if phfx+'Scale' in varylist:
                         dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor
                     elif phfx+'Scale' in dependentVars:
@@ -2038,9 +2042,9 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                         depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11] #*dervCor                           
                     for item in ['Ep','Es','Eg']:
                         if phfx+item in varylist and dervDict:
-                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/dervCor  #correct
+                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11]  #correct
                         elif phfx+item in dependentVars and dervDict:
-                            depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/dervCor
+                            depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/ref[11]
                     for item in ['BabA','BabU']:
                         if phfx+item in varylist:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor

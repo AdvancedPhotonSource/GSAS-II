@@ -821,7 +821,7 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     tabs = ma.compressed(ma.array(tabs.flatten(),mask=tam)) #ones - later used for absorption corr.
     return tax,tay,taz,tad,tabs
     
-def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
+def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
     'Needs a doc string'    #for q, log(q) bins need data['binType']
     import histogram2d as h2d
     print 'Begin image integration'
@@ -895,7 +895,6 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
     NST = np.array(NST,dtype=np.float)
     H0 = np.divide(H0,NST)
     H0 = np.nan_to_num(H0)
-    del NST
     H2 = np.array([tth for tth in np.linspace(lutth[0],lutth[1],numChans+1)])
     if 'log(q)' in data['binType']:
         H2 = 2.*npasind(np.exp(H2)*data['wavelength']/(4.*np.pi))
@@ -921,7 +920,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None):
         \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4])
     print "Elapsed time:","%8.3fs"%(time.time()-tbeg)
     print 'Integration complete'
-    return H0,H1,H2
+    if returnN:     #As requested by Steven Weigand
+        return H0,H1,H2,NST
+    else:
+        return H0,H1,H2
     
 def MakeStrStaRing(ring,Image,Controls):
     ellipse = GetEllipse(ring['Dset'],Controls)

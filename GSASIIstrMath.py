@@ -798,8 +798,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     return dFdvDict
     
 def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
-    ''' Single crystal extinction function; puts correction in ref[11] and returns
-    corrections needed for derivatives
+    ''' Single crystal extinction function; returns extinction & derivative
     '''
     extCor = 1.0
     dervCor = 1.0
@@ -1073,10 +1072,10 @@ def GetAbsorbDerv(refl,hfx,calcControls,parmDict):
 def GetPwdrExt(refl,pfx,phfx,hfx,calcControls,parmDict):
     'Needs a doc string'
     coef = np.array([-0.5,0.25,-0.10416667,0.036458333,-0.0109375,2.8497409E-3])
-    pi2 = np.sqrt(np.pi/2.)
+    pi2 = np.sqrt(2./np.pi)
     if 'T' in calcControls[hfx+'histType']:
         sth2 = sind(parmDict[hfx+'2-theta']/2.)**2
-        wave = refl[12]
+        wave = refl[14]
     else:   #'C'W
         sth2 = sind(refl[5]/2.)**2
         wave = parmDict.get(hfx+'Lam',parmDict.get(hfx+'Lam1',1.0))
@@ -1099,48 +1098,13 @@ def GetPwdrExt(refl,pfx,phfx,hfx,calcControls,parmDict):
     
 def GetPwdrExtDerv(refl,pfx,phfx,hfx,calcControls,parmDict):
     'Needs a doc string'
-    coef = np.array([-0.5,0.25,-0.10416667,0.036458333,-0.0109375,2.8497409E-3])
-    pi2 = np.sqrt(np.pi/2.)
-    if 'T' in calcControls[hfx+'histType']:
-        sth2 = sind(parmDict[hfx+'2-theta']/2.)**2
-        wave = refl[12]
-    else:   #'C'W
-        sth2 = sind(refl[5]/2.)**2
-        wave = parmDict.get(hfx+'Lam',parmDict.get(hfx+'Lam1',1.0))
-    c2th = 1.-2.0*sth2
-    flv2 = refl[9]*(wave/parmDict[pfx+'Vol'])**2
-    return 0.
-#
-#      STH2 = STHETA**2
-#      C2TH = 1-2.0*STH2
-#      FLV2 = FCSQ*(LAM/VOL(IPHAS))**2
-#      IF ( HTYPE(2:2).EQ.'X' ) FLV2 = 0.079411*FLV2*(1.0+C2TH**2)/2.0
-#      XFAC = FLV2*EXTPOWD(IHST,IPHAS)
-#      IF ( XFAC.LE.-1.0 ) THEN
-#        EXB = 1.0
-#        DBDE = -500.0*FLV2
-#      ELSE
-#        EXB = 1.0/SQRT(1.0+XFAC)
-#        DBDE = -0.5*FLV2*EXB**3
-#      END IF
-#      IF ( XFAC.LE.0.0 ) THEN
-#        EXL = 1.0
-#        DLDE = 0.0
-#      ELSE IF ( XFAC.LE.1.0 ) THEN
-#        EXL = 1.0
-#        DLDE = 0.0
-#        DO I=1,6
-#          XN =XFAC**I
-#          EXL = EXL+COEF(I)*XN
-#          DLDE = DLDE+FLOAT(I)*FLV2*COEF(I)*XN/XFAC
-#        END DO
-#      ELSE
-#        XFAC2 = 1.0/SQRT(XFAC)
-#        EXL = PI2*(1.0-0.125/XFAC)*XFAC2
-#        DLDE = 0.5*FLV2*PI2*XFAC2*(-1.0/XFAC+0.375/XFAC**2)
-#      END IF
-#      EXTCOR = EXB*STH2+EXL*(1.0-STH2)
-#      DFDEX = DBDE*STH2+DLDE*(1.0-STH2)
+    delt = 0.001
+    parmDict[phfx+'Extinction'] += delt
+    plus = GetPwdrExt(refl,pfx,phfx,hfx,calcControls,parmDict)
+    parmDict[phfx+'Extinction'] -= 2.*delt
+    minus = GetPwdrExt(refl,pfx,phfx,hfx,calcControls,parmDict)
+    parmDict[phfx+'Extinction'] += delt
+    return (plus-minus)/(2.*delt)    
     
 def GetIntensityCorr(refl,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     'Needs a doc string'    #need powder extinction!
@@ -1185,7 +1149,7 @@ def GetIntensityDerv(refl,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
         for iPO in dIdPO:
             dIdPO[iPO] /= POcorr
     dFdAb = GetAbsorbDerv(refl,hfx,calcControls,parmDict)*refl[14]/refl[16] #wave/abs corr
-    dFdEx = GetPwdrExtDerv(refl,pfx,phfx,hfx,calcControls,parmDict)
+    dFdEx = GetPwdrExtDerv(refl,pfx,phfx,hfx,calcControls,parmDict)/refl[17]    #/ext corr
     return dIdsh,dIdsp,dIdPola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx
         
 def GetSampleSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
@@ -1884,7 +1848,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     hfx+'alpha':[1./refl[4],'alp'],hfx+'beta-0':[1.0,'bet'],hfx+'beta-1':[1./refl[4]**4,'bet'],
                     hfx+'beta-q':[1./refl[4]**2,'bet'],hfx+'sig-0':[1.0,'sig'],hfx+'sig-1':[refl[4]**2,'sig'],
                     hfx+'sig-2':[refl[4]**4,'sig'],hfx+'sig-q':[1./refl[4]**2,'sig'],
-                    hfx+'Absorption':[dFdAb,'int'],hfx+'Extinction':[dFdEx,'int'],}
+                    hfx+'Absorption':[dFdAb,'int'],phfx+'Extinction':[dFdEx,'int'],}
             for name in names:
                 item = names[name]
                 if name in varylist:

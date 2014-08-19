@@ -4516,6 +4516,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
         # UpdateMCSA executable code starts here
         MCSA.DestroyChildren()
+        if not data['Drawing']:                 #if new drawing - no drawing data!
+            SetupDrawingData()
         general = data['General']
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
         RBData = G2frame.PatternTree.GetItemPyData(   

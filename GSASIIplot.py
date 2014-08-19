@@ -3826,7 +3826,9 @@ def PlotStructure(G2frame,data,firstCall=False):
     Mydir = generalData['Mydir']
     atomData = data['Atoms']
     mapPeaks = []
-    drawingData = data['Drawing']    
+    drawingData = data['Drawing']
+    if not drawingData:
+        return          #nothing setup, nothing to draw   
     if 'Map Peaks' in data:
         mapPeaks = np.array(data['Map Peaks'])
         peakMax = 100.

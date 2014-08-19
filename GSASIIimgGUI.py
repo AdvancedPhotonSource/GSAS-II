@@ -289,7 +289,7 @@ def UpdateImageControls(G2frame,data,masks):
                 save = {}
                 keys = ['type','wavelength','calibrant','distance','center',
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
-                    'IOtth','outAzimuths','invert_x','invert_y','DetDepth',
+                    'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
                     'calibskip','pixLimit','cutoff','calibdmin','chisq',
                     'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
                 for key in keys:
@@ -302,7 +302,7 @@ def UpdateImageControls(G2frame,data,masks):
         
     def OnLoadControls(event):
         cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type',
-            'fullIntegrate','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
+            'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
             'calibskip','pixLimit','cutoff','calibdmin','chisq',
             'PolaVal','SampleAbs','dark image','background image']
         dlg = wx.FileDialog(G2frame, 'Choose image controls file', '.', '', 

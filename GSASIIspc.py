@@ -361,7 +361,10 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                 if invers:
                     XT = -XT
                 XT += C
-                newX = MoveToUnitCell(XT)
+                if Move:
+                    newX = MoveToUnitCell(XT)
+                else:
+                    newX = XT
                 cell = np.asarray(np.rint(newX-XT),dtype=np.int32)
                 if All:
                     if np.allclose(newX,X,atol=0.0002):

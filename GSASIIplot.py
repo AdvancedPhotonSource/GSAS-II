@@ -3848,10 +3848,24 @@ def PlotStructure(G2frame,data,firstCall=False):
         XYZs,Types = G2mth.UpdateMCSAxyz(Bmat,MCSA)
         mcsaXYZ = []
         mcsaTypes = []
+        neqv = 0
         for xyz,atyp in zip(XYZs,Types):
-            for item in G2spc.GenAtom(xyz,SGData):
+            equiv = G2spc.GenAtom(xyz,SGData,All=True,Move=False)
+            neqv = max(neqv,len(equiv))
+            for item in equiv:
                 mcsaXYZ.append(item[0]) 
                 mcsaTypes.append(atyp)
+        mcsaXYZ = np.array(mcsaXYZ)
+        mcsaTypes = np.array(mcsaTypes)
+        nuniq = mcsaXYZ.shape[0]/neqv
+        mcsaXYZ = np.reshape(mcsaXYZ,(nuniq,neqv,3))
+        mcsaTypes = np.reshape(mcsaTypes,(nuniq,neqv))
+        cent = np.fix(np.sum(mcsaXYZ+2.,axis=0)/nuniq)-2
+        cent[0] = [0,0,0]   #make sure 1st one isn't moved
+        mcsaXYZ = np.swapaxes(mcsaXYZ,0,1)-cent[:,np.newaxis,:]
+        mcsaTypes = np.swapaxes(mcsaTypes,0,1)
+        mcsaXYZ = np.reshape(mcsaXYZ,(nuniq*neqv,3))
+        mcsaTypes = np.reshape(mcsaTypes,(nuniq*neqv))                        
         mcsaBonds = FindPeaksBonds(mcsaXYZ)        
     drawAtoms = drawingData.get('Atoms',[])
     mapData = {}

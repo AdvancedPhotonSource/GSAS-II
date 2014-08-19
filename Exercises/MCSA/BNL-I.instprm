@@ -1,0 +1,12 @@
+#GSAS-II instrument parameter file; do not add/delete or change order of items!
+Lam:1.148407
+Type:PXC
+V:-1.28771353531
+Zero:0.0
+U:5.9840407759
+W:0.118521878603
+Azimuth:0.0
+Y:4.40147397286
+X:-0.0977791308891
+SH/L:0.0264356231583
+Polariz.:0.99

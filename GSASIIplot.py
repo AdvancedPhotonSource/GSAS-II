@@ -3643,6 +3643,10 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             xylim = []
             Page.toolbar.push_current()
             Page.toolbar.draw()
+            # patch for wx 2.9 on Mac, to force a redraw
+            i,j= wx.__version__.split('.')[0:2]
+            if int(i)+int(j)/10. > 2.8 and 'wxOSX' in wx.PlatformInfo:
+                Page.canvas.draw()
         else:
             Page.canvas.draw()
     finally:

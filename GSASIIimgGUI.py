@@ -376,7 +376,7 @@ def UpdateImageControls(G2frame,data,masks):
         comboSizer.Add(typeSel,0,WACV)
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Color bar '),0,WACV)
         colSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['color'],choices=colorList,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
         colSel.Bind(wx.EVT_COMBOBOX, OnNewColorBar)
         comboSizer.Add(colSel,0,WACV)
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Azimuth offset '),0,WACV)
@@ -665,7 +665,7 @@ def UpdateImageControls(G2frame,data,masks):
             binChoice = ['q','log(q)']
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Bin style: Constant step bins in'),0,WACV)            
         binSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['binType'],choices=binChoice,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
         binSel.Bind(wx.EVT_COMBOBOX, OnNewBinType)
         dataSizer.Add(binSel,0,WACV)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Inner/Outer 2-theta'),0,WACV)            
@@ -873,7 +873,7 @@ def UpdateImageControls(G2frame,data,masks):
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)    
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibrant '),0,WACV)
         calSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['calibrant'],choices=calList,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN|wx.CB_SORT)
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
         calSel.Bind(wx.EVT_COMBOBOX, OnNewCalibrant)
         comboSizer.Add(calSel,0,WACV)
         calibSizer.Add(comboSizer,0)
@@ -964,8 +964,8 @@ def UpdateImageControls(G2frame,data,masks):
         data['PolaVal'] = [0.99,False]
     #end fix
     
-    colorList = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
-    calList = [m for m in calFile.Calibrants.keys()]
+    colorList = sorted([m for m in mpl.cm.datad.keys() if not m.endswith("_r")],key=lambda s: s.lower())
+    calList = sorted([m for m in calFile.Calibrants.keys()],key=lambda s: s.lower())
     typeList = ['PWDR - powder diffraction data','SASD - small angle scattering data',
         'REFL - reflectometry data']
     if not data.get('type'):                        #patch for old project files

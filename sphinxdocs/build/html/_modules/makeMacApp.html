@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>makeMacApp &mdash; GSAS-II 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="GSAS-II 0.2.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for makeMacApp</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">*makeMacApp: Create Mac Applet*</span>
+<span class="sd">===============================</span>
+
+<span class="sd">This script creates an AppleScript app to launch GSAS-II. The app is</span>
+<span class="sd">created in the directory where the GSAS-II script is located.</span>
+<span class="sd">A softlink to Python is created, but is named GSAS-II, so that </span>
+<span class="sd">GSAS-II shows up as the name of the app rather than Python in the</span>
+<span class="sd">menu bar, etc. Note that this requires finding an app version of Python</span>
+<span class="sd">(expected name .../Resources/Python.app/Contents/MacOS/Python in</span>
+<span class="sd">directory tree of the calling python interpreter).</span>
+
+<span class="sd">Run this script with one optional argument, the path to the GSASII.py</span>
+<span class="sd">The script path may be specified relative to the current path or given</span>
+<span class="sd">an absolute path, but will be accessed via an absolute path. </span>
+<span class="sd">If no arguments are supplied, the GSASII.py script is assumed to be in the</span>
+<span class="sd">same directory as this file.</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">os.path</span><span class="o">,</span> <span class="nn">stat</span><span class="o">,</span> <span class="nn">shutil</span><span class="o">,</span> <span class="nn">subprocess</span><span class="o">,</span> <span class="nn">plistlib</span>
+<span class="k">def</span> <span class="nf">Usage</span><span class="p">():</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n\t</span><span class="s">Usage: python &quot;</span><span class="o">+</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s">&quot; [&lt;GSAS-II script&gt;]</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+<div class="viewcode-block" id="RunPython"><a class="viewcode-back" href="../GSASIIscripts.html#makeMacApp.RunPython">[docs]</a><span class="k">def</span> <span class="nf">RunPython</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">cmd</span><span class="p">):</span>
+    <span class="s">&#39;Run a command in a python image&#39;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">err</span><span class="o">=</span><span class="bp">None</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">([</span><span class="n">image</span><span class="p">,</span><span class="s">&#39;-c&#39;</span><span class="p">,</span><span class="n">cmd</span><span class="p">],</span><span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span><span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">out</span><span class="p">,</span><span class="n">err</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">err</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&#39;&#39;</span><span class="p">,</span><span class="s">&#39;Exception = &#39;</span><span class="o">+</span><span class="n">err</span>
+</div>
+<span class="n">project</span><span class="o">=</span><span class="s">&quot;GSAS-II&quot;</span>
+<span class="n">AppleScript</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+<span class="sd">&#39;&#39;&#39;Contains an AppleScript to start GSAS-II launching python and the</span>
+<span class="sd">GSAS-II python script</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">AppleScript</span> <span class="o">+=</span> <span class="s">&#39;&#39;&#39;(*   GSAS-II AppleScript by B. Toby (brian.toby@anl.gov)</span>
+<span class="s">     It can launch GSAS-II by double clicking or by dropping a data file</span>
+<span class="s">     or folder over the app.</span>
+<span class="s">     It runs GSAS-II in a terminal window.</span>
+<span class="s">*)</span>
+
+<span class="s">(* test if a file is present and exit with an error message if it is not  *)</span>
+<span class="s">on TestFilePresent(appwithpath)</span>
+<span class="s">	tell application &quot;System Events&quot;</span>
+<span class="s">		if (file appwithpath exists) then</span>
+<span class="s">		else</span>
+<span class="s">			display dialog &quot;Error: file &quot; &amp; appwithpath &amp; &quot; not found. If you have moved this file recreate the AppleScript with bootstrap.py.&quot; with icon caution buttons {{&quot;Quit&quot;}}</span>
+<span class="s">			return</span>
+<span class="s">		end if</span>
+<span class="s">	end tell</span>
+<span class="s">end TestFilePresent</span>
+
+<span class="s">(* </span>
+<span class="s">------------------------------------------------------------------------</span>
+<span class="s">this section responds to a double-click. No file is supplied to GSAS-II</span>
+<span class="s">------------------------------------------------------------------------ </span>
+<span class="s">*)</span>
+<span class="s">on run</span>
+<span class="s">	set python to &quot;{:s}&quot;</span>
+<span class="s">	set appwithpath to &quot;{:s}&quot;</span>
+<span class="s">	set env to &quot;{:s}&quot;</span>
+<span class="s">	TestFilePresent(appwithpath)</span>
+<span class="s">	TestFilePresent(python)</span>
+<span class="s">	tell application &quot;Terminal&quot;</span>
+<span class="s">		activate</span>
+<span class="s">		do script env &amp; python &amp; &quot; &quot; &amp; appwithpath &amp; &quot;; exit&quot;</span>
+<span class="s">	end tell</span>
+<span class="s">end run</span>
+
+<span class="s">(*</span>
+<span class="s">-----------------------------------------------------------------------------------------------</span>
+<span class="s">this section handles starting with files dragged into the AppleScript</span>
+<span class="s"> o it goes through the list of file(s) dragged in</span>
+<span class="s"> o then it converts the colon-delimited macintosh file location to a POSIX filename</span>
+<span class="s"> o for every non-directory file dragged into the icon, it starts GSAS-II, passing the file name</span>
+<span class="s">------------------------------------------------------------------------------------------------</span>
+<span class="s">*)</span>
+
+<span class="s">on open names</span>
+<span class="s">	set python to &quot;{:s}&quot;</span>
+<span class="s">	set appwithpath to &quot;{:s}&quot;</span>
+<span class="s">	set env to &quot;{:s}&quot;</span>
+<span class="s"> </span>
+<span class="s">	TestFilePresent(appwithpath)</span>
+<span class="s">	repeat with filename in names</span>
+<span class="s">		set filestr to (filename as string)</span>
+<span class="s">		if filestr ends with &quot;:&quot; then</span>
+<span class="s">                        (* should not happen, skip directories *)</span>
+<span class="s">		else</span>
+<span class="s">			(* if this is an input file, open it *)</span>
+<span class="s">			set filename to the quoted form of the POSIX path of filename</span>
+<span class="s">			tell application &quot;Terminal&quot;</span>
+<span class="s">				activate</span>
+<span class="s">				do script env &amp; python &amp; &quot; &quot; &amp; appwithpath &amp; &quot; &quot; &amp; filename &amp; &quot;; exit&quot;</span>
+<span class="s">			end tell</span>
+<span class="s">		end if</span>
+<span class="s">	end repeat</span>
+<span class="s">end open</span>
+<span class="s">&#39;&#39;&#39;</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c"># find the main GSAS-II script if not on command line</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">script</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">__file__</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="s">&quot;GSASII.py&quot;</span>
+            <span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">script</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Usage</span><span class="p">()</span>
+
+    <span class="c"># make sure we found it</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">script</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">File &quot;</span><span class="o">+</span><span class="n">script</span><span class="o">+</span><span class="s">&quot; not found&quot;</span><span class="p">)</span>
+        <span class="n">Usage</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">script</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s">&#39;.py&#39;</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Script &quot;</span><span class="o">+</span><span class="n">script</span><span class="o">+</span><span class="s">&quot; does not have extension .py&quot;</span><span class="p">)</span>
+        <span class="n">Usage</span><span class="p">()</span>
+    <span class="c"># where the app will be created</span>
+    <span class="n">scriptdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">script</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c"># name of app</span>
+    <span class="n">apppath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">scriptdir</span><span class="p">,</span><span class="n">project</span><span class="o">+</span><span class="s">&quot;.app&quot;</span><span class="p">))</span>
+    <span class="n">iconfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">scriptdir</span><span class="p">,</span><span class="s">&#39;gsas2.icns&#39;</span><span class="p">)</span> <span class="c"># optional icon file</span>
+
+    <span class="c"># find the python application; must be an OS X app</span>
+    <span class="n">pythonpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">)</span>
+    <span class="n">top</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">while</span> <span class="n">top</span><span class="p">:</span>
+        <span class="n">pythonapp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pythonpath</span><span class="p">,</span><span class="s">&#39;Resources&#39;</span><span class="p">,</span><span class="s">&#39;Python.app&#39;</span><span class="p">,</span><span class="s">&#39;Contents&#39;</span><span class="p">,</span><span class="s">&#39;MacOS&#39;</span><span class="p">,</span><span class="s">&#39;Python&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">pythonapp</span><span class="p">):</span> <span class="k">break</span>
+        <span class="n">pythonpath</span><span class="p">,</span><span class="n">top</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">pythonpath</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Sorry, failed to find a Resources directory associated with &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">))</span>
+        <span class="n">pythonapp</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">executable</span>
+    
+    <span class="c"># create a link to the python app, but named to match the project</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&#39;/tmp/testpython&#39;</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&#39;/tmp/testpython&#39;</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">symlink</span><span class="p">(</span><span class="n">pythonapp</span><span class="p">,</span><span class="s">&#39;/tmp/testpython&#39;</span><span class="p">)</span>
+    <span class="c"># test if it runs</span>
+    <span class="n">testout</span><span class="p">,</span><span class="n">errout</span> <span class="o">=</span> <span class="n">RunPython</span><span class="p">(</span><span class="s">&#39;/tmp/testpython&#39;</span><span class="p">,</span><span class="s">&#39;import numpy; import wx; print(&quot;OK&quot;)&#39;</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s">&#39;/tmp/testpython&#39;</span><span class="p">)</span>
+    <span class="c">#print testout,errout</span>
+    <span class="k">if</span> <span class="n">testout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s">&quot;OK&quot;</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;Run of python app failed, resorting to non-app version of Python, Alas!&#39;</span>
+        <span class="n">pythonapp</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">executable</span>
+        <span class="c"># is this brain-dead Canopy 1.4.0, if so, switch to pythonw</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">canopy.version</span>
+            <span class="k">if</span> <span class="n">canopy</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s">&#39;1.4.0&#39;</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;using pythonw for Canopy 1.4.0&#39;</span>
+                <span class="n">pythonapp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">pythonapp</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;pythonw&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">pythonapp</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;no pythonw here: &#39;</span><span class="o">+</span><span class="n">pythonapp</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="n">newpython</span> <span class="o">=</span> <span class="n">pythonapp</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># new name to call python</span>
+        <span class="n">newpython</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">apppath</span><span class="p">,</span><span class="s">&quot;Contents&quot;</span><span class="p">,</span><span class="s">&quot;MacOS&quot;</span><span class="p">,</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">apppath</span><span class="p">):</span> <span class="c"># cleanup</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Removing old &quot;</span><span class="o">+</span><span class="n">project</span><span class="o">+</span><span class="s">&quot; app (&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">apppath</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;)&quot;</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">apppath</span><span class="p">)</span>
+
+    <span class="n">shell</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&quot;/tmp/&quot;</span><span class="p">,</span><span class="s">&quot;appscrpt.script&quot;</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">shell</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">AppleScript</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">newpython</span><span class="p">,</span><span class="n">script</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">newpython</span><span class="p">,</span><span class="n">script</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">))</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span> 
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">([</span><span class="s">&quot;osacompile&quot;</span><span class="p">,</span><span class="s">&quot;-o&quot;</span><span class="p">,</span><span class="n">apppath</span><span class="p">,</span><span class="n">shell</span><span class="p">],</span><span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&#39;&#39;&#39;Error compiling AppleScript.</span>
+<span class="s">        Report the next message along with details about your Mac to toby@anl.gov&#39;&#39;&#39;</span>
+        <span class="k">print</span> <span class="n">msg</span><span class="o">.</span><span class="n">output</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+    <span class="c"># create a link to the python app, but named to match the project</span>
+    <span class="k">if</span> <span class="n">pythonapp</span> <span class="o">!=</span> <span class="n">newpython</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">symlink</span><span class="p">(</span><span class="n">pythonapp</span><span class="p">,</span><span class="n">newpython</span><span class="p">)</span>
+
+    <span class="c"># change the icon</span>
+    <span class="n">oldicon</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">apppath</span><span class="p">,</span><span class="s">&quot;Contents&quot;</span><span class="p">,</span><span class="s">&quot;Resources&quot;</span><span class="p">,</span><span class="s">&quot;droplet.icns&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">iconfile</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">oldicon</span><span class="p">):</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">iconfile</span><span class="p">,</span><span class="n">oldicon</span><span class="p">)</span>
+
+    <span class="c"># Edit the app plist file to restrict the type of files that can be dropped</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">plistlib</span><span class="o">.</span><span class="n">readPlist</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">apppath</span><span class="p">,</span><span class="s">&quot;Contents&quot;</span><span class="p">,</span><span class="s">&#39;Info.plist&#39;</span><span class="p">))</span>
+    <span class="n">d</span><span class="p">[</span><span class="s">&#39;CFBundleDocumentTypes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[{</span>
+        <span class="s">&#39;CFBundleTypeExtensions&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;gpx&#39;</span><span class="p">],</span>
+        <span class="s">&#39;CFBundleTypeName&#39;</span><span class="p">:</span> <span class="s">&#39;GSAS-II project&#39;</span><span class="p">,</span>
+        <span class="s">&#39;CFBundleTypeRole&#39;</span><span class="p">:</span> <span class="s">&#39;Editor&#39;</span><span class="p">}]</span>
+    
+    <span class="n">plistlib</span><span class="o">.</span><span class="n">writePlist</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">apppath</span><span class="p">,</span><span class="s">&quot;Contents&quot;</span><span class="p">,</span><span class="s">&#39;Info.plist&#39;</span><span class="p">))</span>
+
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Created &quot;</span><span class="o">+</span><span class="n">project</span><span class="o">+</span><span class="s">&quot; app (&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">apppath</span><span class="p">)</span><span class="o">+</span>
+          <span class="s">&quot;).</span><span class="se">\n</span><span class="s">Viewing app in Finder so you can drag it to the dock if, you wish.&quot;</span><span class="p">)</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">([</span><span class="s">&quot;open&quot;</span><span class="p">,</span><span class="s">&quot;-R&quot;</span><span class="p">,</span><span class="n">apppath</span><span class="p">])</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/G2_html_logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GSAS-II 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -55,13 +55,13 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         values =  np.array(G2stMth.Dict2Values(parmDict, varyList))
         Ftol = Controls['min dM/M']
         Factor = Controls['shift factor']
-        maxCyc = Controls['max cyc']
         if 'Jacobian' in Controls['deriv type']:            
             result = so.leastsq(G2stMth.errRefine,values,Dfun=G2stMth.dervRefine,full_output=True,
                 ftol=Ftol,col_deriv=True,factor=Factor,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = int(result[2]['nfev']/2)
         elif 'Hessian' in Controls['deriv type']:
+            maxCyc = Controls['max cyc']
             result = G2mth.HessianLSQ(G2stMth.errRefine,values,Hess=G2stMth.HessRefine,ftol=Ftol,maxcyc=maxCyc,Print=ifPrint,
                 args=([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg))
             ncyc = result[2]['num cyc']+1

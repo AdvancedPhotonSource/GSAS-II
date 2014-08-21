@@ -1596,7 +1596,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
-    yb = G2pwd.getBackground(hfx,parmDict,bakType,x)
+    yb = G2pwd.getBackground(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
     yc = np.zeros_like(yb)
     cw = np.diff(x)
     cw = np.append(cw,cw[-1])
@@ -1729,7 +1729,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
     dMdv = np.zeros(shape=(len(varylist),len(x)))
-    dMdb,dMddb,dMdpk = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,x)
+    dMdb,dMddb,dMdpk = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
     if hfx+'Back:0' in varylist: # for now assume that Back:x vars to not appear in constraints
         bBpos =varylist.index(hfx+'Back:0')
         dMdv[bBpos:bBpos+len(dMdb)] = dMdb
@@ -1780,6 +1780,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         for iref,refl in enumerate(refDict['RefList']):
             h,k,l = refl[:3]
             Uniq = np.inner(refl[:3],SGMT)
+            if 'T' in calcControls[hfx+'histType']:
+                wave = refl[14]
             dIdsh,dIdsp,dIdpola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx = GetIntensityDerv(refl,wave,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
             if 'C' in calcControls[hfx+'histType']:        #CW powder
                 Wd,fmin,fmax = G2pwd.getWidthsCW(refl[5],refl[6],refl[7],shl)

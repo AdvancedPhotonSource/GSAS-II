@@ -3848,7 +3848,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     rbObj = testRBObj.get('rbObj',{})
     MCSA = data.get('MCSA',{})
     mcsaModels = MCSA.get('Models',[])
-    if mcsaModels:
+    if len(mcsaModels) > 1:
         XYZs,Types = G2mth.UpdateMCSAxyz(Bmat,MCSA)
         mcsaXYZ = []
         mcsaTypes = []

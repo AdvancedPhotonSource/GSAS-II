@@ -518,7 +518,7 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
     Df = si.interp1d(x,Df,bounds_error=False,fill_value=0.0)
     return intens*Df(xdata)*DX/dx
 
-def getBackground(pfx,parmDict,bakType,xdata):
+def getBackground(pfx,parmDict,bakType,dataType,xdata):
     'needs a doc string'
     yb = np.zeros_like(xdata)
     nBak = 0
@@ -588,11 +588,23 @@ def getBackground(pfx,parmDict,bakType,xdata):
             pkI = parmDict[pfx+'BkPkint;'+str(iD)]
             pkS = parmDict[pfx+'BkPksig;'+str(iD)]
             pkG = parmDict[pfx+'BkPkgam;'+str(iD)]
-            shl = 0.002
-            Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,shl)
+            if 'C' in dataType:
+                Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,.002)
+            else: #'T'OF
+                Wd,fmin,fmax = getWidthsTOF(pkP,1.,1.,pkS,pkG)
             iBeg = np.searchsorted(xdata,pkP-fmin)
             iFin = np.searchsorted(xdata,pkP+fmax)
-            yb[iBeg:iFin] += pkI*getFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])
+            lenX = len(xdata)
+            if not iBeg:
+                iFin = np.searchsorted(xdata,pkP+fmax)
+            elif iBeg == lenX:
+                iFin = iBeg
+            else:
+                iFin = np.searchsorted(xdata,pkP+fmax)
+            if 'C' in dataType:
+                yb[iBeg:iFin] += pkI*getFCJVoigt3(pkP,pkS,pkG,0.002,xdata[iBeg:iFin])
+            else:   #'T'OF
+                yb[iBeg:iFin] += pkI*getEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])
             iD += 1       
         except KeyError:
             break
@@ -601,7 +613,7 @@ def getBackground(pfx,parmDict,bakType,xdata):
             break        
     return yb
     
-def getBackgroundDerv(hfx,parmDict,bakType,xdata):
+def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
     'needs a doc string'
     nBak = 0
     while True:
@@ -684,15 +696,31 @@ def getBackgroundDerv(hfx,parmDict,bakType,xdata):
             pkI = parmDict[hfx+'BkPkint;'+str(iD)]
             pkS = parmDict[hfx+'BkPksig;'+str(iD)]
             pkG = parmDict[hfx+'BkPkgam;'+str(iD)]
-            shl = 0.002
-            Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,shl)
+            if 'C' in dataType:
+                Wd,fmin,fmax = getWidthsCW(pkP,pkS,pkG,.002)
+            else: #'T'OF
+                Wd,fmin,fmax = getWidthsTOF(pkP,1.,1.,pkS,pkG)
             iBeg = np.searchsorted(xdata,pkP-fmin)
             iFin = np.searchsorted(xdata,pkP+fmax)
-            Df,dFdp,dFds,dFdg,dFdsh = getdFCJVoigt3(pkP,pkS,pkG,shl,xdata[iBeg:iFin])
-            dydpk[4*iD][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFdp
-            dydpk[4*iD+1][iBeg:iFin] += 100.*cw[iBeg:iFin]*Df
-            dydpk[4*iD+2][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFds
-            dydpk[4*iD+3][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFdg
+            lenX = len(xdata)
+            if not iBeg:
+                iFin = np.searchsorted(xdata,pkP+fmax)
+            elif iBeg == lenX:
+                iFin = iBeg
+            else:
+                iFin = np.searchsorted(xdata,pkP+fmax)
+            if 'C' in dataType:
+                Df,dFdp,dFds,dFdg,x = getdFCJVoigt3(pkP,pkS,pkG,.002,xdata[iBeg:iFin])
+                dydpk[4*iD][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFdp
+                dydpk[4*iD+1][iBeg:iFin] += 100.*cw[iBeg:iFin]*Df
+                dydpk[4*iD+2][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFds
+                dydpk[4*iD+3][iBeg:iFin] += 100.*cw[iBeg:iFin]*pkI*dFdg
+            else:   #'T'OF
+                Df,dFdp,x,x,dFds,dFdg = getdEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])
+                dydpk[4*iD][iBeg:iFin] += pkI*dFdp
+                dydpk[4*iD+1][iBeg:iFin] += Df
+                dydpk[4*iD+2][iBeg:iFin] += pkI*dFds
+                dydpk[4*iD+3][iBeg:iFin] += pkI*dFdg
             iD += 1       
         except KeyError:
             break
@@ -777,7 +805,7 @@ def getHKLpeak(dmin,SGData,A):
 def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
     'needs a doc string'
     
-    yb = getBackground('',parmDict,bakType,xdata)
+    yb = getBackground('',parmDict,bakType,dataType,xdata)
     yc = np.zeros_like(yb)
     cw = np.diff(xdata)
     cw = np.append(cw,cw[-1])
@@ -885,7 +913,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
     'needs a doc string'
 # needs to return np.array([dMdx1,dMdx2,...]) in same order as varylist = backVary,insVary,peakVary order
     dMdv = np.zeros(shape=(len(varyList),len(xdata)))
-    dMdb,dMddb,dMdpk = getBackgroundDerv('',parmDict,bakType,xdata)
+    dMdb,dMddb,dMdpk = getBackgroundDerv('',parmDict,bakType,dataType,xdata)
     if 'Back:0' in varyList:            #background derivs are in front if present
         dMdv[0:len(dMdb)] = dMdb
     names = ['DebyeA','DebyeR','DebyeU']
@@ -897,7 +925,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
     names = ['BkPkpos','BkPkint','BkPksig','BkPkgam']
     for name in varyList:
         if 'BkPk' in name:
-            parm,id = name.split(':')
+            parm,id = name.split(';')
             ip = names.index(parm)
             dMdv[varyList.index(name)] = dMdpk[4*int(id)+ip]
     cw = np.diff(xdata)
@@ -1116,7 +1144,7 @@ def SetBackgroundParms(Background):
     peaksDict = {}
     peaksList = []
     for i in range(Debye['nPeaks']):
-        peaksNames = ['BkPkpos:'+str(i),'BkPkint:'+str(i),'BkPksig:'+str(i),'BkPkgam:'+str(i)]
+        peaksNames = ['BkPkpos;'+str(i),'BkPkint;'+str(i),'BkPksig;'+str(i),'BkPkgam;'+str(i)]
         peaksDict.update(dict(zip(peaksNames,Debye['peaksList'][i][::2])))
         peaksList += zip(peaksNames,Debye['peaksList'][i][1::2])
     peaksVary = []
@@ -1237,7 +1265,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
                 break
         iDb = 0
         while True:
-            names = ['BkPkpos:','BkPkint:','BkPksig:','BkPkgam:']
+            names = ['BkPkpos;','BkPkint;','BkPksig;','BkPkgam;']
             try:
                 for i,name in enumerate(names):
                     val = parmList[name+str(iDb)]
@@ -1279,15 +1307,15 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
         if Background[1]['nPeaks']:
             parms = ['BkPkpos','BkPkint','BkPksig','BkPkgam']
             print 'Peaks in background coefficients'
-            ptfmt = "%12.5f"
+            ptfmt = "%15.3f"
             names =   'names :'
             ptstr =  'values:'
             sigstr = 'esds  :'
             for item in sigDict:
                 if 'BkPk' in item:
-                    names += '%12s'%(item)
+                    names += '%15s'%(item)
                     sigstr += ptfmt%(sigDict[item])
-                    parm,id = item.split(':')
+                    parm,id = item.split(';')
                     ip = parms.index(parm)
                     ptstr += ptfmt%(Background[1]['peaksList'][int(id)][2*ip])
             print names
@@ -1503,7 +1531,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
             return {}
         
     sigDict = dict(zip(varyList,sig))
-    yb[xBeg:xFin] = getBackground('',parmDict,bakType,x[xBeg:xFin])
+    yb[xBeg:xFin] = getBackground('',parmDict,bakType,dataType,x[xBeg:xFin])
     yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],varyList,bakType)
     yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
     GetBackgroundParms(parmDict,Background)
@@ -1614,10 +1642,10 @@ def test0():
     if NeedTestData: TestData()
     msg = 'test '
     gplot = plotter.add('FCJ-Voigt, 11BM').gca()
-    gplot.plot(xdata,getBackground('',parmDict0,bakType,xdata))   
+    gplot.plot(xdata,getBackground('',parmDict0,bakType,'PXC',xdata))   
     gplot.plot(xdata,getPeakProfile(parmDict0,xdata,varyList,bakType))
     fplot = plotter.add('FCJ-Voigt, Ka1+2').gca()
-    fplot.plot(xdata,getBackground('',parmDict1,bakType,xdata))   
+    fplot.plot(xdata,getBackground('',parmDict1,bakType,'PXC',xdata))   
     fplot.plot(xdata,getPeakProfile(parmDict1,xdata,varyList,bakType))
     
 def test1():

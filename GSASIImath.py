@@ -2941,7 +2941,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                 cosTable.append(G2lat.CosAngle(Heqv,MDvec,Gmat))
         cosTable = np.array(cosTable)**2
         nRef = len(refs)
-        if covData['freshCOV'] and generalData['doPawley'] and MCSA.get('newDmin',True):
+        if generalData['doPawley'] and (covData['freshCOV'] or  MCSA['newDmin']):
             vList = covData['varyList']
             covMatrix = covData['covMatrix']
             rcov = getVCov(vNames,vList,covMatrix)

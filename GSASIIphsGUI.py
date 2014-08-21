@@ -121,8 +121,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'Algolrithm' in generalData.get('MCSA controls',{}) or \
             'MCSA controls' not in generalData:
             generalData['MCSA controls'] = {'Data source':'','Annealing':[50.,0.001,50],
-            'dmin':2.0,'Algorithm':'fast','Jump coeff':[0.95,0.5],'boltzmann':1.0,
-            'fast parms':[1.0,1.0,1.0],'log slope':0.9,'Cycles':1,'Results':[]}
+            'dmin':2.0,'Algorithm':'log','Jump coeff':[0.95,0.5],'boltzmann':1.0,
+            'fast parms':[1.0,1.0,1.0],'log slope':0.9,'Cycles':1,'Results':[],'newDmin':True}
         if 'AtomPtrs' not in generalData:
             generalData['AtomPtrs'] = [3,1,7,9]
             if generalData['Type'] =='macromolecular':

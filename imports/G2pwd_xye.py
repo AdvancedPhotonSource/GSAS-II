@@ -92,7 +92,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                     f = float(vals[1])
                     if f <= 0.0:
                         y.append(0.0)
-                        w.append(1.0)
+                        w.append(0.0)
                     elif len(vals) == 3:
                         y.append(float(vals[1]))
                         w.append(1.0/float(vals[2])**2)

@@ -71,7 +71,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                 s = float(vals[2])
                 if f <= 0.0 or s <= 0.0:
                     y.append(0.0)
-                    w.append(1.0)
+                    w.append(0.0)
                 else:
                     y.append(float(vals[1]))
                     w.append(1.0/float(vals[2])**2)
@@ -94,7 +94,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                     w.append(1.0/f)
                 else:              
                     y.append(0.0)
-                    w.append(1.0)
+                    w.append(0.0)
                 S = File.readline()
             N = len(x)
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
@@ -124,7 +124,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                         w.append(1.0/ei**2)
                     else:              
                         y.append(0.0)
-                        w.append(1.0)
+                        w.append(0.0)
                     j += 1
                 S = File.readline()
             N = len(x)
@@ -156,7 +156,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                         vi = yi/ni
                     else:
                         yi = 0.0
-                        vi = 1.0
+                        vi = 0.0
                     j += 1
                     if j < Nch:
                         x.append(xi)

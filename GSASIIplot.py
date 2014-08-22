@@ -942,57 +942,42 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
                 Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
-                if 'C' in Parms['Type'][0]:
-                    wave = G2mth.getWave(Parms)
-                    if G2frame.qPlot and 'PWDR' in plottype:
-                        try:
-                            xpos = 2.0*asind(xpos*wave/(4*math.pi))
-                        except ValueError:      #avoid bad value in asin beyond upper limit
-                            pass
-                    elif G2frame.dPlot:
-                        dsp = xpos
-                        q = 2.*np.pi/dsp
-                        xpos = 2.0*asind(wave/(2.*dsp))
-                    dsp = 0.0
-                    if abs(xpos) > 0.:                  #avoid possible singularity at beam center
-                        if 'PWDR' in plottype:
-                            dsp = wave/(2.*sind(abs(xpos)/2.0))
-                            q = 2.*np.pi/dsp
-                        elif 'SASD' in plottype:
-                            dsp = 2*np.pi/xpos
-                            q = xpos
-                    if G2frame.Contour:
-                        if 'PWDR' in plottype:
-                            G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
-                        elif 'SASD' in plottype:
-                            G2frame.G2plotNB.status.SetStatusText('d =%9.5f q = %9.5f pattern ID =%5d'%(dsp,q,int(ypos)),1)
+                if G2frame.qPlot and 'PWDR' in plottype:
+                    q = xpos
+                    dsp = 2.*np.pi/q
+                    try:
+                        xpos = G2lat.Dsp2pos(Parms,2.0*np.pi/xpos)
+                    except ValueError:      #avoid bad value in asin beyond upper limit
+                        pass
+                elif 'SASD' in plottype:
+                    q = xpos
+                    dsp = 2.*np.pi/q
+                elif G2frame.dPlot:
+                    dsp = xpos
+                    q = 2.*np.pi/dsp
+                    xpos = G2lat.Dsp2pos(Parms,xpos)
+                else:
+                    dsp = G2lat.Pos2dsp(Parms,xpos)
+                    q = 2.*np.pi/dsp
+                if G2frame.Contour: #PWDR only
+                    if 'C' in Parms['Type'][0]:
+                        G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
                     else:
+                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
+                else:
+                    if 'C' in Parms['Type'][0]:
                         if 'PWDR' in plottype:
                             if G2frame.SqrtPlot:
                                 G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                             else:
                                 G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
                         elif 'SASD' in plottype:
-                            G2frame.G2plotNB.status.SetStatusText('d =%9.5f q = %9.5f Intensity =%12.5g'%(dsp,q,ypos),1)
-                else:       #TOF neutrons
-                    dsp = 0.0
-                    difC = Parms['difC'][1]
-                    if G2frame.dPlot:
-                        dsp = xpos
-                        xpos = difC*dsp
-                    elif G2frame.qPlot and 'PWDR' in plottype:
-                        dsp = 2.*np.pi/xpos
-                        xpos = difC*dsp
-                    else:
-                        dsp = xpos/difC             #rough approx.!
-                    q = 2.*np.pi/dsp
-                    if G2frame.Contour:
-                        G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f pattern ID =%5d'%(xpos,dsp,q,int(ypos)),1)
+                            G2frame.G2plotNB.status.SetStatusText('q =%12.5g Intensity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
                     else:
                         if G2frame.SqrtPlot:
-                            G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
+                            G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                         else:
-                            G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
+                            G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
                 if G2frame.itemPicked:
                     Page.canvas.SetToolTipString('%9.5f'%(xpos))
                 if G2frame.PickId:
@@ -1022,10 +1007,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         except TypeError:
             return
-        if 'C' in Parms['Type'][0]:
-            wave = G2mth.getWave(Parms)
-        else:
-            difC = Parms['difC'][1]
         PickId = G2frame.PickId
         pick = event.artist
         mouse = event.mouseevent
@@ -1036,16 +1017,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):                                    #picked a data point
                 data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
-                if 'C' in Parms['Type'][0]:
-                    if G2frame.qPlot:                              #qplot - convert back to 2-theta
-                        xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
-                    elif G2frame.dPlot:                            #dplot - convert back to 2-theta
-                        xy[0] = 2.0*asind(wave/(2.*xy[0]))
-                elif 'T' in Parms['Type'][0]:
-                    if G2frame.qPlot:                              #qplot - convert back to TOF
-                        xy[0] = 2.0*math.pi*difC/xy[0]
-                    elif G2frame.dPlot:                            #dplot - convert back to TOF
-                        xy[0] *= difC                    
+                if G2frame.qPlot:                              #qplot - convert back to 2-theta
+                    xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
+                elif G2frame.dPlot:                            #dplot - convert back to 2-theta
+                    xy[0] = G2lat.Dsp2pos(Parms,xy[0])
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
                 data['peaks'].append(XY)
                 data['sigDict'] = {}    #now invalid
@@ -1057,16 +1032,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
                 data = G2frame.PatternTree.GetItemPyData(LimitId)
-                if 'C' in Parms['Type'][0]:                            #CW data - TOF later in an elif
-                    if G2frame.qPlot and 'PWDR' in plottype:                              #qplot - convert back to 2-theta
-                        xy[0] = 2.0*asind(xy[0]*wave/(4*math.pi))
-                    elif G2frame.dPlot:                            #dplot - convert back to 2-theta
-                        xy[0] = 2.0*asind(wave/(2.*xy[0]))
-                elif 'T' in Parms['Type'][0]:
-                    if G2frame.qPlot:                              #qplot - convert back to TOF
-                        xy[0] = 2.0*math.pi*difC/xy[0]
-                    elif G2frame.dPlot:                            #dplot - convert back to TOF
-                        xy[0] *= difC                    
+                if G2frame.qPlot:                              #qplot - convert back to 2-theta
+                    xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
+                elif G2frame.dPlot:                            #dplot - convert back to 2-theta
+                    xy[0] = G2lat.Dsp2pos(Parms,xy[0])
                 if G2frame.ifGetExclude:
                     excl = [0,0]
                     excl[0] = max(data[1][0],min(xy[0],data[1][1]))
@@ -1109,10 +1078,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             PlotPatterns(G2frame,plotType=plottype)
             return
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
-        if 'C' in Parms['Type'][0]:
-            wave = G2mth.getWave(Parms)
-        else:
-            difC = Parms['difC'][1]
         xpos = event.xdata
         PickId = G2frame.PickId
         if G2frame.PatternTree.GetItemText(PickId) in ['Peak List','Limits'] and xpos:
@@ -1129,15 +1094,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 id = lineNo/2+1
                 id2 = lineNo%2
                 if G2frame.qPlot and 'PWDR' in plottype:
-                    if 'C' in Parms['Type'][0]:
-                        data[id][id2] = 2.0*asind(wave*xpos/(4*math.pi))
-                    else:
-                        data[id][id2] = 2*math.pi*Parms['difC'][1]/xpos
+                    data[id][id2] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
                 elif G2frame.dPlot and 'PWDR' in plottype:
-                    if 'C' in Parms['Type'][0]:
-                        data[id][id2] = 2.0*asind(wave/(2*xpos))
-                    else:
-                        data[id][id2] *= Parms['difC'][1]
+                    data[id][id2] = G2lat.Dsp2pos(Parms,xpos)
                 else:
                     data[id][id2] = xpos
                 if id > 1 and data[id][0] > data[id][1]:
@@ -1154,15 +1113,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     del data['peaks'][lineNo-2]
                 else:
                     if G2frame.qPlot:
-                        if 'C' in Parms['Type'][0]: 
-                            data['peaks'][lineNo-2][0] = 2.0*asind(wave*xpos/(4*math.pi))
-                        else:
-                            data['peaks'][lineNo-2][0] = 2*math.pi*Parms['difC'][1]/xpos
+                        data['peaks'][lineNo-2][0] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
                     elif G2frame.dPlot:
-                        if 'C' in Parms['Type'][0]:
-                            data['peaks'][lineNo-2][0] = 2.0*asind(wave/(2*xpos))
-                        else:
-                            data['peaks'][lineNo-2][0] *= Parms['difC'][1]
+                        data['peaks'][lineNo-2][0] = G2lat.Dsp2pos(Parms,xpos)
                     else:
                         data['peaks'][lineNo-2][0] = xpos
                     data['sigDict'] = {}        #no longer valid
@@ -1380,18 +1333,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 xye[0] = ma.masked_inside(xye[0],excl[0],excl[1])
         if G2frame.qPlot and 'PWDR' in plottype:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
-            if 'C' in Parms['Type'][0]:
-                X = 4*np.pi*npsind((xye[0]-Zero)/2.0)/wave
-            else:
-                X = 2*np.pi*Parms['difC'][1]/(xye[0]-Zero)
+            X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye[0])
         elif G2frame.dPlot and 'PWDR' in plottype:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
-            if 'C' in Parms['Type'][0]:
-                X = wave/(2.*npsind(xye[0]-Zero)/2.0)
-            else:
-                X = (xye[0]-Zero)/Parms['difC'][1]
+            X = G2lat.Pos2dsp(Parms,xye[0])
         else:
-            X = xye[0]-Zero
+            X = xye[0]
         if not lenX:
             lenX = len(X)
         if 'PWDR' in plottype:
@@ -1409,18 +1356,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Y = xye[1]*Sample['Scale'][0]*(1.005)**(offset*N)
         if LimitId and ifpicked:
             limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))
+            lims = limits[1]
             if G2frame.qPlot and 'PWDR' in plottype:
-                if 'C' in Parms['Type'][0]:
-                    limits = 4*np.pi*npsind(limits/2.0)/wave
-                else:
-                    limits = 2*np.pi*difC/limits
+                lims = 2.*np.pi/G2lat.Pos2dsp(Parms,lims)
             elif G2frame.dPlot and 'PWDR' in plottype:
-                if 'C' in Parms['Type'][0]:
-                    limits = wave/(2*npsind(limits/2.0))
-                else:
-                    limits /= difC                
-            Lines.append(Plot.axvline(limits[1][0],color='g',dashes=(5,5),picker=3.))    
-            Lines.append(Plot.axvline(limits[1][1],color='r',dashes=(5,5),picker=3.))
+                lims = G2lat.Pos2dsp(Parms,lims)
+            Lines.append(Plot.axvline(lims[0],color='g',dashes=(5,5),picker=3.))    
+            Lines.append(Plot.axvline(lims[1],color='r',dashes=(5,5),picker=3.))
             for i,item in enumerate(limits[2:]):
                 Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),picker=3.))    
                 Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),picker=3.))
@@ -1534,15 +1476,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
                     for item in data['peaks']:
                         if G2frame.qPlot:
-                            if 'C' in Parms['Type'][0]:
-                                Lines.append(Plot.axvline(4*math.pi*sind(item[0]/2.)/wave,color=colors[N%6],picker=2.))
-                            else:
-                                Lines.append(Plot.axvline(2*math.pi*difC/item[0],color=colors[N%6],picker=2.))                                
-                        if G2frame.dPlot:
-                            if 'C' in Parms['Type'][0]:
-                                Lines.append(Plot.axvline(wave/(2*sind(item[0]/2.)),color=colors[N%6],picker=2.))
-                            else:
-                                Lines.append(Plot.axvline(item[0]/difC,color=colors[N%6],picker=2.))                                
+                            Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,item[0]),color=colors[N%6],picker=2.))
+                        elif G2frame.dPlot:
+                            Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,item[0]),color=colors[N%6],picker=2.))
                         else:
                             Lines.append(Plot.axvline(item[0],color=colors[N%6],picker=2.))
                 if G2frame.PatternTree.GetItemText(PickId) == 'Limits':
@@ -1567,36 +1503,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Plot.set_ylim(bottom=np.min(np.trim_zeros(Y))/2.,top=np.max(Y)*2.)
     if PickId and not G2frame.Contour:
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-        if 'C' in Parms['Type'][0]:
-            wave = G2mth.getWave(Parms)
-        else:
-            difC = Parms['difC'][1]
         if G2frame.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
             peaks = np.array((G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))))[0]
             for peak in peaks:
                 if G2frame.qPlot:
-                    if 'C' in Parms['Type'][0]:
-                        Plot.axvline(4*np.pi*sind(peak[0]/2.0)/wave,color='b')
-                    else:
-                        Plot.axvline(2*np.pi*Parms['difC'][1]/peak[0],color='b')
+                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
                 if G2frame.dPlot:
-                    if 'C' in Parms['Type'][0]:
-                        Plot.axvline(wave/(2*sind(peak[0]/2.0)),color='b')
-                    else:
-                        Plot.avline(peak[0]/Parms['difC'][1],color='b')
+                    Plot.axvline(G2lat.Pos2dsp(Parms,peak[0]),color='b')
                 else:
                     Plot.axvline(peak[0],color='b')
             for hkl in G2frame.HKL:
                 if G2frame.qPlot:
-                    if 'C' in Parms['Type'][0]:
-                        Plot.axvline(4*np.pi*sind(hkl[5]/2.0)/wave,color='b')
-                    else:
-                        Plot.axvline(2*np.pi*Parms['difC'][1]/hkl[5],color='b')
+                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[5]),color='r',dashes=(5,5))
                 if G2frame.dPlot:
-                    if 'C' in Parms['Type'][0]:
-                        Plot.axvline(wave/(2*sind(hkl[5]/2.0)),color='b')
-                    else:
-                        Plot.avline(hkl[5]/Parms['difC'][1],color='b')
+                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[5]),color='r',dashes=(5,5))
                 else:
                     Plot.axvline(hkl[5],color='r',dashes=(5,5))
         elif G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists'] or \

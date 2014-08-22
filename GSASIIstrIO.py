@@ -1817,7 +1817,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                 Uniq.append(uniq)
                                 Phi.append(phi)
                         elif 'T' in inst['Type'][0]:
-                            pos = inst['difC'][1]*d+inst['difA'][1]*d**2+inst['difB'][1]*d**3+Zero
+                            pos = inst['difC'][1]*d+inst['difA'][1]*d**2+inst['difB'][1]/d+Zero
                             if limits[0] < pos < limits[1]:
                                 wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
                                 refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])

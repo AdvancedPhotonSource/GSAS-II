@@ -1389,7 +1389,7 @@ def GetReflPos(refl,wave,G,hfx,calcControls,parmDict):
         else:               #Debye-Scherrer - simple but maybe not right
             pos -= const*(parmDict[hfx+'DisplaceX']*cosd(pos)+parmDict[hfx+'DisplaceY']*sind(pos))
     elif 'T' in calcControls[hfx+'histType']:
-        pos = parmDict[hfx+'difC']*d+parmDict[hfx+'difA']*d**2+parmDict[hfx+'difB']*d**3+parmDict[hfx+'Zero']
+        pos = parmDict[hfx+'difC']*d+parmDict[hfx+'difA']*d**2+parmDict[hfx+'difB']/d+parmDict[hfx+'Zero']
         #do I need sample position effects - maybe?
     return pos
 
@@ -1421,7 +1421,7 @@ def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
         dpdZ = 1.0
         dpdDC = dsp
         dpdDA = dsp**2
-        dpdDB = dsp**3
+        dpdDB = 1./dsp
         return dpdA,dpdZ,dpdDC,dpdDA,dpdDB
             
 def GetHStrainShift(refl,SGData,phfx,parmDict):

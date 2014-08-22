@@ -2092,7 +2092,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A)
         G2indx.IndexPeaks(peaks,G2frame.HKL)
         for hkl in G2frame.HKL:
-            hkl.append(G2lat.Dsp2pos(Inst,hkl[3])++controls[1])
+            hkl.append(G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
         if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:

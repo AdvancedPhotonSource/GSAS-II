@@ -1660,7 +1660,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
         varstr = ' refine:'
         for i,name in enumerate(Hsnames):
             ptlbls += '%12s' % (name)
-            ptstr += '%12.6f' % (hapData[0][i])
+            ptstr += '%12.4g' % (hapData[0][i])
             varstr += '%12s' % (str(hapData[1][i]))
         print >>pFile,ptlbls
         print >>pFile,ptstr
@@ -1970,10 +1970,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
         refine = False
         for i,name in enumerate(Hsnames):
             ptlbls += '%12s' % (name)
-            ptstr += '%12.6g' % (hapData[0][i])
+            ptstr += '%12.4g' % (hapData[0][i])
             if name in strainSig:
                 refine = True
-                sigstr += '%12.6g' % (strainSig[name])
+                sigstr += '%12.4g' % (strainSig[name])
             else:
                 sigstr += 12*' '
         if refine:

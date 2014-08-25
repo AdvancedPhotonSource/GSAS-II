@@ -419,7 +419,7 @@ def UpdateDData(G2frame,DData,data):
             UseList[hist]['HStrain'][0][pid] = strain
         except ValueError:
             pass
-        Obj.SetValue("%.5f"%(UseList[hist]['HStrain'][0][pid]))          #reset in case of error
+        Obj.SetValue("%.3g"%(UseList[hist]['HStrain'][0][pid]))          #reset in case of error
 
     def OnPOVal(event):
         Obj = event.GetEventObject()
@@ -689,7 +689,7 @@ def UpdateDData(G2frame,DData,data):
             Indx[hstrainRef.GetId()] = [item,id]
             hstrainRef.Bind(wx.EVT_CHECKBOX, OnHstrainRef)
             hstrainSizer.Add(hstrainRef,0,WACV)
-            hstrainVal = wx.TextCtrl(DData,wx.ID_ANY,'%.5f'%(val),style=wx.TE_PROCESS_ENTER)
+            hstrainVal = wx.TextCtrl(DData,wx.ID_ANY,'%.3g'%(val),style=wx.TE_PROCESS_ENTER)
             Indx[hstrainVal.GetId()] = [item,id]
             hstrainVal.Bind(wx.EVT_TEXT_ENTER,OnHstrainVal)
             hstrainVal.Bind(wx.EVT_KILL_FOCUS,OnHstrainVal)

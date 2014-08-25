@@ -1199,7 +1199,7 @@ def GetSampleSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
             P = np.array(calcControls[phfx+'SizeAxis'])
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
             Sgam = 1.e-4*parmDict[hfx+'difC']*(parmDict[phfx+'Size;i']*parmDict[phfx+'Size;a'])
-            Sgam *= np.sqrt((sinP*parmDict[phfx+'Size;a'])**2+(cosP*parmDict[phfx+'Size;i'])**2)
+            Sgam /= np.sqrt((sinP*parmDict[phfx+'Size;a'])**2+(cosP*parmDict[phfx+'Size;i'])**2)
         else:           #ellipsoidal crystallites
             Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
             H = np.array(refl[:3])
@@ -1207,14 +1207,14 @@ def GetSampleSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
             Sgam = 1.e-4*parmDict[hfx+'difC']*(refl[4]**2*lenR)
         #microstrain                
         if calcControls[phfx+'MustrainType'] == 'isotropic':
-            Mgam = 1.e-6*parmDict[hfx+'difC']*parmDict[phfx+'Mustrain;i']
+            Mgam = 1.e-6*parmDict[hfx+'difC']*refl[4]*parmDict[phfx+'Mustrain;i']
         elif calcControls[phfx+'MustrainType'] == 'uniaxial':
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'MustrainAxis'])
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
             Si = parmDict[phfx+'Mustrain;i']
             Sa = parmDict[phfx+'Mustrain;a']
-            Mgam = 1.e-6*parmDict[hfx+'difC']*Si*Sa/np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
+            Mgam = 1.e-6*parmDict[hfx+'difC']*refl[4]*Si*Sa/np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
         else:       #generalized - P.W. Stephens model
             pwrs = calcControls[phfx+'MuPwrs']
             sum = 0
@@ -1304,11 +1304,11 @@ def GetSampleSigGamDerv(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
         sigDict[phfx+'Mustrain;mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
     else:   #'T'OF
         if calcControls[phfx+'SizeType'] == 'isotropic':
-            Sgam = 1.e-4*parmDict[hfx+'difC']*parmDict[phfx+'Size;i']
-            gamDict[phfx+'Size;i'] = 1.e-4*parmDict[hfx+'difC']*parmDict[phfx+'Size;mx']
-            sigDict[phfx+'Size;i'] = 1.e-4*parmDict[hfx+'difC']*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
+            Sgam = 1.e-4*parmDict[hfx+'difC']*refl[4]*parmDict[phfx+'Size;i']
+            gamDict[phfx+'Size;i'] = 1.e-4*parmDict[hfx+'difC']*refl[4]*parmDict[phfx+'Size;mx']
+            sigDict[phfx+'Size;i'] = 2.e-4*parmDict[hfx+'difC']*refl[4]*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
         elif calcControls[phfx+'SizeType'] == 'uniaxial':
-            const = 1.e-4*parmDict[hfx+'difC']
+            const = 1.e-4*parmDict[hfx+'difC']*refl[4]
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'SizeAxis'])
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
@@ -1337,7 +1337,7 @@ def GetSampleSigGamDerv(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
                 
         #microstrain derivatives                
         if calcControls[phfx+'MustrainType'] == 'isotropic':
-            Mgam = 1.e-6*parmDict[hfx+'difC']*parmDict[phfx+'Mustrain;i']
+            Mgam = 1.e-6*parmDict[hfx+'difC']*refl[4]*parmDict[phfx+'Mustrain;i']
             gamDict[phfx+'Mustrain;i'] =  1.e-6*parmDict[hfx+'difC']*parmDict[phfx+'Mustrain;mx']
             sigDict[phfx+'Mustrain;i'] =  2.e-6*parmDict[hfx+'difC']*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2        
         elif calcControls[phfx+'MustrainType'] == 'uniaxial':
@@ -1424,7 +1424,7 @@ def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
         dpdDB = 1./dsp
         return dpdA,dpdZ,dpdDC,dpdDA,dpdDB
             
-def GetHStrainShift(refl,SGData,phfx,parmDict):
+def GetHStrainShift(refl,SGData,phfx,hfx,calcControls,parmDict):
     'Needs a doc string'
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
@@ -1451,9 +1451,12 @@ def GetHStrainShift(refl,SGData,phfx,parmDict):
     else:
         Dij = parmDict[phfx+'D11']*h**2+parmDict[phfx+'D22']*k**2+parmDict[phfx+'D33']*l**2+ \
             parmDict[phfx+'D12']*h*k+parmDict[phfx+'D13']*h*l+parmDict[phfx+'D23']*k*l
-    return -Dij*refl[4]**2*tand(refl[5]/2.0)
+    if 'C' in calcControls[hfx+'histType']:
+        return -180.*Dij*refl[4]**2*tand(refl[5]/2.0)/np.pi
+    else:
+        return -Dij*parmDict[hfx+'difC']*refl[4]**2/2.
             
-def GetHStrainShiftDerv(refl,SGData,phfx):
+def GetHStrainShiftDerv(refl,SGData,phfx,hfx,calcControls,parmDict):
     'Needs a doc string'
     laue = SGData['SGLaue']
     uniq = SGData['SGUniq']
@@ -1481,8 +1484,12 @@ def GetHStrainShiftDerv(refl,SGData,phfx):
     else:
         dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2,
             phfx+'D12':h*k,phfx+'D13':h*l,phfx+'D23':k*l}
-    for item in dDijDict:
-        dDijDict[item] *= -refl[4]**2*tand(refl[5]/2.0)
+    if 'C' in calcControls[hfx+'histType']:
+        for item in dDijDict:
+            dDijDict[item] *= -180.0*refl[4]**2*tand(refl[5]/2.0)/np.pi
+    else:
+        for item in dDijDict:
+            dDijDict[item] *= -parmDict[hfx+'difC']*refl[4]**2/2.
     return dDijDict
     
 def GetFobsSq(Histograms,Phases,parmDict,calcControls):
@@ -1582,9 +1589,9 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             parmDict[hfx+'sig-2']*refl[4]**4+parmDict[hfx+'sig-q']/refl[4]**2
         gam = parmDict[hfx+'X']*refl[4]+parmDict[hfx+'Y']*refl[4]**2
         Ssig,Sgam = GetSampleSigGam(refl,0.0,G,GB,hfx,phfx,calcControls,parmDict)
-        sig += Ssig     #save peak sigma
+        sig += Ssig
         sig = max(0.001,sig)
-        gam += Sgam     #save peak gamma
+        gam += Sgam
         gam = max(0.001,gam)
         return sig,gam
         
@@ -1635,7 +1642,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 Uniq = np.inner(refl[:3],SGMT)
                 refl[5] = GetReflPos(refl,wave,G,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = 1./(2.*sind(refl[5]/2.)**2*cosd(refl[5]/2.))           #Lorentz correction
-                refl[5] += GetHStrainShift(refl,SGData,phfx,parmDict)               #apply hydrostatic strain shift
+                refl[5] += GetHStrainShift(refl,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSigGamCW(refl,wave,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
                 refl[11:15] = GetIntensityCorr(refl,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
                 refl[11] *= Vst*Lorenz
@@ -1670,7 +1677,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 Uniq = np.inner(refl[:3],SGMT)
                 refl[5] = GetReflPos(refl,0.0,G,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = sind(parmDict[hfx+'2-theta']/2)*refl[4]**4                                                #TOF Lorentz correction
-                refl[5] += GetHStrainShift(refl,SGData,phfx,parmDict)               #apply hydrostatic strain shift
+                refl[5] += GetHStrainShift(refl,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSigGamTOF(refl,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
                 refl[12:14] = GetReflAlpBet(refl,hfx,parmDict)
                 refl[11],refl[15],refl[16],refl[17] = GetIntensityCorr(refl,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
@@ -1903,7 +1910,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     depDerivDict[name][iBeg:iFin] += dpdA*dervDict['pos']
                     if Ka2:
                         depDerivDict[name][iBeg2:iFin2] += dpdA*dervDict2['pos']
-            dDijDict = GetHStrainShiftDerv(refl,SGData,phfx)
+            dDijDict = GetHStrainShiftDerv(refl,SGData,phfx,hfx,calcControls,parmDict)
             for name in dDijDict:
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += dDijDict[name]*dervDict['pos']

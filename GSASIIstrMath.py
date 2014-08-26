@@ -1156,7 +1156,7 @@ def GetIntensityDerv(refl,wave,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDic
         dFdEx = GetPwdrExtDerv(refl,pfx,phfx,hfx,calcControls,parmDict)/refl[14]    #/ext corr        
     return dIdsh,dIdsp,dIdPola,dIdPO,dFdODF,dFdSA,dFdAb,dFdEx
         
-def GetSampleSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
+def GetSampleSigGam(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
     'Needs a doc string'
     if 'C' in calcControls[hfx+'histType']:
         costh = cosd(refl[5]/2.)
@@ -1185,11 +1185,11 @@ def GetSampleSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
             Sa = parmDict[phfx+'Mustrain;a']
             Mgam = 0.018*Si*Sa*tand(refl[5]/2.)/(np.pi*np.sqrt((Si*cosP)**2+(Sa*sinP)**2))
         else:       #generalized - P.W. Stephens model
-            pwrs = calcControls[phfx+'MuPwrs']
-            sum = 0
-            for i,pwr in enumerate(pwrs):
-                sum += parmDict[phfx+'Mustrain:'+str(i)]*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
-            Mgam = 0.018*refl[4]**2*tand(refl[5]/2.)*sum
+            Strms = G2spc.MustrainCoeff(refl[:3],SGData)
+            Sum = 0
+            for i,strm in enumerate(Strms):
+                Sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
+            Mgam = refl[4]**2*tand(refl[5]/2.)*np.sqrt(Sum)
     elif 'T' in calcControls[hfx+'histType']:
         #crystallite size
         if calcControls[phfx+'SizeType'] == 'isotropic':
@@ -1216,18 +1216,18 @@ def GetSampleSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
             Sa = parmDict[phfx+'Mustrain;a']
             Mgam = 1.e-6*parmDict[hfx+'difC']*refl[4]*Si*Sa/np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
         else:       #generalized - P.W. Stephens model
-            pwrs = calcControls[phfx+'MuPwrs']
-            sum = 0
-            for i,pwr in enumerate(pwrs):
-                sum += parmDict[phfx+'Mustrain:'+str(i)]*refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
-            Mgam = 1.e-6*parmDict[hfx+'difC']*refl[4]**2*sum
+            Sum = 0
+            Strms = G2spc.MustrainCoeff(refl[:3],SGData)
+            for i,strm in enumerate(Strms):
+                Sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
+            Mgam = 1.e-6*parmDict[hfx+'difC']*refl[4]**2*Sum
             
     gam = Sgam*parmDict[phfx+'Size;mx']+Mgam*parmDict[phfx+'Mustrain;mx']
     sig = (Sgam*(1.-parmDict[phfx+'Size;mx']))**2+(Mgam*(1.-parmDict[phfx+'Mustrain;mx']))**2
     sig /= ateln2
     return sig,gam
         
-def GetSampleSigGamDerv(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
+def GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
     'Needs a doc string'
     gamDict = {}
     sigDict = {}
@@ -1288,18 +1288,17 @@ def GetSampleSigGamDerv(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
             sigDict[phfx+'Mustrain;i'] = 2*(Mgam/Si+dsi)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
             sigDict[phfx+'Mustrain;a'] = 2*(Mgam/Sa+dsa)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2       
         else:       #generalized - P.W. Stephens model
-            pwrs = calcControls[phfx+'MuPwrs']
-            const = 0.018*refl[4]**2*tanth
-            sum = 0
-            for i,pwr in enumerate(pwrs):
-                term = refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
-                sum += parmDict[phfx+'Mustrain:'+str(i)]*term
-                gamDict[phfx+'Mustrain:'+str(i)] = const*term*parmDict[phfx+'Mustrain;mx']
-                sigDict[phfx+'Mustrain:'+str(i)] = \
-                    2.*const*term*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
-            Mgam = 0.018*refl[4]**2*tand(refl[5]/2.)*sum
-            for i in range(len(pwrs)):
-                sigDict[phfx+'Mustrain:'+str(i)] *= Mgam
+            const = refl[4]**2*tanth
+            Strms = G2spc.MustrainCoeff(refl[:3],SGData)
+            Sum = 0
+            for i,strm in enumerate(Strms):
+                Sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
+                gamDict[phfx+'Mustrain:'+str(i)] = strm*parmDict[phfx+'Mustrain;mx']/2.
+                sigDict[phfx+'Mustrain:'+str(i)] = strm*(1.-parmDict[phfx+'Mustrain;mx'])**2
+            Mgam = const*np.sqrt(Sum)
+            for i in range(len(Strms)):
+                gamDict[phfx+'Mustrain:'+str(i)] *= Mgam/Sum
+                sigDict[phfx+'Mustrain:'+str(i)] *= const**2/ateln2
         gamDict[phfx+'Mustrain;mx'] = Mgam
         sigDict[phfx+'Mustrain;mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
     else:   #'T'OF
@@ -1357,16 +1356,16 @@ def GetSampleSigGamDerv(refl,wave,G,GB,hfx,phfx,calcControls,parmDict):
             sigDict[phfx+'Mustrain;a'] = 2*(Mgam/Sa+dsa)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2       
         else:       #generalized - P.W. Stephens model
             pwrs = calcControls[phfx+'MuPwrs']
+            Strms = G2spc.MustrainCoeff(refl[:3],SGData)
             const = 1.e-6*parmDict[hfx+'difC']*refl[4]**2
             sum = 0
-            for i,pwr in enumerate(pwrs):
-                term = refl[0]**pwr[0]*refl[1]**pwr[1]*refl[2]**pwr[2]
-                sum += parmDict[phfx+'Mustrain:'+str(i)]*term
-                gamDict[phfx+'Mustrain:'+str(i)] = const*term*parmDict[phfx+'Mustrain;mx']
+            for i,strm in enumerate(Strms):
+                sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
+                gamDict[phfx+'Mustrain:'+str(i)] = const*strm*parmDict[phfx+'Mustrain;mx']
                 sigDict[phfx+'Mustrain:'+str(i)] = \
                     2.*const*term*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
             Mgam = const*sum
-            for i in range(len(pwrs)):
+            for i in range(len(Strms)):
                 sigDict[phfx+'Mustrain:'+str(i)] *= Mgam        
         gamDict[phfx+'Mustrain;mx'] = Mgam
         sigDict[phfx+'Mustrain;mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
@@ -1577,7 +1576,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         X = parmDict[hfx+'X']
         Y = parmDict[hfx+'Y']
         tanPos = tand(refl[5]/2.0)
-        Ssig,Sgam = GetSampleSigGam(refl,wave,G,GB,hfx,phfx,calcControls,parmDict)
+        Ssig,Sgam = GetSampleSigGam(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
         sig = U*tanPos**2+V*tanPos+W+Ssig     #save peak sigma
         sig = max(0.001,sig)
         gam = X/cosd(refl[5]/2.0)+Y*tanPos+Sgam     #save peak gamma
@@ -1588,7 +1587,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         sig = parmDict[hfx+'sig-0']+parmDict[hfx+'sig-1']*refl[4]**2+   \
             parmDict[hfx+'sig-2']*refl[4]**4+parmDict[hfx+'sig-q']/refl[4]**2
         gam = parmDict[hfx+'X']*refl[4]+parmDict[hfx+'Y']*refl[4]**2
-        Ssig,Sgam = GetSampleSigGam(refl,0.0,G,GB,hfx,phfx,calcControls,parmDict)
+        Ssig,Sgam = GetSampleSigGam(refl,0.0,G,GB,SGData,hfx,phfx,calcControls,parmDict)
         sig += Ssig
         sig = max(0.001,sig)
         gam += Sgam
@@ -1921,9 +1920,9 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     if Ka2:
                         depDerivDict[name][iBeg2:iFin2] += dDijDict[name]*dervDict2['pos']
             if 'C' in calcControls[hfx+'histType']:
-                sigDict,gamDict = GetSampleSigGamDerv(refl,wave,G,GB,hfx,phfx,calcControls,parmDict)
+                sigDict,gamDict = GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
             else:   #'T'OF
-                sigDict,gamDict = GetSampleSigGamDerv(refl,0.0,G,GB,hfx,phfx,calcControls,parmDict)
+                sigDict,gamDict = GetSampleSigGamDerv(refl,0.0,G,GB,SGData,hfx,phfx,calcControls,parmDict)
             for name in gamDict:
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += gamDict[name]*dervDict['gam']

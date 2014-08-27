@@ -889,7 +889,7 @@ def GetNewCellParms(parmDict,varyList):
         if keys[2] in Ddict:
             key = keys[0]+'::'+Ddict[keys[2]]       #key is e.g. '0::A0'
             parm = keys[0]+'::'+keys[2]             #parm is e.g. '0::D11'
-            newCellDict[parm] = [key,parmDict[key]+parmDict[item]]
+            newCellDict[parm] = [key,parmDict[key]-parmDict[item]]
     return newCellDict          # is e.g. {'0::D11':A0+D11}
     
 def ApplyXYZshifts(parmDict,varyList):

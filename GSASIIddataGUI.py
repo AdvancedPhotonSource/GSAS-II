@@ -399,9 +399,12 @@ def UpdateDData(G2frame,DData,data):
             UseList[item]['Mustrain'][1][0] = 1000.0
             UseList[item]['Mustrain'][1][1] = 1000.0
         elif name == 'generalized':
+            muiso = 1000.
+            cell = generalData['Cell'][1:7]
+            vals = G2spc.Muiso2Shkl(muiso,SGData,cell)
             nTerm = len(UseList[item]['Mustrain'][4])
             for i in range(nTerm):
-                UseList[item]['Mustrain'][4][i] = 0.01
+                UseList[item]['Mustrain'][4][i] = vals[i]
         G2plt.PlotSizeStrainPO(G2frame,data)
         wx.CallAfter(UpdateDData,G2frame,DData,data)
             

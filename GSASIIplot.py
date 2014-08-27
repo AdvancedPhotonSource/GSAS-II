@@ -2405,10 +2405,10 @@ def PlotSizeStrainPO(G2frame,data,Start=False):
                     def genMustrain(xyz,SGData,A,Shkl):
                         uvw = np.inner(A.T,xyz)
                         Strm = np.array(G2spc.MustrainCoeff(uvw,SGData))
-                        sum = np.sum(np.multiply(Shkl,Strm))
-                        sum = np.where(sum > 0.01,sum,0.01)
-                        sum = np.sqrt(sum)*math.pi/.18      #centidegrees to radians!
-                        return sum*xyz
+                        Sum = np.sum(np.multiply(Shkl,Strm))
+                        Sum = np.where(Sum > 0.01,Sum,0.01)
+                        Sum = np.sqrt(Sum)
+                        return Sum*xyz
                         
                     Shkl = np.array(coeff[4])
                     if np.any(Shkl):

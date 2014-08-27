@@ -1189,7 +1189,7 @@ def GetSampleSigGam(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             Sum = 0
             for i,strm in enumerate(Strms):
                 Sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
-            Mgam = refl[4]**2*tand(refl[5]/2.)*np.sqrt(Sum)
+            Mgam = 0.018*refl[4]**2*tand(refl[5]/2.)*np.sqrt(Sum)/np.pi
     elif 'T' in calcControls[hfx+'histType']:
         #crystallite size
         if calcControls[phfx+'SizeType'] == 'isotropic':
@@ -1288,7 +1288,7 @@ def GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             sigDict[phfx+'Mustrain;i'] = 2*(Mgam/Si+dsi)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
             sigDict[phfx+'Mustrain;a'] = 2*(Mgam/Sa+dsa)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2       
         else:       #generalized - P.W. Stephens model
-            const = refl[4]**2*tanth
+            const = 0.018*refl[4]**2*tanth/np.pi
             Strms = G2spc.MustrainCoeff(refl[:3],SGData)
             Sum = 0
             for i,strm in enumerate(Strms):

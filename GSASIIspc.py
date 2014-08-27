@@ -17,6 +17,7 @@ stored in a :ref:`Space Group (SGData)<SGData_table>` object.
 import numpy as np
 import numpy.ma as ma
 import numpy.linalg as nl
+import scipy.optimize as so
 import math
 import sys
 import os.path as ospath
@@ -24,6 +25,9 @@ import os.path as ospath
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import pyspg
+
+npsind = lambda x: np.sin(x*np.pi/180.)
+npcosd = lambda x: np.cos(x*np.pi/180.)
 
 def SpcGroup(SGSymbol):
     """
@@ -730,55 +734,45 @@ def MustrainCoeff(HKL,SGData):
     return Strm
     
 def Muiso2Shkl(muiso,SGData,cell):
-    "this is to convert isotropic mustrain to generalized Shkls - doesn't work just now"
+    "this is to convert isotropic mustrain to generalized Shkls"
     import GSASIIlattice as G2lat
-    from scipy.optimize import fmin
     A = G2lat.cell2AB(cell)[0]
-    def minMus(Shkl,H,muiso,SGData,A):
+    
+    def minMus(Shkl,muiso,H,SGData,A):
         U = np.inner(A.T,H)
-        S = np.array(MustrainCoeff(H.T,SGData))
-        sum = np.sqrt(np.sum(np.multiply(S,Shkl)))
-        return abs(muiso-sum*H)
+        S = np.array(MustrainCoeff(U,SGData))
+        Sum = np.sqrt(np.sum(np.multiply(S,Shkl[:,np.newaxis]),axis=0))
+        rad = np.sqrt(np.sum((Sum[:,np.newaxis]*H)**2,axis=1))
+        return (muiso-rad)**2
+        
     laue = SGData['SGLaue']
+    PHI = np.linspace(0.,360.,60,True)
+    PSI = np.linspace(0.,180.,60,True)
+    X = np.outer(npsind(PHI),npsind(PSI))
+    Y = np.outer(npcosd(PHI),npsind(PSI))
+    Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
+    HKL = np.dstack((X,Y,Z))
     if laue in ['m3','m3m']:
-        H = [[1,0,0],[1,1,0]]
-        S0 = [0.01,0.01]
+        S0 = [1000.,1000.]
     elif laue in ['6/m','6/mmm','3m1']:
-        H = [[1,0,0],[0,0,1],[1,0,1]]
-        S0 = [0.01,0.01,0.01]
+        S0 = [1000.,1000.,1000.]
     elif laue in ['31m','3']:
-        H = [[1,0,0],[0,0,1],[1,0,1],[1,1,1]]
-        S0 = [0.01,0.01,0.01,0.01]
+        S0 = [1000.,1000.,1000.,1000.]
     elif laue in ['3R','3mR']:
-        H = [[1,0,0],[1,1,0],[1,0,1],[1,1,1]]
-        S0 = [0.01,0.01,0.01,0.01]
+        S0 = [1000.,1000.,1000.,1000.]
     elif laue in ['4/m','4/mmm']:
-        H = [[1,0,0],[0,0,1],[1,1,0],[1,0,1]]
-        S0 = [0.01,0.01,0.01,0.01]
+        S0 = [1000.,1000.,1000.,1000.]
     elif laue in ['mmm']:
-        H = [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1]]
-        S0 = [0.01,0.01,0.01,0.01,0.01,0.01]
+        S0 = [1000.,1000.,1000.,1000.,1000.,1000.]
     elif laue in ['2/m']:
-        H = [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1]]
-        if uniq == 'a':
-            H.append([0,1,-1])
-            H.append([0,-2,1])
-        elif uniq == 'b':
-            H.append([1,0,-1])
-            H.append([-2,0,1])
-        elif uniq == 'c':
-            H.append([1,-1,0])
-            H.append([-2,1,0])
-        H.append([1,1,1])
-        S0 = [9*[0.01,]]
+        S0 = [1000.,1000.,1000.,0.,0.,0.,0.,0.,0.]
     else:
-        H = [[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],
-            [-1,1,0],[1,0,-1],[0,-1,1],[1,-2,0],[-2,0,1],[0,1,-2],
-            [1,-1,1],[-1, 1, 1],[1,-1,1]]
-        S0 = [15*[0.01,]]
-    H = np.array(H)
+        S0 = [1000.,1000.,1000.,1000.,1000., 1000.,1000.,1000.,1000.,1000., 
+            1000.,1000.,0.,0.,0.]
     S0 = np.array(S0)
-    return fmin(minMus,S0,(H,muiso,SGData,A))
+    HKL = np.reshape(HKL,(-1,3))
+    result = so.leastsq(minMus,S0,(np.ones(HKL.shape[0])*muiso,HKL,SGData,A))
+    return result[0]
        
 def SytSym(XYZ,SGData):
     '''

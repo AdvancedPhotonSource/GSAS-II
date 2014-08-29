@@ -890,7 +890,7 @@ def GetNewCellParms(parmDict,varyList):
             key = keys[0]+'::'+Ddict[keys[2]]       #key is e.g. '0::A0'
             parm = keys[0]+'::'+keys[2]             #parm is e.g. '0::D11'
             newCellDict[parm] = [key,parmDict[key]-parmDict[item]]
-    return newCellDict          # is e.g. {'0::D11':A0+D11}
+    return newCellDict          # is e.g. {'0::D11':A0-D11}
     
 def ApplyXYZshifts(parmDict,varyList):
     '''
@@ -1303,11 +1303,11 @@ def GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
         sigDict[phfx+'Mustrain;mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
     else:   #'T'OF
         if calcControls[phfx+'SizeType'] == 'isotropic':
-            Sgam = 1.e-4*parmDict[hfx+'difC']*refl[4]*parmDict[phfx+'Size;i']
-            gamDict[phfx+'Size;i'] = 1.e-4*parmDict[hfx+'difC']*refl[4]*parmDict[phfx+'Size;mx']
-            sigDict[phfx+'Size;i'] = 2.e-4*parmDict[hfx+'difC']*refl[4]*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
+            Sgam = 1.e-4*parmDict[hfx+'difC']*parmDict[phfx+'Size;i']
+            gamDict[phfx+'Size;i'] = 1.e-4*parmDict[hfx+'difC']*parmDict[phfx+'Size;mx']
+            sigDict[phfx+'Size;i'] = 2.e-4*parmDict[hfx+'difC']*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
         elif calcControls[phfx+'SizeType'] == 'uniaxial':
-            const = 1.e-4*parmDict[hfx+'difC']*refl[4]
+            const = 1.e-4*refl[4]*parmDict[hfx+'difC']
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'SizeAxis'])
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
@@ -1315,11 +1315,11 @@ def GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             Sa = parmDict[phfx+'Size;a']
             gami = const*(Si*Sa)
             sqtrm = np.sqrt((sinP*Sa)**2+(cosP*Si)**2)
-            Sgam = gami*sqtrm
-            dsi = gami*Si*cosP**2/sqtrm-gam/Si
-            dsa = gami*Sa*sinP**2/sqtrm-gam/Sa
-            gamDict[phfx+'Size;i'] = const*parmDict[phfx+'Size;mx']*Sa
-            gamDict[phfx+'Size;a'] = const*parmDict[phfx+'Size;mx']*Si
+            Sgam = gami/sqtrm
+            dsi = -gami*Si*cosP**2/sqtrm**3
+            dsa = -gami*Sa*sinP**2/sqtrm**3
+            gamDict[phfx+'Size;i'] = const*parmDict[phfx+'Size;mx']*Sa/8.
+            gamDict[phfx+'Size;a'] = const*parmDict[phfx+'Size;mx']*Si/8.
             sigDict[phfx+'Size;i'] = 2.*dsi*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
             sigDict[phfx+'Size;a'] = 2.*dsa*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
         else:           #ellipsoidal crystallites
@@ -1337,8 +1337,8 @@ def GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
         #microstrain derivatives                
         if calcControls[phfx+'MustrainType'] == 'isotropic':
             Mgam = 1.e-6*parmDict[hfx+'difC']*refl[4]*parmDict[phfx+'Mustrain;i']
-            gamDict[phfx+'Mustrain;i'] =  1.e-6*parmDict[hfx+'difC']*parmDict[phfx+'Mustrain;mx']
-            sigDict[phfx+'Mustrain;i'] =  2.e-6*parmDict[hfx+'difC']*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2        
+            gamDict[phfx+'Mustrain;i'] =  1.e-6*refl[4]*parmDict[hfx+'difC']*parmDict[phfx+'Mustrain;mx']
+            sigDict[phfx+'Mustrain;i'] =  2.e-6*refl[4]*parmDict[hfx+'difC']*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2        
         elif calcControls[phfx+'MustrainType'] == 'uniaxial':
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'MustrainAxis'])
@@ -1350,10 +1350,10 @@ def GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             Mgam = gami/sqtrm
             dsi = -gami*Si*cosP**2/sqtrm**3
             dsa = -gami*Sa*sinP**2/sqtrm**3
-            gamDict[phfx+'Mustrain;i'] = (Mgam/Si+dsi)*parmDict[phfx+'Mustrain;mx']
-            gamDict[phfx+'Mustrain;a'] = (Mgam/Sa+dsa)*parmDict[phfx+'Mustrain;mx']
-            sigDict[phfx+'Mustrain;i'] = 2*(Mgam/Si+dsi)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
-            sigDict[phfx+'Mustrain;a'] = 2*(Mgam/Sa+dsa)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2       
+            gamDict[phfx+'Mustrain;i'] = (Mgam/Si+dsi)*parmDict[phfx+'Mustrain;mx']*refl[4]
+            gamDict[phfx+'Mustrain;a'] = (Mgam/Sa+dsa)*parmDict[phfx+'Mustrain;mx']*refl[4]
+            sigDict[phfx+'Mustrain;i'] = 2*refl[4]*(Mgam/Si+dsi)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
+            sigDict[phfx+'Mustrain;a'] = 2*refl[4]*(Mgam/Sa+dsa)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2       
         else:       #generalized - P.W. Stephens model
             pwrs = calcControls[phfx+'MuPwrs']
             Strms = G2spc.MustrainCoeff(refl[:3],SGData)
@@ -1416,7 +1416,7 @@ def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
             dpdYd = -const*sind(pos)
             return dpdA,dpdw,dpdZ,0.,0.,dpdXd,dpdYd
     elif 'T' in calcControls[hfx+'histType']:
-        dpdA = np.array([h**2,k**2,l**2,h*k,h*l,k*l])
+        dpdA = -np.array([h**2,k**2,l**2,h*k,h*l,k*l])*parmDict[hfx+'difC']*dsp**3/2.
         dpdZ = 1.0
         dpdDC = dsp
         dpdDA = dsp**2
@@ -1774,7 +1774,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         pId = Phase['pId']
         pfx = '%d::'%(pId)
         phfx = '%d:%d:'%(pId,hId)
-        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]     #And modify here by Dij?
+        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]     #And modify here by Dij? - no
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         if not Phase['General'].get('doPawley'):

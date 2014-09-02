@@ -261,7 +261,7 @@ def UpdateDData(G2frame,DData,data):
         hist,name = Indx[Obj.GetId()]
         try:
             value = float(Obj.GetValue())
-            if 0.1 <= value <= 1:
+            if 0 <= value <= 1:
                 UseList[hist][name][1][2] = value
             else:
                 raise ValueError

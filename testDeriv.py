@@ -49,7 +49,7 @@ class testDeriv(wx.Frame):
 
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='testDeriv', parent=parent,
-            size=wx.Size(750, 250),style=wx.DEFAULT_FRAME_STYLE, title='Test Jacobian Derivatives')
+            size=wx.Size(800, 250),style=wx.DEFAULT_FRAME_STYLE, title='Test Jacobian Derivatives')
         self.testDerivMenu = wx.MenuBar()
         self.File = wx.Menu(title='')
         self.File.Append(help='Open testDeriv.dat', id=wxID_FILEOPEN,
@@ -141,7 +141,7 @@ class testDeriv(wx.Frame):
 #        mainSizer.Layout()
         self.testDerivPanel.SetSizer(mainSizer)    
         Size = mainSizer.Fit(self.testDerivPanel)
-        Size[0] = 750
+        Size[0] = 800
         Size[1] = max(Size[1],290) + 35
         self.testDerivPanel.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         self.testDerivPanel.SetSize(Size)

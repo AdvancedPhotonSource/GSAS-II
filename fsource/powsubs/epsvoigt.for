@@ -48,8 +48,8 @@
 
 !CODE:
 
-      SQSGT = MAX(SQRT(SIG),0.01)
-      GAM = MAX(GAM,0.1)
+      SQSGT = MAX(SQRT(SIG),0.00001)
+      GAM = MAX(GAM,0.00001)
       FWHG = STOFW*SQSGT
       PGL = FWHG**5
       SUMHM = PGL

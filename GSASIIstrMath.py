@@ -1158,7 +1158,7 @@ def GetIntensityDerv(refl,wave,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDic
         
 def GetSampleSigGam(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
     'Needs a doc string'
-    if 'C' in calcControls[hfx+'histType']:
+    if 'C' in calcControls[hfx+'histType']:     #All checked & OK
         costh = cosd(refl[5]/2.)
         #crystallite size
         if calcControls[phfx+'SizeType'] == 'isotropic':
@@ -1190,37 +1190,37 @@ def GetSampleSigGam(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             for i,strm in enumerate(Strms):
                 Sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
             Mgam = 0.018*refl[4]**2*tand(refl[5]/2.)*np.sqrt(Sum)/np.pi
-    elif 'T' in calcControls[hfx+'histType']:
+    elif 'T' in calcControls[hfx+'histType']:       #All checked & OK
         #crystallite size
-        if calcControls[phfx+'SizeType'] == 'isotropic':
-            Sgam = 1.e-4*parmDict[hfx+'difC']*parmDict[phfx+'Size;i']
-        elif calcControls[phfx+'SizeType'] == 'uniaxial':
+        if calcControls[phfx+'SizeType'] == 'isotropic':    #OK
+            Sgam = 1.e-4*parmDict[hfx+'difC']*refl[4]**2/parmDict[phfx+'Size;i']
+        elif calcControls[phfx+'SizeType'] == 'uniaxial':   #OK
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'SizeAxis'])
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
-            Sgam = 1.e-4*parmDict[hfx+'difC']*(parmDict[phfx+'Size;i']*parmDict[phfx+'Size;a'])
-            Sgam /= np.sqrt((sinP*parmDict[phfx+'Size;a'])**2+(cosP*parmDict[phfx+'Size;i'])**2)
-        else:           #ellipsoidal crystallites
+            Sgam = 1.e-4*parmDict[hfx+'difC']*refl[4]**2/(parmDict[phfx+'Size;i']*parmDict[phfx+'Size;a'])
+            Sgam *= np.sqrt((sinP*parmDict[phfx+'Size;a'])**2+(cosP*parmDict[phfx+'Size;i'])**2)
+        else:           #ellipsoidal crystallites   #OK
             Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
             H = np.array(refl[:3])
             lenR = G2pwd.ellipseSize(H,Sij,GB)
-            Sgam = 1.e-4*parmDict[hfx+'difC']*(refl[4]**2*lenR)
+            Sgam = 1.e-4*parmDict[hfx+'difC']*refl[4]**2/lenR
         #microstrain                
-        if calcControls[phfx+'MustrainType'] == 'isotropic':
+        if calcControls[phfx+'MustrainType'] == 'isotropic':    #OK
             Mgam = 1.e-6*parmDict[hfx+'difC']*refl[4]*parmDict[phfx+'Mustrain;i']
-        elif calcControls[phfx+'MustrainType'] == 'uniaxial':
+        elif calcControls[phfx+'MustrainType'] == 'uniaxial':   #OK
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'MustrainAxis'])
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
             Si = parmDict[phfx+'Mustrain;i']
             Sa = parmDict[phfx+'Mustrain;a']
             Mgam = 1.e-6*parmDict[hfx+'difC']*refl[4]*Si*Sa/np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
-        else:       #generalized - P.W. Stephens model
-            Sum = 0
+        else:       #generalized - P.W. Stephens model  OK
             Strms = G2spc.MustrainCoeff(refl[:3],SGData)
+            Sum = 0
             for i,strm in enumerate(Strms):
                 Sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
-            Mgam = 1.e-6*parmDict[hfx+'difC']*refl[4]**2*Sum
+            Mgam = 1.e-6*parmDict[hfx+'difC']*np.sqrt(Sum)*refl[4]**3
             
     gam = Sgam*parmDict[phfx+'Size;mx']+Mgam*parmDict[phfx+'Mustrain;mx']
     sig = (Sgam*(1.-parmDict[phfx+'Size;mx']))**2+(Mgam*(1.-parmDict[phfx+'Mustrain;mx']))**2
@@ -1231,7 +1231,7 @@ def GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
     'Needs a doc string'
     gamDict = {}
     sigDict = {}
-    if 'C' in calcControls[hfx+'histType']:
+    if 'C' in calcControls[hfx+'histType']:         #All checked & OK
         costh = cosd(refl[5]/2.)
         tanth = tand(refl[5]/2.)
         #crystallite size derivatives
@@ -1245,12 +1245,11 @@ def GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
             Si = parmDict[phfx+'Size;i']
             Sa = parmDict[phfx+'Size;a']
-            gami = (1.8*wave/np.pi)/(Si*Sa)
+            gami = 1.8*wave/(costh*np.pi*Si*Sa)
             sqtrm = np.sqrt((sinP*Sa)**2+(cosP*Si)**2)
             Sgam = gami*sqtrm
-            gam = Sgam/costh
-            dsi = (gami*Si*cosP**2/(sqtrm*costh)-gam/Si)
-            dsa = (gami*Sa*sinP**2/(sqtrm*costh)-gam/Sa)
+            dsi = gami*Si*cosP**2/sqtrm-Sgam/Si
+            dsa = gami*Sa*sinP**2/sqtrm-Sgam/Sa
             gamDict[phfx+'Size;i'] = dsi*parmDict[phfx+'Size;mx']
             gamDict[phfx+'Size;a'] = dsa*parmDict[phfx+'Size;mx']
             sigDict[phfx+'Size;i'] = 2.*dsi*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
@@ -1301,29 +1300,29 @@ def GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
                 sigDict[phfx+'Mustrain:'+str(i)] *= const**2/ateln2
         gamDict[phfx+'Mustrain;mx'] = Mgam
         sigDict[phfx+'Mustrain;mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
-    else:   #'T'OF
-        if calcControls[phfx+'SizeType'] == 'isotropic':
-            Sgam = 1.e-4*parmDict[hfx+'difC']*parmDict[phfx+'Size;i']
-            gamDict[phfx+'Size;i'] = 1.e-4*parmDict[hfx+'difC']*parmDict[phfx+'Size;mx']
-            sigDict[phfx+'Size;i'] = 2.e-4*parmDict[hfx+'difC']*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
-        elif calcControls[phfx+'SizeType'] == 'uniaxial':
-            const = 1.e-4*refl[4]*parmDict[hfx+'difC']
+    else:   #'T'OF - All checked & OK
+        if calcControls[phfx+'SizeType'] == 'isotropic':    #OK
+            Sgam = 1.e-4*parmDict[hfx+'difC']*refl[4]**2/parmDict[phfx+'Size;i']
+            gamDict[phfx+'Size;i'] = -Sgam*parmDict[phfx+'Size;mx']/parmDict[phfx+'Size;i']
+            sigDict[phfx+'Size;i'] = -2.*Sgam**2*(1.-parmDict[phfx+'Size;mx'])**2/(ateln2*parmDict[phfx+'Size;i'])
+        elif calcControls[phfx+'SizeType'] == 'uniaxial':   #OK
+            const = 1.e-4*parmDict[hfx+'difC']*refl[4]**2
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'SizeAxis'])
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
             Si = parmDict[phfx+'Size;i']
             Sa = parmDict[phfx+'Size;a']
-            gami = const*(Si*Sa)
+            gami = const/(Si*Sa)
             sqtrm = np.sqrt((sinP*Sa)**2+(cosP*Si)**2)
-            Sgam = gami/sqtrm
-            dsi = -gami*Si*cosP**2/sqtrm**3
-            dsa = -gami*Sa*sinP**2/sqtrm**3
-            gamDict[phfx+'Size;i'] = const*parmDict[phfx+'Size;mx']*Sa/8.
-            gamDict[phfx+'Size;a'] = const*parmDict[phfx+'Size;mx']*Si/8.
+            Sgam = gami*sqtrm
+            dsi = gami*Si*cosP**2/sqtrm-Sgam/Si
+            dsa = gami*Sa*sinP**2/sqtrm-Sgam/Sa
+            gamDict[phfx+'Size;i'] = dsi*parmDict[phfx+'Size;mx']
+            gamDict[phfx+'Size;a'] = dsa*parmDict[phfx+'Size;mx']
             sigDict[phfx+'Size;i'] = 2.*dsi*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
             sigDict[phfx+'Size;a'] = 2.*dsa*Sgam*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
-        else:           #ellipsoidal crystallites
-            const = 1.e-4*parmDict[hfx+'difC']
+        else:           #OK  ellipsoidal crystallites 
+            const = 1.e-4*parmDict[hfx+'difC']*refl[4]**2
             Sij =[parmDict[phfx+'Size:%d'%(i)] for i in range(6)]
             H = np.array(refl[:3])
             lenR,dRdS = G2pwd.ellipseSizeDerv(H,Sij,GB)
@@ -1331,42 +1330,42 @@ def GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             for i,item in enumerate([phfx+'Size:%d'%(j) for j in range(6)]):
                 gamDict[item] = -(const/lenR**2)*dRdS[i]*parmDict[phfx+'Size;mx']
                 sigDict[item] = -2.*Sgam*(const/lenR**2)*dRdS[i]*(1.-parmDict[phfx+'Size;mx'])**2/ateln2
-        gamDict[phfx+'Size;mx'] = Sgam
-        sigDict[phfx+'Size;mx'] = -2.*Sgam**2*(1.-parmDict[phfx+'Size;mx'])/ateln2
+        gamDict[phfx+'Size;mx'] = Sgam  #OK
+        sigDict[phfx+'Size;mx'] = -2.*Sgam**2*(1.-parmDict[phfx+'Size;mx'])/ateln2  #OK
                 
         #microstrain derivatives                
         if calcControls[phfx+'MustrainType'] == 'isotropic':
             Mgam = 1.e-6*parmDict[hfx+'difC']*refl[4]*parmDict[phfx+'Mustrain;i']
-            gamDict[phfx+'Mustrain;i'] =  1.e-6*refl[4]*parmDict[hfx+'difC']*parmDict[phfx+'Mustrain;mx']
-            sigDict[phfx+'Mustrain;i'] =  2.e-6*refl[4]*parmDict[hfx+'difC']*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2        
+            gamDict[phfx+'Mustrain;i'] =  1.e-6*refl[4]*parmDict[hfx+'difC']*parmDict[phfx+'Mustrain;mx']   #OK
+            sigDict[phfx+'Mustrain;i'] =  2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])**2/(ateln2*parmDict[phfx+'Mustrain;i'])        
         elif calcControls[phfx+'MustrainType'] == 'uniaxial':
             H = np.array(refl[:3])
             P = np.array(calcControls[phfx+'MustrainAxis'])
             cosP,sinP = G2lat.CosSinAngle(H,P,G)
             Si = parmDict[phfx+'Mustrain;i']
             Sa = parmDict[phfx+'Mustrain;a']
-            gami = 1.e-6*parmDict[hfx+'difC']*Si*Sa
+            gami = 1.e-6*parmDict[hfx+'difC']*refl[4]*Si*Sa
             sqtrm = np.sqrt((Si*cosP)**2+(Sa*sinP)**2)
             Mgam = gami/sqtrm
             dsi = -gami*Si*cosP**2/sqtrm**3
             dsa = -gami*Sa*sinP**2/sqtrm**3
-            gamDict[phfx+'Mustrain;i'] = (Mgam/Si+dsi)*parmDict[phfx+'Mustrain;mx']*refl[4]
-            gamDict[phfx+'Mustrain;a'] = (Mgam/Sa+dsa)*parmDict[phfx+'Mustrain;mx']*refl[4]
-            sigDict[phfx+'Mustrain;i'] = 2*refl[4]*(Mgam/Si+dsi)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
-            sigDict[phfx+'Mustrain;a'] = 2*refl[4]*(Mgam/Sa+dsa)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2       
-        else:       #generalized - P.W. Stephens model
+            gamDict[phfx+'Mustrain;i'] = (Mgam/Si+dsi)*parmDict[phfx+'Mustrain;mx']
+            gamDict[phfx+'Mustrain;a'] = (Mgam/Sa+dsa)*parmDict[phfx+'Mustrain;mx']
+            sigDict[phfx+'Mustrain;i'] = 2*(Mgam/Si+dsi)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
+            sigDict[phfx+'Mustrain;a'] = 2*(Mgam/Sa+dsa)*Mgam*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2       
+        else:       #generalized - P.W. Stephens model OK
             pwrs = calcControls[phfx+'MuPwrs']
             Strms = G2spc.MustrainCoeff(refl[:3],SGData)
-            const = 1.e-6*parmDict[hfx+'difC']*refl[4]**2
-            sum = 0
+            const = 1.e-6*parmDict[hfx+'difC']*refl[4]**3
+            Sum = 0
             for i,strm in enumerate(Strms):
-                sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
-                gamDict[phfx+'Mustrain:'+str(i)] = const*strm*parmDict[phfx+'Mustrain;mx']
-                sigDict[phfx+'Mustrain:'+str(i)] = \
-                    2.*const*term*(1.-parmDict[phfx+'Mustrain;mx'])**2/ateln2
-            Mgam = const*sum
+                Sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
+                gamDict[phfx+'Mustrain:'+str(i)] = strm*parmDict[phfx+'Mustrain;mx']/2.
+                sigDict[phfx+'Mustrain:'+str(i)] = strm*(1.-parmDict[phfx+'Mustrain;mx'])**2
+            Mgam = const*np.sqrt(Sum)
             for i in range(len(Strms)):
-                sigDict[phfx+'Mustrain:'+str(i)] *= Mgam        
+                gamDict[phfx+'Mustrain:'+str(i)] *= Mgam/Sum
+                sigDict[phfx+'Mustrain:'+str(i)] *= const**2/ateln2        
         gamDict[phfx+'Mustrain;mx'] = Mgam
         sigDict[phfx+'Mustrain;mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
         
@@ -1589,9 +1588,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         gam = parmDict[hfx+'X']*refl[4]+parmDict[hfx+'Y']*refl[4]**2
         Ssig,Sgam = GetSampleSigGam(refl,0.0,G,GB,SGData,hfx,phfx,calcControls,parmDict)
         sig += Ssig
-        sig = max(0.001,sig)
         gam += Sgam
-        gam = max(0.001,gam)
         return sig,gam
         
     def GetReflAlpBet(refl,hfx,parmDict):

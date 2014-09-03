@@ -787,9 +787,12 @@ def ellipseSizeDerv(H,Sij,GB):
     delt = 0.001
     dRdS = np.zeros(6)
     for i in range(6):
-        dSij = Sij[:]
-        dSij[i] += delt
-        dRdS[i] = (ellipseSize(H,dSij,GB)-lenR)/delt
+        Sij[i] -= delt
+        lenM = ellipseSize(H,Sij,GB)
+        Sij[i] += 2.*delt
+        lenP = ellipseSize(H,Sij,GB)
+        Sij[i] -= delt
+        dRdS[i] = (lenP-lenM)/(2.*delt)
     return lenR,dRdS
 
 def getHKLpeak(dmin,SGData,A):

@@ -830,7 +830,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
     numAzms = data['outAzimuths']
     numChans = data['outChannels']
     Dazm = (LRazm[1]-LRazm[0])/numAzms
-    LRazm += Dazm/2.
+#    LRazm += Dazm/2.
     if 'log(q)' in data['binType']:
         lutth = np.log(4.*np.pi*npsind(LUtth/2.)/data['wavelength'])
     elif 'q' == data['binType']:

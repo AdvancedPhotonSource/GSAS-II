@@ -3133,8 +3133,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             textureData.update({'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
-        if generalData['doPawley'] and G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results'):
-            G2frame.dataFrame.RefineTexture.Enable(True)
         shAngles = ['omega','chi','phi']
         if Texture.GetSizer():
             Texture.GetSizer().Clear(True)

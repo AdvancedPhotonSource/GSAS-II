@@ -58,6 +58,7 @@ except ImportError:
     print('OpenGL has been installed. Restarting GSAS-II')
     print('*******************************************************')         
     loc = os.path.dirname(__file__)
+    import subprocess
     subprocess.Popen([sys.executable,os.path.join(loc,'GSASII.py')])
     sys.exit()
     

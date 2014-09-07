@@ -763,7 +763,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dfadui = np.sum(-SQfactor*fa,axis=2)
         dfadua = np.sum(-Hij*fa[:,:,:,np.newaxis],axis=2)
         dfadba = np.sum(-cosp*(occ*Tcorr)[:,np.newaxis],axis=1)
-        #NB: the above have been checked against PA(1:10,1:2) in strfctr.for      
+        #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for al2O3!    
         dFdfr[iref] = 2.*(fas[0]*dfadfr[0]+fas[1]*dfadfr[1])*Mdata/len(Uniq)
         dFdx[iref] = 2.*(fas[0]*dfadx[0]+fas[1]*dfadx[1])
         dFdui[iref] = 2.*(fas[0]*dfadui[0]+fas[1]*dfadui[1])
@@ -2013,14 +2013,14 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                         if var in dFdvDict:
                             depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]  #*dervCor
                     if phfx+'Scale' in varylist:
-                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor
+                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*ref[11]  #*dervCor
                     elif phfx+'Scale' in dependentVars:
-                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*dervCor
+                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11]  #*dervCor
                     for item in ['Ep','Es','Eg']:
                         if phfx+item in varylist and dervDict:
-                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/dervCor
+                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11]  #/dervCor
                         elif phfx+item in dependentVars and dervDict:
-                            depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/dervCor
+                            depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/ref[11]  #/dervCor
                     for item in ['BabA','BabU']:
                         if phfx+item in varylist:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
@@ -2037,14 +2037,14 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                     wdf[iref] = 2.0*Fo*w*(Fo-Fc)
                     for j,var in enumerate(varylist):
                         if var in dFdvDict:
-                            dMdvh[j][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]       #*dervCor
+                            dMdvh[j][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*dervCor       #*ref[11]
                     for var in dependentVars:
                         if var in dFdvDict:
-                            depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]      #*dervCor
+                            depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*dervCor      #*ref[11]
                     if phfx+'Scale' in varylist:
-                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*ref[11]    #*dervCor
+                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor    #*ref[11]
                     elif phfx+'Scale' in dependentVars:
-                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11] #*dervCor                           
+                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*dervCor #*ref[11]                           
                     for item in ['Ep','Es','Eg']:
                         if phfx+item in varylist and dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11]  #correct
@@ -2084,10 +2084,9 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             wtFactor = calcControls[hfx+'wtFactor']
             Limits = calcControls[hfx+'Limits']
             x,y,w,yc,yb,yd = Histogram['Data']
-            W = wtFactor*w
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])
-            dMdvh = np.sqrt(W[xB:xF])*getPowderProfileDerv(parmDict,x[xB:xF],
+            dMdvh = np.sqrt(w[xB:xF])*getPowderProfileDerv(parmDict,x[xB:xF],
                 varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup)
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]

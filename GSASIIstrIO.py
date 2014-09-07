@@ -830,11 +830,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                 line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cx])+'%10.5f'%(at[cx+1])+ \
                     '%10.5f'%(at[cx+2])+'%8.3f'%(at[cx+3])+'%7s'%(at[cs])+'%5d'%(at[cs+1])+'%5s'%(at[cia])
                 if at[cia] == 'I':
-                    line += '%8.4f'%(at[cia+1])+48*' '
+                    line += '%8.5f'%(at[cia+1])+48*' '
                 else:
                     line += 8*' '
                     for j in range(6):
-                        line += '%8.4f'%(at[cia+1+j])
+                        line += '%8.5f'%(at[cia+2+j])
                 print >>pFile,line
         elif General['Type'] == 'macromolecular':
             print >>pFile,135*'-'            
@@ -846,7 +846,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                 else:
                     line += 8*' '
                     for j in range(6):
-                        line += '%8.4f'%(at[cia+1+j])
+                        line += '%8.4f'%(at[cia+2+j])
                 print >>pFile,line
         
     def PrintTexture(textureData):
@@ -998,6 +998,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                     if 'F' in at[ct+1]:
                         phaseVary.append(pfx+'Afrac:'+str(i))
                     if 'X' in at[ct+1]:
+                        try:    #patch for sytsym name changes
+                            xId,xCoef = G2spc.GetCSxinel(at[cs])
+                        except KeyError:
+                            Sytsym = G2spc.SytSym(at[cx:cx+3],SGData)[0]
+                            at[cs] = Sytsym
+                            xId,xCoef = G2spc.GetCSxinel(at[cs])
                         xId,xCoef = G2spc.GetCSxinel(at[cs])
                         names = [pfx+'dAx:'+str(i),pfx+'dAy:'+str(i),pfx+'dAz:'+str(i)]
                         equivs = [[],[],[]]
@@ -1008,12 +1014,20 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                         for equiv in equivs:
                             if len(equiv) > 1:
                                 name = equiv[0][0]
+                                coef = equiv[0][1]
                                 for eqv in equiv[1:]:
+                                    eqv[1] /= coef
                                     G2mv.StoreEquivalence(name,(eqv,))
                     if 'U' in at[ct+1]:
                         if at[cia] == 'I':
                             phaseVary.append(pfx+'AUiso:'+str(i))
                         else:
+                            try:    #patch for sytsym name changes
+                                uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
+                            except KeyError:
+                                Sytsym = G2spc.SytSym(at[cx:cx+3],SGData)[0]
+                                at[cs] = Sytsym
+                                uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
                             uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
                             names = [pfx+'AU11:'+str(i),pfx+'AU22:'+str(i),pfx+'AU33:'+str(i),
                                 pfx+'AU12:'+str(i),pfx+'AU13:'+str(i),pfx+'AU23:'+str(i)]
@@ -1025,8 +1039,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                             for equiv in equivs:
                                 if len(equiv) > 1:
                                     name = equiv[0][0]
+                                    coef = equiv[0][1]
                                     for eqv in equiv[1:]:
-                                        G2mv.StoreEquivalence(name,(eqv,))
+                                        eqv[1] /= coef
+                                    G2mv.StoreEquivalence(name,equiv[1:])
 #            elif General['Type'] == 'magnetic':
 #            elif General['Type'] == 'macromolecular':
             textureData = General['SH Texture']
@@ -1292,6 +1308,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             line += '   Mx     My     Mz'
         elif General['Type'] == 'macromolecular':
             line = ' res no  residue  chain '+line
+        cx,ct,cs,cia = General['AtomPtrs']
         print >>pFile,line
         if General['Type'] == 'nuclear':
             print >>pFile,135*'-'

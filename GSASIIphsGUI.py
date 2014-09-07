@@ -1156,7 +1156,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Atoms.SetReadOnly(row,colSS,True)                         #site sym
                 Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
                 if Atoms.GetCellValue(row,colIA) == 'A':
-                    CSI = G2spc.GetCSuinel(atomData[row][colLabels.index('site sym')])
+                    try:    #patch for sytsym name changes
+                        CSI = G2spc.GetCSuinel(atomData[row][colSS])
+                    except KeyError:
+                        Sytsym = G2spc.SytSym(atomData[row][colX:colX+3],SGData)[0]
+                        atomData[row][colSS] = Sytsym
+                        CSI = G2spc.GetCSuinel(Sytsym)
                     Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
                     Atoms.SetCellTextColour(row,colUiso,VERY_LIGHT_GREY)
                     for i in range(6):

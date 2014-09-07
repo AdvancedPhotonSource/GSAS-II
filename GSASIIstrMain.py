@@ -172,7 +172,7 @@ def Refine(GPXfile,dlg):
         #print 'Errors',errmsg
         #if warnmsg: print 'Warnings',warnmsg
         raise Exception(' *** Refine aborted ***')
-    #print G2mv.VarRemapShow(varyList)
+#    print G2mv.VarRemapShow(varyList)
     
     ifPrint = True
     print >>printFile,'\n Refinement results:'

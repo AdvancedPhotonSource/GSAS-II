@@ -395,7 +395,7 @@ def CheckConstraints(varyList,constrDict,fixedList):
             s += str(var)            
         errmsg += '\t'+ s + '\n'
     equivVarList = list(set(indepVarList).union(set(depVarList)))
-    #print 'equivVarList',equivVarList
+    if debug: print 'equivVarList',equivVarList
     inboth = set(fixVlist).intersection(set(equivVarList))
     if len(inboth) > 0:
         errmsg += "\nThe following parameter(s) are used in both Equivalence and Fixed constraints:\n"
@@ -603,8 +603,8 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
                     s += str(v)            
                 msg += str(mv) + " => " + s + '\n'
 
-    #print 'indepVarList',indepVarList
-    #print 'depVarList',depVarList
+    if debug: print 'indepVarList',indepVarList
+    if debug: print 'depVarList',depVarList
     # check for errors:
     inboth = set(indepVarList).intersection(set(depVarList))
     if len(inboth) > 0:
@@ -932,7 +932,7 @@ def VarRemapShow(varyList):
                 s += '  ' + str(mv) + ' is equivalent to parameter(s): '
                 j = 0
                 for v,m in zip(varlist,invmultarr):
-                    #print v,m[0]
+                    if debug: print 'v,m[0]: ',v,m[0]
                     if j > 0: s += '  & '
                     j += 1
                     s += str(v)
@@ -983,12 +983,14 @@ def Dict2Deriv(varyList,derivDict,dMdv):
             if name not in varyList: continue # skip if independent var not varied
             if multarr is None:
                 for v,m in zip(varlist,invmultarr):
-                    #print 'add derv',v,'/',m[0],'to derv',name
+                    if debug: print 'start dMdv',dMdv[varyList.index(name)]
+                    if debug: print 'add derv',v,'/',m[0],'to derv',name,'add=',derivDict[v] / m[0]
                     if m == 0: continue
                     dMdv[varyList.index(name)] += derivDict[v] / m[0]
             else:
                 for v,m in zip(varlist,multarr[i,:]):
-                    #print 'add derv',v,'*',m,'to derv',name
+                    if debug: print 'start dMdv',dMdv[varyList.index(name)]
+                    if debug: print 'add derv',v,'*',m,'to derv',name,'add=',m * derivDict[v]
                     if m == 0: continue
                     dMdv[varyList.index(name)] += m * derivDict[v]
 

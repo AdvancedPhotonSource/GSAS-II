@@ -2013,14 +2013,14 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                         if var in dFdvDict:
                             depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]  #*dervCor
                     if phfx+'Scale' in varylist:
-                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*ref[11]  #*dervCor
+                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*ref[11]  #OK? *dervCor
                     elif phfx+'Scale' in dependentVars:
-                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11]  #*dervCor
+                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11]  #OK? *dervCor
                     for item in ['Ep','Es','Eg']:
                         if phfx+item in varylist and dervDict:
-                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11]  #/dervCor
+                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11]  #OK? /dervCor
                         elif phfx+item in dependentVars and dervDict:
-                            depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/ref[11]  #/dervCor
+                            depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/ref[11]  #OK? /dervCor
                     for item in ['BabA','BabU']:
                         if phfx+item in varylist:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
@@ -2042,9 +2042,9 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                         if var in dFdvDict:
                             depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*dervCor      #*ref[11]
                     if phfx+'Scale' in varylist:
-                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*dervCor    #*ref[11]
+                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*ref[11]    #*dervCor
                     elif phfx+'Scale' in dependentVars:
-                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*dervCor #*ref[11]                           
+                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11] #*dervCor                           
                     for item in ['Ep','Es','Eg']:
                         if phfx+item in varylist and dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11]  #correct

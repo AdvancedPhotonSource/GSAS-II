@@ -1857,8 +1857,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 extApprox,extType,extParms = hapData['Extinction']
                 controlDict[pfx+'EType'] = extType
                 controlDict[pfx+'EApprox'] = extApprox
-                controlDict[pfx+'Tbar'] = extParms['Tbar']
-                controlDict[pfx+'Cos2TM'] = extParms['Cos2TM']
+                if 'C' in inst['Type'][0]:
+                    controlDict[pfx+'Tbar'] = extParms['Tbar']
+                    controlDict[pfx+'Cos2TM'] = extParms['Cos2TM']
                 if 'Primary' in extType:
                     Ekey = ['Ep',]
                 elif 'I & II' in extType:
@@ -1882,7 +1883,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     print >>pFile,135*'-'
                     print >>pFile,' Scale factor     : %10.4f'%(hapData['Scale'][0]),' Refine?',hapData['Scale'][1]
                     if extType != 'None':
-                        print >>pFile,' Extinction  Type: %15s'%(extType),' approx: %10s'%(extApprox),' tbar: %6.3f'%(extParms['Tbar'])
+                        print >>pFile,' Extinction  Type: %15s'%(extType),' approx: %10s'%(extApprox)
                         text = ' Parameters       :'
                         for eKey in Ekey:
                             text += ' %4s : %10.3e Refine? '%(eKey,extParms[eKey][0])+str(extParms[eKey][1])

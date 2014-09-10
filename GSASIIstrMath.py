@@ -801,7 +801,6 @@ def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
     ''' Single crystal extinction function; returns extinction & derivative
     '''
     extCor = 1.0
-    dervCor = 1.0
     dervDict = {}
     if calcControls[phfx+'EType'] != 'None':
         SQ = 1/(4.*ref[4]**2)
@@ -859,7 +858,6 @@ def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
             extCor = np.sqrt(PF4)
             PF3 = 0.5*(CL+2.*AL*PF/(1.+BL*PF)-AL*PF**2*BL/(1.+BL*PF)**2)/(PF4*extCor)
 
-        dervCor = (1.+PF)*PF3   #extinction corr for other derivatives
         if 'Primary' in calcControls[phfx+'EType'] and phfx+'Ep' in varyList:
             dervDict[phfx+'Ep'] = -ref[7]*PLZ*PF3
         if 'II' in calcControls[phfx+'EType'] and phfx+'Es' in varyList:
@@ -867,7 +865,7 @@ def SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varyList):
         if 'I' in calcControls[phfx+'EType'] and phfx+'Eg' in varyList:
             dervDict[phfx+'Eg'] = -ref[7]*PLZ*PF3*(PSIG/parmDict[phfx+'Eg'])**3*PL**2
                
-    return 1./extCor,dervCor,dervDict
+    return 1./extCor,dervDict
     
 def Dict2Values(parmdict, varylist):
     '''Use before call to leastsq to setup list of values for the parameters 
@@ -2002,34 +2000,34 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     if calcControls['F**2']:
         for iref,ref in enumerate(refDict['RefList']):
             if ref[6] > 0:
-                dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist)[1:] 
+                dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist)[1] 
                 w = 1.0/ref[6]
                 if w*ref[5] >= calcControls['minF/sig']:
                     wdf[iref] = w*(ref[5]-ref[7])
                     for j,var in enumerate(varylist):
                         if var in dFdvDict:
-                            dMdvh[j][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]   #*dervCor
+                            dMdvh[j][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]
                     for var in dependentVars:
                         if var in dFdvDict:
-                            depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]  #*dervCor
+                            depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]
                     if phfx+'Scale' in varylist:
-                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*ref[11]  #OK? *dervCor
+                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*ref[11]
                     elif phfx+'Scale' in dependentVars:
-                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11]  #OK? *dervCor
+                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11]
                     for item in ['Ep','Es','Eg']:
                         if phfx+item in varylist and dervDict:
-                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11]  #OK? /dervCor
+                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11]  #OK
                         elif phfx+item in dependentVars and dervDict:
-                            depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/ref[11]  #OK? /dervCor
+                            depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/ref[11]  #OK
                     for item in ['BabA','BabU']:
                         if phfx+item in varylist:
-                            dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
+                            dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*ref[11]
                         elif phfx+item in dependentVars:
-                            depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
+                            depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*ref[11]
     else:
         for iref,ref in enumerate(refDict['RefList']):
             if ref[5] > 0.:
-                dervCor,dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist)[1:]
+                dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist)[1]
                 Fo = np.sqrt(ref[5])
                 Fc = np.sqrt(ref[7])
                 w = 1.0/ref[6]
@@ -2037,14 +2035,14 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                     wdf[iref] = 2.0*Fo*w*(Fo-Fc)
                     for j,var in enumerate(varylist):
                         if var in dFdvDict:
-                            dMdvh[j][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*dervCor       #*ref[11]
+                            dMdvh[j][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]
                     for var in dependentVars:
                         if var in dFdvDict:
-                            depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*dervCor      #*ref[11]
+                            depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11]
                     if phfx+'Scale' in varylist:
-                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*ref[11]    #*dervCor
+                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9]*ref[11]
                     elif phfx+'Scale' in dependentVars:
-                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11] #*dervCor                           
+                        depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11]                           
                     for item in ['Ep','Es','Eg']:
                         if phfx+item in varylist and dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11]  #correct
@@ -2052,9 +2050,9 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                             depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/ref[11]
                     for item in ['BabA','BabU']:
                         if phfx+item in varylist:
-                            dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
+                            dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*ref[11]
                         elif phfx+item in dependentVars:
-                            depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*dervCor
+                            depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*ref[11]
     return dMdvh,depDerivDict,wdf
     
 

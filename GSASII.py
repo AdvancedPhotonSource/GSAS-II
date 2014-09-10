@@ -734,6 +734,7 @@ class GSASII(wx.Frame):
                     self.PatternTree.SetItemPyData(Sub,copy.copy(rd.Parameters))
                     self.PatternTree.SetItemPyData(
                         self.PatternTree.AppendItem(Id,text='Reflection List'),[])  #dummy entry for GUI use
+                    newHistList.append(HistName)
             else:
                 valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxint),}
                 HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
@@ -746,11 +747,11 @@ class GSASII(wx.Frame):
                 self.PatternTree.SetItemPyData(Sub,rd.Parameters)
                 self.PatternTree.SetItemPyData(
                     self.PatternTree.AppendItem(Id,text='Reflection List'),[])  #dummy entry for GUI use
+                newHistList.append(HistName)
                 
             self.PatternTree.SelectItem(Id)
             self.PatternTree.Expand(Id)
             self.Sngl = True
-            newHistList.append(HistName)
 
         if not newHistList: return # somehow, no new histograms
         # make a list of phase names
@@ -842,7 +843,6 @@ class GSASII(wx.Frame):
                 newVals.append(val)                        
             S = File.readline()                
         File.close()
-        # add a second MT dict here. TOF parms? (BHT)
         return G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,]),{}
         
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
@@ -919,7 +919,7 @@ class GSASII(wx.Frame):
         :param str lastdatafile: Name of last data file that was read.
 
         :returns: a list of two dicts, the first containing instrument parameters
-          and the second used for future TOF datasets (timemaps?)
+          and the second used for TOf lookup tables for profile coeff.
 
         '''
         def SetPowderInstParms(Iparm, rd):

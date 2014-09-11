@@ -1841,7 +1841,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             ypos = event.ydata
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3f'%(xpos,Title,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('X =%9.3f %s =%9.3g'%(xpos,Title,ypos),1)                   
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
             found = []
@@ -1885,19 +1885,35 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
         Plot.set_ylabel(r'$\mathsf{\Delta(2\theta)}$',fontsize=14)
     else:
         Plot.set_ylabel(r'$\mathsf{\Delta}T/T$',fontsize=14)
-    for ixy,xy in enumerate(XY):
-        X,Y = xy
+    for ixy,xyw in enumerate(XY):
+        if len(xyw) > 2:
+            X,Y,W = xyw
+        else:
+            X,Y = xyw
+            W = 0.
         Yc = G2lat.Dsp2pos(Inst,X)
         if 'C' in Inst['Type'][0]:
             Y = Y-Yc
             E = Sigs[ixy]
+            bin = W/2.
         else:
             Y = (Y-Yc)/Yc
             E = Sigs[ixy]/Yc
+            bin = W/(2.*Yc)
         if E:
             Plot.errorbar(X,Y,ecolor='k',yerr=E)
-        Plot.plot(X,Y,'kx',picker=3)
+        if ixy:
+            Plot.plot(X,Y,'kx',picker=3)
+        else:
+            Plot.plot(X,Y,'kx',label='peak')
+        if W:
+            if ixy:
+                Plot.plot(X,bin,'b+')
+            else:
+                Plot.plot(X,bin,'b+',label='bin width')
+            Plot.plot(X,-bin,'b+')
         Plot.axhline(0.,color='r',linestyle='--')
+    Plot.legend(loc='best')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

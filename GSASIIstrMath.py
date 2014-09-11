@@ -1547,8 +1547,9 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                         Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5],refl[12],refl[13],refl[6],refl[7])
                         iBeg = max(xB,np.searchsorted(x,refl[5]-fmin))
                         iFin = max(xB,min(np.searchsorted(x,refl[5]+fmax),xF))
-                        yp[iBeg:iFin] = refl[11]*refl[9]*G2pwd.getEpsVoigt(refl[5],refl[12],refl[13],refl[6],refl[7],ma.getdata(x[iBeg:iFin]))  #>90% of time spent here
-                        refl[8] = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11],0.0))
+                        if iBeg < iFin:
+                            yp[iBeg:iFin] = refl[11]*refl[9]*G2pwd.getEpsVoigt(refl[5],refl[12],refl[13],refl[6],refl[7],ma.getdata(x[iBeg:iFin]))  #>90% of time spent here
+                            refl[8] = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11],0.0))
                     Fo = np.sqrt(np.abs(refl[8]))
                     Fc = np.sqrt(np.abs(refl[9]))
                     sumFo += Fo
@@ -2000,7 +2001,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     if calcControls['F**2']:
         for iref,ref in enumerate(refDict['RefList']):
             if ref[6] > 0:
-                dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist)[1] 
+                dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist+dependentVars)[1] 
                 w = 1.0/ref[6]
                 if w*ref[5] >= calcControls['minF/sig']:
                     wdf[iref] = w*(ref[5]-ref[7])
@@ -2015,9 +2016,9 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                     elif phfx+'Scale' in dependentVars:
                         depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11]
                     for item in ['Ep','Es','Eg']:
-                        if phfx+item in varylist and dervDict:
+                        if phfx+item in varylist and phfx+item in dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11]  #OK
-                        elif phfx+item in dependentVars and dervDict:
+                        elif phfx+item in dependentVars and phfx+item in dervDict:
                             depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/ref[11]  #OK
                     for item in ['BabA','BabU']:
                         if phfx+item in varylist:
@@ -2027,7 +2028,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     else:
         for iref,ref in enumerate(refDict['RefList']):
             if ref[5] > 0.:
-                dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist)[1]
+                dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist+dependentVars)[1]
                 Fo = np.sqrt(ref[5])
                 Fc = np.sqrt(ref[7])
                 w = 1.0/ref[6]
@@ -2044,9 +2045,9 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                     elif phfx+'Scale' in dependentVars:
                         depDerivDict[phfx+'Scale'][iref] = w*ref[9]*ref[11]                           
                     for item in ['Ep','Es','Eg']:
-                        if phfx+item in varylist and dervDict:
+                        if phfx+item in varylist and phfx+item in dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11]  #correct
-                        elif phfx+item in dependentVars and dervDict:
+                        elif phfx+item in dependentVars and phfx+item in dervDict:
                             depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/ref[11]
                     for item in ['BabA','BabU']:
                         if phfx+item in varylist:

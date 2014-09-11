@@ -1218,6 +1218,9 @@ def DoCalibInst(IndexPeaks,Inst):
     parmDict = {}
     parmDict.update(insDict)
     varyList = insVary
+    if not len(varyList):
+        print '**** ERROR - nothing to refine! ****'
+        return False
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
@@ -1238,7 +1241,7 @@ def DoCalibInst(IndexPeaks,Inst):
             break                   #refinement succeeded - finish up!
         except ValueError:          #result[1] is None on singular matrix
             print '**** Refinement failed - singular matrix ****'
-        return
+    return True
         
     sigDict = dict(zip(varyList,sig))
     GetInstParms(parmDict,Inst,varyList)

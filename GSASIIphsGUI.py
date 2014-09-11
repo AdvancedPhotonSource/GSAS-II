@@ -2442,7 +2442,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     XYZ = np.array(atom[cx:cx+3])
                     if atom[cuia] == 'A':
                         Uij = atom[cuij:cuij+6]
-                        result = G2spc.GenAtom(XYZ,SGData,False,Uij,False)
+                        result = G2spc.GenAtom(XYZ,SGData,False,Uij,True)
                         for item in result:
                             atom = copy.copy(atomData[ind])
                             atom[cx:cx+3] = item[0]
@@ -2459,7 +2459,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
                                     atomData.append(atom[:])
                     else:
-                        result = G2spc.GenAtom(XYZ,SGData,False,Move=False)
+                        result = G2spc.GenAtom(XYZ,SGData,False,Move=True)
                         for item in result:
                             atom = copy.copy(atomData[ind])
                             atom[cx:cx+3] = item[0]

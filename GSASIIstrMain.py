@@ -41,7 +41,7 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 ateln2 = 8.0*math.log(2.0)
-DEBUG = False
+DEBUG = True
 
 def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
     calcControls,pawleyLookup,ifPrint,printFile,dlg):
@@ -206,6 +206,8 @@ def Refine(GPXfile,dlg):
         fl = open('testDeriv.dat','wb')
         cPickle.dump(result[0],fl,1)
         cPickle.dump([Histograms,Phases,restraintDict,rigidbodyDict],fl,1)
+        cPickle.dump([G2mv.dependentParmList,G2mv.arrayList,G2mv.invarrayList,
+            G2mv.indParmList,G2mv.invarrayList],fl,1)
         cPickle.dump(parmDict,fl,1)
         cPickle.dump(varyList,fl,1)
         cPickle.dump(calcControls,fl,1)

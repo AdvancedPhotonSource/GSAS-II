@@ -955,6 +955,9 @@ def UpdateInstrumentGrid(G2frame,data):
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'),peaks)
             
     def OnCalibrate(event):
+        Pattern = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
+        xye = ma.array(ma.getdata(Pattern[1]))
+        cw = np.diff(xye[0])
         IndexPeaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List'))
         if not len(IndexPeaks[0]):
             G2frame.ErrorDialog('Can not calibrate','Index Peak List empty')
@@ -966,17 +969,21 @@ def UpdateInstrumentGrid(G2frame,data):
         if not Ok:
             G2frame.ErrorDialog('Can not calibrate','Index Peak List not indexed')
             return            
-        G2pwd.DoCalibInst(IndexPeaks,data)
-        UpdateInstrumentGrid(G2frame,data)
-        XY = []
-        Sigs = []
-        for ip,peak in enumerate(IndexPeaks[0]):
-            if peak[2] and peak[3]:
-                XY.append([peak[8],peak[0]])
-                Sigs.append(IndexPeaks[1][ip])
-        if len(XY):
-            XY = np.array(XY)
-            G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
+        if G2pwd.DoCalibInst(IndexPeaks,data):
+            UpdateInstrumentGrid(G2frame,data)
+            XY = []
+            Sigs = []
+            for ip,peak in enumerate(IndexPeaks[0]):
+                if peak[2] and peak[3]:
+                    binwid = cw[np.searchsorted(xye[0],peak[0])]
+                    XY.append([peak[8],peak[0],binwid])
+                    Sigs.append(IndexPeaks[1][ip])
+            if len(XY):
+                XY = np.array(XY)
+                G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
+        else:
+            G2frame.ErrorDialog('Can not calibrate','Nothing selected for refinement')
+            
 
     def OnLoad(event):
         '''Loads instrument parameters from a G2 .instprm file

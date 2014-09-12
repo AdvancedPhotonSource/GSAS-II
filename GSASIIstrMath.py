@@ -1656,6 +1656,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     continue
                 elif not iBeg-iFin:     #peak above high limit - done
                     break
+                elif iBeg > iFin:   #bad peak coeff - skip
+                    continue
                 yc[iBeg:iFin] += refl[11]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,ma.getdata(x[iBeg:iFin]))    #>90% of time spent here
                 if Ka2:
                     pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
@@ -1666,6 +1668,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                         continue
                     elif not iBeg-iFin:     #peak above high limit - done
                         return yc,yb
+                    elif iBeg > iFin:   #bad peak coeff - skip
+                        continue
                     yc[iBeg:iFin] += refl[11]*refl[9]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,ma.getdata(x[iBeg:iFin]))        #and here
             elif 'T' in calcControls[hfx+'histType']:
                 h,k,l = refl[:3]
@@ -1691,6 +1695,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                     continue
                 elif not iBeg-iFin:     #peak above high limit - done
                     break
+                elif iBeg > iFin:   #bad peak coeff - skip
+                    continue
                 yc[iBeg:iFin] += refl[11]*refl[9]*G2pwd.getEpsVoigt(refl[5],refl[12],refl[13],refl[6],refl[7],ma.getdata(x[iBeg:iFin]))/cw[iBeg:iFin]
 #        print 'profile calc time: %.3fs'%(time.time()-time0)
     return yc,yb
@@ -1819,6 +1825,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                         dervDict2 = {'int':dMdpk2[0],'pos':dMdpk2[1],'sig':dMdpk2[2],'gam':dMdpk2[3],'shl':dMdpk2[4],'L1/L2':dMdpk2[5]*refl[9]}
             else:   #'T'OF
                 lenBF = iFin-iBeg
+                if lenBF < 0:   #bad peak coeff
+                    break
                 dMdpk = np.zeros(shape=(6,lenBF))
                 dMdipk = G2pwd.getdEpsVoigt(refl[5],refl[12],refl[13],refl[6],refl[7],ma.getdata(x[iBeg:iFin]))
                 for i in range(6):

@@ -1631,6 +1631,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
 #            print 'sf calc time: %.3fs'%(time.time()-time0)
         time0 = time.time()
+        badPeak = False
         for iref,refl in enumerate(refDict['RefList']):
             if 'C' in calcControls[hfx+'histType']:
                 h,k,l = refl[:3]
@@ -1657,6 +1658,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 elif not iBeg-iFin:     #peak above high limit - done
                     break
                 elif iBeg > iFin:   #bad peak coeff - skip
+                    badPeak = True
                     continue
                 yc[iBeg:iFin] += refl[11]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,ma.getdata(x[iBeg:iFin]))    #>90% of time spent here
                 if Ka2:
@@ -1696,9 +1698,12 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 elif not iBeg-iFin:     #peak above high limit - done
                     break
                 elif iBeg > iFin:   #bad peak coeff - skip
+                    badPeak = True
                     continue
                 yc[iBeg:iFin] += refl[11]*refl[9]*G2pwd.getEpsVoigt(refl[5],refl[12],refl[13],refl[6],refl[7],ma.getdata(x[iBeg:iFin]))/cw[iBeg:iFin]
 #        print 'profile calc time: %.3fs'%(time.time()-time0)
+    if badPeak:
+        print 'ouch #4 bad profile coefficients yield negative peak width; some reflections skipped' 
     return yc,yb
     
 def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calcControls,pawleyLookup):

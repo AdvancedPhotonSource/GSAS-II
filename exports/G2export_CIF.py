@@ -277,7 +277,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             txt = 'Background function: "'+fxn[0]+'" function with '+str(terms)+' terms:\n'
             l = "    "
             for i,v in enumerate(fxn[3:]):
-                name = '%sBack:%d'%(hfx,i)
+                name = '%sBack;%d'%(hfx,i)
                 sig = self.sigDict.get(name,-0.009)
                 if len(l) > 60:
                     txt += l + '\n'
@@ -286,7 +286,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             txt += l
             if bkgdict['nDebye']:
                 txt += '\n  Background Debye function parameters: A, R, U:'
-                names = ['A:','R:','U:']
+                names = ['A;','R;','U;']
                 for i in range(bkgdict['nDebye']):
                     txt += '\n    '
                     for j in range(3):
@@ -295,7 +295,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                         txt += G2mth.ValEsd(bkgdict['debyeTerms'][i][2*j],sig)+', '
             if bkgdict['nPeaks']:
                 txt += '\n  Background peak parameters: pos, int, sig, gam:'
-                names = ['pos:','int:','sig:','gam:']
+                names = ['pos;','int;','sig;','gam;']
                 for i in range(bkgdict['nPeaks']):
                     txt += '\n    '
                     for j in range(4):

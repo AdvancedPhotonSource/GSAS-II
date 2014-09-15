@@ -525,7 +525,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
     cw = np.diff(xdata)
     cw = np.append(cw,cw[-1])
     while True:
-        key = pfx+'Back:'+str(nBak)
+        key = pfx+'Back;'+str(nBak)
         if key in parmDict:
             nBak += 1
         else:
@@ -533,19 +533,19 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
     if bakType in ['chebyschev','cosine']:
         dt = xdata[-1]-xdata[0]    
         for iBak in range(nBak):
-            key = pfx+'Back:'+str(iBak)
+            key = pfx+'Back;'+str(iBak)
             if bakType == 'chebyschev':
                 yb += parmDict[key]*(2.*(xdata-xdata[0])/dt-1.)**iBak
             elif bakType == 'cosine':
                 yb += parmDict[key]*npcosd(xdata*iBak)
     elif bakType in ['lin interpolate','inv interpolate','log interpolate',]:
         if nBak == 1:
-            yb = np.ones_like(xdata)*parmDict[pfx+'Back:0']
+            yb = np.ones_like(xdata)*parmDict[pfx+'Back;0']
         elif nBak == 2:
             dX = xdata[-1]-xdata[0]
             T2 = (xdata-xdata[0])/dX
             T1 = 1.0-T2
-            yb = parmDict[pfx+'Back:0']*T1+parmDict[pfx+'Back:1']*T2
+            yb = parmDict[pfx+'Back;0']*T1+parmDict[pfx+'Back;1']*T2
         else:
             if bakType == 'lin interpolate':
                 bakPos = np.linspace(xdata[0],xdata[-1],nBak,True)
@@ -557,7 +557,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
             bakPos[-1] = xdata[-1]
             bakVals = np.zeros(nBak)
             for i in range(nBak):
-                bakVals[i] = parmDict[pfx+'Back:'+str(i)]
+                bakVals[i] = parmDict[pfx+'Back;'+str(i)]
             bakInt = si.interp1d(bakPos,bakVals,'linear')
             yb = bakInt(xdata)
     if pfx+'difC' in parmDict:
@@ -574,9 +574,9 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
     iD = 0        
     while True:
         try:
-            dbA = parmDict[pfx+'DebyeA:'+str(iD)]
-            dbR = parmDict[pfx+'DebyeR:'+str(iD)]
-            dbU = parmDict[pfx+'DebyeU:'+str(iD)]
+            dbA = parmDict[pfx+'DebyeA;'+str(iD)]
+            dbR = parmDict[pfx+'DebyeR;'+str(iD)]
+            dbU = parmDict[pfx+'DebyeU;'+str(iD)]
             yb += ff*dbA*np.sin(q*dbR)*np.exp(-dbU*q**2)/(q*dbR)
             iD += 1       
         except KeyError:
@@ -617,7 +617,7 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
     'needs a doc string'
     nBak = 0
     while True:
-        key = hfx+'Back:'+str(nBak)
+        key = hfx+'Back;'+str(nBak)
         if key in parmDict:
             nBak += 1
         else:
@@ -677,9 +677,9 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
         try:
             if hfx+'difC' in parmDict:
                 q = 2*np.pi*parmDict[hfx+'difC']/xdata
-            dbA = parmDict[hfx+'DebyeA:'+str(iD)]
-            dbR = parmDict[hfx+'DebyeR:'+str(iD)]
-            dbU = parmDict[hfx+'DebyeU:'+str(iD)]
+            dbA = parmDict[hfx+'DebyeA;'+str(iD)]
+            dbR = parmDict[hfx+'DebyeR;'+str(iD)]
+            dbU = parmDict[hfx+'DebyeU;'+str(iD)]
             sqr = np.sin(q*dbR)/(q*dbR)
             cqr = np.cos(q*dbR)
             temp = np.exp(-dbU*q**2)
@@ -917,7 +917,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
 # needs to return np.array([dMdx1,dMdx2,...]) in same order as varylist = backVary,insVary,peakVary order
     dMdv = np.zeros(shape=(len(varyList),len(xdata)))
     dMdb,dMddb,dMdpk = getBackgroundDerv('',parmDict,bakType,dataType,xdata)
-    if 'Back:0' in varyList:            #background derivs are in front if present
+    if 'Back;0' in varyList:            #background derivs are in front if present
         dMdv[0:len(dMdb)] = dMdb
     names = ['DebyeA','DebyeR','DebyeU']
     for name in varyList:
@@ -1122,7 +1122,7 @@ def SetBackgroundParms(Background):
         BackGround.append({'nDebye':0,'debyeTerms':[]})
     bakType,bakFlag = Background[0][:2]
     backVals = Background[0][3:]
-    backNames = ['Back:'+str(i) for i in range(len(backVals))]
+    backNames = ['Back;'+str(i) for i in range(len(backVals))]
     Debye = Background[1]           #also has background peaks stuff
     backDict = dict(zip(backNames,backVals))
     backVary = []
@@ -1254,7 +1254,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
         iBak = 0
         while True:
             try:
-                bakName = 'Back:'+str(iBak)
+                bakName = 'Back;'+str(iBak)
                 Background[0][iBak+3] = parmList[bakName]
                 iBak += 1
             except KeyError:
@@ -1288,7 +1288,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
             sigstr = 'esds  :'
             for i,back in enumerate(Background[0][3:]):
                 ptstr += ptfmt % (back)
-                sigstr += ptfmt % (sigDict['Back:'+str(i)])
+                sigstr += ptfmt % (sigDict['Back;'+str(i)])
             print ptstr
             print sigstr
         else:
@@ -1504,6 +1504,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
+        Rvals = {}
         if FitPgm == 'LSQ':
             try:
                 result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
@@ -1514,13 +1515,13 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
             runtime = time.time()-begin    
             chisq = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
-            Rwp = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
-            GOF = chisq/(xFin-xBeg-len(varyList))       #reduced chi^2
+            Rvals['Rwp'] = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
+            Rvals['GOF'] = chisq/(xFin-xBeg-len(varyList))       #reduced chi^2
             print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
             print 'fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
-            print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rwp,chisq,GOF)
+            print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
             try:
-                sig = np.sqrt(np.diag(result[1])*GOF)
+                sig = np.sqrt(np.diag(result[1])*Rvals['GOF'])
                 if np.any(np.isnan(sig)):
                     print '*** Least squares aborted - some invalid esds possible ***'
                 break                   #refinement succeeded - finish up!
@@ -1546,7 +1547,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
     InstPrint(Inst,sigDict)
     GetPeaksParms(Inst,parmDict,Peaks,varyList)    
     PeaksPrint(dataType,parmDict,sigDict,varyList)
-    return sigDict
+    return sigDict,result,sig,Rvals,varyList,parmDict
 
 def calcIncident(Iparm,xdata):
     'needs a doc string'

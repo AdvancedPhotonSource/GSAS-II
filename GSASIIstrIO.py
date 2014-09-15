@@ -2199,7 +2199,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         DebyePeaks = Background[1]
         bakType,bakFlag = Back[:2]
         backVals = Back[3:]
-        backNames = [':'+str(hId)+':Back:'+str(i) for i in range(len(backVals))]
+        backNames = [':'+str(hId)+':Back;'+str(i) for i in range(len(backVals))]
         backDict = dict(zip(backNames,backVals))
         backVary = []
         if bakFlag:
@@ -2209,7 +2209,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
         debyeDict = {}
         debyeList = []
         for i in range(DebyePeaks['nDebye']):
-            debyeNames = [':'+str(hId)+':DebyeA:'+str(i),':'+str(hId)+':DebyeR:'+str(i),':'+str(hId)+':DebyeU:'+str(i)]
+            debyeNames = [':'+str(hId)+':DebyeA;'+str(i),':'+str(hId)+':DebyeR;'+str(i),':'+str(hId)+':DebyeU;'+str(i)]
             debyeDict.update(dict(zip(debyeNames,DebyePeaks['debyeTerms'][i][::2])))
             debyeList += zip(debyeNames,DebyePeaks['debyeTerms'][i][1::2])
         debyeVary = []
@@ -2433,9 +2433,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
         lenBack = len(Back[3:])
         backSig = [0 for i in range(lenBack+3*DebyePeaks['nDebye']+4*DebyePeaks['nPeaks'])]
         for i in range(lenBack):
-            Back[3+i] = parmDict[pfx+'Back:'+str(i)]
-            if pfx+'Back:'+str(i) in sigDict:
-                backSig[i] = sigDict[pfx+'Back:'+str(i)]
+            Back[3+i] = parmDict[pfx+'Back;'+str(i)]
+            if pfx+'Back;'+str(i) in sigDict:
+                backSig[i] = sigDict[pfx+'Back;'+str(i)]
         if DebyePeaks['nDebye']:
             for i in range(DebyePeaks['nDebye']):
                 names = [pfx+'DebyeA:'+str(i),pfx+'DebyeR:'+str(i),pfx+'DebyeU:'+str(i)]

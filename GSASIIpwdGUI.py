@@ -329,7 +329,29 @@ def UpdatePeakGrid(G2frame, data):
         for pos,mag in refs:
             data['peaks'].append(G2mth.setPeakparms(inst,inst2,pos,mag))
         UpdatePeakGrid(G2frame,data)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')        
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        
+    def OnCopyPeaks(event):
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
+        copyList = []
+        dlg = G2gd.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Copy peak list from\n'+str(hst[5:])+' to...',
+            'Copy peaks', histList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for i in dlg.GetSelections():
+                    copyList.append(histList[i])
+        finally:
+            dlg.Destroy()
+        for item in copyList:
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+            G2frame.PatternTree.SetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,Id,'Peak List'),copy.copy(data))
     
     def OnUnDo(event):
         DoUnDo()
@@ -368,6 +390,68 @@ def UpdatePeakGrid(G2frame, data):
     def OnOneCycle(event):
         OnPeakFit('LSQ',oneCycle=True)
         
+    def OnSeqPeakFit(event):
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
+        sel = []
+        dlg = G2gd.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential peak fits',
+             'Select dataset to include',histList)
+        dlg.SetSelections(sel)
+        names = []
+        if dlg.ShowModal() == wx.ID_OK:
+            for sel in dlg.GetSelections():
+                names.append(histList[sel])
+        dlg.Destroy()
+        SeqResult = {'histNames':names}
+        dlg.Destroy()
+        dlg = wx.ProgressDialog('Sequential peak fit','Data set name = '+names[0],len(names), 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+        controls = {'deriv type':'analytic','min dM/M':0.0001,}
+        print 'Peak Fitting with '+controls['deriv type']+' derivatives:'
+        oneCycle = False
+        FitPgm = 'LSQ'
+        try:
+            for i,name in enumerate(names):
+                print ' Sequential fit for ',name
+                GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
+                if not GoOn:
+                    break
+                PatternId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
+                background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
+                limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
+                inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+                data = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+                wx.BeginBusyCursor()
+                dlg2 = wx.ProgressDialog('Residual','Peak fit Rwp = ',101.0, 
+                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+                screenSize = wx.ClientDisplayRect()
+                Size = dlg.GetSize()
+                dlg2.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+                try:
+                    peaks['sigDict'],result,sig,Rvals,varyList,parmDict = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
+                        background,limits,inst,inst2,data,oneCycle,controls,dlg2)
+                finally:
+                    dlg2.Destroy()    
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),peaks)
+                SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
+                    'covMatrix':np.eye(len(result[0])),'title':name,'parmDict':parmDict}
+            else:
+                dlg.Destroy()
+                print ' ***** Sequential peak fit successful *****'
+        finally:
+            wx.EndBusyCursor()    
+        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results')
+        if Id:
+            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        else:
+            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential results')
+            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        G2frame.PatternTree.SelectItem(Id)
+        
     def OnClearPeaks(event):
         dlg = wx.MessageDialog(G2frame,'Delete all peaks?','Clear peak list',wx.OK|wx.CANCEL)
         try:
@@ -401,7 +485,7 @@ def UpdatePeakGrid(G2frame, data):
         Size = dlg.GetSize()
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,oneCycle,controls,dlg)
+            peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,oneCycle,controls,dlg)[0]
         finally:
             wx.EndBusyCursor()    
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),peaks)
@@ -501,19 +585,25 @@ def UpdatePeakGrid(G2frame, data):
         Status = G2frame.dataFrame.CreateStatusBar()
     Status.SetStatusText('Global refine: select refine column & press Y or N')
     G2frame.Bind(wx.EVT_MENU, OnAutoSearch, id=G2gd.wxID_AUTOSEARCH)
+    G2frame.Bind(wx.EVT_MENU, OnCopyPeaks, id=G2gd.wxID_PEAKSCOPY)
     G2frame.Bind(wx.EVT_MENU, OnUnDo, id=G2gd.wxID_UNDO)
     G2frame.Bind(wx.EVT_MENU, OnLSQPeakFit, id=G2gd.wxID_LSQPEAKFIT)
     G2frame.Bind(wx.EVT_MENU, OnOneCycle, id=G2gd.wxID_LSQONECYCLE)
+    G2frame.Bind(wx.EVT_MENU, OnSeqPeakFit, id=G2gd.wxID_SEQPEAKFIT)
     G2frame.Bind(wx.EVT_MENU, OnClearPeaks, id=G2gd.wxID_CLEARPEAKS)
     G2frame.Bind(wx.EVT_MENU, OnResetSigGam, id=G2gd.wxID_RESETSIGGAM)
     if data['peaks']:
         G2frame.dataFrame.AutoSearch.Enable(False)
+        G2frame.dataFrame.PeakCopy.Enable(True)
         G2frame.dataFrame.PeakFit.Enable(True)
         G2frame.dataFrame.PFOneCycle.Enable(True)
+        G2frame.dataFrame.SeqPeakFit.Enable(True)
     else:
         G2frame.dataFrame.PeakFit.Enable(False)
+        G2frame.dataFrame.PeakCopy.Enable(False)
         G2frame.dataFrame.PFOneCycle.Enable(False)
         G2frame.dataFrame.AutoSearch.Enable(True)
+        G2frame.dataFrame.SeqPeakFit.Enable(False)
     G2frame.PickTable = []
     rowLabels = []
     PatternId = G2frame.PatternId

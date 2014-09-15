@@ -116,7 +116,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(8)]
 
 [ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_RESETSIGGAM,wxID_CLEARPEAKS,wxID_AUTOSEARCH,
-] = [wx.NewId() for item in range(6)]
+    wxID_PEAKSCOPY, wxID_SEQPEAKFIT,
+] = [wx.NewId() for item in range(8)]
 
 [  wxID_INDXRELOAD, wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
 ] = [wx.NewId() for item in range(5)]
@@ -2919,12 +2920,17 @@ class DataFrame(wx.Frame):
         self.PeakMenu.Append(menu=self.PeakEdit, title='Peak Fitting')
         self.AutoSearch = self.PeakEdit.Append(help='Automatic peak search', 
             id=wxID_AUTOSEARCH, kind=wx.ITEM_NORMAL,text='Auto search')
+        self.PeakCopy = self.PeakEdit.Append(help='Copy peaks to other histograms', 
+            id=wxID_PEAKSCOPY, kind=wx.ITEM_NORMAL,text='Peak copy')
         self.UnDo = self.PeakEdit.Append(help='Undo last least squares refinement', 
             id=wxID_UNDO, kind=wx.ITEM_NORMAL,text='UnDo')
-        self.PeakFit = self.PeakEdit.Append(id=wxID_LSQPEAKFIT, kind=wx.ITEM_NORMAL,text='LSQ PeakFit', 
-            help='Peak fitting via least-squares' )
-        self.PFOneCycle = self.PeakEdit.Append(id=wxID_LSQONECYCLE, kind=wx.ITEM_NORMAL,text='LSQ one cycle', 
-            help='One cycle of Peak fitting via least-squares' )
+        self.PeakFit = self.PeakEdit.Append(id=wxID_LSQPEAKFIT, kind=wx.ITEM_NORMAL,text='Peakfit', 
+            help='Peak fitting' )
+        self.PFOneCycle = self.PeakEdit.Append(id=wxID_LSQONECYCLE, kind=wx.ITEM_NORMAL,text='Peakfit one cycle', 
+            help='One cycle of Peak fitting' )
+        self.SeqPeakFit = self.PeakEdit.Append(id=wxID_SEQPEAKFIT, kind=wx.ITEM_NORMAL,text='Seq PeakFit', 
+            help='Sequential Peak fitting for all histograms' )
+        wxID_PEAKSCOPY
         self.PeakEdit.Append(id=wxID_RESETSIGGAM, kind=wx.ITEM_NORMAL, 
             text='Reset sig and gam',help='Reset sigma and gamma to global fit' )
         self.PeakEdit.Append(id=wxID_CLEARPEAKS, kind=wx.ITEM_NORMAL,text='Clear peaks', 

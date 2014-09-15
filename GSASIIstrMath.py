@@ -1743,14 +1743,14 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     bakType = calcControls[hfx+'bakType']
     dMdv = np.zeros(shape=(len(varylist),len(x)))
     dMdb,dMddb,dMdpk = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
-    if hfx+'Back:0' in varylist: # for now assume that Back:x vars to not appear in constraints
-        bBpos =varylist.index(hfx+'Back:0')
+    if hfx+'Back;0' in varylist: # for now assume that Back;x vars to not appear in constraints
+        bBpos =varylist.index(hfx+'Back;0')
         dMdv[bBpos:bBpos+len(dMdb)] = dMdb
     names = [hfx+'DebyeA',hfx+'DebyeR',hfx+'DebyeU']
     for name in varylist:
         if 'Debye' in name:
-            id = int(name.split(':')[-1])
-            parm = name[:int(name.rindex(':'))]
+            id = int(name.split(';')[-1])
+            parm = name[:int(name.rindex(';'))]
             ip = names.index(parm)
             dMdv[varylist.index(name)] = dMddb[3*id+ip]
     names = [hfx+'BkPkpos',hfx+'BkPkint',hfx+'BkPksig',hfx+'BkPkgam']

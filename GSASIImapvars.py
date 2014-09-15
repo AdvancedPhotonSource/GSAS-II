@@ -1171,7 +1171,7 @@ if __name__ == "__main__":
 #                     ['1.0'])
 #    if e: print 'error=',e
 #    if w: print 'error=',w
-#    varyList = ['0::A0', '0::AUiso:0', '0::Afrac:1', '0::Afrac:2', '0::Afrac:3', '0::Afrac:4', '0::dAx:5', '0::dAy:5', '0::dAz:5', '0::AUiso:5', ':0:Back:0', ':0:Back:1', ':0:Back:2', ':0:Back:3', ':0:Back:4', ':0:Back:5', ':0:Back:6', ':0:Back:7', ':0:Back:8', ':0:Back:9', ':0:Back:10', ':0:Back:11', ':0:U', ':0:V', ':0:W', ':0:X', ':0:Y', ':0:Scale', ':0:DisplaceX', ':0:DisplaceY']
+#    varyList = ['0::A0', '0::AUiso:0', '0::Afrac:1', '0::Afrac:2', '0::Afrac:3', '0::Afrac:4', '0::dAx:5', '0::dAy:5', '0::dAz:5', '0::AUiso:5', ':0:Back;0', ':0:Back;1', ':0:Back;2', ':0:Back;3', ':0:Back;4', ':0:Back;5', ':0:Back;6', ':0:Back;7', ':0:Back;8', ':0:Back;9', ':0:Back;10', ':0:Back;11', ':0:U', ':0:V', ':0:W', ':0:X', ':0:Y', ':0:Scale', ':0:DisplaceX', ':0:DisplaceY']
 #    constrDict = [
 #        {'0::Afrac:4': 24.0, '0::Afrac:1': 16.0, '0::Afrac:3': 24.0, '0::Afrac:2': 16.0},
 #        {'0::Afrac:1': 1.0, '0::Afrac:2': 1.0},

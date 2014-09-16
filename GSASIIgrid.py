@@ -2920,19 +2920,18 @@ class DataFrame(wx.Frame):
         self.PeakMenu.Append(menu=self.PeakEdit, title='Peak Fitting')
         self.AutoSearch = self.PeakEdit.Append(help='Automatic peak search', 
             id=wxID_AUTOSEARCH, kind=wx.ITEM_NORMAL,text='Auto search')
-        self.PeakCopy = self.PeakEdit.Append(help='Copy peaks to other histograms', 
-            id=wxID_PEAKSCOPY, kind=wx.ITEM_NORMAL,text='Peak copy')
         self.UnDo = self.PeakEdit.Append(help='Undo last least squares refinement', 
             id=wxID_UNDO, kind=wx.ITEM_NORMAL,text='UnDo')
         self.PeakFit = self.PeakEdit.Append(id=wxID_LSQPEAKFIT, kind=wx.ITEM_NORMAL,text='Peakfit', 
             help='Peak fitting' )
         self.PFOneCycle = self.PeakEdit.Append(id=wxID_LSQONECYCLE, kind=wx.ITEM_NORMAL,text='Peakfit one cycle', 
             help='One cycle of Peak fitting' )
-        self.SeqPeakFit = self.PeakEdit.Append(id=wxID_SEQPEAKFIT, kind=wx.ITEM_NORMAL,text='Seq PeakFit', 
-            help='Sequential Peak fitting for all histograms' )
-        wxID_PEAKSCOPY
         self.PeakEdit.Append(id=wxID_RESETSIGGAM, kind=wx.ITEM_NORMAL, 
             text='Reset sig and gam',help='Reset sigma and gamma to global fit' )
+        self.PeakCopy = self.PeakEdit.Append(help='Copy peaks to other histograms', 
+            id=wxID_PEAKSCOPY, kind=wx.ITEM_NORMAL,text='Peak copy')
+        self.SeqPeakFit = self.PeakEdit.Append(id=wxID_SEQPEAKFIT, kind=wx.ITEM_NORMAL,text='Seq PeakFit', 
+            help='Sequential Peak fitting for all histograms' )
         self.PeakEdit.Append(id=wxID_CLEARPEAKS, kind=wx.ITEM_NORMAL,text='Clear peaks', 
             help='Clear the peak list' )
         self.PostfillDataMenu()
@@ -3283,8 +3282,8 @@ class DataFrame(wx.Frame):
         self.TextureMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.TextureEdit = wx.Menu(title='')
         self.TextureMenu.Append(menu=self.TextureEdit, title='Texture')
-        self.TextureEdit.Append(id=wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
-            help='Refine the texture coefficients from sequential Pawley results')
+#        self.TextureEdit.Append(id=wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
+#            help='Refine the texture coefficients from sequential Pawley results')
         self.TextureEdit.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
             help='Clear the texture coefficients' )
         self.PostfillDataMenu()
@@ -4730,7 +4729,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         colLabels += ['Rwp']
         Types += [wg.GRID_VALUE_FLOAT+':10,3',]
     # add % change in Chi^2 in last cycle
-    if histNames[0][:4] not in ['SASD','IMG ']:
+    if histNames[0][:4] not in ['SASD','IMG '] and Controls['ShowCell']:
         colList += [[100.*data[name]['Rvals'].get('DelChi2',-1) for name in histNames]]
         colSigs += [None]
         colLabels += [u'\u0394\u03C7\u00B2 (%)']
@@ -4743,37 +4742,38 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         colLabels += [key]
         Types += [wg.GRID_VALUE_FLOAT,]
     # add unique cell parameters
-    for pId in sorted(RecpCellTerms):
-        pfx = str(pId)+'::' # prefix for A values from phase
-        cells = []
-        cellESDs = []
-        colLabels += [pfx+cellUlbl[i] for i in uniqCellIndx[pId]]
-        colLabels += [pfx+'Vol']
-        Types += (1+len(uniqCellIndx[pId]))*[wg.GRID_VALUE_FLOAT,]
-        for name in histNames:
-            covData = {
-                'varyList': [Dlookup.get(striphist(v),v) for v in data[name]['varyList']],
-                'covMatrix': data[name]['covMatrix']
-                }
-            A = RecpCellTerms[pId][:] # make copy of starting A values
-            # update with refined values
-            for i in range(6):
-                var = str(pId)+'::A'+str(i)
-                if var in ESDlookup:
-                    val = data[name]['newCellDict'][ESDlookup[var]][1] # get refined value 
-                    A[i] = val # override with updated value
-            # apply symmetry
-            Albls = [pfx+'A'+str(i) for i in range(6)]
-            cellDict = dict(zip(Albls,A))
-            A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cellDict,zeroDict[pId])
-            # convert to direct cell & add only unique values to table
-            c = G2lat.A2cell(A)
-            vol = G2lat.calc_V(A)
-            cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData)
-            cells += [[c[i] for i in uniqCellIndx[pId]]+[vol]]
-            cellESDs += [[cE[i] for i in uniqCellIndx[pId]]+[cE[-1]]]
-        colList += zip(*cells)
-        colSigs += zip(*cellESDs)
+    if Controls['ShowCell']:
+        for pId in sorted(RecpCellTerms):
+            pfx = str(pId)+'::' # prefix for A values from phase
+            cells = []
+            cellESDs = []
+            colLabels += [pfx+cellUlbl[i] for i in uniqCellIndx[pId]]
+            colLabels += [pfx+'Vol']
+            Types += (1+len(uniqCellIndx[pId]))*[wg.GRID_VALUE_FLOAT,]
+            for name in histNames:
+                covData = {
+                    'varyList': [Dlookup.get(striphist(v),v) for v in data[name]['varyList']],
+                    'covMatrix': data[name]['covMatrix']
+                    }
+                A = RecpCellTerms[pId][:] # make copy of starting A values
+                # update with refined values
+                for i in range(6):
+                    var = str(pId)+'::A'+str(i)
+                    if var in ESDlookup:
+                        val = data[name]['newCellDict'][ESDlookup[var]][1] # get refined value 
+                        A[i] = val # override with updated value
+                # apply symmetry
+                Albls = [pfx+'A'+str(i) for i in range(6)]
+                cellDict = dict(zip(Albls,A))
+                A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cellDict,zeroDict[pId])
+                # convert to direct cell & add only unique values to table
+                c = G2lat.A2cell(A)
+                vol = G2lat.calc_V(A)
+                cE = G2stIO.getCellEsd(pfx,SGdata[pId],A,covData)
+                cells += [[c[i] for i in uniqCellIndx[pId]]+[vol]]
+                cellESDs += [[cE[i] for i in uniqCellIndx[pId]]+[cE[-1]]]
+            colList += zip(*cells)
+            colSigs += zip(*cellESDs)
     # add the variables that were refined; change from rows to columns
     colList += zip(*[data[name]['variables'] for name in histNames])
     colLabels += data[histNames[0]]['varyList']
@@ -4822,7 +4822,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             sigs = data[name]['sig']
             G2mv.InitVars()
             parmDict = data[name].get('parmDict')
-            if parmDict:
+            if parmDict and Controls['ShowCell']:
                 constraintInfo = data[name].get('constraintInfo',[[],[],{},[],seqnum])
                 groups,parmlist,constrDict,fixedList,ihst = constraintInfo
                 varyList = data[name]['varyList']
@@ -5158,9 +5158,6 @@ def MovePatternTreeToGrid(G2frame,item):
         elif G2frame.PatternTree.GetItemText(item) == 'Sequential results':
             data = G2frame.PatternTree.GetItemPyData(item)
             UpdateSeqResults(G2frame,data)
-        elif G2frame.PatternTree.GetItemText(item) == 'Small Angle Sequential results':
-            data = G2frame.PatternTree.GetItemPyData(item)
-            UpdateSASDSeqResults(G2frame,data)
         elif G2frame.PatternTree.GetItemText(item) == 'Covariance':
             data = G2frame.PatternTree.GetItemPyData(item)
             G2frame.dataFrame.setSizePosLeft(defWid)

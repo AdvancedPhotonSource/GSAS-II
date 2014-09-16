@@ -1865,6 +1865,11 @@ class GSASII(wx.Frame):
             self.OnPatternTreeItemDelete, id=wxID_PATTERNTREE)
         self.PatternTree.Bind(wx.EVT_TREE_KEY_DOWN,
             self.OnPatternTreeKeyDown, id=wxID_PATTERNTREE)
+#Can't get drag/drop of tree items to work except in simple cases (e.g. Controls)
+#        self.PatternTree.Bind(wx.EVT_TREE_BEGIN_RDRAG,
+#            self.OnPatternTreeBeginRDrag, id=wxID_PATTERNTREE)        
+#        self.PatternTree.Bind(wx.EVT_TREE_END_DRAG,
+#            self.OnPatternTreeEndDrag, id=wxID_PATTERNTREE)        
         self.root = self.PatternTree.AddRoot('Loaded Data: ')
         
         plotFrame = wx.Frame(None,-1,'GSASII Plots',size=wx.Size(700,600), \
@@ -1988,8 +1993,30 @@ class GSASII(wx.Frame):
         'Called when a tree item is activated'
         event.Skip()
         
+    def OnPatternTreeBeginRDrag(self,event):
+        # testing this - doesn't work! Binds commented out above
+        event.Allow()
+        self.BeginDragId = event.GetItem()
+        print 'start',self.PatternTree.GetItemText(self.BeginDragId)
+        self.ParentId = self.PatternTree.GetItemParent(self.BeginDragId)
+        self.DragData = self.PatternTree.GetItemPyData(self.BeginDragId)
+        
+    def OnPatternTreeEndDrag(self,event):
+        # testing this - doesn't work! Binds commented out above
+        event.Allow()
+        self.EndDragId = event.GetItem()
+        if self.ParentId != self.PatternTree.GetItemParent(self.EndDragId):
+            print 'drag not allowed - wrong parent'
+        else:
+            Name = self.PatternTree.GetItemText(self.BeginDragId)
+            self.PatternTree.InsertItem(self.ParentId,self.EndDragId,Name,data=None)
+            Id = G2gd.GetPatternTreeItemId(self, self.ParentId,Name)
+            self.PatternTree.SetItemPyData(Id,self.DragData)
+            self.PatternTree.Delete(self.BeginDragId)
+        print 'end',self.PatternTree.GetItemText(self.EndDragId)
+        
     def OnPatternTreeKeyDown(self,event):
-        'Not sure what this does'
+        'Allows stepping through the tree with the up/down arrow keys'
         key = event.GetKeyCode()
         item = self.PickId
         if type(item) is int: return # is this the toplevel in tree?
@@ -3274,6 +3301,8 @@ class GSASII(wx.Frame):
         if not Id:
             Id = self.PatternTree.AppendItem(self.root,text='Sequential results')
             self.PatternTree.SetItemPyData(Id,{})            
+        Controls = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Controls'))
+        Controls['ShowCell'] = True
         self.OnFileSave(event)
         # check that constraints are OK here
         errmsg, warnmsg = G2stIO.CheckConstraints(self.GSASprojectfile)

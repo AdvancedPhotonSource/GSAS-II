@@ -1530,18 +1530,19 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                         iBeg = max(xB,np.searchsorted(x,refl[5]-fmin))
                         iFin = max(xB,min(np.searchsorted(x,refl[5]+fmax),xF))
                         iFin2 = iFin
-                        yp[iBeg:iFin] = refl[11]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,ma.getdata(x[iBeg:iFin]))    #>90% of time spent here
-                        if Ka2:
-                            pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
-                            Wd,fmin,fmax = G2pwd.getWidthsCW(pos2,refl[6],refl[7],shl)
-                            iBeg2 = max(xB,np.searchsorted(x,pos2-fmin))
-                            iFin2 = min(np.searchsorted(x,pos2+fmax),xF)
-                            if not iBeg2+iFin2:       #peak below low limit - skip peak
-                                continue
-                            elif not iBeg2-iFin2:     #peak above high limit - done
-                                break
-                            yp[iBeg2:iFin2] += refl[11]*refl[9]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,ma.getdata(x[iBeg2:iFin2]))        #and here
-                        refl[8] = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[11]*(1.+kRatio)),0.0))
+                        if not iBeg+iFin:       #peak below low limit - skip peak
+                            continue
+                        elif not iBeg-iFin:     #peak above high limit - done
+                            break
+                        elif iBeg < iFin:
+                            yp[iBeg:iFin] = refl[11]*refl[9]*G2pwd.getFCJVoigt3(refl[5],refl[6],refl[7],shl,ma.getdata(x[iBeg:iFin]))    #>90% of time spent here
+                            if Ka2:
+                                pos2 = refl[5]+lamRatio*tand(refl[5]/2.0)       # + 360/pi * Dlam/lam * tan(th)
+                                Wd,fmin,fmax = G2pwd.getWidthsCW(pos2,refl[6],refl[7],shl)
+                                iBeg2 = max(xB,np.searchsorted(x,pos2-fmin))
+                                iFin2 = min(np.searchsorted(x,pos2+fmax),xF)
+                                yp[iBeg2:iFin2] += refl[11]*refl[9]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6],refl[7],shl,ma.getdata(x[iBeg2:iFin2]))        #and here
+                            refl[8] = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[11]*(1.+kRatio)),0.0))
                     elif 'T' in calcControls[hfx+'histType']:
                         yp = np.zeros_like(yb)
                         Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5],refl[12],refl[13],refl[6],refl[7])

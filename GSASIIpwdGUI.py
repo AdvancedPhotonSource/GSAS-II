@@ -406,10 +406,22 @@ def UpdatePeakGrid(G2frame, data):
                 names.append(histList[sel])
         dlg.Destroy()
         SeqResult = {'histNames':names}
+        Reverse = False
+        CopyForward = False
+        choice = ['Copy from prev.',]       #'Reverse sequence',
+        dlg = wx.MultiChoiceDialog(G2frame.dataFrame,'Sequential controls','Select controls',choice)
+        if dlg.ShowModal() == wx.ID_OK:
+            for sel in dlg.GetSelections():
+                if sel:
+                    CopyForward = True
+                else:
+                    Reverse = True
         dlg.Destroy()
         dlg = wx.ProgressDialog('Sequential peak fit','Data set name = '+names[0],len(names), 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
+        Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
         controls = {'deriv type':'analytic','min dM/M':0.0001,}
+        Controls['ShowCell'] = False
         print 'Peak Fitting with '+controls['deriv type']+' derivatives:'
         oneCycle = False
         FitPgm = 'LSQ'
@@ -420,6 +432,8 @@ def UpdatePeakGrid(G2frame, data):
                 if not GoOn:
                     break
                 PatternId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                if i and CopyForward:
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),peaks)
                 peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
                 background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
                 limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
@@ -443,7 +457,7 @@ def UpdatePeakGrid(G2frame, data):
                 dlg.Destroy()
                 print ' ***** Sequential peak fit successful *****'
         finally:
-            wx.EndBusyCursor()    
+            wx.EndBusyCursor()
         Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results')
         if Id:
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)

@@ -88,14 +88,6 @@ G2gd.__version__ = __version__
 # else should care much about this. 
 sys.stderr = sys.stdout
 
-# useful degree trig functions
-sind = lambda x: math.sin(x*math.pi/180.)
-cosd = lambda x: math.cos(x*math.pi/180.)
-tand = lambda x: math.tan(x*math.pi/180.)
-asind = lambda x: 180.*math.asin(x)/math.pi
-acosd = lambda x: 180.*math.acos(x)/math.pi
-atan2d = lambda x,y: 180.*math.atan2(y,x)/math.pi
-
 def create(parent):
     return GSASII(parent)
 
@@ -1849,7 +1841,7 @@ class GSASII(wx.Frame):
         self.FillMainMenu(self.GSASIIMenu)
         self.SetMenuBar(self.GSASIIMenu)
         self.Bind(wx.EVT_SIZE, self.OnSize)
-        self.CreateStatusBar()
+        self.Status = self.CreateStatusBar()
         self.mainPanel = wx.Panel(self,-1)
         
         wxID_PATTERNTREE = wx.NewId()
@@ -2008,8 +2000,13 @@ class GSASII(wx.Frame):
         # testing this - doesn't work! Binds commented out above
         event.Allow()
         self.EndDragId = event.GetItem()
-        if self.ParentId != self.PatternTree.GetItemParent(self.EndDragId):
-            print 'drag not allowed - wrong parent'
+        try:
+            NewParent = self.PatternTree.GetItemParent(self.EndDragId)
+        except:
+            self.EndDragId = self.PatternTree.GetLastChild(self.root)
+            NewParent = self.root
+        if self.ParentId != NewParent:
+            self.ErrorDialog('Drag not allowed','Wrong parent for item dragged')
         else:
             Name,Item = self.DragData[0]
             NewId = self.PatternTree.InsertItem(self.ParentId,self.EndDragId,Name,data=None)
@@ -2915,6 +2912,7 @@ class GSASII(wx.Frame):
     def OnMakePDFs(self,event):
         '''Calculates PDFs
         '''
+        sind = lambda x: math.sin(x*math.pi/180.)
         tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
         TextList = ['All PWDR']
         PDFlist = []

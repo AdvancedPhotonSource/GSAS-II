@@ -1865,13 +1865,11 @@ class GSASII(wx.Frame):
             self.OnPatternTreeItemDelete, id=wxID_PATTERNTREE)
         self.PatternTree.Bind(wx.EVT_TREE_KEY_DOWN,
             self.OnPatternTreeKeyDown, id=wxID_PATTERNTREE)
-#Can't get drag/drop of tree items to work except in simple cases (e.g. Controls)
-#        self.PatternTree.Bind(wx.EVT_TREE_BEGIN_RDRAG,
-#            self.OnPatternTreeBeginRDrag, id=wxID_PATTERNTREE)        
-#        self.PatternTree.Bind(wx.EVT_TREE_END_DRAG,
-#            self.OnPatternTreeEndDrag, id=wxID_PATTERNTREE)        
+        self.PatternTree.Bind(wx.EVT_TREE_BEGIN_RDRAG,
+            self.OnPatternTreeBeginRDrag, id=wxID_PATTERNTREE)        
+        self.PatternTree.Bind(wx.EVT_TREE_END_DRAG,
+            self.OnPatternTreeEndDrag, id=wxID_PATTERNTREE)        
         self.root = self.PatternTree.AddRoot('Loaded Data: ')
-        
         plotFrame = wx.Frame(None,-1,'GSASII Plots',size=wx.Size(700,600), \
             style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
         self.G2plotNB = G2plt.G2PlotNoteBook(plotFrame)
@@ -1997,9 +1995,14 @@ class GSASII(wx.Frame):
         # testing this - doesn't work! Binds commented out above
         event.Allow()
         self.BeginDragId = event.GetItem()
-        print 'start',self.PatternTree.GetItemText(self.BeginDragId)
         self.ParentId = self.PatternTree.GetItemParent(self.BeginDragId)
-        self.DragData = self.PatternTree.GetItemPyData(self.BeginDragId)
+        DragText = self.PatternTree.GetItemText(self.BeginDragId)
+        self.DragData = [[DragText,self.PatternTree.GetItemPyData(self.BeginDragId)],]
+        item, cookie = self.PatternTree.GetFirstChild(self.BeginDragId)
+        while item:     #G2 data tree has no sub children under a child of a tree item
+            name = self.PatternTree.GetItemText(item)
+            self.DragData.append([name,self.PatternTree.GetItemPyData(item)])
+            item, cookie = self.PatternTree.GetNextChild(self.BeginDragId, cookie)                            
         
     def OnPatternTreeEndDrag(self,event):
         # testing this - doesn't work! Binds commented out above
@@ -2008,12 +2011,14 @@ class GSASII(wx.Frame):
         if self.ParentId != self.PatternTree.GetItemParent(self.EndDragId):
             print 'drag not allowed - wrong parent'
         else:
-            Name = self.PatternTree.GetItemText(self.BeginDragId)
-            self.PatternTree.InsertItem(self.ParentId,self.EndDragId,Name,data=None)
-            Id = G2gd.GetPatternTreeItemId(self, self.ParentId,Name)
-            self.PatternTree.SetItemPyData(Id,self.DragData)
+            Name,Item = self.DragData[0]
+            NewId = self.PatternTree.InsertItem(self.ParentId,self.EndDragId,Name,data=None)
+            self.PatternTree.SetItemPyData(NewId,Item)
+            for name,item in self.DragData[1:]:     #loop over children
+                Id = self.PatternTree.AppendItem(parent=NewId,text=name)
+                self.PatternTree.SetItemPyData(Id,item)
             self.PatternTree.Delete(self.BeginDragId)
-        print 'end',self.PatternTree.GetItemText(self.EndDragId)
+            G2gd.MovePatternTreeToGrid(self,NewId)
         
     def OnPatternTreeKeyDown(self,event):
         'Allows stepping through the tree with the up/down arrow keys'

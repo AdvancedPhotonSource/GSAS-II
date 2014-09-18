@@ -339,7 +339,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             wx.TextCtrl.SetValue(self,str(val))
         elif self.type is float:
             try:
-                float(val)
+                val = float(val) # convert strings, if needed
             except:
                 if self.CIFinput and (val == '?' or val == '.'):
                     pass

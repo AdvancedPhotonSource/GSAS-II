@@ -525,7 +525,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
       (returned as 2nd value)
 
     :param list varyList: a list of parameters names (strings of form
-      ``<ph>:<hst>:<nam>``) that will be varied
+      ``<ph>:<hst>:<nam>``) that will be varied. Note that this is changed here. 
     
     :param dict constrDict: a list of dicts defining relationships/constraints
       (as defined in :func:`GroupConstraints`)
@@ -793,7 +793,7 @@ def StoreEquivalence(independentVar,dependentList):
         elif len(var) == 2:
             var,mult = var
         else:
-            raise Exception, "Cannot parse "+repr(var) + " as var or (var,multiplier)"
+            raise Exception("Cannot parse "+repr(var) + " as var or (var,multiplier)")
         mapList.append(var)
         multlist.append(tuple((mult,)))
     # added relationships to stored values

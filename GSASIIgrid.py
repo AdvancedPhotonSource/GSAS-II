@@ -5379,6 +5379,7 @@ def MovePatternTreeToGrid(G2frame,item):
         name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
         G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True,Name=name)
+    G2frame.dataFrame.Raise()
 
 def SetDataMenuBar(G2frame,menu=None):
     '''Set the menu for the data frame. On the Mac put this

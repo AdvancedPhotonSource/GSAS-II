@@ -357,6 +357,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     HKLmax = Data['HKLmax']
     HKLmin = Data['HKLmin']
     FosqMax = Data['FoMax']
+    Super = Data.get('Super',0)
     FoMax = math.sqrt(FosqMax)
     xlabel = ['k, h=','h, k=','h, l=']
     ylabel = ['l','l','k']
@@ -369,10 +370,12 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     time0 = time.time()
     for refl in hklRef:
         H = np.array(refl[:3])
+        if Super and np.any(refl[3:3+Super]):   #skip superlattice reflections for 2D plot
+            continue
         if 'HKLF' in Name:
-            Fosq,sig,Fcsq = refl[5:8]
+            Fosq,sig,Fcsq = refl[5+Super:8+Super]
         else:
-            Fosq,sig,Fcsq = refl[8],1.0,refl[9]
+            Fosq,sig,Fcsq = refl[8+Super],1.0,refl[9+Super]
         HKL.append(H)
         HKLF.append([Fosq,sig,Fcsq])
         if H[izone] == Data['Layer']:
@@ -521,6 +524,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     else:
         cell = [10,10,10,90,90,90]
     drawingData = Data['Drawing']
+    Super = Data.get('Super',0)
     defaultViewPt = copy.copy(drawingData['viewPoint'])
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
     Gmat,gmat = G2lat.cell2Gmat(cell)
@@ -548,9 +552,9 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         for i,refl in enumerate(hklRef):
             H = np.array(refl[:3])
             if 'HKLF' in Name:
-                Fosq,sig,Fcsq = refl[5:8]
+                Fosq,sig,Fcsq = refl[5+Super:8+Super]
             else:
-                Fosq,sig,Fcsq = refl[8],1.0,refl[9]
+                Fosq,sig,Fcsq = refl[8+Super],1.0,refl[9+Super]
             HKL.append(H)
             if Data['Type'] == 'Unit':
                 R[i] = 0.1

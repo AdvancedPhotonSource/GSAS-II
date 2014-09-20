@@ -5061,7 +5061,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2plt.PlotPatterns(G2frame,plotType=kind,newPlot=True)
     elif kind == 'HKLF':
         refList = data[1]['RefList']
-        FoMax = np.max(refList.T[5])
+        FoMax = np.max(refList.T[5+data[1].get('Super',0)])
         controls = {'Type' : 'Fosq','ifFc' : True,     
             'HKLmax' : [int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))],
             'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],

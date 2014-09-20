@@ -127,6 +127,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['AtomPtrs'] = [3,1,7,9]
             if generalData['Type'] =='macromolecular':
                 generalData['AtomPtrs'] = [6,4,10,12]
+        if generalData['Type'] in ['modulated','magnetic',] and 'modDim' not in generalData:
+            generalData['modDim'] = '4'
+            generalData['modVects'] = [{'mod':[0.01,False],'vect':[0,0,1],'maxInd':4},
+                {'mod':[0.01,False],'vect':[0,0,1],'maxInd':4},{'mod':[0.01,False],'vect':[0,0,1],'maxInd':4}]
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
         generalData['NoAtoms'] = {}
@@ -504,6 +508,90 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pawleySizer.Add(pawlNegWt,0,WACV)
             return pawleySizer
             
+        def ModulatedSizer(name):
+            
+            def OnDim(event):
+                generalData['modDim'] = dim.GetValue()
+                wx.CallAfter(UpdateGeneral)
+                
+            def OnVec(event):
+                Obj = event.GetEventObject()
+                ind = Indx[Obj.GetId()]
+                axis = Obj.GetValue().split()
+                try:
+                    hkl = [float(axis[i]) for i in range(3)]
+                except (ValueError,IndexError):
+                    hkl = generalData['modVects'][ind]['vect']
+                if not np.any(np.array(hkl)):
+                    hkl = generalData['modVects'][ind]['vect']
+                generalData['modVects'][ind]['vect'] = hkl
+                h,k,l = hkl
+                Obj.SetValue('%.3f %.3f %.3f'%(h,k,l)) 
+                
+            def OnVal(event):
+                Obj = event.GetEventObject()
+                ind = Indx[Obj.GetId()]
+                try:
+                    val = float(Obj.GetValue())
+                    generalData['modVects'][ind]['mod'][0] = val
+                except ValueError:
+                    pass
+                Obj.SetValue('%.4f'%(generalData['modVects'][ind]['mod'][0]))
+
+            def OnValRef(event):
+                Obj = event.GetEventObject()
+                ind = Indx[Obj.GetId()]
+                generalData['modVects'][ind]['mod'][1] = Obj.GetValue()
+                
+            def OnMax(event):
+                Obj = event.GetEventObject()
+                ind = Indx[Obj.GetId()]
+                generalData['modVects'][ind]['maxInd'] = int(Obj.GetValue())
+            
+            Indx = {}
+            modSizer = wx.BoxSizer(wx.VERTICAL)
+            dimSizer = wx.BoxSizer(wx.HORIZONTAL)
+            dimSizer.Add(wx.StaticText(General,label=' '+name.capitalize()+' structure controls: '),0,WACV)
+            dimSizer.Add(wx.StaticText(General,label=' Modulated structure dimension: '),0,WACV)
+            dimChoice = ['4','5','6']
+            dim = wx.ComboBox(General,-1,value=generalData['modDim'],choices=dimChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            dim.Bind(wx.EVT_COMBOBOX,OnDim)
+            dimSizer.Add(dim,0,WACV)
+            modSizer.Add(dimSizer)
+            vecSizer = wx.FlexGridSizer(1,7,5,5)
+            indChoice = ['0','1','2','3','4','5','6','7']
+            for i in range(int(generalData['modDim'])-3):
+                vecSizer.Add(wx.StaticText(General,label=' Modulation vector #%d: '%(i+1)),0,WACV)
+                vec = generalData['modVects'][i]
+                Vec = wx.TextCtrl(General,
+                    value=' %.3f %.3f %.3f '%(vec['vect'][0],vec['vect'][1],vec['vect'][2]),
+                    style=wx.TE_PROCESS_ENTER)
+                Vec.Bind(wx.EVT_TEXT_ENTER,OnVec)        
+                Vec.Bind(wx.EVT_KILL_FOCUS,OnVec)
+                vecSizer.Add(Vec,0,WACV)
+                Indx[Vec.GetId()] = i
+                vecSizer.Add(wx.StaticText(General,label=' value: '),0,WACV)
+                Val = wx.TextCtrl(General,value='%.4f'%(vec['mod'][0]),style=wx.TE_PROCESS_ENTER)
+                Val.Bind(wx.EVT_TEXT_ENTER,OnVal)        
+                Val.Bind(wx.EVT_KILL_FOCUS,OnVal)
+                vecSizer.Add(Val,0,WACV)
+                Indx[Val.GetId()] = i
+                Ref = wx.CheckBox(General,label='Refine?')
+                Ref.SetValue(vec['mod'][1])
+                Indx[Ref.GetId()] = i
+                Ref.Bind(wx.EVT_CHECKBOX, OnValRef)
+                vecSizer.Add(Ref,0,WACV)
+                vecSizer.Add(wx.StaticText(General,label=' max index: '),0,WACV)
+                Max = wx.ComboBox(General,-1,value='%d'%(vec['maxInd']),choices=indChoice,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                Max.Bind(wx.EVT_TEXT_ENTER,OnMax)        
+                Max.Bind(wx.EVT_KILL_FOCUS,OnMax)
+                vecSizer.Add(Max,0,WACV)
+                Indx[Max.GetId()] = i
+            modSizer.Add(vecSizer)
+            return modSizer
+            
         def MapSizer():
             
             def OnMapType(event):
@@ -825,17 +913,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add((5,5),0)            
             mainSizer.Add(ElemSizer())
         G2gd.HorizontalLine(mainSizer,General)
+        
+        if generalData['Type'] in ['modulated','magnetic',]:
+            mainSizer.Add(wx.StaticText(General,label='NB: This does nothing yet'),0,WACV)
+            mainSizer.Add(ModulatedSizer(generalData['Type']))
+            G2gd.HorizontalLine(mainSizer,General)
 
         mainSizer.Add(PawleySizer())
         G2gd.HorizontalLine(mainSizer,General)
         
         mainSizer.Add(MapSizer())
         G2gd.HorizontalLine(mainSizer,General)
-
+        
         mainSizer.Add(FlipSizer())
-        G2gd.HorizontalLine(mainSizer,General)
-
-        mainSizer.Add(MCSASizer())
+        if generalData['Type'] in ['nuclear','macromolecular']:
+            G2gd.HorizontalLine(mainSizer,General)
+            mainSizer.Add(MCSASizer())
         SetPhaseWindow(G2frame.dataFrame,General,mainSizer)
         G2frame.dataFrame.SetStatusText('')
 

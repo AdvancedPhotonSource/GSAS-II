@@ -8,15 +8,16 @@
 ########### SVN repository information ###################
 #
 '''
-*Module G2phase: PDB and .EXP*
+*Module G2phase: PDB, .EXP & JANA m40,m50*
 ------------------------------------
 
 A set of short routines to read in phases using routines that were
-previously implemented in GSAS-II: PDB and GSAS .EXP file formats
+previously implemented in GSAS-II: PDB, GSAS .EXP and JANA m40-m50 file formats
 
 '''
 
 import sys
+import os.path
 import math
 import random as ran
 import traceback
@@ -334,5 +335,139 @@ class EXP_ReaderClass(G2IO.ImportPhase):
         else:
             general['AtomPtrs'] = [3,1,7,9]    
         general['SH Texture'] = textureData
+        Phase['Atoms'] = Atoms
+        return Phase
+
+class JANA_ReaderClass(G2IO.ImportPhase):
+    'Routine to import Phase information from a JANA2006 file'
+    def __init__(self):
+        super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
+            extensionlist=('.m50','.M50'),
+            strictExtension=True,
+            formatName = 'JANA m50',
+            longFormatName = 'JANA2006 phase import'
+            )
+    def ContentsValidator(self, filepointer):
+        '''Taking a stab a validating a .m50 file
+        (look for cell & at least one atom)
+        '''
+        for i,l in enumerate(filepointer):
+            if l.startswith('cell'):
+                break
+        else:
+            self.errors = 'no cell record found'
+            return False
+        for i,l in enumerate(filepointer):
+            if l.startswith('spgroup'):
+                return True
+        self.errors = 'no spgroup record found after cell record'
+        return False
+    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        'Read a m50 file using :meth:`ReadJANAPhase`'
+        try:
+            self.Phase = self.ReadJANAPhase(filename, ParentFrame)
+            return True
+        except Exception as detail:
+            self.errors += '\n  '+str(detail)
+            print 'JANA read error:',detail # for testing
+            traceback.print_exc(file=sys.stdout)
+            return False
+        
+    def ReadJANAPhase(self,filename,parent=None):
+        '''Read a phase from a JANA2006 m50 & m40 files.
+        '''
+        self.errors = 'Error opening file'
+        file = open(filename, 'Ur') #contains only cell & spcgroup
+        Phase = {}
+        Title = os.path.basename(filename)
+        Compnd = ''
+        Atoms = []
+        Atypes = []
+        S = file.readline()
+        line = 1
+        SGData = None
+        cell = None
+        while S:
+            self.errors = 'Error reading at line '+str(line)
+            if 'title' in S and S != 'title\n':
+                Title = S.split()[1]
+            elif 'cell' in S[:4]:
+                cell = S[5:].split()
+                cell=[float(cell[0]),float(cell[1]),float(cell[2]),
+                    float(cell[3]),float(cell[4]),float(cell[5])]
+                Volume = G2lat.calc_V(G2lat.cell2A(cell))
+            elif 'spgroup' in S:
+                SpGrp = S.split()[1]
+                SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
+                E,SGData = G2spc.SpcGroup(SpGrp)
+                # space group processing failed, try to look up name in table
+                if E:
+                    SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
+                    if SpGrpNorm:
+                        E,SGData = G2spc.SpcGroup(SpGrpNorm)
+                while E:
+                    print G2spc.SGErrors(E)
+                    dlg = wx.TextEntryDialog(parent,
+                        SpGrp[:-1]+' is invalid \nN.B.: make sure spaces separate axial fields in symbol',
+                        'ERROR in space group symbol','',style=wx.OK)
+                    if dlg.ShowModal() == wx.ID_OK:
+                        SpGrp = dlg.GetValue()
+                        E,SGData = G2spc.SpcGroup(SpGrp)
+                    else:
+                        SGData = G2IO.SGData # P 1
+                        self.warnings += '\nThe space group was not interpreted and has been set to "P 1".'
+                        self.warnings += "Change this in phase's General tab."            
+                    dlg.Destroy()
+                SGlines = G2spc.SGPrint(SGData)
+                for l in SGlines: print l
+            elif 'atom' in S[:4]:
+                Atypes.append(S.split()[1])
+            S = file.readline()
+            line += 1
+        file.close()
+        #read atoms from m40 file
+        if not SGData:
+            self.warnings += '\nThe space group was not read before atoms and has been set to "P 1". '
+            self.warnings += "Change this in phase's General tab."
+            SGData = G2IO.SGData # P 1
+        filename2 = os.path.splitext(filename)[0]+'.m40'
+        file2 = open(filename2,'Ur')
+        S = file2.readline()
+        line = 1
+        self.errors = 'Error reading at line '+str(line)
+        nAtoms = int(S.split()[0])
+        for i in range(4):
+            S = file2.readline()            
+        line = 5
+        for i in range(nAtoms):
+            S1 = file2.readline()
+            S2 = file2.readline()
+            XYZ = [float(S1[27:36]),float(S1[36:45]),float(S1[45:54])]
+            SytSym,Mult = G2spc.SytSym(XYZ,SGData)
+            Type = Atypes[int(S1[9:11])-1]
+            Name = S1[:8].strip()
+            if S1[11:15].strip() == '1':
+                Uiso = float(S2[:9])
+                Uij = [0,0,0,0,0,0]
+                IA = 'I'
+            elif S1[11:15].strip() == '2':
+                IA = 'A'
+                Uiso = 0.
+                Uij = [float(S2[:9]),float(S2[9:18]),float(S2[18:27]),
+                    float(S2[27:36]),float(S2[36:45]),float(S2[45:54])]
+            Atom = [Name,Type,'',XYZ[0],XYZ[1],XYZ[2],1.0,SytSym,Mult,IA,Uiso,
+                Uij[0],Uij[1],Uij[2],Uij[3],Uij[4],Uij[5]]
+            Atom.append(ran.randint(0,sys.maxint))
+            Atoms.append(Atom)
+            line += 2
+        file2.close()
+        self.errors = 'Error after read complete'
+        if not SGData:
+            raise self.ImportException("No space group (spcgroup entry) found")
+        if not cell:
+            raise self.ImportException("No cell found")
+        Phase = G2IO.SetNewPhase(Name=Title,SGData=SGData,cell=cell+[Volume,])
+        Phase['General']['Type'] = 'nuclear'
+        Phase['General']['AtomPtrs'] = [3,1,7,9]
         Phase['Atoms'] = Atoms
         return Phase

@@ -2632,7 +2632,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     if HKLF:
         G2gd.SetDataMenuBar(G2frame)
         refs = data[1]['RefList']
-    else:        
+        Super = data[1].get('Super',0)
+    else:
+        Super = 0   #for now        
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()    
@@ -2657,14 +2659,18 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             refs = np.vstack((refList.T[:18],I100)).T
             
     for i in range(len(refs)): rowLabels.append(str(i))
-    Types = 4*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
+    Types = (4+Super)*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
         2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
         [wg.GRID_VALUE_FLOAT+':10,3',]
+    superLabels = ['M1','M2','M3']
     if HKLF:
         colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC',]
         if 'T' in Inst['Type'][0]:
             colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','wave','tbar']
-            Types += 2*[wg.GRID_VALUE_FLOAT+':10,3',]            
+            Types += 2*[wg.GRID_VALUE_FLOAT+':10,3',]
+        if Super:
+            for i in range(Super):
+                colLabels.insert(3+i,superLabels[i])
     else:
         if 'C' in Inst['Type'][0]:
             colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100']

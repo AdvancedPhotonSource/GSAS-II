@@ -187,7 +187,10 @@ def getVCov(varyNames,varyList,covMatrix):
             try:
                 vcov[i1][i2] = covMatrix[varyList.index(name1)][varyList.index(name2)]
             except ValueError:
-                vcov[i1][i2] = 0.0
+                if i1 == i2:
+                    vcov[i1][i2] = 1.0
+                else: 
+                    vcov[i1][i2] = 0.0
     return vcov
 
 def FindAtomIndexByIDs(atomData,IDs,Draw=True):
@@ -2941,7 +2944,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
                 cosTable.append(G2lat.CosAngle(Heqv,MDvec,Gmat))
         cosTable = np.array(cosTable)**2
         nRef = len(refs)
-        if generalData['doPawley'] and (covData['freshCOV'] or  MCSA['newDmin']):
+#        if generalData['doPawley'] and (covData['freshCOV'] or  MCSA['newDmin']):
+        if covData['freshCOV'] or  MCSA['newDmin']:
             vList = covData['varyList']
             covMatrix = covData['covMatrix']
             rcov = getVCov(vNames,vList,covMatrix)

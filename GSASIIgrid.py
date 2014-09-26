@@ -3201,6 +3201,12 @@ class DataFrame(wx.Frame):
             text='Compute ISODISTORT mode values',
             help='Compute values of ISODISTORT modes from atom parameters')
         self.PostfillDataMenu()
+        
+        # Phase / Imcommensurate "waves" tab
+        self.WavesData = wx.MenuBar()
+        self.PrefillDataMenu(self.WavesData,helpType='Wave Data', helpLbl='Imcommensurate wave data')
+        self.WavesData.Append(menu=wx.Menu(title=''),title='Select tab')
+        self.PostfillDataMenu()
                  
         # Phase / Draw Options tab
         self.DataDrawOptions = wx.MenuBar()
@@ -4960,15 +4966,14 @@ def UpdatePWHKPlot(G2frame,kind,item):
 
     def OnPlot3DHKL(event):
         refList = data[1]['RefList']
-        phaseName = data[0].get('0::Name','no phase')
-        FoMax = np.max(refList.T[8])
+        FoMax = np.max(refList.T[8+Super])
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
         Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
         Vpoint = [int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))]
         controls = {'Type' : 'Fosq','Iscale' : False,'HKLmax' : Hmax,'HKLmin' : Hmin,
             'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
             'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,
-            'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]}}
+            'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
     def OnErrorAnalysis(event):
@@ -5060,12 +5065,23 @@ def UpdatePWHKPlot(G2frame,kind,item):
     if kind in ['PWDR','SASD']:
         G2plt.PlotPatterns(G2frame,plotType=kind,newPlot=True)
     elif kind == 'HKLF':
+        Name = G2frame.PatternTree.GetItemText(item)
+        phaseName = G2pdG.IsHistogramInAnyPhase(G2frame,Name)
+        if phaseName:
+            pId = GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
+            phaseId =  GetPatternTreeItemId(G2frame,pId,phaseName)
+            General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+            Super = General.get('Super',0)
+            SuperVec = General.get('SuperVec',[])
+        else:
+            Super = 0
+            SuperVec = []       
         refList = data[1]['RefList']
         FoMax = np.max(refList.T[5+data[1].get('Super',0)])
-        controls = {'Type' : 'Fosq','ifFc' : True,     
+        controls = {'Type' : 'Fo','ifFc' : True,     
             'HKLmax' : [int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))],
             'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],
-            'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,}
+            'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,'Super':Super,'SuperVec':SuperVec}
         G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList)
                  
 ################################################################################

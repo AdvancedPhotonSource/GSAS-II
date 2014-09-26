@@ -63,7 +63,7 @@ def IsHistogramInAnyPhase(G2frame,histoName):
             data = G2frame.PatternTree.GetItemPyData(item)
             histoList = data['Histograms'].keys()
             if histoName in histoList:
-                return True
+                return G2frame.PatternTree.GetItemText(item)
             item, cookie = G2frame.PatternTree.GetNextChild(phases, cookie)
         return False
     else:
@@ -2585,56 +2585,69 @@ def UpdateUnitCellsGrid(G2frame, data):
 def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     '''respond to selection of PWDR Reflections data tree item.
     '''
+    def OnPlotHKL(event):
+        FoMax = np.max(refList.T[8+Super])
+        Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
+        Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
+        controls = {'Type' : 'Fo','ifFc' : True,'HKLmax' : Hmax,'HKLmin' : Hmin,
+            'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,'Super':Super,'SuperVec':SuperVec}
+        G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
+        
+    def OnPlot3DHKL(event):
+        FoMax = np.max(refList.T[8+Super])
+        Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
+        Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
+        Vpoint = [int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))]
+        controls = {'Type':'Fosq','Iscale':False,'HKLmax':Hmax,'HKLmin':Hmin,
+            'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
+            'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,
+            'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
+        G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
+        
+    def OnSelectPhase(event):
+        dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',phases)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                G2frame.RefList = phases[sel]
+                UpdateReflectionGrid(G2frame,data)
+        finally:
+            dlg.Destroy()
+        G2plt.PlotPatterns(G2frame)
+            
     if not data:
         print 'No phases, no reflections'
         return
     if HKLF:
         G2frame.RefList = 1
-        phaseName = Name
+        phaseName = IsHistogramInAnyPhase(G2frame,Name)
     else:
         phaseName = G2frame.RefList
         phases = data.keys()
-    
-        def OnSelectPhase(event):
-            dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',phases)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    sel = dlg.GetSelection()
-                    G2frame.RefList = phases[sel]
-                    UpdateReflectionGrid(G2frame,data)
-            finally:
-                dlg.Destroy()
-            G2plt.PlotPatterns(G2frame)
-            
-        def OnPlotHKL(event):
-            FoMax = np.max(refList.T[8])
-            Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
-            Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
-            controls = {'Type' : 'Fo','ifFc' : True,'HKLmax' : Hmax,'HKLmin' : Hmin,
-                'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,}
-            G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
-            
-        def OnPlot3DHKL(event):
-            FoMax = np.max(refList.T[8])
-            Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
-            Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
-            Vpoint = [int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))]
-            controls = {'Type':'Fosq','Iscale':False,'HKLmax':Hmax,'HKLmin':Hmin,
-                'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
-                'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,
-                'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]}}
-            G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
-        
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    if phaseName:
+        pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
+        phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
+        General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+        Super = General.get('Super',0)
+        SuperVec = General.get('SuperVec',[])
+    else:
+        Super = 0
+        SuperVec = []       
     rowLabels = []
     if HKLF:
         G2gd.SetDataMenuBar(G2frame)
-        refs = data[1]['RefList']
-        Super = data[1].get('Super',0)
+        refList = data[1]['RefList']
+        G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
+        if not G2frame.dataFrame.GetStatusBar():
+            Status = G2frame.dataFrame.CreateStatusBar()    
+        G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
+        G2frame.dataFrame.SelectPhase.Enable(False)
+        refs = refList
     else:
-        Super = 0   #for now        
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()    
@@ -2646,17 +2659,17 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             G2frame.dataFrame.SelectPhase.Enable(True)
         try:            #patch for old reflection lists
             refList = np.array(data[G2frame.RefList]['RefList'])
-            I100 = refList.T[8]*refList.T[11]
+            I100 = refList.T[8+Super]*refList.T[11+Super]
         except TypeError:
-            refList = np.array([refl[:11] for refl in data[G2frame.RefList]])
-            I100 = refList.T[8]*np.array([refl[11] for refl in data[G2frame.RefList]])
+            refList = np.array([refl[:11+Super] for refl in data[G2frame.RefList]])
+            I100 = refList.T[8+Super]*np.array([refl[11+Super] for refl in data[G2frame.RefList]])
         Imax = np.max(I100)
         if Imax:
             I100 *= 100.0/Imax
         if 'C' in Inst['Type'][0]:
-            refs = np.vstack((refList.T[:15],I100)).T
+            refs = np.vstack((refList.T[:15+Super],I100)).T
         elif 'T' in Inst['Type'][0]:
-            refs = np.vstack((refList.T[:18],I100)).T
+            refs = np.vstack((refList.T[:18+Super],I100)).T
             
     for i in range(len(refs)): rowLabels.append(str(i))
     Types = (4+Super)*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
@@ -2678,6 +2691,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         elif 'T' in Inst['Type'][0]:
             colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100']
             Types += 7*[wg.GRID_VALUE_FLOAT+':10,3',]
+        if Super:
+            for i in range(Super):
+                colLabels.insert(3+i,superLabels[i])
             
     G2frame.PeakTable = G2gd.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)

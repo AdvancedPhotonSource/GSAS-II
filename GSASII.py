@@ -633,6 +633,11 @@ class GSASII(wx.Frame):
             if phaseName not in newPhaseList: continue
             generalData = data['General']
             SGData = generalData['SGData']
+            Super = generalData.get('Super',0)
+            SuperVec = []
+            for i in range(Super):
+                SuperVec.append(generalData['SuperVec'][i][0])
+                SuperVec = np.array(SuperVec)
             UseList = data['Histograms']
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
@@ -643,10 +648,12 @@ class GSASII(wx.Frame):
                     Id = G2gd.GetPatternTreeItemId(self,self.root,histoName)
                     refDict,reflData = self.PatternTree.GetItemPyData(Id)
                     G,g = G2lat.cell2Gmat(generalData['Cell'][1:7])
+                    Super = reflData.get('Super',0)
                     for iref,ref in enumerate(reflData['RefList']):
-                        H = list(ref[:3])
-                        ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-                        iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
+                        hkl = ref[:3]
+                        H = list(hkl+np.sum(SuperVec*ref[3:3+Super],axis=0))
+                        ref[4+Super] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
+                        iabsnt,ref[3+Super],Uniq,phi = G2spc.GenHKLf(H,SGData)
                     UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
                 elif histoName in PWDRlist:
                     Id = G2gd.GetPatternTreeItemId(self,self.root,histoName)
@@ -770,6 +777,11 @@ class GSASII(wx.Frame):
             if iph not in result: continue
             generalData = data['General']
             SGData = generalData['SGData']
+            Super = generalData.get('Super',0)
+            SuperVec = []
+            for i in range(Super):
+                SuperVec.append(generalData['SuperVec'][i][0])
+                SuperVec = np.array(SuperVec)
             UseList = data['Histograms']
             for histoName in newHistList:
                 #redo UpdateHKLFdata(histoName) here:
@@ -778,9 +790,10 @@ class GSASII(wx.Frame):
                 UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
                 G,g = G2lat.cell2Gmat(generalData['Cell'][1:7])
                 for iref,ref in enumerate(reflData['RefList']):
-                    H = list(ref[:3])
-                    ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-                    iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
+                    hkl = ref[:3]
+                    H = list(hkl+np.sum(SuperVec*ref[3:3+Super],axis=0))
+                    ref[4+Super] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
+                    iabsnt,ref[3+Super],Uniq,phi = G2spc.GenHKLf(H,SGData)
         wx.EndBusyCursor()
         
         return # success
@@ -805,8 +818,8 @@ class GSASII(wx.Frame):
             help='Create a powder data set entry that will be simulated',
             kind=wx.ITEM_NORMAL,text='Simulate a dataset')
         self.Bind(wx.EVT_MENU, self.OnDummyPowder, id=item.GetId())
-           
-    def ReadPowderInstprm(self,instfile):       #fix the write routine for [inst1,inst2] style
+        
+    def OpenPowderInstprm(self,instfile):
         '''Read a GSAS-II (new) instrument parameter file
 
         :param str instfile: name of instrument parameter file
@@ -817,15 +830,22 @@ class GSASII(wx.Frame):
         if not os.path.exists(instfile): # no such file
             return None
         File = open(instfile,'r')
-        S = File.readline()
-        if not S.startswith('#GSAS-II'): # not a valid file
-            File.close()
+        lines = File.readlines()
+        File.close()
+        return lines        
+           
+    def ReadPowderInstprm(self,instLines):
+        '''Read lines from a GSAS-II (new) instrument parameter file
+
+        :param list instLines: strings from GSAs-II parameter file
+
+        '''
+        if not instLines[0].startswith('#GSAS-II'): # not a valid file
             return None
         newItems = []
         newVals = []
-        while S:
+        for S in instLines:
             if S[0] == '#':
-                S = File.readline()
                 continue
             [item,val] = S[:-1].split(':')
             newItems.append(item)
@@ -833,8 +853,6 @@ class GSASII(wx.Frame):
                 newVals.append(float(val))
             except ValueError:
                 newVals.append(val)                        
-            S = File.readline()                
-        File.close()
         return G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,]),{}
         
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
@@ -1070,7 +1088,10 @@ class GSASII(wx.Frame):
                 instfile = lastIparmfile
             if os.path.exists(instfile):
                 #print 'debug: try read',instfile
-                instParmList = self.ReadPowderInstprm(instfile)
+                Lines = self.OpenPowderInstprm(instfile)
+                instParmList = None
+                if Lines is not None:
+                    instParmList = self.ReadPowderInstprm(Lines)
                 if instParmList is not None:
                     rd.instfile = instfile
                     rd.instmsg = 'GSAS-II file '+instfile
@@ -1089,7 +1110,10 @@ class GSASII(wx.Frame):
         basename = os.path.splitext(filename)[0]
         for ext in '.instprm','.prm','.inst','.ins':
             instfile = basename + ext
-            instParmList = self.ReadPowderInstprm(instfile)
+            Lines = self.OpenPowderInstprm(instfile)
+            instParmList = None
+            if Lines is not None:
+                instParmList = self.ReadPowderInstprm(Lines)
             if instParmList is not None:
                 rd.instfile = instfile
                 rd.instmsg = 'GSAS-II file '+instfile
@@ -1114,7 +1138,10 @@ class GSASII(wx.Frame):
                     parent=self)
                 if instfile is not None and instfile != self.zipfile:
                     print 'debug:',instfile,'created from ',self.zipfile
-                    instParmList = self.ReadPowderInstprm(instfile)
+                    Lines = self.OpenPowderInstprm(instfile)
+                    instParmList = None
+                    if Lines is not None:
+                        instParmList = self.ReadPowderInstprm(Lines)
                     if instParmList is not None:
                         rd.instfile = instfile
                         rd.instmsg = 'GSAS-II file '+instfile
@@ -1146,7 +1173,10 @@ class GSASII(wx.Frame):
                 instfile = dlg.GetPath()
             dlg.Destroy()
             if not instfile: break
-            instParmList = self.ReadPowderInstprm(instfile)
+            Lines = self.OpenPowderInstprm(instfile)
+            instParmList = None
+            if Lines is not None:
+                instParmList = self.ReadPowderInstprm(Lines)
             if instParmList is not None:
                 rd.instfile = instfile
                 rd.instmsg = 'GSAS-II file '+instfile

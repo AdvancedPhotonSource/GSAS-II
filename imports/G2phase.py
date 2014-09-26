@@ -362,6 +362,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                 return True
         self.errors = 'no spgroup record found after cell record'
         return False
+        
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read a m50 file using :meth:`ReadJANAPhase`'
         try:
@@ -381,12 +382,16 @@ class JANA_ReaderClass(G2IO.ImportPhase):
         Phase = {}
         Title = os.path.basename(filename)
         Compnd = ''
+        Type = 'nuclear'
         Atoms = []
         Atypes = []
+        SuperVec = [[[0,0,.1],False,4],[[0,0,.1],False,4],[[0,0,.1],False,4]]
         S = file.readline()
         line = 1
         SGData = None
+        SuperSg = ''
         cell = None
+        nqi = 0
         while S:
             self.errors = 'Error reading at line '+str(line)
             if 'title' in S and S != 'title\n':
@@ -397,14 +402,16 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                     float(cell[3]),float(cell[4]),float(cell[5])]
                 Volume = G2lat.calc_V(G2lat.cell2A(cell))
             elif 'spgroup' in S:
+                if 'X' in S:
+                    raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
                 SpGrp = S.split()[1]
+                if '(' in SpGrp:    #supercell symmetry - split in 2
+                    SuperStr = SpGrp.split('(')
+                    SpGrp = SuperStr[0]
+                    SuperSg = '('+SuperStr[1]
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
                 E,SGData = G2spc.SpcGroup(SpGrp)
                 # space group processing failed, try to look up name in table
-                if E:
-                    SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
-                    if SpGrpNorm:
-                        E,SGData = G2spc.SpcGroup(SpGrpNorm)
                 while E:
                     print G2spc.SGErrors(E)
                     dlg = wx.TextEntryDialog(parent,
@@ -420,6 +427,13 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                     dlg.Destroy()
                 SGlines = G2spc.SGPrint(SGData)
                 for l in SGlines: print l
+            elif 'qi' in S[:2]:
+                if nqi:
+                    raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
+                Type = 'modulated'
+                vec = S.split()[1:]
+                SuperVec[nqi] = [[float(vec[i]) for i in range(3)],False,4]
+                nqi += 1
             elif 'atom' in S[:4]:
                 Atypes.append(S.split()[1])
             S = file.readline()
@@ -430,6 +444,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
             self.warnings += '\nThe space group was not read before atoms and has been set to "P 1". '
             self.warnings += "Change this in phase's General tab."
             SGData = G2IO.SGData # P 1
+        waveTypes = ['Fourier','Sawtooth','ZigZag',]
         filename2 = os.path.splitext(filename)[0]+'.m40'
         file2 = open(filename2,'Ur')
         S = file2.readline()
@@ -438,28 +453,73 @@ class JANA_ReaderClass(G2IO.ImportPhase):
         nAtoms = int(S.split()[0])
         for i in range(4):
             S = file2.readline()            
-        line = 5
         for i in range(nAtoms):
             S1 = file2.readline()
-            S2 = file2.readline()
+            S1N = S1.split()[-3:]   # no. occ, no. pos waves, no. ADP waves
+            S1N = [int(i) for i in S1N]
+            S1T = list(S1[60:63])
+            waveType = waveTypes[int(S1T[1])]
+            crenelType = ''
+            Spos = []
+            Sadp = []
+            Sfrac = []
+            Smag = []
             XYZ = [float(S1[27:36]),float(S1[36:45]),float(S1[45:54])]
             SytSym,Mult = G2spc.SytSym(XYZ,SGData)
-            Type = Atypes[int(S1[9:11])-1]
+            aType = Atypes[int(S1[9:11])-1]
             Name = S1[:8].strip()
             if S1[11:15].strip() == '1':
+                S2 = file2.readline()
                 Uiso = float(S2[:9])
                 Uij = [0,0,0,0,0,0]
                 IA = 'I'
             elif S1[11:15].strip() == '2':
+                S2 = file2.readline()
                 IA = 'A'
                 Uiso = 0.
                 Uij = [float(S2[:9]),float(S2[9:18]),float(S2[18:27]),
                     float(S2[27:36]),float(S2[36:45]),float(S2[45:54])]
-            Atom = [Name,Type,'',XYZ[0],XYZ[1],XYZ[2],1.0,SytSym,Mult,IA,Uiso,
-                Uij[0],Uij[1],Uij[2],Uij[3],Uij[4],Uij[5]]
+            for i in range(S1N[0]):
+                if not i:
+                    FS = file2.readline()
+                    Sfrac.append(FS[:9])    #'O' or 'delta' = 'length' for crenel
+                    if int(S1T[0]):  #"", "Legendre" or "Xharm" in 18:27 for "crenel"!
+                        waveType = 'Crenel/Fourier' #all waves 'Fourier' no other choice
+                        crenelType = FS[18:27]
+                Sfrac.append(file2.readline()[:18]) #if not crenel = Osin & Ocos
+                # else Osin & Ocos except last one is X40 = 'Center'
+            for i in range(S1N[1]):  
+                Spos.append(file2.readline()[:54])
+            for i in range(S1N[2]):
+                Sadp.append(file2.readline()[:54]+file2.readline())
+            if sum(S1N):    #if any waves: skip mystery line?
+                file2.readline()
+            for i,it in enumerate(Sfrac):
+                print i,it
+                if not i:
+                    if 'Crenel' in waveType:
+                        vals = [float(it),float(Sfrac[-1][:9])]
+                    else:
+                        vals = [float(it),]
+                else:
+                    vals = [float(it[:9]),float(it[9:18])]
+                if 'Crenel' in waveType and i == len(Sfrac)-1:
+                    del Sfrac[-1]
+                    break                
+                Sfrac[i] = [vals,False]
+                print Sfrac[i]
+            for i,it in enumerate(Spos):
+                vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36]),float(it[36:45]),float(it[45:54])]
+                Spos[i] = [vals,False]
+            for i,it in enumerate(Sadp):
+                vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36]),float(it[36:45]),float(it[45:54]),
+                    float(it[54:63]),float(it[63:72]),float(it[72:81]),float(it[81:90]),float(it[90:99]),float(it[99:108])]                
+                Sadp[i] = [vals,False]
+            Atom = [Name,aType,'',XYZ[0],XYZ[1],XYZ[2],1.0,SytSym,Mult,IA,Uiso]
+            Atom += Uij
+            Atom.append({'SS1':{'waveType':waveType,'crenelType':crenelType,'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':Smag}})    #SS2 is for (3+2), etc.
             Atom.append(ran.randint(0,sys.maxint))
             Atoms.append(Atom)
-            line += 2
         file2.close()
         self.errors = 'Error after read complete'
         if not SGData:
@@ -467,7 +527,10 @@ class JANA_ReaderClass(G2IO.ImportPhase):
         if not cell:
             raise self.ImportException("No cell found")
         Phase = G2IO.SetNewPhase(Name=Title,SGData=SGData,cell=cell+[Volume,])
-        Phase['General']['Type'] = 'nuclear'
+        Phase['General']['Type'] = Type
+        Phase['General']['Super'] = nqi
+        Phase['General']['SuperVec'] = SuperVec
+        Phase['General']['SuperSg'] = SuperSg
         Phase['General']['AtomPtrs'] = [3,1,7,9]
         Phase['Atoms'] = Atoms
         return Phase

@@ -190,7 +190,6 @@ class M90_ReaderClass(G2IO.ImportStructFactor):
                     self.RefDict['RefList'].append([h,k,l,m1,m2,m3,0,0,Fo,sigFo,0,Fo,0,0,0])
             self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
-            print self.RefDict['RefList'].shape
             self.RefDict['Type'] = 'SXC'
             self.RefDict['Super'] = self.Super
             self.UpdateParameters(Type='SXC',Wave=wave) # histogram type

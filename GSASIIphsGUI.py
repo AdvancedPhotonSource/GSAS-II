@@ -127,10 +127,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['AtomPtrs'] = [3,1,7,9]
             if generalData['Type'] =='macromolecular':
                 generalData['AtomPtrs'] = [6,4,10,12]
-        if generalData['Type'] in ['modulated','magnetic',] and 'modDim' not in generalData:
-            generalData['modDim'] = '4'
-            generalData['modVects'] = [{'mod':[0.01,False],'vect':[0,0,1],'maxInd':4},
-                {'mod':[0.01,False],'vect':[0,0,1],'maxInd':4},{'mod':[0.01,False],'vect':[0,0,1],'maxInd':4}]
+        if generalData['Type'] in ['modulated','magnetic',] and 'Super' not in generalData:
+            generalData['SuperSg'] = ''
+            generalData['Super'] = 0
+            generalData['SuperVec'] = [[[0,0,.1],False,4],[[0,0,.1],False,4],[[0,0,.1],False,4]]
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
         generalData['NoAtoms'] = {}
@@ -510,80 +510,72 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         def ModulatedSizer(name):
             
+            def OnSuperGp(event):   #need a check on supersymmetry group rules here!
+                generalData['SuperSg'] = event.GetValue()
+            
             def OnDim(event):
-                generalData['modDim'] = dim.GetValue()
+                generalData['Super'] = dim.GetValue()
                 wx.CallAfter(UpdateGeneral)
                 
             def OnVec(event):
                 Obj = event.GetEventObject()
                 ind = Indx[Obj.GetId()]
-                axis = Obj.GetValue().split()
+                vec = Obj.GetValue().split()
                 try:
-                    hkl = [float(axis[i]) for i in range(3)]
+                    Vec = [float(vec[i]) for i in range(3)]
                 except (ValueError,IndexError):
-                    hkl = generalData['modVects'][ind]['vect']
-                if not np.any(np.array(hkl)):
-                    hkl = generalData['modVects'][ind]['vect']
-                generalData['modVects'][ind]['vect'] = hkl
-                h,k,l = hkl
+                    Vec = generalData['SuperVec'][ind][0]
+                if not np.any(np.array(Vec)):
+                    Vec = generalData['SuperVec'][ind][0]
+                generalData['modVects'][ind][0] = hkl
+                h,k,l = Vec
                 Obj.SetValue('%.3f %.3f %.3f'%(h,k,l)) 
                 
-            def OnVal(event):
+            def OnVecRef(event):
                 Obj = event.GetEventObject()
                 ind = Indx[Obj.GetId()]
-                try:
-                    val = float(Obj.GetValue())
-                    generalData['modVects'][ind]['mod'][0] = val
-                except ValueError:
-                    pass
-                Obj.SetValue('%.4f'%(generalData['modVects'][ind]['mod'][0]))
-
-            def OnValRef(event):
-                Obj = event.GetEventObject()
-                ind = Indx[Obj.GetId()]
-                generalData['modVects'][ind]['mod'][1] = Obj.GetValue()
+                generalData['SuperVec'][ind][1] = Obj.GetValue()
                 
             def OnMax(event):
                 Obj = event.GetEventObject()
                 ind = Indx[Obj.GetId()]
-                generalData['modVects'][ind]['maxInd'] = int(Obj.GetValue())
+                generalData['SuperVec'][ind][2] = int(Obj.GetValue())
             
             Indx = {}
             modSizer = wx.BoxSizer(wx.VERTICAL)
             dimSizer = wx.BoxSizer(wx.HORIZONTAL)
             dimSizer.Add(wx.StaticText(General,label=' '+name.capitalize()+' structure controls: '),0,WACV)
             dimSizer.Add(wx.StaticText(General,label=' Modulated structure dimension: '),0,WACV)
-            dimChoice = ['4','5','6']
-            dim = wx.ComboBox(General,-1,value=generalData['modDim'],choices=dimChoice,
+            dimChoice = ['1']       # restricted to (3+1) superlattices for now
+            dim = wx.ComboBox(General,value=str(generalData['Super']),choices=dimChoice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             dim.Bind(wx.EVT_COMBOBOX,OnDim)
             dimSizer.Add(dim,0,WACV)
+            dimSizer.Add(wx.StaticText(General,label=' Superspace group: '+generalData['SGData']['SpGrp']),0,WACV)
+            superGp = wx.TextCtrl(General,value=generalData['SuperSg'],style=wx.TE_PROCESS_ENTER)
+            superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)        
+            superGp.Bind(wx.EVT_KILL_FOCUS,OnSuperGp)
+            dimSizer.Add(superGp,0,WACV)
             modSizer.Add(dimSizer)
-            vecSizer = wx.FlexGridSizer(1,7,5,5)
+            vecSizer = wx.FlexGridSizer(1,5,5,5)
             indChoice = ['0','1','2','3','4','5','6','7']
-            for i in range(int(generalData['modDim'])-3):
+            for i in range(int(generalData['Super'])):
                 vecSizer.Add(wx.StaticText(General,label=' Modulation vector #%d: '%(i+1)),0,WACV)
-                vec = generalData['modVects'][i]
+                vec = generalData['SuperVec'][i][0]
                 Vec = wx.TextCtrl(General,
-                    value=' %.3f %.3f %.3f '%(vec['vect'][0],vec['vect'][1],vec['vect'][2]),
+                    value=' %.3f %.3f %.3f '%(vec[0],vec[1],vec[2]),
                     style=wx.TE_PROCESS_ENTER)
                 Vec.Bind(wx.EVT_TEXT_ENTER,OnVec)        
                 Vec.Bind(wx.EVT_KILL_FOCUS,OnVec)
                 vecSizer.Add(Vec,0,WACV)
                 Indx[Vec.GetId()] = i
-                vecSizer.Add(wx.StaticText(General,label=' value: '),0,WACV)
-                Val = wx.TextCtrl(General,value='%.4f'%(vec['mod'][0]),style=wx.TE_PROCESS_ENTER)
-                Val.Bind(wx.EVT_TEXT_ENTER,OnVal)        
-                Val.Bind(wx.EVT_KILL_FOCUS,OnVal)
-                vecSizer.Add(Val,0,WACV)
-                Indx[Val.GetId()] = i
                 Ref = wx.CheckBox(General,label='Refine?')
-                Ref.SetValue(vec['mod'][1])
+                Ref.SetValue(generalData['SuperVec'][i][1])
                 Indx[Ref.GetId()] = i
-                Ref.Bind(wx.EVT_CHECKBOX, OnValRef)
+                Ref.Bind(wx.EVT_CHECKBOX, OnVecRef)
                 vecSizer.Add(Ref,0,WACV)
                 vecSizer.Add(wx.StaticText(General,label=' max index: '),0,WACV)
-                Max = wx.ComboBox(General,-1,value='%d'%(vec['maxInd']),choices=indChoice,
+                Max = wx.ComboBox(General,-1,value='%d'%(generalData['SuperVec'][i][2]),choices=indChoice,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 Max.Bind(wx.EVT_TEXT_ENTER,OnMax)        
                 Max.Bind(wx.EVT_KILL_FOCUS,OnMax)
@@ -1314,18 +1306,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+":I,A",]
         Types += 7*[wg.GRID_VALUE_FLOAT+':10,5',]
         colLabels = ['Name','Type','refine','x','y','z','frac','site sym','mult','I/A','Uiso','U11','U22','U33','U12','U13','U23']
-        if generalData['Type'] == 'magnetic':
-            colLabels += ['Mx','My','Mz']
-            Types[2] = wg.GRID_VALUE_CHOICE+": ,X,XU,U,M,MX,MXU,MU,F,FX,FXU,FU,FM,FMX,FMU,"
-            Types += 3*[wg.GRID_VALUE_FLOAT+':10,4',]
-        elif generalData['Type'] == 'macromolecular':
+        if generalData['Type'] == 'macromolecular':
             colLabels = ['res no','residue','chain'] + colLabels
             Types = [wg.GRID_VALUE_STRING,
                 wg.GRID_VALUE_CHOICE+AAchoice,
                 wg.GRID_VALUE_STRING] + Types
-        elif generalData['Type'] == 'modulated':
-            Types += []
-            colLabels += []
         SGData = data['General']['SGData']
         G2frame.dataFrame.SetStatusText('')
         if SGData['SGPolax']:
@@ -1369,8 +1354,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomData.append([0,Name,'',Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] == 'nuclear':
             atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
-        elif generalData['Type'] == 'magnetic':
-            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0,atId])
+        elif generalData['Type'] in ['modulated','magnetic']:
+            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,[],[],[],[],atId])
         SetupGeneral()
         if 'Atoms' in data['Drawing']:            
             DrawAtomAdd(data['Drawing'],atomData[-1])
@@ -1445,14 +1430,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 [AA1letter[oneLetter]+atom[0],]+atom[2:5]+
                 atom[6:9]+['1',]+['sticks',]+['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
             ct,cs = [4,11]         #type & color
-        elif generalData['Type'] == 'magnetic':
-            if oldatom:
-                atomInfo = [atom[:2]+oldatom[3:]][0]
-            else:
-                atomInfo = [atom[:2]+atom[3:6]+['vdW balls',]+['',]+atom[9:]+[[],[]]][0]
-            ct,cs = [1,8]         #type & color
-    #     elif generalData['Type'] == 'modulated':
-    #        ?????   for future
         atNum = generalData['AtomTypes'].index(atom[ct])
         atomInfo[cs] = list(generalData['Color'][atNum])
         return atomInfo
@@ -1471,8 +1448,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 atomData.insert(indx,[0,'UNK','','UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
             elif generalData['Type'] == 'nuclear':
                 atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
-            elif generalData['Type'] == 'magnetic':
-                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,0,0,0,atId])
+            elif generalData['Type'] in ['modulated','magnetic']:
+                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,[],[],[],[],atId])
             SetupGeneral()
 
     def AtomDelete(event):
@@ -1506,7 +1483,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if Type in ['nuclear','macromolecular']:
                 choice = ['F - site fraction','X - coordinates','U - thermal parameters']
             elif Type == 'magnetic':
-                choice = ['F - site fraction','X - coordinates','U - thermal parameters','M - magnetic moment']
+                choice = ['F - site fraction','X - coordinates','U - thermal parameters']
             dlg = wx.MultiChoiceDialog(G2frame,'Select','Refinement controls',choice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelections()
@@ -1912,8 +1889,121 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             except ValueError:
                 print atom[:ct+1], 'not in Atom array; not updated'
         wx.CallAfter(FillAtomsGrid,Atoms)
-         
+        
+################################################################################
+#### Wave Data page
+################################################################################
+
+    def UpdateWavesData():
+        
+        def AtomSizer(SS,atom):
+            
+            def OnWaveType(event):
+                atom[-2][SS]['waveType']=waveType.GetValue()
+                
+            atomSizer = wx.BoxSizer(wx.HORIZONTAL)
+            atomSizer.Add(wx.StaticText(waveData,label=' Modulation data for atom:    '+atom[0]+'    WaveType: '),0,WACV)            
+            waveType = wx.ComboBox(waveData,value=atom[-2][SS]['waveType'],choices=waveTypes,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
+            atomSizer.Add(waveType,0,WACV)
+            return atomSizer
+            
+        def WaveSizer(waveBlk,Stype,typeName,Names):
+            
+            def OnAddWave(event):
+                Obj = event.GetEventObject()
+                iatm,item = Indx[Obj.GetId()]
+                atomData[iatm][-2][SS][item].append([[0.0 for i in range(numVals[Stype])],False])
+                UpdateWavesData()
+                
+            def OnWaveVal(event):
+                Obj = event.GetEventObject()
+                iatm,item,iwave,ival = Indx[Obj.GetId()]
+                try:
+                    val = float(Obj.GetValue())
+                except ValueError:
+                    val = atomData[iatm][-2][SS][item][iwave][0][ival]
+                Obj.SetValue('%.4f'%val)
+                atomData[iatm][-2][SS][item][iwave][0][ival] = val
+                
+            def OnRefWave(event):
+                Obj = event.GetEventObject()
+                iatm,item,iwave = Indx[Obj.GetId()]
+                atomData[iatm][-2][SS][item][iwave][1] = not atomData[iatm][-2][SS][item][iwave][1]
+                
+            def OnDelWave(event):
+                Obj = event.GetEventObject()
+                iatm,item,iwave = Indx[Obj.GetId()]
+                del atomData[iatm][-2][SS][item][iwave]
+                UpdateWavesData()                
+                
+            waveSizer = wx.BoxSizer(wx.VERTICAL)
+            waveHead = wx.BoxSizer(wx.HORIZONTAL)
+            waveHead.Add(wx.StaticText(waveData,label=typeName+' modulation parameters: '),0,WACV)
+            waveAdd = wx.CheckBox(waveData,label='Add wave?')
+            waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
+            Indx[waveAdd.GetId()] = [iatm,Stype]
+            waveHead.Add(waveAdd,0,WACV)
+            waveSizer.Add(waveHead)
+            if len(waveBlk):
+                waveSizer.Add(wx.StaticText(waveData,label=' Parameters: '+str(Names).rstrip(']').lstrip('[').replace("'",'')),0,WACV)
+                if Stype == 'Sfrac':
+                    Waves = wx.FlexGridSizer(1,4,5,5)
+                else:
+                    Waves = wx.FlexGridSizer(1,8,5,5)
+                for iwave,wave in enumerate(waveBlk):
+                    for ival,val in enumerate(wave[0]):
+                        waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_PROCESS_ENTER)
+                        waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
+                        waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
+                        Indx[waveVal.GetId()] = [iatm,Stype,iwave,ival]
+                        Waves.Add(waveVal,0,WACV)
+                        if len(wave[0]) > 6 and ival == 5:
+                            Waves.Add((5,5),0)
+                            Waves.Add((5,5),0)
+                    waveRef = wx.CheckBox(waveData,label='Refine?')
+                    waveRef.SetValue(wave[1])
+                    Indx[waveRef.GetId()] = [iatm,Stype,iwave]
+                    waveRef.Bind(wx.EVT_CHECKBOX, OnRefWave)
+                    Waves.Add(waveRef,0,WACV)
+                    waveDel = wx.CheckBox(waveData,label='Delete?')
+                    Indx[waveDel.GetId()] = [iatm,Stype,iwave]
+                    waveDel.Bind(wx.EVT_CHECKBOX, OnDelWave)
+                    Waves.Add(waveDel,0,WACV)                
+                waveSizer.Add(Waves)                    
+            return waveSizer
+            
+        Indx = {}
+        G2frame.dataFrame.SetStatusText('')
+        generalData = data['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        atomData = data['Atoms']
+        if waveData.GetSizer():
+            waveData.GetSizer().Clear(True)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        typeNames = {'Sfrac':' Site fraction','Spos':' Position','Sadp':' Thermal motion','Smag':' Magnetic moment'}
+        numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6}
+        posNames = ['Xsin','Ysin','Zsin','Xcos','Ysin','Zsin']
+        adpNames = ['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin',
+            'U11cos','U22cos','U33cos','U12cos','U13cos','U23cos']
+        magNames = ['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']
+        fracNames = ['Flen','Fcent','Fsin','Fcos']
+        waveTypes = ['Fourier','Sawtooth','ZigZag','Crenel/Fourier']
+        Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
+        mainSizer.Add(wx.StaticText(waveData,label=' Incommensurate propagation wave data:'),0,WACV)
+        if generalData['Type'] in ['modulated','magnetic']:
+            for iatm,atom in enumerate(atomData):
+                for SS in ['SS1',]:  #future SS2 & SS3
+                    G2gd.HorizontalLine(mainSizer,waveData)
+                    mainSizer.Add(AtomSizer(SS,atom))
+                    for Stype in ['Sfrac','Spos','Sadp','Smag']:
+                        if generalData['Type'] == 'modulated' and Stype == 'Smag':
+                            break
+                        mainSizer.Add(WaveSizer(atom[-2][SS][Stype],Stype,typeNames[Stype],Labels[Stype]))
                         
+        SetPhaseWindow(G2frame.dataFrame,waveData,mainSizer)
+                       
 ################################################################################
 #Structure drawing GUI stuff                
 ################################################################################
@@ -2786,7 +2876,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             DATData['pId'] = data['pId']
             DATData['covData'] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Covariance'))
         G2stMn.DisAglTor(DATData)
-                
+                        
 ################################################################################
 #### Draw Options page
 ################################################################################
@@ -5399,6 +5489,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
                 G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)                
             FillAtomsGrid(Atoms)
+        elif text == 'Wave Data' and data['General']['Type'] in ['modulated','magnetic']:
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.WavesData)
+            FillSelectPageMenu(G2frame.dataFrame.WavesData)
+            UpdateWavesData()
+            wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataDrawOptions)
             FillSelectPageMenu(G2frame.dataFrame.DataDrawOptions)
@@ -5511,6 +5606,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.gridList.append(Atoms)
     G2frame.dataDisplay.AddPage(Atoms,'Atoms')
     Pages.append('Atoms')
+    if data['General']['Type'] in ['modulated','magnetic']:
+        waveData = wx.ScrolledWindow(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(waveData,'Wave Data')
+        Pages.append('Wave Data')        
     drawOptions = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')
     Pages.append('Draw Options')

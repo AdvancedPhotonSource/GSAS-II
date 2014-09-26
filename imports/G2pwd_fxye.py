@@ -160,8 +160,12 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                     j += 1
                     if j < Nch:
                         x.append(xi)
-                        y.append(yi)
-                        w.append(1.0/vi)
+                        if vi <= 0.:
+                            y.append(0.)
+                            w.append(0.)
+                        else:
+                            y.append(yi)
+                            w.append(1.0/vi)
                 S = File.readline()
             N = len(x)
             if self.clockWd:

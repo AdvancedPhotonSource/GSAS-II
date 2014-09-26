@@ -357,7 +357,11 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     HKLmax = Data['HKLmax']
     HKLmin = Data['HKLmin']
     FosqMax = Data['FoMax']
-    Super = Data.get('Super',0)
+    Super = Data['Super']
+    SuperVec = []
+    for i in range(Super):
+        SuperVec.append(Data['SuperVec'][i][0])
+        SuperVec = np.array(SuperVec)
     FoMax = math.sqrt(FosqMax)
     xlabel = ['k, h=','h, k=','h, l=']
     ylabel = ['l','l','k']
@@ -369,14 +373,12 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     HKLF = []
     time0 = time.time()
     for refl in hklRef:
-        H = np.array(refl[:3])
-        if Super and np.any(refl[3:3+Super]):   #skip superlattice reflections for 2D plot
-            continue
+        H = refl[:3]
         if 'HKLF' in Name:
             Fosq,sig,Fcsq = refl[5+Super:8+Super]
         else:
             Fosq,sig,Fcsq = refl[8+Super],1.0,refl[9+Super]
-        HKL.append(H)
+        HKL.append(H+np.sum(SuperVec*refl[3:3+Super],axis=0))
         HKLF.append([Fosq,sig,Fcsq])
         if H[izone] == Data['Layer']:
             A = 0
@@ -409,8 +411,9 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 if sig > 0.:
                     A = (Fosq-Fcsq)/(3*sig)
                 if abs(A) < 3.0: A = 0
-                B = 0                    
-            xy = (H[pzone[izone][0]],H[pzone[izone][1]])
+                B = 0 
+            h = H+np.sum(SuperVec*refl[3:3+Super],axis=0)                   
+            xy = (h[pzone[izone][0]],h[pzone[izone][1]])
             if Type in ['|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']:
                 if A > 0.0:
                     Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w'))
@@ -430,7 +433,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                         else:                    
                             Plot.add_artist(Circle(xy,radius=radius,ec='r',fc='r'))
 #    print 'plot time: %.3f'%(time.time()-time0)
-    HKL = np.array(HKL,dtype=np.int)
+    HKL = np.array(HKL)
     HKLF = np.array(HKLF)
     Plot.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=12)
     Plot.set_ylabel(ylabel[izone],fontsize=12)
@@ -524,7 +527,11 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     else:
         cell = [10,10,10,90,90,90]
     drawingData = Data['Drawing']
-    Super = Data.get('Super',0)
+    Super = Data['Super']
+    SuperVec = []
+    for i in range(Super):
+        SuperVec.append(Data['SuperVec'][i][0])
+        SuperVec = np.array(SuperVec)
     defaultViewPt = copy.copy(drawingData['viewPoint'])
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
     Gmat,gmat = G2lat.cell2Gmat(cell)
@@ -550,12 +557,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         HKL = []
         RC = []
         for i,refl in enumerate(hklRef):
-            H = np.array(refl[:3])
+            H = refl[:3]
             if 'HKLF' in Name:
                 Fosq,sig,Fcsq = refl[5+Super:8+Super]
             else:
                 Fosq,sig,Fcsq = refl[8+Super],1.0,refl[9+Super]
-            HKL.append(H)
+            HKL.append(H+np.sum(SuperVec*refl[3:3+Super],axis=0))
             if Data['Type'] == 'Unit':
                 R[i] = 0.1
                 C.append(Gr)
@@ -591,11 +598,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                     C.append(Rd)
         R /= np.max(R)
         R *= Data['Scale']
+        R = np.where(R<1.e-5,1.e-5,R)
         if Data['Iscale']:
             R = np.where(R<=1.,R,1.)
             C = np.array(C)
             C = (C.T*R).T
-            R = np.ones_like(R)*0.1     
+            R = np.ones_like(R)*0.05     
         return HKL,zip(list(R),C)
 
     def SetTranslation(newxy):

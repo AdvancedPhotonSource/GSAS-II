@@ -1137,7 +1137,7 @@ def UpdateInstrumentGrid(G2frame,data):
                 # make sure extension is .instprm
                 filename = os.path.splitext(filename)[0]+'.instprm'
                 File = open(filename,'w')
-                File.write("#GSAS-II instrument parameter file; do not add/delete or change order of items!\n")
+                File.write("#GSAS-II instrument parameter file; do not add/delete items!\n")
                 for item in data:
                     File.write(item+':'+str(data[item][1])+'\n')
                 File.close()

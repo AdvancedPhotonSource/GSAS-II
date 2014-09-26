@@ -837,7 +837,7 @@ class GSASII(wx.Frame):
     def ReadPowderInstprm(self,instLines):
         '''Read lines from a GSAS-II (new) instrument parameter file
 
-        :param list instLines: strings from GSAs-II parameter file
+        :param list instLines: strings from GSAS-II parameter file; can be concatenated with ';'
 
         '''
         if not instLines[0].startswith('#GSAS-II'): # not a valid file
@@ -847,12 +847,14 @@ class GSASII(wx.Frame):
         for S in instLines:
             if S[0] == '#':
                 continue
-            [item,val] = S[:-1].split(':')
-            newItems.append(item)
-            try:
-                newVals.append(float(val))
-            except ValueError:
-                newVals.append(val)                        
+            SS = S[:-1].split(';')
+            for s in SS:
+                [item,val] = s.split(':')
+                newItems.append(item)
+                try:
+                    newVals.append(float(val))
+                except ValueError:
+                    newVals.append(val)                        
         return G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,]),{}
         
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
@@ -1192,11 +1194,12 @@ class GSASII(wx.Frame):
                                  'Error opening/reading file '+str(instfile))
         
         # still no success: offer user choice of defaults
+        import defaultIparms as dI
         while True: # loop until we get a choice
             choices = []
             head = 'Select from default instrument parameters for '+rd.idstring
 
-            for l in rd.defaultIparm_lbl:
+            for l in dI.defaultIparm_lbl:
                 choices.append('Defaults for '+l)
             res = rd.BlockSelector(
                 choices,
@@ -1206,8 +1209,9 @@ class GSASII(wx.Frame):
                 useCancel=False)
             if res is None: continue
             rd.instfile = ''
-            rd.instmsg = 'default: '+rd.defaultIparm_lbl[res]
-            return SetPowderInstParms(rd.defaultIparms[res],rd)
+            rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
+            #return rd.ReadPowderInstprm(dI.defaultIparms[res])
+            return SetPowderInstParms(dI.defaultIparms[res],rd)
 
     def OnImportPowder(self,event):
         '''Called in response to an Import/Powder Data/... menu item

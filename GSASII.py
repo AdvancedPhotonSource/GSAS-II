@@ -847,6 +847,7 @@ class GSASII(wx.Frame):
         for S in instLines:
             if S[0] == '#':
                 continue
+            S = S.replace(' ','')
             SS = S[:-1].split(';')
             for s in SS:
                 [item,val] = s.split(':')
@@ -1210,8 +1211,7 @@ class GSASII(wx.Frame):
             if res is None: continue
             rd.instfile = ''
             rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-            #return rd.ReadPowderInstprm(dI.defaultIparms[res])
-            return SetPowderInstParms(dI.defaultIparms[res],rd)
+            return self.ReadPowderInstprm(dI.defaultIparms[res])
 
     def OnImportPowder(self,event):
         '''Called in response to an Import/Powder Data/... menu item

@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -58,21 +56,21 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="c"># Copyright: 2008, Robert B. Von Dreele &amp; Brian H. Toby (Argonne National Laboratory)</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-05-28 11:57:03 -0500 (Wed, 28 May 2014) $</span>
+<span class="c"># $Date: 2014-08-01 15:19:48 -0500 (Fri, 01 Aug 2014) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1365 $</span>
+<span class="c"># $Revision: 1453 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIElem.py $</span>
-<span class="c"># $Id: GSASIIElem.py 1365 2014-05-28 16:57:03Z vondreele $</span>
+<span class="c"># $Id: GSASIIElem.py 1453 2014-08-01 20:19:48Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1365 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1453 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">atmdata</span>
 
-<span class="n">getElSym</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">sym</span><span class="p">:</span> <span class="n">sym</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;+&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">getElSym</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">sym</span><span class="p">:</span> <span class="n">sym</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;+&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span>
 <div class="viewcode-block" id="GetFormFactorCoeff"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIElem.GetFormFactorCoeff">[docs]</a><span class="k">def</span> <span class="nf">GetFormFactorCoeff</span><span class="p">(</span><span class="n">El</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Read X-ray form factor coefficients from `atomdata.py` file</span>
 
@@ -119,7 +117,6 @@
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">atomTypes</span> <span class="o">=</span> <span class="n">General</span><span class="p">[</span><span class="s">&#39;AtomTypes&#39;</span><span class="p">]</span>
     <span class="n">BLtable</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">isotopes</span> <span class="o">=</span> <span class="n">General</span><span class="p">[</span><span class="s">&#39;Isotopes&#39;</span><span class="p">]</span>
     <span class="n">isotope</span> <span class="o">=</span> <span class="n">General</span><span class="p">[</span><span class="s">&#39;Isotope&#39;</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">atomTypes</span><span class="p">:</span>
         <span class="n">ElS</span> <span class="o">=</span> <span class="n">getElSym</span><span class="p">(</span><span class="n">El</span><span class="p">)</span>
@@ -146,11 +143,17 @@
     <span class="k">if</span> <span class="n">ifList</span><span class="p">:</span>
         <span class="n">BLvals</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">BLtables</span><span class="p">:</span>
-            <span class="n">BLvals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">BLtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;SL&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="s">&#39;BW-LS&#39;</span> <span class="ow">in</span> <span class="n">El</span><span class="p">:</span>
+                <span class="n">BLvals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">BLtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;BW-LS&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">BLvals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">BLtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;SL&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">BLvals</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">El</span> <span class="ow">in</span> <span class="n">BLtables</span><span class="p">:</span>
-            <span class="n">BLvals</span><span class="p">[</span><span class="n">El</span><span class="p">]</span> <span class="o">=</span> <span class="n">BLtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;SL&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s">&#39;BW-LS&#39;</span> <span class="ow">in</span> <span class="n">El</span><span class="p">:</span>
+                <span class="n">BLvals</span><span class="p">[</span><span class="n">El</span><span class="p">]</span> <span class="o">=</span> <span class="n">BLtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;BW-LS&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">BLvals</span><span class="p">[</span><span class="n">El</span><span class="p">]</span> <span class="o">=</span> <span class="n">BLtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;SL&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">BLvals</span>
         </div>
 <div class="viewcode-block" id="GetFFC5"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIElem.GetFFC5">[docs]</a><span class="k">def</span> <span class="nf">GetFFC5</span><span class="p">(</span><span class="n">ElSym</span><span class="p">):</span>
@@ -251,7 +254,7 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="n">xsec</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;Ur&#39;</span><span class="p">)</span>
     <span class="k">except</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&#39;**** ERROR - File Xsect.dat not found in directory </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">print</span> <span class="s">&#39;**** ERROR - File Xsect.dat not found in directory </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
     <span class="n">S</span> <span class="o">=</span> <span class="s">&#39;1&#39;</span>
     <span class="n">Orbs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -352,63 +355,45 @@
     <span class="n">t</span> <span class="o">=</span> <span class="o">-</span><span class="n">fb</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">*</span><span class="n">SQ</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">fa</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">t</span><span class="p">)[:],</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">+</span><span class="n">El</span><span class="p">[</span><span class="s">&#39;fc&#39;</span><span class="p">]</span>
         </div>
-<span class="k">def</span> <span class="nf">BlenRes</span><span class="p">(</span><span class="n">Elist</span><span class="p">,</span><span class="n">BLtables</span><span class="p">,</span><span class="n">wave</span><span class="p">):</span>
-    <span class="n">FP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Elist</span><span class="p">))</span>
-    <span class="n">FPP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Elist</span><span class="p">))</span>
-    <span class="n">Emev</span> <span class="o">=</span> <span class="mf">81.80703</span><span class="o">/</span><span class="n">wave</span><span class="o">**</span><span class="mi">2</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">El</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Elist</span><span class="p">):</span>
-        <span class="n">BL</span> <span class="o">=</span> <span class="n">BLtables</span><span class="p">[</span><span class="n">El</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">BL</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">BlenResCW</span><span class="p">(</span><span class="n">Els</span><span class="p">,</span><span class="n">BLtables</span><span class="p">,</span><span class="n">wave</span><span class="p">):</span>
+    <span class="n">FP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Els</span><span class="p">))</span>
+    <span class="n">FPP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Els</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">El</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Els</span><span class="p">):</span>
+        <span class="n">BL</span> <span class="o">=</span> <span class="n">BLtables</span><span class="p">[</span><span class="n">El</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s">&#39;BW-LS&#39;</span> <span class="ow">in</span> <span class="n">BL</span><span class="p">:</span>
+            <span class="n">Re</span><span class="p">,</span><span class="n">Im</span><span class="p">,</span><span class="n">E0</span><span class="p">,</span><span class="n">gam</span><span class="p">,</span><span class="n">A</span><span class="p">,</span><span class="n">E1</span><span class="p">,</span><span class="n">B</span><span class="p">,</span><span class="n">E2</span> <span class="o">=</span> <span class="n">BL</span><span class="p">[</span><span class="s">&#39;BW-LS&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
             <span class="n">Emev</span> <span class="o">=</span> <span class="mf">81.80703</span><span class="o">/</span><span class="n">wave</span><span class="o">**</span><span class="mi">2</span>
-            <span class="n">G2</span> <span class="o">=</span> <span class="n">BL</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
-            <span class="n">T</span> <span class="o">=</span> <span class="p">[</span><span class="n">Emev</span><span class="o">-</span><span class="n">BL</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">D</span> <span class="o">=</span> <span class="p">[</span><span class="n">T</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">G2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">fp</span> <span class="o">=</span> <span class="n">T</span><span class="o">/</span><span class="n">D</span>
-            <span class="n">fpp</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">D</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">BL</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
-                <span class="n">T</span> <span class="o">=</span> <span class="n">Emev</span><span class="o">-</span><span class="n">BL</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>
-                <span class="n">D</span> <span class="o">=</span> <span class="n">T</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">G2</span>
-                <span class="n">fp</span> <span class="o">+=</span> <span class="n">BL</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">*</span><span class="n">T</span><span class="o">/</span><span class="n">D</span>
-                <span class="n">fpp</span> <span class="o">+=</span> <span class="n">BL</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">/</span><span class="n">D</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">BL</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10</span><span class="p">:</span>
-                <span class="n">T</span> <span class="o">=</span> <span class="n">Emev</span><span class="o">-</span><span class="n">BL</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span>
-                <span class="n">D</span> <span class="o">=</span> <span class="n">T</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">G2</span>
-                <span class="n">fp</span> <span class="o">+=</span> <span class="n">BL</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">*</span><span class="n">T</span><span class="o">/</span><span class="n">D</span>
-                <span class="n">fpp</span> <span class="o">+=</span> <span class="n">BL</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">/</span><span class="n">D</span>
-            <span class="n">FP</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">BL</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">fp</span><span class="p">)</span>
-            <span class="n">FPP</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">BL</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="n">fpp</span><span class="p">)</span>
+            <span class="n">T0</span> <span class="o">=</span> <span class="n">Emev</span><span class="o">-</span><span class="n">E0</span>
+            <span class="n">T1</span> <span class="o">=</span> <span class="n">Emev</span><span class="o">-</span><span class="n">E1</span>
+            <span class="n">T2</span> <span class="o">=</span> <span class="n">Emev</span><span class="o">-</span><span class="n">E2</span>
+            <span class="n">D0</span> <span class="o">=</span> <span class="n">T0</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">gam</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">D1</span> <span class="o">=</span> <span class="n">T1</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">gam</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">D2</span> <span class="o">=</span> <span class="n">T2</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">gam</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">FP</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">Re</span><span class="o">*</span><span class="p">(</span><span class="n">T0</span><span class="o">/</span><span class="n">D0</span><span class="o">+</span><span class="n">A</span><span class="o">*</span><span class="n">T1</span><span class="o">/</span><span class="n">D1</span><span class="o">+</span><span class="n">B</span><span class="o">*</span><span class="n">T2</span><span class="o">/</span><span class="n">D2</span><span class="p">)</span>
+            <span class="n">FPP</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">Im</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">D0</span><span class="o">+</span><span class="n">A</span><span class="o">/</span><span class="n">D1</span><span class="o">+</span><span class="n">B</span><span class="o">/</span><span class="n">D2</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">FP</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="n">FPP</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">FPP</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">BL</span><span class="p">[</span><span class="s">&#39;SL&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>    <span class="c">#for Li, B, etc.</span>
     <span class="k">return</span> <span class="n">FP</span><span class="p">,</span><span class="n">FPP</span>
     
-<span class="c">#def BlenRes(BLdata,wave):</span>
-<span class="c">#    FP = []</span>
-<span class="c">#    FPP = []</span>
-<span class="c">#    Emev = 81.80703/wave**2</span>
-<span class="c">#    for BL in BLdata:</span>
-<span class="c">#        if len(BL) &gt;= 6:</span>
-<span class="c">#            G2 = BL[5]**2</span>
-<span class="c">#            T = [Emev-BL[4],0,0]</span>
-<span class="c">#            D = [T**2+G2,0,0]</span>
-<span class="c">#            fp = T/D</span>
-<span class="c">#            fpp = 1.0/D</span>
-<span class="c">#            if len(BL) == 8:</span>
-<span class="c">#                T = Emev-BL[7]</span>
-<span class="c">#                D = T**2+G2</span>
-<span class="c">#                fp += BL[6]*T/D</span>
-<span class="c">#                fpp += BL[6]/D</span>
-<span class="c">#            if len(BL) == 10:</span>
-<span class="c">#                T = Emev-BL[9]</span>
-<span class="c">#                D = T**2+G2</span>
-<span class="c">#                fp += BL[8]*T/D</span>
-<span class="c">#                fpp += BL[8]/D</span>
-<span class="c">#            FP.append(BL[2]*fp)</span>
-<span class="c">#            FPP.append(-BL[3]*fpp)</span>
-<span class="c">#        else:</span>
-<span class="c">#            FP.append(0.0)</span>
-<span class="c">#            FPP.append(0.0)</span>
-<span class="c">#    return np.array(FP),np.array(FPP)</span>
+<span class="k">def</span> <span class="nf">BlenResTOF</span><span class="p">(</span><span class="n">Els</span><span class="p">,</span><span class="n">BLtables</span><span class="p">,</span><span class="n">wave</span><span class="p">):</span>
+    <span class="n">FP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">Els</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">wave</span><span class="p">)))</span>
+    <span class="n">FPP</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">Els</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">wave</span><span class="p">)))</span>
+    <span class="n">BL</span> <span class="o">=</span> <span class="p">[</span><span class="n">BLtables</span><span class="p">[</span><span class="n">el</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">Els</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">El</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Els</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s">&#39;BW-LS&#39;</span> <span class="ow">in</span> <span class="n">BL</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+            <span class="n">Re</span><span class="p">,</span><span class="n">Im</span><span class="p">,</span><span class="n">E0</span><span class="p">,</span><span class="n">gam</span><span class="p">,</span><span class="n">A</span><span class="p">,</span><span class="n">E1</span><span class="p">,</span><span class="n">B</span><span class="p">,</span><span class="n">E2</span> <span class="o">=</span> <span class="n">BL</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;BW-LS&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="n">Emev</span> <span class="o">=</span> <span class="mf">81.80703</span><span class="o">/</span><span class="n">wave</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">T0</span> <span class="o">=</span> <span class="n">Emev</span><span class="o">-</span><span class="n">E0</span>
+            <span class="n">T1</span> <span class="o">=</span> <span class="n">Emev</span><span class="o">-</span><span class="n">E1</span>
+            <span class="n">T2</span> <span class="o">=</span> <span class="n">Emev</span><span class="o">-</span><span class="n">E2</span>
+            <span class="n">D0</span> <span class="o">=</span> <span class="n">T0</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">gam</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">D1</span> <span class="o">=</span> <span class="n">T1</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">gam</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">D2</span> <span class="o">=</span> <span class="n">T2</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">gam</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">FP</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">Re</span><span class="o">*</span><span class="p">(</span><span class="n">T0</span><span class="o">/</span><span class="n">D0</span><span class="o">+</span><span class="n">A</span><span class="o">*</span><span class="n">T1</span><span class="o">/</span><span class="n">D1</span><span class="o">+</span><span class="n">B</span><span class="o">*</span><span class="n">T2</span><span class="o">/</span><span class="n">D2</span><span class="p">)</span>
+            <span class="n">FPP</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">Im</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">D0</span><span class="o">+</span><span class="n">A</span><span class="o">/</span><span class="n">D1</span><span class="o">+</span><span class="n">B</span><span class="o">/</span><span class="n">D2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">FPP</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">wave</span><span class="p">))</span><span class="o">*</span><span class="n">BL</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;SL&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>    <span class="c">#for Li, B, etc.</span>
+    <span class="k">return</span> <span class="n">FP</span><span class="p">,</span><span class="n">FPP</span>
     
 <div class="viewcode-block" id="ComptonFac"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIElem.ComptonFac">[docs]</a><span class="k">def</span> <span class="nf">ComptonFac</span><span class="p">(</span><span class="n">El</span><span class="p">,</span><span class="n">SQ</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;compute Compton scattering factor</span>
@@ -550,7 +535,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -144,7 +142,7 @@ a web page for documentation.</p>
 
 <dl class="function">
 <dt id="GSASIIgrid.CallScrolledMultiEditor">
-<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">CallScrolledMultiEditor</tt><big>(</big><em>parent</em>, <em>dictlst</em>, <em>elemlst</em>, <em>prelbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>postlbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>title='Edit items'</em>, <em>header=''</em>, <em>size=(300</em>, <em>250)</em>, <em>CopyButton=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#CallScrolledMultiEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.CallScrolledMultiEditor" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">CallScrolledMultiEditor</tt><big>(</big><em>parent</em>, <em>dictlst</em>, <em>elemlst</em>, <em>prelbl=</em>, <span class="optional">[</span><span class="optional">]</span><em>postlbl=</em>, <span class="optional">[</span><span class="optional">]</span><em>title='Edit items'</em>, <em>header=''</em>, <em>size=(300</em>, <em>250)</em>, <em>CopyButton=False</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#CallScrolledMultiEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.CallScrolledMultiEditor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shell routine to call a ScrolledMultiEditor dialog. See
 <a class="reference internal" href="#GSASIIgrid.ScrolledMultiEditor" title="GSASIIgrid.ScrolledMultiEditor"><tt class="xref py py-class docutils literal"><span class="pre">ScrolledMultiEditor</span></tt></a> for parameter definitions.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -172,10 +170,14 @@ the binding for the menus is done later in various GSASII*GUI modules,
 where the functions to be called are defined.</p>
 <dl class="method">
 <dt id="GSASIIgrid.DataFrame.Bind">
-<tt class="descname">Bind</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DataFrame.Bind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DataFrame.Bind" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">Bind</tt><big>(</big><em>eventtype</em>, <em>handler</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#DataFrame.Bind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.DataFrame.Bind" title="Permalink to this definition">¶</a></dt>
 <dd><p>Override the Bind() function: on the Mac the binding is to
 the main window, so that menus operate with any window on top.
-For other platforms, call the default wx.Frame Bind()</p>
+For other platforms, either wrap calls that will be logged
+or call the default wx.Frame Bind() to bind to the menu item directly.</p>
+<p>Note that bindings can be made to objects by Id or by direct reference to the
+object. As a convention, when bindings are to objects, they are not logged
+but when bindings are by Id, they are logged.</p>
 </dd></dl>
 
 <dl class="method">
@@ -323,11 +325,14 @@ False.</li>
 
 <dl class="class">
 <dt id="GSASIIgrid.G2ChoiceButton">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2ChoiceButton</tt><big>(</big><em>parent</em>, <em>choiceList</em>, <em>indLoc</em>, <em>indKey</em>, <em>strLoc=None</em>, <em>strKey=None</em>, <em>onChoice=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2ChoiceButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2ChoiceButton" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2ChoiceButton</tt><big>(</big><em>parent</em>, <em>choiceList</em>, <em>indLoc=None</em>, <em>indKey=None</em>, <em>strLoc=None</em>, <em>strKey=None</em>, <em>onChoice=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2ChoiceButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2ChoiceButton" title="Permalink to this definition">¶</a></dt>
 <dd><p>A customized version of a wx.Choice that automatically initializes
 the control to match a supplied value and saves the choice directly
 into an array or list. Optionally a function can be called each time a
-choice is selected.</p>
+choice is selected. The widget can be used with an array item that is set to 
+to the choice by number (<tt class="docutils literal"><span class="pre">indLoc[indKey]</span></tt>) or by string value
+(<tt class="docutils literal"><span class="pre">strLoc[strKey]</span></tt>) or both. The initial value is taken from <tt class="docutils literal"><span class="pre">indLoc[indKey]</span></tt>
+if not None or <tt class="docutils literal"><span class="pre">strLoc[strKey]</span></tt> if not None.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -337,17 +342,18 @@ choice is selected.</p>
 the parent to the widget. Can be None.</li>
 <li><strong>choiceList</strong> (<em>list</em>) &#8211; a list or tuple of choices to offer the user.</li>
 <li><strong>indLoc</strong> (<em>dict/list</em>) &#8211; a dict or list with the initial value to be
-placed in the Choice button.</li>
+placed in the Choice button. If this is None, this is ignored.</li>
 <li><strong>indKey</strong> (<em>int/str</em>) &#8211; the dict key or the list index for the value to be
-edited by the Choice button. The <tt class="docutils literal"><span class="pre">indLoc[indKey]</span></tt> element must exist.
-The value for this should be None or an integer in range(len(choiceList)).
-The Choice button will be initialized to the choice corresponding to the
-value in this element if not None.</li>
+edited by the Choice button. If indLoc is not None then this
+must be specified and the <tt class="docutils literal"><span class="pre">indLoc[indKey]</span></tt> will be set. If the value
+for <tt class="docutils literal"><span class="pre">indLoc[indKey]</span></tt> is not None, it should be an integer in
+range(len(choiceList)). The Choice button will be initialized to the
+choice corresponding to the value in this element if not None.</li>
 <li><strong>strLoc</strong> (<em>dict/list</em>) &#8211; a dict or list with the string value corresponding to
 indLoc/indKey. Default (None) means that this is not used.</li>
 <li><strong>strKey</strong> (<em>int/str</em>) &#8211; the dict key or the list index for the string value 
 The <tt class="docutils literal"><span class="pre">strLoc[strKey]</span></tt> element must exist or strLoc must be None (default).</li>
-<li><strong>onChoice</strong> (<em>function</em>) &#8211; name of a</li>
+<li><strong>onChoice</strong> (<em>function</em>) &#8211; name of a function to call when the choice is made.</li>
 </ul>
 </td>
 </tr>
@@ -359,6 +365,20 @@ The <tt class="docutils literal"><span class="pre">strLoc[strKey]</span></tt> el
 <dt id="GSASIIgrid.G2HtmlWindow">
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2HtmlWindow</tt><big>(</big><em>parent</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2HtmlWindow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2HtmlWindow" title="Permalink to this definition">¶</a></dt>
 <dd><p>Displays help information in a primitive HTML browser type window</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIgrid.G2LoggedButton">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2LoggedButton</tt><big>(</big><em>parent</em>, <em>id</em>, <em>label</em>, <em>locationcode</em>, <em>handler</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2LoggedButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2LoggedButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>A version of wx.Button that creates logging events. Bindings are saved
+in the object, and are looked up rather than directly set with a bind.
+An index to these buttons is saved as log.ButtonBindingLookup</p>
+<dl class="method">
+<dt id="GSASIIgrid.G2LoggedButton.onPress">
+<tt class="descname">onPress</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2LoggedButton.onPress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2LoggedButton.onPress" title="Permalink to this definition">¶</a></dt>
+<dd><p>create log event and call handler</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -459,20 +479,91 @@ the presence of the eponymous buttons in the dialog.</li>
 </dd></dl>
 
 <dl class="class">
+<dt id="GSASIIgrid.G2TreeCtrl">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">G2TreeCtrl</tt><big>(</big><em>parent=None</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2TreeCtrl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2TreeCtrl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a wrapper around the standard TreeCtrl so we can &#8220;wrap&#8221;
+various events.</p>
+<p>This logs when a tree item is selected (in <a class="reference internal" href="#GSASIIgrid.G2TreeCtrl.onSelectionChanged" title="GSASIIgrid.G2TreeCtrl.onSelectionChanged"><tt class="xref py py-meth docutils literal"><span class="pre">onSelectionChanged()</span></tt></a>)</p>
+<p>This also wraps lists and dicts pulled out of the tree to track where
+they were retrieved from.</p>
+<dl class="method">
+<dt id="GSASIIgrid.G2TreeCtrl.Bind">
+<tt class="descname">Bind</tt><big>(</big><em>eventtype</em>, <em>handler</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2TreeCtrl.Bind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2TreeCtrl.Bind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override the Bind() function so that page change events can be trapped</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.G2TreeCtrl.ConvertRelativeHistNum">
+<tt class="descname">ConvertRelativeHistNum</tt><big>(</big><em>histtype</em>, <em>histnum</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2TreeCtrl.ConvertRelativeHistNum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2TreeCtrl.ConvertRelativeHistNum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a histogram type and relative histogram number to a
+histogram name in the current project</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.G2TreeCtrl.ConvertRelativePhaseNum">
+<tt class="descname">ConvertRelativePhaseNum</tt><big>(</big><em>phasenum</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2TreeCtrl.ConvertRelativePhaseNum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2TreeCtrl.ConvertRelativePhaseNum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts relative phase number to a phase name in
+the current project</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.G2TreeCtrl.GetItemPyData">
+<tt class="descname">GetItemPyData</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2TreeCtrl.GetItemPyData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2TreeCtrl.GetItemPyData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override the standard method to wrap the contents
+so that the source can be tracked</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.G2TreeCtrl.GetRelativeHistNum">
+<tt class="descname">GetRelativeHistNum</tt><big>(</big><em>histname</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2TreeCtrl.GetRelativeHistNum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2TreeCtrl.GetRelativeHistNum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list with a histogram type and a relative number for that
+histogram, or the original string if not a histogram</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.G2TreeCtrl.GetRelativePhaseNum">
+<tt class="descname">GetRelativePhaseNum</tt><big>(</big><em>phasename</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2TreeCtrl.GetRelativePhaseNum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2TreeCtrl.GetRelativePhaseNum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a phase number if the string matches a phase name
+or else returns the original string</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.G2TreeCtrl.onSelectionChanged">
+<tt class="descname">onSelectionChanged</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#G2TreeCtrl.onSelectionChanged"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.G2TreeCtrl.onSelectionChanged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log each press on a tree item here.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="GSASIIgrid.GSGrid">
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">GSGrid</tt><big>(</big><em>parent</em>, <em>name=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GSGrid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GSGrid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Basic wx.Grid implementation</p>
 <dl class="method">
 <dt id="GSASIIgrid.GSGrid.InstallGridToolTip">
-<tt class="descname">InstallGridToolTip</tt><big>(</big><em>rowcolhintcallback</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GSGrid.InstallGridToolTip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GSGrid.InstallGridToolTip" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">InstallGridToolTip</tt><big>(</big><em>rowcolhintcallback</em>, <em>colLblCallback=None</em>, <em>rowLblCallback=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GSGrid.InstallGridToolTip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GSGrid.InstallGridToolTip" title="Permalink to this definition">¶</a></dt>
 <dd><p>code to display a tooltip for each item on a grid
-from <a class="reference external" href="http://wiki.wxpython.org/wxGrid%20ToolTips">http://wiki.wxpython.org/wxGrid%20ToolTips</a></p>
+from <a class="reference external" href="http://wiki.wxpython.org/wxGrid%20ToolTips">http://wiki.wxpython.org/wxGrid%20ToolTips</a> (buggy!), expanded to
+column and row labels using hints from
+<a class="reference external" href="https://groups.google.com/forum/#!topic/wxPython-users/bm8OARRVDCs">https://groups.google.com/forum/#!topic/wxPython-users/bm8OARRVDCs</a></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rowcolhintcallback</strong> (<em>function</em>) &#8211; a routine that returns a text
-string depending on the selected row and column</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>rowcolhintcallback</strong> (<em>function</em>) &#8211; a routine that returns a text
+string depending on the selected row and column, to be used in
+explaining grid entries.</li>
+<li><strong>colLblCallback</strong> (<em>function</em>) &#8211; a routine that returns a text
+string depending on the selected column, to be used in
+explaining grid columns (if None, the default), column labels
+do not get a tooltip.</li>
+<li><strong>rowLblCallback</strong> (<em>function</em>) &#8211; a routine that returns a text
+string depending on the selected row, to be used in
+explaining grid rows (if None, the default), row labels
+do not get a tooltip.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
@@ -484,6 +575,12 @@ string depending on the selected row and column</td>
 <dt id="GSASIIgrid.GSNoteBook">
 <em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">GSNoteBook</tt><big>(</big><em>parent</em>, <em>name=''</em>, <em>size=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GSNoteBook"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GSNoteBook" title="Permalink to this definition">¶</a></dt>
 <dd><p>Notebook used in various locations; implemented with wx.aui extension</p>
+<dl class="method">
+<dt id="GSASIIgrid.GSNoteBook.Bind">
+<tt class="descname">Bind</tt><big>(</big><em>eventtype</em>, <em>handler</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#GSNoteBook.Bind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.GSNoteBook.Bind" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override the Bind() function so that page change events can be trapped</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="function">
@@ -535,6 +632,13 @@ This shows up on the Mac as a very thin line, no matter what I do</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIgrid.HowDidIgetHere">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">HowDidIgetHere</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#HowDidIgetHere"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.HowDidIgetHere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show a traceback with calls that brought us to the current location.
+Used for debugging.</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIgrid.ItemSelector">
 <tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ItemSelector</tt><big>(</big><em>ChoiceList</em>, <em>ParentFrame=None</em>, <em>title='Select an item'</em>, <em>size=None</em>, <em>header='Item Selector'</em>, <em>useCancel=True</em>, <em>multiple=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ItemSelector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ItemSelector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provide a wx dialog to select a single item or multiple items from list of choices</p>
@@ -567,8 +671,42 @@ This shows up on the Mac as a very thin line, no matter what I do</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="GSASIIgrid.MultiStringDialog">
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">MultiStringDialog</tt><big>(</big><em>parent</em>, <em>title</em>, <em>prompts</em>, <em>values=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MultiStringDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MultiStringDialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dialog to obtain a multi string values from user</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parent</strong> (<em>wx.Frame</em>) &#8211; name of parent frame</li>
+<li><strong>title</strong> (<em>str</em>) &#8211; title string for dialog</li>
+<li><strong>prompts</strong> (<em>str</em>) &#8211; strings to tell use what they are inputting</li>
+<li><strong>values</strong> (<em>str</em>) &#8211; default input values, if any</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="GSASIIgrid.MultiStringDialog.GetValues">
+<tt class="descname">GetValues</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MultiStringDialog.GetValues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MultiStringDialog.GetValues" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use this method to get the value entered by the user
+:returns: string entered by user</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.MultiStringDialog.Show">
+<tt class="descname">Show</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MultiStringDialog.Show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MultiStringDialog.Show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use this method after creating the dialog to post it
+:returns: True if the user pressed OK; False if the User pressed Cancel</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="GSASIIgrid.MyHelp">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">MyHelp</tt><big>(</big><em>frame</em>, <em>helpType=None</em>, <em>helpLbl=None</em>, <em>morehelpitems=</em><span class="optional">[</span><span class="optional">]</span>, <em>title=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MyHelp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MyHelp" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">MyHelp</tt><big>(</big><em>frame</em>, <em>helpType=None</em>, <em>helpLbl=None</em>, <em>morehelpitems=</em>, <span class="optional">[</span><span class="optional">]</span><em>title=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#MyHelp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.MyHelp" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that creates the contents of a help menu.
 The menu will start with two entries:</p>
 <ul class="simple">
@@ -742,7 +880,7 @@ is associated with.</td>
 
 <dl class="class">
 <dt id="GSASIIgrid.ScrolledMultiEditor">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ScrolledMultiEditor</tt><big>(</big><em>parent</em>, <em>dictlst</em>, <em>elemlst</em>, <em>prelbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>postlbl=</em><span class="optional">[</span><span class="optional">]</span>, <em>title='Edit items'</em>, <em>header=''</em>, <em>size=(300</em>, <em>250)</em>, <em>CopyButton=False</em>, <em>minvals=</em><span class="optional">[</span><span class="optional">]</span>, <em>maxvals=</em><span class="optional">[</span><span class="optional">]</span>, <em>sizevals=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ScrolledMultiEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ScrolledMultiEditor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">ScrolledMultiEditor</tt><big>(</big><em>parent</em>, <em>dictlst</em>, <em>elemlst</em>, <em>prelbl=</em>, <span class="optional">[</span><span class="optional">]</span><em>postlbl=</em>, <span class="optional">[</span><span class="optional">]</span><em>title='Edit items'</em>, <em>header=''</em>, <em>size=(300</em>, <em>250)</em>, <em>CopyButton=False</em>, <em>minvals=</em>, <span class="optional">[</span><span class="optional">]</span><em>maxvals=</em>, <span class="optional">[</span><span class="optional">]</span><em>sizevals=</em>, <span class="optional">[</span><span class="optional">]</span><em>checkdictlst=</em>, <span class="optional">[</span><span class="optional">]</span><em>checkelemlst=</em>, <span class="optional">[</span><span class="optional">]</span><em>checklabel=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ScrolledMultiEditor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ScrolledMultiEditor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define a window for editing a potentially large number of dict- or
 list-contained values with validation for each item. Edited values are
 automatically placed in their source location. If invalid entries
@@ -781,6 +919,11 @@ of float or int values. Ignored if value is None.</li>
 of float or int values. Ignored if value is None.</li>
 <li><strong>sizevals</strong> (<em>list</em>) &#8211; optional list of wx.Size values for each input
 widget. Ignored if value is None.</li>
+<li><strong>checkdictlst</strong> (<em>tuple</em>) &#8211; an optional list of dicts or lists containing bool
+values (similar to dictlst).</li>
+<li><strong>checkelemlst</strong> (<em>tuple</em>) &#8211; an optional list of dicts or lists containing bool
+key values (similar to elemlst). Must be used with checkdictlst.</li>
+<li><strong>checklabel</strong> (<em>string</em>) &#8211; a string to use for each checkbutton</li>
 </ul>
 </td>
 </tr>
@@ -790,17 +933,19 @@ widget. Ignored if value is None.</li>
 </tbody>
 </table>
 <p><em>Example for use of ScrolledMultiEditor:</em></p>
-<div class="highlight-python"><pre>dlg = &lt;pkg&gt;.ScrolledMultiEditor(frame,dictlst,elemlst,prelbl,postlbl,
+<div class="highlight-python"><div class="highlight"><pre>dlg = &lt;pkg&gt;.ScrolledMultiEditor(frame,dictlst,elemlst,prelbl,postlbl,
                                 header=header)
 if dlg.ShowModal() == wx.ID_OK:
      for d,k in zip(dictlst,elemlst):
-         print d[k]</pre>
+         print d[k]
+</pre></div>
 </div>
 <p><em>Example definitions for dictlst and elemlst:</em></p>
-<div class="highlight-python"><pre>    dictlst = (dict1,list1,dict1,list1)
-    elemlst = ('a', 1, 2, 3)
+<div class="highlight-python"><div class="highlight"><pre>    dictlst = (dict1,list1,dict1,list1)
+    elemlst = (&#39;a&#39;, 1, 2, 3)
 
-This causes items dict1['a'], list1[1], dict1[2] and list1[3] to be edited.</pre>
+This causes items dict1[&#39;a&#39;], list1[1], dict1[2] and list1[3] to be edited.
+</pre></div>
 </div>
 <p>Note that these items must have int, float or str values assigned to
 them. The dialog will force these types to be retained. String values
@@ -821,6 +966,46 @@ checked for validity. if False then the OK button is disabled.</td>
 </table>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIgrid.SelectEdit1Var">
+<tt class="descclassname">GSASIIgrid.</tt><tt class="descname">SelectEdit1Var</tt><big>(</big><em>G2frame</em>, <em>array</em>, <em>labelLst</em>, <em>elemKeysLst</em>, <em>dspLst</em>, <em>refFlgElem</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#SelectEdit1Var"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.SelectEdit1Var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Select a variable from a list, then edit it and select histograms
+to copy it to.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>G2frame</strong> (<em>wx.Frame</em>) &#8211; main GSAS-II frame</li>
+<li><strong>array</strong> (<em>dict</em>) &#8211; the array (dict or list) where values to be edited are kept</li>
+<li><strong>labelLst</strong> (<em>list</em>) &#8211; labels for each data item</li>
+<li><strong>elemKeysLst</strong> (<em>list</em>) &#8211; a list of lists of keys needed to be applied (see below)
+to obtain the value of each parameter</li>
+<li><strong>dspLst</strong> (<em>list</em>) &#8211; list list of digits to be displayed (10,4) is 10 digits
+with 4 decimal places. Can be None.</li>
+<li><strong>refFlgElem</strong> (<em>list</em>) &#8211; a list of lists of keys needed to be applied (see below)
+to obtain the refine flag for each parameter or None if the parameter
+does not have refine flag.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>Example::</dt>
+<dd><blockquote class="first">
+<div>array = data 
+labelLst = [&#8216;v1&#8217;,&#8217;v2&#8217;]
+elemKeysLst = [[&#8216;v1&#8217;], [&#8216;v2&#8217;,0]]
+refFlgElem = [None, [&#8216;v2&#8217;,1]]</div></blockquote>
+<ul class="last simple">
+<li>The value for v1 will be in data[&#8216;v1&#8217;] and this cannot be refined while,</li>
+<li>The value for v2 will be in data[&#8216;v2&#8217;][0] and its refinement flag is data[&#8216;v2&#8217;][1]</li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
@@ -893,7 +1078,7 @@ the data tree window.</p>
 
 <dl class="class">
 <dt id="GSASIIgrid.Table">
-<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">Table</tt><big>(</big><em>data=</em><span class="optional">[</span><span class="optional">]</span>, <em>rowLabels=None</em>, <em>colLabels=None</em>, <em>types=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#Table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.Table" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIgrid.</tt><tt class="descname">Table</tt><big>(</big><em>data=</em>, <span class="optional">[</span><span class="optional">]</span><em>rowLabels=None</em>, <em>colLabels=None</em>, <em>types=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#Table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.Table" title="Permalink to this definition">¶</a></dt>
 <dd><p>Basic data table for use with GSgrid</p>
 </dd></dl>
 
@@ -936,6 +1121,8 @@ to show results from a sequential refinement.</p>
 <li>&#8216;varyList&#8217; - list of variables - identical over all refinements in sequence
 note that this is the original list of variables, prior to processing
 constraints.</li>
+<li>&#8216;variableLabels&#8217; &#8211; a dict of labels to be applied to each parameter
+(this is created as an empty dict if not present in data).</li>
 <li>keyed by histName - dictionaries for all data sets processed, which contains:<ul>
 <li>&#8216;variables&#8217;- result[0] from leastsq call</li>
 <li>&#8216;varyList&#8217; - list of variables passed to leastsq call (not same as above)</li>
@@ -1032,7 +1219,7 @@ use of a single &#8216;?&#8217; or &#8216;.&#8217; character as valid input.</li
 <li><strong>OnLeaveArgs</strong> (<em>dict</em>) &#8211; a dict with keyword args that are passed to
 the <tt class="xref py py-attr docutils literal"><span class="pre">OnLeave</span></tt> function. Defaults to <tt class="docutils literal"><span class="pre">{}</span></tt></li>
 <li><strong>(other)</strong> &#8211; other optional keyword parameters for the
-wx.TextCtrl widget such as Size or Style may be specified.</li>
+wx.TextCtrl widget such as size or style may be specified.</li>
 </ul>
 </td>
 </tr>
@@ -1044,7 +1231,13 @@ wx.TextCtrl widget such as Size or Style may be specified.</li>
 <dd><p>Show the computed value when an expression is entered to the TextCtrl
 Make sure that the number fits by truncating decimal places and switching
 to scientific notation, as needed. 
-Called on loss of focus.</p>
+Called on loss of focus, enter, etc..</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIgrid.ValidatedTxtCtrl.OnKeyDown">
+<tt class="descname">OnKeyDown</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIgrid.html#ValidatedTxtCtrl.OnKeyDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIgrid.ValidatedTxtCtrl.OnKeyDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Special callback for wx 2.9+ on Mac where backspace is not processed by validator</p>
 </dd></dl>
 
 <dl class="method">
@@ -1455,7 +1648,7 @@ incorrectly in some way.</p>
 
 <dl class="class">
 <dt id="GSASIIIO.ImportBaseclass">
-<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportBaseclass</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportBaseclass</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em>, <span class="optional">[</span><span class="optional">]</span><em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportBaseclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportBaseclass" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the reading of input files (diffraction
 data, coordinates,...). See <a class="reference internal" href="imports.html#import-routines"><em>Writing a Import Routine</em></a>
 for an explanation on how to use a subclass of this class.</p>
@@ -1543,7 +1736,7 @@ returns a list of selected indicies for each choice (or None)</p>
 
 <dl class="class">
 <dt id="GSASIIIO.ImportPhase">
-<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportPhase</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPhase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportPhase</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em>, <span class="optional">[</span><span class="optional">]</span><em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPhase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPhase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the reading of files with coordinates</p>
 <p>Objects constructed that subclass this (in import/G2phase_*.py etc.) will be used
 in <a class="reference internal" href="GSASII.html#GSASII.GSASII.OnImportPhase" title="GSASII.GSASII.OnImportPhase"><tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.OnImportPhase()</span></tt></a>. 
@@ -1560,7 +1753,7 @@ than one phase</p>
 
 <dl class="class">
 <dt id="GSASIIIO.ImportPowderData">
-<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportPowderData</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPowderData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPowderData" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportPowderData</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em>, <span class="optional">[</span><span class="optional">]</span><em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportPowderData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportPowderData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the reading of files with powder data.</p>
 <p>Objects constructed that subclass this (in import/G2pwd_*.py etc.) will be used
 in <a class="reference internal" href="GSASII.html#GSASII.GSASII.OnImportPowder" title="GSASII.GSASII.OnImportPowder"><tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.OnImportPowder()</span></tt></a>. 
@@ -1576,7 +1769,7 @@ for an explanation on how to use this class.</p>
 
 <dl class="class">
 <dt id="GSASIIIO.ImportSmallAngleData">
-<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportSmallAngleData</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportSmallAngleData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportSmallAngleData" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportSmallAngleData</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em>, <span class="optional">[</span><span class="optional">]</span><em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportSmallAngleData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportSmallAngleData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the reading of files with small angle data.
 See <a class="reference internal" href="imports.html#import-routines"><em>Writing a Import Routine</em></a>
 for an explanation on how to use this class.</p>
@@ -1590,7 +1783,7 @@ for an explanation on how to use this class.</p>
 
 <dl class="class">
 <dt id="GSASIIIO.ImportStructFactor">
-<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportStructFactor</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em><span class="optional">[</span><span class="optional">]</span>, <em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">GSASIIIO.</tt><tt class="descname">ImportStructFactor</tt><big>(</big><em>formatName</em>, <em>longFormatName=None</em>, <em>extensionlist=</em>, <span class="optional">[</span><span class="optional">]</span><em>strictExtension=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#ImportStructFactor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.ImportStructFactor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a base class for the reading of files with tables
 of structure factors.</p>
 <p>Structure factors are read with a call to <a class="reference internal" href="GSASII.html#GSASII.GSASII.OnImportSfact" title="GSASII.GSASII.OnImportSfact"><tt class="xref py py-meth docutils literal"><span class="pre">GSASII.GSASII.OnImportSfact()</span></tt></a>
@@ -1690,7 +1883,7 @@ typical input:</p>
 <dl class="function">
 <dt id="GSASIIIO.PutG2Image">
 <tt class="descclassname">GSASIIIO.</tt><tt class="descname">PutG2Image</tt><big>(</big><em>filename</em>, <em>Comments</em>, <em>Data</em>, <em>Npix</em>, <em>image</em><big>)</big><a class="reference internal" href="_modules/GSASIIIO.html#PutG2Image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIIO.PutG2Image" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write an image as a python pickle</p>
+<dd><p>Write an image as a python pickle - might be better as an .edf file?</p>
 </dd></dl>
 
 <dl class="function">
@@ -1853,7 +2046,8 @@ if set to None.</li>
 <dl class="function">
 <dt id="GSASIIpy3.FormatValue">
 <tt class="descclassname">GSASIIpy3.</tt><tt class="descname">FormatValue</tt><big>(</big><em>val</em>, <em>maxdigits=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIpy3.html#FormatValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpy3.FormatValue" title="Permalink to this definition">¶</a></dt>
-<dd><p>Format a float to fit in <tt class="docutils literal"><span class="pre">maxdigits[0]</span></tt> spaces with maxdigits[1] after decimal.</p>
+<dd><p>Format a float to fit in at most <tt class="docutils literal"><span class="pre">maxdigits[0]</span></tt> spaces with maxdigits[1] after decimal.
+Note that this code has been hacked from FormatSigFigs and may have unused sections.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1964,7 +2158,7 @@ evaluate to a valid number.</td>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

@@ -69,9 +69,15 @@ try:
 except ImportError:
     configDict = {}
     
-def GetConfigValue(key):
-    'Return the configuration file value for key or None if not present'
-    return configDict.get(key)
+def GetConfigValue(key,default=None):
+    '''Return the configuration file value for key or a default value if not present
+    
+    :param str key: a value to be found in the configuration (config.py) file
+    :param default: a value to be supplied is none is in the config file or
+      the config file is not found. Defaults to None
+    :returns: the value found or the default.
+    '''
+    return configDict.get(key,default)
 
 # routines for looking a version numbers in files
 version = -1

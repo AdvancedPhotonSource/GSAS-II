@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -328,7 +326,7 @@ created in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" 
 contained in each group, created in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a>
 (returned as 2nd value)</li>
 <li><strong>varyList</strong> (<em>list</em>) &#8211; a list of parameters names (strings of form
-<tt class="docutils literal"><span class="pre">&lt;ph&gt;:&lt;hst&gt;:&lt;nam&gt;</span></tt>) that will be varied</li>
+<tt class="docutils literal"><span class="pre">&lt;ph&gt;:&lt;hst&gt;:&lt;nam&gt;</span></tt>) that will be varied. Note that this is changed here.</li>
 <li><strong>constrDict</strong> (<em>dict</em>) &#8211; a list of dicts defining relationships/constraints
 (as defined in <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a>)</li>
 <li><strong>fixedList</strong> (<em>list</em>) &#8211; a list of values specifying a fixed value for each
@@ -402,7 +400,8 @@ find orthonormal unit vectors relative to first row.</p>
 </tr>
 </tbody>
 </table>
-<div class="highlight-python"><pre>constrDict = [{&lt;constr1&gt;}, {&lt;constr2&gt;}, ...]</pre>
+<div class="highlight-python"><div class="highlight"><pre>constrDict = [{&lt;constr1&gt;}, {&lt;constr2&gt;}, ...]
+</pre></div>
 </div>
 <p>where {&lt;constr1&gt;} is {&#8216;var1&#8217;: mult1, &#8216;var2&#8217;: mult2,... }</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -496,7 +495,8 @@ e.g. eliminates any that start with &#8216;_&#8217;</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>constr</strong> (<em>dict</em>) &#8211; <p>a single constraint entry of form:</p>
-<div class="highlight-python"><pre>{'var1': mult1, 'var2': mult2,... '_notVar': val,...}</pre>
+<div class="highlight-python"><div class="highlight"><pre>{&#39;var1&#39;: mult1, &#39;var2&#39;: mult2,... &#39;_notVar&#39;: val,...}
+</pre></div>
 </div>
 <p>(see <a class="reference internal" href="#GSASIImapvars.GroupConstraints" title="GSASIImapvars.GroupConstraints"><tt class="xref py py-func docutils literal"><span class="pre">GroupConstraints()</span></tt></a>)</p>
 </td>
@@ -593,7 +593,7 @@ defined using <a class="reference internal" href="#GSASIImapvars.StoreEquivalenc
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

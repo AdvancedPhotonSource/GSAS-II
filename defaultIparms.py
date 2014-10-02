@@ -9,17 +9,26 @@
 # $Id: GSASII.py 1507 2014-09-26 15:52:52Z vondreele $
 ########### SVN repository information ###################
 '''
+*defaultIparms: Table of atomic data*
+--------------------------------------
+
 Define some default instrument parameters:
 Format for each is a list of strings finished with a '\n'.
 Begin with '#GSAS-II...' as the reader routine checks this.
 Each line can be comprised of a block of ';' delimited name:value pairs.
 All instrument parameters must be included; even those = 0.
 Use a GSAS-II instprm file as a source for the entries.
+
 For a new entry:
+
     Append a useful name to defaultIparms_lbl.
     Append the list of lines to defaultIparms.
-See examples below.
+
+defaultIparm_lbl: defines a list of labels
+
+defaultIparms: defines a list of multiple strings with values for each set of defaults
 '''
+#See examples below.
 
 defaultIparm_lbl = []
 defaultIparms = []

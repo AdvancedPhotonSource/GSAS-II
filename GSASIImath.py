@@ -2001,7 +2001,7 @@ def getCWsig(ins,pos):
     '''get CW peak profile sigma
     
     :param dict ins: instrument parameters with at least 'U', 'V', & 'W' 
-    as values only
+      as values only
     :param float pos: 2-theta of peak
     :returns: float getCWsig: peak sigma
     
@@ -2024,7 +2024,7 @@ def getCWgam(ins,pos):
     '''get CW peak profile gamma
     
     :param dict ins: instrument parameters with at least 'X' & 'Y' 
-    as values only
+      as values only
     :param float pos: 2-theta of peak
     :returns: float getCWgam: peak gamma
     
@@ -2045,7 +2045,7 @@ def getTOFsig(ins,dsp):
     '''get TOF peak profile sigma
     
     :param dict ins: instrument parameters with at least 'sig-0', 'sig-1' & 'sig-q'
-    as values only
+      as values only
     :param float dsp: d-spacing of peak
     
     :returns: float getTOFsig: peak sigma
@@ -2067,7 +2067,7 @@ def getTOFgamma(ins,dsp):
     '''get TOF peak profile gamma
     
     :param dict ins: instrument parameters with at least 'X' & 'Y'
-    as values only
+      as values only
     :param float dsp: d-spacing of peak
     
     :returns: float getTOFgamma: peak gamma
@@ -2089,7 +2089,7 @@ def getTOFbeta(ins,dsp):
     '''get TOF peak profile beta
     
     :param dict ins: instrument parameters with at least 'beat-0', 'beta-1' & 'beta-q'
-    as values only
+      as values only
     :param float dsp: d-spacing of peak
     
     :returns: float getTOFbeta: peak beat
@@ -2111,7 +2111,7 @@ def getTOFalpha(ins,dsp):
     '''get TOF peak profile alpha
     
     :param dict ins: instrument parameters with at least 'alpha'
-    as values only
+      as values only
     :param float dsp: d-spacing of peak
     
     :returns: flaot getTOFalpha: peak alpha

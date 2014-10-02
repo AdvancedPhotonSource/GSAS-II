@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -62,53 +60,6 @@
 <p>At present this module defines one dict, <tt class="docutils literal"><span class="pre">ramachandranDist</span></tt>,
 which contains arrays for All and specific amino acids</p>
 </div>
-<span class="target" id="module-ElementTable"></span><div class="section" id="elementtable-periodic-table-data">
-<h2><em>ElementTable: Periodic Table Data</em><a class="headerlink" href="#elementtable-periodic-table-data" title="Permalink to this headline">¶</a></h2>
-<p>Element table data for building periodic table with valences &amp; JMOL colors.
-Need these in case we go back to this periodic table coloring scheme.</p>
-<p>Defines list <tt class="docutils literal"><span class="pre">ElTable</span></tt> which contains all defined oxidation states for each
-element, the location in the table, an element name, a color, a size and a
-second color.</p>
-</div>
-<span class="target" id="module-FormFactors"></span><div class="section" id="formfactors-scattering-data">
-<h2><em>FormFactors: Scattering Data</em><a class="headerlink" href="#formfactors-scattering-data" title="Permalink to this headline">¶</a></h2>
-<p>Contains atomic scattering factors from 
-&#8220;New Analytical Scattering Factor Functions for Free Atoms
-and Ions for Free Atoms and Ions&#8221;, 
-D. Waasmaier &amp; A. Kirfel,
-<em>Acta Cryst.</em> <strong>(1995).</strong> A51, 416-413.</p>
-<p>Also, tabulated coefficients for calculation of Compton Cross Section as a function of sin(theta)/lambda from
-&#8220;Analytic Approximations to Incoherently Scattered X-Ray Intensities&#8221;, 
-H. H. M. Balyuzi, <em>Acta Cryst.</em> <strong>(1975).</strong> A31, 600.</p>
-</div>
-<span class="target" id="module-ImageCalibrants"></span><div class="section" id="imagecalibrants-calibration-standards">
-<h2><em>ImageCalibrants: Calibration Standards</em><a class="headerlink" href="#imagecalibrants-calibration-standards" title="Permalink to this headline">¶</a></h2>
-<p>GSASII powder calibrants as a dictionary <tt class="docutils literal"><span class="pre">ImageCalibrants.Calibrants</span></tt> with substances
-commonly used for powder calibrations for image data.</p>
-<p>Each entry in <tt class="docutils literal"><span class="pre">ImageCalibrants</span></tt> consists of:</p>
-<div class="highlight-python"><pre>'key':([Bravais num,],[space group,],[(a,b,c,alpha,beta,gamma),],no. lines skipped,(dmin,pixLimit,cutOff))
-(The space group may be an empty string)</pre>
-</div>
-<p>as an example:</p>
-<div class="highlight-python"><pre>'LaB6  SRM660a':([2,],['',][(4.1569162,4.1569162,4.1569162,90,90,90),],0,(1.0,10,10)),</pre>
-</div>
-<p>or where &#8220;Bravais num&#8221; and &#8220;(a,b,...)&#8221; are repeated in the case of mixtures:</p>
-<div class="highlight-python"><pre>'LaB6 &amp; CeO2':([2,0],['',''] [(4.1569,4.1569,4.1569,90,90,90),(5.4117,5.4117,5.4117,90,90,90)], 0, (1.0,2,1)),</pre>
-</div>
-<p>To expand this list with locally needed additions, do not modify this file,
-because you may lose these changes during a software update. Instead
-duplicate the format of this file in a file named <cite>UserCalibrants.py</cite>
-and there define the material(s) you want:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Calibrants</span><span class="o">=</span><span class="p">{</span>
-  <span class="s">&#39;LaB6 skip 2 lines&#39;</span><span class="p">:([</span><span class="mi">2</span><span class="p">,],[</span><span class="s">&#39;&#39;</span><span class="p">,],[(</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">90</span><span class="p">),],</span><span class="mi">2</span><span class="p">,(</span><span class="mf">1.0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)),</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>New key values will be added to the list of options.
-If a key is duplicated, the information in  <cite>UserCalibrants.py</cite> will
-override the information in this file.</p>
-<p>Note, some useful Bravais numbers are: F-cubic=0, I-cubic=1, P-cubic=2, R3/m (hex)=3, P6=4, P4mmm=6</p>
-</div>
 <span class="target" id="module-GSASIIpath"></span><div class="section" id="gsasiipath-locations-updates">
 <h2><em>GSASIIpath: locations &amp; updates</em><a class="headerlink" href="#gsasiipath-locations-updates" title="Permalink to this headline">¶</a></h2>
 <p>Routines for dealing with file locations, etc.</p>
@@ -119,9 +70,50 @@ where <a class="reference internal" href="#GSASIIpath.SetVersionNumber" title="G
 Other routines will update GSASII from the subversion server if svn can be
 found.</p>
 <dl class="function">
+<dt id="GSASIIpath.GetConfigValue">
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">GetConfigValue</tt><big>(</big><em>key</em>, <em>default=None</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#GetConfigValue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.GetConfigValue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the configuration file value for key or a default value if not present</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>key</strong> (<em>str</em>) &#8211; a value to be found in the configuration (config.py) file</li>
+<li><strong>default</strong> &#8211; a value to be supplied is none is in the config file or
+the config file is not found. Defaults to None</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the value found or the default.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIpath.GetVersionNumber">
 <tt class="descclassname">GSASIIpath.</tt><tt class="descname">GetVersionNumber</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#GetVersionNumber"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.GetVersionNumber" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the maximum version number seen in <a class="reference internal" href="#GSASIIpath.SetVersionNumber" title="GSASIIpath.SetVersionNumber"><tt class="xref py py-func docutils literal"><span class="pre">SetVersionNumber()</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIpath.LoadConfigFile">
+<tt class="descclassname">GSASIIpath.</tt><tt class="descname">LoadConfigFile</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#LoadConfigFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.LoadConfigFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a GSAS-II configuration file.
+Comments (starting with &#8220;%&#8221;) are removed, as are empty lines</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) &#8211; base file name (such as &#8216;file.dat&#8217;). Files with this name
+are located from the path and the contents of each are concatenated.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a list containing each non-empty (after removal of comments) line
+found in every matching config file.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -132,20 +124,22 @@ found.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>RevString</strong> (<em>str</em>) &#8211; something like &#8220;$Revision: 1355 $&#8221;
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>RevString</strong> (<em>str</em>) &#8211; something like &#8220;$Revision: 1512 $&#8221;
 that is set by subversion when the file is retrieved from subversion.</td>
 </tr>
 </tbody>
 </table>
-<p>Place <tt class="docutils literal"><span class="pre">GSASIIpath.SetVersionNumber(&quot;$Revision:</span> <span class="pre">1355</span> <span class="pre">$&quot;)</span></tt> in every python
+<p>Place <tt class="docutils literal"><span class="pre">GSASIIpath.SetVersionNumber(&quot;$Revision:</span> <span class="pre">1512</span> <span class="pre">$&quot;)</span></tt> in every python
 file.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIpath.svnFindLocalChanges">
 <tt class="descclassname">GSASIIpath.</tt><tt class="descname">svnFindLocalChanges</tt><big>(</big><em>fpath='/Users/toby/software/G2/GSASII'</em><big>)</big><a class="reference internal" href="_modules/GSASIIpath.html#svnFindLocalChanges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpath.svnFindLocalChanges" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of files that were changed locally. If no files are changed,
-the list has length 0</p>
+<dd><dl class="docutils">
+<dt>Returns a list of files that were changed locally. If no files are changed,</dt>
+<dd>the list has length 0</dd>
+</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -201,7 +195,7 @@ False: returns the version number of Head on the server</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first last">the version number as an str or 
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the version number as an str or 
 None if there is a subversion error (likely because the path is
 not a repository or svn is not found)</p>
 </td>
@@ -253,6 +247,232 @@ executable file.</td>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+</div>
+<span class="target" id="module-GSASIIlog"></span><div class="section" id="gsasiilog-logging-of-actions">
+<h2><em>GSASIIlog: Logging of &#8220;Actions&#8221;</em><a class="headerlink" href="#gsasiilog-logging-of-actions" title="Permalink to this headline">¶</a></h2>
+<p>Module to provide logging services, e.g. track and replay &#8220;actions&#8221;
+such as menu item, tree item, button press, value change and so on.</p>
+<dl class="data">
+<dt id="GSASIIlog.ButtonBindingLookup">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">ButtonBindingLookup</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIlog.ButtonBindingLookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lookup table for button objects</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIlog.ButtonLogEntry">
+<em class="property">class </em><tt class="descclassname">GSASIIlog.</tt><tt class="descname">ButtonLogEntry</tt><big>(</big><em>locationcode</em>, <em>label</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#ButtonLogEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.ButtonLogEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object to track button press</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIlog.G2logList">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">G2logList</tt><em class="property"> = [None]</em><a class="headerlink" href="#GSASIIlog.G2logList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains a list of logged actions; first item is ignored</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlog.InvokeMenuCommand">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">InvokeMenuCommand</tt><big>(</big><em>id</em>, <em>G2frame</em>, <em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#InvokeMenuCommand"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.InvokeMenuCommand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a menu item is used to log the action as well as call the
+routine &#8220;bind&#8221;ed to that menu item</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIlog.LogEntry">
+<em class="property">class </em><tt class="descclassname">GSASIIlog.</tt><tt class="descname">LogEntry</tt><a class="reference internal" href="_modules/GSASIIlog.html#LogEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.LogEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class to define logging objects. These store information on events
+in a manner that can be pickled and saved &#8211; direct references to wx objects
+is not allowed.</p>
+<p>Each object must define:</p>
+<blockquote>
+<div><ul class="simple">
+<li>__init__: stores the information needed to log &amp; later recreate the action</li>
+<li>__str__ : shows a nice ASCII string for each action</li>
+<li>Replay:   recreates the action when the log is played</li>
+</ul>
+</div></blockquote>
+<p>optional:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Repaint:  redisplays the current window</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIlog.LogInfo">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">LogInfo</tt><em class="property"> = {'Tree': None, 'Logging': False, 'LastPaintAction': None}</em><a class="headerlink" href="#GSASIIlog.LogInfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains values that are needed in the module for past actions &amp; object location</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlog.LogOff">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">LogOff</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#LogOff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.LogOff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turn Off logging of actions</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlog.LogOn">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">LogOn</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#LogOn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.LogOn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turn On logging of actions</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlog.LogVarChange">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">LogVarChange</tt><big>(</big><em>result</em>, <em>key</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#LogVarChange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.LogVarChange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when a variable is changed to log that action</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlog.MakeButtonLog">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">MakeButtonLog</tt><big>(</big><em>locationcode</em>, <em>label</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#MakeButtonLog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.MakeButtonLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a ButtonLogEntry action log</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlog.MakeTabLog">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">MakeTabLog</tt><big>(</big><em>title</em>, <em>tabname</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#MakeTabLog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.MakeTabLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a TabLogEntry action log</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlog.MakeTreeLog">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">MakeTreeLog</tt><big>(</big><em>textlist</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#MakeTreeLog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.MakeTreeLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a TreeLogEntry action log</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="GSASIIlog.MenuBindingLookup">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">MenuBindingLookup</tt><em class="property"> = {}</em><a class="headerlink" href="#GSASIIlog.MenuBindingLookup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lookup table for Menu buttons</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIlog.MenuLogEntry">
+<em class="property">class </em><tt class="descclassname">GSASIIlog.</tt><tt class="descname">MenuLogEntry</tt><big>(</big><em>menulabellist</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#MenuLogEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.MenuLogEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>object that tracks when a menu command is executed</p>
+<dl class="method">
+<dt id="GSASIIlog.MenuLogEntry.Replay">
+<tt class="descname">Replay</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#MenuLogEntry.Replay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.MenuLogEntry.Replay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a Menu item action when read from the log</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlog.OnReplayPress">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">OnReplayPress</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#OnReplayPress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.OnReplayPress" title="Permalink to this definition">¶</a></dt>
+<dd><p>execute one or more commands when the replay button is pressed</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlog.ReplayLog">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">ReplayLog</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#ReplayLog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.ReplayLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>replay the logged actions</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlog.SaveMenuCommand">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">SaveMenuCommand</tt><big>(</big><em>id</em>, <em>G2frame</em>, <em>handler</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#SaveMenuCommand"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.SaveMenuCommand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a table of menu items and their pseudo-bindings</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlog.ShowLogStatus">
+<tt class="descclassname">GSASIIlog.</tt><tt class="descname">ShowLogStatus</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#ShowLogStatus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.ShowLogStatus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the logging status</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIlog.TabLogEntry">
+<em class="property">class </em><tt class="descclassname">GSASIIlog.</tt><tt class="descname">TabLogEntry</tt><big>(</big><em>title</em>, <em>tabname</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#TabLogEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.TabLogEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object to track when tabs are pressed in the DataFrame window</p>
+<dl class="method">
+<dt id="GSASIIlog.TabLogEntry.Repaint">
+<tt class="descname">Repaint</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#TabLogEntry.Repaint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.TabLogEntry.Repaint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to redraw a window created in response to a Tab press</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIlog.TabLogEntry.Replay">
+<tt class="descname">Replay</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#TabLogEntry.Replay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.TabLogEntry.Replay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a Tab press action when read from the log</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIlog.TreeLogEntry">
+<em class="property">class </em><tt class="descclassname">GSASIIlog.</tt><tt class="descname">TreeLogEntry</tt><big>(</big><em>itemlist</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#TreeLogEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.TreeLogEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Object to track when tree items are pressed in the main window</p>
+<dl class="method">
+<dt id="GSASIIlog.TreeLogEntry.Repaint">
+<tt class="descname">Repaint</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#TreeLogEntry.Repaint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.TreeLogEntry.Repaint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to redraw a window created in response to a click on a data tree item</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="GSASIIlog.TreeLogEntry.Replay">
+<tt class="descname">Replay</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#TreeLogEntry.Replay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.TreeLogEntry.Replay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a Tree press action when read from the log</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIlog.VarLogEntry">
+<em class="property">class </em><tt class="descclassname">GSASIIlog.</tt><tt class="descname">VarLogEntry</tt><big>(</big><em>treeRefs</em>, <em>indexRefs</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#VarLogEntry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.VarLogEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>object that tracks changes to a variable</p>
+<dl class="method">
+<dt id="GSASIIlog.VarLogEntry.Replay">
+<tt class="descname">Replay</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#VarLogEntry.Replay"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.VarLogEntry.Replay" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a Variable Change action, when read from the log</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIlog.dictLogged">
+<em class="property">class </em><tt class="descclassname">GSASIIlog.</tt><tt class="descname">dictLogged</tt><big>(</big><em>obj</em>, <em>treeRefs</em>, <em>indexRefs=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#dictLogged"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.dictLogged" title="Permalink to this definition">¶</a></dt>
+<dd><p>A version of a dict object that tracks the source of the
+object back to the location on the G2 tree.
+If a list (tuple) or dict are pulled from inside this object
+the source information is appended to the provinance tracking
+lists.</p>
+<p>tuples are converted to lists.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="GSASIIlog.listLogged">
+<em class="property">class </em><tt class="descclassname">GSASIIlog.</tt><tt class="descname">listLogged</tt><big>(</big><em>obj</em>, <em>treeRefs</em>, <em>indexRefs=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIlog.html#listLogged"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlog.listLogged" title="Permalink to this definition">¶</a></dt>
+<dd><p>A version of a list object that tracks the source of the
+object back to the location on the G2 tree.
+If a list (tuple) or dict are pulled from inside this object
+the source information is appended to the provinance tracking
+lists.</p>
+<p>tuples are converted to lists.</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-config_example"></span><div class="section" id="config-py-configuration-options">
+<h2><em>config.py: Configuration options</em><a class="headerlink" href="#config-py-configuration-options" title="Permalink to this headline">¶</a></h2>
+<p>This file contains optional configuration options for GSAS-II. Note that
+this file is not required to be present and code should be written to
+provide the default behavior if the file is not present or if any configuration
+variable is not set, but please do place a docstring here for every used
+config variable explaining what it does.</p>
+<dl class="data">
+<dt id="config_example.Enable_logging">
+<tt class="descclassname">config_example.</tt><tt class="descname">Enable_logging</tt><em class="property"> = None</em><a class="headerlink" href="#config_example.Enable_logging" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to True to enable use of command logging</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="config_example.logging_debug">
+<tt class="descclassname">config_example.</tt><tt class="descname">logging_debug</tt><em class="property"> = None</em><a class="headerlink" href="#config_example.logging_debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to True to enable debug for logging</p>
 </dd></dl>
 
 </div>
@@ -642,8 +862,7 @@ defined by metric tensor G</p>
 <dl class="function">
 <dt id="GSASIIlattice.Dsp2pos">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Dsp2pos</tt><big>(</big><em>Inst</em>, <em>dsp</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Dsp2pos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Dsp2pos" title="Permalink to this definition">¶</a></dt>
-<dd><p>convert d-spacing to powder pattern position (2-theta or TOF, musec)
-ignores secondary effects (e.g. difA in TOF) - maybe later?</p>
+<dd><p>convert d-spacing to powder pattern position (2-theta or TOF, musec)</p>
 </dd></dl>
 
 <dl class="function">
@@ -756,8 +975,10 @@ or throws a ValueError exception if the combination of center, system is not fou
 <dl class="function">
 <dt id="GSASIIlattice.GetKclKsl">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">GetKclKsl</tt><big>(</big><em>L</em>, <em>N</em>, <em>SGLaue</em>, <em>psi</em>, <em>phi</em>, <em>beta</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#GetKclKsl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.GetKclKsl" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is used for spherical harmonics description of preferred orientation;
-cylindrical symmetry only (M=0) and no sample angle derivatives returned</p>
+<dd><dl class="docutils">
+<dt>This is used for spherical harmonics description of preferred orientation;</dt>
+<dd>cylindrical symmetry only (M=0) and no sample angle derivatives returned</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
@@ -845,7 +1066,7 @@ The math works the same either way.</p>
 <dt id="GSASIIlattice.Pos2dsp">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">Pos2dsp</tt><big>(</big><em>Inst</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#Pos2dsp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.Pos2dsp" title="Permalink to this definition">¶</a></dt>
 <dd><p>convert powder pattern position (2-theta or TOF, musec) to d-spacing
-ignores secondary effects (e.g. difA in TOF)</p>
+ignores secondary effects (e.g. difB in TOF)</p>
 </dd></dl>
 
 <dl class="function">
@@ -950,6 +1171,12 @@ NB: there is a non numpy version in GSASIIspc: Uij2U</p>
 <dl class="function">
 <dt id="GSASIIlattice.calc_rDsq2">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">calc_rDsq2</tt><big>(</big><em>H</em>, <em>G</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#calc_rDsq2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.calc_rDsq2" title="Permalink to this definition">¶</a></dt>
+<dd><p>needs doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIlattice.calc_rDsqT">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">calc_rDsqT</tt><big>(</big><em>H</em>, <em>A</em>, <em>Z</em>, <em>tof</em>, <em>difC</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#calc_rDsqT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.calc_rDsqT" title="Permalink to this definition">¶</a></dt>
 <dd><p>needs doc string</p>
 </dd></dl>
 
@@ -1062,10 +1289,18 @@ B (= inverse of A) for Cartesian to crystal transformation B*X = np.inner(B,X) =
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIlattice.getPeakPos">
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">getPeakPos</tt><big>(</big><em>dataType</em>, <em>parmdict</em>, <em>dsp</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#getPeakPos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.getPeakPos" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert d-spacing to powder pattern position (2-theta or TOF, musec)</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIlattice.invcell2Gmat">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">invcell2Gmat</tt><big>(</big><em>invcell</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#invcell2Gmat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.invcell2Gmat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute real and reciprocal lattice metric tensor from reciprocal 
-unit cell constants</p>
+<dd><dl class="docutils">
+<dt>Compute real and reciprocal lattice metric tensor from reciprocal </dt>
+<dd>unit cell constants</dd>
+</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1093,7 +1328,9 @@ unit cell constants</p>
 <dl class="function">
 <dt id="GSASIIlattice.polfcal">
 <tt class="descclassname">GSASIIlattice.</tt><tt class="descname">polfcal</tt><big>(</big><em>ODFln</em>, <em>SamSym</em>, <em>psi</em>, <em>gam</em><big>)</big><a class="reference internal" href="_modules/GSASIIlattice.html#polfcal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIlattice.polfcal" title="Permalink to this definition">¶</a></dt>
-<dd><p>needs doc string</p>
+<dd><p>Perform a pole figure computation.
+Note that the the number of gam values must either be 1 or must
+match psi. Updated for numpy 1.8.0</p>
 </dd></dl>
 
 <dl class="function">
@@ -1162,7 +1399,7 @@ unit cell constants</p>
 
 <dl class="data">
 <dt id="GSASIIlattice.selftestlist">
-<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x5c66630&gt;, &lt;function test1 at 0x5c66670&gt;, &lt;function test2 at 0x5c666b0&gt;, &lt;function test3 at 0x5c666f0&gt;, &lt;function test4 at 0x5c66730&gt;, &lt;function test5 at 0x5c66770&gt;, &lt;function test6 at 0x5c667b0&gt;, &lt;function test7 at 0x5c667f0&gt;, &lt;function test8 at 0x5c66830&gt;, &lt;function test9 at 0x5c66870&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIlattice.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x108e0cf50&gt;, &lt;function test1 at 0x108e0f050&gt;, &lt;function test2 at 0x108e0f0c8&gt;, &lt;function test3 at 0x108e0f140&gt;, &lt;function test4 at 0x108e0f1b8&gt;, &lt;function test5 at 0x108e0f230&gt;, &lt;function test6 at 0x108e0f2a8&gt;, &lt;function test7 at 0x108e0f320&gt;, &lt;function test8 at 0x108e0f398&gt;, &lt;function test9 at 0x108e0f410&gt;]</em><a class="headerlink" href="#GSASIIlattice.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1307,7 +1544,7 @@ So far I have the element type... getting all possible locations without lookup 
 
 <dl class="function">
 <dt id="GSASIIspc.GenAtom">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">GenAtom</tt><big>(</big><em>XYZ</em>, <em>SGData</em>, <em>All=False</em>, <em>Uij=</em><span class="optional">[</span><span class="optional">]</span>, <em>Move=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#GenAtom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.GenAtom" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">GenAtom</tt><big>(</big><em>XYZ</em>, <em>SGData</em>, <em>All=False</em>, <em>Uij=</em>, <span class="optional">[</span><span class="optional">]</span><em>Move=True</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#GenAtom"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.GenAtom" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates the equivalent positions for a specified coordinate and space group</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1433,7 +1670,7 @@ Cell = unit cell translations needed to put new positions inside cell
 <dl class="function">
 <dt id="GSASIIspc.Muiso2Shkl">
 <tt class="descclassname">GSASIIspc.</tt><tt class="descname">Muiso2Shkl</tt><big>(</big><em>muiso</em>, <em>SGData</em>, <em>cell</em><big>)</big><a class="reference internal" href="_modules/GSASIIspc.html#Muiso2Shkl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIspc.Muiso2Shkl" title="Permalink to this definition">¶</a></dt>
-<dd><p>this is to convert isotropic mustrain to generalized Shkls - doesn&#8217;t work just now</p>
+<dd><p>this is to convert isotropic mustrain to generalized Shkls</p>
 </dd></dl>
 
 <dl class="function">
@@ -1597,7 +1834,7 @@ Should return resultant string - C. SGData - dictionary using entries:</p>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns :</th><td class="field-body"><p class="first">a two element tuple:</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a two element tuple:</p>
 <ul class="last simple">
 <li>The 1st element is a code for the site symmetry (see GetKNsym)</li>
 <li>The 2nd element is the site multiplicity</li>
@@ -1610,7 +1847,7 @@ Should return resultant string - C. SGData - dictionary using entries:</p>
 
 <dl class="data">
 <dt id="GSASIIspc.selftestlist">
-<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x5c80230&gt;, &lt;function test1 at 0x5c80270&gt;, &lt;function test2 at 0x5c802b0&gt;, &lt;function test3 at 0x5c802f0&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIspc.</tt><tt class="descname">selftestlist</tt><em class="property"> = [&lt;function test0 at 0x108e38aa0&gt;, &lt;function test1 at 0x108e38b18&gt;, &lt;function test2 at 0x108e38b90&gt;, &lt;function test3 at 0x108e38c08&gt;]</em><a class="headerlink" href="#GSASIIspc.selftestlist" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines a list of self-tests</p>
 </dd></dl>
 
@@ -1869,6 +2106,95 @@ rotation (int)         - Rotation in degree</p>
 </dd></dl>
 
 </div>
+<span class="target" id="module-ElementTable"></span><div class="section" id="elementtable-periodic-table-data">
+<h2><em>ElementTable: Periodic Table Data</em><a class="headerlink" href="#elementtable-periodic-table-data" title="Permalink to this headline">¶</a></h2>
+<p>Element table data for building periodic table with valences &amp; JMOL colors.
+Need these in case we go back to this periodic table coloring scheme.</p>
+<p>Defines list <tt class="docutils literal"><span class="pre">ElTable</span></tt> which contains all defined oxidation states for each
+element, the location in the table, an element name, a color, a size and a
+second color.</p>
+</div>
+<span class="target" id="module-FormFactors"></span><div class="section" id="formfactors-scattering-data">
+<h2><em>FormFactors: Scattering Data</em><a class="headerlink" href="#formfactors-scattering-data" title="Permalink to this headline">¶</a></h2>
+<p>Contains atomic scattering factors from 
+&#8220;New Analytical Scattering Factor Functions for Free Atoms
+and Ions for Free Atoms and Ions&#8221;, 
+D. Waasmaier &amp; A. Kirfel,
+<em>Acta Cryst.</em> <strong>(1995).</strong> A51, 416-413.</p>
+<p>Also, tabulated coefficients for calculation of Compton Cross Section as a function of sin(theta)/lambda from
+&#8220;Analytic Approximations to Incoherently Scattered X-Ray Intensities&#8221;, 
+H. H. M. Balyuzi, <em>Acta Cryst.</em> <strong>(1975).</strong> A31, 600.</p>
+</div>
+<span class="target" id="module-ImageCalibrants"></span><div class="section" id="imagecalibrants-calibration-standards">
+<h2><em>ImageCalibrants: Calibration Standards</em><a class="headerlink" href="#imagecalibrants-calibration-standards" title="Permalink to this headline">¶</a></h2>
+<p>GSASII powder calibrants as a dictionary <tt class="docutils literal"><span class="pre">ImageCalibrants.Calibrants</span></tt> with substances
+commonly used for powder calibrations for image data.</p>
+<p>Each entry in <tt class="docutils literal"><span class="pre">ImageCalibrants</span></tt> consists of:</p>
+<div class="highlight-python"><div class="highlight"><pre>&#39;key&#39;:([Bravais num,],[space group,],[(a,b,c,alpha,beta,gamma),],no. lines skipped,(dmin,pixLimit,cutOff))
+(The space group may be an empty string)
+</pre></div>
+</div>
+<p>as an example:</p>
+<div class="highlight-python"><div class="highlight"><pre>&#39;LaB6  SRM660a&#39;:([2,],[&#39;&#39;,][(4.1569162,4.1569162,4.1569162,90,90,90),],0,(1.0,10,10)),
+</pre></div>
+</div>
+<p>or where &#8220;Bravais num&#8221; and &#8220;(a,b,...)&#8221; are repeated in the case of mixtures:</p>
+<div class="highlight-python"><div class="highlight"><pre>&#39;LaB6 &amp; CeO2&#39;:([2,0],[&#39;&#39;,&#39;&#39;] [(4.1569,4.1569,4.1569,90,90,90),(5.4117,5.4117,5.4117,90,90,90)], 0, (1.0,2,1)),
+</pre></div>
+</div>
+<p>To expand this list with locally needed additions, do not modify this file,
+because you may lose these changes during a software update. Instead
+duplicate the format of this file in a file named <cite>UserCalibrants.py</cite>
+and there define the material(s) you want:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Calibrants</span><span class="o">=</span><span class="p">{</span>
+  <span class="s">&#39;LaB6 skip 2 lines&#39;</span><span class="p">:([</span><span class="mi">2</span><span class="p">,],[</span><span class="s">&#39;&#39;</span><span class="p">,],[(</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mf">4.1569162</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">90</span><span class="p">,</span><span class="mi">90</span><span class="p">),],</span><span class="mi">2</span><span class="p">,(</span><span class="mf">1.0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)),</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>New key values will be added to the list of options.
+If a key is duplicated, the information in  <cite>UserCalibrants.py</cite> will
+override the information in this file.</p>
+<p>Note, some useful Bravais numbers are: F-cubic=0, I-cubic=1, P-cubic=2, R3/m (hex)=3, P6=4, P4mmm=6</p>
+</div>
+<span class="target" id="module-atmdata"></span><div class="section" id="atmdata-table-of-atomic-data">
+<h2><em>atmdata: Table of atomic data</em><a class="headerlink" href="#atmdata-table-of-atomic-data" title="Permalink to this headline">¶</a></h2>
+<p>The entries here are:</p>
+<blockquote>
+<div><p>XrayFF: a dict of form factor coefficients</p>
+<p>AtmSize: atom Sizes, bond radii, angle radii, H-bond radii</p>
+<p>AtmBlens: atom masses &amp; neutron scattering length (b,b&#8217;), sig(incoh) &#64; 1A</p>
+<p>MagFF: neutron magnetic form factor coeff: M for j&lt;0&gt; &amp; N for j&lt;2&gt;</p>
+</div></blockquote>
+<p>Sources:</p>
+<blockquote>
+<div><p>Exponential scattering factor curve coeficients, Cromer and
+Waber(1971) Int. Tables Vol. IV. Delta f&#8217; and delta f&#8221; terms,
+Cromer(1971) Int. Tables Vol. IV Atomic weights from CRC 56th
+Edition.</p>
+<p>Neutron scattering lengths &amp; abs. cross sections from
+H. Rauch &amp; W. Waschowski, Neutron Data Booklet, 2003.  X-ray
+&lt;j0&gt; &amp; &lt;j2&gt; coeff. from Intl. Tables for Cryst, Vol. C</p>
+<p>Neutron anomalous coeff (LS) from fitting Lynn &amp; Seeger, At. Data &amp; Nuc. Data Tables, 44, 191-207(1990)</p>
+<p>O2- x-ray scattering factor from Tokonami (1965) Acta Cryst 19, 486</p>
+<p>At wts from 14th ed Nuclides &amp; Isotopes, 1989 GE Co.</p>
+</div></blockquote>
+</div>
+<span class="target" id="module-defaultIparms"></span><div class="section" id="defaultiparms-table-of-atomic-data">
+<h2><em>defaultIparms: Table of atomic data</em><a class="headerlink" href="#defaultiparms-table-of-atomic-data" title="Permalink to this headline">¶</a></h2>
+<p>Define some default instrument parameters:
+Format for each is a list of strings finished with a &#8216;
+&#8216;.
+Begin with &#8216;#GSAS-II...&#8217; as the reader routine checks this.
+Each line can be comprised of a block of &#8216;;&#8217; delimited name:value pairs.
+All instrument parameters must be included; even those = 0.
+Use a GSAS-II instprm file as a source for the entries.</p>
+<p>For a new entry:</p>
+<blockquote>
+<div>Append a useful name to defaultIparms_lbl.
+Append the list of lines to defaultIparms.</div></blockquote>
+<p>defaultIparm_lbl: defines a list of labels</p>
+<p>defaultIparms: defines a list of multiple strings with values for each set of defaults</p>
+</div>
 </div>
 
 
@@ -1884,14 +2210,18 @@ rotation (int)         - Rotation in degree</p>
   <ul>
 <li><a class="reference internal" href="#"><em>GSAS-II Utility Modules</em></a><ul>
 <li><a class="reference internal" href="#gsasiidata-data-for-computations"><em>GSASIIdata: Data for computations</em></a></li>
-<li><a class="reference internal" href="#elementtable-periodic-table-data"><em>ElementTable: Periodic Table Data</em></a></li>
-<li><a class="reference internal" href="#formfactors-scattering-data"><em>FormFactors: Scattering Data</em></a></li>
-<li><a class="reference internal" href="#imagecalibrants-calibration-standards"><em>ImageCalibrants: Calibration Standards</em></a></li>
 <li><a class="reference internal" href="#gsasiipath-locations-updates"><em>GSASIIpath: locations &amp; updates</em></a></li>
+<li><a class="reference internal" href="#gsasiilog-logging-of-actions"><em>GSASIIlog: Logging of &#8220;Actions&#8221;</em></a></li>
+<li><a class="reference internal" href="#config-py-configuration-options"><em>config.py: Configuration options</em></a></li>
 <li><a class="reference internal" href="#gsasiielem-functions-for-element-types"><em>GSASIIElem: functions for element types</em></a></li>
 <li><a class="reference internal" href="#gsasiilattice-unit-cells"><em>GSASIIlattice: Unit cells</em></a></li>
 <li><a class="reference internal" href="#gsasiispc-space-group-module"><em>GSASIIspc: Space group module</em></a></li>
 <li><a class="reference internal" href="#gltext-draw-opengl-text"><em>gltext: draw OpenGL text</em></a></li>
+<li><a class="reference internal" href="#elementtable-periodic-table-data"><em>ElementTable: Periodic Table Data</em></a></li>
+<li><a class="reference internal" href="#formfactors-scattering-data"><em>FormFactors: Scattering Data</em></a></li>
+<li><a class="reference internal" href="#imagecalibrants-calibration-standards"><em>ImageCalibrants: Calibration Standards</em></a></li>
+<li><a class="reference internal" href="#atmdata-table-of-atomic-data"><em>atmdata: Table of atomic data</em></a></li>
+<li><a class="reference internal" href="#defaultiparms-table-of-atomic-data"><em>defaultIparms: Table of atomic data</em></a></li>
 </ul>
 </li>
 </ul>
@@ -1944,7 +2274,7 @@ rotation (int)         - Rotation in degree</p>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

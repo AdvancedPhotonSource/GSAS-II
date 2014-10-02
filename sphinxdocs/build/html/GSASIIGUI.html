@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -273,7 +271,7 @@ depending on the histogram type and the instrument type.</p>
 
 <dl class="function">
 <dt id="GSASIIpwdGUI.SetupSampleLabels">
-<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">SetupSampleLabels</tt><big>(</big><em>histName</em>, <em>dataType</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#SetupSampleLabels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.SetupSampleLabels" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIpwdGUI.</tt><tt class="descname">SetupSampleLabels</tt><big>(</big><em>histName</em>, <em>dataType</em>, <em>histType</em><big>)</big><a class="reference internal" href="_modules/GSASIIpwdGUI.html#SetupSampleLabels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIpwdGUI.SetupSampleLabels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Setup a list of labels and number formatting for use in
 labeling sample parameters.
 :param str histName: Name of histogram, (&#8220;PWDR ...&#8221;)
@@ -368,6 +366,8 @@ in a parameter dictionary via a wx.Dialog. The dialog creates a <tt class="xref 
 which is used to evaluate the expression against a supplied parameter dictionary.</p>
 <p>The expression is parsed to find variables used in the expression and then
 the user is asked to assign parameters from the dictionary to each variable.</p>
+<p>Default expressions are read from file DefaultExpressions.txt using
+<a class="reference internal" href="GSASIIutil.html#GSASIIpath.LoadConfigFile" title="GSASIIpath.LoadConfigFile"><tt class="xref py py-func docutils literal"><span class="pre">GSASIIpath.LoadConfigFile()</span></tt></a>.</p>
 <dl class="class">
 <dt id="GSASIIexprGUI.ExpressionDialog">
 <em class="property">class </em><tt class="descclassname">GSASIIexprGUI.</tt><tt class="descname">ExpressionDialog</tt><big>(</big><em>parent</em>, <em>parmDict</em>, <em>exprObj=None</em>, <em>header='Enter restraint expression here'</em>, <em>wintitle='Expression Editor'</em>, <em>fit=True</em>, <em>VarLabel=None</em>, <em>depVarDict=None</em>, <em>ExtraButton=None</em>, <em>usedVars=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#ExpressionDialog"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog" title="Permalink to this definition">¶</a></dt>
@@ -521,6 +521,12 @@ where 1 is used for Phase variables, and 2 for Histogram/Phase vars,
 </dd></dl>
 
 <dl class="attribute">
+<dt id="GSASIIexprGUI.ExpressionDialog.defSize">
+<tt class="descname">defSize</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.defSize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starting size for dialog</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="GSASIIexprGUI.ExpressionDialog.depVarDict">
 <tt class="descname">depVarDict</tt><em class="property"> = None</em><a class="headerlink" href="#GSASIIexprGUI.ExpressionDialog.depVarDict" title="Permalink to this definition">¶</a></dt>
 <dd><p>dict for dependent variables</p>
@@ -644,6 +650,14 @@ be generated and added to the lists</li>
 </table>
 </dd></dl>
 
+<dl class="function">
+<dt id="GSASIIexprGUI.LoadDefaultExpressions">
+<tt class="descclassname">GSASIIexprGUI.</tt><tt class="descname">LoadDefaultExpressions</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/GSASIIexprGUI.html#LoadDefaultExpressions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIexprGUI.LoadDefaultExpressions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a configuration file with default expressions from all files named
+DefaultExpressions.txt found in the path. Duplicates are removed and
+expressions are sorted alphabetically</p>
+</dd></dl>
+
 </div>
 </div>
 
@@ -719,7 +733,7 @@ be generated and added to the lists</li>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

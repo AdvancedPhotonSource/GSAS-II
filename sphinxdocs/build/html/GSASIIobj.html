@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -106,7 +104,8 @@ are of form ::&lt;var&gt;:n</td>
 </tbody>
 </table>
 <span class="target" id="constraint-definitions-table"></span><p id="index-1">Each constraint is defined as an item in a list. Each constraint is of form:</p>
-<div class="highlight-python"><pre>[[&lt;mult1&gt;, &lt;var1&gt;], [&lt;mult2&gt;, &lt;var2&gt;],..., &lt;fixedval&gt;, &lt;varyflag&gt;, &lt;constype&gt;]</pre>
+<div class="highlight-python"><div class="highlight"><pre>[[&lt;mult1&gt;, &lt;var1&gt;], [&lt;mult2&gt;, &lt;var2&gt;],..., &lt;fixedval&gt;, &lt;varyflag&gt;, &lt;constype&gt;]
+</pre></div>
 </div>
 <p>Where the variable pair list item containing two values [&lt;mult&gt;, &lt;var&gt;], where:</p>
 <blockquote>
@@ -1603,12 +1602,14 @@ is always done before use.</p>
 <p>Note that keys may contain regular expressions, where &#8216;[xyz]&#8217;
 matches &#8216;x&#8217; &#8216;y&#8217; or &#8216;z&#8217; (equivalently &#8216;[x-z]&#8217; describes this as range of values).
 &#8216;.*&#8217; matches any string. For example:</p>
-<div class="highlight-python"><pre>'AUiso':'Atomic isotropic displacement parameter',</pre>
+<div class="highlight-python"><div class="highlight"><pre>&#39;AUiso&#39;:&#39;Atomic isotropic displacement parameter&#39;,
+</pre></div>
 </div>
 <p>will match variable <tt class="docutils literal"><span class="pre">'p::AUiso:a'</span></tt>.
 If parentheses are used in the key, the contents of those parentheses can be
 used in the value, such as:</p>
-<div class="highlight-python"><pre>'AU([123][123])':'Atomic anisotropic displacement parameter U\1',</pre>
+<div class="highlight-python"><div class="highlight"><pre>&#39;AU([123][123])&#39;:&#39;Atomic anisotropic displacement parameter U\1&#39;,
+</pre></div>
 </div>
 <p>will match <tt class="docutils literal"><span class="pre">AU11</span></tt>, <tt class="docutils literal"><span class="pre">AU23</span></tt>,.. and <cite>U11</cite>, <cite>U23</cite> etc will be displayed
 in the value when used.</p>
@@ -2373,7 +2374,7 @@ regular expressions. Initialized in <a class="reference internal" href="#GSASIIo
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

@@ -7,16 +7,19 @@
 # $URL: $
 # $Id: $
 ########### SVN repository information ###################
-''' This file contains optional configuration options for GSAS-II. Note that
+'''
+*config.py: Configuration options*
+----------------------------------
+
+This file contains optional configuration options for GSAS-II. Note that
 this file is not required to be present and code should be written to
 provide the default behavior if the file is not present or if any configuration
-variable is not set, but please do place a comment here defining each variable and
-what it does. 
+variable is not set, but please do place a docstring here for every used
+config variable explaining what it does. 
 '''
+
 Enable_logging = None
-Enable_logging = True
 'Set to True to enable use of command logging'
 
 logging_debug = None
-#logging_debug = True
 'Set to True to enable debug for logging'

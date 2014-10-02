@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -382,8 +380,10 @@ is searched</li>
 <dl class="function">
 <dt id="GSASIImath.GetXYZDist">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">GetXYZDist</tt><big>(</big><em>xyz</em>, <em>XYZ</em>, <em>Amat</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#GetXYZDist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.GetXYZDist" title="Permalink to this definition">¶</a></dt>
-<dd><p>gets distance from position xyz to all XYZ, xyz &amp; XYZ are np.array 
-and are in crystal coordinates; Amat is crystal to Cart matrix</p>
+<dd><dl class="docutils">
+<dt>gets distance from position xyz to all XYZ, xyz &amp; XYZ are np.array </dt>
+<dd>and are in crystal coordinates; Amat is crystal to Cart matrix</dd>
+</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -401,9 +401,10 @@ and are in crystal coordinates; Amat is crystal to Cart matrix</p>
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">HessianLSQ</tt><big>(</big><em>func</em>, <em>x0</em>, <em>Hess</em>, <em>args=()</em>, <em>ftol=1.49012e-08</em>, <em>xtol=1.49012e-08</em>, <em>maxcyc=0</em>, <em>Print=False</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#HessianLSQ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.HessianLSQ" title="Permalink to this definition">¶</a></dt>
 <dd><p>Minimize the sum of squares of a function (<span class="math">\(f\)</span>) evaluated on a series of
 values (y): <span class="math">\(\sum_{y=0}^{N_{obs}} f(y,{args})\)</span></p>
-<div class="highlight-python"><pre>            Nobs
+<div class="highlight-python"><div class="highlight"><pre>            Nobs
 x = arg min(sum(func(y)**2,axis=0))
-            y=0</pre>
+            y=0
+</pre></div>
 </div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -866,27 +867,30 @@ Also, let x_old denote the previous state, and k denote the
 iteration number of the outer loop. All other variables not
 defined below are input variables to scipy.optimize.anneal itself.</p>
 <p>In the &#8216;fast&#8217; schedule the updates are</p>
-<div class="highlight-python"><pre>u ~ Uniform(0, 1, size=d)
+<div class="highlight-python"><div class="highlight"><pre>u ~ Uniform(0, 1, size=d)
 y = sgn(u - 0.5) * T * ((1+ 1/T)**abs(2u-1) -1.0)
 xc = y * (upper - lower)
 x_new = x_old + xc
 
 c = n * exp(-n * quench)
-T_new = T0 * exp(-c * k**quench)</pre>
+T_new = T0 * exp(-c * k**quench)
+</pre></div>
 </div>
 <p>In the &#8216;cauchy&#8217; schedule the updates are</p>
-<div class="highlight-python"><pre>u ~ Uniform(-pi/2, pi/2, size=d)
+<div class="highlight-python"><div class="highlight"><pre>u ~ Uniform(-pi/2, pi/2, size=d)
 xc = learn_rate * T * tan(u)
 x_new = x_old + xc
 
-T_new = T0 / (1+k)</pre>
+T_new = T0 / (1+k)
+</pre></div>
 </div>
 <p>In the &#8216;boltzmann&#8217; schedule the updates are</p>
-<div class="highlight-python"><pre>std = minimum( sqrt(T) * ones(d), (upper-lower) / (3*learn_rate) )
+<div class="highlight-python"><div class="highlight"><pre>std = minimum( sqrt(T) * ones(d), (upper-lower) / (3*learn_rate) )
 y ~ Normal(0, std, size=d)
 x_new = x_old + learn_rate * y
 
-T_new = T0 / log(1+k)</pre>
+T_new = T0 / log(1+k)
+</pre></div>
 </div>
 </dd></dl>
 
@@ -984,14 +988,20 @@ sum is used for penalty function.</p>
 <dl class="function">
 <dt id="GSASIImath.getCWgam">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getCWgam</tt><big>(</big><em>ins</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getCWgam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getCWgam" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get CW peak profile gamma</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ins</strong> (<em>dict</em>) &#8211; instrument parameters with at least &#8216;X&#8217; &amp; &#8216;Y&#8217; 
+as values only</li>
+<li><strong>pos</strong> (<em>float</em>) &#8211; 2-theta of peak</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">float getCWgam: peak gamma</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1000,14 +1010,14 @@ sum is used for penalty function.</p>
 <dl class="function">
 <dt id="GSASIImath.getCWgamDeriv">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getCWgamDeriv</tt><big>(</big><em>pos</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getCWgamDeriv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getCWgamDeriv" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get derivatives of CW peak profile gamma wrt X &amp; Y</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pos</strong> (<em>float</em>) &#8211; 2-theta of peak</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list getCWgamDeriv: d(gam)/dX &amp; d(gam)/dY</td>
 </tr>
 </tbody>
 </table>
@@ -1016,14 +1026,20 @@ sum is used for penalty function.</p>
 <dl class="function">
 <dt id="GSASIImath.getCWsig">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getCWsig</tt><big>(</big><em>ins</em>, <em>pos</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getCWsig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getCWsig" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get CW peak profile sigma</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ins</strong> (<em>dict</em>) &#8211; instrument parameters with at least &#8216;U&#8217;, &#8216;V&#8217;, &amp; &#8216;W&#8217; 
+as values only</li>
+<li><strong>pos</strong> (<em>float</em>) &#8211; 2-theta of peak</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">float getCWsig: peak sigma</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1032,14 +1048,14 @@ sum is used for penalty function.</p>
 <dl class="function">
 <dt id="GSASIImath.getCWsigDeriv">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getCWsigDeriv</tt><big>(</big><em>pos</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getCWsigDeriv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getCWsigDeriv" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get derivatives of CW peak profile sigma wrt U,V, &amp; W</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pos</strong> (<em>float</em>) &#8211; 2-theta of peak</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list getCWsigDeriv: d(sig)/dU, d(sig)/dV &amp; d(sig)/dW</td>
 </tr>
 </tbody>
 </table>
@@ -1285,14 +1301,20 @@ crystallographic xyz coordinates.</p>
 <dl class="function">
 <dt id="GSASIImath.getTOFalpha">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getTOFalpha</tt><big>(</big><em>ins</em>, <em>dsp</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getTOFalpha"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getTOFalpha" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get TOF peak profile alpha</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ins</strong> (<em>dict</em>) &#8211; instrument parameters with at least &#8216;alpha&#8217;
+as values only</li>
+<li><strong>dsp</strong> (<em>float</em>) &#8211; d-spacing of peak</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">flaot getTOFalpha: peak alpha</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1301,14 +1323,14 @@ crystallographic xyz coordinates.</p>
 <dl class="function">
 <dt id="GSASIImath.getTOFalphaDeriv">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getTOFalphaDeriv</tt><big>(</big><em>dsp</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getTOFalphaDeriv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getTOFalphaDeriv" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get derivatives of TOF peak profile beta wrt alpha</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dsp</strong> (<em>float</em>) &#8211; d-spacing of peak</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">float getTOFalphaDeriv: d(alp)/d(alpha)</td>
 </tr>
 </tbody>
 </table>
@@ -1317,14 +1339,20 @@ crystallographic xyz coordinates.</p>
 <dl class="function">
 <dt id="GSASIImath.getTOFbeta">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getTOFbeta</tt><big>(</big><em>ins</em>, <em>dsp</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getTOFbeta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getTOFbeta" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get TOF peak profile beta</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ins</strong> (<em>dict</em>) &#8211; instrument parameters with at least &#8216;beat-0&#8217;, &#8216;beta-1&#8217; &amp; &#8216;beta-q&#8217;
+as values only</li>
+<li><strong>dsp</strong> (<em>float</em>) &#8211; d-spacing of peak</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">float getTOFbeta: peak beat</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1333,14 +1361,14 @@ crystallographic xyz coordinates.</p>
 <dl class="function">
 <dt id="GSASIImath.getTOFbetaDeriv">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getTOFbetaDeriv</tt><big>(</big><em>dsp</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getTOFbetaDeriv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getTOFbetaDeriv" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get derivatives of TOF peak profile beta wrt beta-0, beta-1, &amp; beat-q</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dsp</strong> (<em>float</em>) &#8211; d-spacing of peak</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list getTOFbetaDeriv: d(beta)/d(beat-0), d(beta)/d(beta-1) &amp; d(beta)/d(beta-q)</td>
 </tr>
 </tbody>
 </table>
@@ -1349,14 +1377,20 @@ crystallographic xyz coordinates.</p>
 <dl class="function">
 <dt id="GSASIImath.getTOFgamma">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getTOFgamma</tt><big>(</big><em>ins</em>, <em>dsp</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getTOFgamma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getTOFgamma" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get TOF peak profile gamma</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ins</strong> (<em>dict</em>) &#8211; instrument parameters with at least &#8216;X&#8217; &amp; &#8216;Y&#8217;
+as values only</li>
+<li><strong>dsp</strong> (<em>float</em>) &#8211; d-spacing of peak</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">float getTOFgamma: peak gamma</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1365,14 +1399,14 @@ crystallographic xyz coordinates.</p>
 <dl class="function">
 <dt id="GSASIImath.getTOFgammaDeriv">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getTOFgammaDeriv</tt><big>(</big><em>dsp</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getTOFgammaDeriv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getTOFgammaDeriv" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get derivatives of TOF peak profile gamma wrt X &amp; Y</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dsp</strong> (<em>float</em>) &#8211; d-spacing of peak</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list getTOFgammaDeriv: d(gam)/dX &amp; d(gam)/dY</td>
 </tr>
 </tbody>
 </table>
@@ -1381,14 +1415,20 @@ crystallographic xyz coordinates.</p>
 <dl class="function">
 <dt id="GSASIImath.getTOFsig">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getTOFsig</tt><big>(</big><em>ins</em>, <em>dsp</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getTOFsig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getTOFsig" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get TOF peak profile sigma</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ins</strong> (<em>dict</em>) &#8211; instrument parameters with at least &#8216;sig-0&#8217;, &#8216;sig-1&#8217; &amp; &#8216;sig-q&#8217;
+as values only</li>
+<li><strong>dsp</strong> (<em>float</em>) &#8211; d-spacing of peak</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">float getTOFsig: peak sigma</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1397,14 +1437,14 @@ crystallographic xyz coordinates.</p>
 <dl class="function">
 <dt id="GSASIImath.getTOFsigDeriv">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">getTOFsigDeriv</tt><big>(</big><em>dsp</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#getTOFsigDeriv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.getTOFsigDeriv" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>get derivatives of TOF peak profile gamma wrt sig-0, sig-1, &amp; sig-q</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dsp</strong> (<em>float</em>) &#8211; d-spacing of peak</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">list getTOFsigDeriv: d(sig0/d(sig-0), d(sig)/d(sig-1) &amp; d(sig)/d(sig-q)</td>
 </tr>
 </tbody>
 </table>
@@ -1562,14 +1602,26 @@ q=r+ai+bj+ck</p>
 <dl class="function">
 <dt id="GSASIImath.setPeakparms">
 <tt class="descclassname">GSASIImath.</tt><tt class="descname">setPeakparms</tt><big>(</big><em>Parms</em>, <em>Parms2</em>, <em>pos</em>, <em>mag</em>, <em>ifQ=False</em>, <em>useFit=False</em><big>)</big><a class="reference internal" href="_modules/GSASIImath.html#setPeakparms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIImath.setPeakparms" title="Permalink to this definition">¶</a></dt>
-<dd><p>default doc string</p>
+<dd><p>set starting peak parameters for single peak fits from plot selection or auto selection</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>type</em>) &#8211; description</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Parms</strong> (<em>dict</em>) &#8211; instrument parameters dictionary</li>
+<li><strong>Parms2</strong> (<em>dict</em>) &#8211; table lookup for TOF profile coefficients</li>
+<li><strong>pos</strong> (<em>float</em>) &#8211; peak position in 2-theta, TOF or Q (ifQ=True)</li>
+<li><strong>mag</strong> (<em>float</em>) &#8211; peak top magnitude from pick</li>
+<li><strong>ifQ</strong> (<em>bool</em>) &#8211; True if pos in Q</li>
+<li><strong>useFit</strong> (<em>bool</em>) &#8211; True if use fitted CW Parms values (not defaults)</li>
+</ul>
+</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">type name: description</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">list XY: peak list entry:
+for CW: [pos,0,mag,1,sig,0,gam,0]
+for TOF: [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]
+NB: mag refinement set by default, all others off</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1649,7 +1701,7 @@ sort by pos in list; reverse if True</p>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

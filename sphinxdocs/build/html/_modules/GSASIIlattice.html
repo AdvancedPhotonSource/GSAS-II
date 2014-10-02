@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -75,18 +73,18 @@
 <span class="sd">:math:`Q = 2 \\pi d^* = 2 \\pi / d`</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-05-30 17:27:15 -0500 (Fri, 30 May 2014) $</span>
+<span class="c"># $Date: 2014-09-07 14:37:26 -0400 (Sun, 07 Sep 2014) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1372 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIlattice.py $</span>
-<span class="c"># $Id: GSASIIlattice.py 1372 2014-05-30 22:27:15Z vondreele $</span>
+<span class="c"># $Revision: 1489 $</span>
+<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIlattice.py $</span>
+<span class="c"># $Id: GSASIIlattice.py 1489 2014-09-07 18:37:26Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">numpy.linalg</span> <span class="kn">as</span> <span class="nn">nl</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1372 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1489 $&quot;</span><span class="p">)</span>
 <span class="c"># trig functions in degrees</span>
 <span class="n">sind</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span><span class="p">)</span>
 <span class="n">asind</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mf">180.</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span>
@@ -319,16 +317,16 @@
 <span class="sd">        Uij - numpy [3][3] array of uij</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">U</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
-        <span class="p">[</span><span class="n">U6</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">4</span><span class="p">]],</span> 
-        <span class="p">[</span><span class="n">U6</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">5</span><span class="p">]],</span> 
-        <span class="p">[</span><span class="n">U6</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">2</span><span class="p">]]])</span>
+        <span class="p">[</span><span class="n">U6</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">/</span><span class="mf">2.</span><span class="p">],</span> 
+        <span class="p">[</span><span class="n">U6</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">/</span><span class="mf">2.</span><span class="p">],</span> 
+        <span class="p">[</span><span class="n">U6</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">/</span><span class="mf">2.</span><span class="p">,</span>  <span class="n">U6</span><span class="p">[</span><span class="mi">2</span><span class="p">]]])</span>
     <span class="k">return</span> <span class="n">U</span>
 </div>
 <div class="viewcode-block" id="UijtoU6"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.UijtoU6">[docs]</a><span class="k">def</span> <span class="nf">UijtoU6</span><span class="p">(</span><span class="n">U</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Fill vector [U11,U22,U33,U12,U13,U23] from Uij </span>
 <span class="sd">    NB: there is a non numpy version in GSASIIspc: Uij2U</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">U6</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="n">U</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span><span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span><span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]])</span>
+    <span class="n">U6</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="n">U</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span><span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mf">2.</span><span class="p">,</span><span class="n">U</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="mf">2.</span><span class="p">,</span><span class="n">U</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="mf">2.</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">U6</span>
 </div>
 <div class="viewcode-block" id="Uij2betaij"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.Uij2betaij">[docs]</a><span class="k">def</span> <span class="nf">Uij2betaij</span><span class="p">(</span><span class="n">Uij</span><span class="p">,</span><span class="n">G</span><span class="p">):</span>
@@ -468,25 +466,35 @@
    </div>
 <div class="viewcode-block" id="Pos2dsp"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.Pos2dsp">[docs]</a><span class="k">def</span> <span class="nf">Pos2dsp</span><span class="p">(</span><span class="n">Inst</span><span class="p">,</span><span class="n">pos</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; convert powder pattern position (2-theta or TOF, musec) to d-spacing</span>
-<span class="sd">    ignores secondary effects (e.g. difA in TOF)</span>
+<span class="sd">    ignores secondary effects (e.g. difB in TOF)</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">if</span> <span class="s">&#39;C&#39;</span> <span class="ow">in</span> <span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
         <span class="n">wave</span> <span class="o">=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">getWave</span><span class="p">(</span><span class="n">Inst</span><span class="p">)</span>
-        <span class="n">dsp</span> <span class="o">=</span> <span class="n">wave</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">sind</span><span class="p">((</span><span class="n">pos</span><span class="o">-</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mf">2.0</span><span class="p">))</span>
-    <span class="k">else</span><span class="p">:</span>   <span class="c">#&#39;T&#39;OF - ignore difA</span>
-        <span class="n">dsp</span> <span class="o">=</span> <span class="p">(</span><span class="n">pos</span><span class="o">-</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="n">difC</span>
-    <span class="k">return</span> <span class="n">dsp</span>
+        <span class="k">return</span> <span class="n">wave</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">sind</span><span class="p">((</span><span class="n">pos</span><span class="o">-</span><span class="n">Inst</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Zero&#39;</span><span class="p">,[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])[</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mf">2.0</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>   <span class="c">#&#39;T&#39;OF - ignore difB</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">pos</span><span class="o">-</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">T1</span> <span class="o">=</span> <span class="n">Inst</span><span class="p">[</span><span class="s">&#39;difC&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">-</span><span class="mf">4.</span><span class="o">*</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;difA&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">T</span>
+        <span class="k">return</span> <span class="mf">2.</span><span class="o">*</span><span class="n">T</span><span class="o">/</span><span class="p">(</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;difC&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">T1</span><span class="p">))</span>
     </div>
 <div class="viewcode-block" id="Dsp2pos"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.Dsp2pos">[docs]</a><span class="k">def</span> <span class="nf">Dsp2pos</span><span class="p">(</span><span class="n">Inst</span><span class="p">,</span><span class="n">dsp</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39; convert d-spacing to powder pattern position (2-theta or TOF, musec)</span>
-<span class="sd">    ignores secondary effects (e.g. difA in TOF) - maybe later?</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">if</span> <span class="s">&#39;C&#39;</span> <span class="ow">in</span> <span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Type&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
         <span class="n">wave</span> <span class="o">=</span> <span class="n">G2mth</span><span class="o">.</span><span class="n">getWave</span><span class="p">(</span><span class="n">Inst</span><span class="p">)</span>
-        <span class="n">pos</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">asind</span><span class="p">(</span><span class="n">wave</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">dsp</span><span class="p">))</span><span class="o">+</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>             
-    <span class="k">else</span><span class="p">:</span>   <span class="c">#&#39;T&#39;OF - ignore difA</span>
-        <span class="n">pos</span> <span class="o">=</span> <span class="n">Inst</span><span class="p">[</span><span class="s">&#39;difC&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">+</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">pos</span>             
+        <span class="n">pos</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">asind</span><span class="p">(</span><span class="n">wave</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">dsp</span><span class="p">))</span><span class="o">+</span><span class="n">Inst</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Zero&#39;</span><span class="p">,[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span>             
+    <span class="k">else</span><span class="p">:</span>   <span class="c">#&#39;T&#39;OF</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">Inst</span><span class="p">[</span><span class="s">&#39;difC&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">+</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">Inst</span><span class="p">[</span><span class="s">&#39;difA&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">Inst</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;difB&#39;</span><span class="p">,[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="bp">False</span><span class="p">])[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span>
+    <span class="k">return</span> <span class="n">pos</span>
+    </div>
+<div class="viewcode-block" id="getPeakPos"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.getPeakPos">[docs]</a><span class="k">def</span> <span class="nf">getPeakPos</span><span class="p">(</span><span class="n">dataType</span><span class="p">,</span><span class="n">parmdict</span><span class="p">,</span><span class="n">dsp</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; convert d-spacing to powder pattern position (2-theta or TOF, musec)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="s">&#39;C&#39;</span> <span class="ow">in</span> <span class="n">dataType</span><span class="p">:</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">asind</span><span class="p">(</span><span class="n">parmdict</span><span class="p">[</span><span class="s">&#39;Lam&#39;</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">dsp</span><span class="p">))</span><span class="o">+</span><span class="n">parmdict</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>   <span class="c">#&#39;T&#39;OF</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">parmdict</span><span class="p">[</span><span class="s">&#39;difC&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">+</span><span class="n">parmdict</span><span class="p">[</span><span class="s">&#39;difA&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">parmdict</span><span class="p">[</span><span class="s">&#39;difB&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span><span class="o">+</span><span class="n">parmdict</span><span class="p">[</span><span class="s">&#39;Zero&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">pos</span>
+                   
    </div>
 <div class="viewcode-block" id="calc_rDsq"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.calc_rDsq">[docs]</a><span class="k">def</span> <span class="nf">calc_rDsq</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">A</span><span class="p">):</span>
     <span class="s">&#39;needs doc string&#39;</span>
@@ -501,6 +509,11 @@
     <span class="s">&#39;needs doc string&#39;</span>
     <span class="n">rpd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.</span>
     <span class="n">rdsq</span> <span class="o">=</span> <span class="n">calc_rDsq</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">A</span><span class="p">)</span><span class="o">+</span><span class="n">Z</span><span class="o">*</span><span class="n">sind</span><span class="p">(</span><span class="n">tth</span><span class="p">)</span><span class="o">*</span><span class="mf">2.0</span><span class="o">*</span><span class="n">rpd</span><span class="o">/</span><span class="n">lam</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="n">rdsq</span>
+       </div>
+<div class="viewcode-block" id="calc_rDsqT"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.calc_rDsqT">[docs]</a><span class="k">def</span> <span class="nf">calc_rDsqT</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">A</span><span class="p">,</span><span class="n">Z</span><span class="p">,</span><span class="n">tof</span><span class="p">,</span><span class="n">difC</span><span class="p">):</span>
+    <span class="s">&#39;needs doc string&#39;</span>
+    <span class="n">rdsq</span> <span class="o">=</span> <span class="n">calc_rDsq</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">A</span><span class="p">)</span><span class="o">+</span><span class="n">Z</span><span class="o">/</span><span class="n">difC</span>
     <span class="k">return</span> <span class="n">rdsq</span>
        </div>
 <div class="viewcode-block" id="MaxIndex"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.MaxIndex">[docs]</a><span class="k">def</span> <span class="nf">MaxIndex</span><span class="p">(</span><span class="n">dmin</span><span class="p">,</span><span class="n">A</span><span class="p">):</span>
@@ -1240,11 +1253,14 @@
     <span class="k">return</span> <span class="n">ODFln</span>
     </div>
 <div class="viewcode-block" id="polfcal"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.polfcal">[docs]</a><span class="k">def</span> <span class="nf">polfcal</span><span class="p">(</span><span class="n">ODFln</span><span class="p">,</span><span class="n">SamSym</span><span class="p">,</span><span class="n">psi</span><span class="p">,</span><span class="n">gam</span><span class="p">):</span>
-    <span class="s">&#39;needs doc string&#39;</span>
+    <span class="sd">&#39;&#39;&#39;Perform a pole figure computation.</span>
+<span class="sd">    Note that the the number of gam values must either be 1 or must</span>
+<span class="sd">    match psi. Updated for numpy 1.8.0</span>
+<span class="sd">    &#39;&#39;&#39;</span>
     <span class="kn">import</span> <span class="nn">pytexture</span> <span class="kn">as</span> <span class="nn">ptx</span>
     <span class="n">RSQPI</span> <span class="o">=</span> <span class="mf">0.5641895835478</span>
     <span class="n">SQ2</span> <span class="o">=</span> <span class="mf">1.414213562373</span>
-    <span class="n">PolVal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">gam</span><span class="p">)</span>
+    <span class="n">PolVal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">psi</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">ODFln</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">ODFln</span><span class="p">[</span><span class="n">term</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mf">1.e-3</span><span class="p">:</span>
             <span class="n">l</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">n</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s">&#39;C&#39;</span><span class="p">))</span>
@@ -1259,7 +1275,7 @@
                     <span class="n">Ksl</span> <span class="o">=</span> <span class="n">RSQPI</span><span class="o">*</span><span class="n">psrs</span><span class="o">*</span><span class="n">cosd</span><span class="p">(</span><span class="n">m</span><span class="o">*</span><span class="n">gam</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">Ksl</span> <span class="o">=</span> <span class="n">RSQPI</span><span class="o">*</span><span class="n">psrs</span><span class="o">/</span><span class="n">SQ2</span>
-            <span class="n">PolVal</span> <span class="o">+=</span> <span class="n">ODFln</span><span class="p">[</span><span class="n">term</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">Ksl</span> 
+            <span class="n">PolVal</span> <span class="o">+=</span> <span class="n">ODFln</span><span class="p">[</span><span class="n">term</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">Ksl</span>
     <span class="k">return</span> <span class="n">PolVal</span>
     </div>
 <div class="viewcode-block" id="invpolfcal"><a class="viewcode-back" href="../GSASIIutil.html#GSASIIlattice.invpolfcal">[docs]</a><span class="k">def</span> <span class="nf">invpolfcal</span><span class="p">(</span><span class="n">ODFln</span><span class="p">,</span><span class="n">SGData</span><span class="p">,</span><span class="n">phi</span><span class="p">,</span><span class="n">beta</span><span class="p">):</span>
@@ -1706,7 +1722,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -52,11 +50,11 @@
   <h1>Source code for GSASIImapvars</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-04-11 14:31:29 -0500 (Fri, 11 Apr 2014) $</span>
+<span class="c"># $Date: 2014-09-18 11:18:32 -0500 (Thu, 18 Sep 2014) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1276 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImapvars.py $</span>
-<span class="c"># $Id: GSASIImapvars.py 1276 2014-04-11 19:31:29Z toby $</span>
+<span class="c"># $Revision: 1502 $</span>
+<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImapvars.py $</span>
+<span class="c"># $Id: GSASIImapvars.py 1502 2014-09-18 16:18:32Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">*GSASIImapvars: Parameter constraints*</span>
@@ -262,7 +260,7 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1276 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1502 $&quot;</span><span class="p">)</span>
 <span class="c"># data used for constraints; </span>
 <span class="n">debug</span> <span class="o">=</span> <span class="bp">False</span> <span class="c"># turns on printing as constraint input is processed</span>
 <span class="c"># note that constraints are stored listed by contraint groups, where each constraint</span>
@@ -447,7 +445,7 @@
             <span class="n">s</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>            
         <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="o">+</span> <span class="n">s</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
     <span class="n">equivVarList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">indepVarList</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">depVarList</span><span class="p">)))</span>
-    <span class="c">#print &#39;equivVarList&#39;,equivVarList</span>
+    <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span> <span class="s">&#39;equivVarList&#39;</span><span class="p">,</span><span class="n">equivVarList</span>
     <span class="n">inboth</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">fixVlist</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">equivVarList</span><span class="p">))</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inboth</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">errmsg</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">The following parameter(s) are used in both Equivalence and Fixed constraints:</span><span class="se">\n</span><span class="s">&quot;</span>
@@ -577,7 +575,7 @@
 <span class="sd">      (returned as 2nd value)</span>
 
 <span class="sd">    :param list varyList: a list of parameters names (strings of form</span>
-<span class="sd">      ``&lt;ph&gt;:&lt;hst&gt;:&lt;nam&gt;``) that will be varied</span>
+<span class="sd">      ``&lt;ph&gt;:&lt;hst&gt;:&lt;nam&gt;``) that will be varied. Note that this is changed here. </span>
 <span class="sd">    </span>
 <span class="sd">    :param dict constrDict: a list of dicts defining relationships/constraints</span>
 <span class="sd">      (as defined in :func:`GroupConstraints`)</span>
@@ -655,8 +653,8 @@
                     <span class="n">s</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>            
                 <span class="n">msg</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">mv</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; =&gt; &quot;</span> <span class="o">+</span> <span class="n">s</span> <span class="o">+</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
 
-    <span class="c">#print &#39;indepVarList&#39;,indepVarList</span>
-    <span class="c">#print &#39;depVarList&#39;,depVarList</span>
+    <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span> <span class="s">&#39;indepVarList&#39;</span><span class="p">,</span><span class="n">indepVarList</span>
+    <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span> <span class="s">&#39;depVarList&#39;</span><span class="p">,</span><span class="n">depVarList</span>
     <span class="c"># check for errors:</span>
     <span class="n">inboth</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">indepVarList</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">depVarList</span><span class="p">))</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inboth</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -845,7 +843,7 @@
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">var</span><span class="p">,</span><span class="n">mult</span> <span class="o">=</span> <span class="n">var</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">,</span> <span class="s">&quot;Cannot parse &quot;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; as var or (var,multiplier)&quot;</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Cannot parse &quot;</span><span class="o">+</span><span class="nb">repr</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; as var or (var,multiplier)&quot;</span><span class="p">)</span>
         <span class="n">mapList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
         <span class="n">multlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">((</span><span class="n">mult</span><span class="p">,)))</span>
     <span class="c"># added relationships to stored values</span>
@@ -984,7 +982,7 @@
                 <span class="n">s</span> <span class="o">+=</span> <span class="s">&#39;  &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">mv</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39; is equivalent to parameter(s): &#39;</span>
                 <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="k">for</span> <span class="n">v</span><span class="p">,</span><span class="n">m</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">varlist</span><span class="p">,</span><span class="n">invmultarr</span><span class="p">):</span>
-                    <span class="c">#print v,m[0]</span>
+                    <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span> <span class="s">&#39;v,m[0]: &#39;</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">s</span> <span class="o">+=</span> <span class="s">&#39;  &amp; &#39;</span>
                     <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
                     <span class="n">s</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
@@ -1035,12 +1033,14 @@
             <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">varyList</span><span class="p">:</span> <span class="k">continue</span> <span class="c"># skip if independent var not varied</span>
             <span class="k">if</span> <span class="n">multarr</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">v</span><span class="p">,</span><span class="n">m</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">varlist</span><span class="p">,</span><span class="n">invmultarr</span><span class="p">):</span>
-                    <span class="c">#print &#39;add derv&#39;,v,&#39;/&#39;,m[0],&#39;to derv&#39;,name</span>
+                    <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span> <span class="s">&#39;start dMdv&#39;</span><span class="p">,</span><span class="n">dMdv</span><span class="p">[</span><span class="n">varyList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span> <span class="s">&#39;add derv&#39;</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="s">&#39;/&#39;</span><span class="p">,</span><span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;to derv&#39;</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="s">&#39;add=&#39;</span><span class="p">,</span><span class="n">derivDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">/</span> <span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">continue</span>
                     <span class="n">dMdv</span><span class="p">[</span><span class="n">varyList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">derivDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">/</span> <span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">v</span><span class="p">,</span><span class="n">m</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">varlist</span><span class="p">,</span><span class="n">multarr</span><span class="p">[</span><span class="n">i</span><span class="p">,:]):</span>
-                    <span class="c">#print &#39;add derv&#39;,v,&#39;*&#39;,m,&#39;to derv&#39;,name</span>
+                    <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span> <span class="s">&#39;start dMdv&#39;</span><span class="p">,</span><span class="n">dMdv</span><span class="p">[</span><span class="n">varyList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span>
+                    <span class="k">if</span> <span class="n">debug</span><span class="p">:</span> <span class="k">print</span> <span class="s">&#39;add derv&#39;</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="s">&#39;*&#39;</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="s">&#39;to derv&#39;</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="s">&#39;add=&#39;</span><span class="p">,</span><span class="n">m</span> <span class="o">*</span> <span class="n">derivDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">continue</span>
                     <span class="n">dMdv</span><span class="p">[</span><span class="n">varyList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">m</span> <span class="o">*</span> <span class="n">derivDict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span>
 </div>
@@ -1221,7 +1221,7 @@
 <span class="c">#                     [&#39;1.0&#39;])</span>
 <span class="c">#    if e: print &#39;error=&#39;,e</span>
 <span class="c">#    if w: print &#39;error=&#39;,w</span>
-<span class="c">#    varyList = [&#39;0::A0&#39;, &#39;0::AUiso:0&#39;, &#39;0::Afrac:1&#39;, &#39;0::Afrac:2&#39;, &#39;0::Afrac:3&#39;, &#39;0::Afrac:4&#39;, &#39;0::dAx:5&#39;, &#39;0::dAy:5&#39;, &#39;0::dAz:5&#39;, &#39;0::AUiso:5&#39;, &#39;:0:Back:0&#39;, &#39;:0:Back:1&#39;, &#39;:0:Back:2&#39;, &#39;:0:Back:3&#39;, &#39;:0:Back:4&#39;, &#39;:0:Back:5&#39;, &#39;:0:Back:6&#39;, &#39;:0:Back:7&#39;, &#39;:0:Back:8&#39;, &#39;:0:Back:9&#39;, &#39;:0:Back:10&#39;, &#39;:0:Back:11&#39;, &#39;:0:U&#39;, &#39;:0:V&#39;, &#39;:0:W&#39;, &#39;:0:X&#39;, &#39;:0:Y&#39;, &#39;:0:Scale&#39;, &#39;:0:DisplaceX&#39;, &#39;:0:DisplaceY&#39;]</span>
+<span class="c">#    varyList = [&#39;0::A0&#39;, &#39;0::AUiso:0&#39;, &#39;0::Afrac:1&#39;, &#39;0::Afrac:2&#39;, &#39;0::Afrac:3&#39;, &#39;0::Afrac:4&#39;, &#39;0::dAx:5&#39;, &#39;0::dAy:5&#39;, &#39;0::dAz:5&#39;, &#39;0::AUiso:5&#39;, &#39;:0:Back;0&#39;, &#39;:0:Back;1&#39;, &#39;:0:Back;2&#39;, &#39;:0:Back;3&#39;, &#39;:0:Back;4&#39;, &#39;:0:Back;5&#39;, &#39;:0:Back;6&#39;, &#39;:0:Back;7&#39;, &#39;:0:Back;8&#39;, &#39;:0:Back;9&#39;, &#39;:0:Back;10&#39;, &#39;:0:Back;11&#39;, &#39;:0:U&#39;, &#39;:0:V&#39;, &#39;:0:W&#39;, &#39;:0:X&#39;, &#39;:0:Y&#39;, &#39;:0:Scale&#39;, &#39;:0:DisplaceX&#39;, &#39;:0:DisplaceY&#39;]</span>
 <span class="c">#    constrDict = [</span>
 <span class="c">#        {&#39;0::Afrac:4&#39;: 24.0, &#39;0::Afrac:1&#39;: 16.0, &#39;0::Afrac:3&#39;: 24.0, &#39;0::Afrac:2&#39;: 16.0},</span>
 <span class="c">#        {&#39;0::Afrac:1&#39;: 1.0, &#39;0::Afrac:2&#39;: 1.0},</span>
@@ -1310,7 +1310,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

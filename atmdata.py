@@ -1,14 +1,34 @@
 '''
-           1 Exponential scattering factor curve coeficients, Cromer and
-           2 Waber(1971) Int. Tables Vol. IV. Delta f' and delta f" terms,
-           3 Cromer(1971) Int. Tables Vol. IV Atomic weights from CRC 56th
-           4 Edition. Neutron scattering lengths & abs. cross sections from
-           5 H. Rauch & W. Waschowski, Neutron Data Booklet, 2003.  X-ray
-           8 <j0> & <j2> coeff. from Intl. Tables for Cryst, Vol. C
-           9 Neutron anomalous coeff (LS) from fitting Lynn & Seeger, At. Data &
-          10 Nuc. Data Tables, 44, 191-207(1990)
-          11 O2- x-ray scattering factor from Tokonami (1965) Acta Cryst 19, 486
-          12 At wts from 14th ed Nuclides & Isotopes, 1989 GE Co.
+*atmdata: Table of atomic data*
+---------------------------------
+
+The entries here are:
+
+  XrayFF: a dict of form factor coefficients
+
+  AtmSize: atom Sizes, bond radii, angle radii, H-bond radii
+
+  AtmBlens: atom masses & neutron scattering length (b,b'), sig(incoh) @ 1A
+
+  MagFF: neutron magnetic form factor coeff: M for j<0> & N for j<2>
+
+Sources:
+  
+           Exponential scattering factor curve coeficients, Cromer and
+           Waber(1971) Int. Tables Vol. IV. Delta f' and delta f" terms,
+           Cromer(1971) Int. Tables Vol. IV Atomic weights from CRC 56th
+           Edition.
+
+           Neutron scattering lengths & abs. cross sections from
+           H. Rauch & W. Waschowski, Neutron Data Booklet, 2003.  X-ray
+           <j0> & <j2> coeff. from Intl. Tables for Cryst, Vol. C
+
+           Neutron anomalous coeff (LS) from fitting Lynn & Seeger, At. Data & Nuc. Data Tables, 44, 191-207(1990)
+
+           O2- x-ray scattering factor from Tokonami (1965) Acta Cryst 19, 486
+
+           At wts from 14th ed Nuclides & Isotopes, 1989 GE Co.
+
 '''
 XrayFF = { 
 #form factor coefficients

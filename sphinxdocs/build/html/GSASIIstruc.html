@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -73,7 +71,7 @@
 
 <dl class="function">
 <dt id="GSASIIstrMain.PrintDistAngle">
-<tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">PrintDistAngle</tt><big>(</big><em>DisAglCtls</em>, <em>DisAglData</em>, <em>out=&lt;open file '&lt;stdout&gt;'</em>, <em>mode 'w' at 0x240078&gt;</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#PrintDistAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.PrintDistAngle" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIstrMain.</tt><tt class="descname">PrintDistAngle</tt><big>(</big><em>DisAglCtls</em>, <em>DisAglData</em>, <em>out=&lt;open file '&lt;stdout&gt;'</em>, <em>mode 'w' at 0x10028e150&gt;</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMain.html#PrintDistAngle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMain.PrintDistAngle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print distances and angles</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -239,13 +237,13 @@ in parmdict, as selected by key in varylist</p>
 
 <dl class="function">
 <dt id="GSASIIstrMath.GetHStrainShift">
-<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetHStrainShift</tt><big>(</big><em>refl</em>, <em>SGData</em>, <em>phfx</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetHStrainShift"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetHStrainShift" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetHStrainShift</tt><big>(</big><em>refl</em>, <em>SGData</em>, <em>phfx</em>, <em>hfx</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetHStrainShift"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetHStrainShift" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIstrMath.GetHStrainShiftDerv">
-<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetHStrainShiftDerv</tt><big>(</big><em>refl</em>, <em>SGData</em>, <em>phfx</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetHStrainShiftDerv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetHStrainShiftDerv" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetHStrainShiftDerv</tt><big>(</big><em>refl</em>, <em>SGData</em>, <em>phfx</em>, <em>hfx</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetHStrainShiftDerv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetHStrainShiftDerv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
@@ -257,7 +255,7 @@ in parmdict, as selected by key in varylist</p>
 
 <dl class="function">
 <dt id="GSASIIstrMath.GetIntensityDerv">
-<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetIntensityDerv</tt><big>(</big><em>refl</em>, <em>uniq</em>, <em>G</em>, <em>g</em>, <em>pfx</em>, <em>phfx</em>, <em>hfx</em>, <em>SGData</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetIntensityDerv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetIntensityDerv" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetIntensityDerv</tt><big>(</big><em>refl</em>, <em>wave</em>, <em>uniq</em>, <em>G</em>, <em>g</em>, <em>pfx</em>, <em>phfx</em>, <em>hfx</em>, <em>SGData</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetIntensityDerv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetIntensityDerv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
@@ -270,12 +268,24 @@ in parmdict, as selected by key in varylist</p>
 <dl class="function">
 <dt id="GSASIIstrMath.GetPrefOri">
 <tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetPrefOri</tt><big>(</big><em>refl</em>, <em>uniq</em>, <em>G</em>, <em>g</em>, <em>phfx</em>, <em>hfx</em>, <em>SGData</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetPrefOri"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetPrefOri" title="Permalink to this definition">¶</a></dt>
-<dd><p>Needs a doc string</p>
+<dd><p>March-Dollase preferred orientation correction</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIstrMath.GetPrefOriDerv">
 <tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetPrefOriDerv</tt><big>(</big><em>refl</em>, <em>uniq</em>, <em>G</em>, <em>g</em>, <em>phfx</em>, <em>hfx</em>, <em>SGData</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetPrefOriDerv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetPrefOriDerv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIstrMath.GetPwdrExt">
+<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetPwdrExt</tt><big>(</big><em>refl</em>, <em>pfx</em>, <em>phfx</em>, <em>hfx</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetPwdrExt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetPwdrExt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Needs a doc string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIstrMath.GetPwdrExtDerv">
+<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetPwdrExtDerv</tt><big>(</big><em>refl</em>, <em>pfx</em>, <em>phfx</em>, <em>hfx</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetPwdrExtDerv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetPwdrExtDerv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
@@ -293,13 +303,13 @@ in parmdict, as selected by key in varylist</p>
 
 <dl class="function">
 <dt id="GSASIIstrMath.GetSampleSigGam">
-<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetSampleSigGam</tt><big>(</big><em>refl</em>, <em>wave</em>, <em>G</em>, <em>GB</em>, <em>phfx</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetSampleSigGam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetSampleSigGam" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetSampleSigGam</tt><big>(</big><em>refl</em>, <em>wave</em>, <em>G</em>, <em>GB</em>, <em>SGData</em>, <em>hfx</em>, <em>phfx</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetSampleSigGam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetSampleSigGam" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIstrMath.GetSampleSigGamDerv">
-<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetSampleSigGamDerv</tt><big>(</big><em>refl</em>, <em>wave</em>, <em>G</em>, <em>GB</em>, <em>phfx</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetSampleSigGamDerv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetSampleSigGamDerv" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">GetSampleSigGamDerv</tt><big>(</big><em>refl</em>, <em>wave</em>, <em>G</em>, <em>GB</em>, <em>SGData</em>, <em>hfx</em>, <em>phfx</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#GetSampleSigGamDerv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.GetSampleSigGamDerv" title="Permalink to this definition">¶</a></dt>
 <dd><p>Needs a doc string</p>
 </dd></dl>
 
@@ -326,8 +336,7 @@ derivatives are selected as &#8220;analtytic Hessian&#8221; in Controls.</p>
 <dl class="function">
 <dt id="GSASIIstrMath.SCExtinction">
 <tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">SCExtinction</tt><big>(</big><em>ref</em>, <em>phfx</em>, <em>hfx</em>, <em>pfx</em>, <em>calcControls</em>, <em>parmDict</em>, <em>varyList</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#SCExtinction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.SCExtinction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Single crystal extinction function; puts correction in ref[13] and returns
-corrections needed for derivatives</p>
+<dd><p>Single crystal extinction function; returns extinction &amp; derivative</p>
 </dd></dl>
 
 <dl class="function">
@@ -357,7 +366,8 @@ corrections needed for derivatives</p>
 <dl class="function">
 <dt id="GSASIIstrMath.StructureFactor">
 <tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">StructureFactor</tt><big>(</big><em>refDict</em>, <em>G</em>, <em>hfx</em>, <em>pfx</em>, <em>SGData</em>, <em>calcControls</em>, <em>parmDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#StructureFactor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.StructureFactor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute structure factors for all h,k,l for phase
+<dd><p>Not Used: here only for comparison the StructureFactor2 - faster version
+Compute structure factors for all h,k,l for phase
 puts the result, F^2, in each ref[8] in refList
 input:</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -417,6 +427,22 @@ input:</p>
 <tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">Values2Dict</tt><big>(</big><em>parmdict</em>, <em>varylist</em>, <em>values</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#Values2Dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.Values2Dict" title="Permalink to this definition">¶</a></dt>
 <dd><p>Use after call to leastsq to update the parameter dictionary with 
 values corresponding to keys in varylist</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIstrMath.dervHKLF">
+<tt class="descclassname">GSASIIstrMath.</tt><tt class="descname">dervHKLF</tt><big>(</big><em>Histogram</em>, <em>Phase</em>, <em>calcControls</em>, <em>varylist</em>, <em>parmDict</em>, <em>rigidbodyDict</em><big>)</big><a class="reference internal" href="_modules/GSASIIstrMath.html#dervHKLF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIstrMath.dervHKLF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loop over reflections in a HKLF histogram and compute derivatives of the fitting
+model (M) with respect to all parameters.  Independent and dependant dM/dp arrays 
+are returned to either dervRefine or HessRefine.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
@@ -934,7 +960,7 @@ False the name of the last file that exists is returned</li>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

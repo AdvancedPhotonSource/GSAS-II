@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -53,11 +51,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIexprGUI - Expression Definition and Evaluation</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-05-10 20:12:27 -0500 (Sat, 10 May 2014) $</span>
+<span class="c"># $Date: 2014-07-06 12:53:47 -0500 (Sun, 06 Jul 2014) $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1340 $</span>
+<span class="c"># $Revision: 1413 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIexprGUI.py $</span>
-<span class="c"># $Id: GSASIIexprGUI.py 1340 2014-05-11 01:12:27Z toby $</span>
+<span class="c"># $Id: GSASIIexprGUI.py 1413 2014-07-06 17:53:47Z toby $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIexprGUI: Expression Handling*</span>
@@ -70,12 +68,18 @@
 <span class="sd">The expression is parsed to find variables used in the expression and then</span>
 <span class="sd">the user is asked to assign parameters from the dictionary to each variable.</span>
 
+<span class="sd">Default expressions are read from file DefaultExpressions.txt using</span>
+<span class="sd">:func:`GSASIIpath.LoadConfigFile`.</span>
+
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">wx</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">wx.lib.scrolledpanel</span> <span class="kn">as</span> <span class="nn">wxscroll</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">GSASIIpath</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1413 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIpy3</span> <span class="kn">as</span> <span class="nn">G2py3</span>
 <span class="kn">import</span> <span class="nn">GSASIIobj</span> <span class="kn">as</span> <span class="nn">G2obj</span>
@@ -111,6 +115,17 @@
         <span class="n">parmLists</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">parmLists</span>
 
+<span class="c">#==========================================================================</span></div>
+<span class="n">defaultExpressions</span> <span class="o">=</span> <span class="bp">None</span>
+<div class="viewcode-block" id="LoadDefaultExpressions"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.LoadDefaultExpressions">[docs]</a><span class="k">def</span> <span class="nf">LoadDefaultExpressions</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;Read a configuration file with default expressions from all files named</span>
+<span class="sd">    DefaultExpressions.txt found in the path. Duplicates are removed and</span>
+<span class="sd">    expressions are sorted alphabetically</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">global</span> <span class="n">defaultExpressions</span>
+    <span class="k">if</span> <span class="n">defaultExpressions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="k">return</span> <span class="c"># run this routine only once</span>
+    <span class="n">defaultExpressions</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">GSASIIpath</span><span class="o">.</span><span class="n">LoadConfigFile</span><span class="p">(</span><span class="s">&#39;DefaultExpressions.txt&#39;</span><span class="p">))))</span>
+    
 <span class="c">#==========================================================================</span></div>
 <div class="viewcode-block" id="ExpressionDialog"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog">[docs]</a><span class="k">class</span> <span class="nc">ExpressionDialog</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;A wx.Dialog that allows a user to input an arbitrary expression</span>
@@ -199,6 +214,8 @@
         <span class="s">&#39;name for dependent variable selection, when depVarDict is specified&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">usedVars</span> <span class="o">=</span> <span class="n">usedVars</span>
         <span class="s">&#39;variable names that have been used and should not be reused by default&#39;</span>
+        <span class="n">defSize</span> <span class="o">=</span> <span class="p">(</span><span class="mi">620</span><span class="p">,</span><span class="mi">340</span><span class="p">)</span> <span class="c"># seems like a good size</span>
+        <span class="s">&#39;Starting size for dialog&#39;</span>
 
         <span class="c"># process dictionary of values and create an index</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">parmDict</span><span class="p">:</span>
@@ -215,9 +232,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">parmLists</span> <span class="o">=</span> <span class="n">IndexParmDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parmDict</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">Timer</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_TIMER</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">OnValidate</span><span class="p">)</span>
-
+        <span class="n">LoadDefaultExpressions</span><span class="p">()</span>
         <span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">DEFAULT_DIALOG_STYLE</span> <span class="o">|</span> <span class="n">wx</span><span class="o">.</span><span class="n">RESIZE_BORDER</span>
-        <span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">wintitle</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="p">)</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">Dialog</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">wintitle</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">defSize</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">BoxSizer</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">VERTICAL</span><span class="p">)</span>
         <span class="n">label</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">header</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTRE</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
@@ -245,8 +262,13 @@
             <span class="n">label</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="s">&#39; = &#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">exsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">TextCtrl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">150</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span><span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">TE_PROCESS_ENTER</span><span class="p">)</span>
+        <span class="c">#self.exCtrl = wx.TextCtrl(self,  wx.ID_ANY, size=(150,-1),style=wx.TE_PROCESS_ENTER)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">ComboBox</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">90</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span> <span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                                  <span class="n">defaultExpressions</span><span class="p">,</span>
+                                  <span class="n">wx</span><span class="o">.</span><span class="n">CB_DROPDOWN</span><span class="o">|</span> <span class="n">wx</span><span class="o">.</span><span class="n">TE_PROCESS_ENTER</span>
+                         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_CHAR</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnChar</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_COMBOBOX</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnValidate</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span><span class="o">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">wx</span><span class="o">.</span><span class="n">EVT_TEXT_ENTER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OnValidate</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exsizer</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">wx</span><span class="o">.</span><span class="n">ALL</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER_VERTICAL</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="c">#self.mainsizer.Add(self.exCtrl, 0, wx.ALL|wx.EXPAND, 5)</span>
@@ -304,7 +326,7 @@
                     
         <span class="bp">self</span><span class="o">.</span><span class="n">exCtrl</span><span class="o">.</span><span class="n">SetValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expr</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">OnValidate</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">SetMinSize</span><span class="p">((</span><span class="mi">620</span><span class="p">,</span><span class="mi">300</span><span class="p">))</span> <span class="c"># seems like a good size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SetMinSize</span><span class="p">(</span><span class="n">defSize</span><span class="p">)</span> 
         <span class="c">#self.errbox.SetAutoLayout(1)</span>
         <span class="c">#self.errbox.SetupScrolling()</span>
         <span class="c">#self.varbox.SetAutoLayout(1)</span>
@@ -331,7 +353,7 @@
             <span class="n">val</span> <span class="o">=</span>  <span class="n">resDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">varname</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">val</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">varValue</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
-        <span class="n">wx</span><span class="o">.</span><span class="n">CallAfter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ShowVars</span><span class="p">())</span>
+        <span class="n">wx</span><span class="o">.</span><span class="n">CallAfter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ShowVars</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ExpressionDialog.Show"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog.Show">[docs]</a>    <span class="k">def</span> <span class="nf">Show</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">mode</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Call to use the dialog after it is created.</span>
@@ -339,7 +361,8 @@
 <span class="sd">        :returns: None (On Cancel) or a new :class:`~GSASIIobj.ExpressionObj`</span>
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Layout</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mainsizer</span><span class="o">.</span><span class="n">Fit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c">#self.mainsizer.Fit(self)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SendSizeEvent</span><span class="p">()</span> <span class="c"># force repaint</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span> <span class="o">==</span> <span class="n">wx</span><span class="o">.</span><span class="n">ID_OK</span><span class="p">:</span>
             <span class="c"># store the edit results in the object and return it</span>
             <span class="n">exprObj</span> <span class="o">=</span> <span class="n">G2obj</span><span class="o">.</span><span class="n">ExpressionObj</span><span class="p">()</span>
@@ -443,7 +466,7 @@
             <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span>
                           <span class="s">&#39;Assignment of variables to labels:&#39;</span><span class="p">),</span>
             <span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">EXPAND</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">GridSiz</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">FlexGridSizer</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exprVarLst</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">GridSiz</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">FlexGridSizer</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">GridSiz</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span>
             <span class="n">wx</span><span class="o">.</span><span class="n">StaticText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ID_ANY</span><span class="p">,</span><span class="s">&#39;label&#39;</span><span class="p">,</span><span class="n">style</span><span class="o">=</span><span class="n">wx</span><span class="o">.</span><span class="n">CENTER</span><span class="p">),</span>
             <span class="mi">0</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">ALIGN_CENTER</span><span class="p">)</span>
@@ -533,6 +556,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="o">.</span><span class="n">SetupScrolling</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">varbox</span><span class="o">.</span><span class="n">Refresh</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Layout</span><span class="p">()</span>
+        <span class="c">#self.mainsizer.Fit(self)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SendSizeEvent</span><span class="p">()</span> <span class="c"># force repaint</span>
         <span class="k">return</span>
 
 <div class="viewcode-block" id="ExpressionDialog.OnDepChoice"><a class="viewcode-back" href="../GSASIIGUI.html#GSASIIexprGUI.ExpressionDialog.OnDepChoice">[docs]</a>    <span class="k">def</span> <span class="nf">OnDepChoice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">event</span><span class="p">):</span>
@@ -815,7 +840,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

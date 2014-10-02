@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -184,7 +182,7 @@ returns numpy array S(Q)</p>
 
 <dl class="function">
 <dt id="GSASIIsasd.IPG">
-<tt class="descclassname">GSASIIsasd.</tt><tt class="descname">IPG</tt><big>(</big><em>datum</em>, <em>sigma</em>, <em>G</em>, <em>Bins</em>, <em>Dbins</em>, <em>IterMax</em>, <em>Qvec=</em><span class="optional">[</span><span class="optional">]</span>, <em>approach=0.8</em>, <em>Power=-1</em>, <em>report=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIsasd.html#IPG"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIsasd.IPG" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIsasd.</tt><tt class="descname">IPG</tt><big>(</big><em>datum</em>, <em>sigma</em>, <em>G</em>, <em>Bins</em>, <em>Dbins</em>, <em>IterMax</em>, <em>Qvec=</em>, <span class="optional">[</span><span class="optional">]</span><em>approach=0.8</em>, <em>Power=-1</em>, <em>report=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIsasd.html#IPG"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIsasd.IPG" title="Permalink to this definition">¶</a></dt>
 <dd><p>An implementation of the Interior-Point Gradient method of 
 Michael Merritt &amp; Yin Zhang, Technical Report TR04-08, Dept. of Comp. and 
 Appl. Math., Rice Univ., Houston, Texas 77005, U.S.A. found on the web at
@@ -360,7 +358,7 @@ returns float: volume</p>
 <tt class="descclassname">GSASIIsasd.</tt><tt class="descname">SquareWellSF</tt><big>(</big><em>Q</em>, <em>args</em><big>)</big><a class="reference internal" href="_modules/GSASIIsasd.html#SquareWellSF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIsasd.SquareWellSF" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes structure factor for not dilute monodisperse hard sphere with a
 square well potential interaction. 
-Refs.: SHARMA,SHARMA, PHYSICA 89A,(1977),212</p>
+Refs.: SHARMA,SHARMA, PHYSICA 89A,(1977),213-</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -513,7 +511,8 @@ returns float: volume (A^3) of tube wall</p>
 <p>Defines materials commonly found in small angle &amp; reflectometry experiments.
 GSASII substances as a dictionary &#8216;&#8217;Substances.Substances&#8217;&#8217; with these materials.</p>
 <p>Each entry in &#8216;&#8217;Substances&#8217;&#8217; consists of:</p>
-<div class="highlight-python"><pre>'key':{'Elements':{element:{'Num':number in formula},...},'Density':value, 'Volume':,value}</pre>
+<div class="highlight-python"><div class="highlight"><pre>&#39;key&#39;:{&#39;Elements&#39;:{element:{&#39;Num&#39;:number in formula},...},&#39;Density&#39;:value, &#39;Volume&#39;:,value}
+</pre></div>
 </div>
 <p>Density &amp; Volume are optional, if one missing it is calculated from the other; if both
 are missing then Volume is estimated from composition &amp; assuming 10A^3 for each atom,
@@ -588,7 +587,7 @@ See examples below for what is needed.</p>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

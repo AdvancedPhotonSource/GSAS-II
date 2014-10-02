@@ -9,7 +9,7 @@
 #
 '''
 *Module G2phase: PDB, .EXP & JANA m40,m50*
-------------------------------------
+-------------------------------------------
 
 A set of short routines to read in phases using routines that were
 previously implemented in GSAS-II: PDB, GSAS .EXP and JANA m40-m50 file formats

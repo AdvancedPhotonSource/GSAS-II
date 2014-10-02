@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -15,7 +13,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '',
+        URL_ROOT:    './',
         VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -190,6 +188,19 @@ triggers the addition of a d-zero.</li>
 </dd></dl>
 
 <dl class="function">
+<dt id="GSASIIplot.Plot3DSngl">
+<tt class="descclassname">GSASIIplot.</tt><tt class="descname">Plot3DSngl</tt><big>(</big><em>G2frame</em>, <em>newPlot=False</em>, <em>Data=None</em>, <em>hklRef=None</em>, <em>Title=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#Plot3DSngl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.Plot3DSngl" title="Permalink to this definition">¶</a></dt>
+<dd><p>3D Structure factor plotting package - displays reflections as rings proportional
+to F, F**2, etc. as requested as 3D array</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="GSASIIplot.PlotCalib">
+<tt class="descclassname">GSASIIplot.</tt><tt class="descname">PlotCalib</tt><big>(</big><em>G2frame</em>, <em>Inst</em>, <em>XY</em>, <em>Sigs</em>, <em>newPlot=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#PlotCalib"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.PlotCalib" title="Permalink to this definition">¶</a></dt>
+<dd><p>plot of CW or TOF peak calibration</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="GSASIIplot.PlotCovariance">
 <tt class="descclassname">GSASIIplot.</tt><tt class="descname">PlotCovariance</tt><big>(</big><em>G2frame</em>, <em>Data</em><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#PlotCovariance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.PlotCovariance" title="Permalink to this definition">¶</a></dt>
 <dd><p>needs a doc string</p>
@@ -250,7 +261,7 @@ Seen when &#8220;Instrument Parameters&#8221; chosen from powder pattern data tr
 
 <dl class="function">
 <dt id="GSASIIplot.PlotRama">
-<tt class="descclassname">GSASIIplot.</tt><tt class="descname">PlotRama</tt><big>(</big><em>G2frame</em>, <em>phaseName</em>, <em>Rama</em>, <em>RamaName</em>, <em>Names=</em><span class="optional">[</span><span class="optional">]</span>, <em>PhiPsi=</em><span class="optional">[</span><span class="optional">]</span>, <em>Coeff=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#PlotRama"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.PlotRama" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIplot.</tt><tt class="descname">PlotRama</tt><big>(</big><em>G2frame</em>, <em>phaseName</em>, <em>Rama</em>, <em>RamaName</em>, <em>Names=</em>, <span class="optional">[</span><span class="optional">]</span><em>PhiPsi=</em>, <span class="optional">[</span><span class="optional">]</span><em>Coeff=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#PlotRama"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.PlotRama" title="Permalink to this definition">¶</a></dt>
 <dd><p>needs a doc string</p>
 </dd></dl>
 
@@ -292,7 +303,7 @@ number (or None) as the X-axis selection</li>
 <dl class="function">
 <dt id="GSASIIplot.PlotSngl">
 <tt class="descclassname">GSASIIplot.</tt><tt class="descname">PlotSngl</tt><big>(</big><em>G2frame</em>, <em>newPlot=False</em>, <em>Data=None</em>, <em>hklRef=None</em>, <em>Title=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#PlotSngl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.PlotSngl" title="Permalink to this definition">¶</a></dt>
-<dd><p>Single crystal structure factor plotting package - displays zone of reflections as rings proportional
+<dd><p>Structure factor plotting package - displays zone of reflections as rings proportional
 to F, F**2, etc. as requested</p>
 </dd></dl>
 
@@ -304,7 +315,7 @@ to F, F**2, etc. as requested</p>
 
 <dl class="function">
 <dt id="GSASIIplot.PlotStructure">
-<tt class="descclassname">GSASIIplot.</tt><tt class="descname">PlotStructure</tt><big>(</big><em>G2frame</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#PlotStructure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.PlotStructure" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIplot.</tt><tt class="descname">PlotStructure</tt><big>(</big><em>G2frame</em>, <em>data</em>, <em>firstCall=False</em><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#PlotStructure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.PlotStructure" title="Permalink to this definition">¶</a></dt>
 <dd><p>Crystal structure plotting package. Can show structures as balls, sticks, lines,
 thermal motion ellipsoids and polyhedra</p>
 </dd></dl>
@@ -325,13 +336,13 @@ dict generalData contains all phase info needed which is in data</p>
 
 <dl class="function">
 <dt id="GSASIIplot.PlotTorsion">
-<tt class="descclassname">GSASIIplot.</tt><tt class="descname">PlotTorsion</tt><big>(</big><em>G2frame</em>, <em>phaseName</em>, <em>Torsion</em>, <em>TorName</em>, <em>Names=</em><span class="optional">[</span><span class="optional">]</span>, <em>Angles=</em><span class="optional">[</span><span class="optional">]</span>, <em>Coeff=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#PlotTorsion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.PlotTorsion" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIplot.</tt><tt class="descname">PlotTorsion</tt><big>(</big><em>G2frame</em>, <em>phaseName</em>, <em>Torsion</em>, <em>TorName</em>, <em>Names=</em>, <span class="optional">[</span><span class="optional">]</span><em>Angles=</em>, <span class="optional">[</span><span class="optional">]</span><em>Coeff=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#PlotTorsion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.PlotTorsion" title="Permalink to this definition">¶</a></dt>
 <dd><p>needs a doc string</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="GSASIIplot.PlotXY">
-<tt class="descclassname">GSASIIplot.</tt><tt class="descname">PlotXY</tt><big>(</big><em>G2frame</em>, <em>XY</em>, <em>XY2=None</em>, <em>labelX=None</em>, <em>labelY=None</em>, <em>newPlot=False</em>, <em>type=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#PlotXY"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.PlotXY" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">GSASIIplot.</tt><tt class="descname">PlotXY</tt><big>(</big><em>G2frame</em>, <em>XY</em>, <em>XY2=None</em>, <em>labelX=None</em>, <em>labelY=None</em>, <em>newPlot=False</em>, <em>Title=''</em><big>)</big><a class="reference internal" href="_modules/GSASIIplot.html#PlotXY"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#GSASIIplot.PlotXY" title="Permalink to this definition">¶</a></dt>
 <dd><p>simple plot of xy data, used for diagnostic purposes</p>
 </dd></dl>
 
@@ -394,7 +405,7 @@ dict generalData contains all phase info needed which is in data</p>
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

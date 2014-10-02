@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>unit_tests &mdash; GSAS-II 0.2.0 documentation</title>
+    <title>config_example &mdash; GSAS-II 0.2.0 documentation</title>
     
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -47,44 +47,32 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <h1>Source code for unit_tests</h1><div class="highlight"><pre>
+  <h1>Source code for config_example</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="c">#config.py - Variables used to set optional configuration options</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2013-10-03 13:11:47 -0500 (Thu, 03 Oct 2013) $</span>
+<span class="c"># $Date: $</span>
 <span class="c"># $Author: toby $</span>
-<span class="c"># $Revision: 1077 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/unit_tests.py $</span>
-<span class="c"># $Id: unit_tests.py 1077 2013-10-03 18:11:47Z toby $</span>
+<span class="c"># $Revision: $</span>
+<span class="c"># $URL: $</span>
+<span class="c"># $Id: $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">*unit_tests: Self-test Module*</span>
-<span class="sd">------------------------------</span>
+<span class="sd">*config.py: Configuration options*</span>
+<span class="sd">----------------------------------</span>
 
-<span class="sd">A script that can be run to test a series of self-tests in GSAS-II. At present,</span>
-<span class="sd">only modules ``GSASIIspc`` and ``GSASIIlattice`` have self-tests. </span>
-
+<span class="sd">This file contains optional configuration options for GSAS-II. Note that</span>
+<span class="sd">this file is not required to be present and code should be written to</span>
+<span class="sd">provide the default behavior if the file is not present or if any configuration</span>
+<span class="sd">variable is not set, but please do place a docstring here for every used</span>
+<span class="sd">config variable explaining what it does. </span>
 <span class="sd">&#39;&#39;&#39;</span>
 
-<span class="kn">import</span> <span class="nn">GSASIIspc</span>
-<span class="kn">import</span> <span class="nn">GSASIIlattice</span>
-<div class="viewcode-block" id="test_GSASIIspc"><a class="viewcode-back" href="../GSASIIscripts.html#unit_tests.test_GSASIIspc">[docs]</a><span class="k">def</span> <span class="nf">test_GSASIIspc</span><span class="p">():</span>
-    <span class="sd">&#39;&#39;&#39;Test registered self-tests in ``GSASIIspc``.</span>
-<span class="sd">    Takes no input and returns nothing. Throws an Exception if a test fails.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="c">#GSASIIspc.selftestquiet = False</span>
-    <span class="k">for</span> <span class="n">test</span> <span class="ow">in</span> <span class="n">GSASIIspc</span><span class="o">.</span><span class="n">selftestlist</span><span class="p">:</span>
-        <span class="n">test</span><span class="p">()</span></div>
-<div class="viewcode-block" id="test_GSASIIlattice"><a class="viewcode-back" href="../GSASIIscripts.html#unit_tests.test_GSASIIlattice">[docs]</a><span class="k">def</span> <span class="nf">test_GSASIIlattice</span><span class="p">():</span>
-    <span class="sd">&#39;&#39;&#39;Test registered self-tests in ``GSASIIlattice``.</span>
-<span class="sd">    Takes no input and returns nothing. Throws an Exception if a test fails.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="c">#GSASIIlattice.selftestquiet = False</span>
-    <span class="k">for</span> <span class="n">test</span> <span class="ow">in</span> <span class="n">GSASIIlattice</span><span class="o">.</span><span class="n">selftestlist</span><span class="p">:</span>
-        <span class="n">test</span><span class="p">()</span>
-</div>
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">test_GSASIIspc</span><span class="p">()</span>
-    <span class="n">test_GSASIIlattice</span><span class="p">()</span>
-    <span class="k">print</span> <span class="s">&quot;OK&quot;</span>
+<span class="n">Enable_logging</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="s">&#39;Set to True to enable use of command logging&#39;</span>
+
+<span class="n">logging_debug</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="s">&#39;Set to True to enable debug for logging&#39;</span>
 </pre></div>
 
           </div>

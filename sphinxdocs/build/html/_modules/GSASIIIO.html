@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -52,11 +50,11 @@
   <h1>Source code for GSASIIIO</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-05-27 12:14:59 -0500 (Tue, 27 May 2014) $</span>
+<span class="c"># $Date: 2014-09-26 10:52:52 -0500 (Fri, 26 Sep 2014) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1364 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $</span>
-<span class="c"># $Id: GSASIIIO.py 1364 2014-05-27 17:14:59Z vondreele $</span>
+<span class="c"># $Revision: 1507 $</span>
+<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIIO.py $</span>
+<span class="c"># $Id: GSASIIIO.py 1507 2014-09-26 15:52:52Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIIIO: Misc I/O routines*</span>
@@ -81,7 +79,7 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">ran</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1364 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1507 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIgrid</span> <span class="kn">as</span> <span class="nn">G2gd</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
@@ -189,12 +187,12 @@
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">ospath</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">imagefile</span><span class="p">):</span>
         <span class="n">dlg</span> <span class="o">=</span> <span class="n">wx</span><span class="o">.</span><span class="n">FileDialog</span><span class="p">(</span><span class="n">G2frame</span><span class="p">,</span> <span class="s">&#39;Bad image file name; choose name&#39;</span><span class="p">,</span> <span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span>\
-        <span class="s">&#39;Any image file (*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img)</span><span class="se">\</span>
-<span class="s">        |*.edf;*.tif;*.tiff;*.mar*;*.avg;*.sum;*.img|</span><span class="se">\</span>
+        <span class="s">&#39;Any image file (*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img)</span><span class="se">\</span>
+<span class="s">        |*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img|</span><span class="se">\</span>
 <span class="s">        European detector file (*.edf)|*.edf|</span><span class="se">\</span>
 <span class="s">        Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|</span><span class="se">\</span>
 <span class="s">        MAR file (*.mar*)|*.mar*|</span><span class="se">\</span>
-<span class="s">        GE Image (*.avg;*.sum)|*.avg;*.sum|</span><span class="se">\</span>
+<span class="s">        GE Image (*.ge*;*.avg;*.sum)|*.ge*;*.avg;*.sum|</span><span class="se">\</span>
 <span class="s">        ADSC Image (*.img)|*.img|</span><span class="se">\</span>
 <span class="s">        All files (*.*)|*.*&#39;</span><span class="p">,</span><span class="n">wx</span><span class="o">.</span><span class="n">OPEN</span><span class="o">|</span><span class="n">wx</span><span class="o">.</span><span class="n">CHANGE_DIR</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -313,7 +311,7 @@
         <span class="n">Image</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s">&#39;.mar3450&#39;</span> <span class="ow">or</span> <span class="n">ext</span> <span class="o">==</span> <span class="s">&#39;.mar2300&#39;</span><span class="p">:</span>
         <span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">Image</span> <span class="o">=</span> <span class="n">GetMAR345Data</span><span class="p">(</span><span class="n">imagefile</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;.sum&#39;</span><span class="p">,</span><span class="s">&#39;.avg&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">]:</span>
+    <span class="k">elif</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;.sum&#39;</span><span class="p">,</span><span class="s">&#39;.avg&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="s">&#39;ge&#39;</span> <span class="ow">in</span> <span class="n">ext</span><span class="p">:</span>
         <span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">Image</span> <span class="o">=</span> <span class="n">GetGEsumData</span><span class="p">(</span><span class="n">imagefile</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s">&#39;.G2img&#39;</span><span class="p">:</span>
         <span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">Image</span> <span class="o">=</span> <span class="n">GetG2Image</span><span class="p">(</span><span class="n">imagefile</span><span class="p">)</span>
@@ -333,7 +331,7 @@
             <span class="k">return</span> <span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">Image</span>
         </div>
 <div class="viewcode-block" id="PutG2Image"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.PutG2Image">[docs]</a><span class="k">def</span> <span class="nf">PutG2Image</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">image</span><span class="p">):</span>
-    <span class="s">&#39;Write an image as a python pickle&#39;</span>
+    <span class="s">&#39;Write an image as a python pickle - might be better as an .edf file?&#39;</span>
     <span class="n">File</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;wb&#39;</span><span class="p">)</span>
     <span class="n">cPickle</span><span class="o">.</span><span class="n">dump</span><span class="p">([</span><span class="n">Comments</span><span class="p">,</span><span class="n">Data</span><span class="p">,</span><span class="n">Npix</span><span class="p">,</span><span class="n">image</span><span class="p">],</span><span class="n">File</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">File</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -417,8 +415,8 @@
     <span class="k">if</span> <span class="s">&#39;.sum&#39;</span> <span class="ow">in</span> <span class="n">filename</span><span class="p">:</span>
         <span class="n">head</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;GE detector sum data from APS 1-ID&#39;</span><span class="p">,]</span>
         <span class="n">sizexy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2048</span><span class="p">,</span><span class="mi">2048</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="s">&#39;.avg&#39;</span> <span class="ow">in</span> <span class="n">filename</span><span class="p">:</span>
-        <span class="n">head</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;GE detector avg data from APS 1-ID&#39;</span><span class="p">,]</span>
+    <span class="k">elif</span> <span class="s">&#39;.avg&#39;</span> <span class="ow">in</span> <span class="n">filename</span> <span class="ow">or</span> <span class="s">&#39;.ge&#39;</span> <span class="ow">in</span> <span class="n">filename</span><span class="p">:</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;GE detector avg or ge* data from APS 1-ID&#39;</span><span class="p">,]</span>
         <span class="n">sizexy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2048</span><span class="p">,</span><span class="mi">2048</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">head</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;GE detector raw data from APS 1-ID&#39;</span><span class="p">,]</span>
@@ -430,7 +428,7 @@
     <span class="n">Npix</span> <span class="o">=</span> <span class="n">sizexy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">if</span> <span class="s">&#39;.sum&#39;</span> <span class="ow">in</span> <span class="n">filename</span><span class="p">:</span>
         <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;f&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="n">Npix</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="s">&#39;.avg&#39;</span> <span class="ow">in</span> <span class="n">filename</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="s">&#39;.avg&#39;</span> <span class="ow">in</span> <span class="n">filename</span> <span class="ow">or</span> <span class="s">&#39;.ge&#39;</span> <span class="ow">in</span> <span class="n">filename</span><span class="p">:</span>
         <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">Npix</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">Npix</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
@@ -438,7 +436,7 @@
             <span class="n">image</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">Npix</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
             <span class="n">nframes</span> <span class="o">-=</span> <span class="mi">1</span>
     <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">image</span><span class="p">,(</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">sizexy</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pixelSize&#39;</span><span class="p">:(</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">),</span><span class="s">&#39;wavelength&#39;</span><span class="p">:</span><span class="mf">0.15</span><span class="p">,</span><span class="s">&#39;distance&#39;</span><span class="p">:</span><span class="mf">250.0</span><span class="p">,</span><span class="s">&#39;center&#39;</span><span class="p">:[</span><span class="mf">204.8</span><span class="p">,</span><span class="mf">204.8</span><span class="p">],</span><span class="s">&#39;size&#39;</span><span class="p">:</span><span class="n">sizexy</span><span class="p">}</span>  
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;pixelSize&#39;</span><span class="p">:[</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">],</span><span class="s">&#39;wavelength&#39;</span><span class="p">:</span><span class="mf">0.15</span><span class="p">,</span><span class="s">&#39;distance&#39;</span><span class="p">:</span><span class="mf">250.0</span><span class="p">,</span><span class="s">&#39;center&#39;</span><span class="p">:[</span><span class="mf">204.8</span><span class="p">,</span><span class="mf">204.8</span><span class="p">],</span><span class="s">&#39;size&#39;</span><span class="p">:</span><span class="n">sizexy</span><span class="p">}</span>  
     <span class="n">File</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>    
     <span class="k">if</span> <span class="n">imageOnly</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">image</span>
@@ -577,7 +575,14 @@
 <span class="sd">    incorrectly in some way. </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="kn">import</span> <span class="nn">struct</span> <span class="kn">as</span> <span class="nn">st</span>
-    <span class="kn">import</span> <span class="nn">Image</span> <span class="kn">as</span> <span class="nn">Im</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">Image</span> <span class="kn">as</span> <span class="nn">Im</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span> <span class="k">as</span> <span class="n">Im</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;PIL/pillow Image module not present. TIFs cannot be read without this&quot;</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;PIL/pillow Image module not found&quot;</span><span class="p">)</span>
     <span class="kn">import</span> <span class="nn">array</span> <span class="kn">as</span> <span class="nn">ar</span>
     <span class="kn">import</span> <span class="nn">ReadMarCCDFrame</span> <span class="kn">as</span> <span class="nn">rmf</span>
     <span class="n">File</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;rb&#39;</span><span class="p">)</span>
@@ -642,7 +647,7 @@
         <span class="n">marFrame</span> <span class="o">=</span> <span class="n">rmf</span><span class="o">.</span><span class="n">marFrame</span><span class="p">(</span><span class="n">File</span><span class="p">,</span><span class="n">byteOrd</span><span class="p">,</span><span class="n">IFD</span><span class="p">)</span>
         <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">marFrame</span><span class="o">.</span><span class="n">image</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">))</span>
         <span class="n">tifType</span> <span class="o">=</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">filetitle</span>
-        <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeX</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">,</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeY</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">)</span>
+        <span class="n">pixy</span> <span class="o">=</span> <span class="p">[</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeX</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">,</span><span class="n">marFrame</span><span class="o">.</span><span class="n">pixelsizeY</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">]</span>
         <span class="n">head</span> <span class="o">=</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">outputHead</span><span class="p">()</span>
 <span class="c"># extract resonable wavelength from header</span>
         <span class="n">wavelength</span> <span class="o">=</span> <span class="n">marFrame</span><span class="o">.</span><span class="n">sourceWavelength</span><span class="o">*</span><span class="mf">1e-5</span>
@@ -670,7 +675,7 @@
         <span class="k">if</span> <span class="s">&#39;PILATUS&#39;</span> <span class="ow">in</span> <span class="n">S</span><span class="p">:</span>
             <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;Pilatus&#39;</span>
             <span class="n">dataType</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">172</span><span class="p">,</span><span class="mi">172</span><span class="p">)</span>
+            <span class="n">pixy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">172</span><span class="p">,</span><span class="mi">172</span><span class="p">]</span>
             <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">4096</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
                 <span class="k">print</span> <span class="s">&#39;Read Pilatus tiff file: &#39;</span><span class="p">,</span><span class="n">filename</span>
@@ -679,14 +684,14 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">258</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">16</span><span class="p">:</span>
                 <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;GE&#39;</span>
-                <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">)</span>
+                <span class="n">pixy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">]</span>
                 <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
                     <span class="k">print</span> <span class="s">&#39;Read GE-detector tiff file: &#39;</span><span class="p">,</span><span class="n">filename</span>
                 <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">Npix</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">258</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">32</span><span class="p">:</span>
                 <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;CHESS&#39;</span>
-                <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">)</span>
+                <span class="n">pixy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">]</span>
                 <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
                     <span class="k">print</span> <span class="s">&#39;Read CHESS-detector tiff file: &#39;</span><span class="p">,</span><span class="n">filename</span>
@@ -694,14 +699,14 @@
             
     <span class="k">elif</span> <span class="mi">262</span> <span class="ow">in</span> <span class="n">IFD</span> <span class="ow">and</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">262</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
         <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;DND&#39;</span>
-        <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">158</span><span class="p">,</span><span class="mi">158</span><span class="p">)</span>
+        <span class="n">pixy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">158</span><span class="p">,</span><span class="mi">158</span><span class="p">]</span>
         <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">512</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
             <span class="k">print</span> <span class="s">&#39;Read DND SAX/WAX-detector tiff file: &#39;</span><span class="p">,</span><span class="n">filename</span>
         <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">Npix</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">sizexy</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1536</span><span class="p">,</span><span class="mi">1536</span><span class="p">]:</span>
         <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;APS Gold&#39;</span>
-        <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">150</span><span class="p">,</span><span class="mi">150</span><span class="p">)</span>
+        <span class="n">pixy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">150</span><span class="p">,</span><span class="mi">150</span><span class="p">]</span>
         <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
             <span class="k">print</span> <span class="s">&#39;Read Gold tiff file:&#39;</span><span class="p">,</span><span class="n">filename</span>
@@ -710,7 +715,7 @@
         <span class="k">if</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">273</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">258</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">32</span><span class="p">:</span>
                 <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;PE&#39;</span>
-                <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">)</span>
+                <span class="n">pixy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">200</span><span class="p">,</span><span class="mi">200</span><span class="p">]</span>
                 <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
                     <span class="k">print</span> <span class="s">&#39;Read APS PE-detector tiff file: &#39;</span><span class="p">,</span><span class="n">filename</span>
@@ -721,10 +726,10 @@
                 
         <span class="k">elif</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">273</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4096</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">sizexy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3072</span><span class="p">:</span>
-                <span class="n">pixy</span> <span class="o">=</span>  <span class="p">(</span><span class="mi">73</span><span class="p">,</span><span class="mi">73</span><span class="p">)</span>
+                <span class="n">pixy</span> <span class="o">=</span>  <span class="p">[</span><span class="mi">73</span><span class="p">,</span><span class="mi">73</span><span class="p">]</span>
                 <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;MAR225&#39;</span>            
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">158</span><span class="p">,</span><span class="mi">158</span><span class="p">)</span>
+                <span class="n">pixy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">158</span><span class="p">,</span><span class="mi">158</span><span class="p">]</span>
                 <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;MAR325&#39;</span>            
             <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">4096</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
@@ -741,14 +746,14 @@
         <span class="k">if</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">273</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">258</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">16</span><span class="p">:</span>
                 <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;scanCCD&#39;</span>
-                <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">)</span>
+                <span class="n">pixy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">]</span>
                 <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
                     <span class="k">print</span> <span class="s">&#39;Read APS scanCCD tiff file: &#39;</span><span class="p">,</span><span class="n">filename</span>
                 <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="n">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">Npix</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">IFD</span><span class="p">[</span><span class="mi">273</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4096</span><span class="p">:</span>
             <span class="n">tifType</span> <span class="o">=</span> <span class="s">&#39;Rayonix&#39;</span>
-            <span class="n">pixy</span> <span class="o">=</span> <span class="p">(</span><span class="mf">73.242</span><span class="p">,</span><span class="mf">73.242</span><span class="p">)</span>
+            <span class="n">pixy</span> <span class="o">=</span> <span class="p">[</span><span class="mf">73.242</span><span class="p">,</span><span class="mf">73.242</span><span class="p">]</span>
             <span class="n">File</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">4096</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">imageOnly</span><span class="p">:</span>
                 <span class="k">print</span> <span class="s">&#39;Read Rayonix MX300HE tiff file: &#39;</span><span class="p">,</span><span class="n">filename</span>
@@ -977,6 +982,7 @@
         <span class="n">msg</span><span class="o">.</span><span class="n">ShowModal</span><span class="p">()</span>
     <span class="k">finally</span><span class="p">:</span>
         <span class="n">wx</span><span class="o">.</span><span class="n">EndBusyCursor</span><span class="p">()</span>
+        <span class="n">G2frame</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">SetStatusText</span><span class="p">(</span><span class="s">&#39;To reorder tree items, use mouse RB to drag/drop them&#39;</span><span class="p">)</span>
     </div>
 <div class="viewcode-block" id="ProjFileSave"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ProjFileSave">[docs]</a><span class="k">def</span> <span class="nf">ProjFileSave</span><span class="p">(</span><span class="n">G2frame</span><span class="p">):</span>
     <span class="s">&#39;Save a GSAS-II project file&#39;</span>
@@ -1027,45 +1033,45 @@
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">azm</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">azms</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
             <span class="n">Azms</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">azms</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">azm</span><span class="p">)</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">azm</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">azms</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-        <span class="n">name</span> <span class="o">+=</span> <span class="s">&quot; Azm= </span><span class="si">%.2f</span><span class="s">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">Azms</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">Aname</span> <span class="o">=</span> <span class="n">name</span><span class="o">+</span><span class="s">&quot; Azm= </span><span class="si">%.2f</span><span class="s">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">Azms</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
         <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetFirstChild</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
         <span class="n">nOcc</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">while</span> <span class="n">item</span><span class="p">:</span>
             <span class="n">Name</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetItemText</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">Name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">Aname</span> <span class="ow">in</span> <span class="n">Name</span><span class="p">:</span>
                 <span class="n">nOcc</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">item</span><span class="p">,</span> <span class="n">cookie</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">GetNextChild</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">cookie</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">nOcc</span><span class="p">:</span>
-            <span class="n">name</span> <span class="o">+=</span> <span class="s">&#39;(</span><span class="si">%d</span><span class="s">)&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">nOcc</span><span class="p">)</span>
+            <span class="n">Aname</span> <span class="o">+=</span> <span class="s">&#39;(</span><span class="si">%d</span><span class="s">)&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">nOcc</span><span class="p">)</span>
         <span class="n">Sample</span> <span class="o">=</span> <span class="n">G2pdG</span><span class="o">.</span><span class="n">SetDefaultSample</span><span class="p">()</span>
         <span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Gonio. radius&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;distance&#39;</span><span class="p">]</span>
         <span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Omega&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;GonioAngles&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Chi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;GonioAngles&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Phi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;GonioAngles&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
-        <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">Aname</span><span class="p">:</span>
             <span class="n">parms</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;PXC&#39;</span><span class="p">,</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;wavelength&#39;</span><span class="p">],</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.99</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="o">-</span><span class="mf">0.10</span><span class="p">,</span><span class="mf">0.4</span><span class="p">,</span><span class="mf">0.30</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0001</span><span class="p">,</span><span class="n">Azms</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>    <span class="c">#set polarization for synchrotron radiation!</span>
-        <span class="k">elif</span> <span class="s">&#39;SASD&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="s">&#39;SASD&#39;</span> <span class="ow">in</span> <span class="n">Aname</span><span class="p">:</span>
             <span class="n">Sample</span><span class="p">[</span><span class="s">&#39;Trans&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;SampleAbs&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">parms</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;LXC&#39;</span><span class="p">,</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;wavelength&#39;</span><span class="p">],</span><span class="mf">0.0</span><span class="p">,</span><span class="n">Azms</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
         <span class="n">Y</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">Integrate</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
         <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Y</span><span class="o">&gt;</span><span class="mf">0.</span><span class="p">,</span><span class="mf">1.</span><span class="o">/</span><span class="n">Y</span><span class="p">,</span><span class="mf">1.e-6</span><span class="p">)</span>                    <span class="c">#probably not true</span>
-        <span class="n">Id</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">Id</span> <span class="o">=</span> <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">G2frame</span><span class="o">.</span><span class="n">root</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="n">Aname</span><span class="p">)</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Comments&#39;</span><span class="p">),</span><span class="n">Comments</span><span class="p">)</span>                    
         <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Limits&#39;</span><span class="p">),[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">Xminmax</span><span class="p">),</span><span class="n">Xminmax</span><span class="p">])</span>
-        <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">Aname</span><span class="p">:</span>
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Background&#39;</span><span class="p">),[[</span><span class="s">&#39;chebyschev&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span>
                 <span class="p">{</span><span class="s">&#39;nDebye&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;debyeTerms&#39;</span><span class="p">:[],</span><span class="s">&#39;nPeaks&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&#39;peaksList&#39;</span><span class="p">:[]}])</span>
         <span class="n">inst</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span><span class="nb">zip</span><span class="p">(</span><span class="n">parms</span><span class="p">,</span><span class="n">parms</span><span class="p">,</span><span class="n">codes</span><span class="p">))),{}]</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">inst</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
             <span class="n">inst</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">item</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">inst</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">item</span><span class="p">])</span>
         <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Instrument Parameters&#39;</span><span class="p">),</span><span class="n">inst</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s">&#39;PWDR&#39;</span> <span class="ow">in</span> <span class="n">Aname</span><span class="p">:</span>
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Sample Parameters&#39;</span><span class="p">),</span><span class="n">Sample</span><span class="p">)</span>
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Peak List&#39;</span><span class="p">),[])</span>
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Index Peak List&#39;</span><span class="p">),[])</span>
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Unit Cells List&#39;</span><span class="p">),[])</span>
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Reflection Lists&#39;</span><span class="p">),{})</span>
-        <span class="k">elif</span> <span class="s">&#39;SASD&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>             
+        <span class="k">elif</span> <span class="s">&#39;SASD&#39;</span> <span class="ow">in</span> <span class="n">Aname</span><span class="p">:</span>             
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Substances&#39;</span><span class="p">),</span><span class="n">G2pdG</span><span class="o">.</span><span class="n">SetDefaultSubstances</span><span class="p">())</span>
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Sample Parameters&#39;</span><span class="p">),</span><span class="n">Sample</span><span class="p">)</span>
             <span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">SetItemPyData</span><span class="p">(</span><span class="n">G2frame</span><span class="o">.</span><span class="n">PatternTree</span><span class="o">.</span><span class="n">AppendItem</span><span class="p">(</span><span class="n">Id</span><span class="p">,</span><span class="n">text</span><span class="o">=</span><span class="s">&#39;Models&#39;</span><span class="p">),</span><span class="n">G2pdG</span><span class="o">.</span><span class="n">SetDefaultSASDModel</span><span class="p">())</span>
@@ -1667,7 +1673,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Parameters</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="s">&#39;self.Parameters is a list with two dicts for data parameter settings&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">InitParameters</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[],</span><span class="s">&#39;Super&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Banks</span> <span class="o">=</span> <span class="p">[]</span>             <span class="c">#for multi bank data (usually TOF)</span>
         <span class="sd">&#39;&#39;&#39;self.RefDict is a dict containing the reflection information, as read from the file.</span>
 <span class="sd">        Item &#39;RefList&#39; contains the reflection information. See the</span>
@@ -1680,7 +1686,8 @@
         <span class="s">&#39;Reinitialize the Reader to initial settings&#39;</span>
         <span class="n">ImportBaseclass</span><span class="o">.</span><span class="n">ReInitialize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">InitParameters</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[]}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Banks</span> <span class="o">=</span> <span class="p">[]</span>             <span class="c">#for multi bank data (usually TOF)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">RefDict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;RefList&#39;</span><span class="p">:[],</span><span class="s">&#39;FF&#39;</span><span class="p">:[],</span><span class="s">&#39;Super&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">}</span>
         </div>
 <div class="viewcode-block" id="ImportStructFactor.InitParameters"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportStructFactor.InitParameters">[docs]</a>    <span class="k">def</span> <span class="nf">InitParameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="s">&#39;initialize the instrument parameters structure&#39;</span>
@@ -1696,7 +1703,7 @@
         <span class="k">if</span> <span class="n">Type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">Parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;Type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Type</span><span class="p">,</span><span class="n">Type</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">Wave</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">Parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;Lam&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Wave</span><span class="p">,</span><span class="n">Wave</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;Lam&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Wave</span><span class="p">,</span><span class="n">Wave</span><span class="p">]</span>           
                        
 <span class="c">######################################################################</span></div></div>
 <div class="viewcode-block" id="ImportPowderData"><a class="viewcode-back" href="../GSASIIGUIr.html#GSASIIIO.ImportPowderData">[docs]</a><span class="k">class</span> <span class="nc">ImportPowderData</span><span class="p">(</span><span class="n">ImportBaseclass</span><span class="p">):</span>
@@ -1707,61 +1714,6 @@
 <span class="sd">    See :ref:`Writing a Import Routine&lt;Import_Routines&gt;`</span>
 <span class="sd">    for an explanation on how to use this class. </span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="c"># define some default instrument parameter files</span>
-    <span class="c"># just like GSAS, sigh</span>
-    <span class="n">defaultIparm_lbl</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">defaultIparms</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">defaultIparm_lbl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;CuKa lab data&#39;</span><span class="p">)</span>
-    <span class="n">defaultIparms</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-        <span class="s">&#39;INS   HTYPE &#39;</span><span class="p">:</span><span class="s">&#39;PXC &#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1 ICONS&#39;</span><span class="p">:</span><span class="s">&#39;  1.540500  1.544300       0.0         0       0.7    0       0.5   &#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF1 &#39;</span><span class="p">:</span><span class="s">&#39;    3    8      0.01                                                &#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF11&#39;</span><span class="p">:</span><span class="s">&#39;   2.000000E+00  -2.000000E+00   5.000000E+00   0.000000E+00        &#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF12&#39;</span><span class="p">:</span><span class="s">&#39;   0.000000E+00   0.000000E+00   0.150000E-01   0.150000E-01        &#39;</span><span class="p">,</span>
-        <span class="p">})</span>
-    <span class="n">defaultIparm_lbl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;0.6A synch&#39;</span><span class="p">)</span>
-    <span class="n">defaultIparms</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-        <span class="s">&#39;INS   HTYPE &#39;</span><span class="p">:</span><span class="s">&#39;PXC &#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1 ICONS&#39;</span><span class="p">:</span><span class="s">&#39;  0.600000  0.000000       0.0         0      0.99    0       0.5   &#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF1 &#39;</span><span class="p">:</span><span class="s">&#39;    3    8      0.01                                                &#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF11&#39;</span><span class="p">:</span><span class="s">&#39;   1.000000E+00  -1.000000E+00   0.300000E+00   0.000000E+00        &#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF12&#39;</span><span class="p">:</span><span class="s">&#39;   0.000000E+00   0.000000E+00   0.100000E-01   0.100000E-01        &#39;</span><span class="p">,</span>
-        <span class="p">})</span>
-    <span class="n">defaultIparm_lbl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;1.5A CW neutron data&#39;</span><span class="p">)</span>
-    <span class="n">defaultIparms</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-        <span class="s">&#39;INS   HTYPE &#39;</span><span class="p">:</span><span class="s">&#39;PNC&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1 ICONS&#39;</span><span class="p">:</span><span class="s">&#39;   1.54020   0.00000   0.04000         0&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF1 &#39;</span><span class="p">:</span><span class="s">&#39;    3    8     0.005&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF11&#39;</span><span class="p">:</span><span class="s">&#39;   0.239700E+03  -0.298200E+03   0.180800E+03   0.000000E+00&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF12&#39;</span><span class="p">:</span><span class="s">&#39;   0.000000E+00   0.000000E+00   0.400000E-01   0.300000E-01&#39;</span><span class="p">,</span>
-        <span class="p">})</span>
-    <span class="n">defaultIparm_lbl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;10m TOF backscattering bank&#39;</span><span class="p">)</span>
-    <span class="n">defaultIparms</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-        <span class="s">&#39;INS   HTYPE &#39;</span><span class="p">:</span><span class="s">&#39;PNT&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1 ICONS&#39;</span><span class="p">:</span><span class="s">&#39;   5000.00      0.00      0.00&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1BNKPAR&#39;</span><span class="p">:</span><span class="s">&#39;    1.0000   150.000&#39;</span><span class="p">,</span>       
-        <span class="s">&#39;INS  1PRCF1 &#39;</span><span class="p">:</span><span class="s">&#39;    1    8   0.01000&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF11&#39;</span><span class="p">:</span><span class="s">&#39;   0.000000E+00   5.000000E+00   3.000000E-02   1.000000E-03&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF12&#39;</span><span class="p">:</span><span class="s">&#39;   0.000000E+00   4.000000E+01   0.000000E+00   0.000000E+00&#39;</span><span class="p">,</span>        
-        <span class="p">})</span>
-    <span class="n">defaultIparm_lbl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;10m TOF 90deg bank&#39;</span><span class="p">)</span>
-    <span class="n">defaultIparms</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-        <span class="s">&#39;INS   HTYPE &#39;</span><span class="p">:</span><span class="s">&#39;PNT&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1 ICONS&#39;</span><span class="p">:</span><span class="s">&#39;   3500.00      0.00      0.00&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1BNKPAR&#39;</span><span class="p">:</span><span class="s">&#39;    1.0000    90.000&#39;</span><span class="p">,</span>       
-        <span class="s">&#39;INS  1PRCF1 &#39;</span><span class="p">:</span><span class="s">&#39;    1    8   0.01000&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF11&#39;</span><span class="p">:</span><span class="s">&#39;   0.000000E+00   5.000000E+00   3.000000E-02   4.000000E-03&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF12&#39;</span><span class="p">:</span><span class="s">&#39;   0.000000E+00   8.000000E+01   0.000000E+00   0.000000E+00&#39;</span><span class="p">,</span>        
-        <span class="p">})</span>
-    <span class="n">defaultIparm_lbl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;63m POWGEN 90deg bank&#39;</span><span class="p">)</span>
-    <span class="n">defaultIparms</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
-        <span class="s">&#39;INS   HTYPE &#39;</span><span class="p">:</span><span class="s">&#39;PNT&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1 ICONS&#39;</span><span class="p">:</span><span class="s">&#39;  22585.80      0.00      0.00&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1BNKPAR&#39;</span><span class="p">:</span><span class="s">&#39;    1.0000    90.000&#39;</span><span class="p">,</span>       
-        <span class="s">&#39;INS  1PRCF1 &#39;</span><span class="p">:</span><span class="s">&#39;    1    8   0.01000&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF11&#39;</span><span class="p">:</span><span class="s">&#39;   0.000000E+00   1.000000E+00   3.000000E-02   4.000000E-03&#39;</span><span class="p">,</span>
-        <span class="s">&#39;INS  1PRCF12&#39;</span><span class="p">:</span><span class="s">&#39;   0.000000E+00   8.000000E+01   0.000000E+00   0.000000E+00&#39;</span><span class="p">,</span>        
-        <span class="p">})</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">formatName</span><span class="p">,</span>
                  <span class="n">longFormatName</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
@@ -2517,7 +2469,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

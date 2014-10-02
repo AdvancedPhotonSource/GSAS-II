@@ -7,7 +7,11 @@
 # $URL: $
 # $Id: $
 ########### SVN repository information ###################
-'''Module to provide logging services, e.g. track and replay "actions"
+'''
+*GSASIIlog: Logging of "Actions"*
+---------------------------------
+
+Module to provide logging services, e.g. track and replay "actions"
 such as menu item, tree item, button press, value change and so on. 
 '''
 import wx
@@ -63,15 +67,16 @@ class LogEntry(object):
       
     '''
     def __init__(self):
-        'Must be defined'
+        # Must be overridden
         raise Exception('No __init__ defined')
     def __str__(self):
-        'Must be defined'
+        # Must be overridden
         raise Exception('No __str__ defined')
     def Replay(self):
-        'Must be defined'
+        # Must be overridden
         raise Exception('No Replay defined')
     def Repaint(self):
+        # optional
         pass
 
 class VarLogEntry(LogEntry):
@@ -147,6 +152,7 @@ class TabLogEntry(LogEntry):
     def __str__(self):
         return 'Tab press: Tab='+_l2s([self.tablabel])+' on window labeled '+str(self.wintitle)
     def Repaint(self):
+        'Used to redraw a window created in response to a Tab press'
         if debug: print 'Repaint'
         saveval = LogInfo['LastPaintAction']
         self.Replay()
@@ -185,6 +191,7 @@ class TreeLogEntry(LogEntry):
             treeList[1] = 'Phase #'+str(treeList[1]+1)
         return 'Tree item pressed: '+_l2s(treeList)
     def Repaint(self):
+        'Used to redraw a window created in response to a click on a data tree item'
         if debug: print 'Repaint'
         saveval = LogInfo['LastPaintAction']
         LogInfo['Tree'].SelectItem(LogInfo['Tree'].root) # need to select something else

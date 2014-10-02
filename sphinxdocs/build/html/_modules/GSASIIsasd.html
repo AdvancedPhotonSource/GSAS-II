@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -54,15 +52,15 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASII small angle calculation module*</span>
-<span class="sd">==================================</span>
+<span class="sd">=======================================</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-05-12 12:32:16 -0500 (Mon, 12 May 2014) $</span>
+<span class="c"># $Date: 2014-06-05 15:07:57 -0500 (Thu, 05 Jun 2014) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1341 $</span>
+<span class="c"># $Revision: 1374 $</span>
 <span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIsasd.py $</span>
-<span class="c"># $Id: GSASIIsasd.py 1341 2014-05-12 17:32:16Z vondreele $</span>
+<span class="c"># $Id: GSASIIsasd.py 1374 2014-06-05 20:07:57Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -80,7 +78,7 @@
 <span class="c">#import pdb</span>
 
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1341 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1374 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
 <span class="kn">import</span> <span class="nn">GSASIIElem</span> <span class="kn">as</span> <span class="nn">G2elem</span>
@@ -525,17 +523,17 @@
     <span class="k">return</span> <span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">C</span><span class="p">)</span>
         </div>
 <div class="viewcode-block" id="SquareWellSF"><a class="viewcode-back" href="../SAS.html#GSASIIsasd.SquareWellSF">[docs]</a><span class="k">def</span> <span class="nf">SquareWellSF</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span><span class="n">args</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39; Computes structure factor for not dilute monodisperse hard sphere with a</span>
+    <span class="sd">&#39;&#39;&#39;Computes structure factor for not dilute monodisperse hard sphere with a</span>
 <span class="sd">    square well potential interaction. </span>
-<span class="sd">    Refs.: SHARMA,SHARMA, PHYSICA 89A,(1977),212</span>
+<span class="sd">    Refs.: SHARMA,SHARMA, PHYSICA 89A,(1977),213-</span>
 <span class="sd">    </span>
-<span class="sd">    param float Q: Q value array (A-1)</span>
-<span class="sd">    param array args: [float R, float VolFrac, float depth, float width]: </span>
+<span class="sd">    :param float Q: Q value array (A-1)</span>
+<span class="sd">    :param array args: [float R, float VolFrac, float depth, float width]: </span>
 <span class="sd">        interparticle distance, volume fraction (&lt;0.08), well depth (e/kT&lt;1.5kT),</span>
 <span class="sd">        well width</span>
-<span class="sd">    returns numpy array S(Q)</span>
-<span class="sd">    well depth &gt; 0 attractive &amp; values outside above limits nonphysical cf. </span>
-<span class="sd">    Monte Carlo simulations </span>
+<span class="sd">    :returns: numpy array S(Q)</span>
+<span class="sd">      well depth &gt; 0 attractive &amp; values outside above limits nonphysical cf. </span>
+<span class="sd">      Monte Carlo simulations </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">R</span><span class="p">,</span><span class="n">VolFr</span><span class="p">,</span><span class="n">Depth</span><span class="p">,</span><span class="n">Width</span> <span class="o">=</span> <span class="n">args</span> 
     <span class="n">eta</span> <span class="o">=</span> <span class="n">VolFr</span>
@@ -1423,7 +1421,7 @@
             <span class="n">Rbins</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
             <span class="n">Dist</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
     <span class="n">Ic</span><span class="p">[</span><span class="n">Ibeg</span><span class="p">:</span><span class="n">Ifin</span><span class="p">]</span> <span class="o">+=</span> <span class="n">Back</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">slitLen</span> <span class="o">=</span> <span class="n">Sample</span><span class="p">[</span><span class="s">&#39;SlitLen&#39;</span><span class="p">]</span>
+    <span class="n">slitLen</span> <span class="o">=</span> <span class="n">Sample</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;SlitLen&#39;</span><span class="p">,</span><span class="mf">0.</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">slitLen</span><span class="p">:</span>
         <span class="n">Ic</span><span class="p">[</span><span class="n">Ibeg</span><span class="p">:</span><span class="n">Ifin</span><span class="p">]</span> <span class="o">=</span> <span class="n">SmearData</span><span class="p">(</span><span class="n">Ic</span><span class="p">,</span><span class="n">Q</span><span class="p">,</span><span class="n">slitLen</span><span class="p">,</span><span class="n">Back</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="n">Ibeg</span><span class="p">:</span><span class="n">Ifin</span><span class="p">]</span>
     <span class="n">sasdData</span><span class="p">[</span><span class="s">&#39;Size Calc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">Rbins</span><span class="p">,</span><span class="n">Dist</span><span class="p">]</span>
@@ -1579,7 +1577,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

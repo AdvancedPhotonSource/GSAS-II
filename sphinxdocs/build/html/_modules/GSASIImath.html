@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -53,11 +51,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIImath - major mathematics routines</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-05-23 12:45:28 -0500 (Fri, 23 May 2014) $</span>
+<span class="c"># $Date: 2014-09-26 09:41:33 -0500 (Fri, 26 Sep 2014) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1363 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $</span>
-<span class="c"># $Id: GSASIImath.py 1363 2014-05-23 17:45:28Z vondreele $</span>
+<span class="c"># $Revision: 1506 $</span>
+<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIImath.py $</span>
+<span class="c"># $Id: GSASIImath.py 1506 2014-09-26 14:41:33Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">*GSASIImath: computation module*</span>
@@ -78,7 +76,7 @@
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">GSASIIpath</span>
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1363 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1506 $&quot;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">GSASIIElem</span> <span class="kn">as</span> <span class="nn">G2el</span>
 <span class="kn">import</span> <span class="nn">GSASIIlattice</span> <span class="kn">as</span> <span class="nn">G2lat</span>
 <span class="kn">import</span> <span class="nn">GSASIIspc</span> <span class="kn">as</span> <span class="nn">G2spc</span>
@@ -203,18 +201,18 @@
             <span class="k">if</span> <span class="n">Print</span><span class="p">:</span> <span class="k">print</span> <span class="s">&quot;converged&quot;</span>
             <span class="k">break</span>
         <span class="n">icycle</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="k">else</span><span class="p">:</span>       <span class="c">#after last cycle or if zero cycles</span>
-        <span class="n">M</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
-        <span class="n">nfev</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="n">Yvec</span><span class="p">,</span><span class="n">Amat</span> <span class="o">=</span> <span class="n">Hess</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
-        <span class="n">Adiag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">Amat</span><span class="p">))</span>
-        <span class="n">Anorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">Adiag</span><span class="p">,</span><span class="n">Adiag</span><span class="p">)</span>
-        <span class="n">Amatlam</span> <span class="o">=</span> <span class="n">Amat</span><span class="o">*</span><span class="p">(</span><span class="n">One</span><span class="o">+</span><span class="n">Lam</span><span class="p">)</span><span class="o">/</span><span class="n">Anorm</span>              <span class="c">#scale Amat to Marquardt array        </span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">nfev</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">Yvec</span><span class="p">,</span><span class="n">Amat</span> <span class="o">=</span> <span class="n">Hess</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">Adiag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">Amat</span><span class="p">))</span>
+    <span class="n">Anorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">Adiag</span><span class="p">,</span><span class="n">Adiag</span><span class="p">)</span>
+    <span class="n">Lam</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">Amat</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="n">lam</span>
+    <span class="n">Amatlam</span> <span class="o">=</span> <span class="n">Amat</span><span class="o">/</span><span class="n">Anorm</span>  <span class="c">#*(One+Lam)              #don&#39;t scale Amat to Marquardt array        </span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">Bmat</span> <span class="o">=</span> <span class="n">nl</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Amatlam</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">One</span><span class="o">+</span><span class="n">Lam</span><span class="p">)</span><span class="o">/</span><span class="n">Anorm</span>      <span class="c">#rescale Bmat to Marquardt array</span>
+        <span class="n">Bmat</span> <span class="o">=</span> <span class="n">nl</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">Amatlam</span><span class="p">)</span><span class="o">/</span><span class="n">Anorm</span>  <span class="c">#*(One+Lam)      #don&#39;t rescale Bmat to Marquardt array</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">x0</span><span class="p">,</span><span class="n">Bmat</span><span class="p">,{</span><span class="s">&#39;num cyc&#39;</span><span class="p">:</span><span class="n">icycle</span><span class="p">,</span><span class="s">&#39;fvec&#39;</span><span class="p">:</span><span class="n">M</span><span class="p">,</span><span class="s">&#39;nfev&#39;</span><span class="p">:</span><span class="n">nfev</span><span class="p">,</span><span class="s">&#39;lamMax&#39;</span><span class="p">:</span><span class="n">lamMax</span><span class="p">,</span><span class="s">&#39;psing&#39;</span><span class="p">:[],</span> <span class="s">&#39;Converged&#39;</span><span class="p">:</span> <span class="n">ifConverged</span><span class="p">,</span> <span class="s">&#39;DelChi2&#39;</span><span class="p">:</span><span class="n">deltaChi2</span><span class="p">}]</span>
     <span class="k">except</span> <span class="n">nl</span><span class="o">.</span><span class="n">LinAlgError</span><span class="p">:</span>
-        <span class="k">print</span> <span class="s">&#39;ouch #2 linear algebra error in LS&#39;</span>
+        <span class="k">print</span> <span class="s">&#39;ouch #2 linear algebra error in making v-cov matrix&#39;</span>
         <span class="n">psing</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">maxcyc</span><span class="p">:</span>
             <span class="n">psing</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">nl</span><span class="o">.</span><span class="n">qr</span><span class="p">(</span><span class="n">Amat</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mf">1.e-14</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
@@ -239,7 +237,10 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">vcov</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="n">covMatrix</span><span class="p">[</span><span class="n">varyList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name1</span><span class="p">)][</span><span class="n">varyList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name2</span><span class="p">)]</span>
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="n">vcov</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="k">if</span> <span class="n">i1</span> <span class="o">==</span> <span class="n">i2</span><span class="p">:</span>
+                    <span class="n">vcov</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="k">else</span><span class="p">:</span> 
+                    <span class="n">vcov</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="k">return</span> <span class="n">vcov</span>
 </div>
 <div class="viewcode-block" id="FindAtomIndexByIDs"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.FindAtomIndexByIDs">[docs]</a><span class="k">def</span> <span class="nf">FindAtomIndexByIDs</span><span class="p">(</span><span class="n">atomData</span><span class="p">,</span><span class="n">IDs</span><span class="p">,</span><span class="n">Draw</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
@@ -1505,7 +1506,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">Hmax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">Hmax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span><span class="o">*</span><span class="mi">4</span>
         <span class="n">Hmax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">Hmax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span><span class="o">*</span><span class="mi">4</span>
-        <span class="n">Hmax</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">Hmax</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span><span class="o">*</span><span class="mi">4</span>
+        <span class="n">Hmax</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">Hmax</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span><span class="o">*</span><span class="mi">4</span>
 </div>
 <div class="viewcode-block" id="OmitMap"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.OmitMap">[docs]</a><span class="k">def</span> <span class="nf">OmitMap</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">reflDict</span><span class="p">,</span><span class="n">pgbar</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;default doc string</span>
@@ -1565,7 +1566,7 @@
         <span class="n">Fnew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Fnew</span><span class="p">,</span><span class="n">Fnew</span><span class="p">,</span><span class="mf">1.0</span><span class="p">)</span>           <span class="c">#avoid divide by zero</span>
         <span class="n">phase</span> <span class="o">=</span> <span class="n">Fnew</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">Fnew</span><span class="p">)</span>
         <span class="n">OFhkl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">Fhkl</span><span class="p">)</span><span class="o">*</span><span class="n">phase</span>
-        <span class="n">rho1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">fft</span><span class="o">.</span><span class="n">fftn</span><span class="p">(</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">OFhkl</span><span class="p">)))</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="mi">0</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">rho1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">fft</span><span class="o">.</span><span class="n">fftn</span><span class="p">(</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">OFhkl</span><span class="p">)))</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="mi">0j</span><span class="p">)</span>
         <span class="n">rho_omit</span><span class="p">[</span><span class="n">iB</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">iF</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">iB</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span><span class="n">iF</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">iB</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span><span class="n">iF</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">rho1</span><span class="p">[</span><span class="n">iB</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">iF</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">iB</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span><span class="n">iF</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">iB</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span><span class="n">iF</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
         <span class="n">nBlk</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">pgbar</span><span class="o">.</span><span class="n">Update</span><span class="p">(</span><span class="n">nBlk</span><span class="p">)</span>
@@ -1805,7 +1806,7 @@
     <span class="n">Ncyc</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">old</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">seterr</span><span class="p">(</span><span class="nb">all</span><span class="o">=</span><span class="s">&#39;raise&#39;</span><span class="p">)</span>
     <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>        
-        <span class="n">CErho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">fft</span><span class="o">.</span><span class="n">fftn</span><span class="p">(</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">CEhkl</span><span class="p">)))</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="mi">0</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">CErho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">fft</span><span class="o">.</span><span class="n">fftn</span><span class="p">(</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">CEhkl</span><span class="p">)))</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">+</span><span class="mi">0j</span><span class="p">)</span>
         <span class="n">CEsig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">CErho</span><span class="p">)</span>
         <span class="n">CFrho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">CErho</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">flipData</span><span class="p">[</span><span class="s">&#39;k-factor&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">CEsig</span><span class="p">,</span><span class="n">CErho</span><span class="p">,</span><span class="o">-</span><span class="n">CErho</span><span class="p">)</span>
         <span class="n">CFrho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">CErho</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">flipData</span><span class="p">[</span><span class="s">&#39;k-Max&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">CEsig</span><span class="p">,</span><span class="n">CFrho</span><span class="p">,</span><span class="o">-</span><span class="n">CFrho</span><span class="p">)</span>      <span class="c">#solves U atom problem!</span>
@@ -2047,133 +2048,151 @@
 <span class="c">################################################################################</span>
 </div>
 <div class="viewcode-block" id="getCWsig"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getCWsig">[docs]</a><span class="k">def</span> <span class="nf">getCWsig</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">pos</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get CW peak profile sigma</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
-<span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :param dict ins: instrument parameters with at least &#39;U&#39;, &#39;V&#39;, &amp; &#39;W&#39; </span>
+<span class="sd">      as values only</span>
+<span class="sd">    :param float pos: 2-theta of peak</span>
+<span class="sd">    :returns: float getCWsig: peak sigma</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">tp</span> <span class="o">=</span> <span class="n">tand</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;U&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">tp</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;V&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">tp</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;W&#39;</span><span class="p">]</span>
     </div>
 <div class="viewcode-block" id="getCWsigDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getCWsigDeriv">[docs]</a><span class="k">def</span> <span class="nf">getCWsigDeriv</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get derivatives of CW peak profile sigma wrt U,V, &amp; W</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param float pos: 2-theta of peak</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: list getCWsigDeriv: d(sig)/dU, d(sig)/dV &amp; d(sig)/dW</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">tp</span> <span class="o">=</span> <span class="n">tand</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">tp</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="n">tp</span><span class="p">,</span><span class="mf">1.0</span>
     </div>
 <div class="viewcode-block" id="getCWgam"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getCWgam">[docs]</a><span class="k">def</span> <span class="nf">getCWgam</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">pos</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get CW peak profile gamma</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
-<span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :param dict ins: instrument parameters with at least &#39;X&#39; &amp; &#39;Y&#39; </span>
+<span class="sd">      as values only</span>
+<span class="sd">    :param float pos: 2-theta of peak</span>
+<span class="sd">    :returns: float getCWgam: peak gamma</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;X&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">cosd</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;Y&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">tand</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
     </div>
 <div class="viewcode-block" id="getCWgamDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getCWgamDeriv">[docs]</a><span class="k">def</span> <span class="nf">getCWgamDeriv</span><span class="p">(</span><span class="n">pos</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get derivatives of CW peak profile gamma wrt X &amp; Y</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param float pos: 2-theta of peak</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: list getCWgamDeriv: d(gam)/dX &amp; d(gam)/dY</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">return</span> <span class="mf">1.</span><span class="o">/</span><span class="n">cosd</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">),</span><span class="n">tand</span><span class="p">(</span><span class="n">pos</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span>
     </div>
 <div class="viewcode-block" id="getTOFsig"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFsig">[docs]</a><span class="k">def</span> <span class="nf">getTOFsig</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get TOF peak profile sigma</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param dict ins: instrument parameters with at least &#39;sig-0&#39;, &#39;sig-1&#39; &amp; &#39;sig-q&#39;</span>
+<span class="sd">      as values only</span>
+<span class="sd">    :param float dsp: d-spacing of peak</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: float getTOFsig: peak sigma</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-0&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-1&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-q&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span>
+    <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-0&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-1&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-2&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">**</span><span class="mi">4</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;sig-q&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span>
     </div>
 <div class="viewcode-block" id="getTOFsigDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFsigDeriv">[docs]</a><span class="k">def</span> <span class="nf">getTOFsigDeriv</span><span class="p">(</span><span class="n">dsp</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get derivatives of TOF peak profile gamma wrt sig-0, sig-1, &amp; sig-q</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param float dsp: d-spacing of peak</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: list getTOFsigDeriv: d(sig0/d(sig-0), d(sig)/d(sig-1) &amp; d(sig)/d(sig-q)</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="n">dsp</span>
+    <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="n">dsp</span><span class="o">**</span><span class="mi">4</span><span class="p">,</span><span class="mf">1.</span><span class="o">/</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span>
     </div>
 <div class="viewcode-block" id="getTOFgamma"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFgamma">[docs]</a><span class="k">def</span> <span class="nf">getTOFgamma</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get TOF peak profile gamma</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param dict ins: instrument parameters with at least &#39;X&#39; &amp; &#39;Y&#39;</span>
+<span class="sd">      as values only</span>
+<span class="sd">    :param float dsp: d-spacing of peak</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: float getTOFgamma: peak gamma</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;X&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;Y&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span>
     </div>
 <div class="viewcode-block" id="getTOFgammaDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFgammaDeriv">[docs]</a><span class="k">def</span> <span class="nf">getTOFgammaDeriv</span><span class="p">(</span><span class="n">dsp</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get derivatives of TOF peak profile gamma wrt X &amp; Y</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param float dsp: d-spacing of peak</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: list getTOFgammaDeriv: d(gam)/dX &amp; d(gam)/dY</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">return</span> <span class="n">dsp</span><span class="p">,</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span>
     </div>
 <div class="viewcode-block" id="getTOFbeta"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFbeta">[docs]</a><span class="k">def</span> <span class="nf">getTOFbeta</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get TOF peak profile beta</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param dict ins: instrument parameters with at least &#39;beat-0&#39;, &#39;beta-1&#39; &amp; &#39;beta-q&#39;</span>
+<span class="sd">      as values only</span>
+<span class="sd">    :param float dsp: d-spacing of peak</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: float getTOFbeta: peak beat</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;beta-0&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;beta-1&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span><span class="o">**</span><span class="mi">4</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;beta-q&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span>
+    <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;beta-0&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;beta-1&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span><span class="o">**</span><span class="mi">4</span><span class="o">+</span><span class="n">ins</span><span class="p">[</span><span class="s">&#39;beta-q&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span>
     </div>
 <div class="viewcode-block" id="getTOFbetaDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFbetaDeriv">[docs]</a><span class="k">def</span> <span class="nf">getTOFbetaDeriv</span><span class="p">(</span><span class="n">dsp</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get derivatives of TOF peak profile beta wrt beta-0, beta-1, &amp; beat-q</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param float dsp: d-spacing of peak</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: list getTOFbetaDeriv: d(beta)/d(beat-0), d(beta)/d(beta-1) &amp; d(beta)/d(beta-q)</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span><span class="mf">1.</span><span class="o">/</span><span class="n">dsp</span><span class="o">**</span><span class="mi">4</span><span class="p">,</span><span class="mf">1.</span><span class="o">/</span><span class="n">dsp</span>
+    <span class="k">return</span> <span class="mf">1.0</span><span class="p">,</span><span class="mf">1.</span><span class="o">/</span><span class="n">dsp</span><span class="o">**</span><span class="mi">4</span><span class="p">,</span><span class="mf">1.</span><span class="o">/</span><span class="n">dsp</span><span class="o">**</span><span class="mi">2</span>
     </div>
 <div class="viewcode-block" id="getTOFalpha"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFalpha">[docs]</a><span class="k">def</span> <span class="nf">getTOFalpha</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get TOF peak profile alpha</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param dict ins: instrument parameters with at least &#39;alpha&#39;</span>
+<span class="sd">      as values only</span>
+<span class="sd">    :param float dsp: d-spacing of peak</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: flaot getTOFalpha: peak alpha</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">return</span> <span class="n">ins</span><span class="p">[</span><span class="s">&#39;alpha&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">dsp</span>
     </div>
 <div class="viewcode-block" id="getTOFalphaDeriv"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.getTOFalphaDeriv">[docs]</a><span class="k">def</span> <span class="nf">getTOFalphaDeriv</span><span class="p">(</span><span class="n">dsp</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;get derivatives of TOF peak profile beta wrt alpha</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param float dsp: d-spacing of peak</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: float getTOFalphaDeriv: d(alp)/d(alpha)</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">return</span> <span class="mf">1.</span><span class="o">/</span><span class="n">dsp</span>
     </div>
 <div class="viewcode-block" id="setPeakparms"><a class="viewcode-back" href="../GSASIImath.html#GSASIImath.setPeakparms">[docs]</a><span class="k">def</span> <span class="nf">setPeakparms</span><span class="p">(</span><span class="n">Parms</span><span class="p">,</span><span class="n">Parms2</span><span class="p">,</span><span class="n">pos</span><span class="p">,</span><span class="n">mag</span><span class="p">,</span><span class="n">ifQ</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">useFit</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;default doc string</span>
+    <span class="sd">&#39;&#39;&#39;set starting peak parameters for single peak fits from plot selection or auto selection</span>
 <span class="sd">    </span>
-<span class="sd">    :param type name: description</span>
+<span class="sd">    :param dict Parms: instrument parameters dictionary</span>
+<span class="sd">    :param dict Parms2: table lookup for TOF profile coefficients</span>
+<span class="sd">    :param float pos: peak position in 2-theta, TOF or Q (ifQ=True)</span>
+<span class="sd">    :param float mag: peak top magnitude from pick</span>
+<span class="sd">    :param bool ifQ: True if pos in Q</span>
+<span class="sd">    :param bool useFit: True if use fitted CW Parms values (not defaults)</span>
 <span class="sd">    </span>
-<span class="sd">    :returns: type name: description</span>
+<span class="sd">    :returns: list XY: peak list entry:</span>
+<span class="sd">        for CW: [pos,0,mag,1,sig,0,gam,0]</span>
+<span class="sd">        for TOF: [pos,0,mag,1,alp,0,bet,0,sig,0,gam,0]</span>
+<span class="sd">        NB: mag refinement set by default, all others off</span>
 <span class="sd">    </span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="n">ind</span> <span class="o">=</span> <span class="mi">0</span>
@@ -2195,13 +2214,13 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">dsp</span> <span class="o">=</span> <span class="n">pos</span><span class="o">/</span><span class="n">Parms</span><span class="p">[</span><span class="s">&#39;difC&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="s">&#39;Pdabc&#39;</span> <span class="ow">in</span> <span class="n">Parms2</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;sig-q&#39;</span><span class="p">,</span><span class="s">&#39;X&#39;</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;sig-2&#39;</span><span class="p">,</span><span class="s">&#39;sig-q&#39;</span><span class="p">,</span><span class="s">&#39;X&#39;</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">]:</span>
                 <span class="n">ins</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">Parms</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">ind</span><span class="p">]</span>
             <span class="n">Pdabc</span> <span class="o">=</span> <span class="n">Parms2</span><span class="p">[</span><span class="s">&#39;Pdabc&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
             <span class="n">alp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">dsp</span><span class="p">,</span><span class="n">Pdabc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">Pdabc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">bet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">dsp</span><span class="p">,</span><span class="n">Pdabc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">Pdabc</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;alpha&#39;</span><span class="p">,</span><span class="s">&#39;beta-0&#39;</span><span class="p">,</span><span class="s">&#39;beta-1&#39;</span><span class="p">,</span><span class="s">&#39;beta-q&#39;</span><span class="p">,</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;sig-q&#39;</span><span class="p">,</span><span class="s">&#39;X&#39;</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;alpha&#39;</span><span class="p">,</span><span class="s">&#39;beta-0&#39;</span><span class="p">,</span><span class="s">&#39;beta-1&#39;</span><span class="p">,</span><span class="s">&#39;beta-q&#39;</span><span class="p">,</span><span class="s">&#39;sig-0&#39;</span><span class="p">,</span><span class="s">&#39;sig-1&#39;</span><span class="p">,</span><span class="s">&#39;sig-2&#39;</span><span class="p">,</span><span class="s">&#39;sig-q&#39;</span><span class="p">,</span><span class="s">&#39;X&#39;</span><span class="p">,</span><span class="s">&#39;Y&#39;</span><span class="p">]:</span>
                 <span class="n">ins</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">Parms</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">ind</span><span class="p">]</span>
             <span class="n">alp</span> <span class="o">=</span> <span class="n">getTOFalpha</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">)</span>
             <span class="n">bet</span> <span class="o">=</span> <span class="n">getTOFbeta</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span><span class="n">dsp</span><span class="p">)</span>
@@ -2975,7 +2994,8 @@
                 <span class="n">cosTable</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">G2lat</span><span class="o">.</span><span class="n">CosAngle</span><span class="p">(</span><span class="n">Heqv</span><span class="p">,</span><span class="n">MDvec</span><span class="p">,</span><span class="n">Gmat</span><span class="p">))</span>
         <span class="n">cosTable</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cosTable</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
         <span class="n">nRef</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">refs</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">covData</span><span class="p">[</span><span class="s">&#39;freshCOV&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">generalData</span><span class="p">[</span><span class="s">&#39;doPawley&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">MCSA</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;newDmin&#39;</span><span class="p">,</span><span class="bp">True</span><span class="p">):</span>
+<span class="c">#        if generalData[&#39;doPawley&#39;] and (covData[&#39;freshCOV&#39;] or  MCSA[&#39;newDmin&#39;]):</span>
+        <span class="k">if</span> <span class="n">covData</span><span class="p">[</span><span class="s">&#39;freshCOV&#39;</span><span class="p">]</span> <span class="ow">or</span>  <span class="n">MCSA</span><span class="p">[</span><span class="s">&#39;newDmin&#39;</span><span class="p">]:</span>
             <span class="n">vList</span> <span class="o">=</span> <span class="n">covData</span><span class="p">[</span><span class="s">&#39;varyList&#39;</span><span class="p">]</span>
             <span class="n">covMatrix</span> <span class="o">=</span> <span class="n">covData</span><span class="p">[</span><span class="s">&#39;covMatrix&#39;</span><span class="p">]</span>
             <span class="n">rcov</span> <span class="o">=</span> <span class="n">getVCov</span><span class="p">(</span><span class="n">vNames</span><span class="p">,</span><span class="n">vList</span><span class="p">,</span><span class="n">covMatrix</span><span class="p">)</span>
@@ -3256,7 +3276,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -53,11 +51,11 @@
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="c">#GSASIIobj - data objects for GSAS-II</span>
 <span class="c">########### SVN repository information ###################</span>
-<span class="c"># $Date: 2014-05-21 12:59:59 -0500 (Wed, 21 May 2014) $</span>
+<span class="c"># $Date: 2014-09-14 19:48:39 -0500 (Sun, 14 Sep 2014) $</span>
 <span class="c"># $Author: vondreele $</span>
-<span class="c"># $Revision: 1359 $</span>
-<span class="c"># $URL: https://subversion.xor.aps.anl.gov/pyGSAS/trunk/GSASIIobj.py $</span>
-<span class="c"># $Id: GSASIIobj.py 1359 2014-05-21 17:59:59Z vondreele $</span>
+<span class="c"># $Revision: 1496 $</span>
+<span class="c"># $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/GSASIIobj.py $</span>
+<span class="c"># $Id: GSASIIobj.py 1496 2014-09-15 00:48:39Z vondreele $</span>
 <span class="c">########### SVN repository information ###################</span>
 
 <span class="sd">&#39;&#39;&#39;</span>
@@ -895,7 +893,7 @@
 <span class="kn">import</span> <span class="nn">GSASIImath</span> <span class="kn">as</span> <span class="nn">G2mth</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
-<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1359 $&quot;</span><span class="p">)</span>
+<span class="n">GSASIIpath</span><span class="o">.</span><span class="n">SetVersionNumber</span><span class="p">(</span><span class="s">&quot;$Revision: 1496 $&quot;</span><span class="p">)</span>
 
 <span class="n">DefaultControls</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s">&#39;deriv type&#39;</span><span class="p">:</span><span class="s">&#39;analytic Hessian&#39;</span><span class="p">,</span>    <span class="c">#default controls</span>
@@ -997,11 +995,11 @@
 <span class="sd">    Note: this code assumes that the atom random Id (ranId) is the last </span>
 <span class="sd">    element each atom record.</span>
 
-<span class="sd">    This is called in three places (only) :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`</span>
+<span class="sd">    This is called in three places (only): :func:`GSASIIstrIO.GetUsedHistogramsAndPhases`</span>
 <span class="sd">    (which loads the histograms and phases from a GPX file),</span>
-<span class="sd">    :meth:`GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`</span>
+<span class="sd">    :meth:`~GSASII.GSASII.GetUsedHistogramsAndPhasesfromTree`</span>
 <span class="sd">    (which loads the histograms and phases from the data tree.) and</span>
-<span class="sd">    :meth:`GSASII.GSASIIconstrGUI.UpdateConstraints`</span>
+<span class="sd">    :meth:`GSASIIconstrGUI.UpdateConstraints`</span>
 <span class="sd">    (which displays &amp; edits the constraints in a GUI)</span>
 
 <span class="sd">    TODO: do we need a lookup for rigid body variables?</span>
@@ -1183,13 +1181,15 @@
 <span class="c">#        return &quot;invalid variable name!&quot;,&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
-        <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;(variable needs a definition!)&quot;</span>
+        <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;(variable needs a definition! Set it in CompileVarDesc)&quot;</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>         <span class="c">#SASD variable name!</span>
         <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;component:&#39;</span><span class="o">+</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">s</span><span class="p">,</span><span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
     <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># HAP: keep short</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;Scale&quot;</span><span class="p">:</span> <span class="c"># fix up ambigous name</span>
+            <span class="n">l</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;Phase fraction&quot;</span>
         <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
             <span class="n">lbl</span> <span class="o">=</span> <span class="s">&#39;all&#39;</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1205,35 +1205,38 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Hist=&#39;</span><span class="o">+</span><span class="n">hlbl</span>
         <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Ph=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; * &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">hlbl</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Back&#39;</span><span class="p">:</span> <span class="c"># background parameters are &quot;special&quot;, alas</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;Hist=&#39;</span><span class="o">+</span><span class="n">ShortHistNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-        <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39; #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
-    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># rigid body parameter</span>
-        <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;phase?&#39;</span><span class="p">)</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Res #&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">+</span><span class="s">&quot; body #&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span><span class="o">+</span><span class="s">&quot; in &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># atom parameter, </span>
-        <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;phase?&#39;</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">albl</span> <span class="o">=</span> <span class="n">LookupAtomLabel</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="n">albl</span> <span class="o">=</span> <span class="s">&#39;Atom?&#39;</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Atom &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">albl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; in &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;All phases &quot;</span>
-    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;phase?&#39;</span><span class="p">)</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Phase &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;All hists&#39;</span>
-    <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">hlbl</span> <span class="o">=</span> <span class="n">ShortHistNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-        <span class="k">if</span> <span class="n">hlbl</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;HKLF&#39;</span><span class="p">:</span>
-            <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Xtl=&#39;</span><span class="o">+</span><span class="n">hlbl</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
-        <span class="k">elif</span> <span class="n">hlbl</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;PWDR&#39;</span><span class="p">:</span>
-            <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Pwd=&#39;</span><span class="o">+</span><span class="n">hlbl</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Hist=&#39;</span><span class="o">+</span><span class="n">hlbl</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hlbl</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;Scale&quot;</span><span class="p">:</span> <span class="c"># fix up ambigous name: must be scale factor, since not HAP</span>
+            <span class="n">l</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;Scale factor&quot;</span>
+        <span class="k">if</span> <span class="n">l</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;Back&#39;</span><span class="p">:</span> <span class="c"># background parameters are &quot;special&quot;, alas</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;Hist=&#39;</span><span class="o">+</span><span class="n">ShortHistNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39; #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># rigid body parameter</span>
+            <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;phase?&#39;</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Res #&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span><span class="o">+</span><span class="s">&quot; body #&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span><span class="o">+</span><span class="s">&quot; in &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="c"># atom parameter, </span>
+            <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;phase?&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">albl</span> <span class="o">=</span> <span class="n">LookupAtomLabel</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">l</span><span class="p">[</span><span class="mi">3</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">albl</span> <span class="o">=</span> <span class="s">&#39;Atom?&#39;</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Atom &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">albl</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; in &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;All phases &quot;</span>
+        <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">lbl</span> <span class="o">=</span> <span class="n">ShortPhaseNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s">&#39;phase?&#39;</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Phase &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">lbl</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;*&#39;</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;All hists&#39;</span>
+        <span class="k">elif</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">hlbl</span> <span class="o">=</span> <span class="n">ShortHistNames</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s">&#39;? #&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">hlbl</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;HKLF&#39;</span><span class="p">:</span>
+                <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Xtl=&#39;</span><span class="o">+</span><span class="n">hlbl</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
+            <span class="k">elif</span> <span class="n">hlbl</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;PWDR&#39;</span><span class="p">:</span>
+                <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Pwd=&#39;</span><span class="o">+</span><span class="n">hlbl</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hlbl</span> <span class="o">=</span> <span class="s">&#39;Hist=&#39;</span><span class="o">+</span><span class="n">hlbl</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">hlbl</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="p">:</span>
         <span class="n">s</span> <span class="o">=</span> <span class="s">&#39;Global&#39;</span>
     <span class="k">return</span> <span class="n">s</span><span class="p">,</span><span class="n">l</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -1317,7 +1320,10 @@
         <span class="s">&#39;MD&#39;</span> <span class="p">:</span> <span class="s">&#39;March-Dollase coef.&#39;</span><span class="p">,</span>
         <span class="s">&#39;Mustrain;.*&#39;</span> <span class="p">:</span> <span class="s">&#39;Microstrain coef.&#39;</span><span class="p">,</span>
         <span class="s">&#39;Size;.*&#39;</span> <span class="p">:</span> <span class="s">&#39;Crystallite size value&#39;</span><span class="p">,</span>
-        <span class="s">&#39;eA&#39;</span> <span class="p">:</span> <span class="s">&#39;?&#39;</span><span class="p">,</span>
+        <span class="s">&#39;eA$&#39;</span> <span class="p">:</span> <span class="s">&#39;Cubic mustrain value&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Ep$&#39;</span> <span class="p">:</span> <span class="s">&#39;Primary extinction&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Es$&#39;</span> <span class="p">:</span> <span class="s">&#39;Secondary type II extinction&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Eg$&#39;</span> <span class="p">:</span> <span class="s">&#39;Secondary type I extinction&#39;</span><span class="p">,</span>
         <span class="c">#Histogram vars (:h:&lt;var&gt;)</span>
         <span class="s">&#39;Absorption&#39;</span> <span class="p">:</span> <span class="s">&#39;Absorption coef.&#39;</span><span class="p">,</span>
         <span class="s">&#39;Displace([XY])&#39;</span> <span class="p">:</span> <span class="s">&#39;Debye-Scherrer sample displacement </span><span class="se">\\</span><span class="s">1&#39;</span><span class="p">,</span>
@@ -1352,15 +1358,20 @@
         <span class="s">&#39;Radius&#39;</span> <span class="p">:</span> <span class="s">&#39;Sphere/cylinder/disk radius&#39;</span><span class="p">,</span>
         <span class="s">&#39;Mean&#39;</span> <span class="p">:</span> <span class="s">&#39;Particle mean radius&#39;</span><span class="p">,</span>
         <span class="s">&#39;StdDev&#39;</span> <span class="p">:</span> <span class="s">&#39;Standard deviation in Mean&#39;</span><span class="p">,</span>
-        <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="s">&#39;Guinier prefactor&#39;</span><span class="p">,</span>
-        <span class="s">&#39;Rg&#39;</span><span class="p">:</span> <span class="s">&#39;Guinier radius of gyration&#39;</span><span class="p">,</span>
-        <span class="s">&#39;B&#39;</span><span class="p">:</span> <span class="s">&#39;Porod prefactor&#39;</span><span class="p">,</span>
-        <span class="s">&#39;P&#39;</span><span class="p">:</span> <span class="s">&#39;Porod power&#39;</span><span class="p">,</span>
+        <span class="s">&#39;G$&#39;</span><span class="p">:</span> <span class="s">&#39;Guinier prefactor&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Rg$&#39;</span><span class="p">:</span> <span class="s">&#39;Guinier radius of gyration&#39;</span><span class="p">,</span>
+        <span class="s">&#39;B$&#39;</span><span class="p">:</span> <span class="s">&#39;Porod prefactor&#39;</span><span class="p">,</span>
+        <span class="s">&#39;P$&#39;</span><span class="p">:</span> <span class="s">&#39;Porod power&#39;</span><span class="p">,</span>
         <span class="s">&#39;Cutoff&#39;</span><span class="p">:</span> <span class="s">&#39;Porod cutoff&#39;</span><span class="p">,</span>
         <span class="s">&#39;PkInt&#39;</span><span class="p">:</span> <span class="s">&#39;Bragg peak intensity&#39;</span><span class="p">,</span>
         <span class="s">&#39;PkPos&#39;</span><span class="p">:</span> <span class="s">&#39;Bragg peak position&#39;</span><span class="p">,</span>
         <span class="s">&#39;PkSig&#39;</span><span class="p">:</span> <span class="s">&#39;Bragg peak sigma&#39;</span><span class="p">,</span>
-        <span class="s">&#39;PkGam&#39;</span><span class="p">:</span> <span class="s">&#39;Bragg peak gamma&#39;</span><span class="p">,</span>   
+        <span class="s">&#39;PkGam&#39;</span><span class="p">:</span> <span class="s">&#39;Bragg peak gamma&#39;</span><span class="p">,</span>
+        <span class="s">&#39;e([12][12])&#39;</span> <span class="p">:</span> <span class="s">&#39;strain tensor e</span><span class="se">\1</span><span class="s">&#39;</span><span class="p">,</span>   <span class="c"># strain vars e11, e22, e12</span>
+        <span class="s">&#39;Dcalc&#39;</span><span class="p">:</span> <span class="s">&#39;Calc. d-spacing&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Back$&#39;</span><span class="p">:</span> <span class="s">&#39;background parameter&#39;</span><span class="p">,</span>
+        <span class="s">&#39;pos$&#39;</span><span class="p">:</span> <span class="s">&#39;peak position&#39;</span><span class="p">,</span>
+        <span class="s">&#39;int$&#39;</span><span class="p">:</span> <span class="s">&#39;peak intensity&#39;</span><span class="p">,</span>
         <span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">VarDesc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="n">reVarDesc</span><span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span>
@@ -2105,7 +2116,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2013, Von Dreele and Toby for Argonne National Laboratory.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>
 </html>

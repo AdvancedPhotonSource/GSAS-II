@@ -32,7 +32,7 @@ for fil in proc.stdout.readlines():
     #print fil+'...',
     if os.path.splitext(fil.strip())[1] != ".py": continue
     if os.path.splitext(os.path.split(fil)[1])[0] in documented:
-        print fil+' doc'
+        #print fil+' doc'
         continue
     else:
         print fil+' undocumented'

@@ -59,6 +59,20 @@ if newpath not in sys.path: sys.path.append(newpath)
 newpath = os.path.join(path2GSAS2,'exports')
 if newpath not in sys.path: sys.path.append(newpath)
 
+# setup read of config.py, if present
+try:
+    import config
+    configDict = config.__dict__
+    import inspect
+    vals = [True for i in inspect.getmembers(config) if '__' not in i[0]]
+    print str(len(vals))+' values read from config file '+os.path.abspath(config.__file__)
+except ImportError:
+    configDict = {}
+    
+def GetConfigValue(key):
+    'Return the configuration file value for key or None if not present'
+    return configDict.get(key)
+
 # routines for looking a version numbers in files
 version = -1
 def SetVersionNumber(RevString):

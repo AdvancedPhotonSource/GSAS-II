@@ -1721,12 +1721,9 @@ def UpdateSampleGrid(G2frame,data):
         finally:
             dlg.Destroy()
 
-    def OnHistoType(event):
-        Obj = event.GetEventObject()
-        data['Type'] = Obj.GetValue()
-        if data['Type'] == 'Bragg-Brentano' and 'Shift' not in data:    #set up defaults for new type(s)
-            data['Shift'] = [0.0,False]
-            data['Transparency'] = [0.0,False]
+    def OnHistoChange():
+        '''Called when the histogram type is changed to refresh the window
+        '''
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
         
     def SetNameVal():
@@ -1818,6 +1815,10 @@ def UpdateSampleGrid(G2frame,data):
         data['Trans'] = 1.0
     if 'SlitLen' not in data and 'SASD' in histName:
         data['SlitLen'] = 0.0
+    if 'Shift' not in data:
+        data['Shift'] = [0.0,False]
+    if 'Transparency' not in data:
+        data['Transparency'] = [0.0,False]
     data['InstrName'] = data.get('InstrName','')
 #patch end
     labelLst,elemKeysLst,dspLst,refFlgElem = [],[],[],[]
@@ -1851,9 +1852,9 @@ def UpdateSampleGrid(G2frame,data):
             choices = ['Debye-Scherrer',]
         else:
             choices = ['Debye-Scherrer','Bragg-Brentano',]
-        histoType = wx.ComboBox(G2frame.dataDisplay,wx.ID_ANY,value=data['Type'],choices=choices,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        histoType.Bind(wx.EVT_COMBOBOX, OnHistoType)
+        histoType = G2gd.G2ChoiceButton(G2frame.dataDisplay,choices,
+                    strLoc=data,strKey='Type',
+                    onChoice=OnHistoChange)
         nameSizer.Add(histoType)
         mainSizer.Add(nameSizer,0,wx.EXPAND,1)
         mainSizer.Add((5,5),0)

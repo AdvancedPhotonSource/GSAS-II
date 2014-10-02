@@ -76,6 +76,7 @@ import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
+import GSASIIlog as log
 
 #wx inspector - use as needed
 wxInspector = False
@@ -115,6 +116,23 @@ def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
 class GSASII(wx.Frame):
     '''Define the main GSAS-II frame and its associated menu items
     '''
+    def MenuBinding(self,event):
+        '''Called when a menu is clicked upon; looks up the binding in table
+        '''
+        log.InvokeMenuCommand(event.GetId(),self,event)
+            
+    def Bind(self,eventtype,handler,*args,**kwargs):
+        '''Override the Bind function so that we can wrap calls that will be logged.
+        
+        N.B. This is a bit kludgy. Menu bindings with an id are wrapped and
+        menu bindings with an object and no id are not. 
+        '''
+        if eventtype == wx.EVT_MENU and 'id' in kwargs:
+            menulabels = log.SaveMenuCommand(kwargs['id'],self,handler)
+            if menulabels:
+                wx.Frame.Bind(self,eventtype,self.MenuBinding,*args,**kwargs)
+                return
+        wx.Frame.Bind(self,eventtype,handler,*args,**kwargs)      
     
     def _Add_FileMenuItems(self, parent):
         item = parent.Append(
@@ -1641,6 +1659,119 @@ class GSASII(wx.Frame):
         if not newHistList: return # somehow, no new histograms
         return # success
 
+    def OnMacroRecordStatus(self,event,setvalue=None):
+        '''Called when the record macro menu item is used which toggles the
+        value. Alternately a value to be set can be provided. Note that this
+        routine is made more complex because on the Mac there are lots of menu
+        items (listed in self.MacroStatusList) and this loops over all of them.
+        '''
+        nextvalue = log.ShowLogStatus() != True
+        if setvalue is not None:
+            nextvalue = setvalue 
+        if nextvalue:
+            log.LogOn()
+            set2 = True
+        else:
+            log.LogOff()
+            set2 = False
+        for menuitem in self.MacroStatusList:
+            menuitem.Check(set2)
+
+    def _init_Macro(self):
+        '''Define the items in the macro menu.
+        '''
+        menu = self.MacroMenu
+        item = menu.Append(
+                help='Start or stop recording of menu actions, etc.', id=wx.ID_ANY,
+                kind=wx.ITEM_CHECK,text='Record actions')
+        self.MacroStatusList.append(item)
+        item.Check(log.ShowLogStatus())
+        self.Bind(wx.EVT_MENU, self.OnMacroRecordStatus, item)
+
+        # this may only be of value for development work
+        item = menu.Append(
+            help='Show logged commands', id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,text='Show log')
+        def OnShowLog(event):
+            print 70*'='
+            print 'List of logged actions'
+            for i,line in enumerate(log.G2logList):
+                if line: print i,line
+            print 70*'='
+        self.Bind(wx.EVT_MENU, OnShowLog, item)
+
+        item = menu.Append(
+            help='Clear logged commands', id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,text='Clear log')
+        def OnClearLog(event): log.G2logList=[None]
+        self.Bind(wx.EVT_MENU, OnClearLog, item)
+        
+        item = menu.Append(
+            help='Save logged commands to file', id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,text='Save log')
+        def OnSaveLog(event):
+            import cPickle
+            defnam = os.path.splitext(
+                os.path.split(self.GSASprojectfile)[1]
+                )[0]+'.gcmd'
+            dlg = wx.FileDialog(self,
+                'Choose an file to save past actions', '.', defnam, 
+                'GSAS-II cmd output (*.gcmd)|*.gcmd',
+                wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+            dlg.CenterOnParent()
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    filename = dlg.GetPath()
+                    # make sure extension is correct
+                    filename = os.path.splitext(filename)[0]+'.gcmd'
+                else:
+                    filename = None
+            finally:
+                dlg.Destroy()
+            if filename:
+                fp = open(filename,'wb')
+                fp.write(str(len(log.G2logList)-1)+'\n')
+                for item in log.G2logList:
+                    if item: cPickle.dump(item,fp)
+                fp.close()
+        self.Bind(wx.EVT_MENU, OnSaveLog, item)
+
+        item = menu.Append(
+            help='Load logged commands from file', id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,text='Load log')
+        def OnLoadLog(event):
+            # this appends. Perhaps we should ask to clear? 
+            import cPickle
+            defnam = os.path.splitext(
+                os.path.split(self.GSASprojectfile)[1]
+                )[0]+'.gcmd'
+            dlg = wx.FileDialog(self,
+                'Choose an file to read saved actions', '.', defnam, 
+                'GSAS-II cmd output (*.gcmd)|*.gcmd',
+                wx.OPEN|wx.CHANGE_DIR)
+            dlg.CenterOnParent()
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    filename = dlg.GetPath()
+                    # make sure extension is correct
+                    filename = os.path.splitext(filename)[0]+'.gcmd'
+                else:
+                    filename = None
+            finally:
+                dlg.Destroy()
+            if filename and os.path.exists(filename):
+                fp = open(filename,'rb')
+                lines = fp.readline()
+                for i in range(int(lines)):
+                    log.G2logList.append(cPickle.load(fp))
+                fp.close()
+        self.Bind(wx.EVT_MENU, OnLoadLog, item)
+
+        item = menu.Append(
+            help='Replay saved commands', id=wx.ID_ANY,
+            kind=wx.ITEM_NORMAL,text='Replay log')
+        self.Bind(wx.EVT_MENU, log.ReplayLog, item)
+
     def _init_Exports(self,menu):
         '''Find exporter routines and add them into menus
         '''
@@ -1791,8 +1922,9 @@ class GSASII(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnExportPDF, id=item.GetId())
 
     def FillMainMenu(self,menubar):
-        '''Define contents of the main GSAS-II menu for the (main) data tree window
-        in the mac, used also for the data item windows as well.
+        '''Define contents of the main GSAS-II menu for the (main) data tree window.
+        For the mac, this is also called for the data item windows as well so that
+        the main menu items are data menu as well.
         '''
         File = wx.Menu(title='')
         menubar.Append(menu=File, title='&File')
@@ -1848,6 +1980,10 @@ class GSASII(wx.Frame):
         menubar.Append(menu=self.ExportMenu, title='Export')
         self._init_Exports(self.ExportMenu)
         self._Add_ExportMenuItems(self.ExportMenu)
+        if GSASIIpath.GetConfigValue('Enable_logging'):
+            self.MacroMenu = wx.Menu(title='')
+            menubar.Append(menu=self.MacroMenu, title='Macro')
+            self._init_Macro()
         HelpMenu=G2gd.MyHelp(self,helpType='Data tree',
             morehelpitems=[('&Tutorials','Tutorials')])
         menubar.Append(menu=HelpMenu,title='&Help')
@@ -1872,6 +2008,9 @@ class GSASII(wx.Frame):
         self.ExportCIF = []
         #
         self.GSASIIMenu = wx.MenuBar()
+        # create a list of all dataframe menus (appended in PrefillDataMenu)
+        self.dataMenuBars = [self.GSASIIMenu]
+        self.MacroStatusList = []
         self.FillMainMenu(self.GSASIIMenu)
         self.SetMenuBar(self.GSASIIMenu)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -1879,10 +2018,10 @@ class GSASII(wx.Frame):
         self.mainPanel = wx.Panel(self,-1)
         
         wxID_PATTERNTREE = wx.NewId()
-        self.PatternTree = wx.TreeCtrl(id=wxID_PATTERNTREE,
+        #self.PatternTree = wx.TreeCtrl(id=wxID_PATTERNTREE, # replaced for logging
+        self.PatternTree = G2gd.G2TreeCtrl(id=wxID_PATTERNTREE,
             parent=self.mainPanel, pos=wx.Point(0, 0),style=wx.TR_DEFAULT_STYLE )
-        self.PatternTree.Bind(wx.EVT_TREE_SEL_CHANGED,
-            self.OnPatternTreeSelChanged, id=wxID_PATTERNTREE)
+        self.PatternTree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnPatternTreeSelChanged)
         self.PatternTree.Bind(wx.EVT_TREE_ITEM_COLLAPSED,
             self.OnPatternTreeItemCollapsed, id=wxID_PATTERNTREE)
         self.PatternTree.Bind(wx.EVT_TREE_ITEM_EXPANDED,
@@ -1895,7 +2034,8 @@ class GSASII(wx.Frame):
             self.OnPatternTreeBeginRDrag, id=wxID_PATTERNTREE)        
         self.PatternTree.Bind(wx.EVT_TREE_END_DRAG,
             self.OnPatternTreeEndDrag, id=wxID_PATTERNTREE)        
-        self.root = self.PatternTree.AddRoot('Loaded Data: ')
+        #self.root = self.PatternTree.AddRoot('Loaded Data: ')
+        self.root = self.PatternTree.root
         plotFrame = wx.Frame(None,-1,'GSASII Plots',size=wx.Size(700,600), \
             style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
         self.G2plotNB = G2plt.G2PlotNoteBook(plotFrame)

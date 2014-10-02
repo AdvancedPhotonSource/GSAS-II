@@ -44,6 +44,7 @@ import GSASIIrestrGUI as G2restG
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIIexprGUI as G2exG
+import GSASIIlog as log
 
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -152,11 +153,175 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
 ] = [wx.NewId() for item in range(7)]
 
+[ wxID_MCRON,wxID_MCRLIST,wxID_MCRSAVE,wxID_MCRPLAY,
+] = [wx.NewId() for item in range(4)]
+
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 ################################################################################
 #### GSAS-II class definitions
 ################################################################################
+
+class G2TreeCtrl(wx.TreeCtrl):
+    '''Create a wrapper around the standard TreeCtrl so we can "wrap"
+    various events.
+    
+    This logs when a tree item is selected (in :meth:`onSelectionChanged`)
+
+    This also wraps lists and dicts pulled out of the tree to track where
+    they were retrieved from.
+    '''
+    def __init__(self,parent=None,*args,**kwargs):
+        super(self.__class__,self).__init__(parent=parent,*args,**kwargs)
+        self.G2frame = parent.GetParent()
+        self.root = self.AddRoot('Loaded Data: ')
+        self.SelectionChanged = None
+        log.LogInfo['Tree'] = self
+
+    def _getTreeItemsList(self,item):
+        '''Get the full tree hierarchy from a reference to a tree item.
+        Note that this effectively hard-codes phase and histogram names in the
+        returned list. We may want to make these names relative in the future.
+        '''
+        textlist = [self.GetItemText(item)]
+        parent = self.GetItemParent(item)
+        while parent:
+            if parent == self.root: break
+            textlist.insert(0,self.GetItemText(parent))
+            parent = self.GetItemParent(parent)
+        return textlist
+
+    def onSelectionChanged(self,event):
+        '''Log each press on a tree item here. 
+        '''
+        if self.SelectionChanged:
+            textlist = self._getTreeItemsList(event.GetItem())
+            if log.LogInfo['Logging'] and event.GetItem() != self.root:
+                textlist[0] = self.GetRelativeHistNum(textlist[0])
+                if textlist[0] == "Phases" and len(textlist) > 1:
+                    textlist[1] = self.GetRelativePhaseNum(textlist[1])
+                log.MakeTreeLog(textlist)
+            self.SelectionChanged(event)
+
+    def Bind(self,eventtype,handler,*args,**kwargs):
+        '''Override the Bind() function so that page change events can be trapped
+        '''
+        if eventtype == wx.EVT_TREE_SEL_CHANGED:
+            self.SelectionChanged = handler
+            wx.TreeCtrl.Bind(self,eventtype,self.onSelectionChanged)
+            return
+        wx.TreeCtrl.Bind(self,eventtype,handler,*args,**kwargs)
+
+    def GetItemPyData(self,*args,**kwargs):
+        '''Override the standard method to wrap the contents
+        so that the source can be tracked
+        '''
+        data = super(self.__class__,self).GetItemPyData(*args,**kwargs)
+        textlist = self._getTreeItemsList(args[0])
+        if type(data) is dict:
+            return log.dictLogged(data,textlist)
+        if type(data) is list:
+            return log.listLogged(data,textlist)
+        if type(data) is tuple: #N.B. tuples get converted to lists
+            return log.listLogged(list(data),textlist)
+        return data
+
+    def GetRelativeHistNum(self,histname):
+        '''Returns list with a histogram type and a relative number for that
+        histogram, or the original string if not a histogram
+        '''
+        histtype = histname.split()[0]
+        if histtype != histtype.upper(): # histograms (only) have a keyword all in caps
+            return histname
+        item, cookie = self.GetFirstChild(self.root)
+        i = 0
+        while item:
+            itemtext = self.GetItemText(item)
+            if itemtext == histname:
+                return histtype,i
+            elif itemtext.split()[0] == histtype:
+                i += 1
+            item, cookie = self.GetNextChild(self.root, cookie)
+        else:
+            raise Exception("Histogram not found: "+histname)
+
+    def ConvertRelativeHistNum(self,histtype,histnum):
+        '''Converts a histogram type and relative histogram number to a
+        histogram name in the current project
+        '''
+        item, cookie = self.GetFirstChild(self.root)
+        i = 0
+        while item:
+            itemtext = self.GetItemText(item)
+            if itemtext.split()[0] == histtype:
+                if i == histnum: return itemtext
+                i += 1
+            item, cookie = self.GetNextChild(self.root, cookie)
+        else:
+            raise Exception("Histogram #'+str(histnum)+' of type "+histtype+' not found')
         
+    def GetRelativePhaseNum(self,phasename):
+        '''Returns a phase number if the string matches a phase name
+        or else returns the original string
+        '''
+        item, cookie = self.GetFirstChild(self.root)
+        while item:
+            itemtext = self.GetItemText(item)
+            if itemtext == "Phases":
+                parent = item
+                item, cookie = self.GetFirstChild(parent)
+                i = 0
+                while item:
+                    itemtext = self.GetItemText(item)
+                    if itemtext == phasename:
+                        return i
+                    item, cookie = self.GetNextChild(parent, cookie)
+                    i += 1
+                else:
+                    return phasename # not a phase name
+            item, cookie = self.GetNextChild(self.root, cookie)
+        else:
+            raise Exception("No phases found ")
+
+    def ConvertRelativePhaseNum(self,phasenum):
+        '''Converts relative phase number to a phase name in
+        the current project
+        '''
+        item, cookie = self.GetFirstChild(self.root)
+        while item:
+            itemtext = self.GetItemText(item)
+            if itemtext == "Phases":
+                parent = item
+                item, cookie = self.GetFirstChild(parent)
+                i = 0
+                while item:
+                    if i == phasenum:
+                        return self.GetItemText(item)
+                    item, cookie = self.GetNextChild(parent, cookie)
+                    i += 1
+                else:
+                    raise Exception("Phase "+str(phasenum)+" not found")
+            item, cookie = self.GetNextChild(self.root, cookie)
+        else:
+            raise Exception("No phases found ")
+#===========================================================================
+class G2LoggedButton(wx.Button):
+    '''A version of wx.Button that creates logging events. Bindings are saved
+    in the object, and are looked up rather than directly set with a bind.
+    An index to these buttons is saved as log.ButtonBindingLookup
+    '''
+    def __init__(self,parent,id,label,locationcode,handler,*args,**kwargs):
+        super(self.__class__,self).__init__(parent,id,label,*args,**kwargs)
+        self.label = label
+        self.handler = handler
+        self.locationcode = locationcode
+        key = locationcode + '+' + label # hash code to find button
+        self.Bind(wx.EVT_BUTTON,self.onPress)
+        log.ButtonBindingLookup[key] = self
+    def onPress(self,event):
+        'create log event and call handler'
+        log.MakeButtonLog(self.locationcode,self.label)
+        self.handler(event)
+#===========================================================================
 class ValidatedTxtCtrl(wx.TextCtrl):
     '''Create a TextCtrl widget that uses a validator to prevent the
     entry of inappropriate characters and changes color to highlight
@@ -321,6 +486,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
     def SetValue(self,val):
         if self.result is not None: # note that this bypasses formatting
             self.result[self.key] = val
+            log.LogVarChange(self.result,self.key)
         self._setValue(val)
 
     def _setValue(self,val):
@@ -410,6 +576,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.result[self.key] = val.encode('ascii','replace') 
         else:
             self.result[self.key] = val
+        log.LogVarChange(self.result,self.key)
 
     def _GetStringValue(self,event):
         '''Get string input and store.
@@ -424,6 +591,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.result[self.key] = val.encode('ascii','replace') 
         else:
             self.result[self.key] = val
+        log.LogVarChange(self.result,self.key)
 
     def _onLoseFocus(self,event):
         if self.evaluated:
@@ -540,6 +708,7 @@ class NumberValidator(wx.PyValidator):
             val = tc.GetValue().strip()
             if val == '?' or val == '.':
                 self.result[self.key] = val
+                log.LogVarChange(self.result,self.key)
                 return
         try:
             val = self.typ(tc.GetValue())
@@ -568,6 +737,7 @@ class NumberValidator(wx.PyValidator):
                 tc.invalid = True  # invalid
         if self.key is not None and self.result is not None and not tc.invalid:
             self.result[self.key] = val
+            log.LogVarChange(self.result,self.key)
 
     def ShowValidity(self,tc):
         '''Set the control colors to show invalid input
@@ -683,6 +853,7 @@ class ASCIIValidator(wx.PyValidator):
           is associated with.
         '''
         self.result[self.key] = tc.GetValue().encode('ascii','replace')
+        log.LogVarChange(self.result,self.key)
 
     def OnChar(self, event):
         '''Called each type a key is pressed
@@ -788,30 +959,35 @@ class G2CheckBox(wx.CheckBox):
         self.Bind(wx.EVT_CHECKBOX, self._OnCheckBox)
     def _OnCheckBox(self,event):
         self.loc[self.key] = self.GetValue()
+        log.LogVarChange(self.loc,self.key)
 ################################################################################
 class G2ChoiceButton(wx.Choice):
     '''A customized version of a wx.Choice that automatically initializes
     the control to match a supplied value and saves the choice directly
     into an array or list. Optionally a function can be called each time a
-    choice is selected. 
+    choice is selected. The widget can be used with an array item that is set to 
+    to the choice by number (``indLoc[indKey]``) or by string value
+    (``strLoc[strKey]``) or both. The initial value is taken from ``indLoc[indKey]``
+    if not None or ``strLoc[strKey]`` if not None. 
 
     :param wx.Panel parent: name of panel or frame that will be
       the parent to the widget. Can be None.
     :param list choiceList: a list or tuple of choices to offer the user.
     :param dict/list indLoc: a dict or list with the initial value to be
-      placed in the Choice button. 
+      placed in the Choice button. If this is None, this is ignored. 
     :param int/str indKey: the dict key or the list index for the value to be
-      edited by the Choice button. The ``indLoc[indKey]`` element must exist.
-      The value for this should be None or an integer in range(len(choiceList)).
-      The Choice button will be initialized to the choice corresponding to the
-      value in this element if not None.
+      edited by the Choice button. If indLoc is not None then this
+      must be specified and the ``indLoc[indKey]`` will be set. If the value
+      for ``indLoc[indKey]`` is not None, it should be an integer in
+      range(len(choiceList)). The Choice button will be initialized to the
+      choice corresponding to the value in this element if not None.
     :param dict/list strLoc: a dict or list with the string value corresponding to
       indLoc/indKey. Default (None) means that this is not used. 
     :param int/str strKey: the dict key or the list index for the string value 
       The ``strLoc[strKey]`` element must exist or strLoc must be None (default).
-    :param function onChoice: name of a   
+    :param function onChoice: name of a function to call when the choice is made.
     '''
-    def __init__(self,parent,choiceList,indLoc,indKey,strLoc=None,strKey=None,
+    def __init__(self,parent,choiceList,indLoc=None,indKey=None,strLoc=None,strKey=None,
                  onChoice=None,**kwargs):
         wx.Choice.__init__(self,parent,choices=choiceList,id=wx.ID_ANY,**kwargs)
         self.choiceList = choiceList
@@ -820,18 +996,31 @@ class G2ChoiceButton(wx.Choice):
         self.strLoc = strLoc
         self.strKey = strKey
         self.onChoice = None
-        if self.indLoc[self.indKey] is not None:
+        self.SetSelection(wx.NOT_FOUND)
+        if self.indLoc is not None and self.indLoc.get(self.indKey) is not None:
             self.SetSelection(self.indLoc[self.indKey])
-        else:
-            self.SetSelection(wx.NOT_FOUND)
+            if self.strLoc is not None:
+                self.strLoc[self.strKey] = self.GetStringSelection()
+                log.LogVarChange(self.strLoc,self.strKey)
+        elif self.strLoc is not None and self.strLoc.get(self.strKey) is not None:
+            try:
+                self.SetSelection(choiceList.index(self.strLoc[self.strKey]))
+                if self.indLoc is not None:
+                    self.indLoc[self.indKey] = self.GetSelection()
+                    log.LogVarChange(self.indLoc,self.indKey)
+            except ValueError:
+                pass
         self.Bind(wx.EVT_CHOICE, self._OnChoice)
-        if self.strLoc is not None: # make sure strLoc gets initialized
-            self._OnChoice(None) # note that onChoice will not be called
+        #if self.strLoc is not None: # make sure strLoc gets initialized
+        #    self._OnChoice(None) # note that onChoice will not be called
         self.onChoice = onChoice
     def _OnChoice(self,event):
-        self.indLoc[self.indKey] = self.GetSelection()
+        if self.indLoc is not None:
+            self.indLoc[self.indKey] = self.GetSelection()
+            log.LogVarChange(self.indLoc,self.indKey)
         if self.strLoc is not None:
             self.strLoc[self.strKey] = self.GetStringSelection()
+            log.LogVarChange(self.strLoc,self.strKey)
         if self.onChoice:
             self.onChoice()
 ################################################################################    
@@ -2637,15 +2826,26 @@ class DataFrame(wx.Frame):
     the binding for the menus is done later in various GSASII*GUI modules,
     where the functions to be called are defined.
     '''
-    def Bind(self,*args,**kwargs):
+    def Bind(self,eventtype,handler,*args,**kwargs):
         '''Override the Bind() function: on the Mac the binding is to
         the main window, so that menus operate with any window on top.
-        For other platforms, call the default wx.Frame Bind()
+        For other platforms, either wrap calls that will be logged
+        or call the default wx.Frame Bind() to bind to the menu item directly.
+
+        Note that bindings can be made to objects by Id or by direct reference to the
+        object. As a convention, when bindings are to objects, they are not logged
+        but when bindings are by Id, they are logged.
         '''
         if sys.platform == "darwin": # mac
-            self.G2frame.Bind(*args,**kwargs)
-        else:
-            wx.Frame.Bind(self,*args,**kwargs)      
+            self.G2frame.Bind(eventtype,handler,*args,**kwargs)
+            return
+        if eventtype == wx.EVT_MENU and 'id' in kwargs:
+            menulabels = log.SaveMenuCommand(kwargs['id'],self.G2frame,handler)
+            if menulabels:
+                #print 'intercepting bind for',handler,menulabels,kwargs['id']
+                wx.Frame.Bind(self,eventtype,self.G2frame.MenuBinding,*args,**kwargs)
+                return
+            wx.Frame.Bind(self,eventtype,handler,*args,**kwargs)      
         
     def PrefillDataMenu(self,menu,helpType,helpLbl=None,empty=False):
         '''Create the "standard" part of data frame menus. Note that on Linux and
@@ -2653,6 +2853,7 @@ class DataFrame(wx.Frame):
         tree menu, but adds an extra help command for the data item and a separator. 
         '''
         self.datamenu = menu
+        self.G2frame.dataMenuBars.append(menu)
         self.helpType = helpType
         self.helpLbl = helpLbl
         if sys.platform == "darwin": # mac                         
@@ -3400,6 +3601,28 @@ class GSNoteBook(wx.aui.AuiNotebook):
                                     style=wx.aui.AUI_NB_TOP |
                                     wx.aui.AUI_NB_SCROLL_BUTTONS)
         if size: self.SetSize(size)
+        self.parent = parent
+        self.PageChangeHandler = None
+        
+    def PageChangeEvent(self,event):
+        G2frame = self.parent.G2frame
+        page = event.GetSelection()
+        if self.PageChangeHandler:
+            if log.LogInfo['Logging']:
+                log.MakeTabLog(
+                    G2frame.dataFrame.GetTitle(),
+                    G2frame.dataDisplay.GetPageText(page)
+                    )
+            self.PageChangeHandler(event)
+            
+    def Bind(self,eventtype,handler,*args,**kwargs):
+        '''Override the Bind() function so that page change events can be trapped
+        '''
+        if eventtype == wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED:
+            self.PageChangeHandler = handler
+            wx.aui.AuiNotebook.Bind(self,eventtype,self.PageChangeEvent)
+            return
+        wx.aui.AuiNotebook.Bind(self,eventtype,handler,*args,**kwargs)
                                                       
     def Clear(self):        
         GSNoteBook.DeleteAllPages(self)

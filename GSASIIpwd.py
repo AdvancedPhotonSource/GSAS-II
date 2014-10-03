@@ -1247,7 +1247,7 @@ def DoCalibInst(IndexPeaks,Inst):
     GetInstParms(parmDict,Inst,varyList)
     InstPrint(Inst,sigDict)
             
-def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,controls=None,dlg=None):
+def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],oneCycle=False,controls=None,dlg=None):
     'needs a doc string'
         
     def GetBackgroundParms(parmList,Background):
@@ -1500,11 +1500,16 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
     parmDict.update(peakDict)
     parmDict['Pdabc'] = []      #dummy Pdabc
     parmDict.update(Inst2)      #put in real one if there
-    varyList = bakVary+insVary+peakVary
+    if prevVaryList:
+        varyList = prevVaryList[:]
+    else:
+        varyList = bakVary+insVary+peakVary
+    fullvaryList = varyList[:]
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
         Rvals = {}
+        badVary = []
         if FitPgm == 'LSQ':
             try:
                 result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
@@ -1531,6 +1536,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
                 for i,ipvt in enumerate(Ipvt):
                     if not np.sum(result[2]['fjac'],axis=1)[i]:
                         print 'Removing parameter: ',varyList[ipvt-1]
+                        badVary.append(varyList[ipvt-1])
                         del(varyList[ipvt-1])
                         break
         elif FitPgm == 'BFGS':
@@ -1547,7 +1553,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,oneCycle=False,cont
     InstPrint(Inst,sigDict)
     GetPeaksParms(Inst,parmDict,Peaks,varyList)    
     PeaksPrint(dataType,parmDict,sigDict,varyList)
-    return sigDict,result,sig,Rvals,varyList,parmDict
+    return sigDict,result,sig,Rvals,varyList,parmDict,fullvaryList,badVary
 
 def calcIncident(Iparm,xdata):
     'needs a doc string'

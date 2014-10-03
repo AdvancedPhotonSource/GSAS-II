@@ -109,8 +109,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(7)]
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY, wxID_SAMPLECOPY, wxID_SAMPLECOPYSOME, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
-    wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,wxID_SAMPLE1VAL
-] = [wx.NewId() for item in range(11)]
+    wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,wxID_SAMPLE1VAL,wxID_ALLSAMPLELOAD,
+] = [wx.NewId() for item in range(12)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
     wxID_INSTSAVE, wxID_INST1VAL, wxID_INSTCALIB,
@@ -1156,9 +1156,7 @@ class ScrolledMultiEditor(wx.Dialog):
         self.OKbtn = wx.Button(self, wx.ID_OK)
         self.OKbtn.SetDefault()
         # create scrolled panel and sizer
-        panel = wxscroll.ScrolledPanel(
-            self, wx.ID_ANY,
-            size=size,
+        panel = wxscroll.ScrolledPanel(self, wx.ID_ANY,size=size,
             style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
         cols = 4
         if CopyButton: cols += 1
@@ -1785,7 +1783,9 @@ class G2MultiChoiceDialog(wx.Dialog):
             self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
             topSizer.Add(self.filterBox,0,wx.ALL|WACV,0)
         Sizer.Add(topSizer,0,wx.ALL|wx.EXPAND,8)
+        self.trigger = False
         self.clb = wx.CheckListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
+        self.clb.Bind(wx.EVT_CHECKLISTBOX,self.OnCheck)
         if monoFont:
             font1 = wx.Font(self.clb.GetFont().GetPointSize(),
                             wx.MODERN, wx.NORMAL, wx.NORMAL, False)
@@ -1819,6 +1819,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         # OK done, let's get outa here
         self.SetSizer(Sizer)
         self.CenterOnParent()
+        
     def GetSelections(self):
         'Returns a list of the indices for the selected choices'
         # update self.Selections with settings for displayed items
@@ -1826,6 +1827,7 @@ class G2MultiChoiceDialog(wx.Dialog):
             self.Selections[self.filterlist[i]] = self.clb.IsChecked(i)
         # return all selections, shown or hidden
         return [i for i in range(len(self.Selections)) if self.Selections[i]]
+        
     def SetSelections(self,selList):
         '''Sets the selection indices in selList as selected. Resets any previous
         selections for compatibility with wx.MultiChoiceDialog. Note that
@@ -1844,25 +1846,49 @@ class G2MultiChoiceDialog(wx.Dialog):
         self.clb.SetChecked(
             [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
             ) # Note anything previously checked will be cleared.
+            
     def _SetAll(self,event):
         'Set all viewed choices on'
         self.clb.SetChecked(range(len(self.filterlist)))
+        
     def _ToggleAll(self,event):
         'flip the state of all viewed choices'
         for i in range(len(self.filterlist)):
             self.clb.Check(i,not self.clb.IsChecked(i))
+            
     def onChar(self,event):
+        'for keyboard events. self.trigger is used in self.OnCheck below'
         self.OKbtn.Enable(False)
+        if event.GetKeyCode() == wx.WXK_SHIFT:
+            self.trigger = True
         if self.timer.IsRunning():
             self.timer.Stop()
         self.timer.Start(1000,oneShot=True)
         event.Skip()
+        
+    def OnCheck(self,event):
+        '''for CheckListBox events; if Shift key down this sets all unset 
+            entries below the selected one'''
+        if self.trigger:
+            id = event.GetSelection()
+            name = self.clb.GetString(id)            
+            iB = id-1
+            if iB < 0:
+                return
+            while not self.clb.IsChecked(iB):
+                self.clb.Check(iB)
+                iB -= 1
+                if iB < 0:
+                    break
+        self.trigger = not self.trigger
+        
     def Filter(self,event):
         if self.timer.IsRunning():
             self.timer.Stop()
         self.GetSelections() # record current selections
         txt = self.filterBox.GetValue()
         self.clb.Clear()
+        
         self.Update()
         self.filterlist = []
         if txt:
@@ -1993,6 +2019,141 @@ class G2SingleChoiceDialog(wx.Dialog):
         self.OKbtn.Enable(True)
     def onDoubleClick(self,event):
         self.EndModal(wx.ID_OK)
+
+################################################################################
+
+class G2ColumnIDDialog(wx.Dialog):
+    '''A dialog for matching column data to desired items; some columns may be ignored.
+    
+    :param wx.Frame ParentFrame: reference to parent frame
+    :param str title: heading above list of choices
+    :param str header: Title to place on window frame 
+    :param list ChoiceList: a list of possible choices for the columns
+    :param list ColumnData: lists of column data to be matched with ChoiceList
+    :param bool monoFont: If False (default), use a variable-spaced font;
+      if True use a equally-spaced font.
+    :param kw: optional keyword parameters for the wx.Dialog may
+      be included such as size [which defaults to `(320,310)`] and
+      style (which defaults to ``wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.CENTRE | wx.OK | wx.CANCEL``);
+      note that ``wx.OK`` and ``wx.CANCEL`` controls
+      the presence of the eponymous buttons in the dialog.
+    :returns: the name of the created dialog
+    
+    '''
+
+    def __init__(self,parent, title, header,Comments,ChoiceList, ColumnData,
+                 monoFont=False, **kw):
+
+        def OnOk(sevent):
+            OK = True
+            selCols = []
+            for col in self.sel:
+                item = col.GetValue()
+                if item != ' ' and item in selCols:
+                    OK = False
+                    break
+                else:
+                    selCols.append(item)
+            parent = self.GetParent()
+            if not OK:
+                parent.ErrorDialog('Duplicate',item+' selected more than once')
+                return
+            parent.Raise()
+            self.EndModal(wx.ID_OK)
+            
+        def OnModify(event):
+            Obj = event.GetEventObject()
+            icol,colData = Indx[Obj.GetId()]
+            modify = Obj.GetValue()
+            if not modify:
+                return
+            print 'Modify column',icol,' by', modify
+            for i,item in enumerate(self.ColumnData[icol]):
+                self.ColumnData[icol][i] = str(eval(item+modify))
+            colData.SetValue('\n'.join(self.ColumnData[icol]))
+            Obj.SetValue('')
+            
+        # process keyword parameters, notably style
+        options = {'size':(600,310), # default Frame keywords
+                   'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
+                   }
+        options.update(kw)
+        self.Comments = ''.join(Comments)
+        self.ChoiceList = ChoiceList
+        self.ColumnData = ColumnData
+        nCol = len(ColumnData)
+        if options['style'] & wx.OK:
+            useOK = True
+            options['style'] ^= wx.OK
+        else:
+            useOK = False
+        if options['style'] & wx.CANCEL:
+            useCANCEL = True
+            options['style'] ^= wx.CANCEL
+        else:
+            useCANCEL = False        
+        # create the dialog frame
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,header,**options)
+        panel = wxscroll.ScrolledPanel(self)
+        # fill the dialog
+        Sizer = wx.BoxSizer(wx.VERTICAL)
+        Sizer.Add((-1,5))
+        Sizer.Add(wx.StaticText(panel,label=title),0,WACV)
+        if self.Comments:
+            Sizer.Add(wx.StaticText(panel,label=' Header lines:'),0,WACV)
+            Sizer.Add(wx.TextCtrl(panel,value=self.Comments,size=(200,-1),
+                style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP),0,wx.ALL|wx.EXPAND|WACV,8)
+        columnsSizer = wx.FlexGridSizer(0,nCol,5,10)
+        self.sel = []
+        self.mod = []
+        Indx = {}
+        for icol,col in enumerate(self.ColumnData):
+            colSizer = wx.BoxSizer(wx.VERTICAL)
+            colSizer.Add(wx.StaticText(panel,label=' Column #%d Select:'%(icol)),0,WACV)
+            self.sel.append(wx.ComboBox(panel,value=' ',choices=self.ChoiceList,style=wx.CB_READONLY|wx.CB_DROPDOWN))
+            colSizer.Add(self.sel[-1])
+            colData = wx.TextCtrl(panel,value='\n'.join(self.ColumnData[icol]),size=(120,-1),
+                style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP)
+            colSizer.Add(colData,0,WACV)
+            colSizer.Add(wx.StaticText(panel,label=' Modify by:'),0,WACV)
+            mod = wx.TextCtrl(panel,size=(120,-1),value='',style=wx.TE_PROCESS_ENTER)
+            mod.Bind(wx.EVT_TEXT_ENTER,OnModify)
+            mod.Bind(wx.EVT_KILL_FOCUS,OnModify)
+            Indx[mod.GetId()] = [icol,colData]
+            colSizer.Add(mod,0,WACV)
+            columnsSizer.Add(colSizer)
+        Sizer.Add(columnsSizer)
+        Sizer.Add(wx.StaticText(panel,label=' For modify by, enter arithimetic string eg. "-12345.67". "+","-","*","/","**" all allowed'),0,WACV) 
+        Sizer.Add((-1,10))
+        # OK/Cancel buttons
+        btnsizer = wx.StdDialogButtonSizer()
+        if useOK:
+            self.OKbtn = wx.Button(panel, wx.ID_OK)
+            self.OKbtn.SetDefault()
+            btnsizer.AddButton(self.OKbtn)
+            self.OKbtn.Bind(wx.EVT_BUTTON, OnOk)
+        if useCANCEL:
+            btn = wx.Button(panel, wx.ID_CANCEL)
+            btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        Sizer.Add((-1,5))
+        Sizer.Add(btnsizer,0,wx.ALIGN_LEFT,20)
+        Sizer.Add((-1,5))
+        # OK done, let's get outa here
+        panel.SetSizer(Sizer)
+        panel.SetAutoLayout(1)
+        panel.SetupScrolling()
+        Size = [450,375]
+        panel.SetSize(Size)
+        Size[0] += 25; Size[1]+= 25
+        self.SetSize(Size)
+        
+    def GetSelection(self):
+        'Returns the selected sample parm for each column'
+        selCols = []
+        for item in self.sel:
+            selCols.append(item.GetValue())
+        return selCols,self.ColumnData
 
 ################################################################################
 
@@ -3110,6 +3271,8 @@ class DataFrame(wx.Frame):
             help='Copy sample parameter refinement flags to other histograms')
         self.SampleEdit.Append(id=wxID_SAMPLE1VAL, kind=wx.ITEM_NORMAL,text='Set one value',
             help='Set one sample parameter value across multiple histograms')
+        self.SampleEdit.Append(id=wxID_ALLSAMPLELOAD, kind=wx.ITEM_NORMAL,text='Load all samples',
+            help='Load sample parmameters over multiple histograms')
 
         self.PostfillDataMenu()
         self.SetScale.Enable(False)
@@ -4196,7 +4359,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if 'IMG' in histNames[0]:
             sampleParmDict = {'Sample load':[],}
         else:
-            sampleParmDict = {'Temperature':[],'Pressure':[],
+            sampleParmDict = {'Temperature':[],'Pressure':[],'Time':[],
                               'FreePrm1':[],'FreePrm2':[],'FreePrm3':[],}
         Controls = G2frame.PatternTree.GetItemPyData(
             GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
@@ -4971,7 +5134,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         colLabels += [key]
         Types += [wg.GRID_VALUE_FLOAT,]
     # add unique cell parameters
-    if Controls['ShowCell']:
+    if Controls.get('ShowCell',False):
         for pId in sorted(RecpCellTerms):
             pfx = str(pId)+'::' # prefix for A values from phase
             cells = []
@@ -5051,6 +5214,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             sigs = data[name]['sig']
             G2mv.InitVars()
             parmDict = data[name].get('parmDict')
+            badVary = data[name].get('badVary',[])
             if parmDict and Controls['ShowCell']:
                 constraintInfo = data[name].get('constraintInfo',[[],[],{},[],seqnum])
                 groups,parmlist,constrDict,fixedList,ihst = constraintInfo
@@ -5099,6 +5263,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         {var:val for var,val in data[name].get('newCellDict',{}).values()} #  add varied reciprocal cell terms
     )
     name = histNames[0]
+    
     indepVarDict = {     #  values in table w/o ESDs
         var:colList[i][0] for i,var in enumerate(colLabels) if colSigs[i] is None
         }

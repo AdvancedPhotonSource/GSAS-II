@@ -511,7 +511,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def ModulatedSizer(name):
             
             def OnSuperGp(event):   #need a check on supersymmetry group rules here!
-                generalData['SuperSg'] = event.GetValue()
+                SSymbol = superGp.GetValue()
+                SSGData = G2spc.SSpcGroup(generalData['SGData'],SSymbol)
+                generalData['SuperSg'] = SSymbol
             
             def OnDim(event):
                 generalData['Super'] = dim.GetValue()
@@ -527,7 +529,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Vec = generalData['SuperVec'][ind][0]
                 if not np.any(np.array(Vec)):
                     Vec = generalData['SuperVec'][ind][0]
-                generalData['modVects'][ind][0] = hkl
+                generalData['modVects'][ind][0] = Vec
                 h,k,l = Vec
                 Obj.SetValue('%.3f %.3f %.3f'%(h,k,l)) 
                 
@@ -562,7 +564,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for i in range(int(generalData['Super'])):
                 vecSizer.Add(wx.StaticText(General,label=' Modulation vector #%d: '%(i+1)),0,WACV)
                 vec = generalData['SuperVec'][i][0]
-                Vec = wx.TextCtrl(General,
+                Vec = wx.TextCtrl(General,size=wx.Size(120,24),
                     value=' %.3f %.3f %.3f '%(vec[0],vec[1],vec[2]),
                     style=wx.TE_PROCESS_ENTER)
                 Vec.Bind(wx.EVT_TEXT_ENTER,OnVec)        

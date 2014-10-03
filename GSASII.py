@@ -900,6 +900,8 @@ class GSASII(wx.Frame):
             fp = open(instfile,'Ur')
             Iparm = {}
             for S in fp:
+                if '#' in S[0]:
+                    continue
                 Iparm[S[:12]] = S[12:-1]
         except IOError:
             print('Error reading file:'+str(instfile))

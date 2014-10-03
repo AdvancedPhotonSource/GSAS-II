@@ -76,7 +76,7 @@ def SetDefaultSample():
         'ranId':ran.randint(0,sys.maxint),
         'Scale':[1.0,True],'Type':'Debye-Scherrer','Absorption':[0.0,False],
         'DisplaceX':[0.0,False],'DisplaceY':[0.0,False],'Diffuse':[],
-        'Temperature':300.,'Pressure':0.1,
+        'Temperature':300.,'Pressure':0.1,'Time':0.0,
         'FreePrm1':0.,'FreePrm2':0.,'FreePrm3':0.,
         'Gonio. radius':200.0,
         'Omega':0.0,'Chi':0.0,'Phi':0.0,
@@ -115,6 +115,7 @@ def SetupSampleLabels(histName,dataType,histType):
     parms.append(['Omega','Goniometer omega:',[10,3]])
     parms.append(['Chi','Goniometer chi:',[10,3]])
     parms.append(['Phi','Goniometer phi:',[10,3]])
+    parms.append(['Time','Clock time (s)',[12,3]])
     parms.append(['Temperature','Sample temperature (K): ',[10,3]])
     parms.append(['Pressure','Sample pressure (MPa): ',[10,3]])
     return parms
@@ -408,7 +409,7 @@ def UpdatePeakGrid(G2frame, data):
         SeqResult = {'histNames':names}
         Reverse = False
         CopyForward = False
-        choice = ['Copy from prev.',]       #'Reverse sequence',
+        choice = ['Reverse sequence','Copy from prev.',]
         dlg = wx.MultiChoiceDialog(G2frame.dataFrame,'Sequential controls','Select controls',choice)
         if dlg.ShowModal() == wx.ID_OK:
             for sel in dlg.GetSelections():
@@ -425,6 +426,9 @@ def UpdatePeakGrid(G2frame, data):
         print 'Peak Fitting with '+controls['deriv type']+' derivatives:'
         oneCycle = False
         FitPgm = 'LSQ'
+        prevVaryList = []
+        if Reverse:
+            names.reverse()
         try:
             for i,name in enumerate(names):
                 print ' Sequential fit for ',name
@@ -433,7 +437,8 @@ def UpdatePeakGrid(G2frame, data):
                     break
                 PatternId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                 if i and CopyForward:
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),peaks)
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.copy(peaks))
+                    prevVaryList = varyList[:]
                 peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
                 background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
                 limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
@@ -446,13 +451,14 @@ def UpdatePeakGrid(G2frame, data):
                 Size = dlg.GetSize()
                 dlg2.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
                 try:
-                    peaks['sigDict'],result,sig,Rvals,varyList,parmDict = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
-                        background,limits,inst,inst2,data,oneCycle,controls,dlg2)
+                    peaks['sigDict'],result,sig,Rvals,varyList,parmDict,fullvaryList,badVary = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
+                        background,limits,inst,inst2,data,prevVaryList,oneCycle,controls,dlg2)
                 finally:
                     dlg2.Destroy()    
-                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),peaks)
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.copy(peaks))
                 SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-                    'covMatrix':np.eye(len(result[0])),'title':name,'parmDict':parmDict}
+                    'covMatrix':np.eye(len(result[0])),'title':name,'parmDict':parmDict,
+                    'fullVary':fullvaryList,'badVary':badVary}
             else:
                 dlg.Destroy()
                 print ' ***** Sequential peak fit successful *****'
@@ -499,11 +505,11 @@ def UpdatePeakGrid(G2frame, data):
         Size = dlg.GetSize()
         dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,oneCycle,controls,dlg)[0]
+            peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,[],oneCycle,controls,dlg)[0]
         finally:
             wx.EndBusyCursor()    
-        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),peaks)
-        UpdatePeakGrid(G2frame,peaks)
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.copy(peaks))
+        UpdatePeakGrid(G2frame,copy.copy(peaks))
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         print 'finished'
         return
@@ -1581,6 +1587,74 @@ def UpdateSampleGrid(G2frame,data):
                 UpdateSampleGrid(G2frame,data)
         finally:
             dlg.Destroy()
+            
+    def OnAllSampleLoad(event):
+        filename = ''
+        dlg = wx.FileDialog(G2frame, 'Choose multihistogram metadata text file', '.', '', 
+            'metadata file (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'r')
+                S = File.readline()
+                newItems = []
+                itemNames = []
+                Comments = []
+                while S:
+                    if S[0] == '#':
+                        Comments.append(S)
+                        S = File.readline()
+                        continue
+                    S.replace(',',' ')
+                    S.replace('\t',' ')
+                    Stuff = S[:-1].split(' ')
+                    itemNames.append(Stuff[0])
+                    newItems.append(Stuff[1:])
+                    S = File.readline()                
+                File.close()
+        finally:
+            dlg.Destroy()
+        if not filename:
+            G2frame.ErrorDialog('Nothing to do','No file selected')
+            return
+        dataDict = dict(zip(itemNames,newItems))
+        ifany = False
+        Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Controls'))
+        Names = [' ','Phi','Chi','Omega','Time','Temperature','Pressure']
+        freeNames = {}
+        for name in ['FreePrm1','FreePrm2','FreePrm3']:
+            freeNames[Controls[name]] = name
+            Names.append(Controls[name])
+        dlg = G2gd.G2ColumnIDDialog( G2frame,' Choose multihistogram metadata columns:',
+            'Select columns',Comments,Names,np.array(newItems).T)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                colNames,newData = dlg.GetSelection()
+                dataDict = dict(zip(itemNames,newData.T))
+                for item in colNames:
+                    if item != ' ':
+                        ifany = True
+        finally:
+            dlg.Destroy()
+        if not ifany:
+            G2frame.ErrorDialog('Nothing to do','No columns identified')
+            return
+        histList = [G2frame.PatternTree.GetItemText(G2frame.PatternId),]
+        histList += GetHistsLikeSelected(G2frame)
+        colIds = {}
+        for i,name in enumerate(colNames):
+            if name != ' ':
+                colIds[name] = i
+        for hist in histList:
+            name = hist.split()[1]  #this is file name
+            newItems = {}
+            for item in colIds:
+                key = freeNames.get(item,item)
+                newItems[key] = float(dataDict[name][colIds[item]])
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
+            sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+            sampleData.update(newItems)        
+        UpdateSampleGrid(G2frame,data)        
     
     def OnSetScale(event):
         histList = []
@@ -1780,6 +1854,7 @@ def UpdateSampleGrid(G2frame,data):
     G2frame.Bind(wx.EVT_MENU, OnSampleSave, id=G2gd.wxID_SAMPLESAVE)
     G2frame.Bind(wx.EVT_MENU, OnSampleLoad, id=G2gd.wxID_SAMPLELOAD)
     G2frame.Bind(wx.EVT_MENU, OnCopy1Val, id=G2gd.wxID_SAMPLE1VAL)
+    G2frame.Bind(wx.EVT_MENU, OnAllSampleLoad, id=G2gd.wxID_ALLSAMPLELOAD)
     if 'SASD' in histName:
         G2frame.dataFrame.SetScale.Enable(True)
     if not G2frame.dataFrame.GetStatusBar():
@@ -1796,6 +1871,8 @@ def UpdateSampleGrid(G2frame,data):
         data.update({'Omega':0.0,'Chi':0.0,'Phi':0.0})
     if type(data['Temperature']) is int:
         data['Temperature'] = float(data['Temperature'])
+    if 'Time' not in data:
+        data['Time'] = 0.0
     if 'FreePrm1' not in Controls:
         Controls['FreePrm1'] = 'Sample humidity (%)'
     if 'FreePrm2' not in Controls:
@@ -1879,7 +1956,6 @@ def UpdateSampleGrid(G2frame,data):
             refFlgElem.append(None)
         parmSizer.Add(parmVal,1,wx.EXPAND)
     Info = {}
-
         
     for key in ('FreePrm1','FreePrm2','FreePrm3'):
         parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,Controls,key,typeHint=str,

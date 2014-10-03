@@ -28,6 +28,10 @@ import pyspg
 
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
+    
+################################################################################
+#### Space group codes
+################################################################################
 
 def SpcGroup(SGSymbol):
     """
@@ -292,7 +296,175 @@ def SpaceGroup(SGSymbol):
         return
     for l in SGPrint(A):
         print l
+        
+################################################################################
+#### Superspace group codes
+################################################################################
+        
+def SSpcGroup(SGData,SSymbol):
+    """
+    Determines supersymmetry information from superspace group name; currently only for (3+1) superlattices
 
+    :param SGData: space group data structure as defined in SpcGroup above.
+    :param SSymbol: superspace group symbol extension (string) defining modulation direction & generator info.
+    :returns: (SSGError,SSGData)
+       * SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
+       * SSGData - is a dict (see :ref:`Superspace Group object<SSGData_table>`) with entries:
+       
+             * 'SpGrp': superspace group symbol extension to space group symbol, accidental spaces removed
+             * 'LauePtGp':  one of '-1', '2/m', 'mmm', '4/mmm', '-3m', '-31m', '6/mmm'
+             * 'LaueMod': one of '(abg)', '(ab0)', '(ab1/2)', '(a0g)', (a1/2g)','(0bg)', '(1/2bg)',
+               '(a00)', '(a01/2)', '(a1/20)', (a1/21/2)', '(a01)', '(a10)', 
+               '(0b0)', '(0b1/2)', '(1/2b0)', (1/2b1/2)', '(0b1)', '(1b0)',
+               '(00g)', '(01/2g)', '(1/20g)', (1/21/2g)', '(01g)', '(10g)','(1/3/1/3g)'
+             * 'SGLatt': one of 'P', 'A', 'B', 'C', 'I', 'F', 'R'
+             * 'SGCen': 4D cell centering vectors [0,0,0,0] at least
+             * 'SGOps': 4D symmetry operations as [M,T] so that M*x+T = x'
+
+    """
+    
+    def splitSSsym(SSymbol):
+        ' Splits supersymmetry symbol into two lists of strings'
+        modsym,gensym = SSymbol.replace(' ','').split(')')
+        nfrac = modsym.count('/')
+        modsym = modsym.lstrip('(')
+        if nfrac == 0:
+            modsym = list(modsym)
+        elif nfrac == 1:
+            pos = modsym.find('/')
+            if pos == 1:
+                modsym = [modsym[:3],modsym[3],modsym[4]]
+            elif pos == 2:
+                modsym = [modsym[0],modsym[1:4],modsym[4]]
+            else:
+                modsym = [modsym[0],modsym[1],modsym[2:]]
+        else:
+            lpos = modsym.find('/')
+            rpos = modsym.rfind('/')
+            if lpos == 1 and rpos == 4:
+                modsym = [modsym[:3],modsym[3:6],modsym[6]]
+            elif lpos == 1 and rpos == 5:
+                modsym = [modsym[:3],modsym[3],modsym[4:]]
+            else:
+                modsym = [modsym[0],modsym[1:4],modsym[4:]]
+        gensym = list(gensym)
+        return modsym,gensym
+        
+    modsym,gensym = splitSSsym(SSymbol)
+    print modsym,gensym
+    T = np.zeros(4)
+    for iop,op in enumerate(SGData['SGOps']):
+        ssop = np.eye(4)
+        ssop[:3,:3] = op[0]
+        T[:3] = op[1]
+                    
+        print SSMT2text(ssop,T)
+    return None
+
+def SSGPrint(SGData,SSGData):
+    '''
+    Print the output of SSpcGroup in a nicely formatted way. Used in SSpaceGroup
+
+    :param SGData: space group data structure as defined in SpcGroup above.
+    :param SSGData: from :func:`SSpcGroup`
+    :returns:
+        SSGText - list of strings with the superspace group details
+    '''
+    Mult = len(SGData['SGCen'])*len(SGData['SGOps'])*(int(SGData['SGInv'])+1)
+    SSGText = []
+    SSGText.append(' Superspace Group: '+SSGData['SSpGrp'])
+    CentStr = 'centrosymmetric'
+    if not SGData['SGInv']:
+        CentStr = 'non'+CentStr
+    if SGData['SGLatt'] in 'ABCIFR':
+        SSGText.append(' The lattice is '+CentStr+' '+SSGData['SSGLatt']+'-centered '+SSGData['SSGSys'].lower())
+    else:
+        SGText.append(' The superlattice is '+CentStr+' '+'primitive '+SSGData['SSGSys'].lower())        
+    SSGText.append(' Multiplicity of a general site is '+str(Mult))
+    SSGText.append(' The Laue symmetry is '+SGData['SGLaue'])
+    if SGData['SGUniq'] in ['a','b','c']:
+        SSGText.append(' The unique monoclinic axis is '+SGData['SGUniq'])
+    if SGData['SGInv']:
+        SSGText.append(' The inversion center is located at 0,0,0')
+    if SGData['SGPolax']:
+        SSGText.append(' The location of the origin is arbitrary in '+SGData['SGPolax'])
+    SSGText.append('\n'+' The equivalent positions are:')
+    if len(SSGData['SSGCen']) > 1:
+        SSGText.append('\n ('+SSLatt2text(SSGData['SSGCen'])+')+\n')
+    Ncol = 2
+    line = ' '
+    col = 0
+    for iop,[M,T] in enumerate(SSGData['SSGOps']):
+        OPtxt = SSMT2text(M,T)
+        Fld = '(%2i) '%(iop+1)+OPtxt+'\t'
+        line += Fld
+        if '/' not in Fld:
+            line += '\t'
+        col += 1
+        if col == Ncol:
+            SSGText.append(line)        
+            line = ' '
+            col = 0
+    SSGText.append(line)        
+    return SSGText
+
+def SSMT2text(M,T):
+    "From superspace group matrix/translation operator returns text version"
+    XYZS = ('X','Y','Z','S')
+    TRA = ('   ','ERR','1/6','1/4','1/3','ERR','1/2','ERR','2/3','3/4','5/6','ERR')
+    Fld = ''
+    for j in range(4):
+        IJ = ''
+        for k in range(4):
+            txt = str(int(round(M[j][k])))
+            txt = txt.replace('1',XYZS[k]).replace('0','')
+            if IJ and M[j][k] > 0:
+                IJ += '+'+txt
+            else:
+                IJ += txt
+        IK = int(round(T[j]*12))%12
+        if IK:
+            if IJ[0] == '-':
+                Fld += TRA[IK]+IJ
+            else:
+                Fld += TRA[IK]+'+'+IJ
+        else:
+            Fld += IJ
+        if j != 3: Fld += ', '
+    return Fld
+    
+def SSLatt2text(SSGCen):
+    "Lattice centering vectors to text"
+    lattTxt = ''
+    for vec in SGCen:
+        for item in vec:
+            if int(item*12.):
+                lattTxt += '1/%d,'%(12/int(item*12))
+            else:
+                lattTxt += '0,'
+        lattTxt[-1] = ';'
+    return lattTxt[:-1]
+        
+def SSpaceGroup(SGSymbol,SSymbol):
+    '''
+    Print the output of SSpcGroup in a nicely formatted way. 
+
+    :param SGSymbol: space group symbol with spaces between axial fields.
+    :param SSymbol: superspace group symbol extension (string).
+    :returns: nothing
+    '''
+
+    E,A = SpcGroup(SGSymbol)
+    if E > 0:
+        print SGErrors(E)
+        return
+    E,B = SSpcGroup(A,SSymbol)    
+    if E > 0:
+        print SGErrors(E)
+        return
+    for l in SGPrint(B):
+        print l
+        
 def MoveToUnitCell(xyz):
     '''
     Translates a set of coordinates so that all values are >=0 and < 1 
@@ -866,9 +1038,6 @@ def ElemPosition(SGData):
                 print 'rot-inv',Es,MT
                 print M2
                 X = [-1,-1,-1]
-                
-            
-            
         else:               #rotations
             print 'rotation',Es
             X = [-1,-1,-1]

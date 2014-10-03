@@ -2123,7 +2123,7 @@ class G2ColumnIDDialog(wx.Dialog):
             colSizer.Add(mod,0,WACV)
             columnsSizer.Add(colSizer)
         Sizer.Add(columnsSizer)
-        Sizer.Add(wx.StaticText(panel,label=' For modify by, enter arithimetic string eg. "-12345.67". "+","-","*","/","**" all allowed'),0,WACV) 
+        Sizer.Add(wx.StaticText(panel,label=' For modify by, enter arithmetic string eg. "-12345.67". "+","-","*","/","**" all allowed'),0,WACV) 
         Sizer.Add((-1,10))
         # OK/Cancel buttons
         btnsizer = wx.StdDialogButtonSizer()
@@ -4624,58 +4624,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
 
-    # PATCH: this routine can go away eventually
-    def CreatePSvarDict(seqnum,name):
-        '''Create a parameter dict (parmDict) for everything that might be used
-        in a PseudoVar.
-        Also creates a list of revised labels (modVaryList) for the covariance matrix to
-        match the items in the parameter dict and a matching list of ESDs (ESDvaryList).
-        
-        :param int seqnum: the sequence number of the histogram in the sequential
-          refinement
-        :param str name: the name of the histogram in the data tree
-
-        :returns: parmDict,modVaryList,ESDvaryList
-        '''
-        parmDict = {}
-        modVaryList = []
-        for i,(key,val) in enumerate(zip(data[name]['varyList'],data[name]['variables'])):
-            skey = striphist(key)
-            if skey in data[name].get('newAtomDict',{}):
-                # replace coordinate shifts with equivalents from lookup table
-                repkey,repval = data[name]['newAtomDict'][skey]
-                parmDict[repkey] = repval
-                modVaryList.append(repkey)
-            elif skey in data[name].get('newCellDict',{}):
-                # replace recip. cell term shifts with equivalents from lookup table        
-                repkey,repval = data[name]['newCellDict'][skey]
-                parmDict[repkey] = repval
-                modVaryList.append(repkey)
-            else:
-                parmDict[key] = val
-                modVaryList.append(key)
-        # create a cell parm dict, override initial settings with values in parmDict
-        for phase in Phases:
-            phasedict = Phases[phase]
-            pId = phasedict['pId']
-            cell = Rcelldict.copy()
-            cell.update(
-                {lbl:parmDict[lbl] for lbl in RcellLbls[pId] if lbl in parmDict}
-                )
-            pfx = str(pId)+'::' # prefix for A values from phase
-            A,zeros = G2stIO.cellFill(pfx,SGdata[pId],cell,zeroDict[pId])
-            parmDict.update({pfx+cellUlbl[i]:val for i,val in
-                             enumerate(G2lat.A2cell(A))
-                             if i in uniqCellIndx[pId]
-                             })
-            parmDict[pfx+"vol"] = G2lat.calc_V(A)
-        # now add misc terms to dict
-        parmDict['Rwp'] = data[name]['Rvals']['Rwp']
-        parmDict[u'\u0394\u03C7\u00B2 (%)'] = 100.*data[name]['Rvals'].get('DelChi2',-1)
-        for key in sampleParms:
-            parmDict[key] = sampleParms[key][seqnum]
-        return parmDict,modVaryList,data[name]['sig']
-
     def UpdateParmDict(parmDict):
         '''generate the atom positions and the direct & reciprocal cell values,
         because they might be needed to evaluate the pseudovar
@@ -5215,28 +5163,21 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             G2mv.InitVars()
             parmDict = data[name].get('parmDict')
             badVary = data[name].get('badVary',[])
-            if parmDict and Controls['ShowCell']:
-                constraintInfo = data[name].get('constraintInfo',[[],[],{},[],seqnum])
-                groups,parmlist,constrDict,fixedList,ihst = constraintInfo
-                varyList = data[name]['varyList']
-                parmDict = data[name]['parmDict']
-                G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
-                derivs = np.array(
-                    [EvalPSvarDeriv(calcobj,parmDict.copy(),var,ESD)
-                     for var,ESD in zip(varyList,sigs)]
-                    )
-                esdList.append(np.sqrt(
-                    np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T))
-                    ))
-                PSvarDict = parmDict.copy()
-                UpdateParmDict(PSvarDict)
-                #calcobj.SetupCalc(PSvarDict)
-                calcobj.UpdateDict(PSvarDict)
-            else:
-                # PATCH: this routine can go away eventually once parmDict is always in
-                # sequential refinement
-                PSvarDict,unused,unused = CreatePSvarDict(seqnum,name)
-                calcobj.SetupCalc(PSvarDict)
+            constraintInfo = data[name].get('constraintInfo',[[],[],{},[],seqnum])
+            groups,parmlist,constrDict,fixedList,ihst = constraintInfo
+            varyList = data[name]['varyList']
+            parmDict = data[name]['parmDict']
+            G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
+            derivs = np.array(
+                [EvalPSvarDeriv(calcobj,parmDict.copy(),var,ESD)
+                 for var,ESD in zip(varyList,sigs)]
+                )
+            esdList.append(np.sqrt(
+                np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T))
+                ))
+            PSvarDict = parmDict.copy()
+            UpdateParmDict(PSvarDict)
+            calcobj.UpdateDict(PSvarDict)
             valList.append(calcobj.EvalExpression())
         if not esdList:
             esdList = None
@@ -5249,13 +5190,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # Make dict needed for creating & editing pseudovars (PSvarDict).
     name = histNames[0]
     parmDict = data[name].get('parmDict')
-    if parmDict:
-        PSvarDict = parmDict.copy()
-        UpdateParmDict(PSvarDict)
-    else:
-        print 'Sequential refinement needs to be rerun to obtain ESDs for PseudoVariables'
-        # PATCH: this routine can go away eventually
-        PSvarDict,unused,unused = CreatePSvarDict(0,histNames[0])
+    PSvarDict = parmDict.copy()
+    PSvarDict.update(sampleParms)
+    UpdateParmDict(PSvarDict)
     # Also dicts of dependent (depVarDict) & independent vars (indepVarDict)
     # for Parametric fitting from the data table
     parmDict = dict(zip(colLabels,zip(*colList)[0])) # scratch dict w/all values in table

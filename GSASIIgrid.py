@@ -4661,7 +4661,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             parmDict[lbl] = G2lat.calc_V(A)
         return parmDict
 
-    def EvalPSvarDeriv(calcobj,parmDict,var,ESD):
+    def EvalPSvarDeriv(calcobj,parmDict,sampleDict,var,ESD):
         '''Evaluate an expression derivative with respect to a
         GSAS-II variable name.
 
@@ -4674,8 +4674,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                      )
         results = []
         phaselist = []
+        VparmDict = sampleDict.copy()
         for incr in step,-step:
-            VparmDict = parmDict.copy()            
+            VparmDict.update(parmDict.copy())           
             # as saved, the parmDict has updated 'A[xyz]' values, but 'dA[xyz]'
             # values are not zeroed: fix that!
             VparmDict.update({item:0.0 for item in parmDict if 'dA' in item})
@@ -4683,7 +4684,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             G2mv.Dict2Map(VparmDict,[]) # apply constraints
             # generate the atom positions and the direct & reciprocal cell values now, because they might
             # needed to evaluate the pseudovar
-            for item in VparmDict: 
+            for item in VparmDict:
+                if item in sampleDict:
+                    continue 
                 if ':' not in item: continue
                 key = item.split(':')
                 if len(key) < 3: continue
@@ -5081,6 +5084,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         colSigs += [None]
         colLabels += [key]
         Types += [wg.GRID_VALUE_FLOAT,]
+    sampleDict = {}
+    for i,name in enumerate(histNames):
+        sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()])) 
     # add unique cell parameters
     if Controls.get('ShowCell',False):
         for pId in sorted(RecpCellTerms):
@@ -5169,13 +5175,14 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             parmDict = data[name]['parmDict']
             G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
             derivs = np.array(
-                [EvalPSvarDeriv(calcobj,parmDict.copy(),var,ESD)
+                [EvalPSvarDeriv(calcobj,parmDict.copy(),sampleDict[name],var,ESD)
                  for var,ESD in zip(varyList,sigs)]
                 )
             esdList.append(np.sqrt(
                 np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T))
                 ))
             PSvarDict = parmDict.copy()
+            PSvarDict.update(sampleDict[name])
             UpdateParmDict(PSvarDict)
             calcobj.UpdateDict(PSvarDict)
             valList.append(calcobj.EvalExpression())

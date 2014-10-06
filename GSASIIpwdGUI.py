@@ -1605,9 +1605,8 @@ def UpdateSampleGrid(G2frame,data):
                         Comments.append(S)
                         S = File.readline()
                         continue
-                    S.replace(',',' ')
-                    S.replace('\t',' ')
-                    Stuff = S[:-1].split(' ')
+                    S = S.replace(',',' ').replace('\t',' ')
+                    Stuff = S[:-1].split()
                     itemNames.append(Stuff[0])
                     newItems.append(Stuff[1:])
                     S = File.readline()                

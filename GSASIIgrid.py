@@ -104,9 +104,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,
 ] = [wx.NewId() for item in range(8)]
 
-[ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_APPENDDZERO,
-    wxID_STRSTAALLFIT,wxID_UPDATEDZERO,
-] = [wx.NewId() for item in range(7)]
+[ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_STRSTSAMPLE,
+    wxID_APPENDDZERO,wxID_STRSTAALLFIT,wxID_UPDATEDZERO,
+] = [wx.NewId() for item in range(8)]
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY, wxID_SAMPLECOPY, wxID_SAMPLECOPYSOME, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
     wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,wxID_SAMPLE1VAL,wxID_ALLSAMPLELOAD,
@@ -3271,7 +3271,7 @@ class DataFrame(wx.Frame):
             help='Copy sample parameter refinement flags to other histograms')
         self.SampleEdit.Append(id=wxID_SAMPLE1VAL, kind=wx.ITEM_NORMAL,text='Set one value',
             help='Set one sample parameter value across multiple histograms')
-        self.SampleEdit.Append(id=wxID_ALLSAMPLELOAD, kind=wx.ITEM_NORMAL,text='Load all samples',
+        self.SampleEdit.Append(id=wxID_ALLSAMPLELOAD, kind=wx.ITEM_NORMAL,text='Load all',
             help='Load sample parmameters over multiple histograms')
 
         self.PostfillDataMenu()
@@ -3454,6 +3454,8 @@ class DataFrame(wx.Frame):
             id=wxID_STRSTASAVE, kind=wx.ITEM_NORMAL,text='Save stress/strain')
         self.StrStaEdit.Append(help='Load stress/strain data from file', 
             id=wxID_STRSTALOAD, kind=wx.ITEM_NORMAL,text='Load stress/strain')
+        self.StrStaEdit.Append(help='Load sample data from file', 
+            id=wxID_STRSTSAMPLE, kind=wx.ITEM_NORMAL,text='Load sample data')
         self.PostfillDataMenu()
             
         # PDF / PDF Controls

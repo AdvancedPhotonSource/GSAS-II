@@ -41,6 +41,7 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 ################################################################################
 ##### Image Data
 ################################################################################
+
 def UpdateImageData(G2frame,data):
     
     def OnPixVal(event):
@@ -1499,7 +1500,74 @@ def UpdateStressStrain(G2frame,data):
                 File.close()
         finally:
             dlg.Destroy()
-
+            
+    def OnStrStaSample(event):
+        filename = ''
+        dlg = wx.FileDialog(G2frame, 'Choose multihistogram metadata text file', '.', '', 
+            'metadata file (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                File = open(filename,'r')
+                S = File.readline()
+                newItems = []
+                itemNames = []
+                Comments = []
+                while S:
+                    if S[0] == '#':
+                        Comments.append(S)
+                        S = File.readline()
+                        continue
+                    S = S.replace(',',' ').replace('\t',' ')
+                    Stuff = S[:-1].split()
+                    itemNames.append(Stuff[0])
+                    newItems.append(Stuff[1:])
+                    S = File.readline()                
+                File.close()
+        finally:
+            dlg.Destroy()
+        if not filename:
+            G2frame.ErrorDialog('Nothing to do','No file selected')
+            return
+        dataDict = dict(zip(itemNames,newItems))
+        ifany = False
+        Names = [' ','Sample phi','Sample z','Sample load']
+        dlg = G2gd.G2ColumnIDDialog( G2frame,' Choose multihistogram metadata columns:',
+            'Select columns',Comments,Names,np.array(newItems).T)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                colNames,newData = dlg.GetSelection()
+                dataDict = dict(zip(itemNames,newData.T))
+                for item in colNames:
+                    if item != ' ':
+                        ifany = True
+        finally:
+            dlg.Destroy()
+        if not ifany:
+            G2frame.ErrorDialog('Nothing to do','No columns identified')
+            return
+        histList = []
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)        
+        while item:
+            name = G2frame.PatternTree.GetItemText(item)
+            if name.startswith('IMG'):
+                histList.append(name)
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+        colIds = {}
+        for i,name in enumerate(colNames):
+            if name != ' ':
+                colIds[name] = i
+        for hist in histList:
+            name = hist.split()[1]  #this is file name
+            if name in dataDict:
+                newItems = {}
+                for item in colIds:
+                    newItems[item] = float(dataDict[name][colIds[item]])
+                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
+                stsrData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Stress/Strain'))
+                stsrData.update(newItems)        
+        UpdateStressStrain(G2frame,data)        
+    
     def OnFitStrSta(event):
         Controls = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
@@ -1744,7 +1812,8 @@ def UpdateStressStrain(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitAllStrSta, id=G2gd.wxID_STRSTAALLFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyStrSta, id=G2gd.wxID_STRSTACOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadStrSta, id=G2gd.wxID_STRSTALOAD)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveStrSta, id=G2gd.wxID_STRSTASAVE)    
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveStrSta, id=G2gd.wxID_STRSTASAVE)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnStrStaSample, id=G2gd.wxID_STRSTSAMPLE)        
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
     if G2frame.StrainKey == 'a':    #probably doesn't happen

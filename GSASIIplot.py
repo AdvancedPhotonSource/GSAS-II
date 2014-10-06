@@ -968,6 +968,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     dsp = xpos
                     q = 2.*np.pi/dsp
                     xpos = G2lat.Dsp2pos(Parms,xpos)
+                elif G2frame.Contour and 'T' in Parms['Type'][0]:
+                    xpos = X[xpos]                    
+                    dsp = G2lat.Pos2dsp(Parms,xpos)
+                    q = 2.*np.pi/dsp
                 else:
                     dsp = G2lat.Pos2dsp(Parms,xpos)
                     q = 2.*np.pi/dsp
@@ -1289,15 +1293,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     if G2frame.logPlot:
         Title = 'log('+Title+')'
     Plot.set_title(Title)
-    if G2frame.qPlot or 'SASD' in plottype:
+    if G2frame.qPlot or 'SASD' in plottype and not G2frame.Contour:
         Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=16)
-    elif G2frame.dPlot and 'PWDR' in plottype:
+    elif G2frame.dPlot and 'PWDR' in plottype and not G2frame.Contour:
         Plot.set_xlabel(r'$d, \AA$',fontsize=16)
     else:
         if 'C' in ParmList[0]['Type'][0]:        
             Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=16)
         else:
-            Plot.set_xlabel(r'$TOF, \mathsf{\mu}$s',fontsize=16)            
+            if G2frame.Contour:
+                Plot.set_xlabel(r'Channel no.',fontsize=16)            
+            else:
+                Plot.set_xlabel(r'$TOF, \mathsf{\mu}$s',fontsize=16)            
     if G2frame.Weight:
         if 'PWDR' in plottype:
             Plot.set_ylabel(r'$\mathsf{I/\sigma(I)}$',fontsize=16)
@@ -1379,12 +1386,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Lines.append(Plot.axvline(item[0],color='m',dashes=(5,5),picker=3.))    
                 Lines.append(Plot.axvline(item[1],color='m',dashes=(5,5),picker=3.))
                 exclLines += [2*i+2,2*i+3]
-        if G2frame.Contour:
-            
+        if G2frame.Contour:            
             if lenX == len(X):
                 ContourY.append(N)
                 ContourZ.append(Y)
-                ContourX = X
+                if 'C' in ParmList[0]['Type'][0]:        
+                    ContourX = X
+                else: #'T'OF
+                    ContourX = range(lenX)
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:

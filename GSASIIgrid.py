@@ -211,19 +211,19 @@ class G2TreeCtrl(wx.TreeCtrl):
             return
         wx.TreeCtrl.Bind(self,eventtype,handler,*args,**kwargs)
 
-    def GetItemPyData(self,*args,**kwargs):
-        '''Override the standard method to wrap the contents
-        so that the source can be tracked
-        '''
-        data = super(self.__class__,self).GetItemPyData(*args,**kwargs)
-        textlist = self._getTreeItemsList(args[0])
-        if type(data) is dict:
-            return log.dictLogged(data,textlist)
-        if type(data) is list:
-            return log.listLogged(data,textlist)
-        if type(data) is tuple: #N.B. tuples get converted to lists
-            return log.listLogged(list(data),textlist)
-        return data
+#    def GetItemPyData(self,*args,**kwargs):
+#        '''Override the standard method to wrap the contents
+#        so that the source can be tracked
+#        '''
+#        data = super(self.__class__,self).GetItemPyData(*args,**kwargs)
+#        textlist = self._getTreeItemsList(args[0])
+#        if type(data) is dict:
+#            return log.dictLogged(data,textlist)
+#        if type(data) is list:
+#            return log.listLogged(data,textlist)
+#        if type(data) is tuple: #N.B. tuples get converted to lists
+#            return log.listLogged(list(data),textlist)
+#        return data
 
     def GetRelativeHistNum(self,histname):
         '''Returns list with a histogram type and a relative number for that

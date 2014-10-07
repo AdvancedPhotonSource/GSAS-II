@@ -14,6 +14,7 @@
 Control image display and processing
 
 '''
+import os.path
 import wx
 import wx.lib.scrolledpanel as wxscroll
 import matplotlib as mpl
@@ -286,6 +287,8 @@ def UpdateImageControls(G2frame,data,masks):
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
+                # make sure extension is .imctrl
+                filename = os.path.splitext(filename)[0]+'.imctrl'
                 File = open(filename,'w')
                 save = {}
                 keys = ['type','wavelength','calibrant','distance','center',

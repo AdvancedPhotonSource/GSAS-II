@@ -286,6 +286,8 @@ class dictLogged(object):
             return val
 
     def __str__(self):
+        return self.obj.__str__()
+    def __repr__(self):
         return self.obj.__str__() + " : " + str(self.treeRefs) + ',' + str(self.indexRefs)
 
 class ListMeta(type):
@@ -329,6 +331,8 @@ class listLogged(object):
             return val
 
     def __str__(self):
+        return self.obj.__str__()
+    def __repr__(self):
         return self.obj.__str__() + " : " + str(self.treeRefs) + ',' + str(self.indexRefs)
 
 #===========================================================================

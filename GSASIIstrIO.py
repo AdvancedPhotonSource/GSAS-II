@@ -326,7 +326,8 @@ def GetHistograms(GPXfile,hNames):
                 HKLFdata = {}
                 HKLFdata.update(datum[1][0])        #weight factor
 #patch
-                if isinstance(datum[1][1],list):
+                if 'list' in str(type(datum[1][1])):
+                #if isinstance(datum[1][1],list):
                     RefData = {'RefList':[],'FF':{}}
                     for ref in datum[1][1]:
                         RefData['RefList'].append(ref[:11]+[ref[13],])

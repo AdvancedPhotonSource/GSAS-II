@@ -5331,7 +5331,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #patches
     if 'wtFactor' not in data[0]:
         data[0] = {'wtFactor':1.0}
-    if isinstance(data[1],list) and kind == 'HKLF':
+    #if isinstance(data[1],list) and kind == 'HKLF':
+    if 'list' in str(type(data[1])) and kind == 'HKLF':
         RefData = {'RefList':[],'FF':[]}
         for ref in data[1]:
             RefData['RefList'].append(ref[:11]+[ref[13],])
@@ -5631,7 +5632,7 @@ def MovePatternTreeToGrid(G2frame,item):
         G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
 #patch
-        if isinstance(data,list):
+        if 'list' in str(type(data)):
             data = {'peaks':data,'sigDict':{}}
             G2frame.PatternTree.SetItemPyData(item,data)
 #end patch

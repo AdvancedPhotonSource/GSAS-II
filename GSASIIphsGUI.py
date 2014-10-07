@@ -5281,7 +5281,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             reflData = reflSets[phaseName]
-            if isinstance(reflData,list):       #patch for old reflection data
+            if 'list' in str(type(reflData)):       #patch for old reflection data
+            #if isinstance(reflData,list):       #patch for old reflection data
                 RefData = {'RefList':[],'FF':[]}
                 for ref in reflData:
                     RefData['RefList'].append(ref[:11]+[ref[13],])
@@ -5376,7 +5377,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
             reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             reflDict = reflSets[phaseName]
-            if isinstance(reflDict,list):       #patch for old reflection data
+            if 'list' in str(type(reflDict)):       #patch for old reflection data
+            #if isinstance(reflDict,list):       #patch for old reflection data
                 RefData = {'RefList':[],'FF':[]}
                 for ref in reflDict:
                     RefData['RefList'].append(ref[:11]+[ref[13],])
@@ -5581,7 +5583,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         data['RBModels'] = {}
     if 'MCSA' not in data:
         data['MCSA'] = {'Models':[{'Type':'MD','Coef':[1.0,False,[.8,1.2],],'axis':[0,0,1]}],'Results':[],'AtInfo':{}}
-    if isinstance(data['MCSA']['Results'],dict):
+    #if isinstance(data['MCSA']['Results'],dict):
+    if 'dict' in str(type(data['MCSA']['Results'])):
         data['MCSA']['Results'] = []
 #end patch    
 

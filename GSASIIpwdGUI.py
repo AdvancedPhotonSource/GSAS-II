@@ -760,7 +760,8 @@ def UpdateBackground(G2frame,data):
                 for i in range(N,M):
                     del(item[-1])
             G2frame.PatternTree.SetItemPyData(BackId,data)
-            wx.CallAfter(UpdateBackground,G2frame,data)
+            #wx.CallAfter(UpdateBackground,G2frame,data)
+            wx.CallLater(100,UpdateBackground,G2frame,data)
             
         def OnBakVal(event):
             Obj = event.GetEventObject()

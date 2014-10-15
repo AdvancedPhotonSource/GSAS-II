@@ -35,9 +35,11 @@ Note that GSAS-II requires the Python extension packages
 * PIL or Pillow (https://pillow.readthedocs.org) and 
 * PyOpenGL (http://pyopengl.sourceforge.net/documentation)
 
-These are not distributed
-as part of the Python standard library and must be obtained separately
-(or in a bundled Python package such as the Enthought Python
-Distribution/Canopy or anaconda). 
-The PyOpenGL package is installed into Python by GSAS-II if not found,
-so it does not need to be included in the Python bundle.
+These packages are not distributed as part of the Python standard
+library and must be obtained separately (or in a bundled Python
+package such as the Enthought Python Distribution/Canopy or
+Continuum.io's anaconda).  The PyOpenGL package will be installed into
+Python by GSAS-II if not found, so it does not need to be included in
+the Python bundle, but the setuptools package
+(https://pythonhosted.org/setuptools/) is needed by GSAS-II to install
+PyOpenGL.

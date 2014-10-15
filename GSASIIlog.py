@@ -410,18 +410,23 @@ def _getmenuinfo(id,G2frame,handler):
             #raise Exception('debug1: error tracing menuitem')
             return
         menu = parentmenu
-
+        
+    i,j= wx.__version__.split('.')[0:2]
+    if int(i)+int(j)/10. > 2.8 and 'wxOSX' in wx.PlatformInfo:
+        # on mac, with wx 2.9+ the menubar has a menu and this is found above, so
+        # we are now done.
+        return menuLabelList,menuitem
+    
     menubar = menu.MenuBar
     for i in range(menubar.GetMenuCount()):
         if menubar.GetMenu(i) == menu:
             menuLabelList += [menubar.GetMenuLabel(i)]
-            break
-    else:
-        # menu not found in menubar, something is wrong
-        print 'error tracing menuitem to menubar',menuLabelList
-        #raise Exception('debug2: error tracing menuitem')
-        return
-    return menuLabelList,menuitem
+            return menuLabelList,menuitem
+
+    # menu not found in menubar, something is wrong
+    print 'error tracing menuitem to menubar',menuLabelList
+    #raise Exception('debug2: error tracing menuitem')
+    return
 
 def SaveMenuCommand(id,G2frame,handler):
     '''Creates a table of menu items and their pseudo-bindings

@@ -31,12 +31,13 @@ Note that GSAS-II requires the Python extension packages
 * wxPython (http://wxpython.org/docs/api/), 
 * NumPy (http://docs.scipy.org/doc/numpy/reference/), 
 * SciPy (http://docs.scipy.org/doc/scipy/reference/),
-* matplotlib (http://matplotlib.org/contents.html) and 
+* matplotlib (http://matplotlib.org/contents.html)  
+* PIL or Pillow (https://pillow.readthedocs.org) and 
 * PyOpenGL (http://pyopengl.sourceforge.net/documentation)
 
 These are not distributed
 as part of the Python standard library and must be obtained separately
 (or in a bundled Python package such as the Enthought Python
-Distribution/Canopy). 
+Distribution/Canopy or anaconda). 
 The PyOpenGL package is installed into Python by GSAS-II if not found,
 so it does not need to be included in the Python bundle.

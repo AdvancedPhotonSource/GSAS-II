@@ -128,9 +128,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if generalData['Type'] =='macromolecular':
                 generalData['AtomPtrs'] = [6,4,10,12]
         if generalData['Type'] in ['modulated','magnetic',] and 'Super' not in generalData:
-            generalData['SuperSg'] = ''
-            generalData['Super'] = 0
-            generalData['SuperVec'] = [[[0,0,.1],False,4],[[0,0,.1],False,4],[[0,0,.1],False,4]]
+            generalData['SuperSg'] = '(abg)'
+            generalData['Super'] = 1
+            generalData['SuperVec'] = [[[0,0,.1],False,4],[[0,0,.1],False,4],[[0.,0.,.1],False,4]]
+            generalData['SSGData'] = {}
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
         generalData['NoAtoms'] = {}
@@ -211,10 +212,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 #Hmm, need to change phase name key in Reflection Lists for each histogram
                             
             def OnPhaseType(event):
-                if not generalData['AtomTypes']:             #can change only if no atoms!
+                if not len(generalData['AtomTypes']):             #can change only if no atoms!
                     generalData['Type'] = TypeTxt.GetValue()
                     wx.CallAfter(UpdateGeneral)
                 else:
+                    G2frame.ErrorDialog('Phase type change error','Can change phase type only if there are no atoms')
                     TypeTxt.SetValue(generalData['Type'])                
                 
             def OnSpaceGroup(event):
@@ -232,14 +234,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     msg = 'Space Group Error'
                     Style = wx.ICON_EXCLAMATION
                 else:
-                    text = G2spc.SGPrint(SGData)
+                    text,table = G2spc.SGPrint(SGData)
                     generalData['SGData'] = SGData
                     msg = 'Space Group Information'
                     Style = wx.ICON_INFORMATION
-                Text = ''
-                for line in text:
-                    Text += line+'\n'
-                wx.MessageBox(Text,caption=msg,style=Style)
+                G2gd.SGMessageBox(General,msg,text,table).Show()
                 wx.CallAfter(UpdateGeneral)
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -510,10 +509,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         def ModulatedSizer(name):
             
-            def OnSuperGp(event):   #need a check on supersymmetry group rules here!
+            def OnSuperGp(event):
                 SSymbol = superGp.GetValue()
-                SSGData = G2spc.SSpcGroup(generalData['SGData'],SSymbol)
-                generalData['SuperSg'] = SSymbol
+                E,SSGData = G2spc.SSpcGroup(generalData['SGData'],SSymbol)
+                if E:
+                    text = [E+'\nSuperspace Group set to previous']
+                    superGp.SetValue(generalData['SuperSg'])
+                    msg = 'Superspace Group Error'
+                    Style = wx.ICON_EXCLAMATION
+                else:
+                    Vec = generalData['SuperVec'][0][0]     #(3+1) only
+                    Vec = G2spc.SSGModCheck(Vec,SSGData)
+                    generalData['SuperVec'][0][0] = Vec
+                    text,table = G2spc.SSGPrint(generalData['SGData'],SSGData)
+                    generalData['SSGData'] = SSGData
+                    generalData['SuperSg'] = SSymbol
+                    msg = 'Superspace Group Information'
+                    Style = wx.ICON_INFORMATION
+                G2gd.SGMessageBox(General,msg,text,table).Show()
+                wx.CallAfter(UpdateGeneral)                
             
             def OnDim(event):
                 generalData['Super'] = dim.GetValue()
@@ -525,11 +539,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 vec = Obj.GetValue().split()
                 try:
                     Vec = [float(vec[i]) for i in range(3)]
+                    Vec = G2spc.SSGModCheck(Vec,generalData['SSGData'])
                 except (ValueError,IndexError):
                     Vec = generalData['SuperVec'][ind][0]
                 if not np.any(np.array(Vec)):
                     Vec = generalData['SuperVec'][ind][0]
-                generalData['modVects'][ind][0] = Vec
+                generalData['SuperVec'][ind][0] = Vec
                 h,k,l = Vec
                 Obj.SetValue('%.3f %.3f %.3f'%(h,k,l)) 
                 
@@ -556,7 +571,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dimSizer.Add(wx.StaticText(General,label=' Superspace group: '+generalData['SGData']['SpGrp']),0,WACV)
             superGp = wx.TextCtrl(General,value=generalData['SuperSg'],style=wx.TE_PROCESS_ENTER)
             superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)        
-            superGp.Bind(wx.EVT_KILL_FOCUS,OnSuperGp)
             dimSizer.Add(superGp,0,WACV)
             modSizer.Add(dimSizer)
             vecSizer = wx.FlexGridSizer(1,5,5,5)
@@ -1179,7 +1193,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Atoms.SelectRow(row,True)
                 elif event.AltDown() or (event.ShiftDown() and event.ControlDown()):
                     if atomData[r][-1] in rbAtmDict:
-                        G2frame.dataFrame.SetStatusText('**** ERROR - atom is in a rigid body and can not be moved ****')
+                        G2frame.ErrorDialog('Atom move error','Atoms in rigid bodies can not be moved')
                         Atoms.frm = -1
                         Atoms.ClearSelection()
                     else:    
@@ -1384,9 +1398,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         cx = colLabels.index('x')
         indx = Atoms.GetSelectedRows()
         if len(indx) != 1:
-            print '**** ERROR - only one atom can be moved ****'
+            G2frame.ErrorDialog('Atom move error','Only one atom can be moved')
         elif atomData[indx[0]][-1] in rbAtmDict:
-            print '**** ERROR - Atoms in rigid bodies can not be moved ****'
+            G2frame.ErrorDialog('Atom move error','Atoms in rigid bodies can not be moved')
         else:
             atomData[indx[0]][cx:cx+3] = [x,y,z]
             SetupGeneral()

@@ -43,7 +43,7 @@ def SpcGroup(SGSymbol):
        * SGData - is a dict (see :ref:`Space Group object<SGData_table>`) with entries:
        
              * 'SpGrp': space group symbol, slightly cleaned up
-             * 'Laue':  one of '-1', '2/m', 'mmm', '4/m', '4/mmm', '3R',
+             * 'SGLaue':  one of '-1', '2/m', 'mmm', '4/m', '4/mmm', '3R',
                '3mR', '3', '3m1', '31m', '6/m', '6/mmm', 'm3', 'm3m'
              * 'SGInv': boolean; True if centrosymmetric, False if not
              * 'SGLatt': one of 'P', 'A', 'B', 'C', 'I', 'F', 'R'
@@ -54,6 +54,10 @@ def SpcGroup(SGSymbol):
                'tetragonal', 'rhombohedral', 'trigonal', 'hexagonal', 'cubic'
              * 'SGPolax': one of '', 'x', 'y', 'x y', 'z', 'x z', 'y z',
                'xyz', '111' for arbitrary axes
+             * 'SGPtGrp': one of 32 point group symbols (with some permutations)
+                - filled by SGPtGroup - is external (KE) part of supersymmetry point group
+             * 'SSGKl': default internal (Kl) part of supersymmetry point group; modified 
+             in supersymmetry stuff depending on chosen modulation vector for Mono & Ortho
 
     """
     LaueSym = ('-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m')
@@ -61,8 +65,8 @@ def SpcGroup(SGSymbol):
     UniqSym = ('','','a','b','c','',)
     SysSym = ('triclinic','monoclinic','orthorhombic','tetragonal','rhombohedral','trigonal','hexagonal','cubic')
     SGData = {}
-    SGData['SpGrp'] = SGSymbol.strip().lower().capitalize()
     SGInfo = pyspg.sgforpy(SGSymbol)
+    SGData['SpGrp'] = SGSymbol.strip().lower().capitalize()
     SGData['SGLaue'] = LaueSym[SGInfo[0]-1]
     SGData['SGInv'] = bool(SGInfo[1])
     SGData['SGLatt'] = LattSym[SGInfo[2]-1]
@@ -103,6 +107,7 @@ def SpcGroup(SGSymbol):
     elif SGData['SGLaue'] in ['m3','m3m']:
         SGData['SGSys'] = SysSym[7]
     SGData['SGPolax'] = SGpolar(SGData)
+    SGData['SGPtGrp'],SGData['SSGKl'] = SGPtGroup(SGData)
     return SGInfo[8],SGData
 
 def SGErrors(IErr):
@@ -161,6 +166,117 @@ def SGpolar(SGData):
     NPol = (NP[0]+NP[1]+NP[2]+NPZ[0]*NPZ[1])*(1-int(SGData['SGInv']))
     return POL[NPol]
     
+def SGPtGroup(SGData):
+    '''
+    Determine point group of the space group - done after space group symbol has
+    been evaluated by SpcGroup. Only short symbols are allowed
+    
+    :param SGData: from :func SpcGroup
+    returns SSGPtGrp & SSGKl (only defaults for Mono & Ortho)
+    '''
+    Flds = SGData['SpGrp'].split(' ')
+    if SGData['SGLaue'] == '-1':    #triclinic
+        if '-' in Flds[1]:
+            return '-1',[-1,]
+        else:
+            return '1',[1,]
+    elif SGData['SGLaue'] == '2/m': #monoclinic - default for 2D modulation vector
+        if '/' in SGData['SpGrp']:
+            return '2/m',[-1,1]
+        elif '2' in SGData['SpGrp']:
+            return '2',[-1,]
+        else:
+            return 'm',[1,]
+    elif SGData['SGLaue'] == 'mmm': #orthorhombic
+        if SGData['SpGrp'].count('2') == 3:
+            return '222',[1,1,1]
+        elif SGData['SpGrp'].count('2') == 1:
+            if SGData['SGPolax'] == 'x':
+                return '2mm',[1,1,1]
+            elif SGData['SGPolax'] == 'y':
+                return 'm2m',[1,1,1]
+            elif SGData['SGPolax'] == 'z':
+                return 'mm2',[1,1,1]
+        else:
+            return 'mmm',[1,1,-1]
+    elif SGData['SGLaue'] == '4/m': #tetragonal
+        if '/' in SGData['SpGrp']:
+            return '4/m',[1,-1]
+        elif '-' in Flds[1]:
+            return '-4',[-1,]
+        else:
+            return '4',[1,]
+    elif SGData['SGLaue'] == '4/mmm':
+        if '/' in SGData['SpGrp']:
+            return '4/mmm',[1,-1,1,1]
+        elif '-' in Flds[1]:
+            if '2' in Flds[2]:
+                return '-42m',[-1,-1,1]
+            else:
+                return '-4m2',[-1,1,-1]              
+        elif '2' in Flds[2:]:
+            return '422',[1,-1,-1]
+        else:
+            return '4mm',[1,1,1]
+    elif SGData['SGLaue'] in ['3','3R']:  #trigonal/rhombohedral
+        if '-' in Flds[1]:
+            return '-3',[-1,]
+        else:
+            return '3',[1,]
+    elif SGData['SGLaue'] == '3mR' and 'R' in Flds[0]:
+        if '2' in Flds[2]:
+            return '32',[1,-1]
+        elif '-' in Flds[1]:
+            return '-3m',[-1,1]
+        else:
+            return '3m',[1,1]
+    elif SGData['SGLaue'] == '3m1':
+        if '2' in Flds[2]:
+            return '321',[1,-1,1]
+        elif '-' in Flds[1]:
+            return '-3m1',[-1,1,1]
+        else:
+            return '3m1',[1,1,1]
+    elif SGData['SGLaue'] == '31m':
+        if '2' in Flds[3]:
+            return '312',[1,1,-1]
+        elif '-' in Flds[1]:
+            return '-31m',[-1,1,1]
+        else:
+            return '31m',[1,1,1]
+    elif SGData['SGLaue'] == '6/m': #hexagonal
+        if '/' in SGData['SpGrp']:
+            return '6/m',[1,-1]
+        elif '-' in SGData['SpGrp']:
+            return '-6',[-1,]
+        else:
+            return '6',[1,]
+    elif SGData['SGLaue'] == '6/mmm':
+        if '/' in SGData['SpGrp']:
+            return '6/mmm',[1,-1,1,1]
+        elif '-' in Flds[1]:
+            if '2' in Flds[2]:
+                return '-62m',[-1,-1,1]
+            else:
+                return '-6m2',[-1,1,-1]                 
+        elif '2' in Flds[2:]:
+            return '622',[1,-1,-1]
+        else:
+            return '6mm',[1,1,1]   
+    elif SGData['SGLaue'] == 'm3':      #cubic - no (3+1) supersymmetry
+        if '2' in Flds[1]:
+            return '23',[]
+        else:  
+            return 'm3',[]
+    elif SGData['SGLaue'] == 'm3m':
+        if '4' in Flds[1]:
+            if '-' in Flds[1]:
+                return '-43m',[]
+            else:
+                return '432',[]
+        else:
+            return 'm-3m',[]
+    
 def SGPrint(SGData):
     '''
     Print the output of SpcGroup in a nicely formatted way. Used in SpaceGroup
@@ -168,6 +284,7 @@ def SGPrint(SGData):
     :param SGData: from :func:`SpcGroup`
     :returns:
         SGText - list of strings with the space group details
+        SGTable - list of strings for each of the operations
     '''
     Mult = len(SGData['SGCen'])*len(SGData['SGOps'])*(int(SGData['SGInv'])+1)
     SGText = []
@@ -178,34 +295,25 @@ def SGPrint(SGData):
     if SGData['SGLatt'] in 'ABCIFR':
         SGText.append(' The lattice is '+CentStr+' '+SGData['SGLatt']+'-centered '+SGData['SGSys'].lower())
     else:
-        SGText.append(' The lattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower())        
-    SGText.append(' Multiplicity of a general site is '+str(Mult))
+        SGText.append(' The lattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower()) 
     SGText.append(' The Laue symmetry is '+SGData['SGLaue'])
+    SGText.append(' The lattice point group is '+SGData['SGPtGrp'])
+    SGText.append(' Multiplicity of a general site is '+str(Mult))
     if SGData['SGUniq'] in ['a','b','c']:
         SGText.append(' The unique monoclinic axis is '+SGData['SGUniq'])
     if SGData['SGInv']:
         SGText.append(' The inversion center is located at 0,0,0')
     if SGData['SGPolax']:
-        SGText.append(' The location of the origin is arbitrary in '+SGData['SGPolax'])
-    SGText.append('\n'+' The equivalent positions are:')
-    if SGData['SGLatt'] != 'P':
-        SGText.append('\n ('+Latt2text(SGData['SGLatt'])+')+\n')
-    Ncol = 2
-    line = ' '
-    col = 0
-    for iop,[M,T] in enumerate(SGData['SGOps']):
-        OPtxt = MT2text(M,T)
-        Fld = '(%2i) '%(iop+1)+OPtxt+'\t'
-        line += Fld
-        if '/' not in Fld:
-            line += '\t'
-        col += 1
-        if col == Ncol:
-            SGText.append(line)        
-            line = ' '
-            col = 0
-    SGText.append(line)        
-    return SGText
+        SGText.append(' The location of the origin is arbitrary in '+SGData['SGPolax']+'\n')
+    if SGData['SGLatt'] == 'P':
+        SGText.append(' The equivalent positions are:\n')
+    else:    
+        SGText.append(' The equivalent positions are:')
+        SGText.append(' ('+Latt2text(SGData['SGLatt'])+')+\n')
+    SGTable = []
+    for i,[M,T] in enumerate(SGData['SGOps']):
+        SGTable.append('(%2d) %s'%(i+1,MT2text(M,T)))
+    return SGText,SGTable
 
 def AllOps(SGData):
     '''
@@ -267,11 +375,11 @@ def MT2text(M,T):
         IK = int(round(T[j]*12))%12
         if IK:
             if IJ < 3:
-                Fld += TRA[IK]+XYZ[IJ]
+                Fld += (TRA[IK]+XYZ[IJ]).rjust(5)
             else:
-                Fld += TRA[IK]+'+'+XYZ[IJ]
+                Fld += (TRA[IK]+'+'+XYZ[IJ]).rjust(5)
         else:
-            Fld += XYZ[IJ]
+            Fld += XYZ[IJ].rjust(5)
         if j != 2: Fld += ', '
     return Fld
     
@@ -311,20 +419,16 @@ def SSpcGroup(SGData,SSymbol):
        * SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
        * SSGData - is a dict (see :ref:`Superspace Group object<SSGData_table>`) with entries:
        
-             * 'SpGrp': superspace group symbol extension to space group symbol, accidental spaces removed
-             * 'LauePtGp':  one of '-1', '2/m', 'mmm', '4/mmm', '-3m', '-31m', '6/mmm'
-             * 'LaueMod': one of '(abg)', '(ab0)', '(ab1/2)', '(a0g)', (a1/2g)','(0bg)', '(1/2bg)',
-               '(a00)', '(a01/2)', '(a1/20)', (a1/21/2)', '(a01)', '(a10)', 
-               '(0b0)', '(0b1/2)', '(1/2b0)', (1/2b1/2)', '(0b1)', '(1b0)',
-               '(00g)', '(01/2g)', '(1/20g)', (1/21/2g)', '(01g)', '(10g)','(1/3/1/3g)'
-             * 'SGLatt': one of 'P', 'A', 'B', 'C', 'I', 'F', 'R'
-             * 'SGCen': 4D cell centering vectors [0,0,0,0] at least
-             * 'SGOps': 4D symmetry operations as [M,T] so that M*x+T = x'
+             * 'SSpGrp': superspace group symbol extension to space group symbol, accidental spaces removed
+             * 'SSGCen': 4D cell centering vectors [0,0,0,0] at least
+             * 'SSGOps': 4D symmetry operations as [M,T] so that M*x+T = x'
 
     """
     
     def splitSSsym(SSymbol):
-        ' Splits supersymmetry symbol into two lists of strings'
+        '''
+        Splits supersymmetry symbol into two lists of strings
+        '''
         modsym,gensym = SSymbol.replace(' ','').split(')')
         nfrac = modsym.count('/')
         modsym = modsym.lstrip('(')
@@ -350,16 +454,235 @@ def SSpcGroup(SGData,SSymbol):
         gensym = list(gensym)
         return modsym,gensym
         
-    modsym,gensym = splitSSsym(SSymbol)
-    print modsym,gensym
-    T = np.zeros(4)
+    def checkModSym():
+        ''' 
+        Checks to see if proposed modulation form is allowed for Laue group
+        '''
+        if LaueId in [0,] and LaueModId in [0,]:
+            return True
+        elif LaueId in [1,]:
+            try:
+                if modsym.index('1/2') != ['A','B','C'].index(SGData['SGLatt']):
+                    return False
+                if 'I'.index(SGData['SGLatt']) and modsym.count('1/2') not in [0,2]:
+                    return False
+            except ValueError:
+                pass
+            if SGData['SGUniq'] == 'a' and LaueModId in [5,6,7,8,9,]:
+                return True
+            elif SGData['SGUniq'] == 'b' and LaueModId in [3,4,13,14,15,]:
+                return True
+            elif SGData['SGUniq'] == 'c' and LaueModId in [1,2,19,20,21,]:
+                return True
+        elif LaueId in [2,] and LaueModId in [i+7 for i in range(18)]:
+            try:
+                if modsym.index('1/2') != ['A','B','C'].index(SGData['SGLatt']):
+                    return False
+                if SGData['SGLatt'] in ['I','F',] and modsym.index('1/2'):
+                    return False
+            except ValueError:
+                pass
+            return True
+        elif LaueId in [3,4,] and LaueModId in [19,22,]:
+            try:
+                if SGData['SGLatt'] == 'I' and modsym.count('1/2'):
+                    return False
+            except ValueError:
+                pass
+            return True
+        elif LaueId in [7,8,9,] and LaueModId in [19,25,]:
+            try:
+                if SGData['SGLatt'] == 'R' and modsym.index('1/3'):
+                    return False
+            except ValueError:
+                pass
+            return True
+        elif LaueId in [10,11,] and LaueModId in [19,]:
+            return True
+        return False
+        
+    def fixMonoOrtho():
+        mod = ''.join(modsym).replace('1/2','0').replace('1','0')
+        if SGData['SGPtGrp'] in ['2','m']:  #OK
+            if mod in ['a00','0b0','00g']:
+                return [i*-1 for i in SGData['SSGKl']]
+            else:
+                return SGData['SSGKl']
+        elif SGData['SGPtGrp'] == '2/m':    #OK
+            if mod in ['a00','0b0','00g']:
+                return SGData['SSGKl']
+            else:
+                return [i*-1 for i in SGData['SSGKl']]
+        else:   #orthorhombic
+            if SGData['SGPtGrp'] == '222':
+                return [1 if i in ['a','b','g'] else -1 for i in mod]
+            elif SGData['SGPtGrp'] == 'mm2':
+                if 'g' in mod:
+                    return [1,1,1]
+                elif 'b' in mod:
+                    return [1,-1,-1]
+                else:
+                    return [-1,1,-1]
+            elif SGData['SGPtGrp'] == 'm2m':
+                if 'b' in mod:
+                    return [1,1,1]
+                elif 'g' in mod:
+                    return [1,-1,-1]
+                else:
+                    return [-1,-1,1]                
+            elif SGData['SGPtGrp'] == '2mm':
+                if 'a' in mod:
+                    return [1,1,1]
+                elif 'b' in mod:
+                    return [-1,-1,1]
+                else:
+                    return [-1,1,-1]
+            else:
+                return [-1 if i in ['a','b','g'] else 1 for i in mod]
+                
+    def genSSGOps():
+        SSGOps = SSGData['SSGOps']
+        SSGKl = SGData['SSGKl']
+        iFrac = {}
+        for i,frac in enumerate(SSGData['modSymb']):
+            if frac in ['1/2','1/3','1/4','1/6','1']:
+                iFrac[i] = frac
+# set identity & 1,-1
+        SSGOps[0][0][3,3] = 1.
+# monoclinic
+        if SGData['SGPtGrp'] in ['2','m']:  #OK
+            SSGOps[1][0][3,3] = SSGKl[0]
+            for i in iFrac:
+                if SGData['SGPtGrp'] == '2':
+                    SSGOps[1][0][3,i] = 1
+                else:
+                    SSGOps[1][0][3,i] = -1
+        elif SGData['SGPtGrp'] == '2/m':    #OK
+            SSGOps[1][0][3,3] = SSGKl[1]
+            for i in iFrac:
+                SSGOps[1][0][3,i] = -1
+# orthorhombic
+        elif SGData['SGPtGrp'] in ['222','mm2','m2m','2mm','mmm']:
+            SSGOps[1][0][3,3] = SSGKl[0]
+            SSGOps[2][0][3,3] = SSGKl[1]
+            SSGOps[3][0][3,3] = SSGKl[2]
+# tetragonal
+        elif SGData['SGPtGrp'] in ['4','-4',]:
+            SSGOps[1][0][3,3] = SSGKl[0]
+            if '1/2' in SSGData['modSymb']:
+                if SGData['SGPtGrp'] == '-4':
+                    SSGOps[1][0][3,1] = 1
+                else:
+                    SSGOps[1][0][3,1] = -1
+        elif SGData['SGPtGrp'] in ['4/m',]:
+            SSGOps[1][0][3,3] = SSGKl[1]
+            if '1/2' in SSGData['modSymb']:
+                SSGOps[1][0][3,3] *= -1
+                SSGOps[1][0][3,1] = -1
+        elif SGData['SGPtGrp'] in ['422','4mm','-42m','-4m2',]:
+            SSGOps[1][0][3,3] = SSGKl[1]
+        elif SGData['SGPtGrp'] in ['4/mmm',]:
+            SSGOps[1][0][3,3] = SSGKl[1]
+            if '1/2' in SSGData['modSymb']:
+                SSGOps[1][0][3,3] *= -1
+                SSGOps[1][0][3,1] = -1
+# trigonal
+        elif SGData['SGPtGrp'] in ['3','-3',]:
+            SSGOps[1][0][3,3] = SSGKl[0]
+            if '1/2' in SSGData['modSymb']:
+                if SGData['SGPtGrp'] == '-6':
+                    SSGOps[1][0][3,1] = 1
+                else:
+                    SSGOps[1][0][3,1] = -1
+        elif SGData['SGPtGrp'] in ['32','3m','-3m',]:
+            SSGOps[1][0][3,3] = SSGKl[1]
+        elif SGData['SGPtGrp'] in ['312','321','3m1','31m','-3m1','-31m',]:
+            pass
+# hexagonal
+        elif SGData['SGPtGrp'] in ['6','-6',]:
+            SSGOps[1][0][3,3] = SSGKl[0]
+        elif SGData['SGPtGrp'] in ['6/m',]:
+            SSGOps[1][0][3,3] = SSGKl[1]
+        elif SGData['SGPtGrp'] in ['622','6mm','-62m','-62',]:
+            pass
+        elif SGData['SGPtGrp'] in ['6/mmm',]:
+            pass
+            
+        if SGData['SGInv']:
+            SSGfull = SSGOps[:]
+            for M,V in SSGOps:
+                Mi = -1*M
+                SSGfull.append([Mi,V])
+            SSGOps = SSGfull
+        if SGData['SGPtGrp'] in ['1','-1']: #triclinic - done
+            return True,SSGOps
+        nOps = len(SSGOps)
+        for i in range(nOps):
+            for j in range(nOps):
+                OpC = list(SGProd(SSGOps[j],SSGOps[i]))
+                OpC[1] %= 1.
+                for k in range(nOps):
+                    OpD = SSGOps[k]
+                    if np.allclose(OpC[0],OpD[0]) and np.allclose(OpC[1],OpD[1]):
+                        continue
+                    elif np.allclose(OpC[0][:3,:3],OpD[0][:3,:3]):
+                        if np.allclose(OpD[0][3],np.zeros(4)):
+                            SSGOps[k] = OpC
+                        else:
+                            return False,None
+        return True,SSGOps
+                    
+    def getTau(genQ):
+        print 'genQ',genQ
+        return genQ
+        
+    LaueModList = ['abg', 'ab0', 'ab1/2', 'a0g', 'a1/2g','0bg', '1/2bg',
+               'a00', 'a01/2', 'a1/20', 'a1/21/2', 'a01', 'a10', 
+               '0b0', '0b1/2', '1/2b0', '1/2b1/2', '0b1', '1b0',
+               '00g', '01/2g', '1/20g', '1/21/2g', '01g', '10g','1/31/3g']
+    LaueList = ['-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m']
+    GenSymList = ['','s','0s','s0','00s','0s0','s00','s0s','ss0','0ss','q00','0q0','00q','qq0','q0q','0qq',
+        'q','q0','0q','qqs','s0s0','00ss','s00s','q0q0','q0qs','t','t00','t0','h','h00']
+    Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'s':.5,'t':1./3,'q':.25,'h':1./6,'a':0.,'b':0.,'g':0.}
+    LaueId = LaueList.index(SGData['SGLaue'])
+    if LaueId in [12,13,]:
+        return '(3+1) superlattices not defined for cubic space groups',None
+    elif LaueId in [5,6,]:
+        return '(3+1) superlattices not defined for rhombohedral settings - use hexagonal setting',None
+    try:
+        modsym,gensym = splitSSsym(SSymbol)
+    except ValueError:
+        return 'Error in superspace symbol '+SSymbol,None
+    if ''.join(gensym) not in GenSymList:
+        return 'unknown generator symbol '+''.join(gensym),None
+    LaueModId = LaueModList.index(''.join(modsym))
+    if not checkModSym():
+        return 'Modulation '+''.join(modsym)+' not consistent with space group '+SGData['SpGrp'],None
+    modQ = [Fracs[mod] for mod in modsym]
+    if LaueId in [1,2]:
+        SGData['SSGKl'] = fixMonoOrtho()
+    genQ = [Fracs[mod] for mod in gensym]
+    if len(gensym) and len(gensym) != len(SGData['SSGKl']):
+        return 'Wrong number of items in generator symbol '+''.join(gensym),None
+    genQ = getTau(genQ)
+    SSGData = {'SSpGrp':SGData['SpGrp']+SSymbol,'modQ':modQ,'modSymb':modsym}
+    SSCen = np.ones((len(SGData['SGCen']),4))*0.5
+    for icen,cen in enumerate(SGData['SGCen']):
+        SSCen[icen,0:3] = cen
+    SSGData['SSGCen'] = SSCen
+    SSGData['SSGOps'] = []
     for iop,op in enumerate(SGData['SGOps']):
-        ssop = np.eye(4)
+        T = np.zeros(4)
+        ssop = np.zeros((4,4))
         ssop[:3,:3] = op[0]
         T[:3] = op[1]
-                    
-        print SSMT2text(ssop,T)
-    return None
+        SSGData['SSGOps'].append([ssop,T])
+    E,SSGOps = genSSGOps()
+    if E:
+        SSGData['SSGOps'] = SSGOps                     
+        return None,SSGData
+    else:
+        return 'Operator conflict - incorrect superspace symbol',None
 
 def SSGPrint(SGData,SSGData):
     '''
@@ -369,44 +692,46 @@ def SSGPrint(SGData,SSGData):
     :param SSGData: from :func:`SSpcGroup`
     :returns:
         SSGText - list of strings with the superspace group details
+        SGTable - list of strings for each of the operations
     '''
-    Mult = len(SGData['SGCen'])*len(SGData['SGOps'])*(int(SGData['SGInv'])+1)
+    Mult = len(SSGData['SSGCen'])*len(SSGData['SSGOps'])*(int(SGData['SGInv'])+1)
     SSGText = []
     SSGText.append(' Superspace Group: '+SSGData['SSpGrp'])
     CentStr = 'centrosymmetric'
     if not SGData['SGInv']:
         CentStr = 'non'+CentStr
     if SGData['SGLatt'] in 'ABCIFR':
-        SSGText.append(' The lattice is '+CentStr+' '+SSGData['SSGLatt']+'-centered '+SSGData['SSGSys'].lower())
+        SSGText.append(' The lattice is '+CentStr+' '+SGData['SGLatt']+'-centered '+SGData['SGSys'].lower())
     else:
-        SGText.append(' The superlattice is '+CentStr+' '+'primitive '+SSGData['SSGSys'].lower())        
-    SSGText.append(' Multiplicity of a general site is '+str(Mult))
+        SSGText.append(' The superlattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower())        
     SSGText.append(' The Laue symmetry is '+SGData['SGLaue'])
+    SSGText.append(' The superlattice point group is '+SGData['SGPtGrp']+','+''.join([str(i) for i in SGData['SSGKl']]))
+    SSGText.append(' The number of super space group generators is '+str(len(SGData['SSGKl'])))
+    SSGText.append(' Multiplicity of a general site is '+str(Mult))
     if SGData['SGUniq'] in ['a','b','c']:
         SSGText.append(' The unique monoclinic axis is '+SGData['SGUniq'])
     if SGData['SGInv']:
         SSGText.append(' The inversion center is located at 0,0,0')
     if SGData['SGPolax']:
         SSGText.append(' The location of the origin is arbitrary in '+SGData['SGPolax'])
-    SSGText.append('\n'+' The equivalent positions are:')
     if len(SSGData['SSGCen']) > 1:
+        SSGText.append(' The equivalent positions are:')
         SSGText.append('\n ('+SSLatt2text(SSGData['SSGCen'])+')+\n')
-    Ncol = 2
-    line = ' '
-    col = 0
-    for iop,[M,T] in enumerate(SSGData['SSGOps']):
-        OPtxt = SSMT2text(M,T)
-        Fld = '(%2i) '%(iop+1)+OPtxt+'\t'
-        line += Fld
-        if '/' not in Fld:
-            line += '\t'
-        col += 1
-        if col == Ncol:
-            SSGText.append(line)        
-            line = ' '
-            col = 0
-    SSGText.append(line)        
-    return SSGText
+    else:
+        SSGText.append(' The equivalent positions are:\n')
+    SSGTable = []
+    for i,[M,T] in enumerate(SSGData['SSGOps']):
+        SSGTable.append('(%2d) %s'%(i+1,SSMT2text(M,T)))
+    return SSGText,SSGTable
+    
+def SSGModCheck(Vec,SSGData):
+    ''' Checks modulation vector compatibility with supersymmetry space group symbol. 
+    Superspace group symbol takes precidence & the vector will be modified accordingly
+    '''
+    modQ = SSGData['modQ']
+    modSymb = SSGData['modSymb']
+    Vec = [0.1 if (vec == 0.0 and mod in ['a','b','g']) else vec for [vec,mod] in zip(Vec,modSymb)]
+    return [Q if mod not in ['a','b','g'] and vec != Q else vec for [vec,mod,Q] in zip(Vec,modSymb,modQ)]
 
 def SSMT2text(M,T):
     "From superspace group matrix/translation operator returns text version"
@@ -425,25 +750,28 @@ def SSMT2text(M,T):
         IK = int(round(T[j]*12))%12
         if IK:
             if IJ[0] == '-':
-                Fld += TRA[IK]+IJ
+                Fld += (TRA[IK]+IJ).rjust(8)
             else:
-                Fld += TRA[IK]+'+'+IJ
+                Fld += (TRA[IK]+'+'+IJ).rjust(8)
         else:
-            Fld += IJ
+            Fld += IJ.rjust(8)
         if j != 3: Fld += ', '
     return Fld
     
 def SSLatt2text(SSGCen):
     "Lattice centering vectors to text"
     lattTxt = ''
-    for vec in SGCen:
+    for vec in SSGCen:
+        lattTxt += ' '
         for item in vec:
             if int(item*12.):
                 lattTxt += '1/%d,'%(12/int(item*12))
             else:
                 lattTxt += '0,'
-        lattTxt[-1] = ';'
-    return lattTxt[:-1]
+        lattTxt = lattTxt.rstrip(',')
+        lattTxt += ';'
+    lattTxt = lattTxt.rstrip(';').lstrip(' ')
+    return lattTxt
         
 def SSpaceGroup(SGSymbol,SSymbol):
     '''
@@ -460,10 +788,21 @@ def SSpaceGroup(SGSymbol,SSymbol):
         return
     E,B = SSpcGroup(A,SSymbol)    
     if E > 0:
-        print SGErrors(E)
+        print E
         return
-    for l in SGPrint(B):
+    for l in SSGPrint(B):
         print l
+        
+def SGProd(OpA,OpB):
+    '''
+    Form space group operator product. OpA & OpB are [M,V] pairs; 
+        both must be of same dimension (3 or 4). Returns [M,V] pair
+    '''
+    A,U = OpA
+    B,V = OpB
+    M = np.inner(B.T,A)
+    W = np.inner(B,U)+V
+    return M.T,W
         
 def MoveToUnitCell(xyz):
     '''

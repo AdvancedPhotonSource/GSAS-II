@@ -161,6 +161,45 @@ VERY_LIGHT_GREY = wx.Colour(235,235,235)
 #### GSAS-II class definitions
 ################################################################################
 
+class SGMessageBox(wx.Dialog):
+    ''' Special version of MessageBox that displays space group & super space group text
+    in two blocks
+    '''
+    def __init__(self,parent,title,text,table,):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        self.text=text
+        self.table = table
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((0,10))
+        for line in text:
+            mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
+        tableSizer = wx.FlexGridSizer(0,2,0,0)
+        for item in self.table:
+            tableSizer.Add(wx.StaticText(self.panel,label='     %s'%(item.ljust(30))),0,WACV)
+        mainSizer.Add(tableSizer)
+        btnsizer = wx.StdDialogButtonSizer()
+        OKbtn = wx.Button(self.panel, wx.ID_OK)
+        OKbtn.SetDefault()
+        btnsizer.AddButton(OKbtn)
+        btnsizer.Realize()
+        mainSizer.Add((0,10))
+        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        size = self.GetSize()
+        self.SetSize([size[0]+20,size[1]])
+
+    def Show(self):
+        '''Use this method after creating the dialog to post it
+        '''
+        self.ShowModal()
+        return
+        
+        
+
 class G2TreeCtrl(wx.TreeCtrl):
     '''Create a wrapper around the standard TreeCtrl so we can "wrap"
     various events.

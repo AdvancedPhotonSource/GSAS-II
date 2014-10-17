@@ -958,7 +958,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
         AtLookup = G2mth.FillAtomLookUp(Atoms)
         PawleyRef = PhaseData[name].get('Pawley ref',[])
         SGData = General['SGData']
-        SGtext = G2spc.SGPrint(SGData)
+        SGtext,SGtable = G2spc.SGPrint(SGData)
         cell = General['Cell']
         A = G2lat.cell2A(cell[1:7])
         phaseDict.update({pfx+'A0':A[0],pfx+'A1':A[1],pfx+'A2':A[2],
@@ -1066,6 +1066,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                 PrintBLtable(BLtable)
                 print >>pFile,''
                 for line in SGtext: print >>pFile,line
+                if len(SGtable):
+                    for i,item in enumerate(SGtable[::2]):
+                        line = ' %s %s'%(item.ljust(30),SGtable[2*i+1].ljust(30))
+                        print >>pFile,line   
+                else:
+                    print >>pFile,' ( 1)    %s'%(SGtable[0])
                 PrintRBObjects(resRBData,vecRBData)
                 PrintAtoms(General,Atoms)
                 print >>pFile,'\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \

@@ -187,10 +187,11 @@ def getVCov(varyNames,varyList,covMatrix):
             try:
                 vcov[i1][i2] = covMatrix[varyList.index(name1)][varyList.index(name2)]
             except ValueError:
-                if i1 == i2:
-                    vcov[i1][i2] = 1.0
-                else: 
-                    vcov[i1][i2] = 0.0
+                vcov[i1][i2] = 0.0
+#                if i1 == i2:
+#                    vcov[i1][i2] = 1e-20
+#                else: 
+#                    vcov[i1][i2] = 0.0
     return vcov
 
 def FindAtomIndexByIDs(atomData,IDs,Draw=True):

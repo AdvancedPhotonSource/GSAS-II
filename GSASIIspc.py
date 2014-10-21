@@ -514,7 +514,7 @@ def SSpcGroup(SGData,SSymbol):
                 return SGData['SSGKl']
         elif SGData['SGPtGrp'] == '2/m':    #OK
             if mod in ['a00','0b0','00g']:
-                return SGData['SSGKl']
+                return SGData['SSGKl'][:]
             else:
                 return [i*-1 for i in SGData['SSGKl']]
         else:   #orthorhombic
@@ -546,15 +546,17 @@ def SSpcGroup(SGData,SSymbol):
                 
     def genSSGOps():
         SSGOps = SSGData['SSGOps']
-        SSGKl = SGData['SSGKl']
-        print 'genQ',genQ
-        print 'SSGKl',SSGKl
         iFrac = {}
         for i,frac in enumerate(SSGData['modSymb']):
             if frac in ['1/2','1/3','1/4','1/6','1']:
                 iFrac[i] = frac
+        print SSymbol
+        print 'SSGKl',SSGKl,'genQ',genQ,'iFrac',iFrac
 # set identity & 1,-1; triclinic
         SSGOps[0][0][3,3] = 1.
+# expand if centrosymmetric
+        if SGData['SGInv']:
+            SSGOps = SSGOps[:] + [[-1*M,V] for M,V in SSGOps]
 # monoclinic
         if SGData['SGPtGrp'] in ['2','m']:  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
@@ -567,7 +569,8 @@ def SSpcGroup(SGData,SSymbol):
                 if genQ:
                     SSGOps[1][0][3,i] *= -1
         elif SGData['SGPtGrp'] == '2/m':    #OK
-            SSGOps[1][0][3,3] = SSGKl[1]
+            SSGOps[1][0][3,3] = -SSGKl[0]
+            SSGOps[3][0][3,3] = -SSGKl[1]
             for i in iFrac:
                 SSGOps[1][0][3,i] = -1
 # orthorhombic
@@ -586,7 +589,8 @@ def SSpcGroup(SGData,SSymbol):
             if '1/2' in SSGData['modSymb']:
                 SSGOps[1][0][3,1] = 1
         elif SGData['SGPtGrp'] in ['4/m',]:
-            SSGOps[1][0][3,3] = -SSGKl[1]
+            SSGOps[1][0][3,3] = SSGKl[0]
+            SSGOps[5][0][3,3] = SSGKl[1]
             SSGOps[1][1][3] = genQ[0]
             if '1/2' in SSGData['modSymb']:
                 SSGOps[1][0][3,1] = -1
@@ -641,12 +645,6 @@ def SSpcGroup(SGData,SSymbol):
             if genQ[3]:
                 SSGOps[11][0][3,3] = -SSGKl[3]
                 SSGOps[11][1][3] = genQ[3]
-        if SGData['SGInv']:
-            SSGfull = SSGOps[:]
-            for M,V in SSGOps:
-                Mi = -1*M
-                SSGfull.append([Mi,V])
-            SSGOps = SSGfull
         if SGData['SGPtGrp'] in ['1','-1']: #triclinic - done
             return True,SSGOps
         nOps = len(SSGOps)
@@ -659,14 +657,15 @@ def SSpcGroup(SGData,SSymbol):
                     if SSMT2text(OpC) == SSMT2text(OpD):
                         continue
                     elif np.allclose(OpC[0][:3,:3],OpD[0][:3,:3]):
-                        if np.any([np.allclose(OpC[0][3][:3],cen) for cen in SGData['SGCen']]):
-#                        if np.allclose(OpC[0][3],np.zeros(4)):
-                            continue
-                        elif np.allclose(OpD[0][3],np.zeros(4)):
+                        if np.allclose(OpD[0][3],np.zeros(4)):
                             SSGOps[k] = OpC
+                        elif np.any([np.allclose(OpC[0][3][:3],cen) for cen in SGData['SGCen']]):   #?
+                            continue
                         else:
-                            print 'OpC',SSMT2text(OpC),'OpD',SSMT2text(OpD)
-                            return False,None
+                            OpCtxt = SSMT2text(OpC).strip()
+                            OpDtxt = SSMT2text(OpD).strip()
+                            print 'OpC',OpCtxt,'OpD',OpDtxt
+                            return False,OpCtxt+' conflict with '+OpDtxt
         return True,SSGOps
                     
     def getTau():
@@ -686,9 +685,9 @@ def SSpcGroup(SGData,SSymbol):
         'q','q0','0q','qqs','s0s0','00ss','s00s','q0q0','q0qs','t','t00','t0','h','h00']
     Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'s':.5,'t':1./3,'q':.25,'h':1./6,'a':0.,'b':0.,'g':0.}
     LaueId = LaueList.index(SGData['SGLaue'])
-    if LaueId in [12,13,]:
+    if SGData['SGLaue'] in ['m3','m3m']:
         return '(3+1) superlattices not defined for cubic space groups',None
-    elif LaueId in [5,6,]:
+    elif SGData['SGLaue'] in ['3R','3mR']:
         return '(3+1) superlattices not defined for rhombohedral settings - use hexagonal setting',None
     try:
         modsym,gensym = splitSSsym(SSymbol)
@@ -703,10 +702,11 @@ def SSpcGroup(SGData,SSymbol):
     if not checkModSym():
         return 'Modulation '+''.join(modsym)+' not consistent with space group '+SGData['SpGrp'],None
     modQ = [Fracs[mod] for mod in modsym]
-    if LaueId in [1,2]:
-        SGData['SSGKl'] = fixMonoOrtho()
+    SSGKl = SGData['SSGKl'][:]
+    if SGData['SGLaue'] in ['2/m','mmm']:
+        SSGKl = fixMonoOrtho()
     genQ = [Fracs[mod] for mod in gensym]
-    if len(gensym) and len(gensym) != len(SGData['SSGKl']):
+    if len(gensym) and len(gensym) != len(SSGKl):
         return 'Wrong number of items in generator symbol '+''.join(gensym),None
     genQ = getTau()
     SSGData = {'SSpGrp':SGData['SpGrp']+SSymbol,'modQ':modQ,'modSymb':modsym}
@@ -721,12 +721,12 @@ def SSpcGroup(SGData,SSymbol):
         ssop[:3,:3] = op[0]
         T[:3] = op[1]
         SSGData['SSGOps'].append([ssop,T])
-    E,SSGOps = genSSGOps()
+    E,Result = genSSGOps()
     if E:
-        SSGData['SSGOps'] = SSGOps                     
+        SSGData['SSGOps'] = Result                     
         return None,SSGData
     else:
-        return 'Operator conflict - incorrect superspace symbol',None
+        return Result+'\nOperator conflict - incorrect superspace symbol',None
 
 def SSGPrint(SGData,SSGData):
     '''

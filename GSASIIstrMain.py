@@ -551,8 +551,14 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
 
     ShowBanner(DisAglCtls['Name'])
     SGData = DisAglData['SGData']
-    SGtext = G2spc.SGPrint(SGData)
+    SGtext,SGtable = G2spc.SGPrint(SGData)
     for line in SGtext: MyPrint(line)
+    if len(SGtable):
+        for i,item in enumerate(SGtable[::2]):
+            line = ' %s %s'%(item.ljust(30),SGtable[2*i+1].ljust(30))
+            MyPrint(line)   
+    else:
+        MyPrint(' ( 1)    %s'%(SGtable[0])) 
     Cell = DisAglData['Cell']
     
     Amat,Bmat = G2lat.cell2AB(Cell[:6])

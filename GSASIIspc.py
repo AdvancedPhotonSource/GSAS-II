@@ -297,22 +297,24 @@ def SGPrint(SGData):
     else:
         SGText.append(' The lattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower()) 
     SGText.append(' The Laue symmetry is '+SGData['SGLaue'])
-    SGText.append(' The lattice point group is '+SGData['SGPtGrp'])
+    if 'SGPtGrp' in SGData:         #patch
+        SGText.append(' The lattice point group is '+SGData['SGPtGrp'])
     SGText.append(' Multiplicity of a general site is '+str(Mult))
     if SGData['SGUniq'] in ['a','b','c']:
         SGText.append(' The unique monoclinic axis is '+SGData['SGUniq'])
     if SGData['SGInv']:
         SGText.append(' The inversion center is located at 0,0,0')
     if SGData['SGPolax']:
-        SGText.append(' The location of the origin is arbitrary in '+SGData['SGPolax']+'\n')
+        SGText.append(' The location of the origin is arbitrary in '+SGData['SGPolax'])
+    SGText.append(' ')
     if SGData['SGLatt'] == 'P':
         SGText.append(' The equivalent positions are:\n')
     else:    
         SGText.append(' The equivalent positions are:')
         SGText.append(' ('+Latt2text(SGData['SGLatt'])+')+\n')
     SGTable = []
-    for i,[M,T] in enumerate(SGData['SGOps']):
-        SGTable.append('(%2d) %s'%(i+1,MT2text(M,T)))
+    for i,Opr in enumerate(SGData['SGOps']):
+        SGTable.append('(%2d) %s'%(i+1,MT2text(Opr)))
     return SGText,SGTable
 
 def AllOps(SGData):
@@ -358,18 +360,20 @@ def AllOps(SGData):
                     while Tprime[i] >= 1:
                         Tprime[i] += -1
                         offset[i] += -1
-                OPtxt = MT2text(mult*M,Tprime)
+                Opr = [mult*M,Tprime]
+                OPtxt = MT2text(Opr)
                 SGTextList.append(OPtxt.replace(' ',''))
                 offsetList.append(tuple(offset))
                 symOpList.append((mult*M,Tprime))
                 G2oprList.append((cen,mult,j))
     return SGTextList,offsetList,symOpList,G2oprList
     
-def MT2text(M,T):
+def MT2text(Opr):
     "From space group matrix/translation operator returns text version"
     XYZ = ('-Z','-Y','-X','X-Y','ERR','Y-X','X','Y','Z')
     TRA = ('   ','ERR','1/6','1/4','1/3','ERR','1/2','ERR','2/3','3/4','5/6','ERR')
     Fld = ''
+    M,T = Opr
     for j in range(3):
         IJ = int(round(2*M[j][0]+3*M[j][1]+4*M[j][2]+4))%12
         IK = int(round(T[j]*12))%12
@@ -543,20 +547,25 @@ def SSpcGroup(SGData,SSymbol):
     def genSSGOps():
         SSGOps = SSGData['SSGOps']
         SSGKl = SGData['SSGKl']
+        print 'genQ',genQ
+        print 'SSGKl',SSGKl
         iFrac = {}
         for i,frac in enumerate(SSGData['modSymb']):
             if frac in ['1/2','1/3','1/4','1/6','1']:
                 iFrac[i] = frac
-# set identity & 1,-1
+# set identity & 1,-1; triclinic
         SSGOps[0][0][3,3] = 1.
 # monoclinic
         if SGData['SGPtGrp'] in ['2','m']:  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
+            SSGOps[1][1][3] = genQ[0]
             for i in iFrac:
                 if SGData['SGPtGrp'] == '2':
                     SSGOps[1][0][3,i] = 1
                 else:
                     SSGOps[1][0][3,i] = -1
+                if genQ:
+                    SSGOps[1][0][3,i] *= -1
         elif SGData['SGPtGrp'] == '2/m':    #OK
             SSGOps[1][0][3,3] = SSGKl[1]
             for i in iFrac:
@@ -567,17 +576,19 @@ def SSpcGroup(SGData,SSymbol):
             SSGOps[2][0][3,3] = SSGKl[1]
             SSGOps[3][0][3,3] = SSGKl[2]
 # tetragonal
-        elif SGData['SGPtGrp'] in ['4','-4',]:
+        elif SGData['SGPtGrp'] == '4':  #OK
+            SSGOps[1][0][3,3] = SSGKl[0]
+            SSGOps[1][1][3] = genQ[0]
+            if '1/2' in SSGData['modSymb']:
+                SSGOps[1][0][3,1] = -1
+        elif SGData['SGPtGrp'] == '-4': #OK
             SSGOps[1][0][3,3] = SSGKl[0]
             if '1/2' in SSGData['modSymb']:
-                if SGData['SGPtGrp'] == '-4':
-                    SSGOps[1][0][3,1] = 1
-                else:
-                    SSGOps[1][0][3,1] = -1
+                SSGOps[1][0][3,1] = 1
         elif SGData['SGPtGrp'] in ['4/m',]:
-            SSGOps[1][0][3,3] = SSGKl[1]
+            SSGOps[1][0][3,3] = -SSGKl[1]
+            SSGOps[1][1][3] = genQ[0]
             if '1/2' in SSGData['modSymb']:
-                SSGOps[1][0][3,3] *= -1
                 SSGOps[1][0][3,1] = -1
         elif SGData['SGPtGrp'] in ['422','4mm','-42m','-4m2',]:
             SSGOps[1][0][3,3] = SSGKl[1]
@@ -586,28 +597,50 @@ def SSpcGroup(SGData,SSymbol):
             if '1/2' in SSGData['modSymb']:
                 SSGOps[1][0][3,3] *= -1
                 SSGOps[1][0][3,1] = -1
+            SSGOps[2][0][3,3] = SSGKl[1]
+            SSGOps[3][0][3,3] = SSGKl[2]
+            SSGOps[4][0][3,3] = SSGKl[3]
 # trigonal
-        elif SGData['SGPtGrp'] in ['3','-3',]:
+        elif SGData['SGPtGrp'] == '3':
             SSGOps[1][0][3,3] = SSGKl[0]
-            if '1/2' in SSGData['modSymb']:
-                if SGData['SGPtGrp'] == '-6':
-                    SSGOps[1][0][3,1] = 1
-                else:
-                    SSGOps[1][0][3,1] = -1
+            SSGOps[1][1][3] = genQ[0]
+        elif SGData['SGPtGrp'] == '-3':
+            SSGOps[1][0][3,3] = -SSGKl[0]
         elif SGData['SGPtGrp'] in ['32','3m','-3m',]:
             SSGOps[1][0][3,3] = SSGKl[1]
         elif SGData['SGPtGrp'] in ['312','321','3m1','31m','-3m1','-31m',]:
-            pass
-# hexagonal
-        elif SGData['SGPtGrp'] in ['6','-6',]:
             SSGOps[1][0][3,3] = SSGKl[0]
-        elif SGData['SGPtGrp'] in ['6/m',]:
-            SSGOps[1][0][3,3] = SSGKl[1]
+# hexagonal
+        elif SGData['SGPtGrp'] == '6':  #OK
+            SSGOps[1][0][3,3] = SSGKl[0]
+            SSGOps[1][1][3] = genQ[0]
+        elif SGData['SGPtGrp'] == '-6': #OK
+            SSGOps[1][0][3,3] = SSGKl[0]
+        elif SGData['SGPtGrp'] in ['6/m',]: #OK
+            SSGOps[1][0][3,3] = -SSGKl[1]
+            SSGOps[1][1][3] = genQ[0]
+            SSGOps[2][1][3] = genQ[1]
         elif SGData['SGPtGrp'] in ['622','6mm','-62m','-62',]:
-            pass
+            SSGOps[1][0][3,3] = SSGKl[0]
+            SSGOps[2][0][3,3] = -SSGKl[1]
+            SSGOps[3][0][3,3] = -SSGKl[2]
         elif SGData['SGPtGrp'] in ['6/mmm',]:
-            pass
-            
+            SSGOps[1][0][3,3] = SSGKl[0]
+            if genQ[0]:
+                SSGOps[1][0][3,3] = -SSGKl[0]
+                SSGOps[1][1][3] = genQ[0]
+            SSGOps[3][0][3,3] = -SSGKl[1]
+            if genQ[1]:
+                SSGOps[3][0][3,3] = SSGKl[1]
+                SSGOps[3][1][3] = genQ[1]
+            SSGOps[10][0][3,3] = SSGKl[2]
+            if genQ[2]:
+                SSGOps[10][0][3,3] = -SSGKl[2]
+                SSGOps[10][1][3] = genQ[2]
+            SSGOps[11][0][3,3] = SSGKl[3]
+            if genQ[3]:
+                SSGOps[11][0][3,3] = -SSGKl[3]
+                SSGOps[11][1][3] = genQ[3]
         if SGData['SGInv']:
             SSGfull = SSGOps[:]
             for M,V in SSGOps:
@@ -623,18 +656,26 @@ def SSpcGroup(SGData,SSymbol):
                 OpC[1] %= 1.
                 for k in range(nOps):
                     OpD = SSGOps[k]
-                    if np.allclose(OpC[0],OpD[0]) and np.allclose(OpC[1],OpD[1]):
+                    if SSMT2text(OpC) == SSMT2text(OpD):
                         continue
                     elif np.allclose(OpC[0][:3,:3],OpD[0][:3,:3]):
-                        if np.allclose(OpD[0][3],np.zeros(4)):
+                        if np.any([np.allclose(OpC[0][3][:3],cen) for cen in SGData['SGCen']]):
+#                        if np.allclose(OpC[0][3],np.zeros(4)):
+                            continue
+                        elif np.allclose(OpD[0][3],np.zeros(4)):
                             SSGOps[k] = OpC
                         else:
+                            print 'OpC',SSMT2text(OpC),'OpD',SSMT2text(OpD)
                             return False,None
         return True,SSGOps
                     
-    def getTau(genQ):
-        print 'genQ',genQ
-        return genQ
+    def getTau():
+        if not genQ:
+            return [0,0,0,0]
+        newQ = genQ
+        if SGData['SGPtGrp'] in ['2/m']:  #OK            
+            newQ = [0.5,]
+        return newQ
         
     LaueModList = ['abg', 'ab0', 'ab1/2', 'a0g', 'a1/2g','0bg', '1/2bg',
                'a00', 'a01/2', 'a1/20', 'a1/21/2', 'a01', 'a10', 
@@ -655,7 +696,10 @@ def SSpcGroup(SGData,SSymbol):
         return 'Error in superspace symbol '+SSymbol,None
     if ''.join(gensym) not in GenSymList:
         return 'unknown generator symbol '+''.join(gensym),None
-    LaueModId = LaueModList.index(''.join(modsym))
+    try:
+        LaueModId = LaueModList.index(''.join(modsym))
+    except ValueError:
+        return 'Unknown modulation symbol '+''.join(modsym),None
     if not checkModSym():
         return 'Modulation '+''.join(modsym)+' not consistent with space group '+SGData['SpGrp'],None
     modQ = [Fracs[mod] for mod in modsym]
@@ -664,7 +708,7 @@ def SSpcGroup(SGData,SSymbol):
     genQ = [Fracs[mod] for mod in gensym]
     if len(gensym) and len(gensym) != len(SGData['SSGKl']):
         return 'Wrong number of items in generator symbol '+''.join(gensym),None
-    genQ = getTau(genQ)
+    genQ = getTau()
     SSGData = {'SSpGrp':SGData['SpGrp']+SSymbol,'modQ':modQ,'modSymb':modsym}
     SSCen = np.ones((len(SGData['SGCen']),4))*0.5
     for icen,cen in enumerate(SGData['SGCen']):
@@ -694,7 +738,7 @@ def SSGPrint(SGData,SSGData):
         SSGText - list of strings with the superspace group details
         SGTable - list of strings for each of the operations
     '''
-    Mult = len(SSGData['SSGCen'])*len(SSGData['SSGOps'])*(int(SGData['SGInv'])+1)
+    Mult = len(SSGData['SSGCen'])*len(SSGData['SSGOps'])
     SSGText = []
     SSGText.append(' Superspace Group: '+SSGData['SSpGrp'])
     CentStr = 'centrosymmetric'
@@ -706,7 +750,7 @@ def SSGPrint(SGData,SSGData):
         SSGText.append(' The superlattice is '+CentStr+' '+'primitive '+SGData['SGSys'].lower())        
     SSGText.append(' The Laue symmetry is '+SGData['SGLaue'])
     SSGText.append(' The superlattice point group is '+SGData['SGPtGrp']+','+''.join([str(i) for i in SGData['SSGKl']]))
-    SSGText.append(' The number of super space group generators is '+str(len(SGData['SSGKl'])))
+    SSGText.append(' The number of superspace group generators is '+str(len(SGData['SSGKl'])))
     SSGText.append(' Multiplicity of a general site is '+str(Mult))
     if SGData['SGUniq'] in ['a','b','c']:
         SSGText.append(' The unique monoclinic axis is '+SGData['SGUniq'])
@@ -714,14 +758,15 @@ def SSGPrint(SGData,SSGData):
         SSGText.append(' The inversion center is located at 0,0,0')
     if SGData['SGPolax']:
         SSGText.append(' The location of the origin is arbitrary in '+SGData['SGPolax'])
+    SSGText.append(' ')
     if len(SSGData['SSGCen']) > 1:
         SSGText.append(' The equivalent positions are:')
-        SSGText.append('\n ('+SSLatt2text(SSGData['SSGCen'])+')+\n')
+        SSGText.append(' ('+SSLatt2text(SSGData['SSGCen'])+')+\n')
     else:
         SSGText.append(' The equivalent positions are:\n')
     SSGTable = []
-    for i,[M,T] in enumerate(SSGData['SSGOps']):
-        SSGTable.append('(%2d) %s'%(i+1,SSMT2text(M,T)))
+    for i,Opr in enumerate(SSGData['SSGOps']):
+        SSGTable.append('(%2d) %s'%(i+1,SSMT2text(Opr)))
     return SSGText,SSGTable
     
 def SSGModCheck(Vec,SSGData):
@@ -733,11 +778,12 @@ def SSGModCheck(Vec,SSGData):
     Vec = [0.1 if (vec == 0.0 and mod in ['a','b','g']) else vec for [vec,mod] in zip(Vec,modSymb)]
     return [Q if mod not in ['a','b','g'] and vec != Q else vec for [vec,mod,Q] in zip(Vec,modSymb,modQ)]
 
-def SSMT2text(M,T):
+def SSMT2text(Opr):
     "From superspace group matrix/translation operator returns text version"
-    XYZS = ('X','Y','Z','S')
+    XYZS = ('x','y','z','t')    #Stokes, Campbell & van Smaalen notation
     TRA = ('   ','ERR','1/6','1/4','1/3','ERR','1/2','ERR','2/3','3/4','5/6','ERR')
     Fld = ''
+    M,T = Opr
     for j in range(4):
         IJ = ''
         for k in range(4):

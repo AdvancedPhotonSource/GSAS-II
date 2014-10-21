@@ -128,7 +128,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if generalData['Type'] =='macromolecular':
                 generalData['AtomPtrs'] = [6,4,10,12]
         if generalData['Type'] in ['modulated','magnetic',] and 'Super' not in generalData:
-            generalData['SuperSg'] = '(abg)'
             generalData['Super'] = 1
             generalData['SuperVec'] = [[[0,0,.1],False,4],[[0,0,.1],False,4],[[0.,0.,.1],False,4]]
             generalData['SSGData'] = {}
@@ -202,7 +201,21 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         PWDR = any(['PWDR' in item for item in data['Histograms'].keys()])
         # UpdateGeneral execution continues below
         
-        def NameSizer():                   
+        def NameSizer():   
+            
+            def SetDefaultSSsymbol():
+                if generalData['SGData']['SGLaue'] in '-1':
+                    return '(abg)'
+                elif generalData['SGData']['SGLaue'] in ['2/m']:
+                    if generalData['SGData']['SGUniq'] == 'a':
+                        return '(a00)'
+                    elif generalData['SGData']['SGUniq'] == 'b':
+                        return '(0b0)'
+                    elif generalData['SGData']['SGUniq'] == 'c':
+                        return '(00g)'
+                else:
+                    return '(00g)'
+                                
             def OnPhaseName(event):
                 oldName = generalData['Name']
                 generalData['Name'] = NameTxt.GetValue()
@@ -214,6 +227,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnPhaseType(event):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!
                     generalData['Type'] = TypeTxt.GetValue()
+                    if generalData['Type'] in ['modulated',]:
+                        generalData['SuperSg'] = SetDefaultSSsymbol()
                     wx.CallAfter(UpdateGeneral)
                 else:
                     G2frame.ErrorDialog('Phase type change error','Can change phase type only if there are no atoms')
@@ -233,12 +248,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     SGTxt.SetValue(generalData['SGData']['SpGrp'])
                     msg = 'Space Group Error'
                     Style = wx.ICON_EXCLAMATION
+                    Text = '\n'.join(text)
+                    wx.MessageBox(Text,caption=msg,style=Style)
                 else:
                     text,table = G2spc.SGPrint(SGData)
                     generalData['SGData'] = SGData
                     msg = 'Space Group Information'
-                    Style = wx.ICON_INFORMATION
-                G2gd.SGMessageBox(General,msg,text,table).Show()
+                    G2gd.SGMessageBox(General,msg,text,table).Show()
+                if generalData['Type'] in ['modulated',]:
+                    generalData['SuperSg'] = SetDefaultSSsymbol()
                 wx.CallAfter(UpdateGeneral)
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -512,21 +530,21 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnSuperGp(event):
                 SSymbol = superGp.GetValue()
                 E,SSGData = G2spc.SSpcGroup(generalData['SGData'],SSymbol)
-                if E:
-                    text = [E+'\nSuperspace Group set to previous']
-                    superGp.SetValue(generalData['SuperSg'])
-                    msg = 'Superspace Group Error'
-                    Style = wx.ICON_EXCLAMATION
-                else:
+                if SSGData:
                     Vec = generalData['SuperVec'][0][0]     #(3+1) only
-                    Vec = G2spc.SSGModCheck(Vec,SSGData)
-                    generalData['SuperVec'][0][0] = Vec
+                    generalData['SuperVec'][0][0] = G2spc.SSGModCheck(Vec,SSGData)
                     text,table = G2spc.SSGPrint(generalData['SGData'],SSGData)
                     generalData['SSGData'] = SSGData
                     generalData['SuperSg'] = SSymbol
                     msg = 'Superspace Group Information'
-                    Style = wx.ICON_INFORMATION
-                G2gd.SGMessageBox(General,msg,text,table).Show()
+                    G2gd.SGMessageBox(General,msg,text,table).Show()
+                else:
+                    text = [E+'\nSuperspace Group set to previous']
+                    superGp.SetValue(generalData['SuperSg'])
+                    msg = 'Superspace Group Error'
+                    Style = wx.ICON_EXCLAMATION
+                    Text = '\n'.join(text)
+                    wx.MessageBox(Text,caption=msg,style=Style)
                 wx.CallAfter(UpdateGeneral)                
             
             def OnDim(event):

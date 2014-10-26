@@ -87,6 +87,9 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                         begin = False
                 # valid line to read
                 vals = S.split()
+                if len(vals) < 2:
+                    print 'Line '+str(i+1)+' cannot be read:\n\t'+S
+                    continue
                 try:
                     x.append(float(vals[0]))
                     f = float(vals[1])
@@ -100,8 +103,14 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                         y.append(float(vals[1]))
                         w.append(1.0/float(vals[1]))
                 except ValueError:
+                    msg = 'Error parsing number in line '+str(i+1)
+                    print msg
+                    print S
+                    break
+                except:
                     msg = 'Error in line '+str(i+1)
                     print msg
+                    print S
                     break
             N = len(x)
             self.powderdata = [

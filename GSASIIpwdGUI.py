@@ -665,6 +665,7 @@ def UpdatePeakGrid(G2frame, data):
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([535,350])
+    G2frame.dataFrame.SendSizeEvent()
         
 ################################################################################
 #####  Background
@@ -1026,6 +1027,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     G2frame.dataDisplay.SetMargins(0,0)
     G2frame.dataDisplay.AutoSizeColumns(False)
     G2frame.dataFrame.setSizePosLeft([230,260])                                
+    G2frame.dataFrame.SendSizeEvent()
     
 ################################################################################
 #####  Instrument parameters
@@ -2125,6 +2127,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
     if len(XY):
         XY = np.array(XY)
         G2plt.PlotCalib(G2frame,Inst,XY,Sigs,newPlot=True)
+    G2frame.dataFrame.SendSizeEvent()
       
 ################################################################################
 #####  Unit cells

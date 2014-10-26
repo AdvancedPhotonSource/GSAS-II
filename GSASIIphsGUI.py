@@ -5463,7 +5463,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             # lookup the menu item that called us and get its text
             mid = menuBar.FindMenu('Select tab')
             menu = menuBar.GetMenu(mid)
-            tabname = menu.FindItemById(event.GetId()).Label
+            tabname = menu.FindItemById(event.GetId()).GetLabel()
             # find the matching tab
             for PageNum in range(G2frame.dataDisplay.GetPageCount()):
                 if tabname == G2frame.dataDisplay.GetPageText(PageNum):

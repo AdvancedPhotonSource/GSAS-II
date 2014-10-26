@@ -816,8 +816,9 @@ def UpdateBackground(G2frame,data):
             elif N < M:     #delete terms
                 for i in range(N,M):
                     del(data[1]['debyeTerms'][-1])
-            wx.CallAfter(UpdateBackground,G2frame,data)
-            
+            #wx.CallAfter(UpdateBackground,G2frame,data)
+            wx.CallLater(100,UpdateBackground,G2frame,data)
+
         def KeyEditPeakGrid(event):
             colList = debyeGrid.GetSelectedCols()
             if event.GetKeyCode() == wx.WXK_RETURN:
@@ -875,7 +876,8 @@ def UpdateBackground(G2frame,data):
             elif N < M:     #delete terms
                 for i in range(N,M):
                     del(data[1]['peaksList'][-1])
-            wx.CallAfter(UpdateBackground,G2frame,data)
+            #wx.CallAfter(UpdateBackground,G2frame,data)
+            wx.CallLater(100,UpdateBackground,G2frame,data)
             
         def KeyEditPeakGrid(event):
             colList = peaksGrid.GetSelectedCols()

@@ -640,13 +640,14 @@ def SSpcGroup(SGData,SSymbol):
                     SSGOps[j][1][3] = genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
         elif SGData['SGPtGrp'] in ['4/mmm',]:
-            SSGOps[1][0][3,3] = SSGKl[1]
-            if '1/2' in SSGData['modSymb']:
-                SSGOps[1][0][3,3] *= -1
-                SSGOps[1][0][3,1] = -1
-            SSGOps[2][0][3,3] = SSGKl[1]
-            SSGOps[3][0][3,3] = SSGKl[2]
-            SSGOps[4][0][3,3] = SSGKl[3]
+            for i,j in enumerate([1,10,6,7]):
+                SSGOps[j][0][3,3] = SSGKl[i]
+                if genQ[i]:
+                    SSGOps[j][1][3] = genQ[i]
+                for k in iFrac:
+                    print i,k,SSGKl[i],SSGOps[j][0]
+                    SSGOps[j][0][3,k] = SSGKl[i]
+                E,SSGOps = extendSSGOps(SSGOps)
 # trigonal
         elif SGData['SGPtGrp'] == '3':
             SSGOps[1][0][3,3] = SSGKl[0]
@@ -673,8 +674,8 @@ def SSpcGroup(SGData,SSymbol):
                 if genQ[i]:
                     SSGOps[j][1][3] = genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
-        elif SGData['SGPtGrp'] in ['6/mmm',]: #not OK
-            for i,j in enumerate([1,15,19,11]):
+        elif SGData['SGPtGrp'] in ['6/mmm',]: #OK
+            for i,j in enumerate([1,15,10,11]):
                 SSGOps[j][0][3,3] = SSGKl[i]
                 if genQ[i]:
                     SSGOps[j][1][3] = genQ[i]
@@ -686,8 +687,18 @@ def SSpcGroup(SGData,SSymbol):
         
     def specialGen(gensym):
         sym = ''.join(gensym)
+        if SGData['SGPtGrp'] in ['2/m',] and 'n' in SGData['SpGrp']:
+            if 's' in sym:
+                gensym = 'ss'
         if SGData['SGPtGrp'] in ['-62m',] and sym == '00s':
             gensym = '0ss'
+        elif SGData['SGPtGrp'] in ['222',]:
+            if sym == '00s':
+                gensym = '0ss'
+            elif sym == '0s0':
+                gensym = 'ss0'
+            elif sym == 's00':
+                gensym = 's0s'
         return gensym
                     
     def checkGen(gensym):
@@ -788,9 +799,9 @@ def SSpcGroup(SGData,SSymbol):
         SSGKl = fixMonoOrtho()
     if len(gensym) and len(gensym) != len(SSGKl):
         return 'Wrong number of items in generator symbol '+''.join(gensym),None
-    gensym = specialGen(gensym)
     if not checkGen(gensym):
         return 'Generator '+''.join(gensym)+' not consistent with space group '+SGData['SpGrp'],None
+    gensym = specialGen(gensym)
     genQ = [Fracs[mod] for mod in gensym]
     if not genQ:
         genQ = [0,0,0,0]
@@ -798,6 +809,7 @@ def SSpcGroup(SGData,SSymbol):
     SSCen = np.ones((len(SGData['SGCen']),4))*0.5
     for icen,cen in enumerate(SGData['SGCen']):
         SSCen[icen,0:3] = cen
+    SSCen[0] = np.zeros(4)
     SSGData['SSGCen'] = SSCen
     SSGData['SSGOps'] = []
     for iop,op in enumerate(SGData['SGOps']):
@@ -874,6 +886,8 @@ def SSMT2text(Opr):
         for k in range(4):
             txt = str(int(round(M[j][k])))
             txt = txt.replace('1',XYZS[k]).replace('0','')
+            if '2' in txt:
+                txt += XYZS[k]
             if IJ and M[j][k] > 0:
                 IJ += '+'+txt
             else:

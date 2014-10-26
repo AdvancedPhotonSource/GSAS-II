@@ -5455,23 +5455,29 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         event.Skip()
 
     def FillSelectPageMenu(menuBar):
-        '''Assign bindings to the menu buttons to switch between phase tabs;
-        define a dictionary with the page index for each tab
+        '''Fill "Select tab" menu with menu items for each tab and assign
+        bindings to the menu ietm to switch between phase tabs
         '''
         def OnSelectPage(event):
             'Called when an item is selected from the Select page menu'
-            page = Pagedict.get(event.GetId())
-            if page is not None: G2frame.dataDisplay.SetSelection(page)
+            # lookup the menu item that called us and get its text
+            mid = menuBar.FindMenu('Select tab')
+            menu = menuBar.GetMenu(mid)
+            tabname = menu.FindItemById(event.GetId()).Label
+            # find the matching tab
+            for PageNum in range(G2frame.dataDisplay.GetPageCount()):
+                if tabname == G2frame.dataDisplay.GetPageText(PageNum):
+                    G2frame.dataDisplay.SetSelection(PageNum)
+                    return
+            else:
+                print "Warning: tab "+tabname+" was not found"
         mid = menuBar.FindMenu('Select tab')
-        Pagedict = {}
         for ipage,page in enumerate(Pages):
             menu = menuBar.GetMenu(mid)
             if menu.FindItem(page) < 0:
                 Id = wx.NewId()
                 menu.Append(id=Id,kind=wx.ITEM_NORMAL,text=page)
                 G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=Id)
-                Pagedict[Id] = ipage
-
         
     def OnPageChanged(event):
         '''This is called every time that a Notebook tab button is pressed

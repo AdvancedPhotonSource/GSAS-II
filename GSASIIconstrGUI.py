@@ -1081,6 +1081,7 @@ def UpdateRigidBodies(G2frame,data):
         return macro        #advanced past 1st line
         
     def getTextFile():
+        print 'getTextfile'
         defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
         dlg = wx.FileDialog(G2frame,'Choose rigid body text file', '.', '',
             "GSAS-II text file (*.txt)|*.txt|XYZ file (*.xyz)|*.xyz|"
@@ -1827,9 +1828,9 @@ def UpdateRigidBodies(G2frame,data):
 
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRigidBody, id=G2gd.wxID_RIGIDBODYADD)
-    # no menu items yet    
-    #G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)
-    #G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ)
+    # no menu items yet
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ)
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
 
     VectorRB = wx.ScrolledWindow(G2frame.dataDisplay)

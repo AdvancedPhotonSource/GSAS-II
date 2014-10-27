@@ -1050,13 +1050,15 @@ def UpdateRigidBodies(G2frame,data):
         oldPage = G2frame.dataDisplay.ChangeSelection(page)
         text = G2frame.dataDisplay.GetPageText(page)
         if text == 'Vector rigid bodies':
-            G2frame.dataFrame.RigidBodyMenu.Remove(0)   #NB: wx.MenuBar.Replace gives error
-            G2frame.dataFrame.RigidBodyMenu.Insert(0,G2frame.dataFrame.VectorRBEdit,title='Edit')
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.VectorBodyMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, AddVectorRB, id=G2gd.wxID_VECTORBODYADD)
             G2frame.Page = [page,'vrb']
             UpdateVectorRB()
         elif text == 'Residue rigid bodies':
-            G2frame.dataFrame.RigidBodyMenu.Remove(0)
-            G2frame.dataFrame.RigidBodyMenu.Insert(0,G2frame.dataFrame.ResidueRBMenu,title='Edit')
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, AddResidueRB, id=G2gd.wxID_RIGIDBODYADD)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ)
             G2frame.Page = [page,'rrb']
             UpdateResidueRB()
             
@@ -1081,7 +1083,6 @@ def UpdateRigidBodies(G2frame,data):
         return macro        #advanced past 1st line
         
     def getTextFile():
-        print 'getTextfile'
         defDir = os.path.join(os.path.split(__file__)[0],'GSASIImacros')
         dlg = wx.FileDialog(G2frame,'Choose rigid body text file', '.', '',
             "GSAS-II text file (*.txt)|*.txt|XYZ file (*.xyz)|*.xyz|"
@@ -1101,13 +1102,6 @@ def UpdateRigidBodies(G2frame,data):
             ext = '.pdb'
         return text,ext.lower()
         
-    def OnAddRigidBody(event):
-        page = G2frame.dataDisplay.GetSelection()
-        if 'Vector' in G2frame.dataDisplay.GetPageText(page):
-            AddVectorRB()
-        elif 'Residue' in G2frame.dataDisplay.GetPageText(page):
-            AddResidueRB()
-            
     def OnImportRigidBody(event):
         page = G2frame.dataDisplay.GetSelection()
         if 'Vector' in G2frame.dataDisplay.GetPageText(page):
@@ -1115,7 +1109,7 @@ def UpdateRigidBodies(G2frame,data):
         elif 'Residue' in G2frame.dataDisplay.GetPageText(page):
             ImportResidueRB()
             
-    def AddVectorRB():
+    def AddVectorRB(event):
         AtInfo = data['Vector']['AtInfo']
         dlg = MultiIntegerDialog(G2frame.dataDisplay,'New Rigid Body',['No. atoms','No. translations'],[1,1])
         if dlg.ShowModal() == wx.ID_OK:
@@ -1134,7 +1128,7 @@ def UpdateRigidBodies(G2frame,data):
         dlg.Destroy()
         UpdateVectorRB()
         
-    def AddResidueRB():
+    def AddResidueRB(event):
         AtInfo = data['Residue']['AtInfo']
         macro = getMacroFile('rigid body')
         if not macro:
@@ -1826,11 +1820,6 @@ def UpdateRigidBodies(G2frame,data):
         Status = G2frame.dataFrame.CreateStatusBar()
     SetStatusLine('')
 
-    G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRigidBody, id=G2gd.wxID_RIGIDBODYADD)
-    # no menu items yet
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ)
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
 
     VectorRB = wx.ScrolledWindow(G2frame.dataDisplay)
@@ -1839,4 +1828,4 @@ def UpdateRigidBodies(G2frame,data):
     G2frame.dataDisplay.AddPage(ResidueRB,'Residue rigid bodies')
     UpdateVectorRB()
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
-    
+    OnPageChanged(None)

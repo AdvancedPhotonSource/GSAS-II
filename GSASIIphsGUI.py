@@ -58,6 +58,7 @@ BLACK = wx.Colour(0,0,0)
 WACV = wx.ALIGN_CENTER_VERTICAL
 mapDefault = {'MapType':'','RefList':'','Resolution':0.5,'Show bonds':True,
                 'rho':[],'rhoMax':0.,'mapSize':10.0,'cutOff':50.,'Flip':False}
+TabSelectionIdDict = {}
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
 tand = lambda x: np.tan(x*np.pi/180.)
@@ -5454,16 +5455,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         print 'clear texture?'
         event.Skip()
 
-    def FillSelectPageMenu(menuBar):
+    def FillSelectPageMenu(TabSelectionIdDict, menuBar):
         '''Fill "Select tab" menu with menu items for each tab and assign
         bindings to the menu ietm to switch between phase tabs
         '''
         def OnSelectPage(event):
             'Called when an item is selected from the Select page menu'
             # lookup the menu item that called us and get its text
-            mid = menuBar.FindMenu('Select tab')
-            menu = menuBar.GetMenu(mid)
-            tabname = menu.FindItemById(event.GetId()).GetLabel()
+            tabname = TabSelectionIdDict.get(event.GetId())
+            if not tabname:
+                print 'Warning: menu item not in dict! id=',event.GetId()
+                return                
             # find the matching tab
             for PageNum in range(G2frame.dataDisplay.GetPageCount()):
                 if tabname == G2frame.dataDisplay.GetPageText(PageNum):
@@ -5472,10 +5474,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             else:
                 print "Warning: tab "+tabname+" was not found"
         mid = menuBar.FindMenu('Select tab')
+        menu = menuBar.GetMenu(mid)
         for ipage,page in enumerate(Pages):
-            menu = menuBar.GetMenu(mid)
-            if menu.FindItem(page) < 0:
+            if menu.FindItem(page) < 0: # is tab already in menu?
                 Id = wx.NewId()
+                TabSelectionIdDict[Id] = page
                 menu.Append(id=Id,kind=wx.ITEM_NORMAL,text=page)
                 G2frame.Bind(wx.EVT_MENU, OnSelectPage, id=Id)
         
@@ -5490,131 +5493,144 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         ChangePage(page)
         
     def ChangePage(page):
-        # development: Log Tab Selection
-        #G2gd.LogTabPress(G2frame,page)
         text = G2frame.dataDisplay.GetPageText(page)
-#        print 'Select',page,text
         if text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
-            FillSelectPageMenu(G2frame.dataFrame.DataGeneral)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2gd.wxID_SINGLEMCSA)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2gd.wxID_MULTIMCSA)
             UpdateGeneral()
         elif text == 'Data':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataMenu)
-            FillSelectPageMenu(G2frame.dataFrame.DataMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
             G2ddG.UpdateDData(G2frame,DData,data)
             G2plt.PlotSizeStrainPO(G2frame,data,Start=True)            
         elif text == 'Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
-            FillSelectPageMenu(G2frame.dataFrame.AtomsMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2gd.wxID_ATOMSVIEWADD)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2gd.wxID_ATOMVIEWINSERT)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomMove, id=G2gd.wxID_ATOMMOVE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2gd.wxID_ATOMSPDISAGL)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2gd.wxID_ISODISP)
-            for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
-                G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)                
             FillAtomsGrid(Atoms)
         elif text == 'Wave Data' and data['General']['Type'] in ['modulated','magnetic']:
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.WavesData)
-            FillSelectPageMenu(G2frame.dataFrame.WavesData)
             UpdateWavesData()
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Draw Options':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataDrawOptions)
-            FillSelectPageMenu(G2frame.dataFrame.DataDrawOptions)
             UpdateDrawOptions()
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Draw Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DrawAtomsMenu)
-            FillSelectPageMenu(G2frame.dataFrame.DrawAtomsMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomStyle, id=G2gd.wxID_DRAWATOMSTYLE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2gd.wxID_DRAWATOMLABEL)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2gd.wxID_DRAWATOMCOLOR)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, ResetAtomColors, id=G2gd.wxID_DRAWATOMRESETCOLOR)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, SetViewPoint, id=G2gd.wxID_DRAWVIEWPOINT)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2gd.wxID_DRAWADDEQUIV)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2gd.wxID_DRAWTRANSFORM)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2gd.wxID_DRAWFILLCOORD)            
-            G2frame.dataFrame.Bind(wx.EVT_MENU, FillUnitCell, id=G2gd.wxID_DRAWFILLCELL)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDistVP, id=G2gd.wxID_DRAWDISTVP)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDAT, id=G2gd.wxID_DRAWDISAGLTOR)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2gd.wxID_DRAWPLANE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRBOND)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRANGLE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRPLANE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRCHIRAL)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineRB, id=G2gd.wxID_DRAWDEFINERB)
             UpdateDrawAtoms()
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'RB Models':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodiesMenu)
-            FillSelectPageMenu(G2frame.dataFrame.RigidBodiesMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoFindResRB, id=G2gd.wxID_AUTOFINDRESRB)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBAssign, id=G2gd.wxID_ASSIGNATMS2RB)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBCopyParms, id=G2gd.wxID_COPYRBPARMS)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnGlobalResRBTherm, id=G2gd.wxID_GLOBALTHERM)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnGlobalResRBRef, id=G2gd.wxID_GLOBALRESREFINE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBRemoveAll, id=G2gd.wxID_RBREMOVEALL)
             FillRigidBodyGrid()
         elif text == 'Map peaks':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MapPeaksMenu)
-            FillSelectPageMenu(G2frame.dataFrame.MapPeaksMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksViewPoint, id=G2gd.wxID_PEAKSVIEWPT)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDistVP, id=G2gd.wxID_PEAKSDISTVP)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2gd.wxID_PEAKSDA)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnShowBonds, id=G2gd.wxID_SHOWBONDS)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksEquiv, id=G2gd.wxID_FINDEQVPEAKS)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
             FillMapPeaksGrid()
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'MC/SA':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MCSAMenu)
-            FillSelectPageMenu(G2frame.dataFrame.MCSAMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2gd.wxID_ADDMCSAATOM)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddRB, id=G2gd.wxID_ADDMCSARB)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAclear, id=G2gd.wxID_CLEARMCSARB)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAmove, id=G2gd.wxID_MOVEMCSA)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnClearResults, id=G2gd.wxID_MCSACLEARRESULTS)
             UpdateMCSA()                        
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
         elif text == 'Texture':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.TextureMenu)
-            FillSelectPageMenu(G2frame.dataFrame.TextureMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
             UpdateTexture()                        
             G2plt.PlotTexture(G2frame,data,Start=True)            
         elif text == 'Pawley reflections':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PawleyMenu)
-            FillSelectPageMenu(G2frame.dataFrame.PawleyMenu)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)
             FillPawleyReflectionsGrid()
         else:
             G2gd.SetDataMenuBar(G2frame)
-
+    def FillMenus():
+        '''Create the Select tab menus and bind to all menu items
+        '''
+        print 'FillMenus'
+        # General
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataGeneral)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2gd.wxID_SINGLEMCSA)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2gd.wxID_MULTIMCSA)
+        # Data
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
+        # Atoms
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.AtomsMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomAdd, id=G2gd.wxID_ATOMSEDITADD)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2gd.wxID_ATOMSVIEWADD)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2gd.wxID_ATOMVIEWINSERT)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomMove, id=G2gd.wxID_ATOMMOVE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2gd.wxID_ATOMSPDISAGL)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2gd.wxID_ISODISP)
+        for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)                
+        # Wave Data
+        if data['General']['Type'] in ['modulated','magnetic']:
+            FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.WavesData)
+        # Draw Options
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataDrawOptions)
+        # Draw Atoms
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DrawAtomsMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomStyle, id=G2gd.wxID_DRAWATOMSTYLE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomLabel, id=G2gd.wxID_DRAWATOMLABEL)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomColor, id=G2gd.wxID_DRAWATOMCOLOR)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, ResetAtomColors, id=G2gd.wxID_DRAWATOMRESETCOLOR)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, SetViewPoint, id=G2gd.wxID_DRAWVIEWPOINT)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2gd.wxID_DRAWADDEQUIV)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2gd.wxID_DRAWTRANSFORM)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2gd.wxID_DRAWFILLCOORD)            
+        G2frame.dataFrame.Bind(wx.EVT_MENU, FillUnitCell, id=G2gd.wxID_DRAWFILLCELL)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, DrawAtomsDelete, id=G2gd.wxID_DRAWDELETE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDistVP, id=G2gd.wxID_DRAWDISTVP)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawDAT, id=G2gd.wxID_DRAWDISAGLTOR)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDrawPlane, id=G2gd.wxID_DRAWPLANE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRBOND)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRANGLE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRPLANE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRestraint, id=G2gd.wxID_DRAWRESTRCHIRAL)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineRB, id=G2gd.wxID_DRAWDEFINERB)
+        # RB Models
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.RigidBodiesMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoFindResRB, id=G2gd.wxID_AUTOFINDRESRB)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBAssign, id=G2gd.wxID_ASSIGNATMS2RB)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBCopyParms, id=G2gd.wxID_COPYRBPARMS)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnGlobalResRBTherm, id=G2gd.wxID_GLOBALTHERM)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnGlobalResRBRef, id=G2gd.wxID_GLOBALRESREFINE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnRBRemoveAll, id=G2gd.wxID_RBREMOVEALL)
+        # Map peaks
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.MapPeaksMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksMove, id=G2gd.wxID_PEAKSMOVE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksViewPoint, id=G2gd.wxID_PEAKSVIEWPT)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDistVP, id=G2gd.wxID_PEAKSDISTVP)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDA, id=G2gd.wxID_PEAKSDA)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnShowBonds, id=G2gd.wxID_SHOWBONDS)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksEquiv, id=G2gd.wxID_FINDEQVPEAKS)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksUnique, id=G2gd.wxID_PEAKSUNIQUE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksDelete, id=G2gd.wxID_PEAKSDELETE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPeaksClear, id=G2gd.wxID_PEAKSCLEAR)
+        # MC/SA
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.MCSAMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddAtom, id=G2gd.wxID_ADDMCSAATOM)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAaddRB, id=G2gd.wxID_ADDMCSARB)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAclear, id=G2gd.wxID_CLEARMCSARB)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnMCSAmove, id=G2gd.wxID_MOVEMCSA)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnClearResults, id=G2gd.wxID_MCSACLEARRESULTS)
+        # Texture
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.TextureMenu)
+        #G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
+        # Pawley reflections
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.PawleyMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyEstimate, id=G2gd.wxID_PAWLEYESTIMATE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyUpdate, id=G2gd.wxID_PAWLEYUPDATE)
+        
     # UpdatePhaseData execution starts here
 #patch
     if 'RBModels' not in data:
@@ -5679,6 +5695,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     Pages.append('Pawley reflections')
     G2frame.dataFrame.AtomCompute.ISOcalc.Enable('ISODISTORT' in data)
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
+    FillMenus()
     if oldPage is None or oldPage == 0:
         ChangePage(0)
     elif oldPage:

@@ -133,8 +133,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_RIGIDBODYADD,wxID_DRAWDEFINERB,wxID_RIGIDBODYIMPORT,wxID_RESIDUETORSSEQ,
     wxID_AUTOFINDRESRB,wxID_GLOBALRESREFINE,wxID_RBREMOVEALL,wxID_COPYRBPARMS,
-    wxID_GLOBALTHERM,
-] = [wx.NewId() for item in range(9)]
+    wxID_GLOBALTHERM,wxID_VECTORBODYADD
+] = [wx.NewId() for item in range(10)]
 
 [ wxID_RENAMESEQSEL,wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_PLOTSEQSEL,
   wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,wxCOPYPARFIT,
@@ -3122,6 +3122,7 @@ class DataFrame(wx.Frame):
             help='Add constraint on parameter values')
         self.ConstraintEdit.Append(id=wxID_FUNCTADD, kind=wx.ITEM_NORMAL,text='Add New Var',
             help='Add variable composed of existing parameter')
+        self.PostfillDataMenu()
 
         # item = self.ConstraintEdit.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Update GUI')
         # def UpdateGSASIIconstrGUI(event):
@@ -3131,12 +3132,9 @@ class DataFrame(wx.Frame):
         #     reload(GSASIIobj)
         # self.Bind(wx.EVT_MENU,UpdateGSASIIconstrGUI,id=item.GetId())
 
-        self.PostfillDataMenu()
-        
         # Rigid bodies
-        self.VectorRBEdit = wx.Menu(title='')
-        self.VectorRBEdit.Append(id=wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Add rigid body',
-            help='Add vector rigid body')
+        self.RigidBodyMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.RigidBodyMenu,helpType='Rigid bodies')
         self.ResidueRBMenu = wx.Menu(title='')
         self.ResidueRBMenu.Append(id=wxID_RIGIDBODYIMPORT, kind=wx.ITEM_NORMAL,text='Import XYZ',
             help='Import rigid body XYZ from file')
@@ -3144,12 +3142,18 @@ class DataFrame(wx.Frame):
             help='Define torsion sequence')
         self.ResidueRBMenu.Append(id=wxID_RIGIDBODYADD, kind=wx.ITEM_NORMAL,text='Import residues',
             help='Import residue rigid bodies from macro file')
-            
-        self.RigidBodyMenu = wx.MenuBar()
-        self.PrefillDataMenu(self.RigidBodyMenu,helpType='Rigid bodies')
-        self.RigidBodyMenu.Append(menu=self.VectorRBEdit, title='Edit')        
+        self.RigidBodyMenu.Append(menu=self.ResidueRBMenu, title='Edit Body')
         self.PostfillDataMenu()
-            
+
+        self.VectorBodyMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.VectorBodyMenu,helpType='Vector rigid bodies')
+        self.VectorRBEdit = wx.Menu(title='')
+        self.VectorRBEdit.Append(id=wxID_VECTORBODYADD, kind=wx.ITEM_NORMAL,text='Add rigid body',
+            help='Add vector rigid body')
+        self.VectorBodyMenu.Append(menu=self.VectorRBEdit, title='Edit Vector Body')
+        self.PostfillDataMenu()
+
+                    
         # Restraints
         self.RestraintTab = wx.Menu(title='')
         self.RestraintEdit = wx.Menu(title='')
@@ -3695,6 +3699,7 @@ class DataFrame(wx.Frame):
         self.TextureMenu.Append(menu=self.TextureEdit, title='Texture')
 #        self.TextureEdit.Append(id=wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
 #            help='Refine the texture coefficients from sequential Pawley results')
+# N.B. Binding is now commented out
         self.TextureEdit.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
             help='Clear the texture coefficients' )
         self.PostfillDataMenu()

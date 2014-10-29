@@ -230,6 +230,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     generalData['Type'] = TypeTxt.GetValue()
                     if generalData['Type'] in ['modulated',]:
                         generalData['SuperSg'] = SetDefaultSSsymbol()
+                        generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
                     wx.CallAfter(UpdateGeneral)
                 else:
                     G2frame.ErrorDialog('Phase type change error','Can change phase type only if there are no atoms')
@@ -258,6 +259,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     G2gd.SGMessageBox(General,msg,text,table).Show()
                 if generalData['Type'] in ['modulated',]:
                     generalData['SuperSg'] = SetDefaultSSsymbol()
+                    generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
                 wx.CallAfter(UpdateGeneral)
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -588,8 +590,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dim.Bind(wx.EVT_COMBOBOX,OnDim)
             dimSizer.Add(dim,0,WACV)
             dimSizer.Add(wx.StaticText(General,label=' Superspace group: '+generalData['SGData']['SpGrp']),0,WACV)
-            superGp = wx.TextCtrl(General,value=generalData['SuperSg'],style=wx.TE_PROCESS_ENTER)
-            superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)        
+            SSChoice = G2spc.ssdict.get(generalData['SGData']['SpGrp'],[])
+            if SSChoice:
+                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=SSChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)
+            else:   #nonstandard space group symbol not in my dictionary
+                superGp = wx.TextCtrl(General,value=generalData['SuperSg'],style=wx.TE_PROCESS_ENTER)
+                superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)                        
             dimSizer.Add(superGp,0,WACV)
             modSizer.Add(dimSizer)
             vecSizer = wx.FlexGridSizer(1,5,5,5)

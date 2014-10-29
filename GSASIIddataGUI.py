@@ -899,16 +899,16 @@ def UpdateDData(G2frame,DData,data):
         if item[:4] == 'PWDR' and UseList[item]['Show']:
             if UseList[item]['Size'][0] == 'isotropic':
                 isoSizer = wx.BoxSizer(wx.HORIZONTAL)
-                isoSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
+                isoSizer.Add(TopSizer(' Domain size model: ',['isotropic','uniaxial','ellipsoidal'],
                     'Size',OnSizeType),0,WACV)
                 isoSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
                 isoSizer.Add(ResetSizer('isotropic',OnResetSize),0,WACV)
                 mainSizer.Add(isoSizer)
-                mainSizer.Add(IsoSizer(u' Cryst. size(\xb5m): ','Size','%.5f',
+                mainSizer.Add(IsoSizer(u'size(\xb5m): ','Size','%.5f',
                     OnSizeVal,OnSizeRef),0,WACV)
             elif UseList[item]['Size'][0] == 'uniaxial':
                 uniSizer = wx.BoxSizer(wx.HORIZONTAL)
-                uniSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
+                uniSizer.Add(TopSizer(' Domain size model: ',['isotropic','uniaxial','ellipsoidal'],
                     'Size',OnSizeType),0,WACV)
                 uniSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
                 uniSizer.Add(ResetSizer('uniaxial',OnResetSize),0,WACV)
@@ -917,7 +917,7 @@ def UpdateDData(G2frame,DData,data):
                 mainSizer.Add(UniDataSizer(u'size(\xb5m): ','Size','%.5f',OnSizeVal,OnSizeRef))
             elif UseList[item]['Size'][0] == 'ellipsoidal':
                 ellSizer = wx.BoxSizer(wx.HORIZONTAL)
-                ellSizer.Add(TopSizer(' Size model: ',['isotropic','uniaxial','ellipsoidal'],
+                ellSizer.Add(TopSizer(' Domain size model: ',['isotropic','uniaxial','ellipsoidal'],
                     'Size',OnSizeType),0,WACV)
                 ellSizer.Add(LGmixSizer('Size',OnLGmixVal,OnLGmixRef))
                 ellSizer.Add(ResetSizer('ellipsoidal',OnResetSize),0,WACV)

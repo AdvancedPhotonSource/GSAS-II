@@ -2523,7 +2523,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     littleSizer = wx.FlexGridSizer(0,5,5,5)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max Nc/Nobs '),0,WACV)
     NcNo = wx.SpinCtrl(G2frame.dataDisplay)
-    NcNo.SetRange(1,6)
+    NcNo.SetRange(2,6)
     NcNo.SetValue(controls[2])
     NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
     littleSizer.Add(NcNo,0,WACV)
@@ -2574,6 +2574,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     hklShow = wx.Button(G2frame.dataDisplay,label="Show hkl positions")
     hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
     littleSizer.Add(hklShow,0,WACV)
+    #Add super lattice option here
     mainSizer.Add(littleSizer,0)
     
     mainSizer.Add((5,5),0)
@@ -2606,6 +2607,9 @@ def UpdateUnitCellsGrid(G2frame, data):
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,WACV)
     mainSizer.Add(littleSizer,0)
+    #if super lattice add super lattice choice based on space group & modulation values
+    #based on super lattice choice - do refl gen following these choices as above
+    #then make new phase will make modulated one with these choices
         
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)

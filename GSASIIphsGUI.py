@@ -237,14 +237,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     TypeTxt.SetValue(generalData['Type'])                
                 
             def OnSpaceGroup(event):
-                SpcGp = SGTxt.GetValue()
-                SGErr,SGData = G2spc.SpcGroup(SpcGp)
+                Flds = SGTxt.GetValue().split()
+                #get rid of extra spaces between fields first
+                for fld in Flds: fld = fld.strip()
+                SpcGp = ' '.join(Flds)
                 # try a lookup on the user-supplied name
-                if SGErr:
-                    SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
-                    if SpGrpNorm:
-                        E,SGData = G2spc.SpcGroup(SpGrpNorm)
-                        if not E: SGErr = False
+                SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
+                if SpGrpNorm:
+                    SGErr,SGData = G2spc.SpcGroup(SpGrpNorm)
+                else:
+                    SGErr,SGData = G2spc.SpcGroup(SpcGp)
                 if SGErr:
                     text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
                     SGTxt.SetValue(generalData['SGData']['SpGrp'])
@@ -255,6 +257,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 else:
                     text,table = G2spc.SGPrint(SGData)
                     generalData['SGData'] = SGData
+                    SGTxt.SetValue(generalData['SGData']['SpGrp'])
                     msg = 'Space Group Information'
                     G2gd.SGMessageBox(General,msg,text,table).Show()
                 if generalData['Type'] in ['modulated',]:
@@ -535,7 +538,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 E,SSGData = G2spc.SSpcGroup(generalData['SGData'],SSymbol)
                 if SSGData:
                     Vec = generalData['SuperVec'][0][0]     #(3+1) only
-                    generalData['SuperVec'][0][0] = G2spc.SSGModCheck(Vec,SSGData)
+                    modSymb = SSGData['modSymb']
+                    generalData['SuperVec'][0][0] = G2spc.SSGModCheck(Vec,modSymb)[0]
                     text,table = G2spc.SSGPrint(generalData['SGData'],SSGData)
                     generalData['SSGData'] = SSGData
                     generalData['SuperSg'] = SSymbol
@@ -600,10 +604,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dimSizer.Add(superGp,0,WACV)
             modSizer.Add(dimSizer)
             vecSizer = wx.FlexGridSizer(1,5,5,5)
-            indChoice = ['0','1','2','3','4','5','6','7']
+            indChoice = ['1','2','3','4','5','6','7']
             for i in range(int(generalData['Super'])):
                 vecSizer.Add(wx.StaticText(General,label=' Modulation vector #%d: '%(i+1)),0,WACV)
-                vec = generalData['SuperVec'][i][0]
+                vec = generalData['SuperVec'][i][0] #these need to conform to the fixed modulations, e.g. 1/2 1/2 g
                 Vec = wx.TextCtrl(General,size=wx.Size(120,24),
                     value=' %.3f %.3f %.3f '%(vec[0],vec[1],vec[2]),
                     style=wx.TE_PROCESS_ENTER)
@@ -619,8 +623,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 vecSizer.Add(wx.StaticText(General,label=' max index: '),0,WACV)
                 Max = wx.ComboBox(General,-1,value='%d'%(generalData['SuperVec'][i][2]),choices=indChoice,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                Max.Bind(wx.EVT_TEXT_ENTER,OnMax)        
-                Max.Bind(wx.EVT_KILL_FOCUS,OnMax)
+                Max.Bind(wx.EVT_COMBOBOX,OnMax)        
                 vecSizer.Add(Max,0,WACV)
                 Indx[Max.GetId()] = i
             modSizer.Add(vecSizer)

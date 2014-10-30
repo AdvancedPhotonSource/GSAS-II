@@ -352,7 +352,7 @@ def UpdatePeakGrid(G2frame, data):
         for item in copyList:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
             G2frame.PatternTree.SetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,Id,'Peak List'),copy.copy(data))
+                G2gd.GetPatternTreeItemId(G2frame,Id,'Peak List'),copy.deepcopy(data))
     
     def OnUnDo(event):
         DoUnDo()
@@ -406,7 +406,7 @@ def UpdatePeakGrid(G2frame, data):
             for sel in dlg.GetSelections():
                 names.append(histList[sel])
         dlg.Destroy()
-        SeqResult = {'histNames':names}
+        SeqResult = {}
         Reverse = False
         CopyForward = False
         choice = ['Reverse sequence','Copy from prev.',]
@@ -427,6 +427,7 @@ def UpdatePeakGrid(G2frame, data):
         oneCycle = False
         FitPgm = 'LSQ'
         prevVaryList = []
+        Names = []
         if Reverse:
             names.reverse()
         try:
@@ -437,7 +438,7 @@ def UpdatePeakGrid(G2frame, data):
                     break
                 PatternId =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                 if i and CopyForward:
-                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.copy(peaks))
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.deepcopy(peaks))
                     prevVaryList = varyList[:]
                 peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
                 background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
@@ -454,16 +455,21 @@ def UpdatePeakGrid(G2frame, data):
                     peaks['sigDict'],result,sig,Rvals,varyList,parmDict,fullvaryList,badVary = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
                         background,limits,inst,inst2,data,prevVaryList,oneCycle,controls,dlg2)
                 finally:
-                    dlg2.Destroy()    
-                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.copy(peaks))
-                SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
-                    'covMatrix':np.eye(len(result[0])),'title':name,'parmDict':parmDict,
-                    'fullVary':fullvaryList,'badVary':badVary}
-            else:
-                dlg.Destroy()
-                print ' ***** Sequential peak fit successful *****'
+                    dlg2.Destroy()
+                if len(result[0]) != len(fullvaryList):
+                    print ' ***** Sequential peak fit stopped at '+name+' *****'
+                    break
+                else:
+                    Names.append(name)    
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'),copy.deepcopy(peaks))
+                    SeqResult[name] = {'variables':result[0],'varyList':varyList,'sig':sig,'Rvals':Rvals,
+                        'covMatrix':np.eye(len(result[0])),'title':name,'parmDict':parmDict,
+                        'fullVary':fullvaryList,'badVary':badVary}
+            dlg.Destroy()
+            print ' ***** Sequential peak fit successful *****'
         finally:
             wx.EndBusyCursor()
+        SeqResult['histNames'] = Names
         Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results')
         if Id:
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
@@ -2196,6 +2202,30 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnZeroVar(event):
         controls[0] = zeroVar.GetValue()
         
+    def OnSSopt(event):
+        ssopt['Use'] = SSopt.GetValue()
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
+    def OnSelMG(event):
+        ssopt['ssSymb'] = selMG.GetValue()
+        Vec = ssopt['ModVec']
+        modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
+        ssopt['ModVec'] = G2spc.SSGModCheck(Vec,modS)[0]
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+        
+    def OnModVal(event):
+        pass
+        
+    def OnMoveMod(event):
+        Obj = event.GetEventObject()
+        ObjId = cellList.index(Obj.GetId())
+        valObj = valDict[Obj.GetId()]
+        move = Obj.GetValue()*0.01
+        Obj.SetValue(0)
+        value = float(valObj.GetValue())+move  
+#        SetCellValue(valObj,ObjId,value)
+#        OnHklShow(event)
+        
     def OnBravSel(event):
         brav = bravSel.GetString(bravSel.GetSelection())
         controls[5] = brav
@@ -2272,7 +2302,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         PickId = G2frame.PickId    
         peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))[0]
         limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
-        controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
+        controls,bravais,cells,dmin,ssopt = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
@@ -2342,7 +2372,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.ErrorDialog('No peaks!', 'Nothing to refine!')
             return        
         print 'Refine cell'
-        controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
+        controls,bravais,cells,dmin,ssopt = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
@@ -2381,7 +2411,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         print 'Peak Indexing'
         keepcells = []
         try:
-            controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
+            controls,bravais,cells,dmin,ssopt = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
             for cell in cells:
                 if cell[11]:
                     keepcells.append(cell)
@@ -2400,7 +2430,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         cells = G2indx.sortM20(cells)
         cells[0][10] = True
         if OK:
-            data = [controls,bravais,cells,dmin]
+            data = [controls,bravais,cells,dmin,ssopt]
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
             bestCell = cells[0]
             if bestCell[0] > 10.:
@@ -2481,7 +2511,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2gd.wxID_REFINECELL)
     G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2gd.wxID_MAKENEWPHASE)
     
-    controls,bravais,cells,dmin = data
+    controls,bravais,cells,dmin,ssopt = data
     if len(controls) < 13:              #add cell volume if missing
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
     if len(controls) < 14:              #add space gropu used in indexing
@@ -2571,10 +2601,13 @@ def UpdateUnitCellsGrid(G2frame, data):
     zeroVar.SetValue(controls[0])
     zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
     littleSizer.Add(zeroVar,0,WACV)
+    SSopt = wx.CheckBox(G2frame.dataDisplay,label="Super lattice?")
+    SSopt.SetValue(ssopt['Use'])
+    SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
+    littleSizer.Add(SSopt,0,WACV)
     hklShow = wx.Button(G2frame.dataDisplay,label="Show hkl positions")
     hklShow.Bind(wx.EVT_BUTTON,OnHklShow)
     littleSizer.Add(hklShow,0,WACV)
-    #Add super lattice option here
     mainSizer.Add(littleSizer,0)
     
     mainSizer.Add((5,5),0)
@@ -2607,6 +2640,44 @@ def UpdateUnitCellsGrid(G2frame, data):
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,WACV)
     mainSizer.Add(littleSizer,0)
+#ssopt = {'Use':False,'ModVec':[0,0,0.1],'maxH':1,'ssSymb':''})
+    if ssopt['Use']:
+        indChoice = ['1','2','3','4',]
+        SpSg = controls[13]
+        ssChoice = G2spc.ssdict[SpSg]
+        if ssopt['ssSymb'] not in ssChoice:
+            ssopt['ssSymb'] = ssChoice[0]
+        ssSizer = wx.BoxSizer(wx.HORIZONTAL)
+        ssSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Supersymmetry space group: '+SpSg+' '),0,WACV)
+        selMG = wx.ComboBox(G2frame.dataDisplay,value=ssopt['ssSymb'],
+                choices=ssChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        selMG.Bind(wx.EVT_COMBOBOX, OnSelMG)
+        ssSizer.Add(selMG,0,WACV)
+        modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
+        Vec = ssopt['ModVec']
+        Vec,ifShow = G2spc.SSGModCheck(Vec,modS)
+        modList = []
+        modDict = {}
+        for val,show in zip(Vec,ifShow):
+            if show:
+                valSizer = wx.BoxSizer(wx.HORIZONTAL)
+                modVal = wx.TextCtrl(G2frame.dataDisplay,value=('%.3f'%(val)),style=wx.TE_PROCESS_ENTER)
+                modVal.Bind(wx.EVT_TEXT_ENTER,OnModVal)        
+                modVal.Bind(wx.EVT_KILL_FOCUS,OnModVal)
+                valSizer.Add(modVal,0,WACV)
+                modSpin = wx.SpinButton(G2frame.dataDisplay,style=wx.SP_VERTICAL,size=wx.Size(20,20))
+                modSpin.SetValue(0)
+                modSpin.SetRange(-1,1)
+                modSpin.Bind(wx.EVT_SPIN, OnMoveMod)
+                valSizer.Add(modSpin,0,WACV)
+                ssSizer.Add(valSizer,0,WACV)
+                modList.append(modVal.GetId())
+                modList.append(modSpin.GetId())
+                modDict[modSpin.GetId()] = modVal
+
+        
+        
+        mainSizer.Add(ssSizer,0)
     #if super lattice add super lattice choice based on space group & modulation values
     #based on super lattice choice - do refl gen following these choices as above
     #then make new phase will make modulated one with these choices

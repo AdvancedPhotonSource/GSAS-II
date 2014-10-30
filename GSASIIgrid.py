@@ -5754,7 +5754,13 @@ def MovePatternTreeToGrid(G2frame,item):
             data.append([0,0,0,0,0,0,0,0,0,0,0,0,0,0])      #Bravais lattice flags
             data.append([])                                 #empty cell list
             data.append([])                                 #empty dmin
+            data.append({})                                 #empty superlattice stuff
             G2frame.PatternTree.SetItemPyData(item,data)                             
+#patch
+        if len(data) < 5:
+            data.append({'Use':False,'ModVec':[0,0,0.1],'maxH':1,'ssSymb':''})                                 #empty superlattice stuff
+            G2frame.PatternTree.SetItemPyData(item,data)  
+#end patch
         G2pdG.UpdateUnitCellsGrid(G2frame,data)
         if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)

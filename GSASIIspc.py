@@ -174,7 +174,9 @@ def SGPtGroup(SGData):
     :param SGData: from :func SpcGroup
     returns SSGPtGrp & SSGKl (only defaults for Mono & Ortho)
     '''
-    Flds = SGData['SpGrp'].split(' ')
+    Flds = SGData['SpGrp'].split()
+    if len(Flds) < 2:
+        return '',[]
     if SGData['SGLaue'] == '-1':    #triclinic
         if '-' in Flds[1]:
             return '-1',[-1,]
@@ -429,35 +431,6 @@ def SSpcGroup(SGData,SSymbol):
 
     """
     
-    def splitSSsym(SSymbol):
-        '''
-        Splits supersymmetry symbol into two lists of strings
-        '''
-        modsym,gensym = SSymbol.replace(' ','').split(')')
-        nfrac = modsym.count('/')
-        modsym = modsym.lstrip('(')
-        if nfrac == 0:
-            modsym = list(modsym)
-        elif nfrac == 1:
-            pos = modsym.find('/')
-            if pos == 1:
-                modsym = [modsym[:3],modsym[3],modsym[4]]
-            elif pos == 2:
-                modsym = [modsym[0],modsym[1:4],modsym[4]]
-            else:
-                modsym = [modsym[0],modsym[1],modsym[2:]]
-        else:
-            lpos = modsym.find('/')
-            rpos = modsym.rfind('/')
-            if lpos == 1 and rpos == 4:
-                modsym = [modsym[:3],modsym[3:6],modsym[6]]
-            elif lpos == 1 and rpos == 5:
-                modsym = [modsym[:3],modsym[3],modsym[4:]]
-            else:
-                modsym = [modsym[0],modsym[1:4],modsym[4:]]
-        gensym = list(gensym)
-        return modsym,gensym
-        
     def checkModSym():
         ''' 
         Checks to see if proposed modulation form is allowed for Laue group
@@ -588,7 +561,7 @@ def SSpcGroup(SGData,SSymbol):
 # expand if centrosymmetric
         if SGData['SGInv']:
             SSGOps += [[-1*M,V] for M,V in SSGOps[:]]
-# monoclinic - all done
+# monoclinic - all done & all checked
         if SGData['SGPtGrp'] in ['2','m']:  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
             SSGOps[1][1][3] = genQ[0]
@@ -601,7 +574,6 @@ def SSpcGroup(SGData,SSymbol):
                     SSGOps[j][1][3] = genQ[i]
                 for k in iFrac:
                     SSGOps[j][0][3,k] = SSGKl[i]
-                E,SSGOps = extendSSGOps(SSGOps)
             
 # orthorhombic
         elif SGData['SGPtGrp'] in ['222','mm2','m2m','2mm','mmm']:
@@ -625,7 +597,7 @@ def SSpcGroup(SGData,SSymbol):
                 SSGOps[1][0][3,1] = 1
         elif SGData['SGPtGrp'] in ['4/m',]:
             if '1/2' in SSGData['modSymb']:
-                SSGOps[1][0][3,1] = -1
+                SSGOps[1][0][3,1] = SSGKl[0]
             for i,j in enumerate([1,6]):
                 SSGOps[j][0][3,3] = SSGKl[i]
                 if genQ[i]:
@@ -633,7 +605,7 @@ def SSpcGroup(SGData,SSymbol):
                 E,SSGOps = extendSSGOps(SSGOps)
         elif SGData['SGPtGrp'] in ['422','4mm','-42m','-4m2',]:
             if '1/2' in SSGData['modSymb']:
-                SSGOps[1][0][3,1] = -1
+                SSGOps[1][0][3,1] = SSGKl[0]
             for i,j in enumerate([1,4,5]):
                 SSGOps[j][0][3,3] = SSGKl[i]
                 if genQ[i]:
@@ -855,6 +827,35 @@ def SSpcGroup(SGData,SSymbol):
     else:
         return Result+'\nOperator conflict - incorrect superspace symbol',None
 
+def splitSSsym(SSymbol):
+    '''
+    Splits supersymmetry symbol into two lists of strings
+    '''
+    modsym,gensym = SSymbol.replace(' ','').split(')')
+    nfrac = modsym.count('/')
+    modsym = modsym.lstrip('(')
+    if nfrac == 0:
+        modsym = list(modsym)
+    elif nfrac == 1:
+        pos = modsym.find('/')
+        if pos == 1:
+            modsym = [modsym[:3],modsym[3],modsym[4]]
+        elif pos == 2:
+            modsym = [modsym[0],modsym[1:4],modsym[4]]
+        else:
+            modsym = [modsym[0],modsym[1],modsym[2:]]
+    else:
+        lpos = modsym.find('/')
+        rpos = modsym.rfind('/')
+        if lpos == 1 and rpos == 4:
+            modsym = [modsym[:3],modsym[3:6],modsym[6]]
+        elif lpos == 1 and rpos == 5:
+            modsym = [modsym[:3],modsym[3],modsym[4:]]
+        else:
+            modsym = [modsym[0],modsym[1:4],modsym[4:]]
+    gensym = list(gensym)
+    return modsym,gensym
+        
 def SSGPrint(SGData,SSGData):
     '''
     Print the output of SSpcGroup in a nicely formatted way. Used in SSpaceGroup
@@ -896,14 +897,15 @@ def SSGPrint(SGData,SSGData):
         SSGTable.append('(%2d) %s'%(i+1,SSMT2text(Opr)))
     return SSGText,SSGTable
     
-def SSGModCheck(Vec,SSGData):
+def SSGModCheck(Vec,modSymb):
     ''' Checks modulation vector compatibility with supersymmetry space group symbol. 
     Superspace group symbol takes precidence & the vector will be modified accordingly
     '''
-    modQ = SSGData['modQ']
-    modSymb = SSGData['modSymb']
+    Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'a':0.,'b':0.,'g':0.}
+    modQ = [Fracs[mod] for mod in modSymb]
     Vec = [0.1 if (vec == 0.0 and mod in ['a','b','g']) else vec for [vec,mod] in zip(Vec,modSymb)]
-    return [Q if mod not in ['a','b','g'] and vec != Q else vec for [vec,mod,Q] in zip(Vec,modSymb,modQ)]
+    return [Q if mod not in ['a','b','g'] and vec != Q else vec for [vec,mod,Q] in zip(Vec,modSymb,modQ)],  \
+        [True if mod in ['a','b','g'] else False for mod in modSymb]
 
 def SSMT2text(Opr):
     "From superspace group matrix/translation operator returns text version"
@@ -1655,7 +1657,7 @@ def StandardizeSpcName(spcgroup):
     if rspc[-1:] == 'R':
         rspc = rspc[:-1]
         rhomb = ' R'
-    if rspc[-1:] == 'H': # hexagonal is assumed and thus can be ignored
+    elif rspc[-1:] == 'H': # hexagonal is assumed and thus can be ignored
         rspc = rspc[:-1]
     # look for a match in the spacegroup lists
     for i in spglist.values():
@@ -1763,7 +1765,7 @@ ssdict = {}
 ssdict = {
     'P 1':['(abg)',],'P -1':['(abg)',],
     #monoclinic - done
-    'P 2':['(a0g)','(a1/2g)','(0b0)','(0b0)s','(1/2b0)','(0b1/2)',],
+    'P 2':['(a0g)','(a1/2g)','(0b0)','(0b0)s','(1/2b0)','(0b1/2)','(1/2b0)s','(0b1/2)s',],
     'P 21':['(a0g)','(0b0)','(0b0)s','(1/2b0)','(0b1/2)','(1/2b0)s','(0b1/2)s',],
     'P m':['(a0g)','(a0g)s','(a1/2g)','(a1/2g)s','(0b0)','(1/2b0)','(0b1/2)',],
     'P a':['(a0g)','(a1/2g)','(a0g)s','(a1/2g)s','(0b0)','(0b1/2)',],
@@ -1771,7 +1773,7 @@ ssdict = {
     'P n':['(a0g)','(a1/2g)','(a0g)s','(a1/2g)s','(0b0)','(1/2b1/2)',],
     'P 2/m':['(a0g)','(a1/2g)','(a0g)0s','(a1/2g)0s',
         '(0b0)','(0b0)s0','(1/2b0)','(0b1/2)','(1/2b0)s0','(0b1/2)s0',],
-    'P 21/m':['(a0g)','(a0g)0s','(0b0)','(0b0)s',
+    'P 21/m':['(a0g)','(a0g)0s','(0b0)','(0b0)s0',
         '(1/2b0)','(0b1/2)','(1/2b0)s0','(0b1/2)s0'],
     'P 2/c':['(a0g)','(a1/2g)','(a0g)0s','(a1/2g)0s',
         '(0b0)','(0b0)s0','(1/2b0)','(1/2b0)s0',],
@@ -1786,8 +1788,7 @@ ssdict = {
     'C m':['(a0g)','(a0g)s','(0b0)','(0b1/2)',],
     'C c':['(a0g)','(a0g)s','(0b0)',],
     'C n':['(a0g)','(a0g)s','(0b0)',],
-    'C 2/m':['(a0g)','(a0g)0s','(0b0)','(0b0)s0',
-        '(1/2b0)','(0b1/2)','(1/2b0)s0','(0b1/2)s0',],
+    'C 2/m':['(a0g)','(a0g)0s','(0b0)','(0b0)s0','(0b1/2)','(0b1/2)s0',],
     'C 2/c':['(a0g)','(a0g)0s','(0b0)','(0b0)s0',],
     'C 2/n':['(a0g)','(a0g)0s','(0b0)','(0b0)s0',],
     #orthorhombic    
@@ -1913,9 +1914,12 @@ ssdict = {
     'P m c b':[],
     'P c m a':[],
         
-    'P c c n':[],
-    'P n a a':[],
-    'P b n b':[],
+    'P c c n':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P n a a':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P b n b':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
         
     'P b c m':[],
     'P c a m':[],
@@ -1924,30 +1928,45 @@ ssdict = {
     'P b m a':[],
     'P c m b':[],
         
-    'P n n m':[],
-    'P m n n':[],
-    'P n m n':[],
+    'P n n m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P m n n':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P n m n':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
         
     'P m m n':[],
     'P n m m':[],
     'P m n m':[],
         
-    'P b c n':[],
-    'P c a n':[],
-    'P n c a':[],
-    'P n a b':[],
-    'P b n a':[],
-    'P c n b':[],
+    'P b c n':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P c a n':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P n c a':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P n a b':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P b n a':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P c n b':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
         
     'P b c a':[],
     'P c a b':[],
         
-    'P n m a':[],
-    'P m n b':[],
-    'P b n m':[],
-    'P c m n':[],
-    'P m c n':[],
-    'P n a m':[],
+    'P n m a':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P m n b':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P b n m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P c m n':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P m c n':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'P n a m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
         
     'C 2 2 21':['(a00)','(0b0)','(00g)','(10g)','(01g)',],
     'C 2 2 2':[],
@@ -1991,31 +2010,69 @@ ssdict = {
     'I c 2 m':[],
     'I m 2 a':[],
         
-    'I b a m':[],
-    'I m c b':[],
-    'I c m a':[],
+    'I b a m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'I m c b':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'I c m a':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
         
-    'I b c a':[],
-    'I c a b':[],
+    'I b c a':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'I c a b':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
         
-    'I m m a':[],
-    'I m m b':[],
-    'I b m m ':[],
-    'I c m m':[],
-    'I m c m':[],
-    'I m a m':[],
+    'I m m a':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'I m m b':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'I b m m ':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'I c m m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'I m c m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+    'I m a m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
         
-    'F 2 2 2':[],
-    'F m m m':[],
-    'F d d d':[],
+    'F 2 2 2':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s',
+        '(10g)','(10g)s00','(10g)0s0','(10g)ss0','(a10)','(a10)0s0',
+        '(a10)00s','(a10)0ss','(0b1)','(0b1)s00','(0b1)00s','(0b1)s0s',
+        '(01g)','(01g)s00','(01g)0s0','(01g)ss0','(a01)','(a01)0s0',
+        '(a01)00s','(a01)0ss','(1b0)','(1b0)s00','(1b0)00s','(1b0)s0s'],
         
-    'F m m 2':[],
-    'F m 2 m':[],
-    'F 2 m m':[],
+    'F m m m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s',
+        '(10g)','(10g)s00','(10g)0s0','(10g)ss0','(a10)','(a10)0s0',
+        '(a10)00s','(a10)0ss','(0b1)','(0b1)s00','(0b1)00s','(0b1)s0s',
+        '(01g)','(01g)s00','(01g)0s0','(01g)ss0','(a01)','(a01)0s0',
+        '(a01)00s','(a01)0ss','(1b0)','(1b0)s00','(1b0)00s','(1b0)s0s'],
         
-    'F d d 2':[],
-    'F d 2 d':[],
-    'F 2 d d':[],        
+    'F d d d':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
+        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
+        
+    'F m m 2':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(a00)','(a00)0s0',
+        '(0b0)','(0b0)s00','(10g)','(10g)ss0','(10g)0ss','(10g)s0s','(a01)','(a01)0s0',
+        '(1b0)','(1b0)s00','(01g)','(01g)ss0','(01g)0ss','(01g)s0s','(a10)','(a10)0s0',
+        '(0b1)','(0b1)s00',],
+        
+    'F m 2 m':['(0b0)','(0b0)ss0','(0b0)0ss','(0b0)s0s','(a00)','(a00)00s',
+        '(00g)','(00g)s00','(1b0)','(1b0)ss0','(1b0)0ss','(1b0)s0s','(a01)','(a01)00s',
+        '(01g)','(01g)s00','(0b1)','(0b1)ss0','(0b1)0ss','(0b1)s0s','(a10)','(a10)00s',
+        '(10g)','(10g)s00',],
+        
+    'F 2 m m':['(a00)','(a00)ss0','(a00)0ss','(a00)s0s','(0b0)','(0b0)00s',
+        '(00g)','(00g)0s0','(a10)','(a10)ss0','(a10)0ss','(a10)s0s','(0b1)','(0b1)00s',
+        '(10g)','(10g)0s0','(a01)','(a01)ss0','(a01)0ss','(a01)s0s','(1b0)','(1b0)00s',
+        '(01g)','(01g)0s0',],
+        
+    'F d d 2':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(a00)','(a00)0s0',
+        '(0b0)','(0b0)s00',],
+    'F d 2 d':['(0b0)','(0b0)ss0','(0b0)0ss','(0b0)s0s','(a00)','(a00)00s',
+        '(00g)','(00g)s00',],
+    'F 2 d d':['(a00)','(a00)ss0','(a00)0ss','(a00)s0s','(0b0)','(0b0)00s',
+        '(00g)','(00g)0s0',],        
     #tetragonal - done
     'P 4':['(00g)','(00g)q','(00g)s','(1/21/2g)','(1/21/2g)q',],
     'P 41':['(00g)','(00g)q','(00g)s','(1/21/2g)','(1/21/2g)q',],

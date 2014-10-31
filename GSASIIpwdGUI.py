@@ -2211,20 +2211,35 @@ def UpdateUnitCellsGrid(G2frame, data):
         Vec = ssopt['ModVec']
         modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
         ssopt['ModVec'] = G2spc.SSGModCheck(Vec,modS)[0]
+        OnHklShow(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnModVal(event):
-        pass
+        Obj = event.GetEventObject()
+        ObjId = Obj.GetId()
+        Id = Indx[ObjId]
+        try:
+            value = min(1.0,max(0.,float(Obj.GetValue())))
+        except ValueError:
+            value = ssopt['ModVec'][Id]
+        Obj.SetValue('%.3f'%(value))
+        ssopt['ModVec'][Id] = value
+        OnHklShow(event)
         
     def OnMoveMod(event):
         Obj = event.GetEventObject()
-        ObjId = cellList.index(Obj.GetId())
-        valObj = valDict[Obj.GetId()]
+        ObjId = Obj.GetId()
+        Id,valObj = Indx[ObjId]
         move = Obj.GetValue()*0.01
         Obj.SetValue(0)
-        value = float(valObj.GetValue())+move  
-#        SetCellValue(valObj,ObjId,value)
-#        OnHklShow(event)
+        value = min(1.0,max(.0,float(valObj.GetValue())+move))
+        valObj.SetValue('%.3f'%(value)) 
+        ssopt['ModVec'][Id] = value
+        OnHklShow(event)
+        
+    def OnMaxMH(event):
+        ssopt['maxH'] = int(maxMH.GetValue())
+        OnHklShow(event)
         
     def OnBravSel(event):
         brav = bravSel.GetString(bravSel.GetSelection())
@@ -2308,6 +2323,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         ibrav = bravaisSymb.index(controls[5])
         spc = controls[13]
         SGData = G2spc.SpcGroup(spc)[1]
+        if ssopt['Use']:
+            print ssopt
+            SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])
+            Vec = ssopt['ModVec']
         if 'C' in Inst['Type'][0]:
             dmin = G2lat.Pos2dsp(Inst,limits[1])
         else:   #TOF - use other limit!
@@ -2640,8 +2659,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,WACV)
     mainSizer.Add(littleSizer,0)
-#ssopt = {'Use':False,'ModVec':[0,0,0.1],'maxH':1,'ssSymb':''})
-    if ssopt['Use']:
+    if ssopt['Use']:        #super lattice display
         indChoice = ['1','2','3','4',]
         SpSg = controls[13]
         ssChoice = G2spc.ssdict[SpSg]
@@ -2653,15 +2671,16 @@ def UpdateUnitCellsGrid(G2frame, data):
                 choices=ssChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         selMG.Bind(wx.EVT_COMBOBOX, OnSelMG)
         ssSizer.Add(selMG,0,WACV)
+        ssSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Mod. vector: '),0,WACV)
         modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
         Vec = ssopt['ModVec']
         Vec,ifShow = G2spc.SSGModCheck(Vec,modS)
-        modList = []
-        modDict = {}
-        for val,show in zip(Vec,ifShow):
+        Indx = {}
+        for i,[val,show] in enumerate(zip(Vec,ifShow)):
             if show:
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
-                modVal = wx.TextCtrl(G2frame.dataDisplay,value=('%.3f'%(val)),style=wx.TE_PROCESS_ENTER)
+                modVal = wx.TextCtrl(G2frame.dataDisplay,value=('%.3f'%(val)),
+                    size=wx.Size(50,20),style=wx.TE_PROCESS_ENTER)
                 modVal.Bind(wx.EVT_TEXT_ENTER,OnModVal)        
                 modVal.Bind(wx.EVT_KILL_FOCUS,OnModVal)
                 valSizer.Add(modVal,0,WACV)
@@ -2671,17 +2690,20 @@ def UpdateUnitCellsGrid(G2frame, data):
                 modSpin.Bind(wx.EVT_SPIN, OnMoveMod)
                 valSizer.Add(modSpin,0,WACV)
                 ssSizer.Add(valSizer,0,WACV)
-                modList.append(modVal.GetId())
-                modList.append(modSpin.GetId())
-                modDict[modSpin.GetId()] = modVal
-
-        
-        
+                Indx[modVal.GetId()] = i
+                Indx[modSpin.GetId()] = [i,modVal]
+            else:
+                modVal = wx.TextCtrl(G2frame.dataDisplay,value=('%.3f'%(val)),
+                    size=wx.Size(50,20),style=wx.TE_READONLY)
+                modVal.SetBackgroundColour(VERY_LIGHT_GREY)
+                ssSizer.Add(modVal,0,WACV)
+        ssSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Max. M: '),0,WACV)
+        maxMH = wx.ComboBox(G2frame.dataDisplay,value=str(ssopt['maxH']),
+            choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
+        ssSizer.Add(maxMH,0,WACV)
         mainSizer.Add(ssSizer,0)
-    #if super lattice add super lattice choice based on space group & modulation values
-    #based on super lattice choice - do refl gen following these choices as above
-    #then make new phase will make modulated one with these choices
-        
+
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     topSize = mainSizer.Fit(G2frame.dataFrame)

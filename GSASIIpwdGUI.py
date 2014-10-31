@@ -2323,7 +2323,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         ibrav = bravaisSymb.index(controls[5])
         spc = controls[13]
         SGData = G2spc.SpcGroup(spc)[1]
-        if ssopt['Use']:
+        if ssopt.get('Use',False):
             print ssopt
             SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])
             Vec = ssopt['ModVec']
@@ -2621,7 +2621,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     zeroVar.Bind(wx.EVT_CHECKBOX,OnZeroVar)
     littleSizer.Add(zeroVar,0,WACV)
     SSopt = wx.CheckBox(G2frame.dataDisplay,label="Super lattice?")
-    SSopt.SetValue(ssopt['Use'])
+    SSopt.SetValue(ssopt.get('Use',False))
     SSopt.Bind(wx.EVT_CHECKBOX,OnSSopt)
     littleSizer.Add(SSopt,0,WACV)
     hklShow = wx.Button(G2frame.dataDisplay,label="Show hkl positions")
@@ -2659,7 +2659,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             volVal.SetBackgroundColour(VERY_LIGHT_GREY)
             littleSizer.Add(volVal,0,WACV)
     mainSizer.Add(littleSizer,0)
-    if ssopt['Use']:        #super lattice display
+    if ssopt.get('Use',False):        #super lattice display
         indChoice = ['1','2','3','4',]
         SpSg = controls[13]
         ssChoice = G2spc.ssdict[SpSg]

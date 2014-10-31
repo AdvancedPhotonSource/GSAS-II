@@ -1224,7 +1224,7 @@ def DoCalibInst(IndexPeaks,Inst):
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
-        result = so.leastsq(errPeakPos,values,full_output=True,ftol=0.0001,
+        result = so.leastsq(errPeakPos,values,full_output=True,ftol=0.000001,
             args=(peakDsp,peakPos,peakWt,dataType,parmDict,varyList))
         ncyc = int(result[2]['nfev']/2)
         runtime = time.time()-begin    
@@ -1241,11 +1241,11 @@ def DoCalibInst(IndexPeaks,Inst):
             break                   #refinement succeeded - finish up!
         except ValueError:          #result[1] is None on singular matrix
             print '**** Refinement failed - singular matrix ****'
-    return True
         
     sigDict = dict(zip(varyList,sig))
     GetInstParms(parmDict,Inst,varyList)
     InstPrint(Inst,sigDict)
+    return True
             
 def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],oneCycle=False,controls=None,dlg=None):
     'needs a doc string'

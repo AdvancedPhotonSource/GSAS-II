@@ -2341,7 +2341,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2plt.PlotPatterns(G2frame)
             
     def OnSortCells(event):
-        controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(UnitCellsId)
+        controls,bravais,cells,dmin,ssopt = G2frame.PatternTree.GetItemPyData(UnitCellsId)
         c =  event.GetCol()
         if colLabels[c] == 'M20':
             cells = G2indx.sortM20(cells)
@@ -2349,12 +2349,12 @@ def UpdateUnitCellsGrid(G2frame, data):
             cells = G2indx.sortVolume(cells)
         else:
             return
-        data = [controls,bravais,cells,dmin]
+        data = [controls,bravais,cells,dmin,ssopt]
         G2frame.PatternTree.SetItemPyData(UnitCellsId,data)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def CopyUnitCell(event):
-        controls,bravais,cells,dmin = G2frame.PatternTree.GetItemPyData(UnitCellsId)
+        controls,bravais,cells,dmin,ssopt = G2frame.PatternTree.GetItemPyData(UnitCellsId)
         for Cell in cells:
             if Cell[-2]:
                 break
@@ -2364,7 +2364,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[6:12] = cell[1:8]
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
         controls[13] = spaceGroups[bravaisSymb.index(controls[5])]
-        G2frame.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin])
+        G2frame.PatternTree.SetItemPyData(UnitCellsId,[controls,bravais,cells,dmin,ssopt])
         G2frame.dataFrame.RefineCell.Enable(True)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)        
                 
@@ -2406,7 +2406,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[1] = Zero
         controls[6:12] = G2lat.A2cell(Aref)
         controls[12] = G2lat.calc_V(Aref)
-        data = [controls,bravais,cells,dmin]
+        data = [controls,bravais,cells,dmin,ssopt]
         cells = G2frame.PatternTree.GetItemPyData(UnitCellsId)[2]
         for cell in cells:
             cell[-2] = False

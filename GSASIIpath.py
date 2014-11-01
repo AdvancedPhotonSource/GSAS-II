@@ -275,16 +275,20 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None):
     cmd = [svn,'update',fpath,verstr,
            '--non-interactive',
            '--accept','theirs-conflict','--force']
-    s = subprocess.Popen(cmd, 
+    s = subprocess.Popen(cmd+'[--trust-server-cert'], 
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     print out
     if err:
-        print(60*"=")
-        print ("****** An error was noted, see below *********")
-        print(60*"=")
-        print err
-        sys.exit()
+        s = subprocess.Popen(cmd,
+                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        out,err = s.communicate()
+        if err:
+            print(60*"=")
+            print ("****** An error was noted, see below *********")
+            print(60*"=")
+            print err
+            sys.exit()
 
 def svnUpdateProcess(version=None,projectfile=None):
     '''perform an update of GSAS-II in a separate python process'''

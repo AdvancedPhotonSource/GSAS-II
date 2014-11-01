@@ -275,7 +275,7 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None):
     cmd = [svn,'update',fpath,verstr,
            '--non-interactive',
            '--accept','theirs-conflict','--force']
-    s = subprocess.Popen(cmd+'['--trust-server-cert'], 
+    s = subprocess.Popen(cmd+['--trust-server-cert'], 
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     print out

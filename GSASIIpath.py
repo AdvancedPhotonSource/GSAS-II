@@ -214,7 +214,7 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
-        print 'out=',out
+        print 'svn failed, retry w/o --trust...\nout=',out
         print 'err=',err
         s = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -243,7 +243,8 @@ def svnFindLocalChanges(fpath=os.path.split(__file__)[0]):
     import xml.etree.ElementTree as ET
     svn = whichsvn()
     if not svn: return
-    s = subprocess.Popen([svn,'status',fpath,'--xml'],
+    cmd = [svn,'status',fpath,'--xml']
+    s = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err: return None

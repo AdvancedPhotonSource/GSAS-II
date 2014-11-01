@@ -210,13 +210,19 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
         cmd = [svn,'info',fpath,'--xml']
     else:
         cmd = [svn,'info',fpath,'--xml','-rHEAD']
-    s = subprocess.Popen(cmd,
+    s = subprocess.Popen(cmd+['--non-interactive', '--trust-server-cert'],
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
         print 'out=',out
         print 'err=',err
-        return None
+        s = subprocess.Popen(cmd,
+                            stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        out,err = s.communicate()
+        if err:
+            print 'out=',out
+            print 'err=',err
+            return None
     x = ET.fromstring(out)
     for i in x.iter('entry'):
         rev = i.attrib.get('revision')

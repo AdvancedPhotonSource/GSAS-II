@@ -12,6 +12,8 @@ Determine the subversion release number by determining the highest version numbe
 where :func:`SetVersionNumber` is called (best done in every GSASII file).
 Other routines will update GSASII from the subversion server if svn can be
 found.
+
+Accesses configuration options, as defined in config.py
 '''
 
 import os
@@ -306,6 +308,50 @@ def svnUpdateProcess(version=None,projectfile=None):
     subprocess.Popen([sys.executable,__file__,projectfile,version])
     sys.exit()
 
+def IPyBreak():
+    '''A routine that invokes an IPython session at the calling location
+    This routine is only used when debug=True is set in config.py
+    '''
+    savehook = sys.excepthook # save the exception hook
+    from IPython.terminal.embed import InteractiveShellEmbed
+    import inspect
+    ipshell = InteractiveShellEmbed()
+
+    frame = inspect.currentframe().f_back
+    msg   = 'Entering IPython console inside {0.f_code.co_filename} at line {0.f_lineno}'.format(frame)
+    ipshell(msg,stack_depth=2) # Go up one level, to see the calling routine
+    sys.excepthook = savehook # reset IPython's change to the exception hook
+
+def exceptHook(*args):
+    '''A routine to be called when an exception occurs. It prints the traceback
+    with fancy formatting and then calls an IPython shell with the environment
+    of the exception location.
+    
+    This routine is only used when debug=True is set in config.py    
+    '''
+    from IPython.core import ultratb
+    ultratb.FormattedTB(call_pdb=False,color_scheme='LightBG')(*args)
+    from IPython.terminal.embed import InteractiveShellEmbed
+    import inspect
+    frame = inspect.getinnerframes(args[2])[-1][0]
+    msg   = 'Entering IPython console at {0.f_code.co_filename} at line {0.f_lineno}'.format(frame)
+    InteractiveShellEmbed(banner1=msg)(local_ns=frame.f_locals,global_ns=frame.f_globals)
+
+def DoNothing():
+    '''A routine that does nothing. This is called in place of IPyBreak and pdbBreak
+    except when the debug option is set True in config.py
+    '''
+    pass 
+
+if GetConfigValue('debug'):
+    print 'Debug on: IPython: Exceptions and G2path.IPyBreak(); pdb: G2path.pdbBreak()'
+    sys.excepthook = exceptHook
+    import pdb
+    pdbBreak = pdb.set_trace
+else:
+    IPyBreak = DoNothing
+    pdbBreak = DoNothing
+    
 if __name__ == '__main__':
     import subprocess
     import time

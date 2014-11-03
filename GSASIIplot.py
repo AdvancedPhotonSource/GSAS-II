@@ -3855,7 +3855,9 @@ def PlotStructure(G2frame,data,firstCall=False):
     mV = np.array([[[-mD,0,0],[mD,0,0]],[[0,-mD,0],[0,mD,0]],[[0,0,-mD],[0,0,mD]]])
     mapPeakVecs = np.inner(mV,Bmat)
 
-    uColors = [Rd,Gr,Bl,Wt, Wt,Wt,Wt,Wt, Wt,Wt,Wt,Wt]
+    backColor = np.array(list(drawingData['backColor'])+[0,])
+    Bc = np.array(list(drawingData['backColor']))
+    uColors = [Rd,Gr,Bl,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc]
     altDown = False
     shiftDown = False
     ctrlDown = False
@@ -4748,7 +4750,7 @@ def PlotStructure(G2frame,data,firstCall=False):
 #    Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)
     Page.camera['position'] = drawingData['cameraPos']
     Page.camera['viewPoint'] = np.inner(Amat,drawingData['viewPoint'][0])
-    Page.camera['backColor'] = np.array(list(drawingData['backColor'])+[0,])/255.
+    Page.camera['backColor'] = backColor/255.
     try:
         Page.canvas.SetCurrent()
     except:

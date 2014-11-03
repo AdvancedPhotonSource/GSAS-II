@@ -1757,10 +1757,13 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     if hapData[item][1]:
                         hapVary.append(pfx+item)
                 names = G2spc.HStrainNames(SGData)
+                HSvals = []
                 for i,name in enumerate(names):
                     hapDict[pfx+name] = hapData['HStrain'][0][i]
+                    HSvals.append(hapDict[pfx+name])
                     if hapData['HStrain'][1][i]:
                         hapVary.append(pfx+name)
+                DIJS = G2spc.HStrainVals(HSvals,SGData)
                 controlDict[pfx+'poType'] = hapData['Pref.Ori.'][0]
                 if hapData['Pref.Ori.'][0] == 'MD':
                     hapDict[pfx+'MD'] = hapData['Pref.Ori.'][1]
@@ -1823,7 +1826,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     PrintHStrain(hapData['HStrain'],SGData)
                     if hapData['Babinet']['BabA'][0]:
                         PrintBabinet(hapData['Babinet'])
-                HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
+                HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))  #+DIJS
                 if resetRefList:
                     refList = []
                     Uniq = []

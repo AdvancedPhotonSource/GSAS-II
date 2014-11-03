@@ -227,26 +227,26 @@ def UpdateDData(G2frame,DData,data):
                         for name in copyNames:
                             if name in ['Scale','Extinction','HStrain']:
                                 if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
-                                    UseList[item][name][:1] = copy.copy(sourceDict[name][:1])
+                                    UseList[item][name][:1] = copy.deepcopy(sourceDict[name][:1])
                                     for itm in ['Eg','Es','Ep']:
-                                        UseList[item][name][2][itm][1] = copy.copy(copyDict[name][itm])
+                                        UseList[item][name][2][itm][1] = copy.deepcopy(copyDict[name][itm])
                                 else:
-                                    UseList[item][name][1] = copy.copy(copyDict[name])
+                                    UseList[item][name][1] = copy.deepcopy(copyDict[name])
                             elif name in ['Size','Mustrain']:
-                                UseList[item][name][0] = copy.copy(copyDict[name][0])
-                                UseList[item][name][2] = copy.copy(copyDict[name][1])
-                                UseList[item][name][4] = copy.copy(copyDict[name][2])
+                                UseList[item][name][0] = copy.deepcopy(copyDict[name][0])
+                                UseList[item][name][2] = copy.deepcopy(copyDict[name][1])
+                                UseList[item][name][4] = copy.deepcopy(copyDict[name][2])
                             elif name == 'Pref.Ori.':
-                                UseList[item][name][0] = copy.copy(copyDict[name][0])
-                                UseList[item][name][2] = copy.copy(copyDict[name][1])
+                                UseList[item][name][0] = copy.deepcopy(copyDict[name][0])
+                                UseList[item][name][2] = copy.deepcopy(copyDict[name][1])
                                 if sourceDict[name][0] == 'SH':
-                                    SHflags = copy.copy(copyDict[name][2])
-                                    SHterms = copy.copy(sourceDict[name][5])
+                                    SHflags = copy.deepcopy(copyDict[name][2])
+                                    SHterms = copy.deepcopy(sourceDict[name][5])
                                     for item in SHflags:
-                                        SHterms[item][1] = copy.copy(SHflags[item])
+                                        SHterms[item][1] = copy.deepcopy(SHflags[item])
                             elif name == 'Babinet':
                                 for bab in babNames:
-                                    UseList[item][name][bab][1] = copy.copy(copyDict[name][bab])                                              
+                                    UseList[item][name][bab][1] = copy.deepcopy(copyDict[name][bab])                                              
                     wx.CallAfter(UpdateDData,G2frame,DData,data)
             finally:
                 dlg.Destroy()

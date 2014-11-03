@@ -1369,11 +1369,10 @@ def GetSampleSigGamDerv(refl,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
         
     return sigDict,gamDict
         
-def GetReflPos(refl,wave,G,hfx,calcControls,parmDict):
+def GetReflPos(refl,wave,A,hfx,calcControls,parmDict):
     'Needs a doc string'
     h,k,l = refl[:3]
-    dsq = 1./G2lat.calc_rDsq2(np.array([h,k,l]),G)
-    d = np.sqrt(dsq)
+    d = 1./np.sqrt(G2lat.calc_rDsq(np.array([h,k,l]),A))
 
     refl[4] = d
     if 'C' in calcControls[hfx+'histType']:
@@ -1488,6 +1487,10 @@ def GetHStrainShiftDerv(refl,SGData,phfx,hfx,calcControls,parmDict):
             dDijDict[item] *= -parmDict[hfx+'difC']*refl[4]**2/2.
     return dDijDict
     
+def GetDij(phfx,SGData,parmDict):
+    HSvals = [parmDict[phfx+name] for name in G2spc.HStrainNames(SGData)]
+    return G2spc.HStrainVals(HSvals,SGData)
+                
 def GetFobsSq(Histograms,Phases,parmDict,calcControls):
     'Needs a doc string'
     histoList = Histograms.keys()
@@ -1595,7 +1598,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         alp = parmDict[hfx+'alpha']/refl[4]
         bet = parmDict[hfx+'beta-0']+parmDict[hfx+'beta-1']/refl[4]**4+parmDict[hfx+'beta-q']/refl[4]**2
         return alp,bet
-                
+        
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
@@ -1623,7 +1626,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         hfx = ':%d:'%(hId)
         SGData = Phase['General']['SGData']
         SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
-        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]     #Do I want to modify by Dij?
+        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)] #+GetDij(phfx,SGData,parmDict)
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
@@ -1637,7 +1640,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             if 'C' in calcControls[hfx+'histType']:
                 h,k,l = refl[:3]
                 Uniq = np.inner(refl[:3],SGMT)
-                refl[5] = GetReflPos(refl,wave,G,hfx,calcControls,parmDict)         #corrected reflection position
+                refl[5] = GetReflPos(refl,wave,A,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = 1./(2.*sind(refl[5]/2.)**2*cosd(refl[5]/2.))           #Lorentz correction
                 refl[5] += GetHStrainShift(refl,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSigGamCW(refl,wave,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
@@ -1677,7 +1680,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             elif 'T' in calcControls[hfx+'histType']:
                 h,k,l = refl[:3]
                 Uniq = np.inner(refl[:3],SGMT)
-                refl[5] = GetReflPos(refl,0.0,G,hfx,calcControls,parmDict)         #corrected reflection position
+                refl[5] = GetReflPos(refl,0.0,A,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = sind(parmDict[hfx+'2-theta']/2)*refl[4]**4                                                #TOF Lorentz correction
                 refl[5] += GetHStrainShift(refl,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSigGamTOF(refl,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
@@ -1782,7 +1785,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         pId = Phase['pId']
         pfx = '%d::'%(pId)
         phfx = '%d:%d:'%(pId,hId)
-        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]     #And modify here by Dij? - no
+        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)] #+GetDij(phfx,SGData,parmDict)
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         if not Phase['General'].get('doPawley'):

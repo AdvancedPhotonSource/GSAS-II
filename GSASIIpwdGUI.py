@@ -2203,6 +2203,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[0] = zeroVar.GetValue()
         
     def OnSSopt(event):
+        if controls[5] in ['Fm3m','Im3m','Pm3m']:
+            SSopt.SetValue(False)
+            G2frame.ErrorDialog('Cubic lattice', 'Superlattice not allowed for a cubic lattice')
+            return
         ssopt['Use'] = SSopt.GetValue()
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
@@ -2467,7 +2471,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 
     def RefreshUnitCellsGrid(event):
         data =G2frame.PatternTree.GetItemPyData(UnitCellsId)
-        cells,dmin = data[2:]
+        cells,dmin = data[2:4]
         r,c =  event.GetRow(),event.GetCol()
         if cells:
             if c == 2:

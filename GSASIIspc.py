@@ -1322,6 +1322,33 @@ def MustrainNames(SGData):
         SHKL += ['S310','S103','S031','S130','S301','S013']
         SHKL += ['S211','S121','S112']
         return SHKL
+        
+def HStrainVals(HSvals,SGData):
+    laue = SGData['SGLaue']
+    uniq = SGData['SGUniq']
+    DIJ = np.zeros(6)
+    if laue in ['m3','m3m']:
+        DIJ[:3] = [HSvals[0],HSvals[0],HSvals[0]]
+    elif laue in ['6/m','6/mmm','3m1','31m','3']:
+        DIJ[:4] = [HSvals[0],HSvals[0],HSvals[1],HSvals[0]]
+    elif laue in ['3R','3mR']:
+        DIJ = [HSvals[0],HSvals[0],HSvals[0],HSvals[1],HSvals[1],HSvals[1]]
+    elif laue in ['4/m','4/mmm']:
+        DIJ[:3] = [HSvals[0],HSvals[0],HSvals[1]]
+    elif laue in ['mmm']:
+        DIJ[:3] = [HSvals[0],HSvals[1],HSvals[2]]
+    elif laue in ['2/m']:
+        DIJ[:3] = [HSvals[0],HSvals[1],HSvals[2]]
+        if uniq == 'a':
+            DIJ[5] = HSvals[3]
+        elif uniq == 'b':
+            DIJ[4] = HSvals[3]
+        elif uniq == 'c':
+            DIJ[3] = HSvals[3]
+        return Dij
+    else:
+        DIJ = [HSvals[0],HSvals[1],HSvals[2],HSvals[3],HSvals[4],HSvals[5]]
+    return DIJ
 
 def HStrainNames(SGData):
     'Needs a doc string'

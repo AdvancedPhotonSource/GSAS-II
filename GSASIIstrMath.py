@@ -1484,7 +1484,7 @@ def GetHStrainShiftDerv(refl,SGData,phfx,hfx,calcControls,parmDict):
             dDijDict[item] *= -180.0*refl[4]**2*tand(refl[5]/2.0)/np.pi
     else:
         for item in dDijDict:
-            dDijDict[item] *= -parmDict[hfx+'difC']*refl[4]**2/2.
+            dDijDict[item] *= -parmDict[hfx+'difC']*refl[4]**3/2.
     return dDijDict
     
 def GetDij(phfx,SGData,parmDict):
@@ -1626,7 +1626,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         hfx = ':%d:'%(hId)
         SGData = Phase['General']['SGData']
         SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
-        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)] #+GetDij(phfx,SGData,parmDict)
+        Dij = GetDij(phfx,SGData,parmDict)
+        A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*
@@ -1642,7 +1643,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 Uniq = np.inner(refl[:3],SGMT)
                 refl[5] = GetReflPos(refl,wave,A,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = 1./(2.*sind(refl[5]/2.)**2*cosd(refl[5]/2.))           #Lorentz correction
-                refl[5] += GetHStrainShift(refl,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
+#                refl[5] += GetHStrainShift(refl,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSigGamCW(refl,wave,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
                 refl[11:15] = GetIntensityCorr(refl,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
                 refl[11] *= Vst*Lorenz
@@ -1682,7 +1683,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 Uniq = np.inner(refl[:3],SGMT)
                 refl[5] = GetReflPos(refl,0.0,A,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = sind(parmDict[hfx+'2-theta']/2)*refl[4]**4                                                #TOF Lorentz correction
-                refl[5] += GetHStrainShift(refl,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
+#                refl[5] += GetHStrainShift(refl,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
                 refl[6:8] = GetReflSigGamTOF(refl,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
                 refl[12:14] = GetReflAlpBet(refl,hfx,parmDict)
                 refl[11],refl[15],refl[16],refl[17] = GetIntensityCorr(refl,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
@@ -1785,7 +1786,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         pId = Phase['pId']
         pfx = '%d::'%(pId)
         phfx = '%d:%d:'%(pId,hId)
-        A = [parmDict[pfx+'A%d'%(i)] for i in range(6)] #+GetDij(phfx,SGData,parmDict)
+        Dij = GetDij(phfx,SGData,parmDict)
+        A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         if not Phase['General'].get('doPawley'):

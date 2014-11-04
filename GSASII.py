@@ -2110,7 +2110,7 @@ class GSASII(wx.Frame):
         self.EnablePlot = True
         self.Tutorials = False      #used for changing default directory
         arg = sys.argv
-        if len(arg) > 1:
+        if len(arg) > 1 and arg[1]:
             self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
             self.dirname = os.path.dirname(arg[1])
             if self.dirname: os.chdir(self.dirname)
@@ -2119,7 +2119,6 @@ class GSASII(wx.Frame):
                 self.PatternTree.Expand(self.root)
                 for item in self.Refine: item.Enable(True)
                 self.EnableSeqRefineMenu()
-
             except:
                 print 'Error opening file',arg[1]
 

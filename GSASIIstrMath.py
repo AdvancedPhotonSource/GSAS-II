@@ -1399,8 +1399,7 @@ def GetReflPosDerv(refl,wave,A,hfx,calcControls,parmDict):
         pos = refl[5]-parmDict[hfx+'Zero']
         const = dpr/np.sqrt(1.0-wave**2*dstsq/4.0)
         dpdw = const*dst
-        dpdA = np.array([h**2,k**2,l**2,h*k,h*l,k*l])
-        dpdA *= const*wave/(2.0*dst)
+        dpdA = np.array([h**2,k**2,l**2,h*k,h*l,k*l])*const*wave/(2.0*dst)
         dpdZ = 1.0
         const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
         if 'Bragg' in calcControls[hfx+'instType']:
@@ -1481,7 +1480,7 @@ def GetHStrainShiftDerv(refl,SGData,phfx,hfx,calcControls,parmDict):
             phfx+'D12':h*k,phfx+'D13':h*l,phfx+'D23':k*l}
     if 'C' in calcControls[hfx+'histType']:
         for item in dDijDict:
-            dDijDict[item] *= -180.0*refl[4]**2*tand(refl[5]/2.0)/np.pi
+            dDijDict[item] *= 180.0*refl[4]**2*tand(refl[5]/2.0)/np.pi
     else:
         for item in dDijDict:
             dDijDict[item] *= -parmDict[hfx+'difC']*refl[4]**3/2.

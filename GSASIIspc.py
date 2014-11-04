@@ -1345,7 +1345,6 @@ def HStrainVals(HSvals,SGData):
             DIJ[4] = HSvals[3]
         elif uniq == 'c':
             DIJ[3] = HSvals[3]
-        return Dij
     else:
         DIJ = [HSvals[0],HSvals[1],HSvals[2],HSvals[3],HSvals[4],HSvals[5]]
     return DIJ

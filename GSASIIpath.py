@@ -313,7 +313,15 @@ def IPyBreak():
     This routine is only used when debug=True is set in config.py
     '''
     savehook = sys.excepthook # save the exception hook
-    from IPython.terminal.embed import InteractiveShellEmbed
+    try: 
+        from IPython.terminal.embed import InteractiveShellEmbed
+    except ImportError:
+        try:
+            # try the IPython 0.12 approach
+            from IPython.frontend.terminal.embed import InteractiveShellEmbed
+        except ImportError:
+            print 'IPython InteractiveShellEmbed not found'
+            return
     import inspect
     ipshell = InteractiveShellEmbed()
 
@@ -331,11 +339,21 @@ def exceptHook(*args):
     '''
     from IPython.core import ultratb
     ultratb.FormattedTB(call_pdb=False,color_scheme='LightBG')(*args)
-    from IPython.terminal.embed import InteractiveShellEmbed
+    try: 
+        from IPython.terminal.embed import InteractiveShellEmbed
+    except ImportError:
+        try:
+            # try the IPython 0.12 approach
+            from IPython.frontend.terminal.embed import InteractiveShellEmbed
+        except ImportError:
+            print 'IPython InteractiveShellEmbed not found'
+            return
     import inspect
     frame = inspect.getinnerframes(args[2])[-1][0]
     msg   = 'Entering IPython console at {0.f_code.co_filename} at line {0.f_lineno}'.format(frame)
+    savehook = sys.excepthook # save the exception hook
     InteractiveShellEmbed(banner1=msg)(local_ns=frame.f_locals,global_ns=frame.f_globals)
+    sys.excepthook = savehook # reset IPython's change to the exception hook
 
 def DoNothing():
     '''A routine that does nothing. This is called in place of IPyBreak and pdbBreak

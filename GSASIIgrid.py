@@ -175,10 +175,20 @@ class SGMessageBox(wx.Dialog):
         mainSizer.Add((0,10))
         for line in text:
             mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
-        tableSizer = wx.FlexGridSizer(0,2,0,0)
-        for item in self.table:
-            tableSizer.Add(wx.StaticText(self.panel,label='     %s'%(item.ljust(30))),0,WACV)
-        mainSizer.Add(tableSizer)
+        ncol = self.table[0].count(',')+1
+        tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
+        for j,item in enumerate(self.table):
+            num,flds = item.split(')')
+            tableSizer.Add(wx.StaticText(self.panel,label='     %s  '%(num+')')),0,WACV|wx.ALIGN_LEFT)            
+            flds = flds.replace(' ','').split(',')
+            for i,fld in enumerate(flds):
+                if i < ncol-1:
+                    tableSizer.Add(wx.StaticText(self.panel,label='%s, '%(fld)),0,WACV|wx.ALIGN_RIGHT)
+                else:
+                    tableSizer.Add(wx.StaticText(self.panel,label='%s'%(fld)),0,WACV|wx.ALIGN_RIGHT)
+            if not j%2:
+                tableSizer.Add((20,0))
+        mainSizer.Add(tableSizer,0,wx.ALIGN_LEFT)
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(self.panel, wx.ID_OK)
         OKbtn.SetDefault()

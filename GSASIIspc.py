@@ -445,11 +445,11 @@ def SSpcGroup(SGData,SSymbol):
                     return False
             except ValueError:
                 pass
-            if SGData['SGUniq'] == 'a' and LaueModId in [5,6,7,8,9,]:
+            if SGData['SGUniq'] == 'a' and LaueModId in [5,6,7,8,9,10,]:
                 return True
-            elif SGData['SGUniq'] == 'b' and LaueModId in [3,4,13,14,15,]:
+            elif SGData['SGUniq'] == 'b' and LaueModId in [3,4,13,14,15,16,]:
                 return True
-            elif SGData['SGUniq'] == 'c' and LaueModId in [1,2,19,20,21,]:
+            elif SGData['SGUniq'] == 'c' and LaueModId in [1,2,19,20,21,22,]:
                 return True
         elif LaueId in [2,] and LaueModId in [i+7 for i in range(18)]:
             try:
@@ -524,28 +524,35 @@ def SSpcGroup(SGData,SSymbol):
                 
     def extendSSGOps(SSGOps):
         nOps = len(SSGOps)
-        for i in range(nOps):
-            if np.allclose(SSGOps[i][0][3],np.zeros(4)):
+        for OpA in SSGOps[1:]:
+            OpAtxt = SSMT2text(OpA)
+            if 't' not in OpAtxt:
                 continue
-            for j in range(nOps):
-                if np.allclose(SSGOps[j][0][3],np.zeros(4)):
+            for OpB in SSGOps[1:]:
+                OpBtxt = SSMT2text(OpB)
+                if 't' not in OpBtxt:
                     continue
-                OpC = list(SGProd(SSGOps[j],SSGOps[i]))
+                OpC = list(SGProd(OpA,OpB))
                 OpC[1] %= 1.
-                for k in range(nOps):
-                    OpD = SSGOps[k]
-                    if SSMT2text(OpC) == SSMT2text(OpD):
+                OpCtxt = SSMT2text(OpC)
+#                print OpAtxt.replace(' ','')+'*'+OpBtxt.replace(' ','')+'='+OpCtxt.replace(' ','')
+                for k,OpD in enumerate(SSGOps[1:]):
+                    OpDtxt = SSMT2text(OpD)
+                    if 't' in OpDtxt:
                         continue
-                    elif np.allclose(OpC[0][:3,:3],OpD[0][:3,:3]):
-                        if np.allclose(OpD[0][3],np.zeros(4)):
-                            SSGOps[k] = OpC
-                        elif np.any([np.allclose(OpC[0][3][:3],cen) for cen in SGData['SGCen']]):   #?
-                            continue
+#                    print '    ('+OpCtxt.replace(' ','')+'=? '+OpDtxt.replace(' ','')+')'
+                    if OpCtxt == OpDtxt:
+                        continue
+                    elif OpCtxt.split(',')[:3] == OpDtxt.split(',')[:3]:
+                        if 't' not in OpDtxt:
+                            SSGOps[k+1] = OpC
+#                            print k+1,'   new:',OpCtxt.replace(' ','')
                         else:
-                            OpCtxt = SSMT2text(OpC).replace(' ','')
-                            OpDtxt = SSMT2text(OpD).replace(' ','')
-                            print 'OpC',OpCtxt,'OpD',OpDtxt
-                            return False,OpCtxt+' conflict with '+OpDtxt
+                            OpCtxt = OpCtxt.replace(' ','')
+                            OpDtxt = OpDtxt.replace(' ','')
+                            Txt = OpCtxt+' conflict with '+OpDtxt
+                            print Txt
+                            return False,Txt
         return True,SSGOps
                 
     def genSSGOps():
@@ -555,7 +562,7 @@ def SSpcGroup(SGData,SSymbol):
             if frac in ['1/2','1/3','1/4','1/6','1']:
                 iFrac[i] = frac
         print SGData['SpGrp']+SSymbol
-        print 'SSGKl',SSGKl,'genQ',genQ,'iFrac',iFrac
+        print 'SSGKl',SSGKl,'genQ',genQ,'iFrac',iFrac,'modSymb',SSGData['modSymb']
 # set identity & 1,-1; triclinic
         SSGOps[0][0][3,3] = 1.
 # expand if centrosymmetric
@@ -595,32 +602,46 @@ def SSpcGroup(SGData,SSymbol):
             SSGOps[1][0][3,3] = SSGKl[0]
             if '1/2' in SSGData['modSymb']:
                 SSGOps[1][0][3,1] = 1
-        elif SGData['SGPtGrp'] in ['4/m',]:
+        elif SGData['SGPtGrp'] in ['4/m',]: #OK
             if '1/2' in SSGData['modSymb']:
-                SSGOps[1][0][3,1] = SSGKl[0]
+                SSGOps[1][0][3,1] = -SSGKl[0]
             for i,j in enumerate([1,6]):
                 SSGOps[j][0][3,3] = SSGKl[i]
                 if genQ[i]:
                     SSGOps[j][1][3] = genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
+                if not E:
+                    return E,SSGOps
         elif SGData['SGPtGrp'] in ['422','4mm','-42m','-4m2',]:
-            if '1/2' in SSGData['modSymb']:
-                SSGOps[1][0][3,1] = SSGKl[0]
             for i,j in enumerate([1,4,5]):
-                SSGOps[j][0][3,3] = SSGKl[i]
-                if genQ[i]:
-                    SSGOps[j][1][3] = genQ[i]
+                if '1/2' in SSGData['modSymb']:
+                    SSGOps[j][0][3,1] = -SSGKl[i]
+                if SGData['SGPtGrp'] in ['422','-42m','-4m2',]:
+                    SSGOps[j][0][3,3] = SSGKl[i]
+                    if i and genQ[2]:
+                        SSGOps[j][1][3] = genQ[i]
+                else:     #4mm               
+                    SSGOps[j][0][3,3] = -SSGKl[i]
+                    if genQ[i]:
+                        SSGOps[j][1][3] = genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
+                if not E:
+                    return E,SSGOps
         elif SGData['SGPtGrp'] in ['4/mmm',]:
             if '1/2' in SSGData['modSymb']:
-                SSGOps[1][0][3,1] = -1
+                SSGOps[1][0][3,1] = -SSGKl[0]
+                SSGOps[6][0][3,1] = SSGKl[1]
             for i,j in enumerate([1,10,6,7]):
                 SSGOps[j][0][3,3] = SSGKl[i]
                 if genQ[i]:
                     SSGOps[j][1][3] = genQ[i]
-#                for k in iFrac:
-#                    SSGOps[j][0][3,k] = SSGKl[i]
-                E,SSGOps = extendSSGOps(SSGOps)
+                E,Result = extendSSGOps(SSGOps)
+                if not E:
+                    for Op in SSGOps:
+                        print SSMT2text(Op)
+                    return E,Result
+                else:
+                    SSGOps = Result
                 
 # trigonal - all done
         elif SGData['SGPtGrp'] == '3':  #OK
@@ -638,7 +659,7 @@ def SSpcGroup(SGData,SSymbol):
                 SSGOps[1][0][3,1] = -1
             for i,j in enumerate([1,5]):
                 if SGData['SGPtGrp'] in ['3m','-3m']:
-                    SSGOps[j][0][3,3] = SSGKl[i]
+                    SSGOps[j][0][3,3] = 1
                 else:                    
                     SSGOps[j][0][3,3] = SSGKl[i+1]
                 if genQ[i]:
@@ -653,13 +674,13 @@ def SSpcGroup(SGData,SSymbol):
             if SGData['SGPtGrp'] == '-31m':
                 ids = [7,3]
             if '1/3' in SSGData['modSymb']:
-                SSGOps[ids[0]][0][3,1] = -1
+                SSGOps[ids[0]][0][3,1] = -SSGKl[0]
             for i,j in enumerate(ids):
                 SSGOps[j][0][3,3] = SSGKl[i]
                 if genQ[i+1]:
                     SSGOps[j][1][3] = genQ[i+1]
                      
-# hexagonal - all done
+# hexagonal 
         elif SGData['SGPtGrp'] == '6':  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
             SSGOps[1][1][3] = genQ[0]
@@ -675,7 +696,7 @@ def SSpcGroup(SGData,SSymbol):
                 if genQ[i]:
                     SSGOps[j][1][3] = genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
-        elif SGData['SGPtGrp'] in ['6/mmm',]: #OK
+        elif SGData['SGPtGrp'] in ['6/mmm',]: #not OK
             for i,j in enumerate([1,15,10,11]):
                 SSGOps[j][0][3,3] = SSGKl[i]
                 if genQ[i]:
@@ -729,11 +750,11 @@ def SSpcGroup(SGData,SSymbol):
             return False         
         elif SGData['SGPtGrp'] in ['4mm',] and sym not in ['','ss0','s0s','0ss','qq0','qqs']:
             return False
-        elif SGData['SGPtGrp'] in ['-4m2',] and sym not in ['','00s','00q']:
+        elif SGData['SGPtGrp'] in ['-4m2',] and sym not in ['','0s0','0q0']:
             return False
-        elif SGData['SGPtGrp'] in ['-42m',] and sym not in ['','0s0','0q0']:
+        elif SGData['SGPtGrp'] in ['-42m',] and sym not in ['','00s','00q']:
             return False
-        elif SGData['SGPtGrp'] in ['4/mmm',] and sym not in ['','s00s','s0s0','00ss','q0q0','q0qs']:
+        elif SGData['SGPtGrp'] in ['4/mmm',] and sym not in ['','s00s','s0s0','00ss','000s',]:
             return False
 #trigonal/rhombohedral - all done
         elif SGData['SGPtGrp'] in ['3',] and sym not in ['','t']:
@@ -763,19 +784,19 @@ def SSpcGroup(SGData,SSymbol):
             return False
         elif SGData['SGPtGrp'] in ['-6m2',] and sym not in ['','0s0']:
             return False
-        elif SGData['SGPtGrp'] in ['-62m',] and sym not in ['','0ss']:
+        elif SGData['SGPtGrp'] in ['-62m',] and sym not in ['','00s']:
             return False
         elif SGData['SGPtGrp'] in ['6/mmm',] and sym not in ['','s00s','s0s0','00ss']:
             return False
         return True
         
-    LaueModList = ['abg', 'ab0', 'ab1/2', 'a0g', 'a1/2g','0bg', '1/2bg',
-               'a00', 'a01/2', 'a1/20', 'a1/21/2', 'a01', 'a10', 
-               '0b0', '0b1/2', '1/2b0', '1/2b1/2', '0b1', '1b0',
-               '00g', '01/2g', '1/20g', '1/21/2g', '01g', '10g','1/31/3g']
+    LaueModList = [
+        'abg','ab0','ab1/2','a0g','a1/2g',  '0bg','1/2bg','a00','a01/2','a1/20',
+        'a1/21/2','a01','a10','0b0','0b1/2', '1/2b0','1/2b1/2','0b1','1b0','00g',
+        '01/2g','1/20g','1/21/2g','01g','10g', '1/31/3g']
     LaueList = ['-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m']
-    GenSymList = ['','s','0s','s0','00s','0s0','s00','s0s','ss0','0ss','q00','0q0','00q','qq0','q0q','0qq',
-        'q','q0','0q','qqs','s0s0','00ss','s00s','q0q0','q0qs','t','t00','t0','h','h00']
+    GenSymList = ['','s','0s','s0', '00s','0s0','s00','s0s','ss0','0ss','q00','0q0','00q','qq0','q0q', '0qq',
+        'q','qqs','s0s0','00ss','s00s','000s','t','t00','t0','h','h00']
     Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'s':.5,'t':1./3,'q':.25,'h':1./6,'a':0.,'b':0.,'g':0.}
     LaueId = LaueList.index(SGData['SGLaue'])
     if SGData['SGLaue'] in ['m3','m3m']:
@@ -979,9 +1000,9 @@ def SGProd(OpA,OpB):
     '''
     A,U = OpA
     B,V = OpB
-    M = np.inner(B.T,A)
+    M = np.inner(B,A)
     W = np.inner(B,U)+V
-    return M.T,W
+    return M,W
         
 def MoveToUnitCell(xyz):
     '''
@@ -2107,8 +2128,8 @@ ssdict = {
     'P -4':['(00g)','(1/21/2g)',],
     'P 4/m':['(00g)','(00g)s0','(1/21/2g)','(1/21/2g)s0',],
     'P 42/m':['(00g)','(00g)s0','(1/21/2g)','(1/21/2g)s0',],
-    'P 4/n':['(00g)','(00g)s0','(1/21/2g)','(1/21/2g)q0',],
-    'P 42/n':['(00g)','(00g)s0','(1/21/2g)','(1/21/2g)q0',],
+    'P 4/n':['(00g)','(00g)s0','(1/21/2g)',],
+    'P 42/n':['(00g)','(00g)s0','(1/21/2g)',],
     'P 4 2 2':['(00g)','(00g)q00','(00g)s00','(1/21/2g)','(1/21/2g)q00','(1/21/2g)s00',],
     'P 4 21 2':['(00g)','(00g)q00','(00g)s00',],
     'P 41 2 2':['(00g)','(00g)q00','(00g)s00','(1/21/2g)','(1/21/2g)q00','(1/21/2g)s00',],
@@ -2142,9 +2163,9 @@ ssdict = {
     'P 4/m c c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
         '(1/21/2g)','(1/21/2g)s0s0','(1/21/2g)00ss','(1/21/2g)s00s',],
     'P 4/n b m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
-        '(1/21/2g)','(1/21/2g)q0q0','(1/21/2g)q0qs',],
+        '(1/21/2g)','(1/21/2g)000s',],
     'P 4/n n c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
-        '(1/21/2g)','(1/21/2g)q0q0','(1/21/2g)q0qs',],
+        '(1/21/2g)','(1/21/2g)000s',],
     'P 4/m b m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'P 4/m n c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'P 4/n m m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
@@ -2154,9 +2175,9 @@ ssdict = {
     'P 42/m c m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
         '(1/21/2g)','(1/21/2g)s0s0','(1/21/2g)00ss','(1/21/2g)s00s',],
     'P 42/n b c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
-        '(1/21/2g)','(1/21/2g)q0q0','(1/21/2g)q0qs',],
+        '(1/21/2g)','(1/21/2g)000s',],
     'P 42/n n m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
-        '(1/21/2g)','(1/21/2g)q0q0','(1/21/2g)q0qs',],
+        '(1/21/2g)','(1/21/2g)000s',],
     'P 42/m b c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'P 42/m n m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'P 42/n m c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],

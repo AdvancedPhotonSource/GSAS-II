@@ -524,29 +524,30 @@ def SSpcGroup(SGData,SSymbol):
                 
     def extendSSGOps(SSGOps):
         nOps = len(SSGOps)
-        for OpA in SSGOps[1:]:
+        for OpA in SSGOps:
             OpAtxt = SSMT2text(OpA)
             if 't' not in OpAtxt:
                 continue
-            for OpB in SSGOps[1:]:
+            for OpB in SSGOps:
                 OpBtxt = SSMT2text(OpB)
                 if 't' not in OpBtxt:
                     continue
-                OpC = list(SGProd(OpA,OpB))
+                OpC = list(SGProd(OpB,OpA))
                 OpC[1] %= 1.
                 OpCtxt = SSMT2text(OpC)
-#                print OpAtxt.replace(' ','')+'*'+OpBtxt.replace(' ','')+'='+OpCtxt.replace(' ','')
-                for k,OpD in enumerate(SSGOps[1:]):
+#                print OpAtxt.replace(' ','')+' * '+OpBtxt.replace(' ','')+' = '+OpCtxt.replace(' ','')
+                for k,OpD in enumerate(SSGOps):
                     OpDtxt = SSMT2text(OpD)
                     if 't' in OpDtxt:
                         continue
-#                    print '    ('+OpCtxt.replace(' ','')+'=? '+OpDtxt.replace(' ','')+')'
+#                    print '    ('+OpCtxt.replace(' ','')+' = ? '+OpDtxt.replace(' ','')+')'
                     if OpCtxt == OpDtxt:
                         continue
                     elif OpCtxt.split(',')[:3] == OpDtxt.split(',')[:3]:
                         if 't' not in OpDtxt:
-                            SSGOps[k+1] = OpC
-#                            print k+1,'   new:',OpCtxt.replace(' ','')
+                            SSGOps[k] = OpC
+#                            print k,'   new:',OpCtxt.replace(' ','')
+                            break
                         else:
                             OpCtxt = OpCtxt.replace(' ','')
                             OpDtxt = OpDtxt.replace(' ','')
@@ -557,17 +558,18 @@ def SSpcGroup(SGData,SSymbol):
                 
     def genSSGOps():
         SSGOps = SSGData['SSGOps'][:]
+        OrthOp = {'g':[1,2,3],'a':[3,1,2],'b':[2,3,1]}
         iFrac = {}
         for i,frac in enumerate(SSGData['modSymb']):
             if frac in ['1/2','1/3','1/4','1/6','1']:
-                iFrac[i] = frac
+                iFrac[i] = frac+'.'
         print SGData['SpGrp']+SSymbol
         print 'SSGKl',SSGKl,'genQ',genQ,'iFrac',iFrac,'modSymb',SSGData['modSymb']
 # set identity & 1,-1; triclinic
         SSGOps[0][0][3,3] = 1.
-# expand if centrosymmetric
-        if SGData['SGInv']:
-            SSGOps += [[-1*M,V] for M,V in SSGOps[:]]
+## expand if centrosymmetric
+#        if SGData['SGInv']:
+#            SSGOps += [[-1*M,V] for M,V in SSGOps[:]]
 # monoclinic - all done & all checked
         if SGData['SGPtGrp'] in ['2','m']:  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
@@ -575,24 +577,40 @@ def SSpcGroup(SGData,SSymbol):
             for i in iFrac:
                 SSGOps[1][0][3,i] = -SSGKl[0]
         elif SGData['SGPtGrp'] == '2/m':    #OK
-            for i,j in enumerate([1,3]):
-                SSGOps[j][0][3,3] = -SSGKl[i]
-                if genQ[i]:
-                    SSGOps[j][1][3] = genQ[i]
-                for k in iFrac:
-                    SSGOps[j][0][3,k] = SSGKl[i]
+            SSGOps[1][0][3,3] = SSGKl[1]
+            if gensym:
+                SSGOps[1][1][3] = 0.5
+            for i in iFrac:
+                SSGOps[1][0][3,i] = SSGKl[0]
             
 # orthorhombic
         elif SGData['SGPtGrp'] in ['222','mm2','m2m','2mm','mmm']:
+            for a in ['a','b','g']:
+                if a in SSGData['modSymb']:
+                    Gens = OrthOp[a]
+            for j in iFrac:
+                for i in Gens:
+                    if i != j:
+                        SSGOps[i][0][3,j] = -2.*eval(iFrac[j])*SSGKl[i-1]
             for i in [0,1,2]:
-                SSGOps[i+1][0][3,3] = SSGKl[i]
-                SSGOps[i+1][1][3] = genQ[i]
-            for i in iFrac:
-                SSGOps[1][0][3,i] = -1
-            print SSMT2text(SSGOps[1]).replace(' ',''),SSMT2text(SSGOps[2]).replace(' ',''), \
-                SSMT2text(SSGOps[3]).replace(' ','')
+                SSGOps[(i+1)%3+1][0][3,3] = SSGKl[(i+1)%3]  #OK
+                SSGOps[(i+1)%3+1][1][3] = genQ[(i+1)%3]     #OK
+                E,SSGOps = extendSSGOps(SSGOps)
+                if not E:
+                    return E,SSGOps
+        elif SGData['SGPtGrp'] == 'mmm':
+            for i in [1,2,8]:
+                for j in iFrac:
+                    if i-1 != j:
+                        SSGOps[i][0][3,j] = -2.*eval(iFrac[j])*SSGKl[i-1]
+            for i in [0,1,7]:
+                SSGOps[(i+1)%3+1][0][3,3] = SSGKl[(i+1)%3]
+                SSGOps[(i+1)%3+1][1][3] = genQ[(i+1)%3]
+                E,SSGOps = extendSSGOps(SSGOps)
+                if not E:
+                    return E,SSGOps
                 
-# tetragonal
+# tetragonal - all done & checked
         elif SGData['SGPtGrp'] == '4':  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
             SSGOps[1][1][3] = genQ[0]
@@ -605,45 +623,42 @@ def SSpcGroup(SGData,SSymbol):
         elif SGData['SGPtGrp'] in ['4/m',]: #OK
             if '1/2' in SSGData['modSymb']:
                 SSGOps[1][0][3,1] = -SSGKl[0]
-            for i,j in enumerate([1,6]):
-                SSGOps[j][0][3,3] = SSGKl[i]
+            for i,j in enumerate([1,3]):
+                SSGOps[j][0][3,3] = 1
                 if genQ[i]:
                     SSGOps[j][1][3] = genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
                 if not E:
                     return E,SSGOps
-        elif SGData['SGPtGrp'] in ['422','4mm','-42m','-4m2',]:
-            for i,j in enumerate([1,4,5]):
-                if '1/2' in SSGData['modSymb']:
+        elif SGData['SGPtGrp'] in ['422','4mm','-42m','-4m2',]: #OK
+            iGens = [1,4,5]
+            if SGData['SGPtGrp'] in ['4mm','-4m2',]:
+                iGens = [1,6,7]
+            for i,j in enumerate(iGens):
+                if '1/2' in SSGData['modSymb'] and i < 2:
                     SSGOps[j][0][3,1] = -SSGKl[i]
-                if SGData['SGPtGrp'] in ['422','-42m','-4m2',]:
-                    SSGOps[j][0][3,3] = SSGKl[i]
-                    if i and genQ[2]:
-                        SSGOps[j][1][3] = genQ[i]
-                else:     #4mm               
-                    SSGOps[j][0][3,3] = -SSGKl[i]
-                    if genQ[i]:
-                        SSGOps[j][1][3] = genQ[i]
+                SSGOps[j][0][3,3] = SSGKl[i]
+                if genQ[i]:
+                    SSGOps[j][1][3] = -genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
                 if not E:
                     return E,SSGOps
-        elif SGData['SGPtGrp'] in ['4/mmm',]:
+        elif SGData['SGPtGrp'] in ['4/mmm',]:#OK
             if '1/2' in SSGData['modSymb']:
                 SSGOps[1][0][3,1] = -SSGKl[0]
                 SSGOps[6][0][3,1] = SSGKl[1]
-            for i,j in enumerate([1,10,6,7]):
-                SSGOps[j][0][3,3] = SSGKl[i]
-                if genQ[i]:
-                    SSGOps[j][1][3] = genQ[i]
+                if modsym:
+                   SSGOps[1][1][3]  = -genQ[3]
+            for i,j in enumerate([1,2,6,7]):
+                SSGOps[j][0][3,3] = 1
+                SSGOps[j][1][3] = genQ[i]
                 E,Result = extendSSGOps(SSGOps)
                 if not E:
-                    for Op in SSGOps:
-                        print SSMT2text(Op)
                     return E,Result
                 else:
                     SSGOps = Result
                 
-# trigonal - all done
+# trigonal - all done & checked
         elif SGData['SGPtGrp'] == '3':  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
             if '1/3' in SSGData['modSymb']:
@@ -672,15 +687,15 @@ def SSpcGroup(SGData,SSymbol):
         elif SGData['SGPtGrp'] in ['31m','-31m']:   #OK
             ids = [1,3]
             if SGData['SGPtGrp'] == '-31m':
-                ids = [7,3]
+                ids = [1,3]
             if '1/3' in SSGData['modSymb']:
                 SSGOps[ids[0]][0][3,1] = -SSGKl[0]
             for i,j in enumerate(ids):
-                SSGOps[j][0][3,3] = SSGKl[i]
+                SSGOps[j][0][3,3] = 1
                 if genQ[i+1]:
                     SSGOps[j][1][3] = genQ[i+1]
                      
-# hexagonal 
+# hexagonal all done & checked
         elif SGData['SGPtGrp'] == '6':  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
             SSGOps[1][1][3] = genQ[0]
@@ -690,15 +705,22 @@ def SSpcGroup(SGData,SSymbol):
             SSGOps[1][0][3,3] = -SSGKl[1]
             SSGOps[1][1][3] = genQ[0]
             SSGOps[2][1][3] = genQ[1]
-        elif SGData['SGPtGrp'] in ['622','6mm','-62m','-6m2',]: #OK
-            for i,j in enumerate([1,10,11]):
+        elif SGData['SGPtGrp'] in ['622',]: #OK
+            for i,j in enumerate([1,8,9]):
                 SSGOps[j][0][3,3] = SSGKl[i]
                 if genQ[i]:
                     SSGOps[j][1][3] = genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
-        elif SGData['SGPtGrp'] in ['6/mmm',]: #not OK
-            for i,j in enumerate([1,15,10,11]):
+            
+        elif SGData['SGPtGrp'] in ['6mm','-62m','-6m2',]: #OK
+            for i,j in enumerate([1,6,7]):
                 SSGOps[j][0][3,3] = SSGKl[i]
+                if genQ[i]:
+                    SSGOps[j][1][3] = genQ[i]
+                E,SSGOps = extendSSGOps(SSGOps)
+        elif SGData['SGPtGrp'] in ['6/mmm',]: # OK
+            for i,j in enumerate([1,2,10,11]):
+                SSGOps[j][0][3,3] = 1
                 if genQ[i]:
                     SSGOps[j][1][3] = genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
@@ -737,7 +759,7 @@ def SSpcGroup(SGData,SSymbol):
 #orthorhombic - all 
         elif SGData['SGPtGrp'] in ['222',] and sym not in ['','s00','0s0','00s']:
             return False 
-        elif SGData['SGPtGrp'] in ['2mm','m2m','mm2','mmm'] and sym not in GenSymList[4:15]:
+        elif SGData['SGPtGrp'] in ['2mm','m2m','mm2','mmm'] and sym not in ['',]+GenSymList[4:15]:
             return False 
 #tetragonal - all done
         elif SGData['SGPtGrp'] in ['4',] and sym not in ['','s','q']:
@@ -748,13 +770,13 @@ def SSpcGroup(SGData,SSymbol):
             return False
         elif SGData['SGPtGrp'] in ['422',] and sym not in ['','q00','s00']:
             return False         
-        elif SGData['SGPtGrp'] in ['4mm',] and sym not in ['','ss0','s0s','0ss','qq0','qqs']:
+        elif SGData['SGPtGrp'] in ['4mm',] and sym not in ['','ss0','s0s','0ss','00s',]:
             return False
         elif SGData['SGPtGrp'] in ['-4m2',] and sym not in ['','0s0','0q0']:
             return False
-        elif SGData['SGPtGrp'] in ['-42m',] and sym not in ['','00s','00q']:
+        elif SGData['SGPtGrp'] in ['-42m',] and sym not in ['','0ss','00q']:
             return False
-        elif SGData['SGPtGrp'] in ['4/mmm',] and sym not in ['','s00s','s0s0','00ss','000s',]:
+        elif SGData['SGPtGrp'] in ['4/mmm',] and sym not in ['','s00s','s0s0','00ss',]:
             return False
 #trigonal/rhombohedral - all done
         elif SGData['SGPtGrp'] in ['3',] and sym not in ['','t']:
@@ -796,7 +818,7 @@ def SSpcGroup(SGData,SSymbol):
         '01/2g','1/20g','1/21/2g','01g','10g', '1/31/3g']
     LaueList = ['-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m']
     GenSymList = ['','s','0s','s0', '00s','0s0','s00','s0s','ss0','0ss','q00','0q0','00q','qq0','q0q', '0qq',
-        'q','qqs','s0s0','00ss','s00s','000s','t','t00','t0','h','h00']
+        'q','qqs','s0s0','00ss','s00s','t','t00','t0','h','h00']
     Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'s':.5,'t':1./3,'q':.25,'h':1./6,'a':0.,'b':0.,'g':0.}
     LaueId = LaueList.index(SGData['SGLaue'])
     if SGData['SGLaue'] in ['m3','m3m']:
@@ -1000,7 +1022,7 @@ def SGProd(OpA,OpB):
     '''
     A,U = OpA
     B,V = OpB
-    M = np.inner(B,A)
+    M = np.inner(B,A.T)
     W = np.inner(B,U)+V
     return M,W
         
@@ -1839,22 +1861,46 @@ ssdict = {
     'C 2/c':['(a0g)','(a0g)0s','(0b0)','(0b0)s0',],
     'C 2/n':['(a0g)','(a0g)0s','(0b0)','(0b0)s0',],
     #orthorhombic    
-    'P 2 2 2':['(a00)','(0b0)','(00g)','(a00)s00','(0b0)0s0','(00g)00s',
-        '(a1/20)','(a01/2)','(0b1/2)','(1/2b0)','(01/2g)','(1/20g)',
-        '(a1/21/2)','(1/2b1/2)','(1/21/2g)',],
+    'P 2 2 2':['(00g)','(00g)00s','(01/2g)','(01/2g)00s','(1/20g)','(1/20g)00s','(1/21/2g)','(1/21/2g)00s',
+        '(a00)','(a00)s00','(a01/2)','(a01/2)s00','(a1/20)','(a1/20)s00','(a1/21/2)','(a1/21/2)s00',
+        '(0b0)','(0b0)0s0','(0b1/2)','(0b1/2)0s0','(1/2b0)','(1/2b0)0s0','(1/2b1/2)','(1/2b1/2)0s0',],
         
-    'P 2 2 21':['(a00)','(0b0)','(00g)','(a00)s00','(0b0)0s0',
-        '(a1/20)','(1/2b0)','(01/2g)','(1/20g)','(1/21/2g)',],
-    'P 2 21 2':['(a00)','(0b0)','(00g)','(a00)s00','(00g)00s',
-        '(a01/2)','(1/20g)','(0b1/2)','(1/2b0)','(1/2b1/2)',],
-    'P 21 2 2':['(a00)','(0b0)','(00g)','(0b0)0s0','(00g)00s',
-        '(01/2g)','(0b1/2)','(a01/2)','(a1/20)','(a1/21/2)',],
+    'P 2 2 21':['(00g)','(00g)00s','(01/2g)','(01/2g)00s','(1/20g)','(1/20g)00s','(1/21/2g)','(1/21/2g)00s',
+        '(a00)','(a00)s00','(a1/20)','(a1/20)s00','(0b0)','(0b0)0s0','(1/2b0)','(1/2b0)0s0',],
+    'P 2 21 2':['(a00)','(a00)s00','(a01/2)','(a01/2)s00','(a1/20)','(a1/20)s00','(a1/21/2)','(a1/21/2)s00',
+        '(00g)','(00g)00s','(01/2g)','(01/2g)00s','(0b0)','(0b0)0s0','(0b1/2)','(0b1/2)0s0',],
+    'P 21 2 2':['(0b0)','(0b0)0s0','(0b1/2)','(0b1/2)0s0','(1/2b0)','(1/2b0)0s0','(1/2b1/2)','(1/2a1/2)0s0',
+        '(00g)','(00g)00s','(1/20g)','(1/20g)00s','(a00)','(a00)s00','(a01/2)','(a01/2)s00',],
         
-    'P 21 21 2':['(a00)','(0b0)','(00g)','(00g)00s','(a01/2)','(0b1/2)',],
-    'P 21 2 21':['(a00)','(0b0)','(00g)','(0b0)0s0','(a1/20)','(01/2g)',],
-    'P 2 21 21':['(a00)','(0b0)','(00g)','(a00)s00','(1/2b0)','(1/20g)',],
+    'P 21 21 2':['(00g)','(00g)00s','(a00)','(a00)s00','(a01/2)','(a01/2)s00',
+        '(0b0)','(0b0)0s0','(0b1/2)','(0b1/2)0s0',],
+    'P 21 2 21':['(0b0)','(0b0)0s0','(00g)','(00g)00s','(01/2g)','(01/2g)00s',
+        '(a00)','(a00)s00','(a1/20)','(a1/20)s00',],
+    'P 2 21 21':['(a00)','(a00)s00','(00g)','(00g)00s','(1/20g)','(1/20g)00s',
+        '(0b0)','(0b0)0s0','(1/2b0)','(1/2b0)0s0',],
         
-    'P 21 21 21':['(a00)','(0b0)','(00g)',],
+    'P 21 21 21':['(00g)','(00g)00s','(a00)','(a00)s00','(0b0)','(0b0)0s0',],
+        
+    'C 2 2 21':['(00g)','(00g)00s','(10g)','(10g)00s','(01g)','(01g)00s','(a00)',
+        '(a00)s00','(0b0)','(0b0)0s0',],
+    'A 21 2 2':['(a00)','(a00)s00','(a10)','(a10)s00','(a01)','(a01)s00','(0b0)',
+        '(0b0)0s0','(00g)','(00g)00s',],
+    'B 2 21 2':['(0b0)','(0b0)0s0','(1b0)','(1b0)0s0','(0b1)','(0b1)0s0','(a00)',
+        '(a00)s00','(00g)','(00g)00s',],
+        
+    'C 2 2 2':['(00g)','(00g)00s','(10g)','(10g)00s','(a00)','(a00)s00','(a01/2)',
+        '(a01/2)s00','(0b0)','(0b0)0s0','(0b1/2)','(0b1/2)0s0',],
+    'A 2 2 2':['(a00)','(a00)s00','(a10)','(a10)s00','(0b0)','(0b0)0s0','(1/2b0)',
+        '(1/2b0)0s0','(00g)','(00g)00s','(1/20g)','(1/20g)00s',],
+    'B 2 2 2':['(0b0)','(0b0)0b0','(1b0)','(1b0)0s0','(a00)','(a00)s00','(a1/20)',
+        '(a1/20)0s0','(00g)','(00g)00s','(01/2g)','(01/2g)00s',],
+        
+    'F 2 2 2':['(00g)','(00g)00s','(10g)','(10g)00s','(01g)','(01g)00s','(a00)','(a00)s00',
+        '(a10)','(a10)s00','(a01)','(a01)s00','(0b0)','(0b0)0s0','(1b0)','(1b0)0s0','(0b1)','(0b1)0s0',],
+        
+    'I 2 2 2':['(00g)','(00g)00s','(a00)','(a00)s00','(0b0)','(0b0)0s0',],
+        
+    'I 21 21 21':['(00g)','(00g)00s','(a00','(a00)s00','(0b0)','(0b0)0s0',],
         
     'P m m 2':['(a00)','(0b0)','(00g)',
         '(a00)s00','(0b0)0s0','(00g)s0s','(00g)ss0','(00g)0ss',
@@ -1917,11 +1963,20 @@ ssdict = {
     'P 2 n n':[],
     'P n 2 n':[],
         
-    'P m m m':[],
+    'P m m m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(01/2g)','(01/2g)s00','(01/2g)0s0','(01/2g)ss0',
+                    '(1/20g)','(1/20g)s00','(1/20g)0s0','(1/20g)ss0','(1/21/2g)','(1/21/2g)s00','(1/21/2g)0s0','(1/21/2g)ss0',
+                    '(a00)','(a00)0s0','(a00)00s','(a00)0ss','(a01/2)','(a01/2)0s0','(a01/2)00s','(a01/2)0ss',
+                    '(a1/20)','(a1/20)0s0','(a1/20)00s','(a1/20)0ss','(a1/21/2)','(a1/21/2)0s0','(a1/21/2)00s','(a1/21/2)0ss',
+                    '(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s','(0b1/2)','(0b1/2)s00','(0b1/2)00s','(0g1/2)s0s',
+                    '(1/2b0)','(1/2b0)s00','(1/2b0)00s','(1/2b0)s0s','(1/2b1/2)','(1/2b1/2)s00','(1/2b1/2)00s','(1/2b1/2)s0s',],
         
-    'P n n n':[],
+    'P n n n':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0','(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s',
+                    '(1/21/2g)','(1/21/2g)00s','(a1/21/2)','(a1/21/2)s00','(1/2b1/2)','(1/2b1/2)0s0',],
         
-    'P c c m':[],
+    'P c c m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(01/2g)','(01/2g)s00','(01/2g)0s0','(01/2g)ss0',
+                    '(1/20g)','(1/20g)s00','(1/20g)0s0','(1/20g)ss0','(1/21/2g)','(1/21/2g)s00','(1/21/2g)0s0','(1/21/2g)ss0',
+                    '(a00)','(a00)0s0','(a00)00s','(a00)0ss','(a1/20)','(a1/20)0s0','(a1/20)00s','(a1/20)0ss',
+                    '(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s','(1/2b0)','(1/2b0)s00','(1/2b0)00s','(1/2b0)s0s',],
     'P m a a':[],
     'P b m b':[],
         
@@ -2015,8 +2070,6 @@ ssdict = {
     'P n a m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
         '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
         
-    'C 2 2 21':['(a00)','(0b0)','(00g)','(10g)','(01g)',],
-    'C 2 2 2':[],
     'C m m 2':[],
     'C m c 21':[],
     'C c c 2':[],
@@ -2037,8 +2090,6 @@ ssdict = {
     'C m m a':[],
     'C c c a':[],
     'C m c m':[],
-    'I 2 2 2':[],
-    'I 21 21 21':[],
     'I m m m':[],
         
     'I m m 2':[],
@@ -2081,13 +2132,6 @@ ssdict = {
         '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
     'I m a m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
         '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s'],
-        
-    'F 2 2 2':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
-        '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s',
-        '(10g)','(10g)s00','(10g)0s0','(10g)ss0','(a10)','(a10)0s0',
-        '(a10)00s','(a10)0ss','(0b1)','(0b1)s00','(0b1)00s','(0b1)s0s',
-        '(01g)','(01g)s00','(01g)0s0','(01g)ss0','(a01)','(a01)0s0',
-        '(a01)00s','(a01)0ss','(1b0)','(1b0)s00','(1b0)00s','(1b0)s0s'],
         
     'F m m m':['(00g)','(00g)s00','(00g)0s0','(00g)ss0','(a00)','(a00)0s0',
         '(a00)00s','(a00)0ss','(0b0)','(0b0)s00','(0b0)00s','(0b0)s0s',
@@ -2140,32 +2184,30 @@ ssdict = {
     'P 43 21 2':['(00g)','(00g)q00','(00g)s00',],
     'P 4 m m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s',
         '(1/21/2g)','(1/21/2g)ss0','(1/21/2g)0ss','(1/21/2g)s0s',],
-    'P 4 b m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)qq0','(1/21/2g)qqs',],
+    'P 4 b m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)00s',],
     'P 42 c m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s',
         '(1/21/2g)','(1/21/2g)ss0','(1/21/2g)0ss','(1/21/2g)s0s',],
-    'P 42 n m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)qq0','(1/21/2g)qqs',],
+    'P 42 n m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)00s',],
     'P 4 c c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s',
         '(1/21/2g)','(1/21/2g)ss0','(1/21/2g)0ss','(1/21/2g)s0s',],
-    'P 4 n c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)qq0','(1/21/2g)qqs'],
+    'P 4 n c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)00s'],
     'P 42 m c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s',
         '(1/21/2g)','(1/21/2g)ss0','(1/21/2g)0ss','(1/21/2g)s0s',],
-    'P 42 b c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)qq0','(1/21/2g)qqs'],
-    'P -4 2 m':['(00g)','(00g)00s','(1/21/2g)','(1/21/2g)00s',],
-    'P -4 2 c':['(00g)','(00g)00s',],
-    'P -4 21 m':['(00g)','(00g)00s',],
-    'P -4 21 c':['(00g)','(00g)00s',],
+    'P 42 b c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)00s'],
+    'P -4 2 m':['(00g)','(00g)0ss','(1/21/2g)','(1/21/2g)0ss',],
+    'P -4 2 c':['(00g)','(00g)0ss','(1/21/2g)','(1/21/2g)0ss',],
+    'P -4 21 m':['(00g)','(00g)0ss',],
+    'P -4 21 c':['(00g)','(00g)0ss',],
     'P -4 m 2':['(00g)','(00g)0s0','(1/21/2g)','(1/21/2g)0s0',],
     'P -4 c 2':['(00g)','(00g)0s0','(1/21/2g)','(1/21/2g)0s0',],
-    'P -4 b 2':['(00g)','(00g)0s0','(1/21/2g)','(1/21/2g)0q0',],
-    'P -4 n 2':['(00g)','(00g)0s0','(1/21/2g)','(1/21/2g)0q0',],
+    'P -4 b 2':['(00g)','(00g)0s0','(1/21/2g)0q0',],
+    'P -4 n 2':['(00g)','(00g)0s0','(1/21/2g)0q0',],
     'P 4/m m m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
         '(1/21/2g)','(1/21/2g)s0s0','(1/21/2g)00ss','(1/21/2g)s00s',],
     'P 4/m c c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
         '(1/21/2g)','(1/21/2g)s0s0','(1/21/2g)00ss','(1/21/2g)s00s',],
-    'P 4/n b m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
-        '(1/21/2g)','(1/21/2g)000s',],
-    'P 4/n n c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
-        '(1/21/2g)','(1/21/2g)000s',],
+    'P 4/n b m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s','(1/21/2g)',],
+    'P 4/n n c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s','(1/21/2g)',],
     'P 4/m b m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'P 4/m n c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'P 4/n m m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
@@ -2174,10 +2216,8 @@ ssdict = {
         '(1/21/2g)','(1/21/2g)s0s0','(1/21/2g)00ss','(1/21/2g)s00s',],
     'P 42/m c m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
         '(1/21/2g)','(1/21/2g)s0s0','(1/21/2g)00ss','(1/21/2g)s00s',],
-    'P 42/n b c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
-        '(1/21/2g)','(1/21/2g)000s',],
-    'P 42/n n m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
-        '(1/21/2g)','(1/21/2g)000s',],
+    'P 42/n b c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s','(1/21/2g)',],
+    'P 42/n n m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s','(1/21/2g)',],
     'P 42/m b c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'P 42/m n m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'P 42/n m c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
@@ -2195,8 +2235,8 @@ ssdict = {
     'I 41 c d':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s',],
     'I -4 m 2':['(00g)','(00g)0s0',],
     'I -4 c 2':['(00g)','(00g)0s0',],
-    'I -4 2 m':['(00g)','(00g)00s',],
-    'I -4 2 d':['(00g)','(00g)00s',],
+    'I -4 2 m':['(00g)','(00g)0ss',],
+    'I -4 2 d':['(00g)','(00g)0ss',],
     'I 4/m m m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'I 4/m c m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'I 41/a m d':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],

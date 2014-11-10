@@ -588,13 +588,13 @@ def SSpcGroup(SGData,SSymbol):
             for a in ['a','b','g']:
                 if a in SSGData['modSymb']:
                     Gens = OrthOp[a]
-            for j in iFrac:
-                for i in Gens:
-                    if i != j:
+            for i in Gens[:-1]:
+                for j in iFrac:
+                    if i-1 == j:
                         SSGOps[i][0][3,j] = -2.*eval(iFrac[j])*SSGKl[i-1]
-            for i in [0,1,2]:
-                SSGOps[(i+1)%3+1][0][3,3] = SSGKl[(i+1)%3]  #OK
-                SSGOps[(i+1)%3+1][1][3] = genQ[(i+1)%3]     #OK
+                        print i,j,SSMT2text(SSGOps[i]).replace(' ','')
+                SSGOps[(i)%3+1][0][3,3] = SSGKl[(i)%3]  #OK
+                SSGOps[(i)%3+1][1][3] = genQ[(i)%3]     #OK
                 E,SSGOps = extendSSGOps(SSGOps)
                 if not E:
                     return E,SSGOps
@@ -636,10 +636,13 @@ def SSpcGroup(SGData,SSymbol):
                 iGens = [1,6,7]
             for i,j in enumerate(iGens):
                 if '1/2' in SSGData['modSymb'] and i < 2:
-                    SSGOps[j][0][3,1] = -SSGKl[i]
+                    SSGOps[j][0][3,1] = SSGKl[i]
                 SSGOps[j][0][3,3] = SSGKl[i]
                 if genQ[i]:
-                    SSGOps[j][1][3] = -genQ[i]
+                    if 's' in gensym and j == 6:
+                        SSGOps[j][1][3] = -genQ[i]
+                    else:
+                        SSGOps[j][1][3] = genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
                 if not E:
                     return E,SSGOps
@@ -770,13 +773,13 @@ def SSpcGroup(SGData,SSymbol):
             return False
         elif SGData['SGPtGrp'] in ['422',] and sym not in ['','q00','s00']:
             return False         
-        elif SGData['SGPtGrp'] in ['4mm',] and sym not in ['','ss0','s0s','0ss','00s',]:
+        elif SGData['SGPtGrp'] in ['4mm',] and sym not in ['','ss0','s0s','0ss','00s','qq0','qqs']:
             return False
         elif SGData['SGPtGrp'] in ['-4m2',] and sym not in ['','0s0','0q0']:
             return False
         elif SGData['SGPtGrp'] in ['-42m',] and sym not in ['','0ss','00q']:
             return False
-        elif SGData['SGPtGrp'] in ['4/mmm',] and sym not in ['','s00s','s0s0','00ss',]:
+        elif SGData['SGPtGrp'] in ['4/mmm',] and sym not in ['','s00s','s0s0','00ss','000s',]:
             return False
 #trigonal/rhombohedral - all done
         elif SGData['SGPtGrp'] in ['3',] and sym not in ['','t']:
@@ -818,7 +821,7 @@ def SSpcGroup(SGData,SSymbol):
         '01/2g','1/20g','1/21/2g','01g','10g', '1/31/3g']
     LaueList = ['-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m']
     GenSymList = ['','s','0s','s0', '00s','0s0','s00','s0s','ss0','0ss','q00','0q0','00q','qq0','q0q', '0qq',
-        'q','qqs','s0s0','00ss','s00s','t','t00','t0','h','h00']
+        'q','qqs','s0s0','00ss','s00s','t','t00','t0','h','h00','000s']
     Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'s':.5,'t':1./3,'q':.25,'h':1./6,'a':0.,'b':0.,'g':0.}
     LaueId = LaueList.index(SGData['SGLaue'])
     if SGData['SGLaue'] in ['m3','m3m']:
@@ -865,7 +868,10 @@ def SSpcGroup(SGData,SSymbol):
         SSGData['SSGOps'].append([ssop,T])
     E,Result = genSSGOps()
     if E:
-        SSGData['SSGOps'] = Result                     
+        SSGData['SSGOps'] = Result
+        print SSGData['SSpGrp']
+        for Op in Result:
+            print SSMT2text(Op).replace(' ','')                                 
         return None,SSGData
     else:
         return Result+'\nOperator conflict - incorrect superspace symbol',None
@@ -2184,16 +2190,16 @@ ssdict = {
     'P 43 21 2':['(00g)','(00g)q00','(00g)s00',],
     'P 4 m m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s',
         '(1/21/2g)','(1/21/2g)ss0','(1/21/2g)0ss','(1/21/2g)s0s',],
-    'P 4 b m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)00s',],
+    'P 4 b m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)qq0','(1/21/2g)qqs',],
     'P 42 c m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s',
         '(1/21/2g)','(1/21/2g)ss0','(1/21/2g)0ss','(1/21/2g)s0s',],
-    'P 42 n m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)00s',],
+    'P 42 n m':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)qq0','(1/21/2g)qqs',],
     'P 4 c c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s',
         '(1/21/2g)','(1/21/2g)ss0','(1/21/2g)0ss','(1/21/2g)s0s',],
-    'P 4 n c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)00s'],
+    'P 4 n c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)qq0',],
     'P 42 m c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s',
         '(1/21/2g)','(1/21/2g)ss0','(1/21/2g)0ss','(1/21/2g)s0s',],
-    'P 42 b c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)','(1/21/2g)00s'],
+    'P 42 b c':['(00g)','(00g)ss0','(00g)0ss','(00g)s0s','(1/21/2g)qq0',],
     'P -4 2 m':['(00g)','(00g)0ss','(1/21/2g)','(1/21/2g)0ss',],
     'P -4 2 c':['(00g)','(00g)0ss','(1/21/2g)','(1/21/2g)0ss',],
     'P -4 21 m':['(00g)','(00g)0ss',],
@@ -2206,7 +2212,7 @@ ssdict = {
         '(1/21/2g)','(1/21/2g)s0s0','(1/21/2g)00ss','(1/21/2g)s00s',],
     'P 4/m c c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
         '(1/21/2g)','(1/21/2g)s0s0','(1/21/2g)00ss','(1/21/2g)s00s',],
-    'P 4/n b m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s','(1/21/2g)',],
+    'P 4/n b m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s','(1/21/2g)','(1/21/2g)00ss',],
     'P 4/n n c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s','(1/21/2g)',],
     'P 4/m b m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'P 4/m n c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
@@ -2217,7 +2223,7 @@ ssdict = {
     'P 42/m c m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',
         '(1/21/2g)','(1/21/2g)s0s0','(1/21/2g)00ss','(1/21/2g)s00s',],
     'P 42/n b c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s','(1/21/2g)',],
-    'P 42/n n m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s','(1/21/2g)',],
+    'P 42/n n m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s','(1/21/2g)','(1/21/2g)000s',],
     'P 42/m b c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'P 42/m n m':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],
     'P 42/n m c':['(00g)','(00g)s0s0','(00g)00ss','(00g)s00s',],

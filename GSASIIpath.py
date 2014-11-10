@@ -308,7 +308,7 @@ def svnUpdateProcess(version=None,projectfile=None):
     subprocess.Popen([sys.executable,__file__,projectfile,version])
     sys.exit()
 
-def IPyBreak():
+def IPyBreak_base():
     '''A routine that invokes an IPython session at the calling location
     This routine is only used when debug=True is set in config.py
     '''
@@ -338,7 +338,10 @@ def exceptHook(*args):
     This routine is only used when debug=True is set in config.py    
     '''
     from IPython.core import ultratb
-    ultratb.FormattedTB(call_pdb=False,color_scheme='LightBG')(*args)
+    if 'win' in sys.platform:
+        ultratb.FormattedTB(call_pdb=False,color_scheme='NoColor')(*args)
+    else:
+        ultratb.FormattedTB(call_pdb=False,color_scheme='LightBG')(*args)
     try: 
         from IPython.terminal.embed import InteractiveShellEmbed
     except ImportError:
@@ -361,16 +364,22 @@ def DoNothing():
     '''
     pass 
 
-if GetConfigValue('debug'):
-    print 'Debug on: IPython: Exceptions and G2path.IPyBreak(); pdb: G2path.pdbBreak()'
-    sys.excepthook = exceptHook
-    import pdb
-    pdbBreak = pdb.set_trace
-else:
-    IPyBreak = DoNothing
-    pdbBreak = DoNothing
+IPyBreak = DoNothing
+pdbBreak = DoNothing
+def InvokeDebugOpts():
+    'Called in GSASII.py to set up debug options'
+    if GetConfigValue('debug'):
+        print 'Debug on: IPython: Exceptions and G2path.IPyBreak(); pdb: G2path.pdbBreak()'
+        sys.excepthook = exceptHook
+        import pdb
+        global pdbBreak
+        pdbBreak = pdb.set_trace
+        global IPyBreak
+        IPyBreak = IPyBreak_base
     
 if __name__ == '__main__':
+    '''What follows is called to update (or downdate) GSAS-II in a separate process. 
+    '''
     import subprocess
     import time
     time.sleep(1) # delay to give the main process a chance to exit

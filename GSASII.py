@@ -3619,4 +3619,5 @@ if __name__ == '__main__':
     print "Platform info:",sys.platform,platform.architecture()[0],platform.machine()
     #print "wxPython description",wx.PlatformInfo
     print "This is GSAS-II version:     ",__version__,' revision '+str(GSASIIpath.GetVersionNumber())
+    GSASIIpath.InvokeDebugOpts()
     main() # start the GUI

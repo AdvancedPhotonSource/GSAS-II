@@ -501,6 +501,7 @@ def UpdateImageControls(G2frame,data,masks):
         waveSel.Bind(wx.EVT_KILL_FOCUS,OnWavelength)
         calibSizer.Add(waveSel,0,WACV)             
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Distance'),0,WACV)
+#        dist = wx.CheckBox(G2frame.dataDisplay,label=' Distance')  #possible future mod. to allow fix of calib. parms.?
         distSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%8.2f"%(data['distance'])),style=wx.TE_READONLY)
         distSel.SetBackgroundColour(VERY_LIGHT_GREY)
         calibSizer.Add(distSel,0,WACV)

@@ -1067,8 +1067,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                 print >>pFile,''
                 for line in SGtext: print >>pFile,line
                 if len(SGtable):
-                    for i,item in enumerate(SGtable[::2]):
-                        line = ' %s %s'%(item.ljust(30),SGtable[2*i+1].ljust(30))
+                    for item in SGtable:
+                        line = ' %s '%(item)
                         print >>pFile,line   
                 else:
                     print >>pFile,' ( 1)    %s'%(SGtable[0])

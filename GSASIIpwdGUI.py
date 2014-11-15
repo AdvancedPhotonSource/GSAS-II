@@ -1097,7 +1097,7 @@ def UpdateInstrumentGrid(G2frame,data):
             for ip,peak in enumerate(IndexPeaks[0]):
                 if peak[2] and peak[3]:
                     binwid = cw[np.searchsorted(xye[0],peak[0])]
-                    XY.append([peak[8],peak[0],binwid])
+                    XY.append([peak[-1],peak[0],binwid])
                     Sigs.append(IndexPeaks[1][ip])
             if len(XY):
                 XY = np.array(XY)
@@ -1538,6 +1538,11 @@ def UpdateInstrumentGrid(G2frame,data):
         G2frame.Bind(wx.EVT_MENU,OnInstFlagCopy,id=G2gd.wxID_INSTFLAGCOPY)
         #G2frame.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)        
         G2frame.Bind(wx.EVT_MENU,OnCopy1Val,id=G2gd.wxID_INST1VAL)
+    elif 'L' in insVal['Type']:                   #SASD data menu commands
+        G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.InstMenu)
+        if not G2frame.dataFrame.GetStatusBar():
+            Status = G2frame.dataFrame.CreateStatusBar()            
+        G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)
     MakeParameterWindow()
         
     
@@ -2047,7 +2052,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
         Peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'))
         for ip,peak in enumerate(Peaks['peaks']):
             dsp = G2lat.Pos2dsp(Inst,peak[0])
-            peaks.append([peak[0],peak[2],True,False,0,0,0,dsp,0.0])
+            peaks.append([peak[0],peak[2],True,False,0,0,0,dsp,0.0])    #SS?
             try:
                 sig = Peaks['sigDict']['pos'+str(ip)]
             except KeyError:
@@ -2089,12 +2094,12 @@ def UpdateIndexPeaksGrid(G2frame, data):
     if len(data[0]):
         G2frame.dataFrame.IndexPeaks.Enable(True)
         cells = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List'))
-        if cells:
+        if cells:   #what if SS?
             cellist = cells[2]
             dmin = cells[3]
             G2frame.HKL = []
             for i,cell in enumerate(cellist):
-                if cell[-1]:
+                if cell[-1]:        #selected cell from table - no SS
                     ibrav = cell[2]
                     A = G2lat.cell2A(cell[3:9])
                     G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
@@ -2104,9 +2109,12 @@ def UpdateIndexPeaksGrid(G2frame, data):
     rowLabels = []
     for i in range(len(data[0])): rowLabels.append(str(i+1))
     colLabels = ['position','intensity','use','indexed','h','k','l','d-obs','d-calc']
-    Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,1',wg.GRID_VALUE_BOOL,
-        wg.GRID_VALUE_BOOL,wg.GRID_VALUE_LONG,wg.GRID_VALUE_LONG,wg.GRID_VALUE_LONG,
-        wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_FLOAT+':10,5']
+    Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,1',]+2*[wg.GRID_VALUE_BOOL,]+ \
+        3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_FLOAT+':10,5',]
+    if len(data[0][0]) > 9:
+        colLabels = ['position','intensity','use','indexed','h','k','l','m','d-obs','d-calc']
+        Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,1',]+2*[wg.GRID_VALUE_BOOL,]+ \
+            4*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_FLOAT+':10,5',]
     G2frame.PatternTree.SetItemPyData(IndexId,data)
     G2frame.IndexPeaksTable = G2gd.Table(data[0],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Index Peak List')
@@ -2121,7 +2129,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
             else:
                 G2frame.dataDisplay.SetReadOnly(r,c,isReadOnly=True)
         if data[0][r][2] and data[0][r][3]:
-            XY.append([data[0][r][8],data[0][r][0]])
+            XY.append([data[0][r][-1],data[0][r][0]])
             try:
                 sig = data[1][r]
             except IndexError:
@@ -2226,7 +2234,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             value = min(1.0,max(0.,float(Obj.GetValue())))
         except ValueError:
             value = ssopt['ModVec'][Id]
-        Obj.SetValue('%.3f'%(value))
+        Obj.SetValue('%.4f'%(value))
         ssopt['ModVec'][Id] = value
         OnHklShow(event)
         
@@ -2234,10 +2242,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         Obj = event.GetEventObject()
         ObjId = Obj.GetId()
         Id,valObj = Indx[ObjId]
-        move = Obj.GetValue()*0.01
+        move = Obj.GetValue()*0.002
         Obj.SetValue(0)
         value = min(1.0,max(.0,float(valObj.GetValue())+move))
-        valObj.SetValue('%.3f'%(value)) 
+        valObj.SetValue('%.4f'%(value)) 
         ssopt['ModVec'][Id] = value
         OnHklShow(event)
         
@@ -2327,18 +2335,21 @@ def UpdateUnitCellsGrid(G2frame, data):
         ibrav = bravaisSymb.index(controls[5])
         spc = controls[13]
         SGData = G2spc.SpcGroup(spc)[1]
-        if ssopt.get('Use',False):
-            print ssopt
-            SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])
-            Vec = ssopt['ModVec']
         if 'C' in Inst['Type'][0]:
             dmin = G2lat.Pos2dsp(Inst,limits[1])
         else:   #TOF - use other limit!
             dmin = G2lat.Pos2dsp(Inst,limits[0])
-        G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A)
+        if ssopt.get('Use',False):
+            SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])
+            Vec = ssopt['ModVec']
+            maxH = ssopt['maxH']
+            G2frame.HKL = G2pwd.getHKLMpeak(dmin,SGData,SSGData,Vec,maxH,A)
+        else:
+            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A)
         G2indx.IndexPeaks(peaks,G2frame.HKL)
+        for peak in peaks: print peak
         for hkl in G2frame.HKL:
-            hkl.append(G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
+            hkl.append(G2lat.Dsp2pos(Inst,hkl[-2])+controls[1])
         if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
@@ -2683,7 +2694,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         for i,[val,show] in enumerate(zip(Vec,ifShow)):
             if show:
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
-                modVal = wx.TextCtrl(G2frame.dataDisplay,value=('%.3f'%(val)),
+                modVal = wx.TextCtrl(G2frame.dataDisplay,value=('%.4f'%(val)),
                     size=wx.Size(50,20),style=wx.TE_PROCESS_ENTER)
                 modVal.Bind(wx.EVT_TEXT_ENTER,OnModVal)        
                 modVal.Bind(wx.EVT_KILL_FOCUS,OnModVal)
@@ -3802,14 +3813,16 @@ def UpdateModelsGrid(G2frame,data):
         Profile[4][:] = value
         RefreshPlots()
         
-    def OnBackFile(event):
+    def OnBackFile(event):  #multiple backgrounds?
         data['BackFile'] = backFile.GetValue()
         if data['BackFile']:
             fixBack =  data['Back'][0]
             BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,data['BackFile'])
             BackSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,BackId, 'Sample Parameters'))
             Profile[5] = BackSample['Scale'][0]*G2frame.PatternTree.GetItemPyData(BackId)[1][1]
-            RefreshPlots(True)
+        else:
+            Profile[5] = np.zeros(len(Profile[5]))
+        RefreshPlots(True)
             
     Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Sample Parameters'))
     Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
@@ -3869,7 +3882,8 @@ def UpdateModelsGrid(G2frame,data):
     Indx[backVar.GetId()] = [data['Back'],1]
     backVar.SetValue(data['Back'][1])
     backVar.Bind(wx.EVT_CHECKBOX, OnCheckBox)
-    backSizer.Add(backVar,0,WACV)    
+    backSizer.Add(backVar,0,WACV)
+    #multiple background files?
     backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background file: '),0,WACV)
     Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['SASD',])
     backFile = wx.ComboBox(parent=G2frame.dataDisplay,value=data['BackFile'],choices=Choices,

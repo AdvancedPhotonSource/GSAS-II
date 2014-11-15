@@ -805,6 +805,26 @@ def getHKLpeak(dmin,SGData,A):
             HKLs.append([h,k,l,d,-1])
     return HKLs
 
+def getHKLMpeak(dmin,SGData,SSGData,Vec,maxH,A):
+    'needs a doc string'
+    HKL = G2lat.GenHLaue(dmin,SGData,A)        
+    HKLs = []
+    vec = np.array(Vec)
+    SSdH = [vec*h for h in range(-maxH,maxH+1)]
+    SSdH = dict(zip(range(-maxH,maxH+1),SSdH))
+    for h,k,l,d in HKL:
+        ext = G2spc.GenHKLf([h,k,l],SGData)[0]
+        if not ext:
+            HKLs.append([h,k,l,0,d,-1])
+        for dH in SSdH:
+            if dH:
+                DH = SSdH[dH]
+                H = [h+DH[0],k+DH[1],l+DH[2]]
+                d = 1/np.sqrt(G2lat.calc_rDsq(H,A))
+                if d >= dmin:
+                    HKLs.append([h,k,l,dH,d,-1])
+    return HKLs
+
 def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
     'needs a doc string'
     
@@ -1209,7 +1229,7 @@ def DoCalibInst(IndexPeaks,Inst):
     for peak,sig in zip(IndexPeaks[0],IndexPeaks[1]):
         if peak[2] and peak[3]:
             peakPos.append(peak[0])
-            peakDsp.append(peak[8])
+            peakDsp.append(peak[-1])    #d-calc
             peakWt.append(1/sig**2)
     peakPos = np.array(peakPos)
     peakDsp = np.array(peakDsp)

@@ -230,7 +230,7 @@ def IndexPeaks(peaks,HKL):
     import bisect
     N = len(HKL)
     if N == 0: return False
-    hklds = list(np.array(HKL).T[3])+[1000.0,0.0,]
+    hklds = list(np.array(HKL).T[-2])+[1000.0,0.0,]
     hklds.sort()                                        # ascending sort - upper bound at end
     hklmax = [0,0,0]
     for ipk,peak in enumerate(peaks):
@@ -244,18 +244,18 @@ def IndexPeaks(peaks,HKL):
                 print pos,N
                 break
             hkl = HKL[pos]                                 # put in hkl
-            if hkl[4] >= 0:                                 # peak already assigned - test if this one better
-                opeak = peaks[hkl[4]]
-                dold = abs(opeak[7]-hkl[3])
+            if hkl[-1] >= 0:                                 # peak already assigned - test if this one better
+                opeak = peaks[hkl[-1]]
+                dold = abs(opeak[7]-hkl[-2])
                 dnew = min(dm,dp)
                 if dold > dnew:                             # new better - zero out old
                     opeak[4:7] = [0,0,0]
                     opeak[8] = 0.
                 else:                                       # old better - do nothing
                     continue                
-            hkl[4] = ipk
+            hkl[-1] = ipk
             peak[4:7] = hkl[:3]
-            peak[8] = hkl[3]                                # fill in d-calc
+            peak[8] = hkl[-2]                                # fill in d-calc
     for peak in peaks:
         peak[3] = False
         if peak[2]:

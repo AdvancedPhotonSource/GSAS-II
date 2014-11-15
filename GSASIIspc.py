@@ -543,8 +543,8 @@ def SSpcGroup(SGData,SSymbol):
         for i,frac in enumerate(SSGData['modSymb']):
             if frac in ['1/2','1/3','1/4','1/6','1']:
                 iFrac[i] = frac+'.'
-        print SGData['SpGrp']+SSymbol
-        print 'SSGKl',SSGKl,'genQ',genQ,'iFrac',iFrac,'modSymb',SSGData['modSymb']
+#        print SGData['SpGrp']+SSymbol
+#        print 'SSGKl',SSGKl,'genQ',genQ,'iFrac',iFrac,'modSymb',SSGData['modSymb']
 # set identity & 1,-1; triclinic
         SSGOps[0][0][3,3] = 1.
 ## expand if centrosymmetric
@@ -594,7 +594,6 @@ def SSpcGroup(SGData,SSymbol):
             else:
                 SSkl = [1,-1,-1]
             OrFrac = OrOps[a]
-            print a,OrFrac,iFrac
             for j in iFrac:
                 for i in OrFrac[j]:
                     SSGOps[i][0][3,j] = -2.*eval(iFrac[j])*SSkl[i-1]
@@ -745,7 +744,6 @@ def SSpcGroup(SGData,SSymbol):
                     
     def checkGen(gensym):
         sym = ''.join(gensym)
-        print str(SSGKl),sym
 # monoclinic - all done
         if str(SSGKl) == '[-1]' and sym == 's':
             return False
@@ -830,7 +828,6 @@ def SSpcGroup(SGData,SSymbol):
     if ''.join(gensym) not in GenSymList:
         return 'unknown generator symbol '+''.join(gensym),None
     try:
-        print modsym,''.join(modsym)
         LaueModId = LaueModList.index(''.join(modsym))
     except ValueError:
         return 'Unknown modulation symbol '+''.join(modsym),None
@@ -864,9 +861,9 @@ def SSpcGroup(SGData,SSymbol):
     E,Result = genSSGOps()
     if E:
         SSGData['SSGOps'] = Result
-        print SSGData['SSpGrp']
-        for Op in Result:
-            print SSMT2text(Op).replace(' ','')                                 
+#        print SSGData['SSpGrp']
+#        for Op in Result:
+#            print SSMT2text(Op).replace(' ','')                                 
         return None,SSGData
     else:
         return Result+'\nOperator conflict - incorrect superspace symbol',None

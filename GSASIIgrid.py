@@ -3287,13 +3287,13 @@ class DataFrame(wx.Frame):
         self.InstEdit = wx.Menu(title='')
         self.InstMenu.Append(menu=self.InstEdit, title='Operations')
         self.InstEdit.Append(help='Calibrate from indexed peaks', 
-            id=wxID_INSTCALIB, kind=wx.ITEM_NORMAL,text='Calibrate')
+            id=wxID_INSTCALIB, kind=wx.ITEM_NORMAL,text='Calibrate')            
         self.InstEdit.Append(help='Reset instrument profile parameters to default', 
-            id=wxID_INSTLOAD, kind=wx.ITEM_NORMAL,text='Load profile...')
+            id=wxID_INSTPRMRESET, kind=wx.ITEM_NORMAL,text='Reset profile')            
         self.InstEdit.Append(help='Load instrument profile parameters from file', 
-            id=wxID_INSTSAVE, kind=wx.ITEM_NORMAL,text='Save profile...')
+            id=wxID_INSTLOAD, kind=wx.ITEM_NORMAL,text='Load profile...')            
         self.InstEdit.Append(help='Save instrument profile parameters to file', 
-            id=wxID_INSTPRMRESET, kind=wx.ITEM_NORMAL,text='Reset profile')
+            id=wxID_INSTSAVE, kind=wx.ITEM_NORMAL,text='Save profile...')            
         self.InstEdit.Append(help='Copy instrument profile parameters to other histograms', 
             id=wxID_INSTCOPY, kind=wx.ITEM_NORMAL,text='Copy')
         self.InstEdit.Append(id=wxID_INSTFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
@@ -3396,6 +3396,17 @@ class DataFrame(wx.Frame):
             help='Plot HKLs from powder pattern')
         self.ReflEdit.Append(id=wxID_PWD3DHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot 3D HKLs',
             help='Plot HKLs from powder pattern in 3D')
+        self.PostfillDataMenu()
+        
+        # SASD / Instrument Parameters
+        self.SASDInstMenu = wx.MenuBar()
+        self.PrefillDataMenu(self.SASDInstMenu,helpType='Instrument Parameters')
+        self.SASDInstEdit = wx.Menu(title='')
+        self.SASDInstMenu.Append(menu=self.SASDInstEdit, title='Operations')
+        self.InstEdit.Append(help='Reset instrument profile parameters to default', 
+            id=wxID_INSTPRMRESET, kind=wx.ITEM_NORMAL,text='Reset profile')
+        self.SASDInstEdit.Append(help='Copy instrument profile parameters to other histograms', 
+            id=wxID_INSTCOPY, kind=wx.ITEM_NORMAL,text='Copy')
         self.PostfillDataMenu()
         
         #SASD & REFL/ Substance editor

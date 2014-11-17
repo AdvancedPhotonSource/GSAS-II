@@ -229,7 +229,7 @@ def IndexPeaks(peaks,HKL):
     'needs a doc string'
     import bisect
     N = len(HKL)
-    if N == 0: return False
+    if N == 0: return False,peaks
     hklds = list(np.array(HKL).T[-2])+[1000.0,0.0,]
     hklds.sort()                                        # ascending sort - upper bound at end
     hklmax = [0,0,0]
@@ -264,9 +264,9 @@ def IndexPeaks(peaks,HKL):
                     if abs(peak[j+4]) > hklmax[j]: hklmax[j] = abs(peak[j+4])
                 peak[3] = True
     if hklmax[0]*hklmax[1]*hklmax[2] > 0:
-        return True
+        return True,peaks
     else:
-        return False
+        return False,peaks  #nothing indexed!
         
 def Values2A(ibrav,values):
     'needs a doc string'
@@ -442,7 +442,7 @@ def refinePeaks(peaks,ibrav,A):
     OK = False
     tries = 0
     HKL = G2lat.GenHBravais(dmin,ibrav,A)
-    while len(HKL) > 2 and IndexPeaks(peaks,HKL):
+    while len(HKL) > 2 and IndexPeaks(peaks,HKL)[0]:
         Pwr = pwr - (tries % 2)
         HKL = []
         tries += 1
@@ -493,7 +493,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
     if A:
         HKL = G2lat.GenHBravais(dmin,ibrav,A[:])
         if len(HKL) > mHKL[ibrav]:
-            IndexPeaks(peaks,HKL)
+            peaks = IndexPeaks(peaks,HKL)[1]
             Asave.append([calc_M20(peaks,HKL),A[:]])
     tries = 0
     while tries < Ntries:
@@ -505,7 +505,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
             Abeg = ranAbyV(ibrav,amin,amax,V1)
         HKL = G2lat.GenHBravais(dmin,ibrav,Abeg)
         
-        if IndexPeaks(peaks,HKL) and len(HKL) > mHKL[ibrav]:
+        if IndexPeaks(peaks,HKL)[0] and len(HKL) > mHKL[ibrav]:
             Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg)
             Asave.append([calc_M20(peaks,HKL),Aref[:]])
             if ibrav == 9:                          #C-centered orthorhombic
@@ -513,13 +513,13 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
                     Abeg = rotOrthoA(Abeg[:])
                     Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg)
                     HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
-                    IndexPeaks(peaks,HKL)
+                    peaks = IndexPeaks(peaks,HKL)[1]
                     Asave.append([calc_M20(peaks,HKL),Aref[:]])
             elif ibrav == 11:                      #C-centered monoclinic
                 Abeg = swapMonoA(Abeg[:])
                 Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg)
                 HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
-                IndexPeaks(peaks,HKL)
+                peaks = IndexPeaks(peaks,HKL)[1]
                 Asave.append([calc_M20(peaks,HKL),Aref[:]])
         else:
             break
@@ -624,7 +624,7 @@ def DoIndexPeaks(peaks,controls,bravais):
                                     if ibrav in [12]:
                                         A = monoCellReduce(ibrav,A[:])
                                     HKL = G2lat.GenHBravais(dmin,ibrav,A)
-                                    IndexPeaks(peaks,HKL)
+                                    peaks = IndexPeaks(peaks,HKL)[1]
                                     a,b,c,alp,bet,gam = G2lat.A2cell(A)
                                     V = G2lat.calc_V(A)
                                     print "%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f" % (M20,X20,Nc,a,b,c,alp,bet,gam,V,V1)

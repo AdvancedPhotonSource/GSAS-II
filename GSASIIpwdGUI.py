@@ -2098,12 +2098,17 @@ def UpdateIndexPeaksGrid(G2frame, data):
             cellist = cells[2]
             dmin = cells[3]
             G2frame.HKL = []
+#        if ssopt.get('Use',False):
+#            SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])
+#            Vec = ssopt['ModVec']
+#            maxH = ssopt['maxH']
+#            G2frame.HKL = G2pwd.getHKLMpeak(dmin,SGData,SSGData,Vec,maxH,A)
             for i,cell in enumerate(cellist):
                 if cell[-1]:        #selected cell from table - no SS
                     ibrav = cell[2]
                     A = G2lat.cell2A(cell[3:9])
                     G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
-                    G2indx.IndexPeaks(data[0],G2frame.HKL)
+                    peaks = G2indx.IndexPeaks(data[0],G2frame.HKL)[1]
                     for hkl in G2frame.HKL:
                         hkl.append(G2lat.Dsp2pos(Inst,hkl[3]))
     rowLabels = []
@@ -2111,7 +2116,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
     colLabels = ['position','intensity','use','indexed','h','k','l','d-obs','d-calc']
     Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,1',]+2*[wg.GRID_VALUE_BOOL,]+ \
         3*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_FLOAT+':10,5',]
-    if len(data[0][0]) > 9:
+    if len(data[0]) and len(data[0][0]) > 9:
         colLabels = ['position','intensity','use','indexed','h','k','l','m','d-obs','d-calc']
         Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,1',]+2*[wg.GRID_VALUE_BOOL,]+ \
             4*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_FLOAT+':10,5',]
@@ -2242,7 +2247,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         Obj = event.GetEventObject()
         ObjId = Obj.GetId()
         Id,valObj = Indx[ObjId]
-        move = Obj.GetValue()*0.002
+        move = Obj.GetValue()*0.0005
         Obj.SetValue(0)
         value = min(1.0,max(.0,float(valObj.GetValue())+move))
         valObj.SetValue('%.4f'%(value)) 
@@ -2327,7 +2332,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     def OnHklShow(event):
         PatternId = G2frame.PatternId
         PickId = G2frame.PickId    
-        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))[0]
+        peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
         limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
         controls,bravais,cells,dmin,ssopt = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
@@ -2346,8 +2351,8 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.HKL = G2pwd.getHKLMpeak(dmin,SGData,SSGData,Vec,maxH,A)
         else:
             G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A)
-        G2indx.IndexPeaks(peaks,G2frame.HKL)
-        for peak in peaks: print peak
+        peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'),peaks)
         for hkl in G2frame.HKL:
             hkl.append(G2lat.Dsp2pos(Inst,hkl[-2])+controls[1])
         if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
@@ -2383,7 +2388,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataFrame.RefineCell.Enable(True)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)        
                 
-    def RefineCell(event):
+    def RefineCell(event):  #want this to do modulation vector as well
         def cellPrint(ibrav,A):
             cell = G2lat.A2cell(A)
             Vol = G2lat.calc_V(A)
@@ -2413,10 +2418,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         SGData = G2spc.SpcGroup(controls[13])[1]
         dmin = G2indx.getDmin(peaks[0])-0.005
         G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A)
-        G2indx.IndexPeaks(peaks[0],G2frame.HKL)
+        peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
         if 'C' in Inst['Type'][0]:
             Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks[0],wave,ibrav,A,controls[1],controls[0])
-        else:   #'T'OF
+        else:   #'T'OF - doesn't seem to work
             Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])            
         controls[1] = Zero
         controls[6:12] = G2lat.A2cell(Aref)
@@ -2530,7 +2535,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 sub = G2frame.PatternTree.AppendItem(parent=sub,text=PhaseName)
                 E,SGData = G2spc.SpcGroup(controls[13])
                 G2frame.PatternTree.SetItemPyData(sub, \
-                    G2IO.SetNewPhase(Name=PhaseName,SGData=SGData,cell=cell[1:]))
+                    G2IO.SetNewPhase(Name=PhaseName,SGData=SGData,cell=cell[1:],Super=ssopt))
                 Status.SetStatusText('Change space group from '+str(controls[13])+' if needed')
         finally:
             dlg.Destroy()

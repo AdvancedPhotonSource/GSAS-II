@@ -1153,7 +1153,7 @@ def IndexPeakListSave(G2frame,peaks):
         wx.EndBusyCursor()
     print 'index peak list saved'
     
-def SetNewPhase(Name='New Phase',SGData=None,cell=None):
+def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
     '''Create a new phase dict with default values for various parameters
 
     :param str Name: Name for new Phase
@@ -1194,6 +1194,12 @@ def SetNewPhase(Name='New Phase',SGData=None,cell=None):
         'Pawley ref':[],
         'RBModels':{},
         }
+    if Super.get('Use',False):
+        phaseData['General'].update({'Type':'modulated','Super':1,'SuperSg':Super['ssSymb']})
+        phaseData['General']['SSGData'] = G2spc.SSpcGroup(SGData,Super['ssSymb'])
+        phaseData['General']['SuperVec'] = [[Super['ModVec'],False,Super['maxH']],
+            [[0,0,.1],False,4],[[0.,0.,.1],False,4]]
+
     return phaseData
        
 class MultipleChoicesDialog(wx.Dialog):

@@ -807,14 +807,16 @@ def getHKLpeak(dmin,SGData,A):
 
 def getHKLMpeak(dmin,SGData,SSGData,Vec,maxH,A):
     'needs a doc string'
-    HKL = G2lat.GenHLaue(dmin,SGData,A)        
     HKLs = []
     vec = np.array(Vec)
+    vstar = np.sqrt(G2lat.calc_rDsq(vec,A))     #find extra needed for -n SS reflections
+    dvec = 1./(maxH*vstar+1./dmin)
+    HKL = G2lat.GenHLaue(dvec,SGData,A)        
     SSdH = [vec*h for h in range(-maxH,maxH+1)]
     SSdH = dict(zip(range(-maxH,maxH+1),SSdH))
     for h,k,l,d in HKL:
         ext = G2spc.GenHKLf([h,k,l],SGData)[0]
-        if not ext:
+        if not ext and d >= dmin:
             HKLs.append([h,k,l,0,d,-1])
         for dH in SSdH:
             if dH:
@@ -822,7 +824,9 @@ def getHKLMpeak(dmin,SGData,SSGData,Vec,maxH,A):
                 H = [h+DH[0],k+DH[1],l+DH[2]]
                 d = 1/np.sqrt(G2lat.calc_rDsq(H,A))
                 if d >= dmin:
-                    HKLs.append([h,k,l,dH,d,-1])
+                    HKLM = np.array([h,k,l,dH])
+                    if G2spc.checkSSextc(HKLM,SSGData[1]):
+                        HKLs.append([h,k,l,dH,d,-1])
     return HKLs
 
 def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):

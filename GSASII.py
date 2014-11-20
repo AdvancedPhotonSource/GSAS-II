@@ -1265,10 +1265,13 @@ class GSASII(wx.Frame):
         newHistList = []
         self.EnablePlot = False
         for rd in rdlist:
-            # get instrument parameters for each dataset
-            Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
-            if rd.repeat_instparm: 
-                lastIparmfile = rd.instfile
+            if 'Instrument Parameters' not in rd.pwdparms:
+                # get instrument parameters for each dataset, unless already set 
+                Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
+                if rd.repeat_instparm: 
+                    lastIparmfile = rd.instfile
+            else:
+                Iparm1,Iparm2 = rd.pwdparms['Instrument Parameters']
             lastdatafile = rd.powderentry[0]
             HistName = rd.idstring
             HistName = 'PWDR '+HistName
@@ -1303,8 +1306,6 @@ class GSASII(wx.Frame):
                 rd.powderdata[3] = np.zeros_like(rd.powderdata[0])                                        
                 rd.powderdata[4] = np.zeros_like(rd.powderdata[0])                                        
                 rd.powderdata[5] = np.zeros_like(rd.powderdata[0])                                        
-            Tmin = min(rd.powderdata[0])
-            Tmax = max(rd.powderdata[0])
             valuesdict = {
                 'wtFactor':1.0,
                 'Dummy':False,
@@ -1315,14 +1316,18 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Comments'),
                 rd.comments)
+            Tmin = min(rd.powderdata[0])
+            Tmax = max(rd.powderdata[0])
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Limits'),
-                [(Tmin,Tmax),[Tmin,Tmax]])
+                rd.pwdparms.get('Limits',[(Tmin,Tmax),[Tmin,Tmax]])
+                )
             self.PatternId = G2gd.GetPatternTreeItemId(self,Id,'Limits')
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Background'),
-                [['chebyschev',True,3,1.0,0.0,0.0],
-                 {'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
+                rd.pwdparms.get('Background',
+                    [['chebyschev',True,3,1.0,0.0,0.0],{'nDebye':0,'debyeTerms':[],'nPeaks':0,'peaksList':[]}])
+                    )
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Instrument Parameters'),
                 [Iparm1,Iparm2])

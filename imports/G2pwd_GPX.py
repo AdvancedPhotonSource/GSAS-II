@@ -85,7 +85,7 @@ class GSAS2_ReaderClass(G2IO.ImportPowderData):
                 histnames,
                 ParentFrame=ParentFrame,
                 title='Select histogram(s) to read from the list below',
-                size=(600,100),
+                size=(600,250),
                 header='Dataset Selector')
             if len(selections) == 0:
                 self.errors = 'No histogram selected'
@@ -115,30 +115,19 @@ class GSAS2_ReaderClass(G2IO.ImportPowderData):
             ]
             self.powderentry[0] = filename
             self.powderentry[2] = selblk+1
+            # pull some sections from the PWDR children
+            for i in range(1,len(data)):
+                if data[i][0] == 'Comments':
+                    self.comments = data[i][1]
+                    continue
+                elif data[i][0] == 'Sample Parameters':
+                    self.Sample = data[i][1]
+                    continue
+                for keepitem in ('Limits','Background','Instrument Parameters'): 
+                    if data[i][0] == keepitem:
+                        self.pwdparms[data[i][0]] = data[i][1]
+                        break
             self.idstring = data[0][0][5:]
-            # pull out wavelength 
-            try:
-                if len(data[4][1]) == 2: # current GPX file
-                    if data[4][1][0].get('Lam'):
-                        self.instdict['wave'] = [data[4][1][0].get('Lam')[1]]
-                    elif data[4][1][0].get('Lam1') and data[4][1][0].get('Lam2'):
-                        self.instdict['wave'] = [
-                            data[4][1][0].get('Lam1')[1],
-                            data[4][1][0].get('Lam2')[1]
-                            ]
-                elif len(data[4][1]) == 4: # original GPX file
-                    pos = data[4][1][3].index('Lam')
-                    self.instdict['wave'] = [data[4][1][1][pos],]
-            except:
-                self.warnings += "Failed to read wavelength"
-                self.warnings += '\n  '+str(detail)
-            # pull out temperature
-            try:
-                if data[5][1].get('Temperature'):
-                    self.Sample['Temperature'] = data[5][1]['Temperature']
-            except:
-                self.warnings += "Failed to read temperature"
-                self.warnings += '\n  '+str(detail)
             self.repeat_instparm = False # prevent reuse of iparm when several hists are read
             return True
         except Exception as detail:

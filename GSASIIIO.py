@@ -1709,6 +1709,8 @@ class ImportPowderData(ImportBaseclass):
                            # where instrument parameters are from
         self.numbanks = 1
         self.instdict = {} # place items here that will be transferred to the instrument parameters
+        self.pwdparms = {} # place parameters that are transferred directly to the tree
+                           # here (typically from an existing GPX file)
 ######################################################################
 class ImportSmallAngleData(ImportBaseclass):
     '''Defines a base class for the reading of files with small angle data.

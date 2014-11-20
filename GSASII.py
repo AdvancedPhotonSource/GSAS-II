@@ -485,6 +485,7 @@ class GSASII(wx.Frame):
                         except rd.ImportException as detail:
                             rd.errors += "\n  Read exception: "+str(detail)
                         except Exception as detail:
+                            import traceback
                             rd.errors += "\n  Unhandled read exception: "+str(detail)
                             rd.errors += "\n  Traceback info:\n"+str(traceback.format_exc())
                         if flag: # this read succeeded
@@ -3444,9 +3445,9 @@ class GSASII(wx.Frame):
         parentName = ''
         if parentId:
             parentName = self.PatternTree.GetItemText(parentId)     #find the current data tree name
-        dlg = wx.MessageDialog(self,'Load new result?','Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
+        dlg2 = wx.MessageDialog(self,'Load new result?','Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
         try:
-            if dlg.ShowModal() == wx.ID_OK:
+            if dlg2.ShowModal() == wx.ID_OK:
                 Id = 0
                 self.PatternTree.DeleteChildren(self.root)
                 if self.HKL: self.HKL = []
@@ -3469,7 +3470,7 @@ class GSASII(wx.Frame):
                         itemId = G2gd.GetPatternTreeItemId(self, self.root, oldName)
                     self.PatternTree.SelectItem(itemId)
         finally:
-            dlg.Destroy()
+            dlg2.Destroy()
 
     def OnSeqRefine(self,event):
         '''Perform a sequential refinement.

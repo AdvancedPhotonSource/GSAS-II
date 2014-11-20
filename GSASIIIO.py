@@ -1194,7 +1194,7 @@ def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
         'Pawley ref':[],
         'RBModels':{},
         }
-    if Super.get('Use',False):
+    if Super and Super.get('Use',False):
         phaseData['General'].update({'Type':'modulated','Super':1,'SuperSg':Super['ssSymb']})
         phaseData['General']['SSGData'] = G2spc.SSpcGroup(SGData,Super['ssSymb'])
         phaseData['General']['SuperVec'] = [[Super['ModVec'],False,Super['maxH']],

@@ -2954,17 +2954,26 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             xName = 'Data sequence number'
         for col in Page.seqYaxisList:
             name,Y,sig = Page.seqTableGet(col)
-            if sig:
+            # deal with missing (None) values
+            Xnew = []
+            Ynew = []
+            Ysnew = []
+            for i in range(len(X)):
+                if X[i] is None or Y[i] is None: continue
+                Xnew.append(X[i])
+                Ynew.append(Y[i])
+                Ysnew.append(sig[i])
+            if Ysnew:
                 if G2frame.seqReverse and not G2frame.seqXaxis:
-                    Y = Y[::-1]
-                    sig = sig[::-1]
-                Plot.errorbar(X,Y,yerr=sig,label=name)
+                    Ynew = Ynew[::-1]
+                    Ysnew = Ysnew[::-1]
+                Plot.errorbar(Xnew,Ynew,yerr=Ysnew,label=name)
             else:
                 if G2frame.seqReverse and not G2frame.seqXaxis:
-                    Y = Y[::-1]
-                Plot.plot(X,Y)
-                Plot.plot(X,Y,'o',label=name)
-        if Page.fitvals:
+                    Ynew = Ynew[::-1]
+                Plot.plot(Xnew,Ynew)
+                Plot.plot(Xnew,Ynew,'o',label=name)
+        if Page.fitvals: # TODO: deal with fitting of None values
             if G2frame.seqReverse and not G2frame.seqXaxis:
                 Page.fitvals = Page.fitvals[::-1]
             Plot.plot(X,Page.fitvals,label='Fit')
@@ -3321,7 +3330,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     newPos = itemPicked.split(')')[0].split('(')[2].split(',')
                     newPos = np.array([float(newPos[0]),float(newPos[1])])
                     for spot in spots:
-                        if np.allclose(np.array([spot[:2]]),newPos):
+                        if spot and np.allclose(np.array([spot[:2]]),newPos):
                             spot[:2] = Xpos,Ypos
                     G2imG.UpdateMasks(G2frame,Masks)
                 elif 'Line2D' in itemPicked and PickName == 'Masks':

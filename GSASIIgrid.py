@@ -100,9 +100,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS,
 ] = [wx.NewId() for item in range(8)]
 
-[ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD,wxID_NEWMASKSPOT,wxID_NEWMASKARC,wxID_NEWMASKRING,
-    wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,
-] = [wx.NewId() for item in range(8)]
+[ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD, wxID_NEWMASKSPOT,wxID_NEWMASKARC,wxID_NEWMASKRING,
+    wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,  wxID_MASKLOADNOT,
+] = [wx.NewId() for item in range(9)]
 
 [ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_STRSTSAMPLE,
     wxID_APPENDDZERO,wxID_STRSTAALLFIT,wxID_UPDATEDZERO,
@@ -260,19 +260,20 @@ class G2TreeCtrl(wx.TreeCtrl):
             return
         wx.TreeCtrl.Bind(self,eventtype,handler,*args,**kwargs)
 
-#    def GetItemPyData(self,*args,**kwargs):
-#        '''Override the standard method to wrap the contents
-#        so that the source can be tracked
-#        '''
-#        data = super(self.__class__,self).GetItemPyData(*args,**kwargs)
-#        textlist = self._getTreeItemsList(args[0])
-#        if type(data) is dict:
-#            return log.dictLogged(data,textlist)
-#        if type(data) is list:
-#            return log.listLogged(data,textlist)
-#        if type(data) is tuple: #N.B. tuples get converted to lists
-#            return log.listLogged(list(data),textlist)
-#        return data
+    # commented out, disables Logging
+    # def GetItemPyData(self,*args,**kwargs):
+    #    '''Override the standard method to wrap the contents
+    #    so that the source can be logged when changed
+    #    '''
+    #    data = super(self.__class__,self).GetItemPyData(*args,**kwargs)
+    #    textlist = self._getTreeItemsList(args[0])
+    #    if type(data) is dict:
+    #        return log.dictLogged(data,textlist)
+    #    if type(data) is list:
+    #        return log.listLogged(data,textlist)
+    #    if type(data) is tuple: #N.B. tuples get converted to lists
+    #        return log.listLogged(list(data),textlist)
+    #    return data
 
     def GetRelativeHistNum(self,histname):
         '''Returns list with a histogram type and a relative number for that
@@ -357,8 +358,14 @@ class G2LoggedButton(wx.Button):
     '''A version of wx.Button that creates logging events. Bindings are saved
     in the object, and are looked up rather than directly set with a bind.
     An index to these buttons is saved as log.ButtonBindingLookup
+    :param wx.Panel parent: parent widget
+    :param int id: Id for button
+    :param str label: label for button
+    :param str locationcode: a label used internally to uniquely indentify the button
+    :param function handler: a routine to call when the button is pressed
     '''
-    def __init__(self,parent,id,label,locationcode,handler,*args,**kwargs):
+    def __init__(self,parent,id=wx.ID_ANY,label='',locationcode='',
+                 handler=None,*args,**kwargs):
         super(self.__class__,self).__init__(parent,id,label,*args,**kwargs)
         self.label = label
         self.handler = handler
@@ -3487,6 +3494,8 @@ class DataFrame(wx.Frame):
             id=wxID_MASKSAVE, kind=wx.ITEM_NORMAL,text='Save mask')
         self.MaskEdit.Append(help='Load mask from file', 
             id=wxID_MASKLOAD, kind=wx.ITEM_NORMAL,text='Load mask')
+        self.MaskEdit.Append(help='Load mask from file; ignore threshold', 
+            id=wxID_MASKLOADNOT, kind=wx.ITEM_NORMAL,text='Load mask w/o threshold')
         submenu.Append(help='Create an arc mask with mouse input', 
             id=wxID_NEWMASKARC, kind=wx.ITEM_NORMAL,text='Arc mask')
         submenu.Append(help='Create a frame mask with mouse input', 
@@ -4041,12 +4050,14 @@ class Table(wg.PyGridTableBase):
         
     def GetTypeName(self, row, col):
         try:
+            if self.data[row][col] is None: return None
             return self.dataTypes[col]
         except TypeError:
             return None
 
     def GetValue(self, row, col):
         try:
+            if self.data[row][col] is None: return ""
             return self.data[row][col]
         except IndexError:
             return None
@@ -4556,6 +4567,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                         line += ' %12.6f '%saveData[col][row]
                 SeqFile.write(line+'\n')
 
+        # start of OnSaveSelSeq code
         cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
         nrows = G2frame.SeqTable.GetNumberRows()
         if not cols:
@@ -5045,7 +5057,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     data['variableLabels'] = variableLabels
     Histograms,Phases = G2frame.GetUsedHistogramsAndPhasesfromTree()
     Controls = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Controls'))
-    # create a place to store Pseudo Vars & Parametric Fit functions, if needed
+    # create a place to store Pseudo Vars & Parametric Fit functions, if not present
     if 'SeqPseudoVars' not in Controls: Controls['SeqPseudoVars'] = {}
     if 'SeqParFitEqList' not in Controls: Controls['SeqParFitEqList'] = []
     histNames = data['histNames']
@@ -5125,6 +5137,23 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     EnablePseudoVarMenus()
     EnableParFitEqMenus()
 
+    VaryListChanges = []
+    prevVaryList = []
+    combinedVaryList = []
+    firstValueList = []
+    for i,name in enumerate(histNames):
+        if i == 0 or prevVaryList != sorted(data[name]['varyList']):
+            if GSASIIpath.GetConfigValue('debug'):
+                print 'VaryList changes at',name
+                print data[name]['varyList']
+                print data[name]['variables']
+            # add variables to list as they appear
+            for j,var in enumerate(data[name]['varyList']):
+                if var in combinedVaryList: continue
+                combinedVaryList.append(data[name]['varyList'][j])
+                firstValueList.append(data[name]['variables'][j])
+            prevVaryList = sorted(data[name]['varyList'])
+            VaryListChanges += [name]
     #-----------------------------------------------------------------------------------
     # build up the data table by columns -----------------------------------------------
     nRows = len(histNames)
@@ -5154,7 +5183,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     sampleDict = {}
     for i,name in enumerate(histNames):
         sampleDict[name] = dict(zip(sampleParms.keys(),[sampleParms[key][i] for key in sampleParms.keys()])) 
-    # add unique cell parameters
+    # add unique cell parameters TODO: review this where the cell symmetry changes (when possible)
     if Controls.get('ShowCell',False):
         for pId in sorted(RecpCellTerms):
             pfx = str(pId)+'::' # prefix for A values from phase
@@ -5188,11 +5217,26 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             colList += zip(*cells)
             colSigs += zip(*cellESDs)
     # add the variables that were refined; change from rows to columns
-    colList += zip(*[data[name]['variables'] for name in histNames])
-    colLabels += data[histNames[0]]['varyList']
-    Types += len(data[histNames[0]]['varyList'])*[wg.GRID_VALUE_FLOAT]
-    colSigs += zip(*[data[name]['sig'] for name in histNames])
-
+    #colList += zip(*[data[name]['variables'] for name in histNames])
+    #colLabels += data[histNames[0]]['varyList']
+    #Types += len(data[histNames[0]]['varyList'])*[wg.GRID_VALUE_FLOAT]
+    #colSigs += zip(*[data[name]['sig'] for name in histNames])
+    for var in combinedVaryList:
+        colLabels += [var]
+        Types += [wg.GRID_VALUE_FLOAT]
+        vals = []
+        sigs = []
+        for name in histNames:
+            try:
+                i = data[name]['varyList'].index(var)
+                vals.append(data[name]['variables'][i])
+                sigs.append(data[name]['sig'][i])
+            except ValueError: # var not in list
+                vals.append(None)
+                sigs.append(None)
+        colList += [vals]
+        colSigs += [sigs]
+                
     # tabulate constrained variables, removing histogram numbers if needed
     # from parameter label
     depValDict = {}

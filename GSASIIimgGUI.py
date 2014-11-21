@@ -1031,7 +1031,6 @@ def UpdateMasks(G2frame,data):
         Obj.SetToolTipString('Drag this mask on 2D Powder Image with mouse to change ')
 
     def Replot(*args,**kwargs):
-        print 'Replot'
         G2plt.PlotExposedImage(G2frame)        
 
     def onDeleteMask(event):
@@ -1101,6 +1100,10 @@ def UpdateMasks(G2frame,data):
             dlg.Destroy()
         
     def OnLoadMask(event):
+        if event.Id == G2gd.wxID_MASKLOADNOT:
+            ignoreThreshold = True
+        else:
+            ignoreThreshold = False
         dlg = wx.FileDialog(G2frame, 'Choose image mask file', '.', '', 
             'image mask files (*.immask)|*.immask',wx.OPEN|wx.CHANGE_DIR)
         try:
@@ -1116,6 +1119,7 @@ def UpdateMasks(G2frame,data):
                         continue
                     [key,val] = S[:-1].split(':')
                     if key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds']:
+                        if ignoreThreshold and key == 'Thresholds': continue
                         save[key] = eval(val)
                         if key == 'Thresholds':
                             save[key][0] = oldThreshold
@@ -1160,6 +1164,7 @@ def UpdateMasks(G2frame,data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MaskMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyMask, id=G2gd.wxID_MASKCOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadMask, id=G2gd.wxID_MASKLOAD)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadMask, id=G2gd.wxID_MASKLOADNOT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveMask, id=G2gd.wxID_MASKSAVE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewSpotMask, id=G2gd.wxID_NEWMASKSPOT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnNewArcMask, id=G2gd.wxID_NEWMASKARC)

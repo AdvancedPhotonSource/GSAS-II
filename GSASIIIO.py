@@ -135,8 +135,44 @@ def CheckImageFile(G2frame,imagefile):
       that does exist or False if the user presses Cancel
 
     '''
-    if not ospath.exists(imagefile):
-        dlg = wx.FileDialog(G2frame, 'Bad image file name; choose name', '.', '',\
+    if not os.path.exists(imagefile):
+        print 'Image file '+imagefile+' not found'
+        fil = imagefile.replace('\\','/') # windows?!
+        # see if we can find a file with same name or in a similarly named sub-dir
+        pth,fil = os.path.split(fil)
+        prevpth = None
+        while pth and pth != prevpth:
+            prevpth = pth
+            if os.path.exists(os.path.join(G2frame.dirname,fil)):
+                print 'found image file '+os.path.join(G2frame.dirname,fil)
+                return os.path.join(G2frame.dirname,fil)
+            pth,enddir = os.path.split(pth)
+            fil = os.path.join(enddir,fil)
+        # not found as a subdirectory, drop common parts of path for last saved & image file names
+        #    if image was .../A/B/C/imgs/ima.ge
+        #      & GPX was  .../A/B/C/refs/fil.gpx but is now .../NEW/TEST/TEST1
+        #    will look for .../NEW/TEST/TEST1/imgs/ima.ge, .../NEW/TEST/imgs/ima.ge, .../NEW/imgs/ima.ge and so on
+        Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+        gpxPath = Controls.get('LastSavedAs','').replace('\\','/').split('/') # blank in older .GPX files
+        imgPath = imagefile.replace('\\','/').split('/')
+        for p1,p2 in zip(gpxPath,imgPath):
+            if p1 == p2:
+                gpxPath.pop(0),imgPath.pop(0)
+            else:
+                break
+        fil = os.path.join(*imgPath) # file with non-common prefix elements
+        prevpth = None
+        pth = os.path.abspath(G2frame.dirname)
+        while pth and pth != prevpth:
+            prevpth = pth
+            if os.path.exists(os.path.join(pth,fil)):
+                print 'found image file '+os.path.join(pth,fil)
+                return os.path.join(pth,fil)
+            pth,enddir = os.path.split(pth)
+        GSASIIpath.IPyBreak()
+
+    if not os.path.exists(imagefile):
+        dlg = wx.FileDialog(G2frame, 'Previous image file not found; open here', '.', '',\
         'Any image file (*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img)\
         |*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img|\
         European detector file (*.edf)|*.edf|\
@@ -241,6 +277,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
     '''
     ext = ospath.splitext(imagefile)[1]
     Comments = []
+    Image = None
     if ext == '.tif' or ext == '.tiff':
         Comments,Data,Npix,Image = GetTifData(imagefile)
         if Npix == 0:
@@ -269,6 +306,10 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
         Comments,Data,Npix,Image = GetPNGData(imagefile)
         if not imageOnly:
             EditImageParms(G2frame,Data,Comments,Image,imagefile)
+    else:
+        print 'Extension for file '+imagefile+' not recognized'
+    if Image is None:
+        raise Exception('No image read')
     if imageOnly:
         if TRANSP:
             return Image.T
@@ -939,6 +980,9 @@ def ProjFileSave(G2frame):
     if not G2frame.PatternTree.IsEmpty():
         file = open(G2frame.GSASprojectfile,'wb')
         print 'save to file: ',G2frame.GSASprojectfile
+        # stick the file name into the tree
+        Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+        Controls['LastSavedAs'] = G2frame.GSASprojectfile
         wx.BeginBusyCursor()
         try:
             item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)

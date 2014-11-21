@@ -1023,8 +1023,7 @@ def UpdateImageControls(G2frame,data,masks):
 ################################################################################
     
 def UpdateMasks(G2frame,data):
-    '''Shows and handles the controls on the "Masks"
-    data tree entry
+    '''Shows and handles the controls on the "Masks" data tree entry
     '''
     
     def OnTextMsg(event):
@@ -1234,8 +1233,8 @@ def UpdateMasks(G2frame,data):
     elif G2frame.MaskKey == 'r':
         G2frame.dataFrame.GetStatusBar().SetStatusText('Ring mask active - LB pick ring location')
     else:
-        G2frame.dataFrame.GetStatusBar().SetStatusText("To add mask: On 2D Powder Image, key a:arc, r:ring, s:spot, p:polygon, f:frame")
-    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+        G2frame.dataFrame.GetStatusBar().SetStatusText("To add mask: press a,r,s,p or f on 2D image for arc/ring/spot/polygon/frame")
+    G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)
 
@@ -1271,10 +1270,10 @@ def UpdateMasks(G2frame,data):
     spotIds = []
     delSpotId = []
     if spots:
+        lbl = wx.StaticText(parent=G2frame.dataDisplay,label=' Spot masks')
+        lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
         littleSizer = wx.FlexGridSizer(0,3,0,5)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Spot masks:'),0,WACV)
-        littleSizer.Add((5,0),0)
-        littleSizer.Add((5,0),0)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' position, mm'),0,WACV)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' diameter, mm'),0,WACV)
         littleSizer.Add((5,0),0)
@@ -1300,10 +1299,10 @@ def UpdateMasks(G2frame,data):
     ringIds = []
     delRingId = []
     if rings:
+        lbl = wx.StaticText(parent=G2frame.dataDisplay,label=' Ring masks')
+        lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
         littleSizer = wx.FlexGridSizer(0,3,0,5)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Ring masks:'),0,WACV)
-        littleSizer.Add((5,0),0)
-        littleSizer.Add((5,0),0)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' 2-theta,deg'),0,WACV)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' thickness, deg'),0,WACV)
         littleSizer.Add((5,0),0)
@@ -1329,11 +1328,10 @@ def UpdateMasks(G2frame,data):
     arcIds = []
     delArcId = []
     if arcs:
+        lbl = wx.StaticText(parent=G2frame.dataDisplay,label=' Arc masks')
+        lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
         littleSizer = wx.FlexGridSizer(0,4,0,5)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Arc masks:'),0,WACV)
-        littleSizer.Add((5,0),0)
-        littleSizer.Add((5,0),0)
-        littleSizer.Add((5,0),0)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' 2-theta,deg'),0,WACV)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' azimuth, deg'),0,WACV)
         littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' thickness, deg'),0,WACV)
@@ -1366,9 +1364,10 @@ def UpdateMasks(G2frame,data):
     delPolyId = []
     delFrameId = []
     if polygons:
+        lbl = wx.StaticText(parent=G2frame.dataDisplay,label=' Polygon masks (on plot RB vertex drag to move,\nLB vertex drag to insert)')
+        lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Polygon masks:'),0,WACV)
-        littleSizer.Add((5,0),0)
         for polygon in polygons:
             if polygon:
                 polyList = []
@@ -1382,10 +1381,10 @@ def UpdateMasks(G2frame,data):
                 littleSizer.Add(polyDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     if frame:
+        lbl = wx.StaticText(parent=G2frame.dataDisplay,label=' Frame mask (on plot RB vertex drag to move,\nLB vertex drag to insert)')
+        lbl.SetBackgroundColour(wx.Colour(200,200,210))
+        mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)
-        littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Frame mask:'),0,
-            WACV)
-        littleSizer.Add((5,0),0)
         frameList = []
         for x,y in frame:
             frameList.append("%.2f, %.2f"%(x,y))
@@ -1396,14 +1395,17 @@ def UpdateMasks(G2frame,data):
         delFrameId.append(frameDelete)
         littleSizer.Add(frameDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
-    if (frame or polygons):
-        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,
-            label=' For frame and polygons: on plot RB vertex drag to move, LB vertex drag to insert'),0,WACV)
+    #if (frame or polygons):
+    #    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,
+    #        label=' For frame and polygons: on plot RB vertex drag to move, LB vertex drag to insert'),0,WACV)
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
     G2frame.dataDisplay.SetSize(mainSizer.Fit(G2frame.dataFrame))
+    G2frame.dataDisplay.SetupScrolling()
     Size = mainSizer.Fit(G2frame.dataFrame)
-    Size[0] = 450
+    Size[0] += 50 # room for scrollbar & status msg
+    Size[1] = min(Size[1],500)
+    G2frame.dataDisplay.SetSize(Size)
     G2frame.dataFrame.setSizePosLeft(Size)    
 
 ################################################################################

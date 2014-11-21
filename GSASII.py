@@ -3444,6 +3444,7 @@ class GSASII(wx.Frame):
             Rw = G2stMn.Refine(self.GSASprojectfile,dlg)
         finally:
             dlg.Destroy()
+            wx.Yield()
         oldId =  self.PatternTree.GetSelection()        #retain current selection
         oldName = self.PatternTree.GetItemText(oldId)
         parentId = self.PatternTree.GetItemParent(oldId)

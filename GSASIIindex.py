@@ -27,6 +27,7 @@ import numpy.linalg as nl
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
+import GSASIIpwd as G2pwd
 import scipy.optimize as so
 
 # trig functions in degrees
@@ -197,6 +198,35 @@ def calc_M20(peaks,HKL):
     M20 /= (1.+X20)
     return M20,X20
     
+def calc_M20SS(peaks,HKL):
+    'needs a doc string'
+    diff = 0
+    X20 = 0
+    for Nobs20,peak in enumerate(peaks):
+        if peak[3]:
+            Qobs = 1.0/peak[8]**2
+            Qcalc = 1.0/peak[9]**2
+            diff += abs(Qobs-Qcalc)
+        elif peak[2]:
+            X20 += 1
+        if Nobs20 == 19: 
+            d20 = peak[8]
+            break
+    else:
+        d20 = peak[8]
+        Nobs20 = len(peaks)
+    for N20,hkl in enumerate(HKL):
+        if hkl[4] < d20:
+            break                
+    eta = diff/Nobs20
+    Q20 = 1.0/d20**2
+    if diff:
+        M20 = Q20/(2.0*diff)
+    else:
+        M20 = 0
+    M20 /= (1.+X20)
+    return M20,X20
+    
 def sortM20(cells):
     'needs a doc string'
     #cells is M20,X20,Bravais,a,b,c,alp,bet,gam
@@ -230,14 +260,16 @@ def IndexPeaks(peaks,HKL):
     import bisect
     N = len(HKL)
     if N == 0: return False,peaks
-    hklds = list(np.array(HKL).T[-2])+[1000.0,0.0,]
+    hklds = list(np.array(HKL).T[3])+[1000.0,0.0,]
     hklds.sort()                                        # ascending sort - upper bound at end
     hklmax = [0,0,0]
     for ipk,peak in enumerate(peaks):
         if peak[2]:
+            peak[4:7] = [0,0,0]                           #clear old indexing
+            peak[8] = 0.
             i = bisect.bisect_right(hklds,peak[7])          # find peak position in hkl list
-            dm = peak[7]-hklds[i-1]                         # peak to neighbor hkls in list
-            dp = hklds[i]-peak[7]
+            dm = peak[-2]-hklds[i-1]                         # peak to neighbor hkls in list
+            dp = hklds[i]-peak[-2]
             pos = N-i                                       # reverse the order
             if dp > dm: pos += 1                            # closer to upper than lower
             if pos >= N:
@@ -246,7 +278,7 @@ def IndexPeaks(peaks,HKL):
             hkl = HKL[pos]                                 # put in hkl
             if hkl[-1] >= 0:                                 # peak already assigned - test if this one better
                 opeak = peaks[hkl[-1]]
-                dold = abs(opeak[7]-hkl[-2])
+                dold = abs(opeak[-2]-hkl[3])
                 dnew = min(dm,dp)
                 if dold > dnew:                             # new better - zero out old
                     opeak[4:7] = [0,0,0]
@@ -255,15 +287,63 @@ def IndexPeaks(peaks,HKL):
                     continue                
             hkl[-1] = ipk
             peak[4:7] = hkl[:3]
-            peak[8] = hkl[-2]                                # fill in d-calc
+            peak[8] = hkl[3]                                # fill in d-calc
     for peak in peaks:
         peak[3] = False
         if peak[2]:
-            if peak[8] > 0.:
+            if peak[-1] > 0.:
                 for j in range(3):
                     if abs(peak[j+4]) > hklmax[j]: hklmax[j] = abs(peak[j+4])
                 peak[3] = True
     if hklmax[0]*hklmax[1]*hklmax[2] > 0:
+        return True,peaks
+    else:
+        return False,peaks  #nothing indexed!
+        
+def IndexSSPeaks(peaks,HKL):
+    'needs a doc string'
+    import bisect
+    N = len(HKL)
+    if N == 0: return False,peaks
+    if len(peaks[0]) == 9:      #add m column if missing
+        for peak in peaks:
+            peak.insert(7,0)
+    hklds = list(np.array(HKL).T[4])+[1000.0,0.0,]
+    hklds.sort()                                        # ascending sort - upper bound at end
+    hklmax = [0,0,0,0]
+    for ipk,peak in enumerate(peaks):
+        if peak[2]: #Use
+            peak[4:8] = [0,0,0,0]                           #clear old indexing
+            peak[9] = 0.
+            i = bisect.bisect_right(hklds,peak[8])          # find peak position in hkl list
+            dm = peak[8]-hklds[i-1]                         # peak to neighbor hkls in list
+            dp = hklds[i]-peak[8]
+            pos = N-i                                       # reverse the order
+            if dp > dm: pos += 1                            # closer to upper than lower
+            if pos >= N:
+                print pos,N
+                break
+            hkl = HKL[pos]                                 # put in hkl
+            if hkl[-1] >= 0:                                 # peak already assigned - test if this one better
+                opeak = peaks[hkl[-1]]
+                dold = abs(opeak[-2]-hkl[4])
+                dnew = min(dm,dp)
+                if dold > dnew:                             # new better - zero out old
+                    opeak[4:8] = [0,0,0,0]
+                    opeak[9] = 0.
+                else:                                       # old better - do nothing
+                    continue
+            hkl[-1] = ipk
+            peak[4:8] = hkl[:4]
+            peak[9] = hkl[4]                                # fill in d-calc
+    for peak in peaks:
+        peak[3] = False
+        if peak[2]:
+            if peak[-1] > 0.:
+                for j in range(4):
+                    if abs(peak[j+4]) > hklmax[j]: hklmax[j] = abs(peak[j+4])
+                peak[3] = True
+    if hklmax[0]*hklmax[1]*hklmax[2]*hklmax[3] > 0:
         return True,peaks
     else:
         return False,peaks  #nothing indexed!
@@ -295,6 +375,22 @@ def A2values(ibrav,A):
         return [A[0],A[1],A[2],A[4]]
     else:
         return A
+        
+def Values2Vec(ibrav,vec,Vref,val):
+    if ibrav in [3,4,5,6]:
+        Nskip = 2
+    elif ibrav in [7,8,9,10]:
+        Nskip = 3
+    elif ibrav in [11,12]:
+        Nskip = 4
+    else:
+        Nskip = 6
+    i = 0
+    for v,r in zip(vec,Vref):
+        if r:
+            v = val[i+Nskip]
+            i += 1
+    return np.array(vec)  
 
 def FitHKL(ibrav,peaks,A,Pwr):
     'needs a doc string'
@@ -337,6 +433,36 @@ def FitHKLZ(wave,ibrav,peaks,A,Z,Zref,Pwr):
         Z = result[0][-1]
         
     return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Zref,Pwr)**2),A,Z,result
+    
+def FitHKLZSS(wave,ibrav,peaks,A,V,Vref,Z,Zref,Pwr):
+    'needs a doc string'
+    
+    def errFit(values,ibrav,d,H,tth,wave,vec,Vref,Zref,Pwr):
+        Zero = Z
+        if Zref:    
+            Zero = values[-1]
+        A = Values2A(ibrav,values[:6])
+        vec = Values2Vec(ibrav,vec,Vref,values)
+        Qo = 1./d**2
+        Qc = G2lat.calc_rDsqZSS(H,A,vec,Zero,tth,wave)
+        return (Qo-Qc)*d**Pwr
+    
+    Peaks = np.array(peaks).T
+    
+    values = A2values(ibrav,A)
+    for v,r in zip(V,Vref):
+        if r:
+            values.append(v)
+    if Zref:
+        values.append(Z)
+    result = so.leastsq(errFit,values,full_output=True,ftol=0.0001,factor=0.001,
+        args=(ibrav,Peaks[8],Peaks[4:8],Peaks[0],wave,V,Vref,Zref,Pwr))
+    A = Values2A(ibrav,result[0])
+    Vec = Values2Vec(ibrav,V,Vref,result[0])
+    if Zref:
+        Z = result[0][-1]
+    chisq = np.sum(errFit(result[0],ibrav,Peaks[8],Peaks[4:8],Peaks[0],wave,Vec,Vref,Zref,Pwr)**2) 
+    return True,A,Vec,Z,chisq,result
     
 def FitHKLT(difC,ibrav,peaks,A,Z,Zref,Pwr):
     'needs a doc string'
@@ -403,11 +529,11 @@ def halfCell(ibrav,A,peaks):
     
 def getDmin(peaks):
     'needs a doc string'
-    return peaks[-1][7]
+    return peaks[-1][-2]
     
 def getDmax(peaks):
     'needs a doc string'
-    return peaks[0][7]
+    return peaks[0][-2]
     
 def refinePeaksZ(peaks,wave,ibrav,A,Zero,ZeroRef):
     'needs a doc string'
@@ -417,9 +543,21 @@ def refinePeaksZ(peaks,wave,ibrav,A,Zero,ZeroRef):
     H = Peaks[4:7]
     Peaks[8] = 1./np.sqrt(G2lat.calc_rDsqZ(H,Aref,Z,Peaks[0],wave))
     peaks = Peaks.T    
-    HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
+    HKL = G2lat.GenHBravais(dmin,ibrav,A)
     M20,X20 = calc_M20(peaks,HKL)
     return len(HKL),M20,X20,Aref,Z
+    
+def refinePeaksZSS(peaks,wave,Inst,SGData,SSGData,maxH,ibrav,A,vec,vecRef,Zero,ZeroRef):
+    'needs a doc string'
+    dmin = getDmin(peaks)
+    OK,Aref,Vref,Z,smin,result = FitHKLZSS(wave,ibrav,peaks,A,vec,vecRef,Zero,ZeroRef,0)
+    Peaks = np.array(peaks).T
+    H = Peaks[4:8]
+    Peaks[9] = 1./np.sqrt(G2lat.calc_rDsqZSS(H,Aref,Vref,Z,Peaks[0],wave))  #H,A,vec,Z,tth,lam
+    peaks = Peaks.T    
+    HKL =  G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vref,maxH,Aref)
+    M20,X20 = calc_M20SS(peaks,HKL)
+    return len(HKL),M20,X20,Aref,Vref,Z
     
 def refinePeaksT(peaks,difC,ibrav,A,Zero,ZeroRef):
     'needs a doc string'
@@ -429,7 +567,7 @@ def refinePeaksT(peaks,difC,ibrav,A,Zero,ZeroRef):
     H = Peaks[4:7]
     Peaks[8] = 1./np.sqrt(G2lat.calc_rDsqT(H,Aref,Z,Peaks[0],difC))
     peaks = Peaks.T    
-    HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
+    HKL = G2lat.GenHBravais(dmin,ibrav,A)
     M20,X20 = calc_M20(peaks,HKL)
     return len(HKL),M20,X20,Aref,Z
     

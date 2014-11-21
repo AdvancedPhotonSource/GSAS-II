@@ -795,17 +795,17 @@ def ellipseSizeDerv(H,Sij,GB):
         dRdS[i] = (lenP-lenM)/(2.*delt)
     return lenR,dRdS
 
-def getHKLpeak(dmin,SGData,A):
+def getHKLpeak(dmin,Inst,SGData,A):
     'needs a doc string'
     HKL = G2lat.GenHLaue(dmin,SGData,A)        
     HKLs = []
     for h,k,l,d in HKL:
         ext = G2spc.GenHKLf([h,k,l],SGData)[0]
         if not ext:
-            HKLs.append([h,k,l,d,-1])
+            HKLs.append([h,k,l,d,G2lat.Dsp2pos(Inst,d),-1])
     return HKLs
 
-def getHKLMpeak(dmin,SGData,SSGData,Vec,maxH,A):
+def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
     'needs a doc string'
     HKLs = []
     vec = np.array(Vec)
@@ -817,7 +817,7 @@ def getHKLMpeak(dmin,SGData,SSGData,Vec,maxH,A):
     for h,k,l,d in HKL:
         ext = G2spc.GenHKLf([h,k,l],SGData)[0]
         if not ext and d >= dmin:
-            HKLs.append([h,k,l,0,d,-1])
+            HKLs.append([h,k,l,0,d,G2lat.Dsp2pos(Inst,d),-1])
         for dH in SSdH:
             if dH:
                 DH = SSdH[dH]
@@ -826,8 +826,8 @@ def getHKLMpeak(dmin,SGData,SSGData,Vec,maxH,A):
                 if d >= dmin:
                     HKLM = np.array([h,k,l,dH])
                     if G2spc.checkSSextc(HKLM,SSGData[1]):
-                        HKLs.append([h,k,l,dH,d,-1])
-    return HKLs
+                        HKLs.append([h,k,l,dH,d,G2lat.Dsp2pos(Inst,d),-1])    
+    return G2lat.sortHKLd(HKLs,True,True,True)
 
 def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
     'needs a doc string'

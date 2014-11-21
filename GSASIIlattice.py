@@ -461,9 +461,20 @@ def calc_rDsqZ(H,A,Z,tth,lam):
     rdsq = calc_rDsq(H,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
+def calc_rDsqZSS(H,A,vec,Z,tth,lam):
+    'needs doc string'
+    rpd = np.pi/180.
+    rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z*sind(tth)*2.0*rpd/lam**2
+    return rdsq
+       
 def calc_rDsqT(H,A,Z,tof,difC):
     'needs doc string'
     rdsq = calc_rDsq(H,A)+Z/difC
+    return rdsq
+       
+def calc_rDsqTSS(H,A,vec,Z,tof,difC):
+    'needs doc string'
+    rdsq = calc_rDsq(H[:3]+H[3][:,np.newaxis]*vec,A)+Z/difC
     return rdsq
        
 def MaxIndex(dmin,A):
@@ -477,7 +488,7 @@ def MaxIndex(dmin,A):
         Hmax[i] = int(round(cell[i]/dmin))
     return Hmax
     
-def sortHKLd(HKLd,ifreverse,ifdup):
+def sortHKLd(HKLd,ifreverse,ifdup,ifSS=False):
     '''needs doc string
 
     :param HKLd: a list of [h,k,l,d,...];
@@ -485,11 +496,14 @@ def sortHKLd(HKLd,ifreverse,ifdup):
     :param ifdup: True if duplicate d-spacings allowed
     '''
     T = []
+    N = 3
+    if ifSS:
+        N = 4
     for i,H in enumerate(HKLd):
         if ifdup:
-            T.append((H[3],i))
+            T.append((H[N],i))
         else:
-            T.append(H[3])            
+            T.append(H[N])            
     D = dict(zip(T,HKLd))
     T.sort()
     if ifreverse:

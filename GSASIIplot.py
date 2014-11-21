@@ -1003,7 +1003,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         if len(HKL):
                             view = Page.toolbar._views.forward()[0][:2]
                             wid = view[1]-view[0]
-                            found = HKL[np.where(np.fabs(HKL.T[-1]-xpos) < 0.002*wid)]
+                            found = HKL[np.where(np.fabs(HKL.T[-2]-xpos) < 0.002*wid)]
                         if len(found):
                             if len(found[0]) > 6:   #SS reflections
                                 h,k,l,m = found[0][:4]
@@ -1542,11 +1542,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if len(hkl) > 6 and hkl[3]:
                     clr = 'g'
                 if G2frame.qPlot:
-                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-1]),color=clr,dashes=(5,5))
+                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(5,5))
                 if G2frame.dPlot:
-                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-1]),color=clr,dashes=(5,5))
+                    Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(5,5))
                 else:
-                    Plot.axvline(hkl[-1],color=clr,dashes=(5,5))
+                    Plot.axvline(hkl[-2],color=clr,dashes=(5,5))
         elif G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists'] or \
             'PWDR' in G2frame.PatternTree.GetItemText(PickId):
             refColors=['b','r','c','g','m','k']

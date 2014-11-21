@@ -5549,7 +5549,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def FillMenus():
         '''Create the Select tab menus and bind to all menu items
         '''
-        print 'FillMenus'
         # General
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataGeneral)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)

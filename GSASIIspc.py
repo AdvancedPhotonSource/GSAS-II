@@ -1149,14 +1149,14 @@ def checkSSextc(HKL,SSGData):
     Ops = SSGData['SSGOps']
     OpM = np.array([op[0] for op in Ops])
     OpT = np.array([op[1] for op in Ops])
-    HKLS = np.array([HKL,-HKL])
+    HKLS = np.array([HKL,-HKL])     #Freidel's Law
     DHKL = np.reshape(np.inner(HKLS,OpM)-HKL,(-1,4))
     PHKL = np.reshape(np.inner(HKLS,OpT),(-1,))
-    for dhkl,phkl in zip(DHKL,PHKL)[1:]:
+    for dhkl,phkl in zip(DHKL,PHKL)[1:]:    #skip identity
         if dhkl.any():
             continue
         else:
-            if phkl:
+            if phkl%1.:
                 return False
     return True
                                   

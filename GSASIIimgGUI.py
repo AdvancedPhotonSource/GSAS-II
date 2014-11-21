@@ -1057,7 +1057,7 @@ def UpdateMasks(G2frame,data):
     def OnDeleteSpot(event):
         Obj = event.GetEventObject()
         del(data['Points'][delSpotId.index(Obj)])
-        UpdateMasks(G2frame,data)
+        wx.CallAfter(UpdateMasks,G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
         
     def OnRingThickness(event):
@@ -1073,7 +1073,7 @@ def UpdateMasks(G2frame,data):
     def OnDeleteRing(event):
         Obj = event.GetEventObject()
         del(data['Rings'][delRingId.index(Obj)])
-        UpdateMasks(G2frame,data)
+        wx.CallAfter(UpdateMasks,G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
 
     def OnArcThickness(event):
@@ -1089,18 +1089,18 @@ def UpdateMasks(G2frame,data):
     def OnDeleteArc(event):
         Obj = event.GetEventObject()
         del(data['Arcs'][delArcId.index(Obj)])
-        UpdateMasks(G2frame,data)
+        wx.CallAfter(UpdateMasks,G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
 
     def OnDeletePoly(event):
         Obj = event.GetEventObject()
         del(data['Polygons'][delPolyId.index(Obj)])
-        UpdateMasks(G2frame,data)
+        wx.CallAfter(UpdateMasks,G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
 
     def OnDeleteFrame(event):
         data['Frames'] = []
-        UpdateMasks(G2frame,data)
+        wx.CallAfter(UpdateMasks,G2frame,data)
         G2plt.PlotExposedImage(G2frame,event=event)
 
     def OnCopyMask(event):
@@ -1178,7 +1178,7 @@ def UpdateMasks(G2frame,data):
                             save[key][1][1] = min(oldThreshold[1],save[key][1][1])
                     S = File.readline()
                 data.update(save)
-                UpdateMasks(G2frame,data)
+                wx.CallAfter(UpdateMasks,G2frame,data)
                 G2plt.PlotExposedImage(G2frame,event=event)                
                 File.close()
         finally:

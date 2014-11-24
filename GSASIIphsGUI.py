@@ -285,7 +285,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def CellSizer():
             
             cellGUIlist = [[['m3','m3m'],4,zip([" Unit cell: a = "," Vol = "],["%.5f","%.3f"],[True,False],[0,0])],
-            [['3R','3mR'],6,zip([" a = "," alpha = "," Vol = "],["%.5f","%.3f","%.3f"],[True,True,False],[0,2,0])],
+            [['3R','3mR'],6,zip([" a = "," alpha = "," Vol = "],["%.5f","%.3f","%.3f"],[True,True,False],[0,3,0])],
             [['3','3m1','31m','6/m','6/mmm','4/m','4/mmm'],6,zip([" a = "," c = "," Vol = "],["%.5f","%.5f","%.3f"],[True,True,False],[0,2,0])],
             [['mmm'],8,zip([" a = "," b = "," c = "," Vol = "],["%.5f","%.5f","%.5f","%.3f"],
                 [True,True,True,False],[0,1,2,0])],
@@ -380,7 +380,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     denSizer[1].SetValue('%.3f'%(density))
                     if denSizer[2]:
                         denSizer[2].SetValue('%.3f'%(mattCoeff))
-                generalData['Cell'] = cell
             
             cell = generalData['Cell']
             laue = generalData['SGData']['SGLaue']

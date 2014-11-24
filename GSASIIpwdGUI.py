@@ -2268,6 +2268,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         ssopt['maxH'] = int(maxMH.GetValue())
         OnHklShow(event)
         
+    def OnFindMV(event):
+        print 'find MV'
+        
     def OnBravSel(event):
         brav = bravSel.GetString(bravSel.GetSelection())
         controls[5] = brav
@@ -2360,9 +2363,12 @@ def UpdateUnitCellsGrid(G2frame, data):
             maxH = ssopt['maxH']
             G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A)
             peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
+            M20,X20 = G2indx.calc_M20SS(peaks[0],G2frame.HKL)
         else:
             G2frame.HKL = G2pwd.getHKLpeak(dmin,Inst,SGData,A)
             peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
+            M20,X20 = G2indx.calc_M20(peaks[0],G2frame.HKL)
+        print ' new M20,X20: %.2f %d'%(M20,X20)
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'),peaks)
         if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
@@ -2397,7 +2403,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataFrame.RefineCell.Enable(True)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)        
                 
-    def RefineCell(event):  #want this to do modulation vector as well
+    def RefineCell(event):
+        
         def cellPrint(ibrav,A):
             cell = G2lat.A2cell(A)
             Vol = G2lat.calc_V(A)
@@ -2749,6 +2756,9 @@ def UpdateUnitCellsGrid(G2frame, data):
             choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
         ssSizer.Add(maxMH,0,WACV)
+        findMV = wx.wx.Button(G2frame.dataDisplay,label="Find mod. vec.?")
+        findMV.Bind(wx.EVT_BUTTON,OnFindMV)
+        ssSizer.Add(findMV,0,WACV)
         mainSizer.Add(ssSizer,0)
 
     if cells:

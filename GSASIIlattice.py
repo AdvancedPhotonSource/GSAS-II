@@ -44,6 +44,7 @@ atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 cosd = lambda x: np.cos(x*np.pi/180.)
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 rdsq2d = lambda x,p: round(1.0/np.sqrt(x),p)
+rpd = np.pi/180.
 
 def sec2HMS(sec):
     """Convert time in sec to H:M:S string
@@ -457,13 +458,11 @@ def calc_rDsq2(H,G):
     
 def calc_rDsqZ(H,A,Z,tth,lam):
     'needs doc string'
-    rpd = np.pi/180.
     rdsq = calc_rDsq(H,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
 def calc_rDsqZSS(H,A,vec,Z,tth,lam):
     'needs doc string'
-    rpd = np.pi/180.
     rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z*sind(tth)*2.0*rpd/lam**2
     return rdsq
        
@@ -969,7 +968,6 @@ def SamAng(Tth,Gangls,Sangl,IFCoup):
         dPSdA,dGMdA:    Angle zero derivatives
     """                         
     
-    rpd = math.pi/180.
     if IFCoup:
         GSomeg = sind(Gangls[2]+Tth)
         GComeg = cosd(Gangls[2]+Tth)

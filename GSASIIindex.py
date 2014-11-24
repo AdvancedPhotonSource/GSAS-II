@@ -385,12 +385,15 @@ def Values2Vec(ibrav,vec,Vref,val):
         Nskip = 4
     else:
         Nskip = 6
+    Vec = []
     i = 0
-    for v,r in zip(vec,Vref):
+    for j,r in enumerate(Vref):
         if r:
-            v = val[i+Nskip]
+            Vec.append(val[i+Nskip])
             i += 1
-    return np.array(vec)  
+        else:
+            Vec.append(vec[j])
+    return np.array(Vec)  
 
 def FitHKL(ibrav,peaks,A,Pwr):
     'needs a doc string'
@@ -455,7 +458,7 @@ def FitHKLZSS(wave,ibrav,peaks,A,V,Vref,Z,Zref,Pwr):
             values.append(v)
     if Zref:
         values.append(Z)
-    result = so.leastsq(errFit,values,full_output=True,ftol=0.0001,factor=0.001,
+    result = so.leastsq(errFit,values,full_output=True,ftol=1.e-6,factor=1.,
         args=(ibrav,Peaks[8],Peaks[4:8],Peaks[0],wave,V,Vref,Zref,Pwr))
     A = Values2A(ibrav,result[0])
     Vec = Values2Vec(ibrav,V,Vref,result[0])

@@ -2977,6 +2977,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     parmDict['sumFosq'] = sumFosq
     x0 = [parmDict[val] for val in varyList]
     ifInv = SGData['SGInv']
+    # consider replacing anneal with scipy.optimize.basinhopping
     results = anneal(mcsaCalc,x0,args=(refs,rcov,cosTable,ifInv,allFF,RBdata,varyList,parmDict),
         schedule=MCSA['Algorithm'], full_output=True,
         T0=MCSA['Annealing'][0], Tf=MCSA['Annealing'][1],dwell=MCSA['Annealing'][2],

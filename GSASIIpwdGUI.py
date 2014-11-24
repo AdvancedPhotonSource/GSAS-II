@@ -2498,6 +2498,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         if True not in bravais:
             G2frame.ErrorDialog('Error','No Bravais lattices selected')
             return
+        if not peaks[0]:
+            G2frame.ErrorDialog('Error','Index Peak List is empty')
+            return
         G2frame.dataFrame.CopyCell.Enable(False)
         G2frame.dataFrame.RefineCell.Enable(False)
         OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais)
@@ -2578,7 +2581,6 @@ def UpdateUnitCellsGrid(G2frame, data):
             
     if G2frame.dataDisplay:
         G2frame.dataFrame.DestroyChildren()
-#    G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.IndexMenu)
     if not G2frame.dataFrame.GetStatusBar():

@@ -998,12 +998,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Page.canvas.SetToolTipString('%9.5f'%(xpos))
                 if G2frame.PickId:
                     found = []
-                    if G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List','Reflection Lists'] or \
+                    pickIdText = G2frame.PatternTree.GetItemText(G2frame.PickId)
+                    if pickIdText in ['Index Peak List','Unit Cells List','Reflection Lists'] or \
                         'PWDR' in G2frame.PatternTree.GetItemText(PickId):
+                        indx = -1
+                        if pickIdText in ['Index Peak List','Unit Cells List',]:
+                            indx = -2
                         if len(HKL):
                             view = Page.toolbar._views.forward()[0][:2]
                             wid = view[1]-view[0]
-                            found = HKL[np.where(np.fabs(HKL.T[-2]-xpos) < 0.002*wid)]
+                            found = HKL[np.where(np.fabs(HKL.T[indx]-xpos) < 0.002*wid)]
                         if len(found):
                             if len(found[0]) > 6:   #SS reflections
                                 h,k,l,m = found[0][:4]
@@ -1276,11 +1280,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             HKL = []
-            if Phases:
+            if Phases:  #will be trouble for SS reflection lists - will need peak[:7]
                 try:
                     for peak in Phases[G2frame.RefList]['RefList']:
                         HKL.append(peak[:6])
-                except TypeError:
+                except TypeError:   #old style patch
                     for peak in Phases[G2frame.RefList]:
                         HKL.append(peak[:6])                    
                 HKL = np.array(HKL)
@@ -1409,7 +1413,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             DifLine = ['']
             if ifpicked:
                 if G2frame.SqrtPlot:
+                    olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                     Z = np.where(xye[3]>=0.,np.sqrt(xye[3]),-np.sqrt(-xye[3]))
+                    np.seterr(invalid=olderr['invalid'])
                 else:
                     Z = xye[3]+offset*N
                 if 'PWDR' in plottype:
@@ -1531,6 +1537,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if G2frame.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
             peaks = np.array((G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))))[0]
             for peak in peaks:
+#                print 'peak',peak
                 if G2frame.qPlot:
                     Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
                 if G2frame.dPlot:

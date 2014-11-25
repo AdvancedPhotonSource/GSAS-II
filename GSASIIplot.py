@@ -214,7 +214,7 @@ class GSASIItoolbar(Toolbar):
     ON_MPL_KEY = wx.NewId()
     arrows = {}
     for direc in ('left','right','up','down','Expand X',
-                  'Expand Y','Shrink X','Shrink Y'):
+                  'Shrink X','Expand Y','Shrink Y'):
         arrows[direc] = wx.NewId()
     def __init__(self,plotCanvas):
         '''Adds additional icons to toolbar'''
@@ -222,7 +222,7 @@ class GSASIItoolbar(Toolbar):
         self.plotCanvas = plotCanvas
         POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6 # remove one button
         self.DeleteToolByPos(POSITION_OF_CONFIGURE_SUBPLOTS_BTN)
-        parent = self.GetParent()
+        self.parent = self.GetParent()
         key = os.path.join(os.path.split(__file__)[0],'key.ico')
         self.AddSimpleTool(self.ON_MPL_KEY,_load_bitmap(key),'Key press','Select key press')
         wx.EVT_TOOL(self,self.ON_MPL_KEY,self.OnKey)
@@ -235,7 +235,7 @@ class GSASIItoolbar(Toolbar):
             icon =  os.path.join(os.path.split(__file__)[0],direc[0]+'arrow.ico')
             self.AddSimpleTool(self.arrows[direc],_load_bitmap(icon),
                                'Shift '+direc,'Shift plot '+direc)
-        for direc in ('Expand X','Expand Y','Shrink X','Shrink Y'):
+        for direc in ('Expand X','Shrink X','Expand Y','Shrink Y'):
             fil = ''.join([i[0].lower() for i in direc.split()]+['arrow.ico'])
             wx.EVT_TOOL(self,self.arrows[direc],self.OnArrow)
             icon =  os.path.join(os.path.split(__file__)[0],fil)
@@ -264,26 +264,29 @@ class GSASIItoolbar(Toolbar):
             ymax += delta
         elif event.Id == self.arrows['Expand X']:
             delta = (xmax-xmin)/10.
-            #xmin += delta
+            xmin += delta
             xmax -= delta
         elif event.Id == self.arrows['Expand Y']:
             delta = (ymax-ymin)/10.
-            #ymin += delta
+            ymin += delta
             ymax -= delta
         elif event.Id == self.arrows['Shrink X']:
             delta = (xmax-xmin)/10.
-            #xmin -= delta
+            xmin -= delta
             xmax += delta
         elif event.Id == self.arrows['Shrink Y']:
             delta = (ymax-ymin)/10.
-            #ymin -= delta
+            ymin -= delta
             ymax += delta
         else:
             # should not happen!
             GSASIIpath.IPyBreak()
+        self.parent.toolbar.push_current()
         ax.axis((xmin,xmax,ymin,ymax))
         #print xmin,xmax,ymin,ymax
         self.plotCanvas.figure.canvas.draw()
+        self.parent.toolbar.draw()
+#        self.parent.toolbar.push_current()
         
     def OnHelp(self,event):
         'Respond to press of help button on plot toolbar'

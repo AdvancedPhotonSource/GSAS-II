@@ -423,9 +423,18 @@ def Pos2dsp(Inst,pos):
         wave = G2mth.getWave(Inst)
         return wave/(2.0*sind((pos-Inst.get('Zero',[0,0])[1])/2.0))
     else:   #'T'OF - ignore difB
+#        return TOF2dsp(Inst,pos)
         T = pos-Inst['Zero'][1]
         T1 = Inst['difC'][1]**2-4.*Inst['difA'][1]*T
         return 2.*T/(Inst['difC'][1]+np.sqrt(T1))
+        
+def TOF2dsp(Inst,Pos):
+    import scipy.optimize as so
+    
+    def func(d,pos,Inst):
+        return pos-Inst['difC'][1]*d-Inst['difA'][1]*d**2-Inst['Zero'][1]-Inst['difB'][1]/d
+        
+    return [so.brentq(func,.01,100.,args=(pos,Inst)) for pos in Pos]
     
 def Dsp2pos(Inst,dsp):
     ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)

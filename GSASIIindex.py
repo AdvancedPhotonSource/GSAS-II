@@ -46,6 +46,7 @@ npcosd = lambda x: np.cos(x*math.pi/180.)
 nptand = lambda x: np.tan(x*math.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
+rpd = np.pi/180.
     
 def scaleAbyV(A,V):
     'needs a doc string'
@@ -361,7 +362,7 @@ def Values2A(ibrav,values):
     elif ibrav in [11,12]:
         return [values[0],values[1],values[2],0,values[3],0]
     else:
-        return list(values)
+        return list(values[:6])
         
 def A2values(ibrav,A):
     'needs a doc string'
@@ -412,41 +413,84 @@ def FitHKL(ibrav,peaks,A,Pwr):
     A = Values2A(ibrav,result[0])
     return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Pwr)**2),A,result
            
-def errFitZ(values,ibrav,d,H,tth,wave,Z,Zref,Pwr):
+def errFitZ(values,ibrav,d,H,tth,wave,Z,Zref):
     Zero = Z
     if Zref:    
         Zero = values[-1]
-    A = Values2A(ibrav,values[:6])
+    A = Values2A(ibrav,values)
     Qo = 1./d**2
     Qc = G2lat.calc_rDsqZ(H,A,Zero,tth,wave)
-    return (Qo-Qc)*d**Pwr
+    return (Qo-Qc)
     
-def FitHKLZ(wave,ibrav,peaks,A,Z,Zref,Pwr):
+def dervFitZ(values,ibrav,d,H,tth,wave,Z,Zref):
+    if ibrav in [0,1,2]:
+        derv = [H[0]*H[0]+H[1]*H[1]+H[2]*H[2],]
+    elif ibrav in [3,4,]:
+        derv = [H[0]*H[0]+H[1]*H[1]+H[0]*H[1],H[2]*H[2]]
+    elif ibrav in [5,6]:
+        derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
+    elif ibrav in [7,8,9,10]:
+        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
+    elif ibrav in [11,12]:
+        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
+    else:
+        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
+    if Zref:
+        derv.append(npsind(tth)*2.0*rpd/wave**2)
+    derv = -np.array(derv)
+    return derv.T
+    
+def FitHKLZ(wave,ibrav,peaks,A,Z,Zref):
     'needs a doc string'
     
     Peaks = np.array(peaks).T   
     values = A2values(ibrav,A)
     if Zref:
         values.append(Z)
-    result = so.leastsq(errFitZ,values,full_output=True,ftol=0.0001,factor=10.,
-        args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Z,Zref,Pwr))
+    result = so.leastsq(errFitZ,values,Dfun=dervFitZ,full_output=True,ftol=0.0001,
+        args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Z,Zref))
     A = Values2A(ibrav,result[0][:6])
     if Zref:
         Z = result[0][-1]
-    chisq = np.sum(errFitZ(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Z,Zref,Pwr)**2)
+    chisq = np.sum(errFitZ(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],wave,Z,Zref)**2)
     return True,chisq,A,Z,result
     
-def errFitZSS(values,ibrav,d,H,tth,wave,vec,Vref,Z,Zref,Pwr):
+def errFitZSS(values,ibrav,d,H,tth,wave,vec,Vref,Z,Zref):
     Zero = Z
     if Zref:    
         Zero = values[-1]
-    A = Values2A(ibrav,values[:6])
-    vec = Values2Vec(ibrav,vec,Vref,values)
+    A = Values2A(ibrav,values)
+    Vec = Values2Vec(ibrav,vec,Vref,values)
     Qo = 1./d**2
-    Qc = G2lat.calc_rDsqZSS(H,A,vec,Zero,tth,wave)
-    return (Qo-Qc)*d**Pwr
+    Qc = G2lat.calc_rDsqZSS(H,A,Vec,Zero,tth,wave)
+    return (Qo-Qc)
     
-def FitHKLZSS(wave,ibrav,peaks,A,V,Vref,Z,Zref,Pwr):
+def dervFitZSS(values,ibrav,d,H,tth,wave,vec,Vref,Z,Zref):
+    A = Values2A(ibrav,values)
+    Vec = Values2Vec(ibrav,vec,Vref,values)
+    HM = H[:3]+(H[3][:,np.newaxis]*Vec).T
+    if ibrav in [3,4,]:
+        derv = [HM[0]*HM[0]+HM[1]*HM[1]+HM[0]*HM[1],HM[2]*HM[2]]
+    elif ibrav in [5,6]:
+        derv = [HM[0]*HM[0]+HM[1]*HM[1],HM[2]*HM[2]]
+    elif ibrav in [7,8,9,10]:
+        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2]]
+    elif ibrav in [11,12]:
+        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[2]]
+    else:
+        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[1],HM[0]*HM[2],HM[1]*HM[2]]
+    if Vref[0]:
+        derv.append(2.*A[0]*HM[0]*H[3]+A[3]*HM[1]*H[3]+A[4]*HM[2]*H[3])
+    if Vref[1]:
+        derv.append(2.*A[1]*HM[1]*H[3]+A[3]*HM[0]*H[3]+A[5]*HM[2]*H[3])
+    if Vref[2]:
+        derv.append(2.*A[2]*HM[2]*H[3]+A[4]*HM[1]*H[3]+A[5]*HM[0]*H[3])    
+    if Zref:
+        derv.append(npsind(tth)*2.0*rpd/wave**2)
+    derv = -np.array(derv)
+    return derv.T
+    
+def FitHKLZSS(wave,ibrav,peaks,A,V,Vref,Z,Zref):
     'needs a doc string'
     
     Peaks = np.array(peaks).T    
@@ -456,37 +500,55 @@ def FitHKLZSS(wave,ibrav,peaks,A,V,Vref,Z,Zref,Pwr):
             values.append(v)
     if Zref:
         values.append(Z)
-    result = so.leastsq(errFitZSS,values,full_output=True,ftol=1.e-6,factor=10.,
-        args=(ibrav,Peaks[8],Peaks[4:8],Peaks[0],wave,V,Vref,Z,Zref,Pwr))
+    result = so.leastsq(errFitZSS,values,Dfun=dervFitZSS,full_output=True,ftol=1.e-6,
+        args=(ibrav,Peaks[8],Peaks[4:8],Peaks[0],wave,V,Vref,Z,Zref))
     A = Values2A(ibrav,result[0])
     Vec = Values2Vec(ibrav,V,Vref,result[0])
     if Zref:
         Z = result[0][-1]
-    chisq = np.sum(errFitZSS(result[0],ibrav,Peaks[8],Peaks[4:8],Peaks[0],wave,Vec,Vref,Z,Zref,Pwr)**2) 
+    chisq = np.sum(errFitZSS(result[0],ibrav,Peaks[8],Peaks[4:8],Peaks[0],wave,Vec,Vref,Z,Zref)**2) 
     return True,chisq,A,Vec,Z,result
     
-def errFitT(values,ibrav,d,H,tof,difC,Z,Zref,Pwr):
+def errFitT(values,ibrav,d,H,tof,difC,Z,Zref):
     Zero = Z
     if Zref:    
         Zero = values[-1]
-    A = Values2A(ibrav,values[:6])
+    A = Values2A(ibrav,values)
     Qo = 1./d**2
     Qc = G2lat.calc_rDsqT(H,A,Zero,tof,difC)
-    return (Qo-Qc)*d**Pwr
+    return (Qo-Qc)
     
-def FitHKLT(difC,ibrav,peaks,A,Z,Zref,Pwr):
+def dervFitT(values,ibrav,d,H,tof,difC,Z,Zref):
+    if ibrav in [0,1,2]:
+        derv = [H[0]*H[0]+H[1]*H[1]+H[2]*H[2],]
+    elif ibrav in [3,4,]:
+        derv = [H[0]*H[0]+H[1]*H[1]+H[0]*H[1],H[2]*H[2]]
+    elif ibrav in [5,6]:
+        derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
+    elif ibrav in [7,8,9,10]:
+        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
+    elif ibrav in [11,12]:
+        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
+    else:
+        derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
+    if Zref:
+        derv.append(np.ones_like(d)/difC)
+    derv = -np.array(derv)
+    return derv.T
+    
+def FitHKLT(difC,ibrav,peaks,A,Z,Zref):
     'needs a doc string'
     
     Peaks = np.array(peaks).T    
     values = A2values(ibrav,A)
     if Zref:
         values.append(Z)
-    result = so.leastsq(errFitT,values,full_output=True,ftol=0.0001,factor=0.001,
-        args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],difC,Z,Zref,Pwr))
-    A = Values2A(ibrav,result[0][:6])
+    result = so.leastsq(errFitT,values,Dfun=dervFitT,full_output=True,ftol=0.0001,
+        args=(ibrav,Peaks[7],Peaks[4:7],Peaks[0],difC,Z,Zref))
+    A = Values2A(ibrav,result[0])
     if Zref:
         Z = result[0][-1]
-    chisq = np.sum(errFitT(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],difC,Z,Zref,Pwr)**2)
+    chisq = np.sum(errFitT(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],difC,Z,Zref)**2)
     return True,chisq,A,Z,result
                
 def rotOrthoA(A):
@@ -538,7 +600,7 @@ def getDmax(peaks):
 def refinePeaksZ(peaks,wave,ibrav,A,Zero,ZeroRef):
     'needs a doc string'
     dmin = getDmin(peaks)
-    OK,smin,Aref,Z,result = FitHKLZ(wave,ibrav,peaks,A,Zero,ZeroRef,0)
+    OK,smin,Aref,Z,result = FitHKLZ(wave,ibrav,peaks,A,Zero,ZeroRef)
     Peaks = np.array(peaks).T
     H = Peaks[4:7]
     Peaks[8] = 1./np.sqrt(G2lat.calc_rDsqZ(H,Aref,Z,Peaks[0],wave))
@@ -550,9 +612,7 @@ def refinePeaksZ(peaks,wave,ibrav,A,Zero,ZeroRef):
 def refinePeaksZSS(peaks,wave,Inst,SGData,SSGData,maxH,ibrav,A,vec,vecRef,Zero,ZeroRef):
     'needs a doc string'
     dmin = getDmin(peaks)
-    print Zero
-    OK,smin,Aref,Vref,Z,result = FitHKLZSS(wave,ibrav,peaks,A,vec,vecRef,Zero,ZeroRef,0)
-    print Z
+    OK,smin,Aref,Vref,Z,result = FitHKLZSS(wave,ibrav,peaks,A,vec,vecRef,Zero,ZeroRef)
     Peaks = np.array(peaks).T
     H = Peaks[4:8]
     Peaks[9] = 1./np.sqrt(G2lat.calc_rDsqZSS(H,Aref,Vref,Z,Peaks[0],wave))  #H,A,vec,Z,tth,lam
@@ -564,7 +624,7 @@ def refinePeaksZSS(peaks,wave,Inst,SGData,SSGData,maxH,ibrav,A,vec,vecRef,Zero,Z
 def refinePeaksT(peaks,difC,ibrav,A,Zero,ZeroRef):
     'needs a doc string'
     dmin = getDmin(peaks)
-    OK,smin,Aref,Z,result = FitHKLT(difC,ibrav,peaks,A,Zero,ZeroRef,0)
+    OK,smin,Aref,Z,result = FitHKLT(difC,ibrav,peaks,A,Zero,ZeroRef)
     Peaks = np.array(peaks).T
     H = Peaks[4:7]
     Peaks[8] = 1./np.sqrt(G2lat.calc_rDsqT(H,Aref,Z,Peaks[0],difC))

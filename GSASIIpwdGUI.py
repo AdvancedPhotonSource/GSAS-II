@@ -2035,6 +2035,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
     IndexId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+
     def RefreshIndexPeaksGrid(event):
         r,c =  event.GetRow(),event.GetCol()
         peaks = G2frame.IndexPeaksTable.GetData()
@@ -2046,6 +2047,10 @@ def UpdateIndexPeaksGrid(G2frame, data):
             G2frame.IndexPeaksTable.SetData(peaks)
             G2frame.PatternTree.SetItemPyData(IndexId,[peaks,data[1]])
             G2frame.dataDisplay.ForceRefresh()
+            if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
+                G2plt.PlotPowderLines(G2frame)
+            else:
+                G2plt.PlotPatterns(G2frame,plotType='PWDR')
             
     def OnReload(event):
         peaks = []
@@ -2077,7 +2082,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
             G2frame.dataDisplay.ClearSelection()
             key = event.GetKeyCode()
             for col in colList:
-                if G2frame.IndexPeaksTable.GetColLabelValue(col) in ['use','refine']:
+                if G2frame.IndexPeaksTable.GetColLabelValue(col) in ['use',]:
                     if key == 89: #'Y'
                         for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[0][row][col]=True
                     elif key == 78:  #'N'

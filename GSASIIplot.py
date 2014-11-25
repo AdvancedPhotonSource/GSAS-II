@@ -1490,7 +1490,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Z = xye[3]+offset*N
                 if 'PWDR' in plottype:
                     if G2frame.SqrtPlot:
+                        olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                         W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))
+                        np.seterr(invalid=olderr['invalid'])
                         D = np.where(xye[5],(Y-Z),0.)-Ymax*G2frame.delOffset
                     else:
                         W = xye[4]+offset*N
@@ -1608,12 +1610,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             peaks = np.array((G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))))[0]
             for peak in peaks:
 #                print 'peak',peak
-                if G2frame.qPlot:
-                    Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
-                if G2frame.dPlot:
-                    Plot.axvline(G2lat.Pos2dsp(Parms,peak[0]),color='b')
-                else:
-                    Plot.axvline(peak[0],color='b')
+                if peak[2]:
+                    if G2frame.qPlot:
+                        Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
+                    if G2frame.dPlot:
+                        Plot.axvline(G2lat.Pos2dsp(Parms,peak[0]),color='b')
+                    else:
+                        Plot.axvline(peak[0],color='b')
             for hkl in G2frame.HKL:
                 clr = 'r'
                 if len(hkl) > 6 and hkl[3]:

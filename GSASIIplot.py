@@ -209,12 +209,18 @@ class G2PlotNoteBook(wx.Panel):
         self.status.DestroyChildren()                           #get rid of special stuff on status bar
         
 class GSASIItoolbar(Toolbar):
-    'needs a doc string'
+    'Override the matplotlib toolbar so we can add more icons'
     ON_MPL_HELP = wx.NewId()
     ON_MPL_KEY = wx.NewId()
+    arrows = {}
+    for direc in ('left','right','up','down','Expand X',
+                  'Expand Y','Shrink X','Shrink Y'):
+        arrows[direc] = wx.NewId()
     def __init__(self,plotCanvas):
+        '''Adds additional icons to toolbar'''
         Toolbar.__init__(self,plotCanvas)
-        POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6
+        self.plotCanvas = plotCanvas
+        POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6 # remove one button
         self.DeleteToolByPos(POSITION_OF_CONFIGURE_SUBPLOTS_BTN)
         parent = self.GetParent()
         key = os.path.join(os.path.split(__file__)[0],'key.ico')
@@ -223,15 +229,73 @@ class GSASIItoolbar(Toolbar):
         help = os.path.join(os.path.split(__file__)[0],'help.ico')
         self.AddSimpleTool(self.ON_MPL_HELP,_load_bitmap(help),'Help on','Show help on')
         wx.EVT_TOOL(self,self.ON_MPL_HELP,self.OnHelp)
+        # add arrow keys to control zooming
+        for direc in ('left','right','up','down'):
+            wx.EVT_TOOL(self,self.arrows[direc],self.OnArrow)
+            icon =  os.path.join(os.path.split(__file__)[0],direc[0]+'arrow.ico')
+            self.AddSimpleTool(self.arrows[direc],_load_bitmap(icon),
+                               'Shift '+direc,'Shift plot '+direc)
+        for direc in ('Expand X','Expand Y','Shrink X','Shrink Y'):
+            fil = ''.join([i[0].lower() for i in direc.split()]+['arrow.ico'])
+            wx.EVT_TOOL(self,self.arrows[direc],self.OnArrow)
+            icon =  os.path.join(os.path.split(__file__)[0],fil)
+            self.AddSimpleTool(self.arrows[direc],_load_bitmap(icon),
+                               direc,'Zoom: '+direc)
+    def OnArrow(self,event):
+        'reposition limits to scan or zoom by button press'
+        ax = self.plotCanvas.figure.get_axes()[0]
+        xmin,xmax,ymin,ymax = ax.axis()
+        #print xmin,xmax,ymin,ymax
+        if event.Id == self.arrows['right']:
+            delta = (xmax-xmin)/10.
+            xmin -= delta
+            xmax -= delta
+        elif event.Id == self.arrows['left']:
+            delta = (xmax-xmin)/10.
+            xmin += delta
+            xmax += delta
+        elif event.Id == self.arrows['up']:
+            delta = (ymax-ymin)/10.
+            ymin -= delta
+            ymax -= delta
+        elif event.Id == self.arrows['down']:
+            delta = (ymax-ymin)/10.
+            ymin += delta
+            ymax += delta
+        elif event.Id == self.arrows['Expand X']:
+            delta = (xmax-xmin)/10.
+            #xmin += delta
+            xmax -= delta
+        elif event.Id == self.arrows['Expand Y']:
+            delta = (ymax-ymin)/10.
+            #ymin += delta
+            ymax -= delta
+        elif event.Id == self.arrows['Shrink X']:
+            delta = (xmax-xmin)/10.
+            #xmin -= delta
+            xmax += delta
+        elif event.Id == self.arrows['Shrink Y']:
+            delta = (ymax-ymin)/10.
+            #ymin -= delta
+            ymax += delta
+        else:
+            # should not happen!
+            GSASIIpath.IPyBreak()
+        ax.axis((xmin,xmax,ymin,ymax))
+        #print xmin,xmax,ymin,ymax
+        self.plotCanvas.figure.canvas.draw()
+        
     def OnHelp(self,event):
-        'needs a doc string'
+        'Respond to press of help button on plot toolbar'
         Page = self.GetParent().GetParent()
         pageNo = Page.GetSelection()
         bookmark = Page.GetPageText(pageNo)
         bookmark = bookmark.strip(')').replace('(','_')
         G2gd.ShowHelp(bookmark,self.TopLevelParent)
     def OnKey(self,event):
-        'needs a doc string'
+        '''Provide user with list of keystrokes defined for plot as well as an
+        alternate way to access the same functionality
+        '''
         parent = self.GetParent()
         if parent.Choice:
             dlg = wx.SingleChoiceDialog(parent,'Select','Key press',list(parent.Choice))
@@ -944,7 +1008,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             else:
                 G2frame.Interpolate = 'nearest'
             dlg.Destroy()
-            
+        else:
+            print 'no binding for key',event.key
+            #GSASIIpath.IPyBreak()
+            return
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype)
         
     def OnMotion(event):

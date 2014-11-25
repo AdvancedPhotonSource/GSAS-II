@@ -117,7 +117,7 @@ def UpdateImageControls(G2frame,data,masks):
         
     def OnRecalibrate(event):
         G2img.ImageRecalibrate(G2frame,data,masks)
-        UpdateImageControls(G2frame,data,masks)
+        wx.CallAfter(UpdateImageControls,G2frame,data,masks)
         
     def OnClearCalib(event):
         data['ring'] = []
@@ -127,6 +127,7 @@ def UpdateImageControls(G2frame,data,masks):
         G2plt.PlotExposedImage(G2frame,event=event)
             
     def OnIntegrate(event):
+        CleanupMasks(masks)
         blkSize = 128   #this seems to be optimal; will break in polymask if >1024
         Nx,Ny = data['size']
         nXBlks = (Nx-1)/blkSize+1
@@ -219,6 +220,7 @@ def UpdateImageControls(G2frame,data,masks):
                                     Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                                     G2frame.PatternTree.SetItemPyData(
                                         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'),Masks)
+                                CleanupMasks(Masks)
                                 if len(backImage):                                
                                     G2frame.Integrate = G2img.ImageIntegrate(image+backImage,Data,Masks,blkSize,dlgp)
                                 else:
@@ -337,7 +339,7 @@ def UpdateImageControls(G2frame,data,masks):
                     S = File.readline()
                 data.update(save)
                 G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(data))
-                UpdateImageControls(G2frame,data,masks)
+                wx.CallAfter(UpdateImageControls,G2frame,data,masks)
                 G2plt.PlotExposedImage(G2frame,event=event)
                 
                 File.close()
@@ -626,7 +628,7 @@ def UpdateImageControls(G2frame,data,masks):
             else:
                 data['fullIntegrate'] = True
                 data['LRazimuth'] = [Lazm,Lazm+360]
-            UpdateImageControls(G2frame,data,masks)
+            wx.CallAfter(UpdateImageControls,G2frame,data,masks)
             G2plt.PlotExposedImage(G2frame,event=event)
             
         def OnSetDefault(event):
@@ -1021,6 +1023,19 @@ def UpdateImageControls(G2frame,data,masks):
 ################################################################################
 ##### Masks
 ################################################################################
+def CleanupMasks(data):
+    '''If a mask creation is not completed, an empty mask entry is created in the
+    masks array. This cleans them out. It is called when the masks page is first loaded
+    and before saving them or after reading them in. This should also probably be done
+    before they are used for integration.
+    '''
+    for key in ['Points','Rings','Arcs','Polygons']:
+        data[key] = data.get(key,[])
+        l1 = len(data[key])
+        data[key] = [i for i in data[key] if i]
+        l2 = len(data[key])
+        if GSASIIpath.GetConfigValue('debug') and l1 != l2:
+            print 'Mask Cleanup:',key,'was',l1,'entries','now',l2
     
 def UpdateMasks(G2frame,data):
     '''Shows and handles the controls on the "Masks" data tree entry
@@ -1085,6 +1100,7 @@ def UpdateMasks(G2frame,data):
                 dlg.Destroy()
                 
     def OnSaveMask(event):
+        CleanupMasks(data)
         dlg = wx.FileDialog(G2frame, 'Choose image mask file', '.', '', 
             'image mask files (*.immask)|*.immask',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
         try:
@@ -1125,10 +1141,11 @@ def UpdateMasks(G2frame,data):
                             save[key][0] = oldThreshold
                             save[key][1][1] = min(oldThreshold[1],save[key][1][1])
                     S = File.readline()
+                File.close()
                 data.update(save)
+                CleanupMasks(data)
                 wx.CallAfter(UpdateMasks,G2frame,data)
                 G2plt.PlotExposedImage(G2frame,event=event)                
-                File.close()
         finally:
             dlg.Destroy()
             
@@ -1161,6 +1178,8 @@ def UpdateMasks(G2frame,data):
     if G2frame.dataDisplay:
         startScroll = G2frame.dataDisplay.GetScrollPos(wx.VERTICAL) # save scroll position
         G2frame.dataDisplay.Destroy()
+    else:
+        CleanupMasks(data) # posting page for 1st time; clean out anything unfinished
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.MaskMenu)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyMask, id=G2gd.wxID_MASKCOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadMask, id=G2gd.wxID_MASKLOAD)

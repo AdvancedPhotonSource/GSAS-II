@@ -5358,6 +5358,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             elif deltaChi > 1.0:
                 G2frame.dataDisplay.SetCellStyle(row,deltaChiCol,color=wx.Colour(255,255,0))
     G2frame.dataDisplay.InstallGridToolTip(GridSetToolTip,GridColLblToolTip)
+    G2frame.dataDisplay.SendSizeEvent() # resize needed on mac
+    G2frame.dataDisplay.Refresh() # shows colored text on mac
     
 ################################################################################
 #####  Main PWDR panel

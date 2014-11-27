@@ -417,24 +417,25 @@ def permutations(items):
    
 def Pos2dsp(Inst,pos):
     ''' convert powder pattern position (2-theta or TOF, musec) to d-spacing
-    ignores secondary effects (e.g. difB in TOF)
     '''
     if 'C' in Inst['Type'][0]:
         wave = G2mth.getWave(Inst)
         return wave/(2.0*sind((pos-Inst.get('Zero',[0,0])[1])/2.0))
     else:   #'T'OF - ignore difB
-#        return TOF2dsp(Inst,pos)
-        T = pos-Inst['Zero'][1]
-        T1 = Inst['difC'][1]**2-4.*Inst['difA'][1]*T
-        return 2.*T/(Inst['difC'][1]+np.sqrt(T1))
+        return TOF2dsp(Inst,pos)
         
 def TOF2dsp(Inst,Pos):
-    import scipy.optimize as so
-    
-    def func(d,pos,Inst):
-        return pos-Inst['difC'][1]*d-Inst['difA'][1]*d**2-Inst['Zero'][1]-Inst['difB'][1]/d
-        
-    return [so.brentq(func,.01,100.,args=(pos,Inst)) for pos in Pos]
+    ''' convert powder pattern TOF, musec to d-spacing by successive approximation
+    Pos can be numpy array
+    '''
+    def func(d,pos,Inst):        
+        return (pos-Inst['difA'][1]*d**2-Inst['Zero'][1]-Inst['difB'][1]/d)/Inst['difC'][1]
+    dsp0 = np.ones_like(Pos)
+    while True:      #successive approximations
+        dsp = func(dsp0,Pos,Inst)
+        if np.allclose(dsp,dsp0,atol=0.000001):
+            return dsp
+        dsp0 = dsp
     
 def Dsp2pos(Inst,dsp):
     ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)
@@ -455,7 +456,6 @@ def getPeakPos(dataType,parmdict,dsp):
         pos = parmdict['difC']*dsp+parmdict['difA']*dsp**2+parmdict['difB']/dsp+parmdict['Zero']
     return pos
                    
-   
 def calc_rDsq(H,A):
     'needs doc string'
     rdsq = H[0]*H[0]*A[0]+H[1]*H[1]*A[1]+H[2]*H[2]*A[2]+H[0]*H[1]*A[3]+H[0]*H[2]*A[4]+H[1]*H[2]*A[5]

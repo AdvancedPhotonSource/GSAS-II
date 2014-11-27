@@ -243,18 +243,23 @@ def sortM20(cells):
         X.append(D[key])
     return X
                 
-def sortVolume(cells):
+def sortCells(cells,col):
     #cells is M20,X20,Bravais,a,b,c,alp,bet,gam,volume
-    #sort smallest volume 1st
+    #sort smallest a,b,c,alpha,beta,gamma or volume 1st
     T = []
     for i,M in enumerate(cells):
-        T.append((M[9],i))
+        T.append((M[col],i))
     D = dict(zip(T,cells))
     T.sort()
     X = []
     for key in T:
         X.append(D[key])
     return X
+    
+def findMV(peaks,HKL,ssopt):
+#    import basinhopping as bh
+    print ssopt
+    return ssopt['ModVec']
                 
 def IndexPeaks(peaks,HKL):
     'needs a doc string'
@@ -404,11 +409,26 @@ def FitHKL(ibrav,peaks,A,Pwr):
         Qo = 1./d**2
         Qc = G2lat.calc_rDsq(H,A)
         return (Qo-Qc)*d**Pwr
+        
+    def dervFit(values,ibrav,d,H,Pwr):
+        if ibrav in [0,1,2]:
+            derv = [H[0]*H[0]+H[1]*H[1]+H[2]*H[2],]
+        elif ibrav in [3,4,]:
+            derv = [H[0]*H[0]+H[1]*H[1]+H[0]*H[1],H[2]*H[2]]
+        elif ibrav in [5,6]:
+            derv = [H[0]*H[0]+H[1]*H[1],H[2]*H[2]]
+        elif ibrav in [7,8,9,10]:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2]]
+        elif ibrav in [11,12]:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[2]]
+        else:
+            derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
+        derv = -np.array(derv)
+        return (derv*d**Pwr).T
     
     Peaks = np.array(peaks).T
-    
     values = A2values(ibrav,A)
-    result = so.leastsq(errFit,values,full_output=True,ftol=0.0001,
+    result = so.leastsq(errFit,values,Dfun=dervFit,full_output=True,ftol=0.000001,
         args=(ibrav,Peaks[7],Peaks[4:7],Pwr))
     A = Values2A(ibrav,result[0])
     return True,np.sum(errFit(result[0],ibrav,Peaks[7],Peaks[4:7],Pwr)**2),A,result

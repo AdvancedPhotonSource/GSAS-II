@@ -2274,7 +2274,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(event)
         
     def OnFindMV(event):
-        print 'find MV'
+        ssopt['ModVec'] = G2indx.findMV(peaks,G2frame.HKL,ssopt)
+        OnHklShow(event)
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnBravSel(event):
         brav = bravSel.GetString(bravSel.GetSelection())
@@ -2385,8 +2387,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         c =  event.GetCol()
         if colLabels[c] == 'M20':
             cells = G2indx.sortM20(cells)
-        elif colLabels[c] == 'Volume':
-            cells = G2indx.sortVolume(cells)
+        elif colLabels[c] in ['Bravais','a','b','c','alpha','beta','gamma','Volume']:
+            cells = G2indx.sortCells(cells,c-1)     #an extra column (Use) not in cells
         else:
             return
         data = [controls,bravais,cells,dmin,ssopt]

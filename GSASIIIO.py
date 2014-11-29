@@ -980,9 +980,13 @@ def ProjFileSave(G2frame):
     if not G2frame.PatternTree.IsEmpty():
         file = open(G2frame.GSASprojectfile,'wb')
         print 'save to file: ',G2frame.GSASprojectfile
-        # stick the file name into the tree
-        Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
-        Controls['LastSavedAs'] = G2frame.GSASprojectfile
+        # stick the file name into the tree, if possible
+        try:
+            Controls = G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+            Controls['LastSavedAs'] = os.path.abspath(G2frame.GSASprojectfile)
+        except:
+            pass
         wx.BeginBusyCursor()
         try:
             item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)

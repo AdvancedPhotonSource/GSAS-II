@@ -141,12 +141,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData['AtomMass'] = []
         generalData['Color'] = []
         generalData['Mydir'] = G2frame.dirname
+        badList = {}
         for atom in atomData:
             atom[ct] = atom[ct].lower().capitalize()              #force to standard form
             if generalData['AtomTypes'].count(atom[ct]):
                 generalData['NoAtoms'][atom[ct]] += atom[cs-1]*float(atom[cs+1])
             elif atom[ct] != 'UNK':
                 Info = G2elem.GetAtomInfo(atom[ct])
+                if not Info:
+                    if atom[ct] not in badList:
+                        badList[atom[ct]] = 0
+                    badList[atom[ct]] += 1
+                    atom[ct] = 'UNK'
+                    continue
+                atom[ct] = Info['Symbol'] # N.B. symbol might be changed by GetAtomInfo
                 generalData['AtomTypes'].append(atom[ct])
                 generalData['Z'] = Info['Z']
                 generalData['Isotopes'][atom[ct]] = Info['Isotopes']
@@ -160,6 +168,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     generalData['AtomMass'].append(Info['Mass'])
                 generalData['NoAtoms'][atom[ct]] = atom[cs-1]*float(atom[cs+1])
                 generalData['Color'].append(Info['Color'])
+        if badList:
+            msg = 'Warning: element symbol(s) not found:'
+            for key in badList:
+                msg += '\n\t' + key
+                if badList[key] > 1:
+                    msg += ' (' + str(badList[key]) + ' times)'
+            wx.MessageBox(msg,caption='Element symbol error')
         F000X = 0.
         F000N = 0.
         for i,elem in enumerate(generalData['AtomTypes']):

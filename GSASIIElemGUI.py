@@ -37,6 +37,7 @@ class PickElement(wx.Dialog):
         
         i=0
         for E in ET.ElTable:
+            if E[1] < 0: continue
             if self.oneOnly:
                 color=E[4]
             else:

@@ -1291,6 +1291,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             attr.IncRef()               #fix from Jim Hester
             attr.SetEditor(G2gd.GridFractionEditor(Atoms))
             for c in range(colX,colX+3):
+                attr = wx.grid.GridCellAttr()
+                attr.IncRef()               #fix from Jim Hester
+                attr.SetEditor(G2gd.GridFractionEditor(Atoms))
                 Atoms.SetColAttr(c, attr)
             for i in range(colU11-1,colU11+6):
                 Atoms.SetColSize(i,50)            

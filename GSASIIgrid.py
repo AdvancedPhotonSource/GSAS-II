@@ -2287,11 +2287,11 @@ class GridFractionEditor(wg.PyGridCellEditor):
         self._tc.SetFocus()
         self._tc.SetSelection(0, self._tc.GetLastPosition())
 
-    def EndEdit(self, row, col, grid):
+    def EndEdit(self, row, col, grid, oldVal=None):
         changed = False
 
+        self.nextval = self.startValue
         val = self._tc.GetValue().lower()
-        
         if val != self.startValue:
             changed = True
             neg = False
@@ -2310,14 +2310,24 @@ class GridFractionEditor(wg.PyGridCellEditor):
                 else:
                     val = 'cosd('+val.strip('c')+')'
             try:
-                val = float(eval(val))
-            except (SyntaxError,NameError):
+                self.nextval = val = float(eval(val))
+            except (SyntaxError,NameError,ZeroDivisionError):
                 val = self.startValue
-            grid.GetTable().SetValue(row, col, val) # update the table
+                return None
+            
+            if oldVal is None: # this arg appears in 2.9+; before, we should go ahead & change the table
+                grid.GetTable().SetValue(row, col, val) # update the table
+            # otherwise self.ApplyEdit gets called
 
         self.startValue = ''
         self._tc.SetValue('')
         return changed
+    
+    def ApplyEdit(self, row, col, grid):
+        """ Called only in wx >= 2.9
+        Save the value of the control into the grid if EndEdit() returns as True
+        """
+        grid.GetTable().SetValue(row, col, self.nextval) # update the table
 
     def Reset(self):
         self._tc.SetValue(self.startValue)

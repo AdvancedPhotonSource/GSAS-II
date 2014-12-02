@@ -2165,7 +2165,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
             Dy = dy[xB:xF][np.newaxis,:]
             dMdvh *= Wt
             if dlg:
-                dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
+                dlg.Update(Histogram['Residuals']['wR'],newmsg='Hessian for histogram %d\nAll data Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))
             if len(Hess):
                 Hess += np.inner(dMdvh,dMdvh)
                 dMdvh *= Wt*Dy

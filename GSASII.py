@@ -3433,16 +3433,17 @@ class GSASII(wx.Frame):
             return
         #works - but it'd be better if it could restore plots
         dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-        screenSize = wx.ClientDisplayRect()
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
+            parent=self)
         Size = dlg.GetSize()
-        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
-        dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-        dlg.SetSize(Size)
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+        dlg.CenterOnParent()
         Rw = 100.00
         try:
             Rw = G2stMn.Refine(self.GSASprojectfile,dlg)
         finally:
+            dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
             wx.Yield()
         oldId =  self.PatternTree.GetSelection()        #retain current selection
@@ -3506,16 +3507,18 @@ class GSASII(wx.Frame):
                              warnmsg+'\nRefinement not possible')
             return
         dlg = wx.ProgressDialog('Residual for histogram 0','Powder profile Rwp =',101.0, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
-        screenSize = wx.ClientDisplayRect()
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
+            parent=self)            
         Size = dlg.GetSize()
-        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
-        dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-        dlg.SetSize(Size)
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+        dlg.CenterOnParent()
         try:
             G2stMn.SeqRefine(self.GSASprojectfile,dlg)
         finally:
-            dlg.Destroy()        
+            dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
+            dlg.Destroy()
+            wx.Yield()
         dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
         try:
             if dlg.ShowModal() == wx.ID_OK:

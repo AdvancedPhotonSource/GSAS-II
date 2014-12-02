@@ -28,6 +28,8 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIpwd as G2pwd
+import GSASIIspc as G2spc
+import GSASIImath as G2mth
 import scipy.optimize as so
 
 # trig functions in degrees
@@ -170,7 +172,7 @@ def rancell(Bravais,dmin,dmax):
         gam = ranaxis(acosd(r),acosd(-r))  
     return [a,b,c,alp,bet,gam]
     
-def calc_M20(peaks,HKL):
+def calc_M20(peaks,HKL,ifX20=True):
     'needs a doc string'
     diff = 0
     X20 = 0
@@ -196,7 +198,8 @@ def calc_M20(peaks,HKL):
         M20 = Q20/(2.0*diff)
     else:
         M20 = 0
-    M20 /= (1.+X20)
+    if ifX20:
+        M20 /= (1.+X20)
     return M20,X20
     
 def calc_M20SS(peaks,HKL):
@@ -256,10 +259,50 @@ def sortCells(cells,col):
         X.append(D[key])
     return X
     
-def findMV(peaks,HKL,ssopt):
-#    import basinhopping as bh
-    print ssopt
-    return ssopt['ModVec']
+def findMV(peaks,controls,ssopt,Inst):
+        
+    def Val2Vec(vec,Vref,values):
+        Vec = []
+        i = 0
+        for j,r in enumerate(Vref):
+            if r:
+                if values.size > 1:
+                    Vec.append(values[i])
+                else:
+                    Vec.append(values)                    
+                i += 1
+            else:
+                Vec.append(vec[j])
+        return np.array(Vec)  
+     
+    def ZSSfunc(values,peaks,dmin,Inst,SGData,SSGData,vec,Vref,maxH,A,wave,Z):
+        Vec = Val2Vec(vec,Vref,values)
+        HKL =  G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A)
+        Peaks = np.array(IndexSSPeaks(peaks,HKL)[1]).T
+        Qo = 1./Peaks[-2]**2
+        Qc = G2lat.calc_rDsqZSS(Peaks[4:8],A,Vec,Z,Peaks[0],wave)
+        return np.sum((Qo-Qc)**2)
+
+    if 'C' in Inst['Type'][0]:
+        wave = G2mth.getWave(Inst)
+    else:
+        difC = Inst['difC'][1]
+    SGData = G2spc.SpcGroup(controls[13])[1]
+    SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])
+    A = G2lat.cell2A(controls[6:12])
+    Z = controls[1]
+    Vref = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
+    values = []
+    ranges = []    
+    for v,r in zip(ssopt['ModVec'],Vref):
+        if r:
+            ranges += [slice(.02,.98,.05),]
+            values += [v,]
+    dmin = getDmin(peaks)-0.005
+    Peaks = np.copy(np.array(peaks).T)    
+    result = so.brute(ZSSfunc,ranges,finish=so.fmin_cg,
+        args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,ssopt['maxH'],A,wave,Z))
+    return Val2Vec(ssopt['ModVec'],Vref,result)
                 
 def IndexPeaks(peaks,HKL):
     'needs a doc string'
@@ -310,14 +353,15 @@ def IndexSSPeaks(peaks,HKL):
     'needs a doc string'
     import bisect
     N = len(HKL)
-    if N == 0: return False,peaks
+    Peaks = np.copy(peaks)
+    if N == 0: return False,Peaks
     if len(peaks[0]) == 9:      #add m column if missing
-        for peak in peaks:
+        for peak in Peaks:
             peak.insert(7,0)
     hklds = list(np.array(HKL).T[4])+[1000.0,0.0,]
     hklds.sort()                                        # ascending sort - upper bound at end
     hklmax = [0,0,0,0]
-    for ipk,peak in enumerate(peaks):
+    for ipk,peak in enumerate(Peaks):
         if peak[2]: #Use
             peak[4:8] = [0,0,0,0]                           #clear old indexing
             peak[9] = 0.
@@ -331,7 +375,7 @@ def IndexSSPeaks(peaks,HKL):
                 break
             hkl = HKL[pos]                                 # put in hkl
             if hkl[-1] >= 0:                                 # peak already assigned - test if this one better
-                opeak = peaks[hkl[-1]]
+                opeak = Peaks[hkl[-1]]
                 dold = abs(opeak[-2]-hkl[4])
                 dnew = min(dm,dp)
                 if dold > dnew:                             # new better - zero out old
@@ -342,7 +386,7 @@ def IndexSSPeaks(peaks,HKL):
             hkl[-1] = ipk
             peak[4:8] = hkl[:4]
             peak[9] = hkl[4]                                # fill in d-calc
-    for peak in peaks:
+    for peak in Peaks:
         peak[3] = False
         if peak[2]:
             if peak[-1] > 0.:
@@ -350,9 +394,9 @@ def IndexSSPeaks(peaks,HKL):
                     if abs(peak[j+4]) > hklmax[j]: hklmax[j] = abs(peak[j+4])
                 peak[3] = True
     if hklmax[0]*hklmax[1]*hklmax[2]*hklmax[3] > 0:
-        return True,peaks
+        return True,Peaks
     else:
-        return False,peaks  #nothing indexed!
+        return False,Peaks  #nothing indexed!
         
 def Values2A(ibrav,values):
     'needs a doc string'
@@ -653,7 +697,7 @@ def refinePeaksT(peaks,difC,ibrav,A,Zero,ZeroRef):
     M20,X20 = calc_M20(peaks,HKL)
     return len(HKL),M20,X20,Aref,Z
     
-def refinePeaks(peaks,ibrav,A):
+def refinePeaks(peaks,ibrav,A,ifX20=True):
     'needs a doc string'
     dmin = getDmin(peaks)
     smin = 1.0e10
@@ -695,10 +739,10 @@ def refinePeaks(peaks,ibrav,A):
         except FloatingPointError:
             A = oldA
         
-    M20,X20 = calc_M20(peaks,HKL)
+    M20,X20 = calc_M20(peaks,HKL,ifX20)
     return len(HKL),M20,X20,A
         
-def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
+def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
     'needs a doc string'
 # dlg & ncMax are used for wx progress bar 
 # A != 0 find the best A near input A,
@@ -714,7 +758,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
         HKL = G2lat.GenHBravais(dmin,ibrav,A[:])
         if len(HKL) > mHKL[ibrav]:
             peaks = IndexPeaks(peaks,HKL)[1]
-            Asave.append([calc_M20(peaks,HKL),A[:]])
+            Asave.append([calc_M20(peaks,HKL,ifX20),A[:]])
     tries = 0
     while tries < Ntries:
         if A:
@@ -726,21 +770,21 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
         HKL = G2lat.GenHBravais(dmin,ibrav,Abeg)
         
         if IndexPeaks(peaks,HKL)[0] and len(HKL) > mHKL[ibrav]:
-            Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg)
-            Asave.append([calc_M20(peaks,HKL),Aref[:]])
+            Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
+            Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
             if ibrav == 9:                          #C-centered orthorhombic
                 for i in range(2):
                     Abeg = rotOrthoA(Abeg[:])
-                    Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg)
+                    Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
                     HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
                     peaks = IndexPeaks(peaks,HKL)[1]
-                    Asave.append([calc_M20(peaks,HKL),Aref[:]])
+                    Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
             elif ibrav == 11:                      #C-centered monoclinic
                 Abeg = swapMonoA(Abeg[:])
-                Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg)
+                Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
                 HKL = G2lat.GenHBravais(dmin,ibrav,Aref)
                 peaks = IndexPeaks(peaks,HKL)[1]
-                Asave.append([calc_M20(peaks,HKL),Aref[:]])
+                Asave.append([calc_M20(peaks,HKL,ifX20),Aref[:]])
         else:
             break
         Nc = len(HKL)
@@ -753,7 +797,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1):
         tries += 1    
     X = sortM20(Asave)
     if X:
-        Lhkl,M20,X20,A = refinePeaks(peaks,ibrav,X[0][1])
+        Lhkl,M20,X20,A = refinePeaks(peaks,ibrav,X[0][1],ifX20)
         return GoOn,Lhkl,M20,X20,A
         
     else:
@@ -781,7 +825,7 @@ def monoCellReduce(ibrav,A):
             A = G2lat.cell2A([a,b,cnew,90,beta,90])
     return A
 
-def DoIndexPeaks(peaks,controls,bravais):
+def DoIndexPeaks(peaks,controls,bravais,ifX20=True):
     'needs a doc string'
     
     delt = 0.005                                     #lowest d-spacing cushion - can be fixed?
@@ -824,11 +868,11 @@ def DoIndexPeaks(peaks,controls,bravais):
                             if ibrav > 2:
                                 if not N2:
                                     A = []
-                                    GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,A,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1)
+                                    GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,A,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1,ifX20)
                                 if A:
-                                    GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,A[:],N1s[ibrav],ibrav,peaks,0)
+                                    GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,A[:],N1s[ibrav],ibrav,peaks,0,ifX20)
                             else:
-                                GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,0,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1)
+                                GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,0,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1,ifX20)
                             if Nc >= ncMax:
                                 GoOn = False
                                 break
@@ -847,8 +891,8 @@ def DoIndexPeaks(peaks,controls,bravais):
                                     peaks = IndexPeaks(peaks,HKL)[1]
                                     a,b,c,alp,bet,gam = G2lat.A2cell(A)
                                     V = G2lat.calc_V(A)
-                                    print "%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f" % (M20,X20,Nc,a,b,c,alp,bet,gam,V,V1)
                                     if M20 >= 2.0:
+                                        print "%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f" % (M20,X20,Nc,a,b,c,alp,bet,gam,V,V1)
                                         cells.append([M20,X20,ibrav,a,b,c,alp,bet,gam,V,False,False])
                             if not GoOn:
                                 break

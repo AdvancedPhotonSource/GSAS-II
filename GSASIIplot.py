@@ -1070,7 +1070,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     found = []
                     pickIdText = G2frame.PatternTree.GetItemText(G2frame.PickId)
                     if pickIdText in ['Index Peak List','Unit Cells List','Reflection Lists'] or \
-                        'PWDR' in G2frame.PatternTree.GetItemText(PickId):
+                        'PWDR' in pickIdText:
                         indx = -1
                         if pickIdText in ['Index Peak List','Unit Cells List',]:
                             indx = -2

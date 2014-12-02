@@ -2174,6 +2174,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     '''
     UnitCellsId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
+    ifX20 = True
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
@@ -2204,6 +2205,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def OnNcNo(event):
         controls[2] = NcNo.GetValue()
+        
+    def OnIfX20(event):
+        ifX20 = x20.GetValue()
         
     def OnStartVol(event):
         try:
@@ -2274,7 +2278,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(event)
         
     def OnFindMV(event):
-        ssopt['ModVec'] = G2indx.findMV(peaks,G2frame.HKL,ssopt)
+        Peaks = np.copy(peaks[0])
+        ssopt['ModVec'] = G2indx.findMV(Peaks,controls,ssopt,Inst)
         OnHklShow(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
@@ -2387,7 +2392,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         c =  event.GetCol()
         if colLabels[c] == 'M20':
             cells = G2indx.sortM20(cells)
-        elif colLabels[c] in ['Bravais','a','b','c','alpha','beta','gamma','Volume']:
+        elif colLabels[c] in ['X20','Bravais','a','b','c','alpha','beta','gamma','Volume']:
+            if c == 1:
+                c += 1  #X20 before Use
             cells = G2indx.sortCells(cells,c-1)     #an extra column (Use) not in cells
         else:
             return
@@ -2433,7 +2440,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         PatternId = G2frame.PatternId
         PickId = G2frame.PickId    
         peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
-        if not peaks[0]:
+        if not len(peaks[0]):
             G2frame.ErrorDialog('No peaks!', 'Nothing to refine!')
             return        
         print ' Refine cell'
@@ -2496,11 +2503,15 @@ def UpdateUnitCellsGrid(G2frame, data):
             controls,bravais,cells,dmin,ssopt = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
             for cell in cells:
                 if cell[11]:
+                    cell[10] = False    #clear selection flag on keepers
                     keepcells.append(cell)
         except IndexError:
             pass
         except ValueError:
             G2frame.ErrorDialog('Error','Need to set controls in Unit Cell List first')
+            return
+        if ssopt.get('Use',False):
+            G2frame.ErrorDialog('Super lattice error','Indexing not available for super lattices')
             return
         if True not in bravais:
             G2frame.ErrorDialog('Error','No Bravais lattices selected')
@@ -2508,12 +2519,15 @@ def UpdateUnitCellsGrid(G2frame, data):
         if not peaks[0]:
             G2frame.ErrorDialog('Error','Index Peak List is empty')
             return
+        if len(peaks[0][0]) > 9:
+            G2frame.ErrorDialog('Error','You need to reload Index Peaks List first')
+            return
         G2frame.dataFrame.CopyCell.Enable(False)
         G2frame.dataFrame.RefineCell.Enable(False)
-        OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais)
+        OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais,ifX20)
         cells = keepcells+newcells
         cells = G2indx.sortM20(cells)
-        cells[0][10] = True
+        cells[0][10] = True         #select best M20
         if OK:
             data = [controls,bravais,cells,dmin,ssopt]
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
@@ -2532,7 +2546,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def RefreshUnitCellsGrid(event):
-        data =G2frame.PatternTree.GetItemPyData(UnitCellsId)
+        data = G2frame.PatternTree.GetItemPyData(UnitCellsId)
         cells,dmin = data[2:4]
         r,c =  event.GetRow(),event.GetCol()
         if cells:
@@ -2541,7 +2555,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     cells[i][-2] = False
                     UnitCellsTable.SetValue(i,c,False)
                 UnitCellsTable.SetValue(r,c,True)
-                gridDisplay.ForceRefresh()
+                gridDisplay.Refresh()
                 cells[r][-2] = True
                 ibrav = cells[r][2]
                 A = G2lat.cell2A(cells[r][3:9])
@@ -2560,7 +2574,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     cells[r][c] = True
                     UnitCellsTable.SetValue(r,c,True)
                 gridDisplay.ForceRefresh()
-            G2frame.PatternTree.SetItemPyData(UnitCellsId,data)                
+            G2frame.PatternTree.SetItemPyData(UnitCellsId,data)
         
     def MakeNewPhase(event):
         if not G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'):
@@ -2585,8 +2599,8 @@ def UpdateUnitCellsGrid(G2frame, data):
                 Status.SetStatusText('Change space group from '+str(controls[13])+' if needed')
         finally:
             dlg.Destroy()
-            
     if G2frame.dataDisplay:
+        print G2frame.dataDisplay.GetScrollPos(wx.VERTICAL)
         G2frame.dataFrame.DestroyChildren()
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.IndexMenu)
@@ -2644,6 +2658,10 @@ def UpdateUnitCellsGrid(G2frame, data):
     startVol.Bind(wx.EVT_TEXT_ENTER,OnStartVol)
     startVol.Bind(wx.EVT_KILL_FOCUS,OnStartVol)
     littleSizer.Add(startVol,0,WACV)
+    x20 = wx.CheckBox(G2frame.dataDisplay,label='Use M20/(X20+1)?')
+    x20.SetValue(ifX20)
+    x20.Bind(wx.EVT_CHECKBOX,OnIfX20)
+    littleSizer.Add(x20,0,WACV)
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
     mainSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Select Bravais Lattices for indexing: '),
@@ -2793,7 +2811,6 @@ def UpdateUnitCellsGrid(G2frame, data):
             table.append(row)
         UnitCellsTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         gridDisplay = G2gd.GSGrid(G2frame.dataDisplay)
-        gridDisplay.SetPosition(wx.Point(0,20))                
         gridDisplay.SetTable(UnitCellsTable, True)
         G2frame.dataFrame.CopyCell.Enable(True)
         gridDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshUnitCellsGrid)

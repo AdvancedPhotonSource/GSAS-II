@@ -825,7 +825,7 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
                 d = 1/np.sqrt(G2lat.calc_rDsq(H,A))
                 if d >= dmin:
                     HKLM = np.array([h,k,l,dH])
-                    if G2spc.checkSSextc(HKLM,SSGData[1]):
+                    if G2spc.checkSSextc(HKLM,SSGData):
                         HKLs.append([h,k,l,dH,d,G2lat.Dsp2pos(Inst,d),-1])    
     return G2lat.sortHKLd(HKLs,True,True,True)
 

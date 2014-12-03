@@ -244,8 +244,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!
                     generalData['Type'] = TypeTxt.GetValue()
                     if generalData['Type'] in ['modulated',]:
-                        generalData['SuperSg'] = SetDefaultSSsymbol()
-                        generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
+                        if 'SuperSg' not in generalData:
+                            generalData['SuperSg'] = SetDefaultSSsymbol()
+                            generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
                     wx.CallAfter(UpdateGeneral)
                 else:
                     G2frame.ErrorDialog('Phase type change error','Can change phase type only if there are no atoms')
@@ -551,9 +552,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 SSymbol = superGp.GetValue()
                 E,SSGData = G2spc.SSpcGroup(generalData['SGData'],SSymbol)
                 if SSGData:
-                    Vec = generalData['SuperVec'][0][0]     #(3+1) only
+                    Vec = generalData['SuperVec'][0]     #(3+1) only
                     modSymb = SSGData['modSymb']
-                    generalData['SuperVec'][0][0] = G2spc.SSGModCheck(Vec,modSymb)[0]
+                    generalData['SuperVec'][0] = G2spc.SSGModCheck(Vec,modSymb)[0]
                     text,table = G2spc.SSGPrint(generalData['SGData'],SSGData)
                     generalData['SSGData'] = SSGData
                     generalData['SuperSg'] = SSymbol
@@ -575,39 +576,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnVec(event):
                 Obj = event.GetEventObject()
                 ind = Indx[Obj.GetId()]
-                vec = Obj.GetValue().split()
+                val = Obj.GetValue()
                 try:
-                    Vec = [float(vec[i]) for i in range(3)]
-                    Vec = G2spc.SSGModCheck(Vec,generalData['SSGData'])
-                except (ValueError,IndexError):
-                    Vec = generalData['SuperVec'][ind][0]
-                if not np.any(np.array(Vec)):
-                    Vec = generalData['SuperVec'][ind][0]
-                generalData['SuperVec'][ind][0] = Vec
-                h,k,l = Vec
-                Obj.SetValue('%.3f %.3f %.3f'%(h,k,l)) 
+                    val = min(1.0,max(0.0,float(val)))
+                except ValueError:
+                    val = generalData['SuperVec'][0][ind]
+                generalData['SuperVec'][0][ind] = val
+                Obj.SetValue('%.4f'%(generalData['SuperVec'][0][ind])) 
                 
             def OnVecRef(event):
-                Obj = event.GetEventObject()
-                ind = Indx[Obj.GetId()]
-                generalData['SuperVec'][ind][1] = Obj.GetValue()
+                generalData['SuperVec'][1] = Ref.GetValue()
                 
             def OnMax(event):
-                Obj = event.GetEventObject()
-                ind = Indx[Obj.GetId()]
-                generalData['SuperVec'][ind][2] = int(Obj.GetValue())
+                generalData['SuperVec'][2] = int(Max.GetValue())
             
             Indx = {}
-            modSizer = wx.BoxSizer(wx.VERTICAL)
-            dimSizer = wx.BoxSizer(wx.HORIZONTAL)
-            dimSizer.Add(wx.StaticText(General,label=' '+name.capitalize()+' structure controls: '),0,WACV)
-            dimSizer.Add(wx.StaticText(General,label=' Modulated structure dimension: '),0,WACV)
-            dimChoice = ['1']       # restricted to (3+1) superlattices for now
-            dim = wx.ComboBox(General,value=str(generalData['Super']),choices=dimChoice,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            dim.Bind(wx.EVT_COMBOBOX,OnDim)
-            dimSizer.Add(dim,0,WACV)
-            dimSizer.Add(wx.StaticText(General,label=' Superspace group: '+generalData['SGData']['SpGrp']),0,WACV)
+            ssSizer = wx.BoxSizer(wx.VERTICAL)
+            modSizer = wx.BoxSizer(wx.HORIZONTAL)
+            modSizer.Add(wx.StaticText(General,label=' '+name.capitalize()+' structure controls: '),0,WACV)
+            modSizer.Add(wx.StaticText(General,label=' Superspace group: '+generalData['SGData']['SpGrp']),0,WACV)
             SSChoice = G2spc.ssdict.get(generalData['SGData']['SpGrp'],[])
             if SSChoice:
                 superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=SSChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -615,33 +602,38 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             else:   #nonstandard space group symbol not in my dictionary
                 superGp = wx.TextCtrl(General,value=generalData['SuperSg'],style=wx.TE_PROCESS_ENTER)
                 superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)                        
-            dimSizer.Add(superGp,0,WACV)
-            modSizer.Add(dimSizer)
-            vecSizer = wx.FlexGridSizer(1,5,5,5)
+            modSizer.Add(superGp,0,WACV)
+            modSizer.Add(wx.StaticText(General,label=' Max index: '),0,WACV)
             indChoice = ['1','2','3','4','5','6','7']
-            for i in range(int(generalData['Super'])):
-                vecSizer.Add(wx.StaticText(General,label=' Modulation vector #%d: '%(i+1)),0,WACV)
-                vec = generalData['SuperVec'][i][0] #these need to conform to the fixed modulations, e.g. 1/2 1/2 g
-                Vec = wx.TextCtrl(General,size=wx.Size(120,24),
-                    value=' %.3f %.3f %.3f '%(vec[0],vec[1],vec[2]),
-                    style=wx.TE_PROCESS_ENTER)
-                Vec.Bind(wx.EVT_TEXT_ENTER,OnVec)        
-                Vec.Bind(wx.EVT_KILL_FOCUS,OnVec)
-                vecSizer.Add(Vec,0,WACV)
-                Indx[Vec.GetId()] = i
-                Ref = wx.CheckBox(General,label='Refine?')
-                Ref.SetValue(generalData['SuperVec'][i][1])
-                Indx[Ref.GetId()] = i
-                Ref.Bind(wx.EVT_CHECKBOX, OnVecRef)
-                vecSizer.Add(Ref,0,WACV)
-                vecSizer.Add(wx.StaticText(General,label=' max index: '),0,WACV)
-                Max = wx.ComboBox(General,-1,value='%d'%(generalData['SuperVec'][i][2]),choices=indChoice,
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                Max.Bind(wx.EVT_COMBOBOX,OnMax)        
-                vecSizer.Add(Max,0,WACV)
-                Indx[Max.GetId()] = i
-            modSizer.Add(vecSizer)
-            return modSizer
+            Max = wx.ComboBox(General,-1,value='%d'%(generalData['SuperVec'][2]),choices=indChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Max.Bind(wx.EVT_COMBOBOX,OnMax)        
+            modSizer.Add(Max,0,WACV)
+            ssSizer.Add(modSizer,0,WACV)
+            vecSizer = wx.FlexGridSizer(1,5,5,5)
+            vecSizer.Add(wx.StaticText(General,label=' Modulation vector: '),0,WACV)
+            modS = G2spc.splitSSsym(generalData['SuperSg'])[0]
+            generalData['SuperVec'][0],ifShow = G2spc.SSGModCheck(generalData['SuperVec'][0],modS)
+            vec = generalData['SuperVec'][0]
+            for i,[val,show] in enumerate(zip(generalData['SuperVec'][0],ifShow)):
+                if show:
+                    modVal = wx.TextCtrl(General,value=('%.4f'%(val)),
+                        size=wx.Size(50,20),style=wx.TE_PROCESS_ENTER)
+                    modVal.Bind(wx.EVT_TEXT_ENTER,OnVec)        
+                    modVal.Bind(wx.EVT_KILL_FOCUS,OnVec)
+                    vecSizer.Add(modVal,0,WACV)
+                    Indx[modVal.GetId()] = i
+                else:
+                    modVal = wx.TextCtrl(General,value=('%.3f'%(val)),
+                        size=wx.Size(50,20),style=wx.TE_READONLY)
+                    modVal.SetBackgroundColour(VERY_LIGHT_GREY)
+                    vecSizer.Add(modVal,0,WACV)
+            Ref = wx.CheckBox(General,label='Refine?')
+            Ref.SetValue(generalData['SuperVec'][1])
+            Ref.Bind(wx.EVT_CHECKBOX, OnVecRef)
+            vecSizer.Add(Ref,0,WACV)
+            ssSizer.Add(vecSizer)
+            return ssSizer
             
         def MapSizer():
             
@@ -966,7 +958,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2gd.HorizontalLine(mainSizer,General)
         
         if generalData['Type'] in ['modulated','magnetic',]:
-            mainSizer.Add(wx.StaticText(General,label='NB: This does nothing yet'),0,WACV)
             mainSizer.Add(ModulatedSizer(generalData['Type']))
             G2gd.HorizontalLine(mainSizer,General)
 
@@ -5020,19 +5011,27 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         # FillPawleyReflectionsGrid executable starts here
         G2frame.dataFrame.SetStatusText('To delete a few Pawley reflections: select rows & press Delete')                        
+        generalData = data['General']
         if 'Pawley ref' in data:
             PawleyPeaks = data['Pawley ref']                        
             rowLabels = []
             for i in range(len(PawleyPeaks)): rowLabels.append(str(i))
-            colLabels = ['h','k','l','mul','d','refine','Fsq(hkl)','sig(Fsq)']
-            Types = 4*[wg.GRID_VALUE_LONG,]+[wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]+ \
-                2*[wg.GRID_VALUE_FLOAT+':10,2',]
+            if generalData['Type'] in ['modulated','magnetic',]:
+                colLabels = ['h','k','l','m','mul','d','refine','Fsq(hkl)','sig(Fsq)']
+                Types = 5*[wg.GRID_VALUE_LONG,]+[wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]+ \
+                    2*[wg.GRID_VALUE_FLOAT+':10,2',]
+                pos = [6,7]
+            else:    
+                colLabels = ['h','k','l','mul','d','refine','Fsq(hkl)','sig(Fsq)']
+                Types = 4*[wg.GRID_VALUE_LONG,]+[wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]+ \
+                    2*[wg.GRID_VALUE_FLOAT+':10,2',]
+                pos = [5,6]
             PawleyTable = G2gd.Table(PawleyPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             G2frame.PawleyRefl.SetTable(PawleyTable, True)
             G2frame.PawleyRefl.Bind(wx.EVT_KEY_DOWN, KeyEditPawleyGrid)                 
             for r in range(G2frame.PawleyRefl.GetNumberRows()):
                 for c in range(G2frame.PawleyRefl.GetNumberCols()):
-                    if c in [5,6]:
+                    if c in pos:
                         G2frame.PawleyRefl.SetReadOnly(r,c,isReadOnly=False)
                     else:
                         G2frame.PawleyRefl.SetCellStyle(r,c,VERY_LIGHT_GREY,True)
@@ -5042,21 +5041,35 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     
     def OnPawleyLoad(event):
         generalData = data['General']
-        dmin = generalData['Pawley dmin']
         cell = generalData['Cell'][1:7]
         A = G2lat.cell2A(cell)
         SGData = generalData['SGData']
-        HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
+        dmin = generalData['Pawley dmin']
         PawleyPeaks = []
-        wx.BeginBusyCursor()
-        try:
-            for h,k,l,d in HKLd:
-                ext,mul = G2spc.GenHKLf([h,k,l],SGData)[:2]
-                if not ext:
-                    mul *= 2        #for powder multiplicity
-                    PawleyPeaks.append([h,k,l,mul,d,False,100.0,1.0])
-        finally:
-            wx.EndBusyCursor()
+        HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
+        if generalData['Type'] in ['modulated','magnetic',]:
+            Vec,x,maxH = generalData['SuperVec']
+            SSGData = G2spc.SSpcGroup(SGData,generalData['SuperSg'])[1]
+            wx.BeginBusyCursor()
+            try:
+                HKLd = G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A)
+                for h,k,l,m,d in HKLd:
+                    ext,mul = G2spc.GenHKLf([h,k,l],SGData)[:2]
+                    if not ext:
+                        mul *= 2        #for powder multiplicity
+                        PawleyPeaks.append([h,k,l,m,mul,d,False,100.0,1.0])
+            finally:
+                wx.EndBusyCursor()
+        else:
+            wx.BeginBusyCursor()
+            try:
+                for h,k,l,d in HKLd:
+                    ext,mul = G2spc.GenHKLf([h,k,l],SGData)[:2]
+                    if not ext:
+                        mul *= 2        #for powder multiplicity
+                        PawleyPeaks.append([h,k,l,mul,d,False,100.0,1.0])
+            finally:
+                wx.EndBusyCursor()
         data['Pawley ref'] = PawleyPeaks
         FillPawleyReflectionsGrid()
         

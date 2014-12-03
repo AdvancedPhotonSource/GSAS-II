@@ -2111,7 +2111,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
                 ibrav = bravaisSymb.index(controls[5])
                 spc = controls[13]
                 SGData = G2spc.SpcGroup(spc)[1]
-                SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])
+                SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
                 Vec = ssopt['ModVec']
                 maxH = ssopt['maxH']
                 G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A)
@@ -2379,7 +2379,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         else:   #TOF - use other limit!
             dmin = G2lat.Pos2dsp(Inst,limits[0])
         if ssopt.get('Use',False):
-            SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])
+            SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
             Vec = ssopt['ModVec']
             maxH = ssopt['maxH']
             G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A)
@@ -2462,7 +2462,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         if 'C' in Inst['Type'][0]:
             if ssopt.get('Use',False):
                 vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
-                SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])
+                SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
                 G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
                 peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
                 Lhkl,M20,X20,Aref,Vec,Zero = \
@@ -2609,6 +2609,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 Status.SetStatusText('Change space group from '+str(controls[13])+' if needed')
         finally:
             dlg.Destroy()
+            
     if G2frame.dataDisplay:
         G2frame.dataFrame.DestroyChildren()
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
@@ -2618,8 +2619,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, IndexPeaks, id=G2gd.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2gd.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2gd.wxID_REFINECELL)
-    G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2gd.wxID_MAKENEWPHASE)
-    
+    G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2gd.wxID_MAKENEWPHASE)    
     controls,bravais,cells,dmin,ssopt = data
     if len(controls) < 13:              #add cell volume if missing
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))

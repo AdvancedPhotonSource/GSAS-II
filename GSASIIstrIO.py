@@ -628,6 +628,13 @@ def cellVary(pfx,SGData):
     elif SGData['SGLaue'] in ['m3m','m3']:
         return [pfx+'A0',]
         
+def modVary(pfx,SSGData):
+    vary = []
+    for i,item in SSGData['modSymb']:
+        if item in ['a','b','g']:
+            vary.append(pfx+'mV%d'%(i))
+    return vary
+        
 ################################################################################
 ##### Rigid Body Models and not General.get('doPawley')
 ################################################################################
@@ -965,6 +972,13 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
             pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5],pfx+'Vol':G2lat.calc_V(A)})
         if cell[0]:
             phaseVary += cellVary(pfx,SGData)
+        if General['Type'] in ['modulated','magnetic']:
+            Vec,vRef,maxH = General['SuperVec']
+            phaseDict.update({pfx+'mV0':Vec[0],pfx+'mV1':Vec[1],pfx+'mV2':Vec[2]})
+            SSGData = General['SSGData']
+            SSGtext,SSGtable = G2spc.SSGPrint(SGData,SSGData)
+            if vRef:
+                phaseVary += modVary(pfx,SSGData)        
         resRBData = PhaseData[name]['RBModels'].get('Residue',[])
         if resRBData:
             rbids = rbIds['Residue']    #NB: used in the MakeRB routines

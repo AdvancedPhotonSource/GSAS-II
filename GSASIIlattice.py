@@ -34,6 +34,7 @@ import numpy as np
 import numpy.linalg as nl
 import GSASIIpath
 import GSASIImath as G2mth
+import GSASIIspc as G2spc
 GSASIIpath.SetVersionNumber("$Revision$")
 # trig functions in degrees
 sind = lambda x: np.sin(x*np.pi/180.)
@@ -852,6 +853,30 @@ def GenHLaue(dmin,SGData,A):
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,1/math.sqrt(rdsq)])
     return sortHKLd(HKL,True,True)
+
+def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
+    'needs a doc string'
+    HKLs = []
+    vec = np.array(Vec)
+    vstar = np.sqrt(calc_rDsq(vec,A))     #find extra needed for -n SS reflections
+    dvec = 1./(maxH*vstar+1./dmin)
+    HKL = GenHLaue(dvec,SGData,A)        
+    SSdH = [vec*h for h in range(-maxH,maxH+1)]
+    SSdH = dict(zip(range(-maxH,maxH+1),SSdH))
+    for h,k,l,d in HKL:
+        ext = G2spc.GenHKLf([h,k,l],SGData)[0]
+        if not ext and d >= dmin:
+            HKLs.append([h,k,l,0,d])
+        for dH in SSdH:
+            if dH:
+                DH = SSdH[dH]
+                H = [h+DH[0],k+DH[1],l+DH[2]]
+                d = 1/np.sqrt(calc_rDsq(H,A))
+                if d >= dmin:
+                    HKLM = np.array([h,k,l,dH])
+                    if G2spc.checkSSextc(HKLM,SSGData):
+                        HKLs.append([h,k,l,dH,d])    
+    return sortHKLd(HKLs,True,True,True)
 
 #Spherical harmonics routines
 def OdfChk(SGLaue,L,M):

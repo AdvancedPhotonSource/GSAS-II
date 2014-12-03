@@ -2737,8 +2737,9 @@ class GSASII(wx.Frame):
                         if 'PWDR' in name:
                             Id = G2gd.GetPatternTreeItemId(self,item, 'Reflection Lists')
                             refList = self.PatternTree.GetItemPyData(Id)
-                            for i,item in DelList:
-                                del(refList[item])
+                            if len(refList):
+                                for i,item in DelList:
+                                    del(refList[item])
                             self.PatternTree.SetItemPyData(Id,refList)
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             finally:

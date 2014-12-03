@@ -2083,6 +2083,7 @@ class GSASII(wx.Frame):
         self.PickId = 0
         self.PeakTable = []
         self.LimitsTable = []
+        self.ifX20 = True   #use M20 /= (1+X20)
         self.HKL = []
         self.Lines = []
         self.itemPicked = None

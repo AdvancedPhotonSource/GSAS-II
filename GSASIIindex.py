@@ -259,7 +259,7 @@ def sortCells(cells,col):
         X.append(D[key])
     return X
     
-def findMV(peaks,controls,ssopt,Inst):
+def findMV(peaks,controls,ssopt,Inst,dlg):
         
     def Val2Vec(vec,Vref,values):
         Vec = []
@@ -267,21 +267,24 @@ def findMV(peaks,controls,ssopt,Inst):
         for j,r in enumerate(Vref):
             if r:
                 if values.size > 1:
-                    Vec.append(values[i])
+                    Vec.append(max(0.0,min(1.0,values[i])))
                 else:
-                    Vec.append(values)                    
+                    Vec.append(max(0.0,min(1.0,values)))                    
                 i += 1
             else:
                 Vec.append(vec[j])
         return np.array(Vec)  
      
-    def ZSSfunc(values,peaks,dmin,Inst,SGData,SSGData,vec,Vref,maxH,A,wave,Z):
+    def ZSSfunc(values,peaks,dmin,Inst,SGData,SSGData,vec,Vref,maxH,A,wave,Z,dlg=None):
         Vec = Val2Vec(vec,Vref,values)
         HKL =  G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A)
         Peaks = np.array(IndexSSPeaks(peaks,HKL)[1]).T
         Qo = 1./Peaks[-2]**2
         Qc = G2lat.calc_rDsqZSS(Peaks[4:8],A,Vec,Z,Peaks[0],wave)
-        return np.sum((Qo-Qc)**2)
+        chi = np.sum((Qo-Qc)**2)
+        if dlg:
+            dlg.Pulse()    
+        return chi
 
     if 'C' in Inst['Type'][0]:
         wave = G2mth.getWave(Inst)
@@ -301,7 +304,7 @@ def findMV(peaks,controls,ssopt,Inst):
     dmin = getDmin(peaks)-0.005
     Peaks = np.copy(np.array(peaks).T)    
     result = so.brute(ZSSfunc,ranges,finish=so.fmin_cg,
-        args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,ssopt['maxH'],A,wave,Z))
+        args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,ssopt['maxH'],A,wave,Z,dlg))
     return Val2Vec(ssopt['ModVec'],Vref,result)
                 
 def IndexPeaks(peaks,HKL):
@@ -356,8 +359,9 @@ def IndexSSPeaks(peaks,HKL):
     Peaks = np.copy(peaks)
     if N == 0: return False,Peaks
     if len(peaks[0]) == 9:      #add m column if missing
-        for peak in Peaks:
-            peak.insert(7,0)
+        Peaks = np.insert(Peaks,7,np.zeros_like(Peaks.T[0]),axis=1)
+#        for peak in Peaks:
+#            peak.insert(7,0)
     hklds = list(np.array(HKL).T[4])+[1000.0,0.0,]
     hklds.sort()                                        # ascending sort - upper bound at end
     hklmax = [0,0,0,0]

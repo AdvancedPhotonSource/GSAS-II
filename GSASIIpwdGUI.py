@@ -2174,7 +2174,6 @@ def UpdateUnitCellsGrid(G2frame, data):
     '''
     UnitCellsId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
-    ifX20 = True
     bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
@@ -2207,7 +2206,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls[2] = NcNo.GetValue()
         
     def OnIfX20(event):
-        ifX20 = x20.GetValue()
+        G2frame.ifX20 = x20.GetValue()
         
     def OnStartVol(event):
         try:
@@ -2240,6 +2239,8 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.ErrorDialog('Cubic lattice', 'Superlattice not allowed for a cubic lattice')
             return
         ssopt['Use'] = SSopt.GetValue()
+        if 'ssSymb' not in ssopt:
+            ssopt.update({'ssSymb':'(abg)','ModVec':[0.1,0.1,0.1],'maxH':1})
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnSelMG(event):
@@ -2247,6 +2248,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         Vec = ssopt['ModVec']
         modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
         ssopt['ModVec'] = G2spc.SSGModCheck(Vec,modS)[0]
+        print ' Selecting: ',controls[13],ssopt['ssSymb'], 'maxH:',ssopt['maxH']
         OnHklShow(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
@@ -2275,11 +2277,18 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def OnMaxMH(event):
         ssopt['maxH'] = int(maxMH.GetValue())
+        print ' Selecting: ',controls[13],ssopt['ssSymb'], 'maxH:',ssopt['maxH']
         OnHklShow(event)
         
     def OnFindMV(event):
         Peaks = np.copy(peaks[0])
-        ssopt['ModVec'] = G2indx.findMV(Peaks,controls,ssopt,Inst)
+        print ' Trying: ',controls[13],ssopt['ssSymb'], 'maxH:',ssopt['maxH']
+        dlg = wx.ProgressDialog('Elapsed time','Modulation vector search',
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        try:
+            ssopt['ModVec'] = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
+        finally:
+            dlg.Destroy()
         OnHklShow(event)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
@@ -2516,7 +2525,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         if True not in bravais:
             G2frame.ErrorDialog('Error','No Bravais lattices selected')
             return
-        if not peaks[0]:
+        if not len(peaks[0]):
             G2frame.ErrorDialog('Error','Index Peak List is empty')
             return
         if len(peaks[0][0]) > 9:
@@ -2524,11 +2533,11 @@ def UpdateUnitCellsGrid(G2frame, data):
             return
         G2frame.dataFrame.CopyCell.Enable(False)
         G2frame.dataFrame.RefineCell.Enable(False)
-        OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais,ifX20)
+        OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais,G2frame.ifX20)
         cells = keepcells+newcells
         cells = G2indx.sortM20(cells)
-        cells[0][10] = True         #select best M20
         if OK:
+            cells[0][10] = True         #select best M20
             data = [controls,bravais,cells,dmin,ssopt]
             G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
             bestCell = cells[0]
@@ -2543,7 +2552,8 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.dataFrame.CopyCell.Enable(True)
             G2frame.dataFrame.IndexPeaks.Enable(True)
             G2frame.dataFrame.MakeNewPhase.Enable(True)
-        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
+            G2frame.ifX20 = True
+            wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
                 
     def RefreshUnitCellsGrid(event):
         data = G2frame.PatternTree.GetItemPyData(UnitCellsId)
@@ -2600,7 +2610,6 @@ def UpdateUnitCellsGrid(G2frame, data):
         finally:
             dlg.Destroy()
     if G2frame.dataDisplay:
-        print G2frame.dataDisplay.GetScrollPos(wx.VERTICAL)
         G2frame.dataFrame.DestroyChildren()
     G2frame.dataDisplay = wxscroll.ScrolledPanel(G2frame.dataFrame)
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.IndexMenu)
@@ -2659,7 +2668,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     startVol.Bind(wx.EVT_KILL_FOCUS,OnStartVol)
     littleSizer.Add(startVol,0,WACV)
     x20 = wx.CheckBox(G2frame.dataDisplay,label='Use M20/(X20+1)?')
-    x20.SetValue(ifX20)
+    x20.SetValue(G2frame.ifX20)
     x20.Bind(wx.EVT_CHECKBOX,OnIfX20)
     littleSizer.Add(x20,0,WACV)
     mainSizer.Add(littleSizer,0)
@@ -2757,10 +2766,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         ssSizer.Add(selMG,0,WACV)
         ssSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Mod. vector: '),0,WACV)
         modS = G2spc.splitSSsym(ssopt['ssSymb'])[0]
-        Vec = ssopt['ModVec']
-        Vec,ifShow = G2spc.SSGModCheck(Vec,modS)
+        ssopt['ModVec'],ifShow = G2spc.SSGModCheck(ssopt['ModVec'],modS)
         Indx = {}
-        for i,[val,show] in enumerate(zip(Vec,ifShow)):
+        for i,[val,show] in enumerate(zip(ssopt['ModVec'],ifShow)):
             if show:
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
                 modVal = wx.TextCtrl(G2frame.dataDisplay,value=('%.4f'%(val)),

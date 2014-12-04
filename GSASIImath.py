@@ -1389,6 +1389,7 @@ def ValEsd(value,esd=0,nTZ=False):
 
     '''
     # Note: this routine is Python 3 compatible -- I think
+    cutoff = 3.16228    #=(sqrt(10); same as old GSAS   was 1.95
     if math.isnan(value): # invalid value, bail out
         return '?'
     if math.isnan(esd): # invalid esd, treat as zero
@@ -1396,9 +1397,8 @@ def ValEsd(value,esd=0,nTZ=False):
         esdoff = 5
     elif esd != 0:
         # transform the esd to a one or two digit integer
-        l = math.log10(abs(esd)) % 1
-        # cut off of 19 1.9==>(19) but 1.95==>(2) N.B. log10(1.95) = 0.2900...
-        if l < 0.290034611362518: l+= 1.        
+        l = math.log10(abs(esd)) % 1.
+        if l < math.log10(cutoff): l+= 1.        
         intesd = int(round(10**l)) # esd as integer
         # determine the number of digits offset for the esd
         esdoff = int(round(math.log10(intesd*1./abs(esd))))

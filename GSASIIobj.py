@@ -1252,6 +1252,7 @@ def CompileVarDesc():
         # Phase vars (p::<var>)
         'A([0-5])' : 'Reciprocal metric tensor component \\1',
         'Vol' : 'Unit cell volume',
+        'mV([0-2])' : 'Modulation vector component \\1',
         # Atom vars (p::<var>:a)
         'dA([xyz])$' : 'change to atomic coordinate, \\1',
         'A([xyz])$' : '\\1 fractional atomic coordinate',

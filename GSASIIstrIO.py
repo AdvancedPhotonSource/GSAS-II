@@ -972,7 +972,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
             pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5],pfx+'Vol':G2lat.calc_V(A)})
         if cell[0]:
             phaseVary += cellVary(pfx,SGData)
+        SSGtext = []    #no superstructure
+        im = 0
         if General['Type'] in ['modulated','magnetic']:
+            im = 1      #refl offset
             Vec,vRef,maxH = General['SuperVec']
             phaseDict.update({pfx+'mV0':Vec[0],pfx+'mV1':Vec[1],pfx+'mV2':Vec[2]})
             SSGData = General['SSGData']
@@ -1079,29 +1082,70 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                 PrintFFtable(FFtable)
                 PrintBLtable(BLtable)
                 print >>pFile,''
-                for line in SGtext: print >>pFile,line
-                if len(SGtable):
-                    for item in SGtable:
-                        line = ' %s '%(item)
-                        print >>pFile,line   
+                if len(SSGtext):    #if superstructure
+                    for line in SSGtext: print >>pFile,line
+                    if len(SSGtable):
+                        for item in SSGtable:
+                            line = ' %s '%(item)
+                            print >>pFile,line   
+                    else:
+                        print >>pFile,' ( 1)    %s'%(SSGtable[0])
                 else:
-                    print >>pFile,' ( 1)    %s'%(SGtable[0])
+                    for line in SGtext: print >>pFile,line
+                    if len(SGtable):
+                        for item in SGtable:
+                            line = ' %s '%(item)
+                            print >>pFile,line   
+                    else:
+                        print >>pFile,' ( 1)    %s'%(SGtable[0])
                 PrintRBObjects(resRBData,vecRBData)
                 PrintAtoms(General,Atoms)
-                print >>pFile,'\n Unit cell: a =','%.5f'%(cell[1]),' b =','%.5f'%(cell[2]),' c =','%.5f'%(cell[3]), \
-                    ' alpha =','%.3f'%(cell[4]),' beta =','%.3f'%(cell[5]),' gamma =', \
-                    '%.3f'%(cell[6]),' volume =','%.3f'%(cell[7]),' Refine?',cell[0]
+                print >>pFile,'\n Unit cell: a = %.5f'%(cell[1]),' b = %.5f'%(cell[2]),' c = %.5f'%(cell[3]), \
+                    ' alpha = %.3f'%(cell[4]),' beta = %.3f'%(cell[5]),' gamma = %.3f'%(cell[6]), \
+                    ' volume = %.3f'%(cell[7]),' Refine?',cell[0]
+                if len(SSGtext):    #if superstructure
+                    print >>pFile,'\n Modulation vector: mV0 = %.4f'%(Vec[0]),' mV1 = %.4f'%(Vec[1]),   \
+                        ' mV2 = %.4f'%(Vec[2]),' max mod. index = %d'%(maxH),' Refine?',vRef
                 PrintTexture(textureData)
                 if name in RestraintDict:
                     PrintRestraints(cell[1:7],SGData,General['AtomPtrs'],Atoms,AtLookup,
                         textureData,RestraintDict[name],pFile)
                     
         elif PawleyRef:
+            if Print:
+                print >>pFile,'\n Phase name: ',General['Name']
+                print >>pFile,135*'-'
+                print >>pFile,''
+                if len(SSGtext):    #if superstructure
+                    for line in SSGtext: print >>pFile,line
+                    if len(SSGtable):
+                        for item in SSGtable:
+                            line = ' %s '%(item)
+                            print >>pFile,line   
+                    else:
+                        print >>pFile,' ( 1)    %s'%(SSGtable[0])
+                else:
+                    for line in SGtext: print >>pFile,line
+                    if len(SGtable):
+                        for item in SGtable:
+                            line = ' %s '%(item)
+                            print >>pFile,line   
+                    else:
+                        print >>pFile,' ( 1)    %s'%(SGtable[0])
+                print >>pFile,'\n Unit cell: a = %.5f'%(cell[1]),' b = %.5f'%(cell[2]),' c = %.5f'%(cell[3]), \
+                    ' alpha = %.3f'%(cell[4]),' beta = %.3f'%(cell[5]),' gamma = %.3f'%(cell[6]), \
+                    ' volume = %.3f'%(cell[7]),' Refine?',cell[0]
+                if len(SSGtext):    #if superstructure
+                    print >>pFile,'\n Modulation vector: mV0 = %.4f'%(Vec[0]),' mV1 = %.4f'%(Vec[1]),   \
+                        ' mV2 = %.4f'%(Vec[2]),' max mod. index = %d'%(maxH),' Refine?',vRef
             pawleyVary = []
             for i,refl in enumerate(PawleyRef):
-                phaseDict[pfx+'PWLref:'+str(i)] = refl[6]
-                pawleyLookup[pfx+'%d,%d,%d'%(refl[0],refl[1],refl[2])] = i
-                if refl[5]:
+                phaseDict[pfx+'PWLref:'+str(i)] = refl[6+im]
+                if im:
+                    pawleyLookup[pfx+'%d,%d,%d,%d'%(refl[0],refl[1],refl[2],refl[3])] = i
+                else:
+                    pawleyLookup[pfx+'%d,%d,%d'%(refl[0],refl[1],refl[2])] = i
+                if refl[5+im]:
                     pawleyVary.append(pfx+'PWLref:'+str(i))
             GetPawleyConstr(SGData['SGLaue'],PawleyRef,pawleyVary)      #does G2mv.StoreEquivalence
             phaseVary += pawleyVary
@@ -1551,17 +1595,36 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             print >>pFile,namstr
             print >>pFile,ptstr
             print >>pFile,sigstr
+        ik = 6  #for Pawley stuff below
+        if General['Type'] in ['modulated','magnetic']:
+            ik = 7
+            Vec,vRef,maxH = General['SuperVec']
+            if vRef:
+                print >>pFile,' New modulation vector:'
+                namstr = '  names :'
+                ptstr =  '  values:'
+                sigstr = '  esds  :'
+                for var in ['mV0','mV1','mV2']:
+                    namstr += '%12s'%(pfx+var)
+                    ptstr += '%12.4f'%(parmDict[pfx+var])
+                    if pfx+var in sigDict:
+                        sigstr += '%12.4f'%(sigDict[pfx+var])
+                    else:
+                        sigstr += 12*' '
+                print >>pFile,namstr
+                print >>pFile,ptstr
+                print >>pFile,sigstr
             
         General['Mass'] = 0.
         if Phase['General'].get('doPawley'):
             pawleyRef = Phase['Pawley ref']
             for i,refl in enumerate(pawleyRef):
                 key = pfx+'PWLref:'+str(i)
-                refl[6] = parmDict[key]
+                refl[ik] = parmDict[key]
                 if key in sigDict:
-                    refl[7] = sigDict[key]
+                    refl[ik+1] = sigDict[key]
                 else:
-                    refl[7] = 0
+                    refl[ik+1] = 0
         else:
             VRBIds = RBIds['Vector']
             RRBIds = RBIds['Residue']
@@ -1742,6 +1805,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
         SGData = Phases[phase]['General']['SGData']
         cell = Phases[phase]['General']['Cell'][1:7]
         A = G2lat.cell2A(cell)
+        if Phases[phase]['General']['Type'] in ['modulated','magnetic']:
+            SSGData = Phases[phase]['General']['SSGData']
+            Vec,x,maxH = Phases[phase]['General']['SuperVec']
         pId = Phases[phase]['pId']
         histoList = HistoPhase.keys()
         histoList.sort()
@@ -1839,32 +1905,56 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     PrintMuStrain(hapData['Mustrain'],SGData)
                     PrintHStrain(hapData['HStrain'],SGData)
                     if hapData['Babinet']['BabA'][0]:
-                        PrintBabinet(hapData['Babinet'])
-                HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))  #+DIJS
+                        PrintBabinet(hapData['Babinet'])                        
+                if Phases[phase]['General']['Type'] in ['modulated','magnetic']:
+                    HKLd = G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A)
+                else:
+                    HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
                 if resetRefList:
                     refList = []
                     Uniq = []
                     Phi = []
-                    for h,k,l,d in HKLd:
-                        ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
-                        mul *= 2      # for powder overlap of Friedel pairs
-                        if ext:
-                            continue
-                        if 'C' in inst['Type'][0]:
-                            pos = 2.0*asind(wave/(2.0*d))+Zero
-                            if limits[0] < pos < limits[1]:
-                                refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0,1.0,1.0,1.0])
-                                #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
-                                Uniq.append(uniq)
-                                Phi.append(phi)
-                        elif 'T' in inst['Type'][0]:
-                            pos = inst['difC'][1]*d+inst['difA'][1]*d**2+inst['difB'][1]/d+Zero
-                            if limits[0] < pos < limits[1]:
-                                wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
-                                refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
-                                # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
-                                Uniq.append(uniq)
-                                Phi.append(phi)
+                    if Phases[phase]['General']['Type'] in ['modulated','magnetic']:
+                        for h,k,l,m,d in HKLd:
+                            ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)    #is this right for SS refl.??
+                            mul *= 2      # for powder overlap of Friedel pairs
+                            if m or not ext:
+                                if 'C' in inst['Type'][0]:
+                                    pos = G2lat.Dsp2pos(inst,d)
+                                    if limits[0] < pos < limits[1]:
+                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0,1.0,1.0,1.0])
+                                        #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
+                                        Uniq.append(uniq)
+                                        Phi.append(phi)
+                                elif 'T' in inst['Type'][0]:
+                                    pos = G2lat.Dsp2pos(inst,d)
+                                    if limits[0] < pos < limits[1]:
+                                        wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
+                                        refList.append([h,k,l,m,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
+                                        # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
+                                        Uniq.append(uniq)
+                                        Phi.append(phi)
+                    else:
+                        for h,k,l,d in HKLd:
+                            ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
+                            mul *= 2      # for powder overlap of Friedel pairs
+                            if ext:
+                                continue
+                            if 'C' in inst['Type'][0]:
+                                pos = G2lat.Dsp2pos(inst,d)
+                                if limits[0] < pos < limits[1]:
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0,1.0,1.0,1.0])
+                                    #... sig,gam,fotsq,fctsq, phase,icorr,prfo,abs,ext
+                                    Uniq.append(uniq)
+                                    Phi.append(phi)
+                            elif 'T' in inst['Type'][0]:
+                                pos = G2lat.Dsp2pos(inst,d)
+                                if limits[0] < pos < limits[1]:
+                                    wave = inst['difC'][1]*d/(252.816*inst['fltPath'][0])
+                                    refList.append([h,k,l,mul,d, pos,0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0,wave, 1.0,1.0,1.0])
+                                    # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
+                                    Uniq.append(uniq)
+                                    Phi.append(phi)
                     Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{},'Type':inst['Type'][0]}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]

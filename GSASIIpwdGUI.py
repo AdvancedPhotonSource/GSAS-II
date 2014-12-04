@@ -2300,6 +2300,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def OnSpcSel(event):
         controls[13] = spcSel.GetString(spcSel.GetSelection())
+        G2frame.dataFrame.RefineCell.Enable(True)
         
     def SetCellValue(Obj,ObjId,value):
         ibrav = bravaisSymb.index(controls[5])
@@ -2939,15 +2940,13 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     Types = (4+Super)*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
         2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
         [wg.GRID_VALUE_FLOAT+':10,3',]
-    superLabels = ['M1','M2','M3']
     if HKLF:
         colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC',]
         if 'T' in Inst['Type'][0]:
             colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','wave','tbar']
             Types += 2*[wg.GRID_VALUE_FLOAT+':10,3',]
         if Super:
-            for i in range(Super):
-                colLabels.insert(3+i,superLabels[i])
+            colLabels.insert(3,'M')
     else:
         if 'C' in Inst['Type'][0]:
             colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100']
@@ -2956,8 +2955,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100']
             Types += 7*[wg.GRID_VALUE_FLOAT+':10,3',]
         if Super:
-            for i in range(Super):
-                colLabels.insert(3+i,superLabels[i])
+            colLabels.insert(3,'M')
             
     G2frame.PeakTable = G2gd.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)

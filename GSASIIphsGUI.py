@@ -5055,7 +5055,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 HKLd = G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A)
                 for h,k,l,m,d in HKLd:
                     ext,mul = G2spc.GenHKLf([h,k,l],SGData)[:2]
-                    if not ext:
+                    if m or not ext:
                         mul *= 2        #for powder multiplicity
                         PawleyPeaks.append([h,k,l,m,mul,d,False,100.0,1.0])
             finally:
@@ -5082,6 +5082,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.ErrorDialog('Pawley estimate','No histograms defined for this phase')
             return
         Vst = 1.0/data['General']['Cell'][7]     #Get volume
+        generalData = data['General']
+        im = 0
+        if generalData['Type'] in ['modulated','magnetic',]:
+            im = 1
         HistoNames = filter(lambda a:Histograms[a]['Use']==True,Histograms.keys())
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
         xdata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
@@ -5095,7 +5099,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         wx.BeginBusyCursor()
         try:
             for ref in Refs:
-                pos = 2.0*asind(wave/(2.0*ref[4]))
+                pos = 2.0*asind(wave/(2.0*ref[4+im]))
                 if 'Bragg' in Sample['Type']:
                     pos -= const*(4.*Sample['Shift'][0]*cosd(pos/2.0)+ \
                         Sample['Transparency'][0]*sind(pos)*100.0)            #trans(=1/mueff) in cm
@@ -5108,7 +5112,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     # routines, which use Icorr * F^2 * peak profile, where peak profile has an area of 1.  So
                     # we multiply the observed peak height by sqrt(8 ln 2)/(FWHM*sqrt(pi)) to determine the value of Icorr*F^2 
                     # then divide by Icorr to get F^2.
-                    ref[6] = (xdata[1][indx]-xdata[4][indx])*gconst/(FWHM*np.sqrt(np.pi))  #Area of Gaussian is height * FWHM * sqrt(pi)
+                    ref[6+im] = (xdata[1][indx]-xdata[4][indx])*gconst/(FWHM*np.sqrt(np.pi))  #Area of Gaussian is height * FWHM * sqrt(pi)
                     Lorenz = 1./(2.*sind(xdata[0][indx]/2.)**2*cosd(xdata[0][indx]/2.))           #Lorentz correction
                     pola = 1.0
                     if 'X' in Inst['Type']:
@@ -5116,7 +5120,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     else:
                         pola = 1.0
                     # Include histo scale and volume in calculation
-                    ref[6] /= (Sample['Scale'][0] * Vst * Lorenz * pola * ref[3])
+                    ref[6+im] /= (Sample['Scale'][0] * Vst * Lorenz * pola * ref[3+im])
                 except IndexError:
                     pass
         finally:

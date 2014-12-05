@@ -1894,7 +1894,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                 else:
                     names.update({hfx+'Absorption':[dFdAb,'int'],})
             else:   #'T'OF
-                dpdA,dpdZ,dpdDC,dpdDA,dpdDB = GetReflPosDerv(refl,0.0,A,hfx,calcControls,parmDict)
+                dpdA,dpdZ,dpdDC,dpdDA,dpdDB = GetReflPosDerv(refl,im,0.0,A,hfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],phfx+'Scale':[dIdsp,'int'],
                     hfx+'difC':[dpdDC,'pos'],hfx+'difA':[dpdDA,'pos'],hfx+'difB':[dpdDB,'pos'],
                     hfx+'Zero':[dpdZ,'pos'],hfx+'X':[refl[4+im],'gam'],hfx+'Y':[refl[4+im]**2,'gam'],

@@ -1353,7 +1353,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             if Phases:  #will be trouble for SS reflection lists - will need peak[:7]
                 try:
                     for peak in Phases[G2frame.RefList]['RefList']:
-                        HKL.append(peak[:6])
+                        if len(peak) > 15:
+                            HKL.append(peak[:7])
+                        else:
+                            HKL.append(peak[:6])
                 except TypeError:   #old style patch
                     for peak in Phases[G2frame.RefList]:
                         HKL.append(peak[:6])                    
@@ -1638,7 +1641,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     peaks = Phases[phase]
                 if not len(peaks):
                     continue
-                peak = np.array([[peak[4],peak[5]] for peak in peaks])
+                if len(peaks[0]) > 15:
+                    peak = np.array([[peak[5],peak[6]] for peak in peaks])
+                else:
+                    peak = np.array([[peak[4],peak[5]] for peak in peaks])
                 pos = G2frame.refOffset-pId*Ymax*G2frame.refDelt*np.ones_like(peak)
                 if G2frame.qPlot:
                     Plot.plot(2*np.pi/peak.T[0],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)

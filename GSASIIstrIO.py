@@ -1906,15 +1906,13 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     PrintHStrain(hapData['HStrain'],SGData)
                     if hapData['Babinet']['BabA'][0]:
                         PrintBabinet(hapData['Babinet'])                        
-                if Phases[phase]['General']['Type'] in ['modulated','magnetic']:
-                    HKLd = G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A)
-                else:
-                    HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
                 if resetRefList:
                     refList = []
                     Uniq = []
                     Phi = []
                     if Phases[phase]['General']['Type'] in ['modulated','magnetic']:
+                        HKLd = np.array(G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A))
+                        HKLd = G2mth.sortArray(HKLd,4,reverse=True)
                         for h,k,l,m,d in HKLd:
                             ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)    #is this right for SS refl.??
                             mul *= 2      # for powder overlap of Friedel pairs
@@ -1935,6 +1933,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                         Uniq.append(uniq)
                                         Phi.append(phi)
                     else:
+                        HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
+                        HKLd = G2mth.sortArray(HKLd,3,reverse=True)
                         for h,k,l,d in HKLd:
                             ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
                             mul *= 2      # for powder overlap of Friedel pairs

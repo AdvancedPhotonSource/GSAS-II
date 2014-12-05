@@ -876,7 +876,7 @@ def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
                     HKLM = np.array([h,k,l,dH])
                     if G2spc.checkSSextc(HKLM,SSGData):
                         HKLs.append([h,k,l,dH,d])    
-    return sortHKLd(HKLs,True,True,True)
+    return HKLs
 
 #Spherical harmonics routines
 def OdfChk(SGLaue,L,M):

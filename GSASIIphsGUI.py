@@ -5010,7 +5010,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     FillPawleyReflectionsGrid()
             
         # FillPawleyReflectionsGrid executable starts here
-        G2frame.dataFrame.SetStatusText('To delete a few Pawley reflections: select rows & press Delete')                        
+        G2frame.dataFrame.SetStatusText('To delete a Pawley reflection: select row & press Delete')                        
         generalData = data['General']
         if 'Pawley ref' in data:
             PawleyPeaks = data['Pawley ref']                        
@@ -5058,6 +5058,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     if m or not ext:
                         mul *= 2        #for powder multiplicity
                         PawleyPeaks.append([h,k,l,m,mul,d,False,100.0,1.0])
+                PawleyPeaks = G2mth.sortArray(PawleyPeaks,5,reverse=True)
             finally:
                 wx.EndBusyCursor()
         else:
@@ -5068,6 +5069,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     if not ext:
                         mul *= 2        #for powder multiplicity
                         PawleyPeaks.append([h,k,l,mul,d,False,100.0,1.0])
+                PawleyPeaks = G2mth.sortArray(PawleyPeaks,4,reverse=True)
             finally:
                 wx.EndBusyCursor()
         data['Pawley ref'] = PawleyPeaks

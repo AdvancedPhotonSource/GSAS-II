@@ -1369,11 +1369,15 @@ def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
         
     return sigDict,gamDict
         
-def GetReflPos(refl,im,wave,A,hfx,calcControls,parmDict):
+def GetReflPos(refl,im,wave,A,pfx,hfx,calcControls,parmDict):
     'Needs a doc string'
-    h,k,l = refl[:3]
-    d = 1./np.sqrt(G2lat.calc_rDsq(np.array([h,k,l]),A))
-
+    if im:
+        h,k,l,m = refl[:4]
+        vec = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
+        d = 1./np.sqrt(G2lat.calc_rDsqSS(np.array([h,k,l,m]),A,vec))
+    else:
+        h,k,l = refl[:3]
+        d = 1./np.sqrt(G2lat.calc_rDsq(np.array([h,k,l]),A))
     refl[4+im] = d
     if 'C' in calcControls[hfx+'histType']:
         pos = 2.0*asind(wave/(2.0*d))+parmDict[hfx+'Zero']
@@ -1388,11 +1392,17 @@ def GetReflPos(refl,im,wave,A,hfx,calcControls,parmDict):
         #do I need sample position effects - maybe?
     return pos
 
-def GetReflPosDerv(refl,im,wave,A,hfx,calcControls,parmDict):
+def GetReflPosDerv(refl,im,wave,A,pfx,hfx,calcControls,parmDict):
     'Needs a doc string'
     dpr = 180./np.pi
-    h,k,l = refl[:3]
-    dstsq = G2lat.calc_rDsq(np.array([h,k,l]),A)
+    if im:
+        h,k,l,m = refl[:4]
+        vec = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
+        dstsq = G2lat.calc_rDsqSS(np.array([h,k,l,m]),A,vec)
+    else:
+        m = 0
+        h,k,l = refl[:3]        
+        dstsq = G2lat.calc_rDsq(np.array([h,k,l]),A)
     dst = np.sqrt(dstsq)
     dsp = 1./dst
     if 'C' in calcControls[hfx+'histType']:
@@ -1401,22 +1411,26 @@ def GetReflPosDerv(refl,im,wave,A,hfx,calcControls,parmDict):
         dpdw = const*dst
         dpdA = np.array([h**2,k**2,l**2,h*k,h*l,k*l])*const*wave/(2.0*dst)
         dpdZ = 1.0
-        const = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
+        dpdV = np.array([2.*h*A[0]+k*A[3]+l*A[4],2*k*A[1]+h*A[3]+l*A[5],
+            2*l*A[2]+h*A[4]+k*A[5]])*m*const*wave/(2.0*dst)
+        shft = 9.e-2/(np.pi*parmDict[hfx+'Gonio. radius'])                  #shifts in microns
         if 'Bragg' in calcControls[hfx+'instType']:
-            dpdSh = -4.*const*cosd(pos/2.0)
-            dpdTr = -const*sind(pos)*100.0
-            return dpdA,dpdw,dpdZ,dpdSh,dpdTr,0.,0.
+            dpdSh = -4.*shft*cosd(pos/2.0)
+            dpdTr = -shft*sind(pos)*100.0
+            return dpdA,dpdw,dpdZ,dpdSh,dpdTr,0.,0.,dpdV
         else:               #Debye-Scherrer - simple but maybe not right
-            dpdXd = -const*cosd(pos)
-            dpdYd = -const*sind(pos)
-            return dpdA,dpdw,dpdZ,0.,0.,dpdXd,dpdYd
+            dpdXd = -shft*cosd(pos)
+            dpdYd = -shft*sind(pos)
+            return dpdA,dpdw,dpdZ,0.,0.,dpdXd,dpdYd,dpdV
     elif 'T' in calcControls[hfx+'histType']:
         dpdA = -np.array([h**2,k**2,l**2,h*k,h*l,k*l])*parmDict[hfx+'difC']*dsp**3/2.
         dpdZ = 1.0
         dpdDC = dsp
         dpdDA = dsp**2
         dpdDB = 1./dsp
-        return dpdA,dpdZ,dpdDC,dpdDA,dpdDB
+        dpdV = np.array([2.*h*A[0]+k*A[3]+l*A[4],2*k*A[1]+h*A[3]+l*A[5],
+            2*l*A[2]+h*A[4]+k*A[5]])*m**parmDict[hfx+'difC']*dsp**3/2.
+        return dpdA,dpdZ,dpdDC,dpdDA,dpdDB,dpdV
             
 def GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict):
     'Needs a doc string'
@@ -1652,7 +1666,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 else:
                     h,k,l = refl[:3]
                 Uniq = np.inner(refl[:3],SGMT)
-                refl[5+im] = GetReflPos(refl,im,wave,A,hfx,calcControls,parmDict)         #corrected reflection position
+                refl[5+im] = GetReflPos(refl,im,wave,A,pfx,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = 1./(2.*sind(refl[5+im]/2.)**2*cosd(refl[5+im]/2.))           #Lorentz correction
 #                refl[5+im] += GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
                 refl[6+im:8+im] = GetReflSigGamCW(refl,im,wave,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
@@ -1695,7 +1709,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             elif 'T' in calcControls[hfx+'histType']:
                 h,k,l = refl[:3]
                 Uniq = np.inner(refl[:3],SGMT)
-                refl[5+im] = GetReflPos(refl,im,0.0,A,hfx,calcControls,parmDict)         #corrected reflection position
+                refl[5+im] = GetReflPos(refl,im,0.0,A,pfx,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = sind(parmDict[hfx+'2-theta']/2)*refl[4+im]**4                                                #TOF Lorentz correction
 #                refl[5+im] += GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
                 refl[6+im:8+im] = GetReflSigGamTOF(refl,im,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
@@ -1820,7 +1834,10 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
         time0 = time.time()
         for iref,refl in enumerate(refDict['RefList']):
-            h,k,l = refl[:3]
+            if im:
+                h,k,l,m = refl[:4]
+            else:
+                h,k,l = refl[:3]
             Uniq = np.inner(refl[:3],SGMT)
             if 'T' in calcControls[hfx+'histType']:
                 wave = refl[14+im]
@@ -1881,7 +1898,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                 except: # ValueError:
                     pass
             if 'C' in calcControls[hfx+'histType']:
-                dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY = GetReflPosDerv(refl,im,wave,A,hfx,calcControls,parmDict)
+                dpdA,dpdw,dpdZ,dpdSh,dpdTr,dpdX,dpdY,dpdV = GetReflPosDerv(refl,im,wave,A,pfx,hfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],hfx+'Polariz.':[dIdpola,'int'],phfx+'Scale':[dIdsp,'int'],
                     hfx+'U':[tanth**2,'sig'],hfx+'V':[tanth,'sig'],hfx+'W':[1.0,'sig'],
                     hfx+'X':[1.0/costh,'gam'],hfx+'Y':[tanth,'gam'],hfx+'SH/L':[1.0,'shl'],
@@ -1894,7 +1911,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                 else:
                     names.update({hfx+'Absorption':[dFdAb,'int'],})
             else:   #'T'OF
-                dpdA,dpdZ,dpdDC,dpdDA,dpdDB = GetReflPosDerv(refl,im,0.0,A,hfx,calcControls,parmDict)
+                dpdA,dpdZ,dpdDC,dpdDA,dpdDB,dpdV = GetReflPosDerv(refl,im,0.0,A,pfx,hfx,calcControls,parmDict)
                 names = {hfx+'Scale':[dIdsh,'int'],phfx+'Scale':[dIdsp,'int'],
                     hfx+'difC':[dpdDC,'pos'],hfx+'difA':[dpdDA,'pos'],hfx+'difB':[dpdDB,'pos'],
                     hfx+'Zero':[dpdZ,'pos'],hfx+'X':[refl[4+im],'gam'],hfx+'Y':[refl[4+im]**2,'gam'],
@@ -1960,6 +1977,15 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     depDerivDict[name][iBeg:iFin] += dDijDict[name]*dervDict['pos']
                     if Ka2:
                         depDerivDict[name][iBeg2:iFin2] += dDijDict[name]*dervDict2['pos']
+            for i,name in enumerate([pfx+'mV0',pfx+'mV1',pfx+'mV2']):
+                if name in varylist:
+                    dMdv[varylist.index(name)][iBeg:iFin] += dpdV[i]*dervDict['pos']
+                    if Ka2:
+                        dMdv[varylist.index(name)][iBeg2:iFin2] += dpdV[i]*dervDict2['pos']
+                elif name in dependentVars:
+                    depDerivDict[name][iBeg:iFin] += dpdV[i]*dervDict['pos']
+                    if Ka2:
+                        depDerivDict[name][iBeg2:iFin2] += dpdV[i]*dervDict2['pos']
             if 'C' in calcControls[hfx+'histType']:
                 sigDict,gamDict = GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
             else:   #'T'OF

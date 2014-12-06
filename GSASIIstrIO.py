@@ -561,7 +561,7 @@ def ShowControls(Controls,pFile=None,SeqRef=False):
         print >>pFile,' Copy of histogram results to next: ',Controls['Copy2Next']
         print >>pFile,' Process histograms in reverse order: ',Controls['Reverse Seq']
     
-def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
+def GetPawleyConstr(SGLaue,PawleyRef,im,pawleyVary):
     'needs a doc string'
 #    if SGLaue in ['-1','2/m','mmm']:
 #        return                      #no Pawley symmetry required constraints
@@ -570,11 +570,11 @@ def GetPawleyConstr(SGLaue,PawleyRef,pawleyVary):
         eqvDict[varyI] = []
         refI = int(varyI.split(':')[-1])
         ih,ik,il = PawleyRef[refI][:3]
-        dspI = PawleyRef[refI][4]
+        dspI = PawleyRef[refI][4+im]
         for varyJ in pawleyVary[i+1:]:
             refJ = int(varyJ.split(':')[-1])
             jh,jk,jl = PawleyRef[refJ][:3]
-            dspJ = PawleyRef[refJ][4]
+            dspJ = PawleyRef[refJ][4+im]
             if SGLaue in ['4/m','4/mmm']:
                 isum = ih**2+ik**2
                 jsum = jh**2+jk**2
@@ -630,7 +630,7 @@ def cellVary(pfx,SGData):
         
 def modVary(pfx,SSGData):
     vary = []
-    for i,item in SSGData['modSymb']:
+    for i,item in enumerate(SSGData['modSymb']):
         if item in ['a','b','g']:
             vary.append(pfx+'mV%d'%(i))
     return vary
@@ -1147,7 +1147,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                     pawleyLookup[pfx+'%d,%d,%d'%(refl[0],refl[1],refl[2])] = i
                 if refl[5+im]:
                     pawleyVary.append(pfx+'PWLref:'+str(i))
-            GetPawleyConstr(SGData['SGLaue'],PawleyRef,pawleyVary)      #does G2mv.StoreEquivalence
+            GetPawleyConstr(SGData['SGLaue'],PawleyRef,im,pawleyVary)      #does G2mv.StoreEquivalence
             phaseVary += pawleyVary
                 
     return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables
@@ -1606,9 +1606,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 sigstr = '  esds  :'
                 for var in ['mV0','mV1','mV2']:
                     namstr += '%12s'%(pfx+var)
-                    ptstr += '%12.4f'%(parmDict[pfx+var])
+                    ptstr += '%12.6f'%(parmDict[pfx+var])
                     if pfx+var in sigDict:
-                        sigstr += '%12.4f'%(sigDict[pfx+var])
+                        sigstr += '%12.6f'%(sigDict[pfx+var])
                     else:
                         sigstr += 12*' '
                 print >>pFile,namstr

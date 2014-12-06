@@ -466,6 +466,11 @@ def calc_rDsq2(H,G):
     'needs doc string'
     return np.inner(H,np.inner(G,H))
     
+def calc_rDsqSS(H,A,vec):
+    'needs doc string'
+    rdsq = calc_rDsq(H[:3]+(H[3]*vec).T,A)
+    return rdsq
+       
 def calc_rDsqZ(H,A,Z,tth,lam):
     'needs doc string'
     rdsq = calc_rDsq(H,A)+Z*sind(tth)*2.0*rpd/lam**2

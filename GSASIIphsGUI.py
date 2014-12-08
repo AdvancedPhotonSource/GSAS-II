@@ -130,7 +130,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['AtomPtrs'] = [6,4,10,12]
         if generalData['Type'] in ['modulated','magnetic',] and 'Super' not in generalData:
             generalData['Super'] = 1
-            generalData['SuperVec'] = [[[0,0,.1],False,4],[[0,0,.1],False,4],[[0.,0.,.1],False,4]]
+            generalData['SuperVec'] = [[0,0,.1],False,4]
             generalData['SSGData'] = {}
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -992,7 +992,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 noSkip = True
                 if Atoms.GetColLabelValue(c) == 'refine':
                     Type = generalData['Type']
-                    if Type in ['nuclear','macromolecular']:
+                    if Type in ['nuclear','macromolecular','modulated']:
                         choice = ['F - site fraction','X - coordinates','U - thermal parameters']
                     elif Type in ['magnetic',]:
                         choice = ['F - site fraction','X - coordinates','U - thermal parameters','M - magnetic moment']
@@ -1076,7 +1076,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     us = colLabels.index('Uiso')
                     ss = colLabels.index('site sym')
                     for r in range(Atoms.GetNumberRows()):
-                        ID = atomData[r][-1]
+                        ID = atomData[r][ui+6]
                         if parms != atomData[r][c] and Atoms.GetColLabelValue(c) == 'I/A':
                             if parms == 'A':                #'I' --> 'A'
                                 Uiso = float(Atoms.GetCellValue(r,us))
@@ -1101,7 +1101,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     Atoms.SetCellStyle(r,ci,VERY_LIGHT_GREY,True)
                         if not Atoms.IsReadOnly(r,c):
                             if Atoms.GetColLabelValue(c) == 'refine':
-                                rbExcl = rbAtmDict.get(atomData[r][-1],'')
+                                rbExcl = rbAtmDict.get(atomData[r][ui+6],'')
                                 if rbExcl:
                                     for excl in rbExcl:
                                         atomData[r][c] = parms.replace(excl,'')
@@ -1120,7 +1120,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
             r,c =  event.GetRow(),event.GetCol()
             if r >= 0 and c >= 0:
-                ID = atomData[r][-1]
+                ci = colLabels.index('I/A')
+                ID = atomData[r][ci+8]
                 if Atoms.GetColLabelValue(c) in ['x','y','z']:
                     ci = colLabels.index('x')
                     XYZ = atomData[r][ci:ci+3]
@@ -1174,7 +1175,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if iUij == CSI[0][i]:
                             atomData[r][i+colLabels.index('U11')] = value*CSI[1][i]
                 elif Atoms.GetColLabelValue(c) == 'refine':
-                    atomData[r][c] = atomData[r][c].replace(rbAtmDict.get(atomData[r][-1],''),'')
+                    ci = colLabels.index('I/A')
+                    atomData[r][c] = atomData[r][c].replace(rbAtmDict.get(atomData[r][ci+8],''),'')
                 if 'Atoms' in data['Drawing']:
                     DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
                 wx.CallAfter(Paint)
@@ -1196,7 +1198,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.CallAfter(Paint)
                 value = Atoms.GetCellValue(r,c)
                 atomData[r][c] = value
-                ID = atomData[r][-1]
+                ci = colLabels.index('I/A')
+                ID = atomData[r][ci+8]
                 if 'Atoms' in data['Drawing']:
                     DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
                 SetupGeneral()
@@ -1212,6 +1215,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if Atoms.IsSelection():
                     Atoms.ClearSelection()
             elif c < 0:                   #only row clicks
+                ci = colLabels.index('I/A')
                 if event.ControlDown() and not event.ShiftDown():                    
                     if r in Atoms.GetSelectedRows():
                         Atoms.DeselectRow(r)
@@ -1226,7 +1230,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for row in range(ibeg,r+1):
                         Atoms.SelectRow(row,True)
                 elif event.AltDown() or (event.ShiftDown() and event.ControlDown()):
-                    if atomData[r][-1] in rbAtmDict:
+                    if atomData[r][ci+8] in rbAtmDict:
                         G2frame.ErrorDialog('Atom move error','Atoms in rigid bodies can not be moved')
                         Atoms.frm = -1
                         Atoms.ClearSelection()
@@ -1289,7 +1293,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for i in range(colU11-1,colU11+6):
                 Atoms.SetColSize(i,50)            
             for row in range(Atoms.GetNumberRows()):
-                atId = atomData[row][-1]
+                atId = atomData[row][colIA+8]
                 rbExcl = rbAtmDict.get(atId,'')
                 Atoms.SetReadOnly(row,colSS,True)                         #site sym
                 Atoms.SetReadOnly(row,colSS+1,True)                       #Mult
@@ -1303,20 +1307,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
                     Atoms.SetCellTextColour(row,colUiso,VERY_LIGHT_GREY)
                     for i in range(6):
-                        ci = colU11+i
-                        Atoms.SetCellTextColour(row,ci,BLACK)
-                        Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
+                        cj = colU11+i
+                        Atoms.SetCellTextColour(row,cj,BLACK)
+                        Atoms.SetCellStyle(row,cj,VERY_LIGHT_GREY,True)
                         if CSI[2][i] and 'U' not in rbExcl:
-                            Atoms.SetCellStyle(row,ci,WHITE,False)
+                            Atoms.SetCellStyle(row,cj,WHITE,False)
                 else:
                     Atoms.SetCellStyle(row,colUiso,WHITE,False)
                     Atoms.SetCellTextColour(row,colUiso,BLACK)
                     if 'U' in rbExcl:
                         Atoms.SetCellStyle(row,colUiso,VERY_LIGHT_GREY,True)
                     for i in range(6):
-                        ci = colU11+i
-                        Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
-                        Atoms.SetCellTextColour(row,ci,VERY_LIGHT_GREY)
+                        cj = colU11+i
+                        Atoms.SetCellStyle(row,cj,VERY_LIGHT_GREY,True)
+                        Atoms.SetCellTextColour(row,cj,VERY_LIGHT_GREY)
                 if 'X' in rbExcl:
                     for c in range(0,colX+3):
                         if c != colR:
@@ -1408,7 +1412,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif generalData['Type'] == 'nuclear':
             atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['modulated','magnetic']:
-            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,[],[],[],[],atId])
+            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],[],[]])
         SetupGeneral()
         if 'Atoms' in data['Drawing']:            
             DrawAtomAdd(data['Drawing'],atomData[-1])
@@ -1433,16 +1437,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         x,y,z = drawData['viewPoint'][0]
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
         cx = colLabels.index('x')
+        ci = colLabels.index('I/A')
         indx = Atoms.GetSelectedRows()
         if len(indx) != 1:
             G2frame.ErrorDialog('Atom move error','Only one atom can be moved')
-        elif atomData[indx[0]][-1] in rbAtmDict:
+        elif atomData[indx[0]][ci+8] in rbAtmDict:
             G2frame.ErrorDialog('Atom move error','Atoms in rigid bodies can not be moved')
         else:
             atomData[indx[0]][cx:cx+3] = [x,y,z]
             SetupGeneral()
             FillAtomsGrid(Atoms)
-            ID = atomData[indx[0]][-1]
+            ID = atomData[indx[0]][ci+8]
             DrawAtomsReplaceByID(data['Drawing'],atomData[indx[0]],ID)
             G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
@@ -1461,7 +1466,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
         generalData = data['General']
         SGData = generalData['SGData']
-        if generalData['Type'] == 'nuclear':
+        if generalData['Type'] in ['nuclear','modulated',]:
             if oldatom:
                 opr = oldatom[5]
                 if atom[9] == 'A':                    
@@ -1502,10 +1507,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             elif generalData['Type'] == 'nuclear':
                 atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
             elif generalData['Type'] in ['modulated','magnetic']:
-                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,[],[],[],[],atId])
+                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],[],[]])
             SetupGeneral()
 
     def AtomDelete(event):
+        colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+        ci = colLabels.index('I/A')
         indx = Atoms.GetSelectedRows()
         IDs = []
         if indx:
@@ -1513,10 +1520,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             indx.reverse()
             for ind in indx:
                 atom = atomData[ind]
-                if atom[-1] in rbAtmDict:
+                if atom[ci+8] in rbAtmDict:
                     G2frame.dataFrame.SetStatusText('**** ERROR - atom is in a rigid body and can not be deleted ****')
                 else:
-                    IDs.append(atom[-1])
+                    IDs.append(atom[ci+8])
                     del atomData[ind]
             if 'Atoms' in data['Drawing']:
                 DrawAtomsDeleteByIDs(IDs)
@@ -1555,6 +1562,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomData = data['Atoms']
             generalData = data['General']
             colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+            ci = colLabels.index('I/A')
             choices = ['Type','Name','x','y','z','frac','I/A','Uiso']
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom parameter',choices)
             parm = ''
@@ -1578,7 +1586,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         SetupGeneral()
                         if 'Atoms' in data['Drawing']:
                             for r in indx:
-                                ID = atomData[r][-1]
+                                ID = atomData[r][ci+8]
                                 DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
                     FillAtomsGrid(Atoms)
                 dlg.Destroy()
@@ -1938,7 +1946,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         for atom in rd.Phase['Atoms']:
             try:
                 idx = atomNames.index(atom[:ct+1])
+                atId = atom[cia+8]
                 atomData[idx][:-1] = atom[:-1]
+                atomData[idx][cia+8] = atId
             except ValueError:
                 print atom[:ct+1], 'not in Atom array; not updated'
         wx.CallAfter(FillAtomsGrid,Atoms)
@@ -1952,11 +1962,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def AtomSizer(SS,atom):
             
             def OnWaveType(event):
-                atom[-2][SS]['waveType']=waveType.GetValue()
+                atom[-1][SS]['waveType']=waveType.GetValue()
                 
             atomSizer = wx.BoxSizer(wx.HORIZONTAL)
             atomSizer.Add(wx.StaticText(waveData,label=' Modulation data for atom:    '+atom[0]+'    WaveType: '),0,WACV)            
-            waveType = wx.ComboBox(waveData,value=atom[-2][SS]['waveType'],choices=waveTypes,
+            waveType = wx.ComboBox(waveData,value=atom[-1][SS]['waveType'],choices=waveTypes,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
             atomSizer.Add(waveType,0,WACV)
@@ -1967,7 +1977,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnAddWave(event):
                 Obj = event.GetEventObject()
                 iatm,item = Indx[Obj.GetId()]
-                atomData[iatm][-2][SS][item].append([[0.0 for i in range(numVals[Stype])],False])
+                atomData[iatm][-1][SS][item].append([[0.0 for i in range(numVals[Stype])],False])
                 UpdateWavesData()
                 
             def OnWaveVal(event):
@@ -1976,19 +1986,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 try:
                     val = float(Obj.GetValue())
                 except ValueError:
-                    val = atomData[iatm][-2][SS][item][iwave][0][ival]
+                    val = atomData[iatm][-1][SS][item][iwave][0][ival]
                 Obj.SetValue('%.4f'%val)
-                atomData[iatm][-2][SS][item][iwave][0][ival] = val
+                atomData[iatm][-1][SS][item][iwave][0][ival] = val
                 
             def OnRefWave(event):
                 Obj = event.GetEventObject()
                 iatm,item,iwave = Indx[Obj.GetId()]
-                atomData[iatm][-2][SS][item][iwave][1] = not atomData[iatm][-2][SS][item][iwave][1]
+                atomData[iatm][-1][SS][item][iwave][1] = not atomData[iatm][-1][SS][item][iwave][1]
                 
             def OnDelWave(event):
                 Obj = event.GetEventObject()
                 iatm,item,iwave = Indx[Obj.GetId()]
-                del atomData[iatm][-2][SS][item][iwave]
+                del atomData[iatm][-1][SS][item][iwave]
                 UpdateWavesData()                
                 
             waveSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2053,7 +2063,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         if generalData['Type'] == 'modulated' and Stype == 'Smag':
                             break
-                        mainSizer.Add(WaveSizer(atom[-2][SS][Stype],Stype,typeNames[Stype],Labels[Stype]))
+                        mainSizer.Add(WaveSizer(atom[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype]))
                         
         SetPhaseWindow(G2frame.dataFrame,waveData,mainSizer)
                        
@@ -2098,7 +2108,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'showRigidBodies' not in drawingData:
             drawingData['showRigidBodies'] = True
         cx,ct,cs,ci = [0,0,0,0]
-        if generalData['Type'] == 'nuclear':
+        if generalData['Type'] in ['nuclear','modulated']:
             cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index
         elif generalData['Type'] == 'macromolecular':
             cx,ct,cs,ci = [5,4,9,20]         #x, type, style & index

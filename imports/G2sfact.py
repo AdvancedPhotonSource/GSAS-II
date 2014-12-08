@@ -151,6 +151,8 @@ class M90_ReaderClass(G2IO.ImportStructFactor):
             if i > startData+20:
                 break
         self.Super = numCols-9     #= 0,1,2,or 3
+        if self.Super > 1:
+            raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
         return True #ColumnValidator(self, filepointer)
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
@@ -166,12 +168,6 @@ class M90_ReaderClass(G2IO.ImportStructFactor):
                     elif self.Super == 1:
                         h,k,l,m1,Fo,sigFo = S.split()[:6]
                         h,k,l,m1 = [int(h),int(k),int(l),int(m1)]
-                    elif self.Super == 2:
-                        h,k,l,m1,m2,Fo,sigFo = S.split()[:7]
-                        h,k,l,m1,m2 = [int(h),int(k),int(l),int(m1),int(m2)]
-                    elif self.Super == 3:
-                        h,k,l,m1,m2,m3,Fo,sigFo = S.split()[:8]
-                        h,k,l,m1,m2,m3 = [int(h),int(k),int(l),int(m1),int(m2),int(m3)]                        
                 except ValueError:  #skipping text at front
                     text = S.split()
                     if text[0] == 'lambda':
@@ -184,10 +180,6 @@ class M90_ReaderClass(G2IO.ImportStructFactor):
                     self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0])
                 elif self.Super == 1:
                     self.RefDict['RefList'].append([h,k,l,m1,0,0,Fo,sigFo,0,Fo,0,0,0])
-                elif self.Super == 2:
-                    self.RefDict['RefList'].append([h,k,l,m1,m2,0,0,Fo,sigFo,0,Fo,0,0,0])
-                elif self.Super == 3:
-                    self.RefDict['RefList'].append([h,k,l,m1,m2,m3,0,0,Fo,sigFo,0,Fo,0,0,0])
             self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.RefDict['Type'] = 'SXC'

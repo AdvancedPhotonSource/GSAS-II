@@ -426,9 +426,8 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     FosqMax = Data['FoMax']
     Super = Data['Super']
     SuperVec = []
-    for i in range(Super):
-        SuperVec.append(Data['SuperVec'][i][0])
-        SuperVec = np.array(SuperVec)
+    if Super:
+        SuperVec = np.array(Data['SuperVec'][0])
     FoMax = math.sqrt(FosqMax)
     xlabel = ['k, h=','h, k=','h, l=']
     ylabel = ['l','l','k']
@@ -445,7 +444,10 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             Fosq,sig,Fcsq = refl[5+Super:8+Super]
         else:
             Fosq,sig,Fcsq = refl[8+Super],1.0,refl[9+Super]
-        HKL.append(H+np.sum(SuperVec*refl[3:3+Super],axis=0))
+        if Super:
+            HKL.append(H+SuperVec*refl[3])
+        else:
+            HKL.append(H)
         HKLF.append([Fosq,sig,Fcsq])
         if H[izone] == Data['Layer']:
             A = 0
@@ -478,8 +480,11 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 if sig > 0.:
                     A = (Fosq-Fcsq)/(3*sig)
                 if abs(A) < 3.0: A = 0
-                B = 0 
-            h = H+np.sum(SuperVec*refl[3:3+Super],axis=0)                   
+                B = 0
+            if Super:
+                h = H+SuperVec*refl[3]                
+            else:
+                h = H
             xy = (h[pzone[izone][0]],h[pzone[izone][1]])
             if Type in ['|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']:
                 if A > 0.0:

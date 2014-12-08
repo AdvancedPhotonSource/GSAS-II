@@ -426,7 +426,6 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                         self.warnings += "Change this in phase's General tab."            
                     dlg.Destroy()
                 SGlines = G2spc.SGPrint(SGData)
-                for l in SGlines: print l
             elif 'qi' in S[:2]:
                 if nqi:
                     raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
@@ -517,8 +516,10 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                 Sadp[i] = [vals,False]
             Atom = [Name,aType,'',XYZ[0],XYZ[1],XYZ[2],1.0,SytSym,Mult,IA,Uiso]
             Atom += Uij
-            Atom.append({'SS1':{'waveType':waveType,'crenelType':crenelType,'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':Smag}})    #SS2 is for (3+2), etc.
             Atom.append(ran.randint(0,sys.maxint))
+            Atom.append([])
+            Atom.append([])
+            Atom.append({'SS1':{'waveType':waveType,'crenelType':crenelType,'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':Smag}})    #SS2 is for (3+2), etc.
             Atoms.append(Atom)
         file2.close()
         self.errors = 'Error after read complete'

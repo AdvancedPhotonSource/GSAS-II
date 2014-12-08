@@ -525,6 +525,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         to F, F**2, etc. as requested as 3D array
     '''
 
+    global ifBox
+    ifBox = False
     def OnKeyBox(event):
         mode = cb.GetValue()
         if mode in ['jpeg','bmp','tiff',]:
@@ -556,6 +558,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
         
     def OnKey(event):           #on key UP!!
+        global ifBox
         Choice = {'F':'Fo','S':'Fosq','U':'Unit','D':'dFsq','W':'dFsq/sig'}
         try:
             keyCode = event.GetKeyCode()
@@ -575,6 +578,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             Q = G2mth.AV2Q(A,[0,1,0])
             drawingData['Quaternion'] = Q
             Q = drawingData['Quaternion']
+        elif key in 'B':
+            ifBox = not ifBox
         elif key == '+':
             Data['Scale'] *= 1.25
         elif key == '-':
@@ -596,9 +601,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     drawingData = Data['Drawing']
     Super = Data['Super']
     SuperVec = []
-    for i in range(Super):
-        SuperVec.append(Data['SuperVec'][i][0])
-        SuperVec = np.array(SuperVec)
+    if Super:
+        SuperVec = np.array(Data['SuperVec'][0])
     defaultViewPt = copy.copy(drawingData['viewPoint'])
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
     Gmat,gmat = G2lat.cell2Gmat(cell)
@@ -615,9 +619,10 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     wxOrange = wx.Colour(255,128,0)
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
-        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]]])
-    uColors = [Rd,Gr,Bl]
-    
+        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
+        [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
+        [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
+    uColors = [Rd,Gr,Bl, Wt,Wt,Wt, Wt,Wt,Wt, Wt,Wt,Wt]
     def FillHKLRC():
         R = np.zeros(len(hklRef))
         C = []
@@ -629,7 +634,10 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 Fosq,sig,Fcsq = refl[5+Super:8+Super]
             else:
                 Fosq,sig,Fcsq = refl[8+Super],1.0,refl[9+Super]
-            HKL.append(H+np.sum(SuperVec*refl[3:3+Super],axis=0))
+            if Super:
+                HKL.append(H+SuperVec*refl[3])
+            else:
+                HKL.append(H)
             if Data['Type'] == 'Unit':
                 R[i] = 0.1
                 C.append(Gr)
@@ -778,6 +786,23 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
         
+    def RenderBox(x,y,z):
+        xyz = np.array([x,y,z])
+        glEnable(GL_COLOR_MATERIAL)
+        glLineWidth(1)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glColor4ubv([0,0,0,0])
+        glBegin(GL_LINES)
+        for line,color in zip(uEdges,uColors):
+            glColor3ubv(color)
+            glVertex3fv(line[0])
+            glVertex3fv(line[1])
+        glEnd()
+        glPopMatrix()
+        glColor4ubv([0,0,0,0])
+        glDisable(GL_COLOR_MATERIAL)
+        
     def RenderUnitVectors(x,y,z):
         xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
@@ -785,7 +810,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         glPushMatrix()
         glTranslate(x,y,z)
         glBegin(GL_LINES)
-        for line,color in zip(uEdges,uColors):
+        for line,color in zip(uEdges,uColors)[:3]:
             glColor3ubv(color)
             glVertex3fv(-line[1])
             glVertex3fv(line[1])
@@ -849,7 +874,10 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         glMultMatrixf(B4mat.T)
         glTranslate(-Tx,-Ty,-Tz)
         x,y,z = drawingData['viewPoint'][0]
-        RenderUnitVectors(x,y,z)
+        if ifBox:
+            RenderBox(x,y,z)
+        else:
+            RenderUnitVectors(x,y,z)
         RenderUnitVectors(0,0,0)
         RenderDots(HKL,RC)
         time0 = time.time()
@@ -870,7 +898,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     Font = Page.GetFont()
     Page.SetFocus()
     Page.Choice = None
-    choice = [' save as/key:','jpeg','tiff','bmp','c: recenter to default','+: increase scale',
+    choice = [' save as/key:','jpeg','tiff','bmp','c: recenter to default','b: toggle box ','+: increase scale',
     '-: decrease scale','f: Fobs','s: Fobs**2','u: unit','d: Fo-Fc','w: DF/sig','i: toggle intensity scaling']
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)

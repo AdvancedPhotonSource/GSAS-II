@@ -432,7 +432,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                     raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
                 Type = 'modulated'
                 vec = S.split()[1:]
-                SuperVec[nqi] = [[float(vec[i]) for i in range(3)],False,4]
+                SuperVec = [[float(vec[i]) for i in range(3)],False,4]
                 nqi += 1
             elif 'atom' in S[:4]:
                 Atypes.append(S.split()[1])

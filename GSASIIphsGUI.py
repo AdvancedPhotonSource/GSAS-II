@@ -5143,6 +5143,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
         refData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,  \
             PatternId,'Reflection Lists'))[PhaseName]['RefList']
+        im = 0
+        if data['General']['Type'] in ['modulated','magnetic',]:
+            im = 1
         Inv = data['General']['SGData']['SGInv']
         mult = 0.5
         if Inv:
@@ -5151,12 +5154,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         try:
             for iref,ref in enumerate(Refs):
                 try:
-                    if ref[6] < 0.:
-                        ref[6] *= -mult
-                        refData[iref][8] *= -mult
-                        refData[iref][9] *= -mult
-                        ref[5] = False
-                        ref[7] = 1.0
+                    if ref[6+im] < 0.:
+                        ref[6+im] *= -mult
+                        refData[iref][8+im] *= -mult
+                        refData[iref][9+im] *= -mult
+                        ref[5+im] = False
+                        ref[7+im] = 1.0
                 except IndexError:
                     print 'skipped',ref
                     pass

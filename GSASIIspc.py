@@ -1122,13 +1122,14 @@ def GenHKLf(HKL,SGData):
     '''
     Uses old GSAS Fortran routine genhkl.for
 
-    :param HKL:  [h,k,l]
+    :param HKL:  [h,k,l] must be integral values for genhkl.for to work
     :param SGData: space group data obtained from SpcGroup
     :returns: iabsnt,mulp,Uniq,phi
 
      *   iabsnt = True if reflection is forbidden by symmetry
      *   mulp = reflection multiplicity including Friedel pairs
      *   Uniq = numpy array of equivalent hkl in descending order of h,k,l
+     *   phi = phase offset for each equivalent h,k,l
 
     '''
     hklf = HKL+[0,]
@@ -1144,6 +1145,54 @@ def GenHKLf(HKL,SGData):
     phi = f[:Nuniq]
     
     return iabsnt,mulp,Uniq,phi
+    
+def checkSSLaue(HKL,SGData,SSGData):
+    #Laue check here - Toss HKL if outside unique Laue part
+    h,k,l,m = HKL
+    if SGData['SGLaue'] == '2/m':
+        if SGData['SGUniq'] == 'a':
+            if 'a' in SSGData['modSymb'] and h == 0 and m < 0:
+                return False
+            elif 'b' in SSGData['modSymb'] and k == 0 and l ==0 and m < 0:
+                return False
+            else:
+                return True
+        elif SGData['SGUniq'] == 'b':
+            if 'b' in SSGData['modSymb'] and k == 0 and m < 0:
+                return False
+            elif 'a' in SSGData['modSymb'] and h == 0 and l ==0 and m < 0:
+                return False
+            else:
+                return True
+        elif SGData['SGUniq'] == 'c':
+            if 'g' in SSGData['modSymb'] and l == 0 and m < 0:
+                return False
+            elif 'a' in SSGData['modSymb'] and h == 0 and k ==0 and m < 0:
+                return False
+            else:
+                return True
+    elif SGData['SGLaue'] == 'mmm':
+        if 'a' in SSGData['modSymb']:
+            if h == 0 and m < 0:
+                return False
+            else:
+                return True
+        elif 'b' in SSGData['modSymb']:
+            if k == 0 and m < 0:
+                return False
+            else:
+                return True
+        elif 'g' in SSGData['modSymb']:
+            if l == 0 and m < 0:
+                return False
+            else:
+                return True
+    else:   #tetragonal, trigonal, hexagonal (& triclinic?)
+        if l == 0 and m < 0:
+            return False
+        else:
+            return True
+        
     
 def checkSSextc(HKL,SSGData):
     Ops = SSGData['SSGOps']

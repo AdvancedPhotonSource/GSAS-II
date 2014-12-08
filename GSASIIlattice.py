@@ -869,7 +869,7 @@ def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
     SSdH = [vec*h for h in range(-maxH,maxH+1)]
     SSdH = dict(zip(range(-maxH,maxH+1),SSdH))
     for h,k,l,d in HKL:
-        ext = G2spc.GenHKLf([h,k,l],SGData)[0]
+        ext = G2spc.GenHKLf([h,k,l],SGData)[0]  #h,k,l must be integral values here
         if not ext and d >= dmin:
             HKLs.append([h,k,l,0,d])
         for dH in SSdH:
@@ -879,7 +879,7 @@ def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
                 d = 1/np.sqrt(calc_rDsq(H,A))
                 if d >= dmin:
                     HKLM = np.array([h,k,l,dH])
-                    if G2spc.checkSSextc(HKLM,SSGData):
+                    if G2spc.checkSSLaue([h,k,l,dH],SGData,SSGData) and G2spc.checkSSextc(HKLM,SSGData):
                         HKLs.append([h,k,l,dH,d])    
     return HKLs
 

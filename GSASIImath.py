@@ -1719,19 +1719,24 @@ def ChargeFlip(data,reflDict,pgbar):
     cell = generalData['Cell'][1:8]        
     A = G2lat.cell2A(cell[:6])
     Vol = cell[6]
+    im = 0
+    if generalData['Type'] in ['modulated','magnetic',]:
+        im = 1
     Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A),dtype='i')+1
     adjHKLmax(SGData,Hmax)
     Ehkl = np.zeros(shape=2*Hmax,dtype='c16')       #2X64bits per complex no.
     time0 = time.time()
     for iref,ref in enumerate(reflDict['RefList']):
-        dsp = ref[4]
+        dsp = ref[4+im]
+        if im and ref[3]:   #skip super lattice reflections
+            continue
         if dsp >= dmin:
             ff = 0.1*Vol    #est. no. atoms for ~10A**3/atom
             if FFtable:
                 SQ = 0.25/dsp**2
                 ff *= G2el.ScatFac(FFtable,SQ)[0]
-            if ref[8] > 0.:         #use only +ve Fobs**2
-                E = np.sqrt(ref[8])/ff
+            if ref[8+im] > 0.:         #use only +ve Fobs**2
+                E = np.sqrt(ref[8+im])/ff
             else:
                 E = 0.
             ph = ref[10]

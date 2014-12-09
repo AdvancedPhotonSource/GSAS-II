@@ -390,8 +390,9 @@ cs                site symmetry (str)
 cs+1              site multiplicity (int)
 cia               ADP flag: Isotropic ('I') or Anisotropic ('A')
 cia+1             Uiso (float)
-cia+2...cia+6     U11, U22, U33, U12, U13, U23 (6 floats)
-atom[-1]                unique atom identifier (int)
+cia+2...cia+7     U11, U22, U33, U12, U13, U23 (6 floats)
+atom[cia+8]       unique atom identifier (int)
+
 ==============   ====================================================
 
 Drawing Atom Records
@@ -977,10 +978,10 @@ def IndexAllIds(Histograms,Phases):
         AtomIdLookup[pId] = {}
         AtomRanIdLookup[pId] = {}
         for iatm,at in enumerate(Phases[ph]['Atoms']):
-            ranId = at[-1]
+            ranId = at[cia+8]
             while ranId in AtomRanIdLookup[pId]: # check for dups
                 print ("\n\n*** Phase "+str(ph)+" atom "+str(iatm)+" has repeated ranId. Fixing.\n")
-                at[-1] = ranId = ran.randint(0,sys.maxint)
+                at[cia+8] = ranId = ran.randint(0,sys.maxint)
             AtomRanIdLookup[pId][ranId] = str(iatm)
             if Phases[ph]['General']['Type'] == 'macromolecular':
                 label = '%s_%s_%s_%s'%(at[ct-1],at[ct-3],at[ct-4],at[ct-2])

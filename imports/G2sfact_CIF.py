@@ -40,8 +40,8 @@ class CIFhklReader(G2IO.ImportStructFactor):
         '''Read single crystal data from a CIF.
         If multiple datasets are requested, use self.repeat and buffer caching.
         '''
-        hklitems = [('_refln_index_h','_refln_index_k','_refln_index_l'),
-                    ('_refln.index_h','_refln.index_k','_refln.index_l')]
+        hklitems = [('_refln_index_h','_refln_index_k','_refln_index_l','_refln_index_m_1'),
+                    ('_refln.index_h','_refln.index_k','_refln.index_l','_refln.index_m_1')]
         cellitems = [
             ('_cell_length_a','_cell_length_b','_cell_length_c',
              '_cell_angle_alpha','_cell_angle_beta','_cell_angle_gamma',),
@@ -110,9 +110,12 @@ class CIFhklReader(G2IO.ImportStructFactor):
                 blkkeys = [k.lower() for k in cf[blk].keys()]
                 gotFo = False
                 gotFo2 = False
+                im = 0
                 for i in range(2):
                     if hklitems[i][0] in blkkeys and hklitems[i][1] in blkkeys and hklitems[i][2] in blkkeys:
                         dnIndex = i
+                        if hklitems[i][3] in blkkeys:   #Super lattice reflections h,k,l,m
+                            im = 1
                         break
                 else:
                     break # no reflections
@@ -261,7 +264,10 @@ class CIFhklReader(G2IO.ImportStructFactor):
                         except:
                             HKL.append('.')
                     #h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,Ext
-                    ref = HKL+[0,0,0,0,0, 0,0,0,0,0, 0] 
+                    if im:
+                        ref = HKL+[0,0,0,0,0, 0,0,0,0,0, 0,0] 
+                    else:
+                        ref = HKL+[0,0,0,0,0, 0,0,0,0,0, 0] 
                     if F2dn:
                         F2 = item[itemkeys[F2dn]]
                         if '(' in F2:
@@ -297,14 +303,14 @@ class CIFhklReader(G2IO.ImportStructFactor):
                         except:
                             pass
                                 
-                    ref[8] = F2
-                    ref[5] = F2
-                    ref[6] = sigF2
-                    ref[9] = F2c
-                    ref[7] = F2c
+                    ref[8+im] = F2
+                    ref[5+im] = F2
+                    ref[6+im] = sigF2
+                    ref[9+im] = F2c
+                    ref[7+im] = F2c
                     try:
                         if Phdn:
-                            ref[10] = float(item[itemkeys[Phdn]])
+                            ref[10+im] = float(item[itemkeys[Phdn]])
                     except:
                         pass
                 except:
@@ -320,8 +326,9 @@ class CIFhklReader(G2IO.ImportStructFactor):
                 if blk['_diffrn_radiation.probe'] == 'neutron':
                     Type = 'SNC'
             else:
-                type = 'SXC'
+                Type = 'SXC'
             self.RefDict['Type'] = Type
+            self.RefDict['Super'] = im
             if blk.get('_diffrn_radiation_wavelength'):
                 wave = float(blk['_diffrn_radiation_wavelength'])
             elif blk.get('_diffrn_radiation.wavelength'):

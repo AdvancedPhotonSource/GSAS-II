@@ -1525,6 +1525,62 @@ def OmitMap(data,reflDict,pgbar=None):
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     print 'Omit map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
     return mapData
+    
+def Fourier4DMap(data,reflDict):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+    generalData = data['General']
+    if not generalData['4DmapData']['RefList']:
+        print '**** ERROR - 4D Fourier map data not defined'
+        return
+    mapData = generalData['4DmapData']
+    dmin = mapData['Resolution']
+    SGData = generalData['SGData']
+    SSGData = generalData['SSGData']
+    SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
+    SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
+    cell = generalData['Cell'][1:8]        
+    A = G2lat.cell2A(cell[:6])
+    maxM = generalData['SuperVec'][2]
+    Hmax = G2lat.getHKLmax(dmin,SGData,A)+[maxM,]
+    adjHKLmax(SGData,Hmax)
+    Hmax = np.asarray(Hmax,dtype='i')+1
+    Fhkl = np.zeros(shape=2*Hmax,dtype='c16')
+    time0 = time.time()
+    for iref,ref in enumerate(reflDict['RefList']):
+        if ref[5] >= dmin:
+            Fosq,Fcsq,ph = ref[9:12]
+            Uniq = np.inner(ref[:4],SSGMT)
+            Phi = np.inner(ref[:4],SSGT)
+            for i,hkl in enumerate(Uniq):        #uses uniq
+                hkl = np.asarray(hkl,dtype='i')
+                dp = 360.*Phi[i]                #and phi
+                a = cosd(ph+dp)
+                b = sind(ph+dp)
+                phasep = complex(a,b)
+                phasem = complex(a,-b)
+                if 'Fobs' in mapData['MapType']:
+                    F = np.where(Fosq>0.,np.sqrt(Fosq),0.)
+                    h,k,l,m = hkl+Hmax
+                    Fhkl[h,k,l,m] = F*phasep
+                    h,k,l,m = -hkl+Hmax
+                    Fhkl[h,k,l,m] = F*phasem
+                elif 'delt-F' in mapData['MapType']:
+                    dF = np.where(Fosq>0.,np.sqrt(Fosq),0.)-np.sqrt(Fcsq)
+                    h,k,l,m = hkl+Hmax
+                    Fhkl[h,k,l,m] = dF*phasep
+                    h,k,l,m = -hkl+Hmax
+                    Fhkl[h,k,l,m] = dF*phasem
+    rho = fft.fftn(fft.fftshift(Fhkl))/cell[6]
+    print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
+    mapData['rho'] = np.real(rho)
+    mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
+    return mapData
 
 def FourierMap(data,reflDict):
     '''default doc string

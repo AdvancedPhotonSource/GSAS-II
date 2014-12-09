@@ -405,12 +405,13 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                 if 'X' in S:
                     raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
                 SpGrp = S.split()[1]
+                SuperSg = ''
                 if '(' in SpGrp:    #supercell symmetry - split in 2
                     SuperStr = SpGrp.split('(')
                     SpGrp = SuperStr[0]
                     SuperSg = '('+SuperStr[1]
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
-                E,SGData = G2spc.SpcGroup(SpGrp)
+                E,SGData = G2spc.SpcGroup(SpGrpNorm)
                 # space group processing failed, try to look up name in table
                 while E:
                     print G2spc.SGErrors(E)
@@ -532,6 +533,8 @@ class JANA_ReaderClass(G2IO.ImportPhase):
         Phase['General']['Super'] = nqi
         Phase['General']['SuperVec'] = SuperVec
         Phase['General']['SuperSg'] = SuperSg
+        if SuperSg:
+            Phase['General']['SSGData'] = G2spc.SSpcGroup(SGData,SuperSg)[1]
         Phase['General']['AtomPtrs'] = [3,1,7,9]
         Phase['Atoms'] = Atoms
         return Phase

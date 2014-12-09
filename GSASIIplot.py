@@ -525,7 +525,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
 ##### Plot3DSngl
 ################################################################################
 
-def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
+def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title='no phase'):
     '''3D Structure factor plotting package - displays reflections as rings proportional
         to F, F**2, etc. as requested as 3D array
     '''
@@ -2764,6 +2764,27 @@ def PlotTexture(G2frame,data,Start=False):
             Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
     Page.canvas.draw()
 
+################################################################################
+#####
+################################################################################
+
+def ModulationPlot(G2frame,data,atom):
+    
+    print 'modulation plot for',atom[0]
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index('Modulation')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+        if not Page.IsShown():
+            Page.Show()
+    except ValueError:
+        Plot = G2frame.G2plotNB.addMpl('Modulation').gca()
+        plotNum = G2frame.G2plotNB.plotList.index('Modulation')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+#        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+
+    
 ################################################################################
 ##### PlotCovariance
 ################################################################################

@@ -128,10 +128,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['AtomPtrs'] = [3,1,7,9]
             if generalData['Type'] =='macromolecular':
                 generalData['AtomPtrs'] = [6,4,10,12]
-        if generalData['Type'] in ['modulated','magnetic',] and 'Super' not in generalData:
-            generalData['Super'] = 1
-            generalData['SuperVec'] = [[0,0,.1],False,4]
-            generalData['SSGData'] = {}
+        if generalData['Type'] in ['modulated','magnetic',]: 
+            if 'Super' not in generalData:
+                generalData['Super'] = 1
+                generalData['SuperVec'] = [[0,0,.1],False,4]
+                generalData['SSGData'] = {}
+            if '4DmapData' not in generalData:
+                generalData['4DmapData'] = mapDefault
+                generalData['4DmapData'].update({'MapType':'Fobs'})
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
         generalData['NoAtoms'] = {}
@@ -1964,12 +1968,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnWaveType(event):
                 atom[-1][SS]['waveType']=waveType.GetValue()
                 
+            def OnShowWave(event):
+                mapBtn.SetValue(False)
+                G2plt.ModulationPlot(G2frame,data,atom)
+                
             atomSizer = wx.BoxSizer(wx.HORIZONTAL)
             atomSizer.Add(wx.StaticText(waveData,label=' Modulation data for atom:    '+atom[0]+'    WaveType: '),0,WACV)            
             waveType = wx.ComboBox(waveData,value=atom[-1][SS]['waveType'],choices=waveTypes,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
             atomSizer.Add(waveType,0,WACV)
+            mapBtn = wx.CheckBox(waveData,label='Show contour map?')
+            mapBtn.Bind(wx.EVT_CHECKBOX, OnShowWave)
+            Indx[mapBtn.GetId()] = atom
+            atomSizer.Add(mapBtn,0,WACV)
             return atomSizer
             
         def WaveSizer(waveBlk,Stype,typeName,Names):
@@ -2037,6 +2049,30 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 waveSizer.Add(Waves)                    
             return waveSizer
             
+        def MapSizer():
+
+            def OnRefList(event):
+                Map['RefList'] = refList.GetValue()
+                
+            def OnMapType(event):
+                Map['MapType'] = mapType.GetValue()
+                
+            Map = generalData['4DmapData']
+            refList = data['Histograms'].keys()
+            mapSizer = wx.BoxSizer(wx.HORIZONTAL)
+            mapSizer.Add(wx.StaticText(waveData,label=' 4D map data: Reflection set from: '),0,WACV)
+            refList = wx.ComboBox(waveData,-1,value=Map['RefList'],choices=refList,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            refList.Bind(wx.EVT_COMBOBOX,OnRefList)
+            mapSizer.Add(refList,0,WACV)
+            mapTypes = ['Fobs','delt-F']
+            mapSizer.Add(wx.StaticText(waveData,label=' Map type: '),0,WACV)
+            mapType = wx.ComboBox(waveData,-1,value=Map['MapType'],choices=mapTypes,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            mapType.Bind(wx.EVT_COMBOBOX,OnMapType)
+            mapSizer.Add(mapType,0,WACV)
+            return mapSizer
+            
         Indx = {}
         G2frame.dataFrame.SetStatusText('')
         generalData = data['General']
@@ -2056,8 +2092,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
         mainSizer.Add(wx.StaticText(waveData,label=' Incommensurate propagation wave data:'),0,WACV)
         if generalData['Type'] in ['modulated','magnetic']:
+            mainSizer.Add(MapSizer(),0,WACV)            
             for iatm,atom in enumerate(atomData):
-                for SS in ['SS1',]:  #future SS2 & SS3
+                for SS in ['SS1',]:  #future SS2 & SS3 - I doubt it!
                     G2gd.HorizontalLine(mainSizer,waveData)
                     mainSizer.Add(AtomSizer(SS,atom))
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
@@ -2067,6 +2104,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         
         SetPhaseWindow(G2frame.dataFrame,waveData,mainSizer)
                        
+    def On4DMapCompute(event):
+        generalData = data['General']
+        mapData = generalData['4DmapData']
+        reflName = mapData['RefList']
+        if not reflName:
+            G2frame.ErrorDialog('Fourier map','No reflections defined for Fourier map')
+            return
+        phaseName = generalData['Name']
+        if 'PWDR' in reflName:
+            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+            reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
+            reflData = reflSets[phaseName]
+        elif 'HKLF' in reflName:
+            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+            reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+        mapData.update(G2mth.Fourier4DMap(data,reflData))
+        mapSig = np.std(mapData['rho'])
+        print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+            
 ################################################################################
 #Structure drawing GUI stuff                
 ################################################################################
@@ -5631,6 +5687,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         # Wave Data
         if data['General']['Type'] in ['modulated','magnetic']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.WavesData)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, On4DMapCompute, id=G2gd.wxID_4DMAPCOMPUTE)
         # Draw Options
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataDrawOptions)
         # Draw Atoms

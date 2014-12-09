@@ -66,8 +66,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_FOURCALC, wxID_FOURSEARCH, wxID_FOURCLEAR, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, 
     wxID_CHARGEFLIP, wxID_PEAKSUNIQUE, wxID_PEAKSDELETE, wxID_PEAKSDA,
     wxID_PEAKSDISTVP, wxID_PEAKSVIEWPT, wxID_FINDEQVPEAKS,wxID_SHOWBONDS,wxID_MULTIMCSA,
-    wxID_SINGLEMCSA
-] = [wx.NewId() for item in range(15)]
+    wxID_SINGLEMCSA, wxID_4DMAPCOMPUTE,
+] = [wx.NewId() for item in range(16)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_PWDANALYSIS, wxID_PWDCOPY, wxID_DATADELETE,
 ] = [wx.NewId() for item in range(5)]
@@ -3655,6 +3655,10 @@ class DataFrame(wx.Frame):
         self.WavesData = wx.MenuBar()
         self.PrefillDataMenu(self.WavesData,helpType='Wave Data', helpLbl='Imcommensurate wave data')
         self.WavesData.Append(menu=wx.Menu(title=''),title='Select tab')
+        self.WavesDataCompute = wx.Menu(title='')
+        self.WavesData.Append(menu=self.WavesDataCompute,title='Compute')
+        self.WavesDataCompute.Append(id=wxID_4DMAPCOMPUTE, kind=wx.ITEM_NORMAL,text='Compute 4D map',
+            help='Compute 4-dimensional map')
         self.PostfillDataMenu()
                  
         # Phase / Draw Options tab

@@ -654,9 +654,8 @@ class GSASII(wx.Frame):
             SGData = generalData['SGData']
             Super = generalData.get('Super',0)
             SuperVec = []
-            for i in range(Super):
-                SuperVec.append(generalData['SuperVec'][i][0])
-                SuperVec = np.array(SuperVec)
+            if Super:
+                SuperVec = np.array(generalData['SuperVec'][0])
             UseList = data['Histograms']
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
@@ -670,7 +669,10 @@ class GSASII(wx.Frame):
                     Super = reflData.get('Super',0)
                     for iref,ref in enumerate(reflData['RefList']):
                         hkl = ref[:3]
-                        H = list(hkl+np.sum(SuperVec*ref[3:3+Super],axis=0))
+                        if Super:
+                            H = list(hkl+SuperVec*ref[3])
+                        else:
+                            H = hkl
                         ref[4+Super] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
                         iabsnt,ref[3+Super],Uniq,phi = G2spc.GenHKLf(H,SGData)
                     UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
@@ -798,9 +800,8 @@ class GSASII(wx.Frame):
             SGData = generalData['SGData']
             Super = generalData.get('Super',0)
             SuperVec = []
-            for i in range(Super):
-                SuperVec.append(generalData['SuperVec'][i][0])
-                SuperVec = np.array(SuperVec)
+            if Super:
+                SuperVec = np.array(generalData['SuperVec'][0])
             UseList = data['Histograms']
             for histoName in newHistList:
                 #redo UpdateHKLFdata(histoName) here:
@@ -810,7 +811,10 @@ class GSASII(wx.Frame):
                 G,g = G2lat.cell2Gmat(generalData['Cell'][1:7])
                 for iref,ref in enumerate(reflData['RefList']):
                     hkl = ref[:3]
-                    H = list(hkl+np.sum(SuperVec*ref[3:3+Super],axis=0))
+                    if Super:
+                        H = list(hkl+SuperVec*ref[3])
+                    else:
+                        H = hkl
                     ref[4+Super] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
                     iabsnt,ref[3+Super],Uniq,phi = G2spc.GenHKLf(H,SGData)
         wx.EndBusyCursor()

@@ -13,7 +13,7 @@
 @set gsasloc=%~dp0\*
 @set gsasloc=%gsasloc:\\*=\*%
 @set gsasloc=%gsasloc:\*=\%
-python "%gsasloc%\GSASII.py" %1
+D:\Python27\python "%gsasloc%\GSASII.py" %1
 @REM To keep the window from disappearing with any error messages
 pause
 

@@ -214,7 +214,7 @@ def FindAtomIndexByIDs(atomData,IDs,Draw=True):
             indx.append(i)
     return indx
 
-def FillAtomLookUp(atomData):
+def FillAtomLookUp(atomData,indx):
     '''create a dictionary of atom indexes with atom IDs as keys
     
     :param list atomData: Atom table to be used
@@ -224,7 +224,7 @@ def FillAtomLookUp(atomData):
     '''
     atomLookUp = {}
     for iatm,atom in enumerate(atomData):
-        atomLookUp[atom[-1]] = iatm
+        atomLookUp[atom[indx]] = iatm
     return atomLookUp
 
 def GetAtomsById(atomData,atomLookUp,IdList):

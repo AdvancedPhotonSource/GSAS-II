@@ -109,7 +109,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'POhkl' not in generalData:
             generalData['POhkl'] = [0,0,1]
         if 'Map' not in generalData:
-            generalData['Map'] = mapDefault
+            generalData['Map'] = {}
+            generalData['Map'].update(mapDefault)
         if 'Flip' not in generalData:
             generalData['Flip'] = {'RefList':'','Resolution':0.5,'Norm element':'None',
                 'k-factor':0.1,'k-Max':20.}
@@ -134,7 +135,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['SuperVec'] = [[0,0,.1],False,4]
                 generalData['SSGData'] = {}
             if '4DmapData' not in generalData:
-                generalData['4DmapData'] = mapDefault
+                generalData['4DmapData'] = {}
+                generalData['4DmapData'].update(mapDefault)
                 generalData['4DmapData'].update({'MapType':'Fobs'})
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -1969,8 +1971,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 atom[-1][SS]['waveType']=waveType.GetValue()
                 
             def OnShowWave(event):
-                mapBtn.SetValue(False)
-                G2plt.ModulationPlot(G2frame,data,atom)
+                Obj = event.GetEventObject()
+                atom = Indx[Obj.GetId()]               
+                Ax = Obj.GetValue()
+                G2plt.ModulationPlot(G2frame,data,atom,Ax)
                 
             atomSizer = wx.BoxSizer(wx.HORIZONTAL)
             atomSizer.Add(wx.StaticText(waveData,label=' Modulation data for atom:    '+atom[0]+'    WaveType: '),0,WACV)            
@@ -1978,10 +1982,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
             atomSizer.Add(waveType,0,WACV)
-            mapBtn = wx.CheckBox(waveData,label='Show contour map?')
-            mapBtn.Bind(wx.EVT_CHECKBOX, OnShowWave)
-            Indx[mapBtn.GetId()] = atom
-            atomSizer.Add(mapBtn,0,WACV)
+            axchoice = ['x','y','z']
+            atomSizer.Add(wx.StaticText(waveData,label=' Show contour map for axis:'),0,WACV)
+            mapSel = wx.ComboBox(waveData,value=' ',choices=axchoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            mapSel.Bind(wx.EVT_COMBOBOX,OnShowWave)
+            Indx[mapSel.GetId()] = atom
+            atomSizer.Add(mapSel,0,WACV)
             return atomSizer
             
         def WaveSizer(waveBlk,Stype,typeName,Names):
@@ -2058,6 +2065,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Map['MapType'] = mapType.GetValue()
                 
             Map = generalData['4DmapData']
+            Map['Resolution'] = 0.25
             refList = data['Histograms'].keys()
             mapSizer = wx.BoxSizer(wx.HORIZONTAL)
             mapSizer.Add(wx.StaticText(waveData,label=' 4D map data: Reflection set from: '),0,WACV)
@@ -2083,7 +2091,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         typeNames = {'Sfrac':' Site fraction','Spos':' Position','Sadp':' Thermal motion','Smag':' Magnetic moment'}
         numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6}
-        posNames = ['Xsin','Ysin','Zsin','Xcos','Ysin','Zsin']
+        posNames = ['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos']
         adpNames = ['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin',
             'U11cos','U22cos','U33cos','U12cos','U13cos','U23cos']
         magNames = ['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']

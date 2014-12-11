@@ -65,9 +65,10 @@ def ApplyRBModels(parmDict,Phases,rigidbodyDict,Update=False):
     for phase in Phases:
         Phase = Phases[phase]
         General = Phase['General']
+        cx,ct,cs,cia = General['AtomPtrs']
         cell = General['Cell'][1:7]
         Amat,Bmat = G2lat.cell2AB(cell)
-        AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'])
+        AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'],cia+8)
         pfx = str(Phase['pId'])+'::'
         if Update:
             RBModels = Phase['RBModels']
@@ -158,6 +159,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
         if 'RB' in item:
             dFdvDict[item] = 0.        #NB: this is a vector which is no. refl. long & must be filled!
     General = Phase['General']
+    cx,ct,cs,cia = General['AtomPtrs']
     cell = General['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(cell)
     rpd = np.pi/180.
@@ -165,7 +167,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
     g = nl.inv(np.inner(Bmat,Bmat))
     gvec = np.sqrt(np.array([g[0][0]**2,g[1][1]**2,g[2][2]**2,
         g[0][0]*g[1][1],g[0][0]*g[2][2],g[1][1]*g[2][2]]))
-    AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'])
+    AtLookup = G2mth.FillAtomLookUp(Phase['Atoms'],cia+8)
     pfx = str(Phase['pId'])+'::'
     RBModels =  Phase['RBModels']
     for irb,RBObj in enumerate(RBModels.get('Vector',[])):
@@ -311,9 +313,10 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
         pId = Phases[phase]['pId']
         negWt[pId] = Phases[phase]['General']['Pawley neg wt']
         General = Phases[phase]['General']
+        cx,ct,cs,cia = General['AtomPtrs']
         textureData = General['SH Texture']
         SGData = General['SGData']
-        AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'])
+        AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'],cia+8)
         cell = General['Cell'][1:7]
         Amat,Bmat = G2lat.cell2AB(cell)
         if phase not in restraintDict:
@@ -414,8 +417,9 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
 #            continue
         pId = Phases[phase]['pId']
         General = Phases[phase]['General']
+        cx,ct,cs,cia = General['AtomPtrs']
         SGData = General['SGData']
-        AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'])
+        AtLookup = G2mth.FillAtomLookUp(Phases[phase]['Atoms'],cia+8)
         cell = General['Cell'][1:7]
         Amat,Bmat = G2lat.cell2AB(cell)
         textureData = General['SH Texture']
@@ -2105,7 +2109,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     else:
         for iref,ref in enumerate(refDict['RefList']):
             if ref[5+im] > 0.:
-                dervDict = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist+dependentVars)[1]
+                dervDict = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist+dependentVars)[1]
                 Fo = np.sqrt(ref[5+im])
                 Fc = np.sqrt(ref[7+im])
                 w = 1.0/ref[6+im]
@@ -2349,7 +2353,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             if calcControls['F**2']:
                 for i,ref in enumerate(refDict['RefList']):
                     if ref[6+im] > 0:
-                        ref[11+im] = SCExtinction(ref,phfx,hfx,pfx,calcControls,parmDict,varylist)[0]
+                        ref[11+im] = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist)[0]
                         w = 1.0/ref[6+im]
                         ref[7+im] = parmDict[phfx+'Scale']*ref[9+im]*ref[11+im]  #correct Fc^2 for extinction
                         ref[8+im] = ref[5+im]/(parmDict[phfx+'Scale']*ref[11+im])

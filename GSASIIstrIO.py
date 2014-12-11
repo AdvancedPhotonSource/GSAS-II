@@ -962,7 +962,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
         FFtables.update(FFtable)
         BLtables.update(BLtable)
         Atoms = PhaseData[name]['Atoms']
-        AtLookup = G2mth.FillAtomLookUp(Atoms)
+        if Atoms and not General.get('doPawley'):
+            cx,ct,cs,cia = General['AtomPtrs']
+            AtLookup = G2mth.FillAtomLookUp(Atoms,cia+8)
         PawleyRef = PhaseData[name].get('Pawley ref',[])
         SGData = General['SGData']
         SGtext,SGtable = G2spc.SGPrint(SGData)
@@ -1000,69 +1002,69 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
         Natoms[pfx] = 0
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']
-            if General['Type'] in ['nuclear','macromolecular']:
-                Natoms[pfx] = len(Atoms)
-                for i,at in enumerate(Atoms):
-                    atomIndx[at[-1]] = [pfx,i]      #lookup table for restraints
-                    phaseDict.update({pfx+'Atype:'+str(i):at[ct],pfx+'Afrac:'+str(i):at[cx+3],pfx+'Amul:'+str(i):at[cs+1],
-                        pfx+'Ax:'+str(i):at[cx],pfx+'Ay:'+str(i):at[cx+1],pfx+'Az:'+str(i):at[cx+2],
-                        pfx+'dAx:'+str(i):0.,pfx+'dAy:'+str(i):0.,pfx+'dAz:'+str(i):0.,         #refined shifts for x,y,z
-                        pfx+'AI/A:'+str(i):at[cia],})
+            Natoms[pfx] = len(Atoms)
+            for i,at in enumerate(Atoms):
+                atomIndx[at[cia+8]] = [pfx,i]      #lookup table for restraints
+                phaseDict.update({pfx+'Atype:'+str(i):at[ct],pfx+'Afrac:'+str(i):at[cx+3],pfx+'Amul:'+str(i):at[cs+1],
+                    pfx+'Ax:'+str(i):at[cx],pfx+'Ay:'+str(i):at[cx+1],pfx+'Az:'+str(i):at[cx+2],
+                    pfx+'dAx:'+str(i):0.,pfx+'dAy:'+str(i):0.,pfx+'dAz:'+str(i):0.,         #refined shifts for x,y,z
+                    pfx+'AI/A:'+str(i):at[cia],})
+                if at[cia] == 'I':
+                    phaseDict[pfx+'AUiso:'+str(i)] = at[cia+1]
+                else:
+                    phaseDict.update({pfx+'AU11:'+str(i):at[cia+2],pfx+'AU22:'+str(i):at[cia+3],pfx+'AU33:'+str(i):at[cia+4],
+                        pfx+'AU12:'+str(i):at[cia+5],pfx+'AU13:'+str(i):at[cia+6],pfx+'AU23:'+str(i):at[cia+7]})
+                if 'F' in at[ct+1]:
+                    phaseVary.append(pfx+'Afrac:'+str(i))
+                if 'X' in at[ct+1]:
+                    try:    #patch for sytsym name changes
+                        xId,xCoef = G2spc.GetCSxinel(at[cs])
+                    except KeyError:
+                        Sytsym = G2spc.SytSym(at[cx:cx+3],SGData)[0]
+                        at[cs] = Sytsym
+                        xId,xCoef = G2spc.GetCSxinel(at[cs])
+                    xId,xCoef = G2spc.GetCSxinel(at[cs])
+                    names = [pfx+'dAx:'+str(i),pfx+'dAy:'+str(i),pfx+'dAz:'+str(i)]
+                    equivs = [[],[],[]]
+                    for j in range(3):
+                        if xId[j] > 0:                               
+                            phaseVary.append(names[j])
+                            equivs[xId[j]-1].append([names[j],xCoef[j]])
+                    for equiv in equivs:
+                        if len(equiv) > 1:
+                            name = equiv[0][0]
+                            coef = equiv[0][1]
+                            for eqv in equiv[1:]:
+                                eqv[1] /= coef
+                                G2mv.StoreEquivalence(name,(eqv,))
+                if 'U' in at[ct+1]:
                     if at[cia] == 'I':
-                        phaseDict[pfx+'AUiso:'+str(i)] = at[cia+1]
+                        phaseVary.append(pfx+'AUiso:'+str(i))
                     else:
-                        phaseDict.update({pfx+'AU11:'+str(i):at[cia+2],pfx+'AU22:'+str(i):at[cia+3],pfx+'AU33:'+str(i):at[cia+4],
-                            pfx+'AU12:'+str(i):at[cia+5],pfx+'AU13:'+str(i):at[cia+6],pfx+'AU23:'+str(i):at[cia+7]})
-                    if 'F' in at[ct+1]:
-                        phaseVary.append(pfx+'Afrac:'+str(i))
-                    if 'X' in at[ct+1]:
                         try:    #patch for sytsym name changes
-                            xId,xCoef = G2spc.GetCSxinel(at[cs])
+                            uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
                         except KeyError:
                             Sytsym = G2spc.SytSym(at[cx:cx+3],SGData)[0]
                             at[cs] = Sytsym
-                            xId,xCoef = G2spc.GetCSxinel(at[cs])
-                        xId,xCoef = G2spc.GetCSxinel(at[cs])
-                        names = [pfx+'dAx:'+str(i),pfx+'dAy:'+str(i),pfx+'dAz:'+str(i)]
-                        equivs = [[],[],[]]
-                        for j in range(3):
-                            if xId[j] > 0:                               
+                            uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
+                        uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
+                        names = [pfx+'AU11:'+str(i),pfx+'AU22:'+str(i),pfx+'AU33:'+str(i),
+                            pfx+'AU12:'+str(i),pfx+'AU13:'+str(i),pfx+'AU23:'+str(i)]
+                        equivs = [[],[],[],[],[],[]]
+                        for j in range(6):
+                            if uId[j] > 0:                               
                                 phaseVary.append(names[j])
-                                equivs[xId[j]-1].append([names[j],xCoef[j]])
+                                equivs[uId[j]-1].append([names[j],uCoef[j]])
                         for equiv in equivs:
                             if len(equiv) > 1:
                                 name = equiv[0][0]
                                 coef = equiv[0][1]
                                 for eqv in equiv[1:]:
                                     eqv[1] /= coef
-                                    G2mv.StoreEquivalence(name,(eqv,))
-                    if 'U' in at[ct+1]:
-                        if at[cia] == 'I':
-                            phaseVary.append(pfx+'AUiso:'+str(i))
-                        else:
-                            try:    #patch for sytsym name changes
-                                uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
-                            except KeyError:
-                                Sytsym = G2spc.SytSym(at[cx:cx+3],SGData)[0]
-                                at[cs] = Sytsym
-                                uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
-                            uId,uCoef = G2spc.GetCSuinel(at[cs])[:2]
-                            names = [pfx+'AU11:'+str(i),pfx+'AU22:'+str(i),pfx+'AU33:'+str(i),
-                                pfx+'AU12:'+str(i),pfx+'AU13:'+str(i),pfx+'AU23:'+str(i)]
-                            equivs = [[],[],[],[],[],[]]
-                            for j in range(6):
-                                if uId[j] > 0:                               
-                                    phaseVary.append(names[j])
-                                    equivs[uId[j]-1].append([names[j],uCoef[j]])
-                            for equiv in equivs:
-                                if len(equiv) > 1:
-                                    name = equiv[0][0]
-                                    coef = equiv[0][1]
-                                    for eqv in equiv[1:]:
-                                        eqv[1] /= coef
-                                    G2mv.StoreEquivalence(name,equiv[1:])
-#            elif General['Type'] == 'magnetic':
-#            elif General['Type'] == 'macromolecular':
+                                G2mv.StoreEquivalence(name,equiv[1:])
+                if General['Type'] in ['modulated','magnetic']:
+                    AtomSS = at[-1]['SS1']
+                    print AtomSS
             textureData = General['SH Texture']
             if textureData['Order']:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
@@ -1554,7 +1556,9 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         General = Phase['General']
         SGData = General['SGData']
         Atoms = Phase['Atoms']
-        AtLookup = G2mth.FillAtomLookUp(Atoms)
+        if Atoms and not General.get('doPawley'):
+            cx,ct,cs,cia = General['AtomPtrs']
+            AtLookup = G2mth.FillAtomLookUp(Atoms,cia+8)
         cell = General['Cell']
         pId = Phase['pId']
         pfx = str(pId)+'::'

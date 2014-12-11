@@ -1253,7 +1253,6 @@ def CompileVarDesc():
         # Phase vars (p::<var>)
         'A([0-5])' : 'Reciprocal metric tensor component \\1',
         'Vol' : 'Unit cell volume',
-        'mV([0-2])' : 'Modulation vector component \\1',
         # Atom vars (p::<var>:a)
         'dA([xyz])$' : 'change to atomic coordinate, \\1',
         'A([xyz])$' : '\\1 fractional atomic coordinate',
@@ -1293,8 +1292,16 @@ def CompileVarDesc():
         'RBRP([xyz])' : 'Residue rigid body position parameter',
         'RBRTr;.*' : 'Residue rigid body torsion parameter',
         'RBR([TLS])([123AB][123AB])' : 'Residue rigid body group disp. param.',
-        # Global vars (::<var>)
         'constr([0-9]*)' : 'Parameter from constraint',
+        # supersymmetry parameters
+        'mV([0-2])' : 'Modulation vector component \\1',
+#        'Flen','Fcent','Fsin','Fcos'
+        '[XYZ]sin'  : 'Sin position wave for \\1',
+        '[XYZ]cos'  : 'Cos position wave for \\1',
+        'U[123][123]sin' :  'Sin thermal wave for U\\1',
+        'U[123][123]cos' :  'Cos thermal wave for U\\1',
+        'M[XYZ]sin' :  'Sin mag. moment wave for \\1',
+        'M[XYZ]cos' :  'Cos mag. moment wave for \\1',
         # SASD vars (l:<var>;l = component)
         'Aspect ratio' : 'Particle aspect ratio',
         'Length' : 'Cylinder length',

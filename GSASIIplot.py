@@ -2765,10 +2765,10 @@ def PlotTexture(G2frame,data,Start=False):
     Page.canvas.draw()
 
 ################################################################################
-#####
+##### Modulation Plot
 ################################################################################
 
-def ModulationPlot(G2frame,data,atom):
+def ModulationPlot(G2frame,data,atom,Ax):
     
     print 'modulation plot for',atom[0]
     try:
@@ -2784,6 +2784,33 @@ def ModulationPlot(G2frame,data,atom):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
 #        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
 
+    General = data['General']
+    cx,ct,cs,cia = General['AtomPtrs']
+    Map = General['4DmapData']
+    MapType = Map['MapType']
+    rhoSize = np.array(Map['rho'].shape)
+    atxyz = np.array(atom[cx:cx+3])
+    Title = MapType+' modulation map for atom '+atom[0]+    \
+        ' at %.4f %.4f %.4f'%(atxyz[0],atxyz[1],atxyz[2])
+    ix = -np.array(np.rint(rhoSize[:3]*atxyz),dtype='i')
+    ix += (rhoSize[:3]/2)
+    ix = ix%rhoSize[:3]
+    print 'roll',ix,atxyz
+    rho = np.roll(np.roll(np.roll(Map['rho'],ix[0],axis=0),ix[1],axis=1),ix[2],axis=2)
+    ix = rhoSize[:3]/2
+    print 'slab',ix,rhoSize
+    ib = 4
+    if Ax == 'x':
+        slab = np.sum(np.sum(rho[:,ix[1]-ib:ix[1]+ib,ix[2]-ib:ix[2]+ib,:],axis=2),axis=1)
+    elif Ax == 'y':
+        slab = np.sum(np.sum(rho[ix[0]-ib:ix[0]+ib,:,ix[2]-ib:ix[2]+ib,:],axis=2),axis=0)
+    elif Ax == 'z':
+        slab = np.sum(np.sum(rho[ix[0]-ib:ix[0]+ib,ix[1]-ib:ix[1]+ib,:,:],axis=1),axis=0)
+    Plot.set_title(Title)
+    Plot.set_xlabel('t')
+    Plot.set_ylabel(r'$\mathsf{\Delta}$%s'%(Ax))
+    Plot.contour(slab,20,extent=(0.,1.,-.5,.5))
+    Page.canvas.draw()
     
 ################################################################################
 ##### PlotCovariance

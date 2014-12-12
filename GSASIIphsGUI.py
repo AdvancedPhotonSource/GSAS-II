@@ -240,12 +240,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                 
             def OnPhaseName(event):
                 oldName = generalData['Name']
-                generalData['Name'] = NameTxt.GetValue()
-                G2frame.G2plotNB.Rename(oldName,generalData['Name'])
-                G2frame.dataFrame.SetLabel('Phase Data for '+generalData['Name'])
-                G2frame.PatternTree.SetItemText(Item,generalData['Name'])
-                #Hmm, need to change phase name key in Reflection Lists for each histogram
-                            
+                phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
+                phaseNameList = usedHistograms.keys() # phase names in use
+                newName = NameTxt.GetValue().strip()
+                if newName and newName != oldName:
+                    newName = G2obj.MakeUniqueLabel(newName,phaseNameList)             
+                    generalData['Name'] = newName
+                    G2frame.G2plotNB.Rename(oldName,generalData['Name'])
+                    G2frame.dataFrame.SetLabel('Phase Data for '+generalData['Name'])
+                    G2frame.PatternTree.SetItemText(Item,generalData['Name'])
+                    #Hmm, need to change phase name key in Reflection Lists for each histogram
+                NameTxt.SetValue(generalData['Name'])
+                                                
             def OnPhaseType(event):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!
                     generalData['Type'] = TypeTxt.GetValue()

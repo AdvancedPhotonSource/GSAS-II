@@ -566,17 +566,22 @@ class GSASII(wx.Frame):
         self.CheckNotebook()
         newPhaseList = []
         for rd in rdlist:
+            PhaseName = ''
             dlg = wx.TextEntryDialog( # allow editing of phase name
-                self, 'Enter the name for the new phase',
-                'Edit phase name', rd.Phase['General']['Name'],
-                style=wx.OK)
-            dlg.CenterOnParent()
-            if dlg.ShowModal() == wx.ID_OK:
-                rd.Phase['General']['Name'] = dlg.GetValue()
+                                    self, 'Enter the name for the new phase',
+                                    'Edit phase name', rd.Phase['General']['Name'],
+                                    style=wx.OK)
+            while PhaseName == '':
+                dlg.CenterOnParent()
+                if dlg.ShowModal() == wx.ID_OK:
+                    PhaseName = dlg.GetValue().strip()
+                else:
+                    dlg.Destroy()
+                    return
             dlg.Destroy()
             # make new phase names unique
-            rd.Phase['General']['Name'] = G2obj.MakeUniqueLabel(rd.Phase['General']['Name'],phaseNameList)
-            PhaseName = rd.Phase['General']['Name']
+            rd.Phase['General']['Name'] = G2obj.MakeUniqueLabel(PhaseName,phaseNameList)
+            PhaseName = rd.Phase['General']['Name'][:]
             newPhaseList.append(PhaseName)
             print 'Read phase '+str(PhaseName)+' from file '+str(self.lastimport)
             if not G2gd.GetPatternTreeItemId(self,self.root,'Phases'):

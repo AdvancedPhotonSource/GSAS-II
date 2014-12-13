@@ -403,7 +403,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                 Volume = G2lat.calc_V(G2lat.cell2A(cell))
             elif 'spgroup' in S:
                 if 'X' in S:
-                    raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
+                    raise self.ImportException("Supersymmetry "+S+" too high; GSAS-II limited to (3+1) supersymmetry")            
                 SpGrp = S.split()[1]
                 SuperSg = ''
                 if '(' in SpGrp:    #supercell symmetry - split in 2

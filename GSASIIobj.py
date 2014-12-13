@@ -1293,9 +1293,10 @@ def CompileVarDesc():
         'RBRTr;.*' : 'Residue rigid body torsion parameter',
         'RBR([TLS])([123AB][123AB])' : 'Residue rigid body group disp. param.',
         'constr([0-9]*)' : 'Parameter from constraint',
-        # supersymmetry parameters
+        # supersymmetry parameters  'Flen','Fcent'?
         'mV([0-2])' : 'Modulation vector component \\1',
-#        'Flen','Fcent','Fsin','Fcos'
+        'Fsin'  :   'Sin site fraction modulation',
+        'Fcos'  :   'Cos site fraction modulation',
         '[XYZ]sin'  : 'Sin position wave for \\1',
         '[XYZ]cos'  : 'Cos position wave for \\1',
         'U[123][123]sin' :  'Sin thermal wave for U\\1',

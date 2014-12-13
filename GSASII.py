@@ -2748,7 +2748,8 @@ class GSASII(wx.Frame):
                             refList = self.PatternTree.GetItemPyData(Id)
                             if len(refList):
                                 for i,item in DelList:
-                                    del(refList[item])
+                                    if item in refList:
+                                        del(refList[item])
                             self.PatternTree.SetItemPyData(Id,refList)
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             finally:

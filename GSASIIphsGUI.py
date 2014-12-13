@@ -3971,9 +3971,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         # FillRigidBodyGrid executable code starts here
         if refresh:
             RigidBodies.DestroyChildren()
-        AtLookUp = G2mth.FillAtomLookUp(data['Atoms'])
         general = data['General']
-        cx = general['AtomPtrs'][0]
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        AtLookUp = G2mth.FillAtomLookUp(data['Atoms'],cia+8)
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
         RBData = G2frame.PatternTree.GetItemPyData(   
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
@@ -4343,9 +4343,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         RBNames = [RBData['Residue'][k]['RBname'] for k in rbKeys]
         RBIds = dict(zip(RBNames,rbKeys))
         general = data['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
         Atoms = data['Atoms']
-        AtLookUp = G2mth.FillAtomLookUp(Atoms)
+        AtLookUp = G2mth.FillAtomLookUp(Atoms,cia+8)
         if 'macro' not in general['Type']:
             print '**** ERROR - this phase is not a macromolecule ****'
             return
@@ -4428,10 +4429,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         FillRigidBodyGrid(True)
         
     def OnGlobalResRBTherm(event):
-        AtLookUp = G2mth.FillAtomLookUp(data['Atoms'])
         RBObjs = data['RBModels']['Residue']
         names = ['None','Uiso','T','TL','TLS']
         cia = data['General']['AtomPtrs'][3]
+        AtLookUp = G2mth.FillAtomLookUp(data['Atoms'],cia+8)
         dlg = wx.SingleChoiceDialog(G2frame,'Select','Residue thermal motion model',names)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()

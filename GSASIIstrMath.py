@@ -1535,6 +1535,8 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
             ratio = 1./np.where(ycmb,ycmb/ymb,1.e10)          
             refLists = Histogram['Reflection Lists']
             for phase in refLists:
+                if phase not in Phases:     #skips deleted or renamed phases silently!
+                    continue
                 Phase = Phases[phase]
                 im = 0
                 if Phase['General']['Type'] in ['modulated','magnetic']:
@@ -1580,8 +1582,12 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                     sumFosq += refl[8+im]**2
                     sumdF += np.abs(Fo-Fc)
                     sumdFsq += (refl[8+im]-refl[9+im])**2
-                Histogram['Residuals'][phfx+'Rf'] = min(100.,(sumdF/sumFo)*100.)
-                Histogram['Residuals'][phfx+'Rf^2'] = min(100.,np.sqrt(sumdFsq/sumFosq)*100.)
+                if sumFo:
+                    Histogram['Residuals'][phfx+'Rf'] = min(100.,(sumdF/sumFo)*100.)
+                    Histogram['Residuals'][phfx+'Rf^2'] = min(100.,np.sqrt(sumdFsq/sumFosq)*100.)
+                else:
+                    Histogram['Residuals'][phfx+'Rf'] = 100.
+                    Histogram['Residuals'][phfx+'Rf^2'] = 100.
                 Histogram['Residuals'][phfx+'Nref'] = len(refDict['RefList'])
                 Histogram['Residuals']['hId'] = hId
         elif 'HKLF' in histogram[:4]:
@@ -1639,6 +1645,8 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
             wave = parmDict[hfx+'Lam']
     for phase in Histogram['Reflection Lists']:
         refDict = Histogram['Reflection Lists'][phase]
+        if phase not in Phases:     #skips deleted or renamed phases silently!
+            continue
         Phase = Phases[phase]
         pId = Phase['pId']
         pfx = '%d::'%(pId)
@@ -1815,6 +1823,8 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             wave = parmDict[hfx+'Lam']
     for phase in Histogram['Reflection Lists']:
         refDict = Histogram['Reflection Lists'][phase]
+        if phase not in Phases:     #skips deleted or renamed phases silently!
+            continue
         Phase = Phases[phase]
         SGData = Phase['General']['SGData']
         SGMT = np.array([ops[0].T for ops in SGData['SGOps']])

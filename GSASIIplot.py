@@ -598,11 +598,13 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title='no phase'):
         Draw('key')
             
     Name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-    if Title != 'no phase':
+    if Title != 'no phase': #NB: save image as e.g. jpeg will fail if no phase; MyDir is unknown
         generalData = G2frame.GetPhaseData()[Title]['General']
         cell = generalData['Cell'][1:7]
+        Mydir = generalData['Mydir']
     else:
         cell = [10,10,10,90,90,90]
+        Mydir = G2frame.dirname
     drawingData = Data['Drawing']
     Super = Data['Super']
     SuperVec = []
@@ -1643,9 +1645,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     if PickId and not G2frame.Contour:
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         if G2frame.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
-            peaks = np.array((G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))))[0]
-            for peak in peaks:
-#                print 'peak',peak
+            peaks = np.array((G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))))
+            for peak in peaks[0]:
                 if peak[2]:
                     if G2frame.qPlot:
                         Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')

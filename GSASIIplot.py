@@ -548,10 +548,10 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title='no phase'):
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
             if mode in ['jpeg',]:
                 Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
-                im = Image.new("RGBA", (size[0],size[1]))
+                im = Im.new("RGBA", (size[0],size[1]))
             else:
                 Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
-                im = Image.new("RGB", (size[0],size[1]))
+                im = Im.new("RGB", (size[0],size[1]))
             im.fromstring(Pix)
             im.save(Fname,mode)
             cb.SetValue(' save as/key:')
@@ -4063,10 +4063,10 @@ def PlotStructure(G2frame,data,firstCall=False):
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
             if mode in ['jpeg',]:
                 Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
-                im = Image.new("RGBA", (size[0],size[1]))
+                im = Im.new("RGBA", (size[0],size[1]))
             else:
                 Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
-                im = Image.new("RGB", (size[0],size[1]))
+                im = Im.new("RGB", (size[0],size[1]))
             im.fromstring(Pix)
             im.save(Fname,mode)
             cb.SetValue(' save as/key:')

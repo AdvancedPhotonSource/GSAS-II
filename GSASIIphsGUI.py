@@ -207,7 +207,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'SGData':SGData
             'Cell':[False,10.,10.,10.,90.,90.,90,1000.]
             'AtomPtrs':[]
-            'Histogram list':['',]
             'Pawley dmin':1.0,
             'Pawley neg wt':0.0}
         'Atoms':[]
@@ -249,7 +248,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     G2frame.G2plotNB.Rename(oldName,generalData['Name'])
                     G2frame.dataFrame.SetLabel('Phase Data for '+generalData['Name'])
                     G2frame.PatternTree.SetItemText(Item,generalData['Name'])
-                    #Hmm, need to change phase name key in Reflection Lists for each histogram
+                    # change phase name key in Reflection Lists for each histogram
+                    for hist in data['Histograms']:
+                        ht = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
+                        rt = G2gd.GetPatternTreeItemId(G2frame,ht,'Reflection Lists')
+                        if not rt: continue
+                        RfList = G2frame.PatternTree.GetItemPyData(rt)
+                        if oldName not in RfList:
+                            print('Warning: '+oldName+' not in Reflection List for '+
+                                  hist)
+                            continue
+                        RfList[newName] = RfList[oldName]
+                        del RfList[oldName]                            
                 NameTxt.SetValue(generalData['Name'])
                                                 
             def OnPhaseType(event):

@@ -3982,7 +3982,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if refresh:
             RigidBodies.DestroyChildren()
         general = data['General']
-        cx,ct,cs,cia = generalData['AtomPtrs']
+        cx,ct,cs,cia = general['AtomPtrs']
         AtLookUp = G2mth.FillAtomLookUp(data['Atoms'],cia+8)
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
         RBData = G2frame.PatternTree.GetItemPyData(   
@@ -4353,7 +4353,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         RBNames = [RBData['Residue'][k]['RBname'] for k in rbKeys]
         RBIds = dict(zip(RBNames,rbKeys))
         general = data['General']
-        cx,ct,cs,cia = generalData['AtomPtrs']
+        cx,ct,cs,cia = general['AtomPtrs']
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
         Atoms = data['Atoms']
         AtLookUp = G2mth.FillAtomLookUp(Atoms,cia+8)

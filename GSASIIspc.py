@@ -21,6 +21,7 @@ import scipy.optimize as so
 import math
 import sys
 import os.path as ospath
+import config
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -602,8 +603,7 @@ def SSpcGroup(SGData,SSymbol):
                 SSGOps[i+1][1][3] = genQ[i]
                 E,SSGOps = extendSSGOps(SSGOps)
                 if not E:
-                    return E,SSGOps
-                
+                    return E,SSGOps                
 # tetragonal - all done & checked
         elif SGData['SGPtGrp'] == '4':  #OK
             SSGOps[1][0][3,3] = SSGKl[0]
@@ -726,7 +726,7 @@ def SSpcGroup(SGData,SSymbol):
         E,SSGOps = extendSSGOps(SSGOps)
         return E,SSGOps
         
-    def specialGen(gensym):
+    def specialGen(gensym,modsym):
         sym = ''.join(gensym)
         if SGData['SGPtGrp'] in ['2/m',] and 'n' in SGData['SpGrp']:
             if 's' in sym:
@@ -740,6 +740,22 @@ def SSpcGroup(SGData,SSymbol):
                 gensym = 'ss0'
             elif sym == 's00':
                 gensym = 's0s'
+        elif SGData['SGPtGrp'] in ['mmm',]:
+            if 'g' in modsym:
+                if sym == 's00':
+                    gensym = 's0s'
+                elif sym == '0s0':
+                    gensym = '0ss'
+            elif 'a' in modsym:
+                if sym == '0s0':
+                    gensym = 'ss0'
+                elif sym == '00s':
+                    gensym = 's0s'
+            elif 'b' in modsym:
+                if sym == '00s':
+                    gensym = '0ss'
+                elif sym == 's00':
+                    gensym = 'ss0'
         return gensym
                     
     def checkGen(gensym):
@@ -841,7 +857,7 @@ def SSpcGroup(SGData,SSymbol):
         return 'Wrong number of items in generator symbol '+''.join(gensym),None
     if not checkGen(gensym):
         return 'Generator '+''.join(gensym)+' not consistent with space group '+SGData['SpGrp'],None
-    gensym = specialGen(gensym)
+    gensym = specialGen(gensym,modsym)
     genQ = [Fracs[mod] for mod in gensym]
     if not genQ:
         genQ = [0,0,0,0]
@@ -861,9 +877,14 @@ def SSpcGroup(SGData,SSymbol):
     E,Result = genSSGOps()
     if E:
         SSGData['SSGOps'] = Result
-#        print SSGData['SSpGrp']
-#        for Op in Result:
-#            print SSMT2text(Op).replace(' ','')                                 
+        if config.debug:
+            print 'Super spacegroup operators for '+SSGData['SSpGrp']
+            for Op in Result:
+                print SSMT2text(Op).replace(' ','')
+            if SGData['SGInv']:                                 
+                for Op in Result:
+                    Op = [-Op[0],-Op[1]%1.]
+                    print SSMT2text(Op).replace(' ','')                                 
         return None,SSGData
     else:
         return Result+'\nOperator conflict - incorrect superspace symbol',None
@@ -1400,6 +1421,126 @@ def GetCSuinel(siteSym):
     indx = GetNXUPQsym(siteSym)
     return CSuinel[indx[1]]
     
+def GetSSfxuinel(XYZ,UIJ,SGData,SSGData):
+    CSI = {'Sfrac':[[0,1],[1.,1.]],'Spos':[[0,1,2, 0,1,2],[1.,1.,1., 1.,1.,1.]],    #sin & cos
+        'Sadp':[[0,1,2,3,4,5, 0,1,2,3,4,5],[1.,1.,1.,1.,1.,1., 1.,1.,1.,1.,1.,1.]],
+        'Smag':[[0,1,2, 0,1,2],[1.,1.,1., 1.,1.,1.]]}
+    deltx = np.eye((3))*.001
+    deltu = np.eye((6))*.0001
+    xyz = np.array(XYZ)%1.
+    uij = np.array(UIJ)
+    SGOps = SGData['SGOps']
+    SSGOps = SSGData['SSGOps']
+    ssop = SSGOps[0]
+    sop = SGOps[0]
+    for iop,Op in enumerate(SGOps):
+        nxyz = (np.inner(Op[0],xyz)+Op[1])%1.
+        if SGData['SGInv'] and np.allclose(xyz,-nxyz%1.,1.e-6):
+            ssop = SSGOps[iop]
+            ssop = [-ssop[0],-ssop[1]%1.]
+            sop = [-Op[0],-Op[1]%1.]
+            break
+        elif np.allclose(xyz,nxyz,1.e-6) and iop:
+            ssop = SSGOps[iop]
+            sop = SGOps[iop]
+            break
+    siteSym = SytSym(XYZ,SGData)[0].strip().split('(')[0]
+    OpText =  MT2text(sop).replace(' ','')
+    SSOptext = SSMT2text(ssop).replace(' ','')
+    if siteSym == '1':   #"1" site symmetry
+        return CSI
+    elif siteSym == '-1':   #"-1" site symmetry
+        CSI['Spos'][0] = [0,1,2, -1,-1,-1]
+        CSI['Sadp'][0] = [-1,-1,-1,-1,-1,-1, 0,1,2,3,4,5,]
+        return CSI        
+    print siteSym[0],OpText,SSOptext    
+    UniqAx = {'a':'a','b':'b','c':'g'}
+    if SGData['SGLaue'] == '2/m':
+        if UniqAx[SGData['SGUniq']] in SSGData['modSymb']:   #e.g. (0b0)
+            if 's' in SSGData['SSpGrp'].split('(')[1]:
+                if siteSym == 'm':
+                    CSI['Spos'][0] = [0,-1,1, -1,1,-1]
+                    CSI['Sadp'][0] = [0,1,2,-1,3,-1, -1,-1,-1,4,-1,5]
+                elif siteSym == '2/m':
+                    CSI['Spos'][0] = [0,-1,1, -1,-1,-1]
+                    CSI['Sadp'][0] = [-1,-1,-1,-1,-1,-1, -1,-1,-1,0,-1,1]
+                elif siteSym == '2':
+                    CSI['Spos'][0] = [0,-1,1, 2,-1,3]                
+                    CSI['Sadp'][0] = [-1,-1,-1,0,-1,1, -1,-1,-1,2,-1,3]
+            elif '1/2' in SSGData['modSymb']:    #e.g. (0b1/2)
+                if siteSym == 'm':
+                    CSI['Spos'][0] = [-1,-1,-1, -1,-1,-1]
+                    CSI['Sadp'][0] = [-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1]
+                elif siteSym == '2/m':
+                    CSI['Spos'][0] = [0,-1,1, -1,-1,-1]
+                    CSI['Sadp'][0] = [-1,-1,-1,-1,-1,-1, 0,1,2,-1,3,-1]
+                elif siteSym == '2':
+                    CSI['Spos'][0] = [0,-1,1, 2,-1,3]
+                    CSI['Sadp'][0] = [-1,-1,-1,0,-1,1, -1,-1,-1,2,-1,3]
+            else:
+                if siteSym == 'm':
+                    CSI['Spos'][0] = [-1,0,-1, 1,-1,2]
+                    CSI['Sadp'][0] = [-1,-1,-1,0,-1,1, 2,3,4,-1,5,-1]
+                elif siteSym == '2/m':
+                    CSI['Spos'][0] = [-1,0,-1, -1,-1,-1]
+                    CSI['Sadp'][0] = [-1,-1,-1,-1,-1,-1, 0,1,2,-1,3,-1]
+                elif siteSym == '2':
+                    CSI['Spos'][0] = [-1,0,-1, -1,1,-1]
+                    CSI['Sadp'][0] = [0,1,2,-1,3,-1, 4,5,6,-1,7,-1]
+            
+        else:   #e.g. (a0g)
+            if 's' in SSGData['SSpGrp'].split('(')[1]:
+                if siteSym == 'm':
+                    CSI['Spos'][0] = [-1,0,-1, -1,1,-1]
+                    CSI['Sadp'][0] = [-1,-1,-1,0,-1,1, -1,-1,-1,2,-1,3]
+                elif siteSym == '2/m':
+                    CSI['Spos'][0] = [-1,0,-1, -1,-1,-1]
+                    CSI['Sadp'][0] = [-1,-1,-1,-1,-1,-1, -1,-1,-1,0,-1,1]
+                elif siteSym == '2':
+                    CSI['Spos'][0] = [-1,0,-1, 1,-1,2]
+                    CSI['Sadp'][0] = [0,1,2,-1,3,-1, -1,-1,-1,4,-1,5]
+            else:
+                if siteSym == 'm':
+                    CSI['Spos'][0] = [0,-1,1, 2,-1,3]
+                    CSI['Sadp'][0] = [0,1,2,-1,3,-1, 4,5,6,-1,7,-1]
+                elif siteSym == '2/m':
+                    CSI['Spos'][0] = [0,-1,1, -1,-1,-1]
+                    CSI['Sadp'][0] = [-1,-1,-1,-1,-1,-1, 0,1,2,-1,3,-1]
+                elif siteSym == '2':
+                    CSI['Spos'][0] = [0,-1,1, -1,2,-1]
+                    CSI['Sadp'][0] = [-1,-1,-1,0,-1,1, 2,3,4,-1,5,-1]
+        Sx = CSI['Spos'][0]
+        Su = CSI['Sadp'][0]
+        if SGData['SGUniq'] == 'a':
+            CSI['Spos'][0] = [Sx[1],Sx[2],Sx[0], Sx[4],Sx[5],Sx[3]]
+            CSI['Sadp'][0] = [Su[1],Sx[2],Sx[0],Su[4],Su[5],Su[3], Su[7],Su[8],Su[6],Su[10],Su[11],Su[9]]
+        elif SGData['SGUniq'] == 'c':
+            CSI['Spos'][0] = [Sx[2],Sx[0],Sx[1], Sx[5],Sx[3],Sx[4]]
+            CSI['Sadp'][0] = [Su[2],Su[0],Su[1],Su[5],Su[3],Su[4], Su[8],Su[6],Su[7],Su[11],Su[9],Su[10]]
+#        return CSI
+#    elif SGData['SGLaue'] == 'mmm':
+#    elif SGData['SGLaue'] in ['4/m','4/mmm']:
+#    elif SGData['SGLaue'] in ['3','3m1','31m']:
+#    elif SGData['SGLaue'] in ['6/m','6/mmm']:
+#        
+    xsin = np.zeros(3)
+    xcos = np.zeros(3)
+    usin = np.zeros(6)
+    ucos = np.zeros(6)
+    for i,idelt in enumerate(deltx):
+        nxyz = (np.inner(sop[0],(xyz+idelt))+sop[1])%1.
+        xcos[i] = np.allclose((xyz+idelt)%1.,nxyz,1.e-6)
+        xsin[i] = np.allclose((xyz-idelt)%1.,nxyz,1.e-6)
+    print CSI['Spos'][0]
+    print xsin,xcos
+    for i,idelt in enumerate(deltu):
+        nuij = U2Uij(np.inner(sop[0],np.inner(Uij2U(uij+idelt),sop[0])))
+        ucos[i] = np.allclose((uij+idelt),nuij,1.e-6)
+        usin[i] = np.allclose((uij-idelt),nuij,1.e-6)
+    print CSI['Sadp'][0]
+    print usin,ucos
+    return CSI
+    
 def MustrainNames(SGData):
     'Needs a doc string'
     laue = SGData['SGLaue']
@@ -1903,44 +2044,39 @@ ssdict = {
     'P 1':['(abg)',],'P -1':['(abg)',],
 #monoclinic - done
 #3
-    'P 2':['(a0g)','(a1/2g)','(0b0)','(0b0)s','(1/2b0)','(1/2b0)s','(0b1/2)','(0b1/2)s',],
+    'P 2':['(a0g)','(a1/2g)','(0b0)','(0b0)s','(1/2b0)','(0b1/2)',],
 #4        
-    'P 21':['(a0g)','(0b0)','(0b0)s','(1/2b0)','(1/2b0)s','(0b1/2)','(0b1/2)s',],
+    'P 21':['(a0g)','(0b0)','(1/2b0)','(0b1/2)',],
 #5
-    'C 2':['(a0g)','(0b0)','(0b0)s','(0b1/2)','(0b1/2)s',],
+    'C 2':['(a0g)','(0b0)','(0b0)s','(0b1/2)',],
 #6
-    'P m':['(a0g)','(a0g)s','(a1/2g)','(a1/2g)s','(0b0)','(1/2b0)','(0b1/2)',],
+    'P m':['(a0g)','(a0g)s','(a1/2g)','(0b0)','(1/2b0)','(0b1/2)',],
 #7
-    'P a':['(a0g)','(a0g)s','(a1/2g)','(a1/2g)s','(0b0)','(0b1/2)',],
-    'P c':['(a0g)','(a0g)s','(a1/2g)','(a1/2g)s','(0b0)','(1/2b0)',],
-    'P n':['(a0g)','(a0g)s','(a1/2g)','(a1/2g)s','(0b0)','(1/2b1/2)',],
+    'P a':['(a0g)','(a1/2g)','(0b0)','(0b1/2)',],
+    'P c':['(a0g)','(a1/2g)','(0b0)','(1/2b0)',],
+    'P n':['(a0g)','(a1/2g)','(0b0)','(1/2b1/2)',],
 #8        
     'C m':['(a0g)','(a0g)s','(0b0)','(0b1/2)',],
 #9        
     'C c':['(a0g)','(a0g)s','(0b0)',],
     'C n':['(a0g)','(a0g)s','(0b0)',],
 #10        
-    'P 2/m':['(a0g)','(a0g)0s','(a1/2g)','(a1/2g)0s',
-        '(0b0)','(0b0)s0','(1/2b0)','(1/2b0)s0','(0b1/2)','(0b1/2)s0',],
+    'P 2/m':['(a0g)','(a0g)0s','(a1/2g)','(0b0)','(0b0)s0','(1/2b0)','(0b1/2)',],
 #11
-    'P 21/m':['(a0g)','(a0g)0s','(0b0)','(0b0)s0',
-        '(1/2b0)','(1/2b0)s0','(0b1/2)','(0b1/2)s0'],
+    'P 21/m':['(a0g)','(a0g)0s','(0b0)','(0b0)s0','(1/2b0)','(0b1/2)',],
 #12        
-    'C 2/m':['(a0g)','(a0g)0s','(0b0)','(0b0)s0','(0b1/2)','(0b1/2)s0',],
+    'C 2/m':['(a0g)','(a0g)0s','(0b0)','(0b0)s0','(0b1/2)',],
 #13
-    'P 2/c':['(a0g)','(a0g)0s','(a1/2g)','(a1/2g)0s',
-        '(0b0)','(0b0)s0','(1/2b0)','(1/2b0)s0',],
-    'P 2/a':['(a0g)','(a0g)0s','(a1/2g)','(a1/2g)0s',
-        '(0b0)','(0b0)s0','(0b1/2)','(0b1/2)s0',],
-    'P 2/n':['(a0g)','(a0g)0s','(a1/2g)','(a1/2g)0s',
-        '(0b0)','(0b0)s0','(1/2b1/2)','(1/2b1/2)s0',],
+    'P 2/c':['(a0g)','(a0g)0s','(a1/2g)','(0b0)','(0b0)s0','(1/2b0)',],
+    'P 2/a':['(a0g)','(a0g)0s','(a1/2g)','(0b0)','(0b0)s0','(0b1/2)',],
+    'P 2/n':['(a0g)','(a0g)0s','(a1/2g)','(0b0)','(0b0)s0','(1/2b1/2)',],
 #14
-    'P 21/c':['(a0g)','(a0g)0s','(0b0)','(0b0)s0','(1/2b0)','(1/2b0)s0',],
-    'P 21/a':['(a0g)','(a0g)0s','(0b0)','(0b0)s0','(0b1/2)','(0b1/2)s0',],
-    'P 21/n':['(a0g)','(a0g)0s','(0b0)','(0b0)s0','(1/2b1/2)','(1/2b1/2)s0',],
+    'P 21/c':['(a0g)','(0b0)','(1/2b0)',],
+    'P 21/a':['(a0g)','(0b0)','(0b1/2)',],
+    'P 21/n':['(a0g)','(0b0)','(1/2b1/2)',],
 #15
-    'C 2/c':['(a0g)','(a0g)0s','(0b0)','(0b0)s0',],
-    'C 2/n':['(a0g)','(a0g)0s','(0b0)','(0b0)s0',],
+    'C 2/c':['(a0g)','(0b0)','(0b0)s0',],
+    'C 2/n':['(a0g)','(0b0)','(0b0)s0',],
 #orthorhombic
 #16    
     'P 2 2 2':['(00g)','(00g)00s','(01/2g)','(1/20g)','(1/21/2g)',

@@ -6,6 +6,8 @@
 @echo             as Operator of Argonne National Laboratory.
 @echo                            Please cite:
 @echo      B.H. Toby and R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013)
+@echo                   for small angle use also cite:
+@echo      R.B. Von Dreele, J. Appl. Cryst. 47, 1784-9 (2014)
 @echo ========================================================================
 @
 @REM Get this script's directory; make sure that the path ends
@@ -13,7 +15,9 @@
 @set gsasloc=%~dp0\*
 @set gsasloc=%gsasloc:\\*=\*%
 @set gsasloc=%gsasloc:\*=\%
-D:\Python27\python "%gsasloc%\GSASII.py" %1
+@rem one can use a specific reference to a python via, e.g.:
+@set pythonloc=%D:\Python27\python%
+%pythonloc% "%gsasloc%\GSASII.py" %1
 @REM To keep the window from disappearing with any error messages
 pause
 

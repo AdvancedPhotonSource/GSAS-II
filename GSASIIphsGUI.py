@@ -619,8 +619,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             modSizer.Add(wx.StaticText(General,label=' Superspace group: '+generalData['SGData']['SpGrp']),0,WACV)
             SSChoice = G2spc.ssdict.get(generalData['SGData']['SpGrp'],[])
             if SSChoice:
-                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=SSChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=SSChoice,style=wx.CB_DROPDOWN)   #wx.CB_READONLY|
                 superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)
+                superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)
             else:   #nonstandard space group symbol not in my dictionary
                 superGp = wx.TextCtrl(General,value=generalData['SuperSg'],style=wx.TE_PROCESS_ENTER)
                 superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)                        
@@ -2007,7 +2008,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomSizer.Add(mapSel,0,WACV)
             return atomSizer
             
-        def WaveSizer(waveBlk,Stype,typeName,Names):
+        def WaveSizer(waveBlk,Stype,typeName,Names,waveCSI):
             
             def OnAddWave(event):
                 Obj = event.GetEventObject()
@@ -2052,10 +2053,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Waves = wx.FlexGridSizer(1,8,5,5)
                 for iwave,wave in enumerate(waveBlk):
                     for ival,val in enumerate(wave[0]):
-                        waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_PROCESS_ENTER)
-                        waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
-                        waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
-                        Indx[waveVal.GetId()] = [iatm,Stype,iwave,ival]
+                        if waveCSI[0][ival] < 0:
+                            waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_READONLY)
+                            waveVal.SetBackgroundColour(VERY_LIGHT_GREY)
+                        else:
+                            waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_PROCESS_ENTER)
+                            waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
+                            waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
+                            Indx[waveVal.GetId()] = [iatm,Stype,iwave,ival]
                         Waves.Add(waveVal,0,WACV)
                         if len(wave[0]) > 6 and ival == 5:
                             Waves.Add((5,5),0)
@@ -2100,6 +2105,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Indx = {}
         G2frame.dataFrame.SetStatusText('')
         generalData = data['General']
+        SGData = generalData['SGData']
+        SSGData = generalData['SSGData']
         cx,ct,cs,cia = generalData['AtomPtrs']
         atomData = data['Atoms']
         if waveData.GetSizer():
@@ -2118,13 +2125,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if generalData['Type'] in ['modulated','magnetic']:
             mainSizer.Add(MapSizer(),0,WACV)            
             for iatm,atom in enumerate(atomData):
+                xyz = atom[cx:cx+3]
+                uij = atom[cia+2:cia+8]
+                CSI = G2spc.GetSSfxuinel(xyz,uij,SGData,SSGData)
                 for SS in ['SS1',]:  #future SS2 & SS3 - I doubt it!
                     G2gd.HorizontalLine(mainSizer,waveData)
                     mainSizer.Add(AtomSizer(SS,atom))
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         if generalData['Type'] == 'modulated' and Stype == 'Smag':
                             break
-                        mainSizer.Add(WaveSizer(atom[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype]))
+                        mainSizer.Add(WaveSizer(atom[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype],CSI[Stype]))
                         
         SetPhaseWindow(G2frame.dataFrame,waveData,mainSizer)
                        
@@ -2636,7 +2646,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             XYZ = -XYZ
                         XYZ = XYZ+cent+Cell
                         if Force:
-                            XYZ = G2spc.MoveToUnitCell(XYZ)
+                            XYZ %= 1.       #G2spc.MoveToUnitCell(XYZ)
                         if noDuplicate(XYZ,atomData):
                             atom = copy.copy(atomData[ind])
                             atom[cx:cx+3] = XYZ
@@ -2646,9 +2656,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             atom[cx+3] = G2spc.StringOpsProd(atomOp,newOp,SGData)
                             if atom[cuia] == 'A':
                                 Uij = atom[cuij:cuij+6]
-                                U = G2spc.Uij2U(Uij)
-                                U = np.inner(np.inner(M,U),M)
-                                Uij = G2spc.U2Uij(U)
+                                Uij = G2spc.U2Uij(np.inner(np.inner(M,G2spc.Uij2U(Uij)),M))
                                 atom[cuij:cuij+6] = Uij
                             atomData.append(atom)
             finally:

@@ -21,7 +21,6 @@ import scipy.optimize as so
 import math
 import sys
 import os.path as ospath
-import config
 
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
@@ -29,6 +28,7 @@ import pyspg
 
 npsind = lambda x: np.sin(x*np.pi/180.)
 npcosd = lambda x: np.cos(x*np.pi/180.)
+DEBUG = True
     
 ################################################################################
 #### Space group codes
@@ -877,7 +877,7 @@ def SSpcGroup(SGData,SSymbol):
     E,Result = genSSGOps()
     if E:
         SSGData['SSGOps'] = Result
-        if config.debug:
+        if DEBUG:
             print 'Super spacegroup operators for '+SSGData['SSpGrp']
             for Op in Result:
                 print SSMT2text(Op).replace(' ','')
@@ -1453,7 +1453,7 @@ def GetSSfxuinel(XYZ,UIJ,SGData,SSGData):
         CSI['Spos'][0] = [0,1,2, -1,-1,-1]
         CSI['Sadp'][0] = [-1,-1,-1,-1,-1,-1, 0,1,2,3,4,5,]
         return CSI        
-    print siteSym[0],OpText,SSOptext    
+    print siteSym,OpText,SSOptext    
     UniqAx = {'a':'a','b':'b','c':'g'}
     if SGData['SGLaue'] == '2/m':
         if UniqAx[SGData['SGUniq']] in SSGData['modSymb']:   #e.g. (0b0)
@@ -1529,14 +1529,17 @@ def GetSSfxuinel(XYZ,UIJ,SGData,SSGData):
     ucos = np.zeros(6)
     for i,idelt in enumerate(deltx):
         nxyz = (np.inner(sop[0],(xyz+idelt))+sop[1])%1.
-        xcos[i] = np.allclose((xyz+idelt)%1.,nxyz,1.e-6)
-        xsin[i] = np.allclose((xyz-idelt)%1.,nxyz,1.e-6)
+        print 'nxyz',i,nxyz
+        xsin[i] = np.equal((xyz-idelt)%1.,nxyz)[i]
+        print 'sin',(xyz-idelt)%1.
+        xcos[i] = np.equal((xyz+idelt)%1.,nxyz)[i]
+        print 'cos',(xyz+idelt)%1.
     print CSI['Spos'][0]
     print xsin,xcos
     for i,idelt in enumerate(deltu):
-        nuij = U2Uij(np.inner(sop[0],np.inner(Uij2U(uij+idelt),sop[0])))
-        ucos[i] = np.allclose((uij+idelt),nuij,1.e-6)
-        usin[i] = np.allclose((uij-idelt),nuij,1.e-6)
+        nuij = U2Uij(np.inner(sop[0],np.inner(np.abs(Uij2U(uij+idelt)),sop[0])))
+        usin[i] = np.equal(np.abs(uij-idelt),nuij)[i]
+        ucos[i] = np.equal(np.abs(uij+idelt),nuij)[i]
     print CSI['Sadp'][0]
     print usin,ucos
     return CSI

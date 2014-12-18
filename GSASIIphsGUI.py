@@ -269,6 +269,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if 'SuperSg' not in generalData:
                             generalData['SuperSg'] = SetDefaultSSsymbol()
                             generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
+                    pages = [G2frame.dataDisplay.GetPageText(PageNum) for PageNum in range(G2frame.dataDisplay.GetPageCount())]
+                    if 'Wave Data' not in pages:
+                        G2frame.waveData = wx.ScrolledWindow(G2frame.dataDisplay)
+                        G2frame.dataDisplay.InsertPage(3,G2frame.waveData,'Wave Data')
                     wx.CallAfter(UpdateGeneral)
                 else:
                     G2frame.ErrorDialog('Phase type change error','Can change phase type only if there are no atoms')
@@ -1001,6 +1005,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #####  Atom routines
 ################################################################################
 
+    SSdefault = {'SS1':{'waveType':'Fourier','crenelType':None,'Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}
     def FillAtomsGrid(Atoms):
         '''Display the contents of the Atoms tab
         '''
@@ -1379,7 +1384,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         else:
             for item in Items:
                 G2frame.dataFrame.AtomsMenu.Enable(item,False)
-
         AAchoice = ": ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK"
         Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",]+ \
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+[wg.GRID_VALUE_FLOAT+':10,4', #x,y,z,frac
@@ -1435,7 +1439,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif generalData['Type'] == 'nuclear':
             atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['modulated','magnetic']:
-            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],[],[]])
+            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],SSdefault])
         SetupGeneral()
         if 'Atoms' in data['Drawing']:            
             DrawAtomAdd(data['Drawing'],atomData[-1])
@@ -1530,7 +1534,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             elif generalData['Type'] == 'nuclear':
                 atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
             elif generalData['Type'] in ['modulated','magnetic']:
-                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],[],[]])
+                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],SSdefault])
             SetupGeneral()
 
     def AtomDelete(event):
@@ -2000,12 +2004,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
             atomSizer.Add(waveType,0,WACV)
             axchoice = ['x','y','z']
-            atomSizer.Add(wx.StaticText(waveData,label=' Show contour map for axis:'),0,WACV)
-            mapSel = wx.ComboBox(waveData,value=' ',choices=axchoice,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            mapSel.Bind(wx.EVT_COMBOBOX,OnShowWave)
-            Indx[mapSel.GetId()] = atom
-            atomSizer.Add(mapSel,0,WACV)
+            if len(Map['rho']):
+                atomSizer.Add(wx.StaticText(waveData,label=' Show contour map for axis:'),0,WACV)
+                mapSel = wx.ComboBox(waveData,value=' ',choices=axchoice,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                mapSel.Bind(wx.EVT_COMBOBOX,OnShowWave)
+                Indx[mapSel.GetId()] = atom
+                atomSizer.Add(mapSel,0,WACV)
             return atomSizer
             
         def WaveSizer(waveBlk,Stype,typeName,Names,waveCSI):
@@ -2036,7 +2041,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 iatm,item,iwave = Indx[Obj.GetId()]
                 del atomData[iatm][-1][SS][item][iwave]
                 UpdateWavesData()                
-                
+            
             waveSizer = wx.BoxSizer(wx.VERTICAL)
             waveHead = wx.BoxSizer(wx.HORIZONTAL)
             waveHead.Add(wx.StaticText(waveData,label=typeName+' modulation parameters: '),0,WACV)
@@ -2085,7 +2090,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnMapType(event):
                 Map['MapType'] = mapType.GetValue()
                 
-            Map = generalData['4DmapData']
             Map['Resolution'] = 0.25
             refList = data['Histograms'].keys()
             mapSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2103,12 +2107,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return mapSizer
             
         Indx = {}
+        waveData = G2frame.waveData
         G2frame.dataFrame.SetStatusText('')
         generalData = data['General']
         SGData = generalData['SGData']
         SSGData = generalData['SSGData']
         cx,ct,cs,cia = generalData['AtomPtrs']
         atomData = data['Atoms']
+        Map = generalData['4DmapData']
         if waveData.GetSizer():
             waveData.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -5814,8 +5820,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.AddPage(Atoms,'Atoms')
     Pages.append('Atoms')
     if data['General']['Type'] in ['modulated','magnetic']:
-        waveData = wx.ScrolledWindow(G2frame.dataDisplay)
-        G2frame.dataDisplay.AddPage(waveData,'Wave Data')
+        G2frame.waveData = wx.ScrolledWindow(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(G2frame.waveData,'Wave Data')
         Pages.append('Wave Data')        
     drawOptions = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')

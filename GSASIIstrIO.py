@@ -1064,7 +1064,43 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                                 G2mv.StoreEquivalence(name,equiv[1:])
                 if General['Type'] in ['modulated','magnetic']:
                     AtomSS = at[-1]['SS1']
-                    print AtomSS
+                    CSI = G2spc.GetSSfxuinel(at[cx:cx+3],at[cia+2:cia+8],SGData,SSGData)
+                    for Stype in ['Sfrac','Spos','Sadp','Smag']:
+                        Waves = AtomSS[Stype]
+                        uId,uCoef = CSI[Stype]
+                        for iw,wave in enumerate(Waves):
+                            stiw = str(i)+':'+str(iw)
+                            if Stype == 'Spos':
+                                names = [pfx+'Xsin:'+stiw,pfx+'Ysin:'+stiw,pfx+'Zsin:'+stiw,
+                                    pfx+'Xcos:'+stiw,pfx+'Ycos:'+stiw,pfx+'Zcos:'+stiw]
+                                equivs = [[],[],[], [],[],[]]
+                            elif Stype == 'Sadp':
+                                names = [pfx+'U11sin:'+stiw,pfx+'U22sin:'+stiw,pfx+'U33sin:'+stiw,
+                                    pfx+'U12sin:'+stiw,pfx+'U13sin:'+stiw,pfx+'U23sin:'+stiw,
+                                    pfx+'U11cos:'+stiw,pfx+'U22cos:'+stiw,pfx+'U33cos:'+stiw,
+                                    pfx+'U12cos:'+stiw,pfx+'U13cos:'+stiw,pfx+'U23cos:'+stiw]
+                                equivs = [[],[],[],[],[],[], [],[],[],[],[],[]]
+                            elif Stype == 'Sfrac':
+                                equivs = [[],[]]
+                                names = [pfx+'Fsin:'+stiw,pfx+'Fcos:'+stiw]
+                            elif Stype == 'Smag':
+                                equivs = [[],[],[], [],[],[]]
+                                names = [pfx+'MXsin:'+stiw,pfx+'MYsin:'+stiw,pfx+'MZsin:'+stiw,
+                                    pfx+'MXcos:'+stiw,pfx+'MYcos:'+stiw,pfx+'MZcos:'+stiw]
+                            phaseDict.update(dict(zip(names,wave[0])))
+                            if wave[1]:
+                                for j in range(len(equivs)):
+                                    if uId[j] > 0:                               
+                                        phaseVary.append(names[j])
+                                        equivs[uId[j]-1].append([names[j],uCoef[j]])
+                                for equiv in equivs:
+                                    if len(equiv) > 1:
+                                        name = equiv[0][0]
+                                        coef = equiv[0][1]
+                                        for eqv in equiv[1:]:
+                                            eqv[1] /= coef
+                                        G2mv.StoreEquivalence(name,equiv[1:])
+                                            
             textureData = General['SH Texture']
             if textureData['Order']:
                 phaseDict[pfx+'SHorder'] = textureData['Order']

@@ -1293,16 +1293,16 @@ def CompileVarDesc():
         'RBRTr;.*' : 'Residue rigid body torsion parameter',
         'RBR([TLS])([123AB][123AB])' : 'Residue rigid body group disp. param.',
         'constr([0-9]*)' : 'Parameter from constraint',
-        # supersymmetry parameters  'Flen','Fcent'?
-        'mV([0-2])' : 'Modulation vector component \\1',
-        'Fsin'  :   'Sin site fraction modulation',
-        'Fcos'  :   'Cos site fraction modulation',
-        '[XYZ]sin'  : 'Sin position wave for \\1',
-        '[XYZ]cos'  : 'Cos position wave for \\1',
-        'U[123][123]sin' :  'Sin thermal wave for U\\1',
-        'U[123][123]cos' :  'Cos thermal wave for U\\1',
-        'M[XYZ]sin' :  'Sin mag. moment wave for \\1',
-        'M[XYZ]cos' :  'Cos mag. moment wave for \\1',
+        # supersymmetry parameters  p::<var>:a:o 'Flen','Fcent'?
+        'mV([0-2])$' : 'Modulation vector component \\1',
+        'Fsin$'  :   'Sin site fraction modulation',
+        'Fcos$'  :   'Cos site fraction modulation',
+        '([XYZ])sin'  : 'Sin position wave for \\1',
+        '([XYZ])cos'  : 'Cos position wave for \\1',
+        'U([123][123])sin$' :  'Sin thermal wave for U\\1',
+        'U([123][123])cos$' :  'Cos thermal wave for U\\1',
+        'M([XYZ])sin$' :  'Sin mag. moment wave for \\1',
+        'M([XYZ])cos$' :  'Cos mag. moment wave for \\1',
         # SASD vars (l:<var>;l = component)
         'Aspect ratio' : 'Particle aspect ratio',
         'Length' : 'Cylinder length',
@@ -1348,6 +1348,7 @@ def getDescr(name):
     for key in reVarDesc:
         m = key.match(name)
         if m:
+            reVarDesc[key]
             return m.expand(reVarDesc[key])
     return None
 

@@ -2138,7 +2138,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     G2gd.HorizontalLine(mainSizer,waveData)
                     mainSizer.Add(AtomSizer(SS,atom))
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
-                        if generalData['Type'] == 'modulated' and Stype == 'Smag':
+                        if atom[cia] != 'A' and Stype == 'Sadp':    #Uiso can't have modulations!
+                            continue
+                        if generalData['Type'] != 'magnetic' and Stype == 'Smag':
                             break
                         mainSizer.Add(WaveSizer(atom[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype],CSI[Stype]))
                         

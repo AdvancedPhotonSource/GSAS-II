@@ -5694,18 +5694,26 @@ def MovePatternTreeToGrid(G2frame,item):
     elif 'I(Q)' in G2frame.PatternTree.GetItemText(item):
         G2frame.PickId = item
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
+        G2pdG.UpdatePDFGrid(G2frame,data)
         G2plt.PlotISFG(G2frame,type='I(Q)',newPlot=True)
     elif 'S(Q)' in G2frame.PatternTree.GetItemText(item):
         G2frame.PickId = item
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
+        G2pdG.UpdatePDFGrid(G2frame,data)
         G2plt.PlotISFG(G2frame,type='S(Q)',newPlot=True)
     elif 'F(Q)' in G2frame.PatternTree.GetItemText(item):
         G2frame.PickId = item
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
+        G2pdG.UpdatePDFGrid(G2frame,data)
         G2plt.PlotISFG(G2frame,type='F(Q)',newPlot=True)
     elif 'G(R)' in G2frame.PatternTree.GetItemText(item):
         G2frame.PickId = item
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
+        data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
+        G2pdG.UpdatePDFGrid(G2frame,data)
         G2plt.PlotISFG(G2frame,type='G(R)',newPlot=True)            
     elif G2frame.PatternTree.GetItemText(parentID) == 'Phases':
         G2frame.PickId = item

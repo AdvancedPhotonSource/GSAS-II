@@ -4270,10 +4270,10 @@ def UpdatePDFGrid(G2frame,data):
             dlg.Destroy()
                 
     def OnSavePDFControls(event):
-        print 'save PDF controls?'
+        print 'save PDF controls? TBD'
         
     def OnLoadPDFControls(event):
-        print 'Load PDF controls?'
+        print 'Load PDF controls? TBD'
         
     def OnAddElement(event):
         ElList = data['ElList']

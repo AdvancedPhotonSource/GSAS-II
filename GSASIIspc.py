@@ -1425,9 +1425,11 @@ def GetSSfxuinel(XYZ,UIJ,SGData,SSGData):
     CSI = {'Sfrac':[[0,1],[1.,1.]],'Spos':[[0,1,2, 0,1,2],[1.,1.,1., 1.,1.,1.]],    #sin & cos
         'Sadp':[[0,1,2,3,4,5, 0,1,2,3,4,5],[1.,1.,1.,1.,1.,1., 1.,1.,1.,1.,1.,1.]],
         'Smag':[[0,1,2, 0,1,2],[1.,1.,1., 1.,1.,1.]]}
-    deltx = np.eye((3))*.001
+    deltx = np.ones((3,4))*.01
+    deltx[:3,:3] = np.eye((3))*.001
     deltu = np.eye((6))*.0001
     xyz = np.array(XYZ)%1.
+    xyzt = np.array(XYZ+[0,])%1.
     uij = np.array(UIJ)
     SGOps = SGData['SGOps']
     SSGOps = SSGData['SSGOps']
@@ -1523,17 +1525,30 @@ def GetSSfxuinel(XYZ,UIJ,SGData,SSGData):
 #    elif SGData['SGLaue'] in ['3','3m1','31m']:
 #    elif SGData['SGLaue'] in ['6/m','6/mmm']:
 #        
-    xsin = np.zeros(3)
-    xcos = np.zeros(3)
-    usin = np.zeros(6)
-    ucos = np.zeros(6)
+    xsin = np.zeros(3,dtype='i')
+    xcos = np.zeros(3,dtype='i')
+    usin = np.zeros(6,dtype='i')
+    ucos = np.zeros(6,dtype='i')
+    csi = np.ones((6),dtype='i')*-1
     for i,idelt in enumerate(deltx):
-        nxyz = (np.inner(sop[0],(xyz+idelt))+sop[1])%1.
-        print 'nxyz',i,nxyz
-        xsin[i] = np.equal((xyz-idelt)%1.,nxyz)[i]
-        print 'sin',(xyz-idelt)%1.
-        xcos[i] = np.equal((xyz+idelt)%1.,nxyz)[i]
-        print 'cos',(xyz+idelt)%1.
+        print 'idelt:',idelt
+        nxyzt = np.inner(ssop[0],(xyzt+idelt))+ssop[1]
+        nxyzt[3] -= ssop[1][3]
+        print 'nxyz',nxyzt
+        xsin[i] = np.allclose((xyzt-idelt),nxyzt,1.e-6)
+        print 'sin ',(xyzt-idelt),xsin[i]
+        xcos[i] = np.allclose((xyzt+idelt),nxyzt,1.e-6)
+        print 'cos ',(xyzt+idelt),xcos[i]
+    n = -1
+    for i,isin in enumerate(xsin):
+        if isin:
+            n += 1
+            csi[i] = n
+    for i,icos in enumerate(xcos):
+        if icos:
+            n += 1
+            csi[i+3] = n
+    print csi
     print CSI['Spos'][0]
     print xsin,xcos
     for i,idelt in enumerate(deltu):

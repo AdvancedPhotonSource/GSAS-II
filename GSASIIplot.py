@@ -1922,7 +1922,10 @@ def PlotISFG(G2frame,newPlot=False,type=''):
     Ymax = 1.0
     lenX = 0
     for Pattern in PlotList:
-        xye = Pattern[1]
+        try:
+            xye = Pattern[1]
+        except IndexError:
+            return
         Ymax = max(Ymax,max(xye[1]))
     offset = G2frame.Offset[0]*Ymax/100.0
     if G2frame.Contour:

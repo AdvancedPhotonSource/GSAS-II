@@ -827,12 +827,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
         print >>pFile,'\n Atoms:'
         line = '   name    type  refine?   x         y         z    '+ \
             '  frac site sym  mult I/A   Uiso     U11     U22     U33     U12     U13     U23'
-        if General['Type'] == 'magnetic':
-            line += '   Mx     My     Mz'
-        elif General['Type'] == 'macromolecular':
+        if General['Type'] == 'macromolecular':
             line = ' res no residue chain'+line
         print >>pFile,line
-        if General['Type'] == 'nuclear':
+        if General['Type'] in ['nuclear','modulated','magnetic']:
             print >>pFile,135*'-'
             for i,at in enumerate(Atoms):
                 line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cx])+'%10.5f'%(at[cx+1])+ \
@@ -856,6 +854,31 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                     for j in range(6):
                         line += '%8.4f'%(at[cia+2+j])
                 print >>pFile,line
+                
+    def PrintWaves(General,Atoms):
+        cx,ct,cs,cia = General['AtomPtrs']
+        print >>pFile,'\n Modulation waves'
+        names = {'Sfrac':['Fsin','Fcos'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos'],
+            'Sadp':['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin','U11cos','U22cos',
+            'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
+        print >>pFile,135*'-'
+        for i,at in enumerate(Atoms):
+            AtomSS = at[-1]['SS1']
+            for Stype in ['Sfrac','Spos','Sadp','Smag']:
+                Waves = AtomSS[Stype]
+                if len(Waves):
+                    print >>pFile,' atom: %s, site sym: %s, type: %s wave type: %s:'    \
+                        %(at[ct-1],at[cs],Stype,AtomSS['waveType'])
+                    line = ''
+                    for item in names[Stype]:
+                        line += '%8s '%(item)
+                    print >>pFile,line
+                for wave in Waves:                    
+                    line = ''
+                    for item in wave[0]:
+                        line += '%8.4f '%(item)
+                    line += ' Refine? '+str(wave[1])
+                    print >>pFile,line
         
     def PrintTexture(textureData):
         topstr = '\n Spherical harmonics texture: Order:' + \
@@ -1100,7 +1123,6 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                                         for eqv in equiv[1:]:
                                             eqv[1] /= coef
                                         G2mv.StoreEquivalence(name,equiv[1:])
-                                            
             textureData = General['SH Texture']
             if textureData['Order']:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
@@ -1138,6 +1160,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                         print >>pFile,' ( 1)    %s'%(SGtable[0])
                 PrintRBObjects(resRBData,vecRBData)
                 PrintAtoms(General,Atoms)
+                if General['Type'] in ['modulated','magnetic']:
+                    PrintWaves(General,Atoms)
+                raise Exception
                 print >>pFile,'\n Unit cell: a = %.5f'%(cell[1]),' b = %.5f'%(cell[2]),' c = %.5f'%(cell[3]), \
                     ' alpha = %.3f'%(cell[4]),' beta = %.3f'%(cell[5]),' gamma = %.3f'%(cell[6]), \
                     ' volume = %.3f'%(cell[7]),' Refine?',cell[0]

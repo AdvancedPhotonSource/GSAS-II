@@ -2058,7 +2058,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Waves = wx.FlexGridSizer(1,8,5,5)
                 for iwave,wave in enumerate(waveBlk):
                     for ival,val in enumerate(wave[0]):
-                        if waveCSI[0][ival] < 0:
+                        if waveCSI[0][ival] == 0:
                             waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_READONLY)
                             waveVal.SetBackgroundColour(VERY_LIGHT_GREY)
                         else:

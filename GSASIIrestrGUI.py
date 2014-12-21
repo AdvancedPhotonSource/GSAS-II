@@ -70,9 +70,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     Cell = General['Cell'][1:7]          #skip flag & volume    
     Amat,Bmat = G2lat.cell2AB(Cell)
     SGData = General['SGData']
-    cx,ct,cs = General['AtomPtrs'][:3]
+    cx,ct,cs,cia = General['AtomPtrs']
     Atoms = phasedata['Atoms']
-    AtLookUp = G2mth.FillAtomLookUp(Atoms)
+    AtLookUp = G2mth.FillAtomLookUp(Atoms,cia+8)
     if 'macro' in General['Type']:
         Names = [atom[0]+':'+atom[1]+atom[2]+' '+atom[3] for atom in Atoms]
         Ids = []

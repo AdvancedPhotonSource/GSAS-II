@@ -1162,7 +1162,6 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                 PrintAtoms(General,Atoms)
                 if General['Type'] in ['modulated','magnetic']:
                     PrintWaves(General,Atoms)
-                raise Exception
                 print >>pFile,'\n Unit cell: a = %.5f'%(cell[1]),' b = %.5f'%(cell[2]),' c = %.5f'%(cell[3]), \
                     ' alpha = %.3f'%(cell[4]),' beta = %.3f'%(cell[5]),' gamma = %.3f'%(cell[6]), \
                     ' volume = %.3f'%(cell[7]),' Refine?',cell[0]

@@ -2848,9 +2848,12 @@ def UpdateUnitCellsGrid(G2frame, data):
 ################################################################################           
        
 def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
-    '''respond to selection of PWDR Reflections data tree item.
+    '''respond to selection of PWDR Reflections data tree item by displaying
+    a table of reflections in the data window.
     '''
     def OnPlotHKL(event):
+        '''Plots a layer of reflections
+        '''
         FoMax = np.max(refList.T[8+Super])
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
         Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
@@ -2859,6 +2862,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
     def OnPlot3DHKL(event):
+        '''Plots the reflections in 3D
+        '''
         FoMax = np.max(refList.T[8+Super])
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
         Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
@@ -2869,16 +2874,103 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
+    def MakeReflectionTable(phaseName):
+        '''Returns a wx.grid table (G2gd.Table) containing a list of all reflections
+        for a phase.        
+        '''
+        if phaseName:
+            pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
+            phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
+            General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+            Super = General.get('Super',0)
+            SuperVec = General.get('SuperVec',[])
+        else:
+            Super = 0
+            SuperVec = []       
+        rowLabels = []
+        if HKLF:
+            refList = data[1]['RefList']
+            refs = refList
+        else:
+            if len(data) > 1:
+                G2frame.dataFrame.SelectPhase.Enable(True)
+            try:            #patch for old reflection lists
+                refList = np.array(data[phaseName]['RefList'])
+                I100 = refList.T[8+Super]*refList.T[11+Super]
+            except TypeError:
+                refList = np.array([refl[:11+Super] for refl in data[phaseName]])
+                I100 = refList.T[8+Super]*np.array([refl[11+Super] for refl in data[phaseName]])
+            Imax = np.max(I100)
+            if Imax:
+                I100 *= 100.0/Imax
+            if 'C' in Inst['Type'][0]:
+                refs = np.vstack((refList.T[:15+Super],I100)).T
+            elif 'T' in Inst['Type'][0]:
+                refs = np.vstack((refList.T[:18+Super],I100)).T
+        for i in range(len(refs)): rowLabels.append(str(i))
+        Types = (4+Super)*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
+            2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
+            [wg.GRID_VALUE_FLOAT+':10,3',]
+        if HKLF:
+            colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC',]
+            if 'T' in Inst['Type'][0]:
+                colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','wave','tbar']
+                Types += 2*[wg.GRID_VALUE_FLOAT+':10,3',]
+            if Super:
+                colLabels.insert(3,'M')
+        else:
+            if 'C' in Inst['Type'][0]:
+                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100']
+                Types += 4*[wg.GRID_VALUE_FLOAT+':10,3',]
+            elif 'T' in Inst['Type'][0]:
+                colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100']
+                Types += 7*[wg.GRID_VALUE_FLOAT+':10,3',]
+            if Super:
+                colLabels.insert(3,'M')
+        return G2gd.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    def ShowReflTable(phaseName):
+        '''Posts a table of reflections for a phase, creating the table
+        if needed using MakeReflectionTable
+        '''
+        G2frame.RefList = phaseName
+        G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
+        # has this table already been displayed?
+        if G2frame.refTable[phaseName].GetTable() is None:
+            PeakTable = MakeReflectionTable(phaseName)
+            G2frame.refTable[phaseName].SetTable(PeakTable, True)
+            G2frame.refTable[phaseName].EnableEditing(False)
+            G2frame.refTable[phaseName].SetMargins(0,0)
+            G2frame.refTable[phaseName].AutoSizeColumns(False)
+        # raise the tab (needed for 1st use and from OnSelectPhase)
+        for PageNum in range(G2frame.dataDisplay.GetPageCount()):
+            if phaseName == G2frame.dataDisplay.GetPageText(PageNum):
+                G2frame.dataDisplay.SetSelection(PageNum)
+                break
+        else:
+            print phaseName
+            print phases
+            raise Exception("how did we not find a phase name?")
+        G2plt.PlotPatterns(G2frame) # replot, to activate phase's reflection tooltips
+        
+    def OnPageChanged(event):
+        '''Respond to a press on a phase tab by displaying the reflections. This
+        routine is needed because the reflection table may not have been created yet.
+        '''
+        page = event.GetSelection()
+        phaseName = G2frame.dataDisplay.GetPageText(page)
+        ShowReflTable(phaseName)
+
     def OnSelectPhase(event):
+        '''For PWDR, selects a phase with a selection box. Called from menu.
+        '''
+        if len(phases) < 2: return
         dlg = wx.SingleChoiceDialog(G2frame,'Select','Phase',phases)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()
-                G2frame.RefList = phases[sel]
-                UpdateReflectionGrid(G2frame,data)
+                ShowReflTable(phases[sel])
         finally:
             dlg.Destroy()
-        G2plt.PlotPatterns(G2frame)
             
     if not data:
         print 'No phases, no reflections'
@@ -2886,32 +2978,21 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     if HKLF:
         G2frame.RefList = 1
         phaseName = IsHistogramInAnyPhase(G2frame,Name)
+        phases = [phaseName]
     else:
         phaseName = G2frame.RefList
         phases = data.keys()
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    if phaseName:
-        pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
-        phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
-        General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
-        Super = General.get('Super',0)
-        SuperVec = General.get('SuperVec',[])
-    else:
-        Super = 0
-        SuperVec = []       
-    rowLabels = []
     if HKLF:
         G2gd.SetDataMenuBar(G2frame)
-        refList = data[1]['RefList']
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()    
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
         G2frame.dataFrame.SelectPhase.Enable(False)
-        refs = refList
     else:
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
         if not G2frame.dataFrame.GetStatusBar():
@@ -2920,53 +3001,21 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
         G2frame.dataFrame.SelectPhase.Enable(False)
-        if len(data) > 1:
-            G2frame.dataFrame.SelectPhase.Enable(True)
-        try:            #patch for old reflection lists
-            refList = np.array(data[G2frame.RefList]['RefList'])
-            I100 = refList.T[8+Super]*refList.T[11+Super]
-        except TypeError:
-            refList = np.array([refl[:11+Super] for refl in data[G2frame.RefList]])
-            I100 = refList.T[8+Super]*np.array([refl[11+Super] for refl in data[G2frame.RefList]])
-        Imax = np.max(I100)
-        if Imax:
-            I100 *= 100.0/Imax
-        if 'C' in Inst['Type'][0]:
-            refs = np.vstack((refList.T[:15+Super],I100)).T
-        elif 'T' in Inst['Type'][0]:
-            refs = np.vstack((refList.T[:18+Super],I100)).T
             
-    for i in range(len(refs)): rowLabels.append(str(i))
-    Types = (4+Super)*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
-        2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
-        [wg.GRID_VALUE_FLOAT+':10,3',]
-    if HKLF:
-        colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC',]
-        if 'T' in Inst['Type'][0]:
-            colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','wave','tbar']
-            Types += 2*[wg.GRID_VALUE_FLOAT+':10,3',]
-        if Super:
-            colLabels.insert(3,'M')
-    else:
-        if 'C' in Inst['Type'][0]:
-            colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','Prfo','Trans','ExtP','I100']
-            Types += 4*[wg.GRID_VALUE_FLOAT+':10,3',]
-        elif 'T' in Inst['Type'][0]:
-            colLabels = ['H','K','L','mul','d','pos','sig','gam','Fosq','Fcsq','phase','Icorr','alp','bet','wave','Prfo','Abs','Ext','I100']
-            Types += 7*[wg.GRID_VALUE_FLOAT+':10,3',]
-        if Super:
-            colLabels.insert(3,'M')
-            
-    G2frame.PeakTable = G2gd.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-    G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
-    G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)
-    G2frame.dataDisplay.SetTable(G2frame.PeakTable, True)
-    G2frame.dataDisplay.EnableEditing(False)
-    G2frame.dataDisplay.SetMargins(0,0)
-    G2frame.dataDisplay.AutoSizeColumns(False)
-    G2frame.dataDisplay.Fit()
-    size = G2frame.dataDisplay.GetSize()
-    G2frame.dataFrame.setSizePosLeft([size[0]+32,350])
+    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
+    G2frame.refTable = {}
+    for tabnum,phase in enumerate(phases):
+        G2frame.refTable[phase] = G2gd.GSGrid(parent=G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(G2frame.refTable[phase],phase)
+    if phaseName not in G2frame.refTable:
+        print phaseName
+        print phases
+        raise Exception("how did we get a invalid phase name?")    
+    ShowReflTable(phaseName)
+    G2frame.refTable[phaseName].Fit()
+    size = G2frame.refTable[phaseName].GetSize()
+    G2frame.dataFrame.setSizePosLeft([size[0]+32,350])        
+    G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     
 ################################################################################
 #####  SASD Substances 

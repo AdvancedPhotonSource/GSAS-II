@@ -80,7 +80,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                         self.comments.append(S[:-1])
                         gotCcomment = True
                         continue   
-                    if S[0] in ["'"'#']:
+                    if S[0] in ["'",'#']:
                         self.comments.append(S[:-1])
                         continue       #ignore comments, if any
                     else:

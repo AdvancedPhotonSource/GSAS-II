@@ -1553,7 +1553,7 @@ class GSASII(wx.Frame):
             UseList = data['Histograms']
             NShkl = len(G2spc.MustrainNames(SGData))
             NDij = len(G2spc.HStrainNames(SGData))
-            UseList[HistName] = SetDefaultDData('PWDR',histoName,NShkl=NShkl,NDij=NDij)
+            UseList[HistName] = SetDefaultDData('PWDR',HistName,NShkl=NShkl,NDij=NDij)
             Id = G2gd.GetPatternTreeItemId(self,self.root,HistName)
             refList = self.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'))

@@ -3134,7 +3134,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
                 if X[i] is None or Y[i] is None: continue
                 Xnew.append(X[i])
                 Ynew.append(Y[i])
-                Ysnew.append(sig[i])
+                if sig: Ysnew.append(sig[i])
             if Ysnew:
                 if G2frame.seqReverse and not G2frame.seqXaxis:
                     Ynew = Ynew[::-1]

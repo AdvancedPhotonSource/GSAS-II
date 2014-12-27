@@ -37,6 +37,7 @@ import GSASIIpwdGUI as G2pdG
 import GSASIIElem as G2el
 import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
+import GSASIIctrls as G2G
 import os
 import os.path as ospath
 
@@ -205,19 +206,19 @@ def EditImageParms(parent,Data,Comments,Image,filename):
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Wavelength (\xC5) '),
                0,wx.ALIGN_LEFT|wx.ALL, 2)
-    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data,'wavelength')
+    wdgt = G2G.ValidatedTxtCtrl(dlg,Data,'wavelength')
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Pixel size (\xb5m). Width '),
                0,wx.ALIGN_LEFT|wx.ALL, 2)
-    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data['pixelSize'],0,
+    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],0,
                                  size=(50,-1))
     vsizer.Add(wdgt)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Height '),
                wx.ALIGN_LEFT|wx.ALL, 2)
-    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data['pixelSize'],1,
+    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['pixelSize'],1,
                                  size=(50,-1))
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
@@ -225,19 +226,19 @@ def EditImageParms(parent,Data,Comments,Image,filename):
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Sample to detector (mm) '),
                0,wx.ALIGN_LEFT|wx.ALL, 2)
-    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data,'distance')
+    wdgt = G2G.ValidatedTxtCtrl(dlg,Data,'distance')
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Beam center (pixels). X = '),
                0,wx.ALIGN_LEFT|wx.ALL, 2)
-    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data['center'],0,
+    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['center'],0,
                                  size=(75,-1))
     vsizer.Add(wdgt)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'  Y = '),
                wx.ALIGN_LEFT|wx.ALL, 2)
-    wdgt = G2gd.ValidatedTxtCtrl(dlg,Data['center'],1,
+    wdgt = G2G.ValidatedTxtCtrl(dlg,Data['center'],1,
                                  size=(75,-1))
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
@@ -245,7 +246,7 @@ def EditImageParms(parent,Data,Comments,Image,filename):
     vsizer = wx.BoxSizer(wx.HORIZONTAL)
     vsizer.Add(wx.StaticText(dlg,wx.ID_ANY,u'Comments '),
                0,wx.ALIGN_LEFT|wx.ALL, 2)
-    wdgt = G2gd.ValidatedTxtCtrl(dlg,Comments,0,size=(250,-1))
+    wdgt = G2G.ValidatedTxtCtrl(dlg,Comments,0,size=(250,-1))
     vsizer.Add(wdgt)
     mainsizer.Add(vsizer,0,wx.ALIGN_LEFT|wx.ALL, 2)
 

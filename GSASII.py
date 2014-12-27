@@ -67,6 +67,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
+import GSASIIctrls as G2G
 import GSASIIplot as G2plt
 import GSASIIpwd as G2pwd
 import GSASIIpwdGUI as G2pdG
@@ -1454,7 +1455,7 @@ class GSASII(wx.Frame):
                 inp = [rd.idstring, 10.,40.,0.005] # see names for what's what
             else:
                 inp = [rd.idstring, 10.,80.,0.01] # see names for what's what
-            dlg = G2gd.ScrolledMultiEditor(
+            dlg = G2G.ScrolledMultiEditor(
                 self,[inp] * len(inp),range(len(inp)),names,
                 header='Enter simulation name and range',
                 minvals=(None,0.001,0.001,0.0001),
@@ -2036,7 +2037,7 @@ class GSASII(wx.Frame):
         
         wxID_PATTERNTREE = wx.NewId()
         #self.PatternTree = wx.TreeCtrl(id=wxID_PATTERNTREE, # replaced for logging
-        self.PatternTree = G2gd.G2TreeCtrl(id=wxID_PATTERNTREE,
+        self.PatternTree = G2G.G2TreeCtrl(id=wxID_PATTERNTREE,
             parent=self.mainPanel, pos=wx.Point(0, 0),style=wx.TR_DEFAULT_STYLE )
         self.PatternTree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnPatternTreeSelChanged)
         self.PatternTree.Bind(wx.EVT_TREE_ITEM_COLLAPSED,

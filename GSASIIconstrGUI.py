@@ -30,6 +30,7 @@ import GSASIIElemGUI as G2elemGUI
 import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
 import GSASIIgrid as G2gd
+import GSASIIctrls as G2G
 import GSASIIplot as G2plt
 import GSASIIobj as G2obj
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
@@ -118,7 +119,7 @@ class ConstraintDialog(wx.Dialog):
             if lbl[-1] != '=': lbl1 = lbl + ' ' + separator + ' '
             name = wx.StaticText(panel,wx.ID_ANY,lbl1,
                                  style=wx.ALIGN_RIGHT)
-            scale = G2gd.ValidatedTxtCtrl(panel,self.data[id],0,
+            scale = G2G.ValidatedTxtCtrl(panel,self.data[id],0,
                                           typeHint=float,
                                           OKcontrol=self.DisableOK)
             dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,5)
@@ -132,7 +133,7 @@ class ConstraintDialog(wx.Dialog):
         if title == 'New Variable':
             name = wx.StaticText(panel,wx.ID_ANY,"New variable's\nname (optional)",
                                  style=wx.ALIGN_CENTER)
-            scale = G2gd.ValidatedTxtCtrl(panel,self.newvar,0,
+            scale = G2G.ValidatedTxtCtrl(panel,self.newvar,0,
                                           typeHint=str,notBlank=False)
             dataGridSizer.Add(name,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,5)
             dataGridSizer.Add(scale,0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL,3)
@@ -838,7 +839,7 @@ def UpdateConstraints(G2frame,data):
             else:
                 constSizer.Add((-1,-1))
             if refineflag:
-                ch = G2gd.G2CheckBox(pageDisplay,'',item,-2)
+                ch = G2G.G2CheckBox(pageDisplay,'',item,-2)
                 constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
             else:
                 constSizer.Add((-1,-1))                

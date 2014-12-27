@@ -31,6 +31,7 @@ import numpy as np
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIgrid as G2gd
+import GSASIIctrls as G2G
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 
@@ -457,7 +458,7 @@ class ExpressionDialog(wx.Dialog):
             if self.varSelect.get(v) is None:
                 GridSiz.Add((-1,-1),0,wx.ALIGN_LEFT|wx.EXPAND,0)
             elif self.varSelect.get(v) == 0:
-                wid = G2gd.ValidatedTxtCtrl(self.varbox,self.varName,v,
+                wid = G2G.ValidatedTxtCtrl(self.varbox,self.varName,v,
                                             #OnLeave=self.OnTxtLeave,
                                             size=(50,-1))
                 GridSiz.Add(wid,0,wx.ALIGN_LEFT|wx.EXPAND,0)
@@ -469,7 +470,7 @@ class ExpressionDialog(wx.Dialog):
             if self.varSelect.get(v) is None:
                 GridSiz.Add((-1,-1),0,wx.ALIGN_RIGHT|wx.EXPAND,0)
             elif self.varSelect.get(v) == 0:
-                wid = G2gd.ValidatedTxtCtrl(self.varbox,self.varValue,v,
+                wid = G2G.ValidatedTxtCtrl(self.varbox,self.varValue,v,
                                             #OnLeave=self.OnTxtLeave,
                                             size=(75,-1))
                 GridSiz.Add(wid,0,wx.ALIGN_LEFT|wx.EXPAND,0)
@@ -492,7 +493,7 @@ class ExpressionDialog(wx.Dialog):
             # show a refine flag for Free Vars only
             if self.varSelect.get(v) == 0 and self.fit:
                 self.varRefflag[v] = self.varRefflag.get(v,True)
-                wid = G2gd.G2CheckBox(self.varbox,'',self.varRefflag,v)
+                wid = G2G.G2CheckBox(self.varbox,'',self.varRefflag,v)
                 GridSiz.Add(wid,0,wx.ALIGN_LEFT|wx.EXPAND,0)
             else:
                 wid = (-1,-1)
@@ -516,7 +517,7 @@ class ExpressionDialog(wx.Dialog):
         '''
         sel = self.depChoices[event.GetEventObject().GetSelection()]
         var = self.SelectG2var(sel,'Dependent variable',self.depParmLists[sel])
-        if not var:
+        if var is None:
             self.dependentVar = None
             self.OnValidate(None)
             event.GetEventObject().SetSelection(wx.NOT_FOUND)
@@ -537,17 +538,17 @@ class ExpressionDialog(wx.Dialog):
         '''
         v = event.GetEventObject().label
         sel = self.AllowedChoices[event.GetEventObject().GetSelection()]
-        self.varSelect[v] = sel
         if sel == 0:
             sv = G2obj.MakeUniqueLabel(v,self.usedVars)
+            self.varSelect[v] = sel
             self.varName[v] = sv
             self.varValue[v] = self.varValue.get(v,0.0)
         else:
             var = self.SelectG2var(sel,v,self.parmLists[sel])
-            if not var:
-                del self.varSelect[v]
+            if var is None:
                 self.OnValidate(None)
                 return
+            self.varSelect[v] = sel
             self.varName[v] = var
         self.OnValidate(None)
 

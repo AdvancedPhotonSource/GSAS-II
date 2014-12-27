@@ -37,6 +37,7 @@ import GSASIIspc as G2spc
 import GSASIIindex as G2indx
 import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
+import GSASIIctrls as G2G
 import GSASIIElemGUI as G2elemGUI
 import GSASIIElem as G2elem
 import GSASIIsasd as G2sasd
@@ -1238,7 +1239,7 @@ def UpdateInstrumentGrid(G2frame,data):
         optionally allow values to be edited in a table
         '''
         updateData(insVal,insRef)
-        G2gd.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
+        G2G.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
         insVal.update({key:data[key][1] for key in instkeys})
         insRef.update({key:data[key][2] for key in instkeys})
         wx.CallAfter(MakeParameterWindow)
@@ -1314,7 +1315,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     elemKeysLst.append([key,1])
                     dspLst.append([10,4])
                     refFlgElem.append([key,2])                   
-                    ratVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
+                    ratVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
                     instSizer.Add(ratVal,0)
                     instSizer.Add(RefineBox(key),0,WACV)
                     instSizer.Add((5,5),0)
@@ -1328,7 +1329,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     key = 'Lam'
                     instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),
                         0,WACV)
-                    waveVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                    waveVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                     labelLst.append(u'Lam (\xc5)')
                     elemKeysLst.append([key,1])
                     dspLst.append([10,6])
@@ -1349,7 +1350,7 @@ def UpdateInstrumentGrid(G2frame,data):
                         instSizer.Add(
                             wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,4,insDef[item])),
                             0,WACV)
-                        itemVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
+                        itemVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
                         instSizer.Add(itemVal,0,WACV)
                         refFlgElem.append([item,2])
                         instSizer.Add(RefineBox(item),0,WACV)
@@ -1379,7 +1380,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     instSizer.Add(
                         wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,nDig[1],insDef[item])),
                         0,WACV)
-                    itemVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
+                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
                     instSizer.Add(itemVal,0,WACV)
                     instSizer.Add(RefineBox(item),0,WACV)
             else:                                   #time of flight (neutrons)
@@ -1428,7 +1429,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     instSizer.Add(
                             wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,nDig[1],insDef[item])),
                             0,WACV)
-                    itemVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
+                    itemVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
                     instSizer.Add(itemVal,0,WACV)
                     labelLst.append(item)
                     elemKeysLst.append([item,1])
@@ -1439,7 +1440,7 @@ def UpdateInstrumentGrid(G2frame,data):
             if 'C' in insVal['Type']:               #constant wavelength
                 instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
                     0,WACV)
-                waveVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
                 labelLst.append(u'Lam (\xc5)')
                 elemKeysLst.append(['Lam',1])
@@ -1451,7 +1452,7 @@ def UpdateInstrumentGrid(G2frame,data):
             if 'C' in insVal['Type']:        
                 instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
                     0,WACV)
-                waveVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
                 labelLst.append(u'Lam (\xc5)')
                 elemKeysLst.append(['Lam',1])
@@ -1846,7 +1847,7 @@ def UpdateSampleGrid(G2frame,data):
 
     def OnCopy1Val(event):
         'Select one value to copy to many histograms and optionally allow values to be edited in a table'
-        G2gd.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
+        G2G.SelectEdit1Var(G2frame,data,labelLst,elemKeysLst,dspLst,refFlgElem)
         wx.CallAfter(UpdateSampleGrid,G2frame,data)
         
     ######## DEBUG #######################################################
@@ -1955,16 +1956,16 @@ def UpdateSampleGrid(G2frame,data):
         labelLst.append(lbl.strip().strip(':').strip())
         dspLst.append(nDig)
         if 'list' in str(type(data[key])):
-            parmRef = G2gd.G2CheckBox(G2frame.dataDisplay,' '+lbl,data[key],1)
+            parmRef = G2G.G2CheckBox(G2frame.dataDisplay,' '+lbl,data[key],1)
             parmSizer.Add(parmRef,0,WACV|wx.EXPAND)
-            parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data[key],0,
+            parmVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data[key],0,
                 nDig=nDig,typeHint=float,OnLeave=AfterChange)
             elemKeysLst.append([key,0])
             refFlgElem.append([key,1])
         else:
             parmSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' '+lbl),
                 0,WACV|wx.EXPAND)
-            parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,
+            parmVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,
                 typeHint=float,OnLeave=AfterChange)
             elemKeysLst.append([key])
             refFlgElem.append(None)
@@ -1972,10 +1973,10 @@ def UpdateSampleGrid(G2frame,data):
     Info = {}
         
     for key in ('FreePrm1','FreePrm2','FreePrm3'):
-        parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,Controls,key,typeHint=str,
+        parmVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,Controls,key,typeHint=str,
                                         notBlank=False)
         parmSizer.Add(parmVal,1,wx.EXPAND)
-        parmVal = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,typeHint=float)
+        parmVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,key,typeHint=float)
         parmSizer.Add(parmVal,1,wx.EXPAND)
         labelLst.append(Controls[key])
         dspLst.append(None)
@@ -3786,7 +3787,7 @@ def UpdateModelsGrid(G2frame,data):
                     nRadii.Bind(wx.EVT_COMBOBOX,OnSelect)
                     sizeSizer.Add(nRadii,0,WACV)
                     sizeSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' R dist. cutoff: '),0,WACV)
-                    rCutoff = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,level['Controls'],'Cutoff',
+                    rCutoff = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,level['Controls'],'Cutoff',
                         min=0.001,max=0.1,typeHint=float)
                     sizeSizer.Add(rCutoff,0,WACV)
             elif level['Controls']['DistType']  in ['Unified',]:
@@ -3882,7 +3883,7 @@ def UpdateModelsGrid(G2frame,data):
         rhoMat = Substances['Substances'][data['Particle']['Matrix']['Name']].get('XAnom density',0.0)        
         topSizer.Add(matsel,0,WACV)
         topSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Volume fraction: '),0,WACV)
-        volfrac = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data['Particle']['Matrix']['VolFrac'],0,
+        volfrac = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data['Particle']['Matrix']['VolFrac'],0,
                 typeHint=float)
         topSizer.Add(volfrac,0,WACV)
         volVar = wx.CheckBox(G2frame.dataDisplay,label=' Refine?')

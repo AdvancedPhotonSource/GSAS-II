@@ -28,6 +28,7 @@ import GSASIImath as G2mth
 import GSASIIplot as G2plt
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
+import GSASIIctrls as G2G
 import numpy as np
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
@@ -1226,10 +1227,10 @@ def UpdateMasks(G2frame,data):
     littleSizer.Add(Text,0,WACV)
     Text.SetBackgroundColour(VERY_LIGHT_GREY)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Lower/Upper thresholds '),0,WACV)
-    lowerThreshold = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,loc=thresh[1],key=0,
+    lowerThreshold = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=thresh[1],key=0,
                                            min=thresh[0][0],OnLeave=Replot,typeHint=int)
     littleSizer.Add(lowerThreshold,0,WACV)
-    upperThreshold = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,loc=thresh[1],key=1,
+    upperThreshold = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=thresh[1],key=1,
                                            max=thresh[0][1],OnLeave=Replot,typeHint=int)
     littleSizer.Add(upperThreshold,0,WACV)
     mainSizer.Add(littleSizer,0,)
@@ -1249,7 +1250,7 @@ def UpdateMasks(G2frame,data):
                 spotText.SetBackgroundColour(VERY_LIGHT_GREY)
                 littleSizer.Add(spotText,0,WACV)
                 spotText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
-                spotDiameter = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Spots[i],key=2,
+                spotDiameter = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Spots[i],key=2,
                                            max=100.,OnLeave=Replot,nDig=[8,2])
                 littleSizer.Add(spotDiameter,0,WACV)
                 spotDelete = G2gd.G2LoggedButton(G2frame.dataDisplay,label='delete?',
@@ -1272,7 +1273,7 @@ def UpdateMasks(G2frame,data):
                 ringText.SetBackgroundColour(VERY_LIGHT_GREY)
                 ringText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
                 littleSizer.Add(ringText,0,WACV)
-                ringThick = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Rings[i],key=1,
+                ringThick = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Rings[i],key=1,
                                            min=0.001,max=1.,OnLeave=Replot,nDig=[8,3])
                 littleSizer.Add(ringThick,0,WACV)
                 ringDelete = G2gd.G2LoggedButton(G2frame.dataDisplay,label='delete?',
@@ -1302,7 +1303,7 @@ def UpdateMasks(G2frame,data):
                 azmText.SetBackgroundColour(VERY_LIGHT_GREY)
                 azmText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
                 littleSizer.Add(azmText,0,WACV)
-                arcThick = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Arcs[i],key=2,
+                arcThick = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Arcs[i],key=2,
                                            min=0.001,max=20.,OnLeave=Replot,nDig=[8,3])
                 littleSizer.Add(arcThick,0,WACV)
                 arcDelete = G2gd.G2LoggedButton(G2frame.dataDisplay,label='delete?',
@@ -1657,7 +1658,7 @@ def UpdateStressStrain(G2frame,data):
         samZ.Bind(wx.EVT_TEXT_ENTER,OnSamZ)
         samZ.Bind(wx.EVT_KILL_FOCUS,OnSamZ)
         samSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=' Sample load(MPa): '),0,WACV)
-        samLoad = G2gd.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Sample load',
+        samLoad = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,data,'Sample load',
                 nDig=[8,3],typeHint=float,)
         samSizer.Add(samLoad,0,WACV)
 

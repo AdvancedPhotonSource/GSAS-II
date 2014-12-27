@@ -1359,8 +1359,8 @@ class SymOpDialog(wx.Dialog):
         else:
             Ncol = 3
         OpList = []
-        for M,T in SGData['SGOps']:
-            OpList.append(G2spc.MT2text(M,T))
+        for Opr in SGData['SGOps']:
+            OpList.append(G2spc.MT2text(Opr))
         self.oprs = wx.RadioBox(panel,-1,'Choose space group operator?',choices=OpList,
             majorDimension=Ncol)
         self.oprs.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)

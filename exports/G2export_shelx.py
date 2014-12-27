@@ -66,8 +66,8 @@ class ExportPhaseShelx(G2IO.ExportBaseclass):
             if not phasedict['General']['SGData']['SGInv']: lattnum *= -1
             self.Write("LATT "+str(lattnum))
             # generate symmetry operations not including centering and center of symmetry
-            for M,T in phasedict['General']['SGData']['SGOps']:
-                sym = G2spc.MT2text(M,T).lower().replace(" ,",", ")
+            for Opr in phasedict['General']['SGData']['SGOps']:
+                sym = G2spc.MT2text(Opr).lower().replace(" ,",", ")
                 self.Write('SYMM '+G2IO.trim(sym))
             # scan through atom types, count the number of times that each element occurs
             AtomsList = self.GetAtoms(phasenam)

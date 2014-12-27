@@ -1023,6 +1023,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                 MakeRBThermals('V',phaseVary,phaseDict)
                     
         Natoms[pfx] = 0
+        maxSSwave = {'Sfrac':0,'Spos':0,'Sadp':0,'Smag':0}
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']
             Natoms[pfx] = len(Atoms)
@@ -1123,6 +1124,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                                         for eqv in equiv[1:]:
                                             eqv[1] /= coef
                                         G2mv.StoreEquivalence(name,equiv[1:])
+                        maxSSwave['Stype'] = max(maxSSwave['Stype'],iw+1)
+            phaseDict[pfx+'maxSSwave'] = maxSSwave    
             textureData = General['SH Texture']
             if textureData['Order']:
                 phaseDict[pfx+'SHorder'] = textureData['Order']

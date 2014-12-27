@@ -2793,6 +2793,7 @@ class GSASII(wx.Frame):
         TextList = ['All Data']
         DelList = []
         DelItemList = []
+        nItems = {'PWDR':0,'SASD':0,'IMG':0,'HKLF':0,'PDF':0}
         ifPWDR = False
         ifSASD = False
         ifIMG = False
@@ -2804,11 +2805,11 @@ class GSASII(wx.Frame):
                 name = self.PatternTree.GetItemText(item)
                 if name not in ['Notebook','Controls','Covariance','Constraints',
                     'Restraints','Phases','Rigid bodies']:
-                    if 'PWDR' in name: ifPWDR = True
-                    if 'SASD' in name: ifSASD = True
-                    if 'IMG' in name: ifIMG = True
-                    if 'HKLF' in name: ifHKLF = True
-                    if 'PDF' in name: ifPDF = True
+                    if 'PWDR' in name: ifPWDR = True; nItems['PWDR'] += 1
+                    if 'SASD' in name: ifSASD = True; nItems['SASD'] += 1
+                    if 'IMG' in name: ifIMG = True; nItems['IMG'] += 1
+                    if 'HKLF' in name: ifHKLF = True; nItems['HKLF'] += 1
+                    if 'PDF' in name: ifPDF = True; nItems['PDF'] += 1
                     TextList.append(name)
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             if ifPWDR: TextList.insert(1,'All PWDR')
@@ -2835,12 +2836,28 @@ class GSASII(wx.Frame):
                         DelList = [item for item in TextList if item[:3] == 'PDF']
                     item, cookie = self.PatternTree.GetFirstChild(self.root)
                     while item:
-                        if self.PatternTree.GetItemText(item) in DelList: DelItemList.append(item)
+                        itemName = self.PatternTree.GetItemText(item)
+                        if itemName in DelList:
+                            if 'PWDR' in itemName: nItems['PWDR'] -= 1
+                            elif 'SASD' in itemName: nItems['SASD'] -= 1
+                            elif 'IMG' in itemName: nItems['IMG'] -= 1
+                            elif 'HKLF' in itemName: nItems['HKLF'] -= 1
+                            elif 'PDF' in itemName: nItems['PDF'] -= 1
+                            DelItemList.append(item)
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
                     for item in DelItemList:
                         self.PatternTree.Delete(item)
                     self.PickId = 0
-                    wx.CallAfter(G2plt.PlotPatterns,self,True)                        #so plot gets updated
+                    if nItems['PWDR']:
+                        wx.CallAfter(G2plt.PlotPatterns,self,True)
+                    else:
+                        self.G2plotNB.Delete('Powder Patterns')
+                    if not nItems['IMG']:
+                        self.G2plotNB.Delete('2D Powder Image')
+                    if not nItems['HKLF']:
+                        self.G2plotNB.Delete('Structure Factors')
+                        if '3D Structure Factors' in self.G2plotNB.plotList:
+                            self.G2plotNB.Delete('3D Structure Factors')
             finally:
                 dlg.Destroy()
 
@@ -3280,7 +3297,6 @@ class GSASII(wx.Frame):
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
 
         return HistogramNames
-
                     
     def GetUsedHistogramsAndPhasesfromTree(self):
         ''' Returns all histograms that are found in any phase

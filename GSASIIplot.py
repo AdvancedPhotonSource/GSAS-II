@@ -1646,7 +1646,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         if G2frame.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
             peaks = np.array((G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))))
-            if not peaks: return # are there any peaks?
+            if not len(peaks): return # are there any peaks?
             for peak in peaks[0]:
                 if peak[2]:
                     if G2frame.qPlot:

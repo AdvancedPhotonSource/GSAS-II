@@ -1353,7 +1353,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     colors=['b','g','r','c','m','k']
     Lines = []
     exclLines = []
-    if G2frame.SinglePlot:
+    if G2frame.SinglePlot and PatternId:
         Pattern = G2frame.PatternTree.GetItemPyData(PatternId)
         Pattern.append(G2frame.PatternTree.GetItemText(PatternId))
         PlotList = [Pattern,]

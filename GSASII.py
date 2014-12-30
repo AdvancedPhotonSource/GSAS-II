@@ -2849,6 +2849,7 @@ class GSASII(wx.Frame):
                     for item in DelItemList:
                         self.PatternTree.Delete(item)
                     self.PickId = 0
+                    self.PatternId = 0
                     if nItems['PWDR']:
                         wx.CallAfter(G2plt.PlotPatterns,self,True)
                     else:

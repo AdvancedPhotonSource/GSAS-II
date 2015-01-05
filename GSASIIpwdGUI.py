@@ -2969,7 +2969,6 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             print phaseName
             print phases
             raise Exception("how did we not find a phase name?")
-        G2plt.PlotPatterns(G2frame) # replot, to activate phase's reflection tooltips
         
     def OnPageChanged(event):
         '''Respond to a press on a phase tab by displaying the reflections. This

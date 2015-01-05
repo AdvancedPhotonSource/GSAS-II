@@ -2775,7 +2775,6 @@ def PlotTexture(G2frame,data,Start=False):
 
 def ModulationPlot(G2frame,data,atom,Ax):
     
-    print 'modulation plot for',atom[0]
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Modulation')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -2800,10 +2799,8 @@ def ModulationPlot(G2frame,data,atom,Ax):
     ix = -np.array(np.rint(rhoSize[:3]*atxyz),dtype='i')
     ix += (rhoSize[:3]/2)
     ix = ix%rhoSize[:3]
-    print 'roll',ix,atxyz
     rho = np.roll(np.roll(np.roll(Map['rho'],ix[0],axis=0),ix[1],axis=1),ix[2],axis=2)
     ix = rhoSize[:3]/2
-    print 'slab',ix,rhoSize
     ib = 4
     if Ax == 'x':
         slab = np.sum(np.sum(rho[:,ix[1]-ib:ix[1]+ib,ix[2]-ib:ix[2]+ib,:],axis=2),axis=1)
@@ -2814,7 +2811,8 @@ def ModulationPlot(G2frame,data,atom,Ax):
     Plot.set_title(Title)
     Plot.set_xlabel('t')
     Plot.set_ylabel(r'$\mathsf{\Delta}$%s'%(Ax))
-    Plot.contour(slab,20,extent=(0.,1.,-.5,.5))
+    Slab = np.concatenate((slab,slab),axis=1)
+    Plot.contour(Slab,20,extent=(0.,2.,-.5,.5))
     Page.canvas.draw()
     
 ################################################################################
@@ -4152,6 +4150,8 @@ def PlotStructure(G2frame,data,firstCall=False):
         elif key in ['U','D','L','R'] and mapData['Flip'] == True:
             dirDict = {'U':[0,1],'D':[0,-1],'L':[-1,0],'R':[1,0]}
             SetMapRoll(dirDict[key])
+            if 'rho' in generalData.get('4DmapData',{}):
+                Set4DMapRoll(dirDict[key])
             SetPeakRoll(dirDict[key])
             SetMapPeaksText(mapPeaks)
         Draw('key')
@@ -4344,22 +4344,27 @@ def PlotStructure(G2frame,data,firstCall=False):
         glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
         
-    def GetRoll(newxy,rho):
+    def GetRoll(newxy,rhoshape):
         Q = drawingData['Quaternion']
         dxy = G2mth.prodQVQ(G2mth.invQ(Q),np.inner(Bmat,newxy+[0,]))
-        dxy = np.array(dxy*rho.shape)        
+        dxy = np.array(dxy*rhoshape)        
         roll = np.where(dxy>0.5,1,np.where(dxy<-.5,-1,0))
         return roll
                 
     def SetMapRoll(newxy):
         rho = mapData['rho']
-        roll = GetRoll(newxy,rho)
+        roll = GetRoll(newxy,rho.shape)
         mapData['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
         drawingData['oldxy'] = list(newxy)
         
+    def Set4DMapRoll(newxy):
+        rho = generalData['4DmapData']['rho']
+        roll = GetRoll(newxy,rho.shape[:3])
+        generalData['4DmapData']['rho'] = np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
+        
     def SetPeakRoll(newxy):
         rho = mapData['rho']
-        roll = GetRoll(newxy,rho)
+        roll = GetRoll(newxy,rho.shape)
         steps = 1./np.array(rho.shape)
         dxy = roll*steps
         for peak in mapPeaks:

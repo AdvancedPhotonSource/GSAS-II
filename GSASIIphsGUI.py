@@ -5604,9 +5604,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         finally:
             pgbar.Destroy()
         mapData.update(newMap)
-        print newMap['rho'].shape,mapData['rho'].shape
         map4DData.update(new4Dmap)
-        print newMap['rho'].shape,mapData['rho'].shape
         mapData['Flip'] = True        
         mapSig = np.std(mapData['rho'])
         if not data['Drawing']:                 #if new drawing - no drawing data!
@@ -5614,7 +5612,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
         print ' 4D Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
-        print mapData['rho'].shape
         if mapData['Rcf'] < 99.:
             OnSearchMaps(event)             #does a plot structure at end
         else:

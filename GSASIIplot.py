@@ -1385,11 +1385,11 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             HKL = []
-            if Phases:  #will be trouble for SS reflection lists - will need peak[:7]
+            if Phases:  
                 try:
                     for peak in Phases[G2frame.RefList]['RefList']:
                         if len(peak) > 15:
-                            HKL.append(peak[:7])
+                            HKL.append(peak[:7])    #SS reflection list - need peak[:7]
                         else:
                             HKL.append(peak[:6])
                 except TypeError:   #old style patch
@@ -1676,7 +1676,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     peaks = Phases[phase]
                 if not len(peaks):
                     continue
-                if len(peaks[0]) > 15:
+                if len(peaks[0]) > 15:  #is there a way to plot ss lines differnt color than main ones?
                     peak = np.array([[peak[5],peak[6]] for peak in peaks])
                 else:
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])

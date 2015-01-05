@@ -70,7 +70,6 @@ def SetPhaseWindow(mainFrame,phasePage,mainSizer):
     phasePage.SetSizer(mainSizer)
     Size = mainSizer.GetMinSize()
     Size[0] += 40
-#    Size[1] = 500
     Size[1] = min(Size[1]+ 150,500) 
     phasePage.SetSize(Size)
     phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
@@ -109,8 +108,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'POhkl' not in generalData:
             generalData['POhkl'] = [0,0,1]
         if 'Map' not in generalData:
-            generalData['Map'] = {}
-            generalData['Map'].update(mapDefault)
+            generalData['Map'] = mapDefault.copy()
         if 'Flip' not in generalData:
             generalData['Flip'] = {'RefList':'','Resolution':0.5,'Norm element':'None',
                 'k-factor':0.1,'k-Max':20.}
@@ -135,8 +133,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['SuperVec'] = [[0,0,.1],False,4]
                 generalData['SSGData'] = {}
             if '4DmapData' not in generalData:
-                generalData['4DmapData'] = {}
-                generalData['4DmapData'].update(mapDefault)
+                generalData['4DmapData'] = mapDefault.copy()
                 generalData['4DmapData'].update({'MapType':'Fobs'})
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -265,15 +262,29 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnPhaseType(event):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!
                     generalData['Type'] = TypeTxt.GetValue()
-                    if generalData['Type'] in ['modulated',]:
+                    pages = [G2frame.dataDisplay.GetPageText(PageNum) for PageNum in range(G2frame.dataDisplay.GetPageCount())]
+                    if generalData['Type'] in ['modulated','magnetic']:
                         if 'SuperSg' not in generalData:
                             generalData['SuperSg'] = SetDefaultSSsymbol()
-                            generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
-                    pages = [G2frame.dataDisplay.GetPageText(PageNum) for PageNum in range(G2frame.dataDisplay.GetPageCount())]
-                    if 'Wave Data' not in pages:
-                        G2frame.waveData = wx.ScrolledWindow(G2frame.dataDisplay)
-                        G2frame.dataDisplay.InsertPage(3,G2frame.waveData,'Wave Data')
-                    wx.CallAfter(UpdateGeneral)
+                        generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
+                        if 'MC/SA' in pages:
+                            pass
+#                            G2frame.dataDisplay.DeletePage(pages.index('MC/SA'))   #this crashes!!
+                        if 'Wave Data' not in pages:
+                            G2frame.waveData = wx.ScrolledWindow(G2frame.dataDisplay)
+                            G2frame.dataDisplay.InsertPage(3,G2frame.waveData,'Wave Data')
+                            Id = wx.NewId()
+                            TabSelectionIdDict[Id] = 'Wave Data'
+                        wx.CallAfter(UpdateGeneral)
+                    else:
+                        if 'Wave Data' in pages:
+                            G2frame.dataDisplay.DeletePage(pages.index('Wave Data'))
+                        if 'MC/SA' not in pages:
+                            G2frame.MCSA = wx.ScrolledWindow(G2frame.dataDisplay)
+                            G2frame.dataDisplay.InsertPage(7,G2frame.MCSA,'MC/SA')
+                            Id = wx.NewId()
+                            TabSelectionIdDict[Id] = 'MC/SA'
+                        wx.CallAfter(UpdateGeneral)
                 else:
                     G2frame.ErrorDialog('Phase type change error','Can change phase type only if there are no atoms')
                     TypeTxt.SetValue(generalData['Type'])                
@@ -985,8 +996,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2gd.HorizontalLine(mainSizer,General)
         
         if generalData['Type'] in ['modulated','magnetic',]:
+            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_SINGLEMCSA,False)
+            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_MULTIMCSA,False)
+            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_4DCHARGEFLIP,True)
             mainSizer.Add(ModulatedSizer(generalData['Type']))
             G2gd.HorizontalLine(mainSizer,General)
+        else:
+            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_SINGLEMCSA,True)
+            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_MULTIMCSA,True)
+            G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_4DCHARGEFLIP,False)
 
         mainSizer.Add(PawleySizer())
         G2gd.HorizontalLine(mainSizer,General)
@@ -2194,7 +2212,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             data['Drawing'] = {}
             drawingData = data['Drawing']
         if not drawingData:                 #fill with defaults if empty
-            drawingData.update(defaultDrawing)
+            drawingData = defaultDrawing.copy()
         if 'Zstep' not in drawingData:
             drawingData['Zstep'] = 0.5
         if 'contourLevel' not in drawingData:
@@ -4584,23 +4602,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def atomSizer(model):
             
             atomsizer = wx.FlexGridSizer(0,7,5,5)
-            atomsizer.Add(wx.StaticText(MCSA,-1,' Atom: '+model['name']+': '),0,WACV)
+            atomsizer.Add(wx.StaticText(G2frame.MCSA,-1,' Atom: '+model['name']+': '),0,WACV)
             for ix,item in enumerate(['x','y','z']):
-                posRef = wx.CheckBox(MCSA,-1,label=item+': ')
+                posRef = wx.CheckBox(G2frame.MCSA,-1,label=item+': ')
                 posRef.SetValue(model['Pos'][1][ix])
                 posRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                 Indx[posRef.GetId()] = [model,'Pos',ix]
                 atomsizer.Add(posRef,0,WACV)
-                posVal = wx.TextCtrl(MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
+                posVal = wx.TextCtrl(G2frame.MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
                 posVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
                 posVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
                 Indx[posVal.GetId()] = [model,'Pos',ix]
                 atomsizer.Add(posVal,0,WACV)
             atomsizer.Add((5,5),0)
             for ix,item in enumerate(['x','y','z']):
-                atomsizer.Add(wx.StaticText(MCSA,-1,' Range: '),0,WACV)
+                atomsizer.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
                 rmin,rmax = model['Pos'][2][ix]
-                posRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
+                posRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[posRange.GetId()] = [model,'Pos',ix]
                 posRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
                 posRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
@@ -4656,27 +4674,27 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
             rbsizer = wx.BoxSizer(wx.VERTICAL)
             rbsizer1 = wx.FlexGridSizer(0,7,5,5)
-            rbsizer1.Add(wx.StaticText(MCSA,-1,model['Type']+': '+model['name']+': '),0,WACV)
+            rbsizer1.Add(wx.StaticText(G2frame.MCSA,-1,model['Type']+': '+model['name']+': '),0,WACV)
             for ix,item in enumerate(['x','y','z']):
-                posRef = wx.CheckBox(MCSA,-1,label=item+': ')
+                posRef = wx.CheckBox(G2frame.MCSA,-1,label=item+': ')
                 posRef.SetValue(model['Pos'][1][ix])
                 posRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                 Indx[posRef.GetId()] = [model,'Pos',ix]
                 rbsizer1.Add(posRef,0,WACV)
-                posVal = wx.TextCtrl(MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
+                posVal = wx.TextCtrl(G2frame.MCSA,-1,'%.4f'%(model['Pos'][0][ix]),style=wx.TE_PROCESS_ENTER)
                 posVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
                 posVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
                 Indx[posVal.GetId()] = [model,'Pos',ix]
                 rbsizer1.Add(posVal,0,WACV)
-            molcent = wx.CheckBox(MCSA,-1,label=' Use mol. center? ')
+            molcent = wx.CheckBox(G2frame.MCSA,-1,label=' Use mol. center? ')
             molcent.SetValue(model['MolCent'][1])
             molcent.Bind(wx.EVT_CHECKBOX,OnMolCent)
             Indx[molcent.GetId()] = model
             rbsizer1.Add(molcent,0,WACV)
             for ix,item in enumerate(['x','y','z']):
-                rbsizer1.Add(wx.StaticText(MCSA,-1,' Range: '),0,WACV)
+                rbsizer1.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
                 rmin,rmax = model['Pos'][2][ix]
-                posRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
+                posRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[posRange.GetId()] = [model,'Pos',ix]
                 posRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
                 posRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
@@ -4684,36 +4702,36 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 
             rbsizer2 = wx.FlexGridSizer(0,6,5,5)
             Ori = model['Ori'][0]
-            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oa: '),0,WACV)
-            angVal = wx.TextCtrl(MCSA,-1,'%.5f'%(Ori[0]),style=wx.TE_PROCESS_ENTER)
+            rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,'Oa: '),0,WACV)
+            angVal = wx.TextCtrl(G2frame.MCSA,-1,'%.5f'%(Ori[0]),style=wx.TE_PROCESS_ENTER)
             angVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
             angVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
             rbsizer2.Add(angVal,0,WACV)
-            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oi,Oj,Ok: '),0,WACV)
-            vecVal = wx.TextCtrl(MCSA,-1,'%.3f %.3f %.3f'%(Ori[1],Ori[2],Ori[3]),style=wx.TE_PROCESS_ENTER)
+            rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,'Oi,Oj,Ok: '),0,WACV)
+            vecVal = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f %.3f'%(Ori[1],Ori[2],Ori[3]),style=wx.TE_PROCESS_ENTER)
             vecVal.Bind(wx.EVT_TEXT_ENTER,OnOriVal)
             vecVal.Bind(wx.EVT_KILL_FOCUS,OnOriVal)
             Indx[angVal.GetId()] = [model,0,angVal,vecVal]
             Indx[vecVal.GetId()] = [model,1,angVal,vecVal]
             rbsizer2.Add(vecVal,0,WACV)
-            rbsizer2.Add(wx.StaticText(MCSA,-1,' Vary? '),0,WACV)
+            rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,' Vary? '),0,WACV)
             choice = [' ','A','AV']
-            orvar = wx.ComboBox(MCSA,-1,value=model['Ovar'],choices=choice,
+            orvar = wx.ComboBox(G2frame.MCSA,-1,value=model['Ovar'],choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             orvar.Bind(wx.EVT_COMBOBOX, OnOrVar)
             Indx[orvar.GetId()] = model
             rbsizer2.Add(orvar,0,WACV)
-            rbsizer2.Add(wx.StaticText(MCSA,-1,' Range: Oa: '),0,WACV)
+            rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,' Range: Oa: '),0,WACV)
             Rge = model['Ori'][2]
-            angRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(Rge[0][0],Rge[0][1]),style=wx.TE_PROCESS_ENTER)
+            angRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(Rge[0][0],Rge[0][1]),style=wx.TE_PROCESS_ENTER)
             Indx[angRange.GetId()] = [model,'Ori',0]
             angRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
             angRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
             rbsizer2.Add(angRange,0,WACV)
-            rbsizer2.Add(wx.StaticText(MCSA,-1,'Oi,Oj,Ok: '),0,WACV)
+            rbsizer2.Add(wx.StaticText(G2frame.MCSA,-1,'Oi,Oj,Ok: '),0,WACV)
             for io,item in enumerate(['Oi','Oj','Ok']):
                 rmin,rmax = Rge[io+1]
-                vecRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f '%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
+                vecRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f '%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                 Indx[vecRange.GetId()] = [model,'Ori',io+1]
                 vecRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
                 vecRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
@@ -4722,24 +4740,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             rbsizer.Add(rbsizer2)    
             if model['Type'] == 'Residue':
                 atNames = RBData['Residue'][model['RBId']]['atNames']
-                rbsizer.Add(wx.StaticText(MCSA,-1,'Torsions:'),0,WACV)
+                rbsizer.Add(wx.StaticText(G2frame.MCSA,-1,'Torsions:'),0,WACV)
                 rbsizer3 = wx.FlexGridSizer(0,8,5,5)
                 for it,tor in enumerate(model['Tor'][0]):
                     iBeg,iFin = RBData['Residue'][model['RBId']]['rbSeq'][it][:2]
                     name = atNames[iBeg]+'-'+atNames[iFin]
-                    torRef = wx.CheckBox(MCSA,-1,label=' %s: '%(name))
+                    torRef = wx.CheckBox(G2frame.MCSA,-1,label=' %s: '%(name))
                     torRef.SetValue(model['Tor'][1][it])
                     torRef.Bind(wx.EVT_CHECKBOX,OnPosRef)
                     Indx[torRef.GetId()] = [model,'Tor',it]
                     rbsizer3.Add(torRef,0,WACV)
-                    torVal = wx.TextCtrl(MCSA,-1,'%.4f'%(tor),style=wx.TE_PROCESS_ENTER)
+                    torVal = wx.TextCtrl(G2frame.MCSA,-1,'%.4f'%(tor),style=wx.TE_PROCESS_ENTER)
                     torVal.Bind(wx.EVT_TEXT_ENTER,OnPosVal)
                     torVal.Bind(wx.EVT_KILL_FOCUS,OnPosVal)
                     Indx[torVal.GetId()] = [model,'Tor',it]
                     rbsizer3.Add(torVal,0,WACV)
-                    rbsizer3.Add(wx.StaticText(MCSA,-1,' Range: '),0,WACV)
+                    rbsizer3.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
                     rmin,rmax = model['Tor'][2][it]
-                    torRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
+                    torRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
                     Indx[torRange.GetId()] = [model,'Tor',it]
                     torRange.Bind(wx.EVT_TEXT_ENTER,OnPosRange)
                     torRange.Bind(wx.EVT_KILL_FOCUS,OnPosRange)
@@ -4788,23 +4806,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 poAxis.SetValue('%3d %3d %3d'%(h,k,l))                 
                 
             poSizer = wx.BoxSizer(wx.HORIZONTAL)
-            poRef = wx.CheckBox(MCSA,-1,label=' March-Dollase ratio: ')
+            poRef = wx.CheckBox(G2frame.MCSA,-1,label=' March-Dollase ratio: ')
             poRef.SetValue(POData['Coef'][1])
             poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
             poSizer.Add(poRef,0,WACV)
-            poVal = wx.TextCtrl(MCSA,-1,'%.3f'%(POData['Coef'][0]),style=wx.TE_PROCESS_ENTER)
+            poVal = wx.TextCtrl(G2frame.MCSA,-1,'%.3f'%(POData['Coef'][0]),style=wx.TE_PROCESS_ENTER)
             poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
             poVal.Bind(wx.EVT_KILL_FOCUS,OnPOVal)
             poSizer.Add(poVal,0,WACV)
-            poSizer.Add(wx.StaticText(MCSA,-1,' Range: '),0,WACV)
+            poSizer.Add(wx.StaticText(G2frame.MCSA,-1,' Range: '),0,WACV)
             rmin,rmax = POData['Coef'][2]
-            poRange = wx.TextCtrl(MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
+            poRange = wx.TextCtrl(G2frame.MCSA,-1,'%.3f %.3f'%(rmin,rmax),style=wx.TE_PROCESS_ENTER)
             poRange.Bind(wx.EVT_TEXT_ENTER,OnPORange)
             poRange.Bind(wx.EVT_KILL_FOCUS,OnPORange)
             poSizer.Add(poRange,0,WACV)                       
-            poSizer.Add(wx.StaticText(MCSA,-1,' Unique axis, H K L: '),0,WACV)
+            poSizer.Add(wx.StaticText(G2frame.MCSA,-1,' Unique axis, H K L: '),0,WACV)
             h,k,l = POData['axis']
-            poAxis = wx.TextCtrl(MCSA,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+            poAxis = wx.TextCtrl(G2frame.MCSA,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
             poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOAxis)
             poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)
             poSizer.Add(poAxis,0,WACV)
@@ -4824,7 +4842,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Results[r][0] = True
                     resultsTable.SetValue(r,0,True)
                     G2plt.PlotStructure(G2frame,data)
-                    wx.CallAfter(UpdateMCSA,MCSA.GetScrollPos(wx.VERTICAL))
+                    wx.CallAfter(UpdateMCSA,G2frame.MCSA.GetScrollPos(wx.VERTICAL))
                     resultsGrid.ForceRefresh()
                 elif c == 1:
                     if Results[r][1]:
@@ -4847,7 +4865,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Types = [wg.GRID_VALUE_BOOL,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,4',
                 wg.GRID_VALUE_FLOAT+':10,4',]+maxVary*[wg.GRID_VALUE_FLOAT+':10,5',]
             resultsTable = G2gd.Table(resultVals,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            resultsGrid = G2gd.GSGrid(MCSA)
+            resultsGrid = G2gd.GSGrid(G2frame.MCSA)
             resultsGrid.SetTable(resultsTable, True)
             resultsGrid.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, OnCellChange)
             resultsGrid.AutoSizeColumns(True)
@@ -4861,7 +4879,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return resultsSizer
         
         # UpdateMCSA executable code starts here
-        MCSA.DestroyChildren()
+        G2frame.MCSA.DestroyChildren()
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         general = data['General']
@@ -4876,11 +4894,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         if not data['MCSA']['Models']:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(MCSA,-1,'No MC/SA models:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.MCSA,-1,'No MC/SA models:'),0,WACV)
             mainSizer.Add((5,5),0)
         else:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(MCSA,-1,'MC/SA models:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.MCSA,-1,'MC/SA models:'),0,WACV)
             mainSizer.Add((5,5),0)
             for model in data['MCSA']['Models']:
                 Xsize = 500
@@ -4894,24 +4912,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Rsizer = rbSizer(model)
                     mainSizer.Add(Rsizer)
                     Xsize = max(Rsizer.GetMinSize()[0],Xsize)
-                G2gd.HorizontalLine(mainSizer,MCSA)
+                G2gd.HorizontalLine(mainSizer,G2frame.MCSA)
                 
         if not data['MCSA']['Results']:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(MCSA,-1,'No MC/SA results:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.MCSA,-1,'No MC/SA results:'),0,WACV)
             mainSizer.Add((5,5),0)
         else:
             mainSizer.Add((5,5),0)
-            mainSizer.Add(wx.StaticText(MCSA,-1,'MC/SA results:'),0,WACV)
+            mainSizer.Add(wx.StaticText(G2frame.MCSA,-1,'MC/SA results:'),0,WACV)
             mainSizer.Add((5,5),0)
             Results = data['MCSA']['Results']
             mainSizer.Add(ResultsSizer(Results))
             
-        SetPhaseWindow(G2frame.dataFrame,MCSA,mainSizer)
-        Size = MCSA.GetSize()
+        SetPhaseWindow(G2frame.dataFrame,G2frame.MCSA,mainSizer)
+        Size = G2frame.MCSA.GetSize()
         Size[0] = Xsize+40
         G2frame.dataFrame.SetSize(Size)
-        MCSA.Scroll(0,Scroll)
+        G2frame.MCSA.Scroll(0,Scroll)
         
     def SetSolution(result,Models):
         for key,val in zip(result[-1],result[4:-1]):
@@ -5500,11 +5518,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     def OnFourClear(event):
         generalData = data['General']
-        generalData['Map'] = mapDefault
+        generalData['Map'] = mapDefault.copy()
         G2plt.PlotStructure(G2frame,data)
         
-    def printRho(SGLaue,rho,rhoMax):                          
 # map printing for testing purposes
+    def printRho(SGLaue,rho,rhoMax):                          
         dim = len(rho.shape)
         if dim == 2:
             ix,jy = rho.shape
@@ -5537,11 +5555,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         print ' Begin fourier map search - can take some time'
         time0 = time.time()
         generalData = data['General']
+        drawingData = data['Drawing']
         mapData = generalData['Map']
         if len(mapData['rho']):
             wx.BeginBusyCursor()
             try:
-                peaks,mags,dzeros = G2mth.SearchMap(data)
+                peaks,mags,dzeros = G2mth.SearchMap(generalData,drawingData)
             finally:
                 wx.EndBusyCursor()
             if len(peaks):
@@ -5555,6 +5574,51 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             UpdateDrawAtoms()
         else:
             print 'No map available'
+            
+    def On4DChargeFlip(event):
+        generalData = data['General']
+        mapData = generalData['Map']
+        map4DData = generalData['4DmapData']
+        flipData = generalData['Flip']
+        reflName = flipData['RefList']
+        phaseName = generalData['Name']
+        if 'PWDR' in reflName:
+            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+            reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
+            reflDict = reflSets[phaseName]
+        elif 'HKLF' in reflName:
+            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+            reflDict = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+        else:
+            print '**** ERROR - No data defined for charge flipping'
+            return
+        pgbar = wx.ProgressDialog('Charge flipping','Residual Rcf =',101.0, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+        screenSize = wx.ClientDisplayRect()
+        Size = pgbar.GetSize()
+        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
+        pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        pgbar.SetSize(Size)
+        try:
+            newMap,new4Dmap = G2mth.SSChargeFlip(data,reflDict,pgbar)
+        finally:
+            pgbar.Destroy()
+        mapData.update(newMap)
+        print newMap['rho'].shape,mapData['rho'].shape
+        map4DData.update(new4Dmap)
+        print newMap['rho'].shape,mapData['rho'].shape
+        mapData['Flip'] = True        
+        mapSig = np.std(mapData['rho'])
+        if not data['Drawing']:                 #if new drawing - no drawing data!
+            SetupDrawingData()
+        data['Drawing']['contourLevel'] = 1.
+        data['Drawing']['mapSize'] = 10.
+        print ' 4D Charge flip map computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+        print mapData['rho'].shape
+        if mapData['Rcf'] < 99.:
+            OnSearchMaps(event)             #does a plot structure at end
+        else:
+            print 'Bad charge flip map - no peak search done'
         
     def OnChargeFlip(event):
         generalData = data['General']
@@ -5567,7 +5631,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             reflDict = reflSets[phaseName]
             if 'list' in str(type(reflDict)):       #patch for old reflection data
-            #if isinstance(reflDict,list):       #patch for old reflection data
                 RefData = {'RefList':[],'FF':[]}
                 for ref in reflDict:
                     RefData['RefList'].append(ref[:11]+[ref[13],])
@@ -5700,6 +5763,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourierMaps, id=G2gd.wxID_FOURCALC)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnSearchMaps, id=G2gd.wxID_FOURSEARCH)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnChargeFlip, id=G2gd.wxID_CHARGEFLIP)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, On4DChargeFlip, id=G2gd.wxID_4DCHARGEFLIP)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2gd.wxID_SINGLEMCSA)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2gd.wxID_MULTIMCSA)
@@ -5839,9 +5903,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.gridList.append(MapPeaks)    
     G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
     Pages.append('Map peaks')
-    MCSA = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(MCSA,'MC/SA')
-    Pages.append('MC/SA')
+    if data['General']['Type'] not in ['modulated','magnetic']:
+        G2frame.MCSA = wx.ScrolledWindow(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(G2frame.MCSA,'MC/SA')
+        Pages.append('MC/SA')
     Texture = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(Texture,'Texture')
     Pages.append('Texture')

@@ -696,7 +696,10 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict):
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = refDict['FF']['FF'][iref][Tindx]
         Uniq = np.inner(H[:3],SGMT)
+        SSUniq = np.inner(H,SSGMT)
         Phi = np.inner(H[:3],SGT)
+        SSPhi = np.inner(H,SSGT)
+        
         phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
@@ -710,6 +713,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict):
         if not SGData['SGInv']:
             fb = np.array([(FF+FP-Bab)*sinp*Tcorr,FPP*cosp*Tcorr])
             fbs = np.sum(np.sum(fb,axis=1),axis=1)
+            
         fasq = fas**2
         fbsq = fbs**2        #imaginary
         refl[9+im] = np.sum(fasq)+np.sum(fbsq)

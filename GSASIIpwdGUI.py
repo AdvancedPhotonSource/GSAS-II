@@ -2858,6 +2858,13 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     def OnPlotHKL(event):
         '''Plots a layer of reflections
         '''
+        phaseName = G2frame.RefList
+        pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
+        phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
+        General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+        Super = General.get('Super',0)
+        SuperVec = General.get('SuperVec',[])
+        refList = np.array(data[phaseName]['RefList'])
         FoMax = np.max(refList.T[8+Super])
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
         Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
@@ -2868,6 +2875,13 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     def OnPlot3DHKL(event):
         '''Plots the reflections in 3D
         '''
+        phaseName = G2frame.RefList
+        pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
+        phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
+        General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+        Super = General.get('Super',0)
+        SuperVec = General.get('SuperVec',[])
+        refList = np.array(data[phaseName]['RefList'])
         FoMax = np.max(refList.T[8+Super])
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
         Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
@@ -2932,6 +2946,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             if Super:
                 colLabels.insert(3,'M')
         return G2gd.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+
     def ShowReflTable(phaseName):
         '''Posts a table of reflections for a phase, creating the table
         if needed using MakeReflectionTable

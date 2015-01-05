@@ -1451,13 +1451,13 @@ def adjHKLmax(SGData,Hmax):
     
     '''
     if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
-        Hmax[0] = ((Hmax[0]+3)/6)*6
-        Hmax[1] = ((Hmax[1]+3)/6)*6
-        Hmax[2] = ((Hmax[2]+1)/4)*4
+        Hmax[0] = int(math.ceil(Hmax[0]/6.))*6
+        Hmax[1] = int(math.ceil(Hmax[1]/6.))*6
+        Hmax[2] = int(math.ceil(Hmax[2]/4.))*4
     else:
-        Hmax[0] = ((Hmax[0]+2)/4)*4
-        Hmax[1] = ((Hmax[1]+2)/4)*4
-        Hmax[2] = ((Hmax[2]+2)/4)*4
+        Hmax[0] = int(math.ceil(Hmax[0]/4.))*4
+        Hmax[1] = int(math.ceil(Hmax[1]/4.))*4
+        Hmax[2] = int(math.ceil(Hmax[2]/4.))*4
 
 def OmitMap(data,reflDict,pgbar=None):
     '''default doc string
@@ -1553,7 +1553,7 @@ def Fourier4DMap(data,reflDict):
     Fhkl = np.zeros(shape=2*Hmax,dtype='c16')
     time0 = time.time()
     for iref,ref in enumerate(reflDict['RefList']):
-        if ref[5] >= dmin:
+        if ref[5] > dmin:
             Fosq,Fcsq,ph = ref[9:12]
             Uniq = np.inner(ref[:4],SSGMT)
             Phi = np.inner(ref[:4],SSGT)
@@ -1607,7 +1607,7 @@ def FourierMap(data,reflDict):
 #    Fhkl[0,0,0] = generalData['F000X']
     time0 = time.time()
     for iref,ref in enumerate(reflDict['RefList']):
-        if ref[4] >= dmin:
+        if ref[4] > dmin:
             Fosq,Fcsq,ph = ref[8:11]
             Uniq = np.inner(ref[:3],SGMT)
             Phi = np.inner(ref[:3],SGT)
@@ -1784,9 +1784,9 @@ def ChargeFlip(data,reflDict,pgbar):
     time0 = time.time()
     for iref,ref in enumerate(reflDict['RefList']):
         dsp = ref[4+im]
-        if im and ref[3]:   #skip super lattice reflections
+        if im and ref[3]:   #skip super lattice reflections - result is 3D projection
             continue
-        if dsp >= dmin:
+        if dsp > dmin:
             ff = 0.1*Vol    #est. no. atoms for ~10A**3/atom
             if FFtable:
                 SQ = 0.25/dsp**2
@@ -1847,7 +1847,109 @@ def ChargeFlip(data,reflDict,pgbar):
     mapData['rollMap'] = [0,0,0]
     return mapData
     
-def SearchMap(data):
+def SSChargeFlip(data,reflDict,pgbar):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+    generalData = data['General']
+    mapData = generalData['Map']
+    map4DData = {}
+    flipData = generalData['Flip']
+    FFtable = {}
+    if 'None' not in flipData['Norm element']:
+        normElem = flipData['Norm element'].upper()
+        FFs = G2el.GetFormFactorCoeff(normElem.split('+')[0].split('-')[0])
+        for ff in FFs:
+            if ff['Symbol'] == normElem:
+                FFtable.update(ff)
+    dmin = flipData['Resolution']
+    SGData = generalData['SGData']
+    SSGData = generalData['SSGData']
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGT = np.array([ops[1] for ops in SGData['SGOps']])
+    SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
+    SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
+    cell = generalData['Cell'][1:8]        
+    A = G2lat.cell2A(cell[:6])
+    Vol = cell[6]
+    maxM = generalData['SuperVec'][2]
+    Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A)+[maxM,],dtype='i')+1
+    adjHKLmax(SGData,Hmax)
+    Ehkl = np.zeros(shape=2*Hmax,dtype='c16')       #2X64bits per complex no.
+    time0 = time.time()
+    for iref,ref in enumerate(reflDict['RefList']):
+        dsp = ref[5]
+        if dsp > dmin:
+            ff = 0.1*Vol    #est. no. atoms for ~10A**3/atom
+            if FFtable:
+                SQ = 0.25/dsp**2
+                ff *= G2el.ScatFac(FFtable,SQ)[0]
+            if ref[9] > 0.:         #use only +ve Fobs**2
+                E = np.sqrt(ref[9])/ff
+            else:
+                E = 0.
+            ph = ref[11]
+            ph = rn.uniform(0.,360.)
+            Uniq = np.inner(ref[:4],SSGMT)
+            Phi = np.inner(ref[:4],SSGT)
+            for i,hklm in enumerate(Uniq):        #uses uniq
+                hklm = np.asarray(hklm,dtype='i')
+                dp = 360.*Phi[i]                #and phi
+                a = cosd(ph+dp)
+                b = sind(ph+dp)
+                phasep = complex(a,b)
+                phasem = complex(a,-b)
+                h,k,l,m = hklm+Hmax
+                Ehkl[h,k,l,m] = E*phasep
+                h,k,l,m = -hklm+Hmax       #Friedel pair refl.
+                Ehkl[h,k,l,m] = E*phasem
+#    Ehkl[Hmax] = 0.00001           #this to preserve F[0,0,0]
+    CEhkl = copy.copy(Ehkl)
+    MEhkl = ma.array(Ehkl,mask=(Ehkl==0.0))
+    Emask = ma.getmask(MEhkl)
+    sumE = np.sum(ma.array(np.absolute(CEhkl),mask=Emask))
+    Ncyc = 0
+    old = np.seterr(all='raise')
+    while True:        
+        CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))*(1.+0j)
+        CEsig = np.std(CErho)
+        CFrho = np.where(np.real(CErho) >= flipData['k-factor']*CEsig,CErho,-CErho)
+        CFrho = np.where(np.real(CErho) <= flipData['k-Max']*CEsig,CFrho,-CFrho)      #solves U atom problem!
+        CFhkl = fft.ifftshift(fft.ifftn(CFrho))
+        CFhkl = np.where(CFhkl,CFhkl,1.0)           #avoid divide by zero
+        phase = CFhkl/np.absolute(CFhkl)
+        CEhkl = np.absolute(Ehkl)*phase
+        Ncyc += 1
+        sumCF = np.sum(ma.array(np.absolute(CFhkl),mask=Emask))
+        DEhkl = np.absolute(np.absolute(Ehkl)/sumE-np.absolute(CFhkl)/sumCF)
+        Rcf = min(100.,np.sum(ma.array(DEhkl,mask=Emask)*100.))
+        if Rcf < 5.:
+            break
+        GoOn = pgbar.Update(Rcf,newmsg='%s%8.3f%s\n%s %d'%('Residual Rcf =',Rcf,'%','No.cycles = ',Ncyc))[0]
+        if not GoOn or Ncyc > 10000:
+            break
+    np.seterr(**old)
+    print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
+    CErho = np.real(fft.fftn(fft.fftshift(CEhkl[:,:,:,maxM+1])))
+    SSrho = np.real(fft.fftn(fft.fftshift(CEhkl)))
+    print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
+    roll = findOffset(SGData,A,CEhkl[:,:,:,maxM+1])               #CEhkl needs to be just the observed set, not the full set!
+
+    mapData['Rcf'] = Rcf
+    mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
+    mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
+    mapData['rollMap'] = [0,0,0]
+
+    map4DData['Rcf'] = Rcf
+    map4DData['rho'] = np.real(np.roll(np.roll(np.roll(SSrho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2))
+    map4DData['rhoMax'] = max(np.max(map4DData['rho']),-np.min(map4DData['rho']))
+    return mapData,map4DData
+    
+def SearchMap(generalData,drawingData):
     '''Does a search of a density map for peaks meeting the criterion of peak
     height is greater than mapData['cutOff']/100 of mapData['rhoMax'] where 
     mapData is data['General']['mapData']; the map is also in mapData.
@@ -1916,11 +2018,9 @@ def SearchMap(data):
         
         return Vec,Hess
         
-    generalData = data['General']
     phaseName = generalData['Name']
     SGData = generalData['SGData']
     Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-    drawingData = data['Drawing']
     peaks = []
     mags = []
     dzeros = []

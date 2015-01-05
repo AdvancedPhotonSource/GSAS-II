@@ -67,8 +67,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_FOURCALC, wxID_FOURSEARCH, wxID_FOURCLEAR, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, 
     wxID_CHARGEFLIP, wxID_PEAKSUNIQUE, wxID_PEAKSDELETE, wxID_PEAKSDA,
     wxID_PEAKSDISTVP, wxID_PEAKSVIEWPT, wxID_FINDEQVPEAKS,wxID_SHOWBONDS,wxID_MULTIMCSA,
-    wxID_SINGLEMCSA, wxID_4DMAPCOMPUTE,
-] = [wx.NewId() for item in range(16)]
+    wxID_SINGLEMCSA, wxID_4DMAPCOMPUTE,wxID_4DCHARGEFLIP,
+] = [wx.NewId() for item in range(17)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_PWDANALYSIS, wxID_PWDCOPY, wxID_DATADELETE,
 ] = [wx.NewId() for item in range(5)]
@@ -1981,7 +1981,7 @@ class DataFrame(wx.Frame):
             help='Select phase')
         self.RestraintEdit.Append(id=wxID_RESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add restraints',
             help='Add restraints')
-        self.RestraintEdit.Enable(wxID_RESTRAINTADD,True)    #gets disenabled if macromolecule phase
+        self.RestraintEdit.Enable(wxID_RESTRAINTADD,True)    #gets disabled if macromolecule phase
         self.RestraintEdit.Append(id=wxID_AARESTRAINTADD, kind=wx.ITEM_NORMAL,text='Add residue restraints',
             help='Add residue based restraints for macromolecules from macro file')
         self.RestraintEdit.Enable(wxID_AARESTRAINTADD,False)    #gets enabled if macromolecule phase
@@ -2369,6 +2369,9 @@ class DataFrame(wx.Frame):
             text='Search map')
         self.GeneralCalc.Append(help='Run charge flipping',id=wxID_CHARGEFLIP, kind=wx.ITEM_NORMAL,
             text='Charge flipping')
+        self.GeneralCalc.Append(help='Run 4D charge flipping',id=wxID_4DCHARGEFLIP, kind=wx.ITEM_NORMAL,
+            text='4D Charge flipping')
+        self.GeneralCalc.Enable(wxID_4DCHARGEFLIP,False)   
         self.GeneralCalc.Append(help='Clear map',id=wxID_FOURCLEAR, kind=wx.ITEM_NORMAL,
             text='Clear map')
         self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing',id=wxID_SINGLEMCSA, kind=wx.ITEM_NORMAL,

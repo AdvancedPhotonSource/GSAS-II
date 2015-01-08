@@ -536,14 +536,15 @@ def GetAtomFXU(pfx,calcControls,parmDict):
 def GetAtomSSFXU(pfx,calcControls,parmDict):
     'Needs a doc string'
     Natoms = calcControls['Natoms'][pfx]
-    maxSSwave = parmDict[pfx+'maxSSwave']
+    maxSSwave = calcControls['maxSSwave'][pfx]
     Nwave = {'F':maxSSwave['Sfrac'],'X':maxSSwave['Spos'],'Y':maxSSwave['Spos'],'Z':maxSSwave['Spos'],
         'U':maxSSwave['Sadp'],'M':maxSSwave['Smag']}
     XSSdata = np.zeros((6,maxSSwave['Spos'],Natoms))
     FSSdata = np.zeros((2,maxSSwave['Sfrac'],Natoms))
     USSdata = np.zeros((12,maxSSwave['Sadp'],Natoms))
     MSSdata = np.zeros((6,maxSSwave['Smag'],Natoms))
-    keys = {'Fsin:':FSSdata[0],'Fcos:':FSSdata[1],
+    keys = {'Fsin:':FSSdata[0],'Fcos:':FSSdata[1],'Fzero:':FSSdata[0],'Fwid:':FSSdata[1],
+        'Tzero:':XSSdata[0],'Xslope:':XSSdata[1],'Yslope:':XSSdata[2],'Zslope:':XSSdata[3],
         'Xsin:':XSSdata[0],'Ysin:':XSSdata[1],'Zsin:':XSSdata[2],'Xcos:':XSSdata[3],'Ycos:':XSSdata[4],'Zcos:':XSSdata[5],
         'U11sin:':USSdata[0],'U22sin:':USSdata[1],'U33sin:':USSdata[2],'U12sin:':USSdata[3],'U13sin:':USSdata[4],'U23sin:':USSdata[5],
         'U11cos:':USSdata[6],'U22cos:':USSdata[7],'U33cos:':USSdata[8],'U12cos:':USSdata[9],'U13cos:':USSdata[10],'U23cos:':USSdata[11],

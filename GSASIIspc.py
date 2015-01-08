@@ -1454,8 +1454,9 @@ def GetSSfxuinel(XYZ,UIJ,SGData,SSGData):
     elif siteSym == '-1':   #"-1" site symmetry
         CSI['Spos'][0] = [1,2,3, 0,0,0]
         CSI['Sadp'][0] = [0,0,0,0,0,0, 1,2,3,4,5,6]
-        return CSI        
-    print siteSym,OpText,SSOptext    
+        return CSI
+    return CSI  #for now        
+#    print siteSym,OpText,SSOptext    
     UniqAx = {'a':'a','b':'b','c':'g'}
     if SGData['SGLaue'] == '2/m':
         if UniqAx[SGData['SGUniq']] in SSGData['modSymb']:   #e.g. (0b0)
@@ -1531,14 +1532,14 @@ def GetSSfxuinel(XYZ,UIJ,SGData,SSGData):
     ucos = np.zeros(6,dtype='i')
     csi = np.ones((6),dtype='i')*-1
     for i,idelt in enumerate(deltx):
-        print 'idelt:',idelt
+#        print 'idelt:',idelt
         nxyzt = np.inner(ssop[0],(xyzt+idelt))+ssop[1]
         nxyzt[3] -= ssop[1][3]
-        print 'nxyz',nxyzt
+#        print 'nxyz',nxyzt
         xsin[i] = np.allclose((xyzt-idelt),nxyzt,1.e-6)
-        print 'sin ',(xyzt-idelt),xsin[i]
+#        print 'sin ',(xyzt-idelt),xsin[i]
         xcos[i] = np.allclose((xyzt+idelt),nxyzt,1.e-6)
-        print 'cos ',(xyzt+idelt),xcos[i]
+#        print 'cos ',(xyzt+idelt),xcos[i]
     n = -1
     for i,isin in enumerate(xsin):
         if isin:
@@ -1548,15 +1549,15 @@ def GetSSfxuinel(XYZ,UIJ,SGData,SSGData):
         if icos:
             n += 1
             csi[i+3] = n
-    print csi
-    print CSI['Spos'][0]
-    print xsin,xcos
+#    print csi
+#    print CSI['Spos'][0]
+#    print xsin,xcos
     for i,idelt in enumerate(deltu):
         nuij = U2Uij(np.inner(sop[0],np.inner(np.abs(Uij2U(uij+idelt)),sop[0])))
         usin[i] = np.equal(np.abs(uij-idelt),nuij)[i]
         ucos[i] = np.equal(np.abs(uij+idelt),nuij)[i]
-    print CSI['Sadp'][0]
-    print usin,ucos
+#    print CSI['Sadp'][0]
+#    print usin,ucos
     return CSI
     
 def MustrainNames(SGData):

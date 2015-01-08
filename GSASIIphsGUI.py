@@ -2004,10 +2004,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     def UpdateWavesData():
         
+        generalData = data['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        
         def AtomSizer(SS,atom):
             
             def OnWaveType(event):
                 atom[-1][SS]['waveType']=waveType.GetValue()
+                atom[-1][SS]['Spos'] = []
+                UpdateWavesData()                
                 
             def OnShowWave(event):
                 Obj = event.GetEventObject()
@@ -2016,7 +2021,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.ModulationPlot(G2frame,data,atom,Ax)
                 
             atomSizer = wx.BoxSizer(wx.HORIZONTAL)
-            atomSizer.Add(wx.StaticText(waveData,label=' Modulation data for atom:    '+atom[0]+'    WaveType: '),0,WACV)            
+            atomSizer.Add(wx.StaticText(waveData,label=
+            ' Modulation data for atom: %s  Site sym: %s  WaveType: '%(atom[0],atom[cs].strip())),0,WACV)            
             waveType = wx.ComboBox(waveData,value=atom[-1][SS]['waveType'],choices=waveTypes,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
@@ -2031,12 +2037,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 atomSizer.Add(mapSel,0,WACV)
             return atomSizer
             
-        def WaveSizer(waveBlk,Stype,typeName,Names,waveCSI):
+        def WaveSizer(waveType,waveBlk,Stype,typeName,Names):
             
             def OnAddWave(event):
                 Obj = event.GetEventObject()
                 iatm,item = Indx[Obj.GetId()]
-                atomData[iatm][-1][SS][item].append([[0.0 for i in range(numVals[Stype])],False])
+                nt = numVals[Stype]
+                if not len(atomData[iatm][-1][SS][item]) and waveType in ['ZigZag','Sawtooth'] and Stype == 'Spos':
+                    nt = 4
+                atomData[iatm][-1][SS][item].append([[0.0 for i in range(nt)],False])
                 UpdateWavesData()
                 
             def OnWaveVal(event):
@@ -2069,14 +2078,30 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             waveHead.Add(waveAdd,0,WACV)
             waveSizer.Add(waveHead)
             if len(waveBlk):
-                waveSizer.Add(wx.StaticText(waveData,label=' Parameters: '+str(Names).rstrip(']').lstrip('[').replace("'",'')),0,WACV)
-                if Stype == 'Sfrac':
-                    Waves = wx.FlexGridSizer(1,4,5,5)
-                else:
-                    Waves = wx.FlexGridSizer(1,8,5,5)
+                CSI = G2spc.GetSSfxuinel(xyz,uij,SGData,SSGData)
                 for iwave,wave in enumerate(waveBlk):
+                    waveName = 'Fourier'
+                    if Stype == 'Sfrac':
+                        if 'Crenel' in waveType and not iwave:
+                            waveName = 'Crenel'
+                            names = Names[2:]
+                        else:
+                            names = Names[:2]
+                        Waves = wx.FlexGridSizer(1,4,5,5)
+                    elif Stype == 'Spos':
+                        if waveType in ['ZigZag','Sawtooth'] and not iwave:
+                            names = Names[6:]
+                            Waves = wx.FlexGridSizer(1,6,5,5)
+                            waveName = waveType
+                        else:
+                            names = Names[:6]
+                            Waves = wx.FlexGridSizer(1,8,5,5)
+                    else:
+                        names = Names
+                        Waves = wx.FlexGridSizer(1,8,5,5)
+                    waveSizer.Add(wx.StaticText(waveData,label=' %s  parameters: %s'%(waveName,str(names).rstrip(']').lstrip('[').replace("'",''))),0,WACV)
                     for ival,val in enumerate(wave[0]):
-                        if waveCSI[0][ival] == 0:
+                        if CSI[Stype][0][ival] == 0:
                             waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_READONLY)
                             waveVal.SetBackgroundColour(VERY_LIGHT_GREY)
                         else:
@@ -2093,11 +2118,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Indx[waveRef.GetId()] = [iatm,Stype,iwave]
                     waveRef.Bind(wx.EVT_CHECKBOX, OnRefWave)
                     Waves.Add(waveRef,0,WACV)
-                    waveDel = wx.CheckBox(waveData,label='Delete?')
-                    Indx[waveDel.GetId()] = [iatm,Stype,iwave]
-                    waveDel.Bind(wx.EVT_CHECKBOX, OnDelWave)
-                    Waves.Add(waveDel,0,WACV)                
-                waveSizer.Add(Waves)                    
+                    if iwave < len(waveBlk)-1:
+                        Waves.Add((5,5),0)                
+                    else:
+                        waveDel = wx.CheckBox(waveData,label='Delete?')
+                        Indx[waveDel.GetId()] = [iatm,Stype,iwave]
+                        waveDel.Bind(wx.EVT_CHECKBOX, OnDelWave)
+                        Waves.Add(waveDel,0,WACV)
+                    waveSizer.Add(Waves)                    
             return waveSizer
             
         def MapSizer():
@@ -2138,11 +2166,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         typeNames = {'Sfrac':' Site fraction','Spos':' Position','Sadp':' Thermal motion','Smag':' Magnetic moment'}
         numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6}
-        posNames = ['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos']
+        posNames = ['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tzero','Xslope','Yslope','Zslope']
         adpNames = ['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin',
             'U11cos','U22cos','U33cos','U12cos','U13cos','U23cos']
         magNames = ['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']
-        fracNames = ['Flen','Fcent','Fsin','Fcos']
+        fracNames = ['Fsin','Fcos','Fzero','Fwid']
         waveTypes = ['Fourier','Sawtooth','ZigZag','Crenel/Fourier']
         Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
         mainSizer.Add(wx.StaticText(waveData,label=' Incommensurate propagation wave data:'),0,WACV)
@@ -2151,7 +2179,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for iatm,atom in enumerate(atomData):
                 xyz = atom[cx:cx+3]
                 uij = atom[cia+2:cia+8]
-                CSI = G2spc.GetSSfxuinel(xyz,uij,SGData,SSGData)
                 for SS in ['SS1',]:  #future SS2 & SS3 - I doubt it!
                     G2gd.HorizontalLine(mainSizer,waveData)
                     mainSizer.Add(AtomSizer(SS,atom))
@@ -2160,7 +2187,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             continue
                         if generalData['Type'] != 'magnetic' and Stype == 'Smag':
                             break
-                        mainSizer.Add(WaveSizer(atom[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype],CSI[Stype]))
+                        mainSizer.Add(WaveSizer(atom[-1][SS]['waveType'],atom[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype]))
                         
         SetPhaseWindow(G2frame.dataFrame,waveData,mainSizer)
                        
@@ -5785,7 +5812,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2gd.wxID_ATOMSPDISAGL)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2gd.wxID_ISODISP)
         for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)                
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)
         # Wave Data
         if data['General']['Type'] in ['modulated','magnetic']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.WavesData)

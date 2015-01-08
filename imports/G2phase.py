@@ -509,7 +509,10 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                 Sfrac[i] = [vals,False]
                 print Sfrac[i]
             for i,it in enumerate(Spos):
-                vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36]),float(it[36:45]),float(it[45:54])]
+                if waveType in ['ZigZag','Sawtooth'] and not i:
+                    vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36])]
+                else:
+                    vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36]),float(it[36:45]),float(it[45:54])]
                 Spos[i] = [vals,False]
             for i,it in enumerate(Sadp):
                 vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36]),float(it[36:45]),float(it[45:54]),

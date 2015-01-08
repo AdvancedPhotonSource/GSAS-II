@@ -146,11 +146,12 @@ def Refine(GPXfile,dlg):
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,pFile=printFile)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,maxSSwave = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,pFile=printFile)
     calcControls['atomIndx'] = atomIndx
     calcControls['Natoms'] = Natoms
     calcControls['FFtables'] = FFtables
     calcControls['BLtables'] = BLtables
+    calcControls['maxSSwave'] = maxSSwave
     hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,pFile=printFile)
     calcControls.update(controlDict)
     histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,pFile=printFile)
@@ -242,7 +243,7 @@ def SeqRefine(GPXfile,dlg):
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,False,printFile)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,maxSSwave = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,False,printFile)
     for item in phaseVary:
         if '::A0' in item:
             print '**** WARNING - lattice parameters should not be refined in a sequential refinement ****'
@@ -268,6 +269,7 @@ def SeqRefine(GPXfile,dlg):
         calcControls['Natoms'] = Natoms
         calcControls['FFtables'] = FFtables
         calcControls['BLtables'] = BLtables
+        calcControls['maxSSwave'] = maxSSwave
         Histo = {histogram:Histograms[histogram],}
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histo,Print=False)
         calcControls.update(controlDict)

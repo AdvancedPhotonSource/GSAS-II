@@ -61,6 +61,7 @@ npacosd = lambda x: 180.*np.arccos(x)/np.pi
 npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
+GkDelta = unichr(0x0394)
     
 class G2PlotMpl(wx.Panel):    
     'needs a doc string'
@@ -2770,11 +2771,35 @@ def PlotTexture(G2frame,data,Start=False):
     Page.canvas.draw()
 
 ################################################################################
-##### Modulation Plot
+##### Plot Modulation
 ################################################################################
 
-def ModulationPlot(G2frame,data,atom,Ax):
+def ModulationPlot(G2frame,data,atom,ax,off=0):
+    global Off,Atom,Ax
+    Off = off
+    Atom = atom
+    Ax = ax
+    def OnMotion(event):
+        xpos = event.xdata
+        if xpos:                                        #avoid out of frame mouse position
+            ypos = event.ydata
+            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            try:
+                G2frame.G2plotNB.status.SetStatusText('t =%9.3f %s =%9.3f'%(xpos,GkDelta+Ax,ypos),1)                   
+            except TypeError:
+                G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
     
+    def OnPlotKeyPress(event):
+        global Off,Atom,Ax
+        newPlot = False        
+        if event.key == '0':
+            Off = 0
+        elif event.key == '+':
+            Off += 1
+        elif event.key == '-':
+            Off -= 1 
+        wx.CallAfter(ModulationPlot,G2frame,data,Atom,Ax,Off)
+
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Modulation')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -2786,14 +2811,37 @@ def ModulationPlot(G2frame,data,atom,Ax):
         Plot = G2frame.G2plotNB.addMpl('Modulation').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Modulation')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-#        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
+        
+    Page.Choice = ['+: shift up','-: shift down','0: reset']
+    Page.keyPress = OnPlotKeyPress
+    Page.SetFocus()
     General = data['General']
     cx,ct,cs,cia = General['AtomPtrs']
     Map = General['4DmapData']
     MapType = Map['MapType']
     rhoSize = np.array(Map['rho'].shape)
     atxyz = np.array(atom[cx:cx+3])
+    waveType = atom[-1]['SS1']['waveType']
+    Spos = atom[-1]['SS1']['Spos']
+    tau = np.linspace(0.,2.,101)
+    wave = np.zeros((3,101))
+    if len(Spos):
+        scof = []
+        ccof = []
+        for i,spos in enumerate(Spos):
+            if waveType in ['Sawtooth','ZigZag'] and not i:
+                Toff = spos[0][0]
+                slopes = np.array(spos[0][1:])
+                if waveType == 'Sawtooth':
+                    wave = G2mth.posSawtooth(tau,Toff,slopes)
+                elif waveType == 'ZigZag':
+                    wave = G2mth.posZigZag(tau,Toff,slopes)
+            else:
+                scof.append(spos[0][:3])
+                ccof.append(spos[0][3:])
+        wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof))
     Title = MapType+' modulation map for atom '+atom[0]+    \
         ' at %.4f %.4f %.4f'%(atxyz[0],atxyz[1],atxyz[2])
     ix = -np.array(np.rint(rhoSize[:3]*atxyz),dtype='i')
@@ -2804,17 +2852,21 @@ def ModulationPlot(G2frame,data,atom,Ax):
     ib = 4
     if Ax == 'x':
         slab = np.sum(np.sum(rho[:,ix[1]-ib:ix[1]+ib,ix[2]-ib:ix[2]+ib,:],axis=2),axis=1)
+        Plot.plot(wave[0],tau)
     elif Ax == 'y':
         slab = np.sum(np.sum(rho[ix[0]-ib:ix[0]+ib,:,ix[2]-ib:ix[2]+ib,:],axis=2),axis=0)
+        Plot.plot(wave[1],tau)
     elif Ax == 'z':
         slab = np.sum(np.sum(rho[ix[0]-ib:ix[0]+ib,ix[1]-ib:ix[1]+ib,:,:],axis=1),axis=0)
+        Plot.plot(wave[2],tau)
     Plot.set_title(Title)
     Plot.set_xlabel('t')
     Plot.set_ylabel(r'$\mathsf{\Delta}$%s'%(Ax))
-    Slab = np.concatenate((slab,slab),axis=1)
-    Plot.contour(Slab,20,extent=(0.,2.,-.5,.5))
-    Page.canvas.draw()
+    Slab = np.concatenate((slab,slab),axis=1).T
+    Plot.contour(Slab,20,extent=(-.5+Off*.005,.5+Off*.005,0.,2.))
     
+    Page.canvas.draw()
+   
 ################################################################################
 ##### PlotCovariance
 ################################################################################
@@ -4024,7 +4076,6 @@ def PlotStructure(G2frame,data,firstCall=False):
         showBonds = mapData.get('Show bonds',False)
     if 'Flip' in generalData:
         flipData = generalData['Flip']                        
-        flipData['mapRoll'] = [0,0,0]
     Wt = np.array([255,255,255])
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])

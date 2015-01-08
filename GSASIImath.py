@@ -41,6 +41,10 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atand = lambda x: 180.*np.arctan(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
+    
+################################################################################
+##### Hessian least-squares Levenberg-Marquardt routine
+################################################################################
 
 def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Print=False):
     
@@ -193,6 +197,10 @@ def getVCov(varyNames,varyList,covMatrix):
 #                else: 
 #                    vcov[i1][i2] = 0.0
     return vcov
+    
+################################################################################
+##### Atom manipulations
+################################################################################
 
 def FindAtomIndexByIDs(atomData,IDs,Draw=True):
     '''finds the set of atom array indices for a list of atom IDs. Will search 
@@ -696,9 +704,33 @@ def XAnomAbs(Elements,wave):
         Xanom[El] = G2el.FPcalc(Orbs, kE)
     return Xanom
     
+def posFourier(tau,psin,pcos):
+    A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])
+    B = np.array([pc[:,np.newaxis]*np.cos(2*np.pi*(i+1)*tau) for i,pc in enumerate(pcos)])
+    return np.sum(A,axis=0)+np.sum(B,axis=0)
+    
+def posSawtooth(tau,Toff,slopes):
+    Tau = (tau-Toff)%1.
+    A = slopes[:,np.newaxis]*Tau
+    return A
+
+def posZigZag(tau,Toff,slopes):
+    Tau = (tau-Toff)%1.
+    A = np.where(Tau <= 0.5,slopes[:,np.newaxis]*Tau,slopes[:,np.newaxis]*(1.-Tau))
+    return A
+    
+def fracCrenel(tau,Toff,Twid):
+    Tau = (tau-Toff)%1.
+    A = np.where(Tau<Twid,1.,0.)
+    return A
+    
+def fracFourier(tau,fsin,fcos):
+    A = np.array([fs[:,np.newaxis]*np.sin(2.*np.pi*(i+1)*tau) for i,fs in enumerate(fsin)])
+    B = np.array([fc[:,np.newaxis]*np.cos(2.*np.pi*(i+1)*tau) for i,fc in enumerate(fcos)])
+    return np.sum(A,axis=0)+np.sum(B,axis=0)
     
 ################################################################################
-##### distance, angle, planes, torsion stuff stuff
+##### distance, angle, planes, torsion stuff 
 ################################################################################
 
 def getSyXYZ(XYZ,ops,SGData):

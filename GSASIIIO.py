@@ -2056,7 +2056,7 @@ class ExportBaseclass(object):
         rbVary,rbDict =  G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
         self.parmDict.update(rbDict)
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables =  G2stIO.GetPhaseData(
+        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,maxSSwave =  G2stIO.GetPhaseData(
             Phases,RestraintDict=None,rbIds=rbIds,Print=False)
         self.parmDict.update(phaseDict)
         hapVary,hapDict,controlDict =  G2stIO.GetHistogramPhaseData(

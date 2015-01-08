@@ -3372,7 +3372,7 @@ class GSASII(wx.Frame):
             G2gd.GetPatternTreeItemId(self,self.root,'Rigid bodies'))
         rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
         rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
-        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)        
+        Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable,maxSSwave = G2stIO.GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)        
         hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,Print=False)
         histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,Print=False)
         varyList = rbVary+phaseVary+hapVary+histVary

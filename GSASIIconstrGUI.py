@@ -234,7 +234,7 @@ def UpdateConstraints(G2frame,data):
         return
 
     # create a list of the phase variables
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable = G2stIO.GetPhaseData(Phases,rbIds=rbIds,Print=False)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable,maxSSwave = G2stIO.GetPhaseData(Phases,rbIds=rbIds,Print=False)
     phaseList = []
     for item in phaseDict:
         if item.split(':')[2] not in ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder']:

@@ -188,7 +188,7 @@ def CheckConstraints(GPXfile):
     rigidbodyDict = GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables = GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,maxSSwave = GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
     varyList = rbVary+phaseVary+hapVary+histVary
@@ -858,7 +858,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
     def PrintWaves(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
         print >>pFile,'\n Modulation waves'
-        names = {'Sfrac':['Fsin','Fcos'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos'],
+        names = {'Sfrac':['Fsin','Fcos','Fzero','Fwid'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tzero','Xslope','Yslope','Zslope'],
             'Sadp':['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin','U11cos','U22cos',
             'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
         print >>pFile,135*'-'
@@ -973,6 +973,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
     Natoms = {}
     AtMults = {}
     AtIA = {}
+    maxSSwave = {}
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
     atomIndx = {}
@@ -1023,7 +1024,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                 MakeRBThermals('V',phaseVary,phaseDict)
                     
         Natoms[pfx] = 0
-        maxSSwave = {'Sfrac':0,'Spos':0,'Sadp':0,'Smag':0}
+        maxSSwave[pfx] = {'Sfrac':0,'Spos':0,'Sadp':0,'Smag':0}
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']
             Natoms[pfx] = len(Atoms)
@@ -1088,6 +1089,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                                 G2mv.StoreEquivalence(name,equiv[1:])
                 if General['Type'] in ['modulated','magnetic']:
                     AtomSS = at[-1]['SS1']
+                    waveType = AtomSS['waveType']
+                    phaseDict[pfx+'waveType:'+str(i)] = waveType    
                     CSI = G2spc.GetSSfxuinel(at[cx:cx+3],at[cia+2:cia+8],SGData,SSGData)
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         Waves = AtomSS[Stype]
@@ -1095,9 +1098,13 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                         for iw,wave in enumerate(Waves):
                             stiw = str(i)+':'+str(iw)
                             if Stype == 'Spos':
-                                names = [pfx+'Xsin:'+stiw,pfx+'Ysin:'+stiw,pfx+'Zsin:'+stiw,
-                                    pfx+'Xcos:'+stiw,pfx+'Ycos:'+stiw,pfx+'Zcos:'+stiw]
-                                equivs = [[],[],[], [],[],[]]
+                                if waveType in ['ZigZag','Sawtooth'] and not iw:
+                                    names = [pfx+'Tzero:'+stiw,pfx+'Xslope:'+stiw,pfx+'Yslope:'+stiw,pfx+'Zslope:'+stiw]
+                                    equivs = [[], [],[],[]]
+                                else:
+                                    names = [pfx+'Xsin:'+stiw,pfx+'Ysin:'+stiw,pfx+'Zsin:'+stiw,
+                                        pfx+'Xcos:'+stiw,pfx+'Ycos:'+stiw,pfx+'Zcos:'+stiw]
+                                    equivs = [[],[],[], [],[],[]]
                             elif Stype == 'Sadp':
                                 names = [pfx+'U11sin:'+stiw,pfx+'U22sin:'+stiw,pfx+'U33sin:'+stiw,
                                     pfx+'U12sin:'+stiw,pfx+'U13sin:'+stiw,pfx+'U23sin:'+stiw,
@@ -1106,7 +1113,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                                 equivs = [[],[],[],[],[],[], [],[],[],[],[],[]]
                             elif Stype == 'Sfrac':
                                 equivs = [[],[]]
-                                names = [pfx+'Fsin:'+stiw,pfx+'Fcos:'+stiw]
+                                if 'Crenel' in waveType and not iw:
+                                    names = [pfx+'Fzero:'+stiw,pfx+'Fwid:'+stiw]
+                                else:
+                                    names = [pfx+'Fsin:'+stiw,pfx+'Fcos:'+stiw]
                             elif Stype == 'Smag':
                                 equivs = [[],[],[], [],[],[]]
                                 names = [pfx+'MXsin:'+stiw,pfx+'MYsin:'+stiw,pfx+'MZsin:'+stiw,
@@ -1124,8 +1134,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                                         for eqv in equiv[1:]:
                                             eqv[1] /= coef
                                         G2mv.StoreEquivalence(name,equiv[1:])
-                        maxSSwave['Stype'] = max(maxSSwave['Stype'],iw+1)
-            phaseDict[pfx+'maxSSwave'] = maxSSwave    
+                            maxSSwave[pfx][Stype] = max(maxSSwave[Stype],iw+1)
             textureData = General['SH Texture']
             if textureData['Order']:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
@@ -1215,7 +1224,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
             GetPawleyConstr(SGData['SGLaue'],PawleyRef,im,pawleyVary)      #does G2mv.StoreEquivalence
             phaseVary += pawleyVary
                 
-    return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables
+    return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,maxSSwave
     
 def cellFill(pfx,SGData,parmDict,sigDict): 
     '''Returns the filled-out reciprocal cell (A) terms and their uncertainties

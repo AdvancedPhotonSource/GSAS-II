@@ -2797,7 +2797,13 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
         elif event.key == '+':
             Off += 1
         elif event.key == '-':
-            Off -= 1 
+            Off -= 1
+        elif event.key in ['l','r',]:
+            roll = 1
+            if  event.key == 'l':
+                roll = -1
+            rho = Map['rho']
+            Map['rho'] = np.roll(rho,roll,axis=3)
         wx.CallAfter(ModulationPlot,G2frame,data,Atom,Ax,Off)
 
     try:
@@ -2814,7 +2820,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
         
-    Page.Choice = ['+: shift up','-: shift down','0: reset']
+    Page.Choice = ['+: shift up','-: shift down','0: reset shift','l: move left','r: move right']
     Page.keyPress = OnPlotKeyPress
     Page.SetFocus()
     General = data['General']
@@ -2852,19 +2858,18 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     ib = 4
     if Ax == 'x':
         slab = np.sum(np.sum(rho[:,ix[1]-ib:ix[1]+ib,ix[2]-ib:ix[2]+ib,:],axis=2),axis=1)
-        Plot.plot(wave[0],tau)
+        Plot.plot(tau,wave[0])
     elif Ax == 'y':
         slab = np.sum(np.sum(rho[ix[0]-ib:ix[0]+ib,:,ix[2]-ib:ix[2]+ib,:],axis=2),axis=0)
-        Plot.plot(wave[1],tau)
+        Plot.plot(tau,wave[1])
     elif Ax == 'z':
         slab = np.sum(np.sum(rho[ix[0]-ib:ix[0]+ib,ix[1]-ib:ix[1]+ib,:,:],axis=1),axis=0)
-        Plot.plot(wave[2],tau)
+        Plot.plot(tau,wave[2])
     Plot.set_title(Title)
     Plot.set_xlabel('t')
     Plot.set_ylabel(r'$\mathsf{\Delta}$%s'%(Ax))
-    Slab = np.concatenate((slab,slab),axis=1).T
-    Plot.contour(Slab,20,extent=(-.5+Off*.005,.5+Off*.005,0.,2.))
-    
+    Slab = np.concatenate((slab,slab),axis=1)
+    Plot.contour(Slab,20,extent=(0.,2.,-.5+Off*.005,.5+Off*.005))
     Page.canvas.draw()
    
 ################################################################################

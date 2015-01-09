@@ -1744,9 +1744,13 @@ def findOffset(SGData,A,Fhkl):
     i = 0
     DH = []
     Dphi = []
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGT = np.array([ops[1] for ops in SGData['SGOps']])
     Hmax = 2*np.asarray(G2lat.getHKLmax(3.5,SGData,A),dtype='i')
     for F in Flist:
         hkl = np.unravel_index(Fdict[F],hklShape)
+        if np.any(np.abs(hkl-hklHalf)-Hmax > 0):
+            continue
         iabsnt,mulp,Uniq,Phi = G2spc.GenHKLf(list(hkl-hklHalf),SGData)
         Uniq = np.array(Uniq,dtype='i')
         Phi = np.array(Phi)
@@ -1758,8 +1762,6 @@ def findOffset(SGData,A,Fhkl):
             ang = (np.angle(Fhkl[H[0],H[1],H[2]],deg=True)/360.-phi)
             dH = H-hkl
             dang = ang-ang0
-            if np.any(np.abs(dH)- Hmax > 0):    #keep low order DHs
-                continue
             DH.append(dH)
             Dphi.append((dang+.5) % 1.0)
         if i > 20 or len(DH) > 30:
@@ -1876,8 +1878,71 @@ def ChargeFlip(data,reflDict,pgbar):
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
-    mapData['rollMap'] = [0,0,0]
     return mapData
+    
+def findSSOffset(SGData,SSGData,A,Fhklm):    
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+    if SGData['SpGrp'] == 'P 1':
+        return [0,0,0,0]    
+    hklmShape = Fhklm.shape
+    hklmHalf = np.array(hklmShape)/2
+    sortHKLM = np.argsort(Fhklm.flatten())
+    Fdict = {}
+    for hklm in sortHKLM:
+        HKLM = np.unravel_index(hklm,hklmShape)
+        F = Fhklm[HKLM[0]][HKLM[1]][HKLM[2]][HKLM[3]]
+        if F == 0.:
+            break
+        Fdict['%.6f'%(np.absolute(F))] = hklm
+    Flist = np.flipud(np.sort(Fdict.keys()))
+    F = str(1.e6)
+    i = 0
+    DH = []
+    Dphi = []
+    SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
+    SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
+    Hmax = 2*np.asarray(G2lat.getHKLmax(3.5,SGData,A),dtype='i')
+    for F in Flist:
+        hklm = np.unravel_index(Fdict[F],hklmShape)
+        if np.any(np.abs(hklm-hklmHalf)[:3]-Hmax > 0):
+            continue
+        Uniq = np.inner(hklm-hklmHalf,SSGMT)
+        Phi = np.inner(hklm-hklmHalf,SSGT)
+        Uniq = np.concatenate((Uniq,-Uniq))+hklmHalf         # put in Friedel pairs & make as index to Farray
+        Phi = np.concatenate((Phi,-Phi))                      # and their phase shifts
+        Fh0 = Fhklm[hklm[0],hklm[1],hklm[2],hklm[3]]
+        ang0 = np.angle(Fh0,deg=True)/360.
+        for H,phi in zip(Uniq,Phi)[1:]:
+            ang = (np.angle(Fhklm[H[0],H[1],H[2],H[3]],deg=True)/360.-phi)
+            dH = H-hklm
+            dang = ang-ang0
+            DH.append(dH)
+            Dphi.append((dang+.5) % 1.0)
+        if i > 20 or len(DH) > 30:
+            break
+        i += 1
+    DH = np.array(DH)
+    print ' map offset no.of terms: %d from %d reflections'%(len(DH),len(Flist))
+    Dphi = np.array(Dphi)
+    steps = np.array(hklmShape)
+    X,Y,Z,T = np.mgrid[0:1:1./steps[0],0:1:1./steps[1],0:1:1./steps[2],0:1:1./steps[3]]
+    XYZT = np.array(zip(X.flatten(),Y.flatten(),Z.flatten(),T.flatten()))
+    Dang = (np.dot(XYZT,DH.T)+.5)%1.-Dphi
+    Mmap = np.reshape(np.sum((Dang)**2,axis=1),newshape=steps)/len(DH)
+    hist,bins = np.histogram(Mmap,bins=1000)
+#    for i,item in enumerate(hist[:10]):
+#        print item,bins[i]
+    chisq = np.min(Mmap)
+    DX = -np.array(np.unravel_index(np.argmin(Mmap),Mmap.shape))
+    print ' map offset chi**2: %.3f, map offset: %d %d %d %d'%(chisq,DX[0],DX[1],DX[2],DX[3])
+#    print (np.dot(DX,DH.T)+.5)%1.-Dphi
+    return DX
     
 def SSChargeFlip(data,reflDict,pgbar):
     '''default doc string
@@ -1969,15 +2034,14 @@ def SSChargeFlip(data,reflDict,pgbar):
     CErho = np.real(fft.fftn(fft.fftshift(CEhkl[:,:,:,maxM+1])))
     SSrho = np.real(fft.fftn(fft.fftshift(CEhkl)))
     print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
-    roll = findOffset(SGData,A,CEhkl[:,:,:,maxM+1])               #CEhkl needs to be just the observed set, not the full set!
+    roll = findSSOffset(SGData,SSGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
 
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
-    mapData['rollMap'] = [0,0,0]
 
     map4DData['Rcf'] = Rcf
-    map4DData['rho'] = np.real(np.roll(np.roll(np.roll(SSrho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2))
+    map4DData['rho'] = np.real(np.roll(np.roll(np.roll(np.roll(SSrho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2),roll[3],axis=3))
     map4DData['rhoMax'] = max(np.max(map4DData['rho']),-np.min(map4DData['rho']))
     return mapData,map4DData
     

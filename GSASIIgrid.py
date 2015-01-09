@@ -2489,7 +2489,7 @@ class DataFrame(wx.Frame):
             help='View point is 1st atom selected')
         self.DrawAtomEdit.Append(id=wxID_DRAWADDEQUIV, kind=wx.ITEM_NORMAL,text='Add atoms',
             help='Add symmetry & cell equivalents to drawing set from selected atoms')
-        self.DrawAtomEdit.Append(id=wxID_DRAWTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
+        self.DrawAtomEdit.Append(id=wxID_DRAWTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform draw atoms',
             help='Transform selected atoms by symmetry & cell translations')
         self.DrawAtomEdit.Append(id=wxID_DRAWFILLCOORD, kind=wx.ITEM_NORMAL,text='Fill CN-sphere',
             help='Fill coordination sphere for selected atoms')            

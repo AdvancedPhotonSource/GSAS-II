@@ -3426,7 +3426,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         'strip a histogram number from a var name'
         sv = var.split(':')
         if len(sv) <= 1: return var
-        sv[1] = insChar
+        if sv[1]:
+            sv[1] = insChar
         return ':'.join(sv)
         
     def plotSpCharFix(lbl):
@@ -3957,23 +3958,25 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     # scan for locations where the variables change
     VaryListChanges = [] # histograms where there is a change
-    prevVaryList = []
     combinedVaryList = []
     firstValueList = []
     vallookup = {}
     posdict = {}
     for i,name in enumerate(histNames):
-        if i == 0 or prevVaryList != sorted(data[name]['varyList']):
+        newval = False
+        for var,val in zip(data[name]['varyList'],data[name]['variables']):
+            svar = striphist(var,'*')
+            if svar in combinedVaryList: continue
             # add variables to list as they appear
-            for j,var in enumerate(data[name]['varyList']):
-                if var in combinedVaryList: continue
-                combinedVaryList.append(data[name]['varyList'][j])
-                firstValueList.append(data[name]['variables'][j])
+            combinedVaryList.append(svar)
+            firstValueList.append(val)
+            newval = True
+        if newval:
             vallookup[name] = dict(zip(data[name]['varyList'],data[name]['variables']))
             posdict[name] = {}
-            for lbl in data[name]['varyList']:
-                posdict[name][combinedVaryList.index(lbl)] = lbl            
-            prevVaryList = sorted(data[name]['varyList'])
+            for var in data[name]['varyList']:
+                svar = striphist(var,'*')
+                posdict[name][combinedVaryList.index(svar)] = svar
             VaryListChanges.append(name)
     if len(VaryListChanges) > 1:
         G2frame.dataFrame.SequentialFile.Enable(wxID_ORGSEQSEL,True)
@@ -4062,7 +4065,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     for name in histNames:
         if name in posdict:
             varsellist = [posdict[name].get(i) for i in range(varcols)]
-            sellist = [data[name]['varyList'].index(v) if v is not None else None for v in varsellist]
+            #sellist = [data[name]['varyList'].index(v) if v is not None else None for v in varsellist]
+            sellist = [i if striphist(v,'*') in varsellist else None for i,v in enumerate(data[name]['varyList'])]
         if not varsellist: raise Exception()
         vals.append([data[name]['variables'][s] if s is not None else None for s in sellist])
         esds.append([data[name]['sig'][s] if s is not None else None for s in sellist])

@@ -172,6 +172,8 @@ class ExpressionDialog(wx.Dialog):
         for key in parmDict:
             try: # deal with values that are in lists
                 val = parmDict[key][0]
+            except KeyError:
+                continue # there were dicts in parmDict (should be gone now)
             except (TypeError,IndexError):
                 val = parmDict[key]
             if isinstance(val, basestring): continue

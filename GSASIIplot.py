@@ -1487,9 +1487,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         elif 'SASD' in plottype:
             B = xye[5]
             if G2frame.sqPlot:
-                Y = xye[1]*Sample['Scale'][0]*(1.005)**(offset*N)*X**4
+                Y = xye[1]*Sample['Scale'][0]*(1.05)**(G2frame.Offset[0]*N)*X**4
             else:
-                Y = xye[1]*Sample['Scale'][0]*(1.005)**(offset*N)
+                Y = xye[1]*Sample['Scale'][0]*(1.05)**(G2frame.Offset[0]*N)
         if LimitId and ifpicked:
             limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))
             lims = limits[1]

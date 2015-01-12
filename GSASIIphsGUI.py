@@ -1374,6 +1374,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Atoms.AutoSizeColumns(False)
 
         # FillAtomsGrid executable code starts here
+        if not data['Drawing']:                 #if new drawing - no drawing data!
+            SetupDrawingData()
         generalData = data['General']
         atomData = data['Atoms']
         DData = data['Drawing']

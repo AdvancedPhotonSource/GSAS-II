@@ -35,6 +35,8 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 ateln2 = 8.0*math.log(2.0)
+twopi = 2.0*np.pi
+twopisq = 2.0*np.pi**2
 
 ################################################################################
 ##### Rigid Body Models
@@ -538,11 +540,12 @@ def GetAtomSSFXU(pfx,calcControls,parmDict):
     Natoms = calcControls['Natoms'][pfx]
     maxSSwave = calcControls['maxSSwave'][pfx]
     Nwave = {'F':maxSSwave['Sfrac'],'X':maxSSwave['Spos'],'Y':maxSSwave['Spos'],'Z':maxSSwave['Spos'],
-        'U':maxSSwave['Sadp'],'M':maxSSwave['Smag']}
+        'U':maxSSwave['Sadp'],'M':maxSSwave['Smag'],'T':maxSSwave['Spos']}
     XSSdata = np.zeros((6,maxSSwave['Spos'],Natoms))
     FSSdata = np.zeros((2,maxSSwave['Sfrac'],Natoms))
     USSdata = np.zeros((12,maxSSwave['Sadp'],Natoms))
     MSSdata = np.zeros((6,maxSSwave['Smag'],Natoms))
+    waveTypes = []
     keys = {'Fsin:':FSSdata[0],'Fcos:':FSSdata[1],'Fzero:':FSSdata[0],'Fwid:':FSSdata[1],
         'Tzero:':XSSdata[0],'Xslope:':XSSdata[1],'Yslope:':XSSdata[2],'Zslope:':XSSdata[3],
         'Xsin:':XSSdata[0],'Ysin:':XSSdata[1],'Zsin:':XSSdata[2],'Xcos:':XSSdata[3],'Ycos:':XSSdata[4],'Zcos:':XSSdata[5],
@@ -550,12 +553,13 @@ def GetAtomSSFXU(pfx,calcControls,parmDict):
         'U11cos:':USSdata[6],'U22cos:':USSdata[7],'U33cos:':USSdata[8],'U12cos:':USSdata[9],'U13cos:':USSdata[10],'U23cos:':USSdata[11],
         'MXsin:':MSSdata[0],'MYsin:':MSSdata[1],'MZsin:':MSSdata[2],'MXcos:':MSSdata[3],'MYcos:':MSSdata[4],'MZcos:':MSSdata[5]}
     for iatm in range(Natoms):
+        waveTypes.append(parmDict[pfx+'waveType:'+str(iatm)])
         for key in keys:
             for m in range(Nwave[key[0]]):
                 parm = pfx+key+str(iatm)+':%d'%(m)
                 if parm in parmDict:
-                    keys[key][iatm] = parmDict[parm]
-    return FSSdata,XSSdata,USSdata,MSSdata    
+                    keys[key][m][iatm] = parmDict[parm]
+    return waveTypes,FSSdata.squeeze(),XSSdata.squeeze(),USSdata.squeeze(),MSSdata.squeeze()    
     
 def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     ''' Not Used: here only for comparison the StructureFactor2 - faster version
@@ -573,8 +577,6 @@ def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     :param dict ParmDict:
 
     '''        
-    twopi = 2.0*np.pi
-    twopisq = 2.0*np.pi**2
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
@@ -635,7 +637,7 @@ def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         refl[9] = np.sum(fasq)+np.sum(fbsq)
         refl[10] = atan2d(fbs[0],fas[0])
     
-def SStructureFactor(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict):
+def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ''' 
     Compute super structure factors for all h,k,l,m for phase
     puts the result, F^2, in each ref[8+im] in refList
@@ -651,8 +653,6 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict):
     :param dict ParmDict:
 
     '''        
-    twopi = 2.0*np.pi
-    twopisq = 2.0*np.pi**2
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
@@ -663,7 +663,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict):
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
-    SSFdata,SSXdata,SSUdata,SSMdata = GetAtomSSFXU(pfx,calcControls,parmDict)
+    waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
@@ -700,7 +700,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict):
         SSUniq = np.inner(H,SSGMT)
         Phi = np.inner(H[:3],SGT)
         SSPhi = np.inner(H,SSGT)
-        
+        GfpuA,GfpuB = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata)        
         phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
@@ -710,10 +710,13 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict):
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij*Mdata*Fdata/len(Uniq)
         fa = np.array([(FF+FP-Bab)*cosp*Tcorr,-FPP*sinp*Tcorr])
-        fas = np.sum(np.sum(fa,axis=1),axis=1)        #real
+        fb = 0.
         if not SGData['SGInv']:
             fb = np.array([(FF+FP-Bab)*sinp*Tcorr,FPP*cosp*Tcorr])
-            fbs = np.sum(np.sum(fb,axis=1),axis=1)
+        fa = fa*GfpuA.T-fb*GfpuB.T
+        fb = fb*GfpuA.T+fa*GfpuB.T
+        fas = np.sum(np.sum(fa,axis=1),axis=1)        #real
+        fbs = np.sum(np.sum(fb,axis=1),axis=1)
             
         fasq = fas**2
         fbsq = fbs**2        #imaginary
@@ -735,8 +738,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     :param dict ParmDict:
 
     '''        
-    twopi = 2.0*np.pi
-    twopisq = 2.0*np.pi**2
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
@@ -812,8 +813,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     
 def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     'Needs a doc string'
-    twopi = 2.0*np.pi
-    twopisq = 2.0*np.pi**2
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
@@ -910,19 +909,20 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     dFdvDict[pfx+'BabU'] = dFdbab.T[1]
     return dFdvDict
     
-def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict):
+def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     'Needs a doc string'
-    twopi = 2.0*np.pi
-    twopisq = 2.0*np.pi**2
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
+    SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
+    SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
+    waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     mSize = len(Mdata)
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -950,8 +950,11 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict):
         Bab = parmDict[phfx+'BabA']*dBabdA
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = refDict['FF']['FF'][iref].T[Tindx]
-        Uniq = np.inner(H,SGMT)
-        Phi = np.inner(H,SGT)
+        Uniq = np.inner(H[:3],SGMT)
+        SSUniq = np.inner(H,SSGMT)
+        Phi = np.inner(H[:3],SGT)
+        SSPhi = np.inner(H,SSGT)
+        GfpuA,GfpuB = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata)        
         phase = twopi*(np.inner((dXdata.T+Xdata.T),Uniq)+Phi[np.newaxis,:])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
@@ -1879,7 +1882,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         if not Phase['General'].get('doPawley'):
             time0 = time.time()
             if im:
-                SStructureFactor(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict)
+                SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             else:
                 StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
 #            print 'sf calc time: %.3fs'%(time.time()-time0)
@@ -2058,7 +2061,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         if not Phase['General'].get('doPawley'):
             time0 = time.time()
             if im:
-                dFdvDict = StructureFactorDerv(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict)
+                dFdvDict = SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             else:
                 dFdvDict = StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
 #            print 'sf-derv time %.3fs'%(time.time()-time0)
@@ -2299,7 +2302,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
     refDict = Histogram['Data']
     if im:
-        dFdvDict = StructureFactorDerv(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict)
+        dFdvDict = SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
     else:
         dFdvDict = StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
     ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase)
@@ -2572,7 +2575,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             refDict = Histogram['Data']
             time0 = time.time()
             if im:
-                SStructureFactor(refDict,im,G,hfx,pfx,SGData,calcControls,parmDict)
+                SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             else:
                 StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
 #            print 'sf-calc time: %.3f'%(time.time()-time0)

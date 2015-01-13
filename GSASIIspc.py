@@ -1455,7 +1455,6 @@ def GetSSfxuinel(XYZ,UIJ,SGData,SSGData):
         CSI['Spos'][0] = [1,2,3, 0,0,0]
         CSI['Sadp'][0] = [0,0,0,0,0,0, 1,2,3,4,5,6]
         return CSI
-    return CSI  #for now        
 #    print siteSym,OpText,SSOptext    
     UniqAx = {'a':'a','b':'b','c':'g'}
     if SGData['SGLaue'] == '2/m':

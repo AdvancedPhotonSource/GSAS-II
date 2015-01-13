@@ -41,6 +41,8 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atand = lambda x: 180.*np.arctan(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
+twopi = 2.0*np.pi
+twopisq = 2.0*np.pi**2
     
 ################################################################################
 ##### Hessian least-squares Levenberg-Marquardt routine
@@ -703,6 +705,16 @@ def XAnomAbs(Elements,wave):
         Orbs = G2el.GetXsectionCoeff(El)
         Xanom[El] = G2el.FPcalc(Orbs, kE)
     return Xanom
+    
+def Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata):
+    import scipy.special as sp
+    for iwt,wt in enumerate(waveTypes):    #atom loop!
+        if wt == 'Fourier':
+            A = np.array([[a,b] for a,b in zip(XSSdata[:3],XSSdata[3:])])
+            HdotA = twopi*np.inner(A.T,SSUniq.T[:3].T)
+            m = SSUniq.T[3]
+            Gp = sp.jn(-m,HdotA)
+    return np.real(Gp),np.imag(Gp)
     
 def posFourier(tau,psin,pcos):
     A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])
@@ -2884,7 +2896,6 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     
     '''
     
-    twopi = 2.0*np.pi
     global tsum
     tsum = 0.
     

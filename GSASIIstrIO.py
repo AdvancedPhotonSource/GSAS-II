@@ -1134,7 +1134,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                                         for eqv in equiv[1:]:
                                             eqv[1] /= coef
                                         G2mv.StoreEquivalence(name,equiv[1:])
-                            maxSSwave[pfx][Stype] = max(maxSSwave[Stype],iw+1)
+                            maxSSwave[pfx][Stype] = max(maxSSwave[pfx][Stype],iw+1)
             textureData = General['SH Texture']
             if textureData['Order']:
                 phaseDict[pfx+'SHorder'] = textureData['Order']
@@ -1446,47 +1446,77 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         if General['Type'] == 'magnetic':
             line += '   Mx     My     Mz'
         elif General['Type'] == 'macromolecular':
-            line = ' res no  residue  chain '+line
+            line = ' res no residue chain '+line
         cx,ct,cs,cia = General['AtomPtrs']
         print >>pFile,line
-        if General['Type'] == 'nuclear':
-            print >>pFile,135*'-'
-            fmt = {0:'%7s',1:'%7s',3:'%10.5f',4:'%10.5f',5:'%10.5f',6:'%8.3f',10:'%8.5f',
-                11:'%8.5f',12:'%8.5f',13:'%8.5f',14:'%8.5f',15:'%8.5f',16:'%8.5f'}
-            noFXsig = {3:[10*' ','%10s'],4:[10*' ','%10s'],5:[10*' ','%10s'],6:[8*' ','%8s']}
-            for atyp in General['AtomTypes']:       #zero composition
-                General['NoAtoms'][atyp] = 0.
-            for i,at in enumerate(Atoms):
-                General['NoAtoms'][at[1]] += at[6]*float(at[8])     #new composition
-                name = fmt[0]%(at[0])+fmt[1]%(at[1])+':'
+        print >>pFile,135*'-'
+        fmt = {0:'%7s',ct:'%7s',cx:'%10.5f',cx+1:'%10.5f',cx+2:'%10.5f',cx+3:'%8.3f',cia+1:'%8.5f',
+            cia+2:'%8.5f',cia+3:'%8.5f',cia+4:'%8.5f',cia+5:'%8.5f',cia+6:'%8.5f',cia+7:'%8.5f'}
+        noFXsig = {cx:[10*' ','%10s'],cx+1:[10*' ','%10s'],cx+2:[10*' ','%10s'],cx+3:[8*' ','%8s']}
+        for atyp in General['AtomTypes']:       #zero composition
+            General['NoAtoms'][atyp] = 0.
+        for i,at in enumerate(Atoms):
+            General['NoAtoms'][at[ct]] += at[cx+3]*float(at[cx+5])     #new composition
+            if General['Type'] == 'macromolecular':
+                name = ' %s %s %s %s:'%(at[0],at[1],at[2],at[3])
+                valstr = ' values:          '
+                sigstr = ' sig   :          '
+            else:
+                name = fmt[0]%(at[ct-1])+fmt[1]%(at[ct])+':'
                 valstr = ' values:'
                 sigstr = ' sig   :'
-                for ind in [3,4,5,6]:
+            for ind in range(cx,cx+4):
+                sigind = str(i)+':'+str(ind)
+                valstr += fmt[ind]%(at[ind])                    
+                if sigind in atomsSig:
+                    sigstr += fmt[ind]%(atomsSig[sigind])
+                else:
+                    sigstr += noFXsig[ind][1]%(noFXsig[ind][0])
+            if at[cia] == 'I':
+                valstr += fmt[cia+1]%(at[cia+1])
+                if '%d:%d'%(i,cia+1) in atomsSig:
+                    sigstr += fmt[cia+1]%(atomsSig['%d:%d'%(i,cia+1)])
+                else:
+                    sigstr += 8*' '
+            else:
+                valstr += 8*' '
+                sigstr += 8*' '
+                for ind in range(cia+2,cia+7):
                     sigind = str(i)+':'+str(ind)
-                    valstr += fmt[ind]%(at[ind])                    
-                    if sigind in atomsSig:
+                    valstr += fmt[ind]%(at[ind])
+                    if sigind in atomsSig:                        
                         sigstr += fmt[ind]%(atomsSig[sigind])
                     else:
-                        sigstr += noFXsig[ind][1]%(noFXsig[ind][0])
-                if at[9] == 'I':
-                    valstr += fmt[10]%(at[10])
-                    if str(i)+':10' in atomsSig:
-                        sigstr += fmt[10]%(atomsSig[str(i)+':10'])
-                    else:
                         sigstr += 8*' '
-                else:
-                    valstr += 8*' '
-                    sigstr += 8*' '
-                    for ind in [11,12,13,14,15,16]:
-                        sigind = str(i)+':'+str(ind)
-                        valstr += fmt[ind]%(at[ind])
-                        if sigind in atomsSig:                        
-                            sigstr += fmt[ind]%(atomsSig[sigind])
-                        else:
-                            sigstr += 8*' '
-                print >>pFile,name
-                print >>pFile,valstr
-                print >>pFile,sigstr
+            print >>pFile,name
+            print >>pFile,valstr
+            print >>pFile,sigstr
+            
+    def PrintWavesAndSig(General,Atoms,wavesSig):
+        cx,ct,cs,cia = General['AtomPtrs']
+        print >>pFile,'\n Modulation waves'
+#        names = {'Sfrac':['Fsin','Fcos','Fzero','Fwid'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tzero','Xslope','Yslope','Zslope'],
+#            'Sadp':['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin','U11cos','U22cos',
+#            'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
+#        print >>pFile,135*'-'
+#        for i,at in enumerate(Atoms):
+#            AtomSS = at[-1]['SS1']
+#            for Stype in ['Sfrac','Spos','Sadp','Smag']:
+#                Waves = AtomSS[Stype]
+#                if len(Waves):
+#                    print >>pFile,' atom: %s, site sym: %s, type: %s wave type: %s:'    \
+#                        %(at[ct-1],at[cs],Stype,AtomSS['waveType'])
+#                    line = ''
+#                    for item in names[Stype]:
+#                        line += '%8s '%(item)
+#                    print >>pFile,line
+#                for wave in Waves:                    
+#                    line = ''
+#                    for item in wave[0]:
+#                        line += '%8.4f '%(item)
+#                    line += ' Refine? '+str(wave[1])
+#                    print >>pFile,line
+        
                 
     def PrintRBObjPOAndSig(rbfx,rbsx):
         namstr = '  names :'
@@ -1719,31 +1749,66 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 PrintRBObjTLSAndSig('RBR',rbsx,RBObj['ThermalMotion'][0])
                 PrintRBObjTorAndSig(rbsx)
             atomsSig = {}
-            if General['Type'] == 'nuclear':        #this needs macromolecular variant!
-                for i,at in enumerate(Atoms):
-                    names = {3:pfx+'Ax:'+str(i),4:pfx+'Ay:'+str(i),5:pfx+'Az:'+str(i),6:pfx+'Afrac:'+str(i),
-                        10:pfx+'AUiso:'+str(i),11:pfx+'AU11:'+str(i),12:pfx+'AU22:'+str(i),13:pfx+'AU33:'+str(i),
-                        14:pfx+'AU12:'+str(i),15:pfx+'AU13:'+str(i),16:pfx+'AU23:'+str(i)}
-                    for ind in [3,4,5,6]:
-                        at[ind] = parmDict[names[ind]]
-                        if ind in [3,4,5]:
-                            name = names[ind].replace('A','dA')
-                        else:
-                            name = names[ind]
-                        if name in sigDict:
-                            atomsSig[str(i)+':'+str(ind)] = sigDict[name]
-                    if at[9] == 'I':
-                        at[10] = parmDict[names[10]]
-                        if names[10] in sigDict:
-                            atomsSig[str(i)+':10'] = sigDict[names[10]]
+            wavesSig = {}
+            cx,ct,cs,cia = General['AtomPtrs']
+            for i,at in enumerate(Atoms):
+                names = {cx:pfx+'Ax:'+str(i),cx+1:pfx+'Ay:'+str(i),cx+2:pfx+'Az:'+str(i),cx+3:pfx+'Afrac:'+str(i),
+                    cia+1:pfx+'AUiso:'+str(i),cia+2:pfx+'AU11:'+str(i),cia+3:pfx+'AU22:'+str(i),cia+4:pfx+'AU33:'+str(i),
+                    cia+5:pfx+'AU12:'+str(i),cia+6:pfx+'AU13:'+str(i),cia+7:pfx+'AU23:'+str(i)}
+                for ind in range(cx,cx+4):
+                    at[ind] = parmDict[names[ind]]
+                    if ind in range(cx,cx+3):
+                        name = names[ind].replace('A','dA')
                     else:
-                        for ind in [11,12,13,14,15,16]:
-                            at[ind] = parmDict[names[ind]]
-                            if names[ind] in sigDict:
-                                atomsSig[str(i)+':'+str(ind)] = sigDict[names[ind]]
-                    ind = General['AtomTypes'].index(at[1])
-                    General['Mass'] += General['AtomMass'][ind]*at[6]*at[8]
+                        name = names[ind]
+                    if name in sigDict:
+                        atomsSig[str(i)+':'+str(ind)] = sigDict[name]
+                if at[cia] == 'I':
+                    at[cia+1] = parmDict[names[cia+1]]
+                    if names[cia+1] in sigDict:
+                        atomsSig['%d:%d'%(i,cia+1)] = sigDict[names[cia+1]]
+                else:
+                    for ind in range(cia+2,cia+8):
+                        at[ind] = parmDict[names[ind]]
+                        if names[ind] in sigDict:
+                            atomsSig[str(i)+':'+str(ind)] = sigDict[names[ind]]
+                ind = General['AtomTypes'].index(at[ct])
+                General['Mass'] += General['AtomMass'][ind]*at[cx+3]*at[cx+5]
+                if General['Type'] in ['modulated','magnetic']:
+                    AtomSS = at[-1]['SS1']
+                    waveType = AtomSS['waveType']
+                    for Stype in ['Sfrac','Spos','Sadp','Smag']:
+                        Waves = AtomSS[Stype]
+                        for iw,wave in enumerate(Waves):
+                            stiw = str(i)+':'+str(iw)
+                            if Stype == 'Spos':
+                                if waveType in ['ZigZag','Sawtooth'] and not iw:
+                                    names = [pfx+'Tzero:'+stiw,pfx+'Xslope:'+stiw,pfx+'Yslope:'+stiw,pfx+'Zslope:'+stiw]
+                                else:
+                                    names = [pfx+'Xsin:'+stiw,pfx+'Ysin:'+stiw,pfx+'Zsin:'+stiw,
+                                        pfx+'Xcos:'+stiw,pfx+'Ycos:'+stiw,pfx+'Zcos:'+stiw]
+                            elif Stype == 'Sadp':
+                                names = [pfx+'U11sin:'+stiw,pfx+'U22sin:'+stiw,pfx+'U33sin:'+stiw,
+                                    pfx+'U12sin:'+stiw,pfx+'U13sin:'+stiw,pfx+'U23sin:'+stiw,
+                                    pfx+'U11cos:'+stiw,pfx+'U22cos:'+stiw,pfx+'U33cos:'+stiw,
+                                    pfx+'U12cos:'+stiw,pfx+'U13cos:'+stiw,pfx+'U23cos:'+stiw]
+                            elif Stype == 'Sfrac':
+                                if 'Crenel' in waveType and not iw:
+                                    names = [pfx+'Fzero:'+stiw,pfx+'Fwid:'+stiw]
+                                else:
+                                    names = [pfx+'Fsin:'+stiw,pfx+'Fcos:'+stiw]
+                            elif Stype == 'Smag':
+                                names = [pfx+'MXsin:'+stiw,pfx+'MYsin:'+stiw,pfx+'MZsin:'+stiw,
+                                    pfx+'MXcos:'+stiw,pfx+'MYcos:'+stiw,pfx+'MZcos:'+stiw]
+                            for iname,name in enumerate(names):
+                                AtomSS[Stype][iw][0][iname] = parmDict[name]
+                                if name in sigDict:
+                                    wavesSig[name] = sigDict[name]
+                    
             PrintAtomsAndSig(General,Atoms,atomsSig)
+            if General['Type'] in ['modulated','magnetic']:
+                PrintWavesAndSig(General,Atoms,wavesSig)
+            
         
         textureData = General['SH Texture']    
         if textureData['Order']:

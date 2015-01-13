@@ -160,6 +160,58 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
             self.CloseFile()
             print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
 
+class ExportMultiPowderCSV(G2IO.ExportBaseclass):
+    '''Used to create a csv file for a stack of powder data sets suitable for display 
+    purposes only; no y-calc or weights are exported only x & y-obs
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    '''
+    def __init__(self,G2frame):
+        super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
+            G2frame=G2frame,
+            formatName = 'stacked CSV file',
+            extension='.csv',
+            longFormatName = 'Export powder data sets as a (csv) file - x,y-o1,y-o2,... only'
+            )
+        self.exporttype = ['powder']
+        #self.multiple = False # only allow one histogram to be selected
+        self.multiple = True
+
+    def Exporter(self,event=None):
+        '''Export a set of powder data as a csv file
+        '''
+        # the export process starts here
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.loadTree()
+        if self.ExportSelect( # set export parameters
+            AskFile='single' # get a file name/directory to save in
+            ): return
+        filenamelist = []
+        csvData = []
+        headList = ["x",]
+        digitList = []
+        fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(self.histnam[0]),filenamelist)
+        # create an instrument parameter file
+        self.filename = os.path.join(self.dirname,fileroot + self.extension)
+        for ihst,hist in enumerate(self.histnam):
+            histblk = self.Histograms[hist]
+            headList.append('y_obs_'+str(ihst))
+            if not ihst:
+                digitList = [(13,3),]
+                csvData.append(histblk['Data'][0])
+            digitList += [(13,3),]
+            csvData.append(histblk['Data'][1])
+            print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
+        self.OpenFile()
+        WriteList(self,headList)
+        for vallist in np.array(csvData).T:
+            line = ""
+            for val,digits in zip(vallist,digitList):
+                if line: line += ','
+                line += G2py3.FormatValue(val,digits)
+            self.Write(line)
+        self.CloseFile()
+
 class ExportPowderReflCSV(G2IO.ExportBaseclass):
     '''Used to create a csv file of reflections from a powder data set
 

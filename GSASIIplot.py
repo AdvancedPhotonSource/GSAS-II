@@ -2798,7 +2798,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
             Off += 1
         elif event.key == '-':
             Off -= 1
-        elif event.key in ['l','r',]:
+        elif event.key in ['l','r',] and mapData['Flip']:
             roll = 1
             if  event.key == 'l':
                 roll = -1
@@ -2819,12 +2819,16 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
-        
-    Page.Choice = ['+: shift up','-: shift down','0: reset shift','l: move left','r: move right']
-    Page.keyPress = OnPlotKeyPress
+    
     Page.SetFocus()
     General = data['General']
     cx,ct,cs,cia = General['AtomPtrs']
+    mapData = General['Map']
+    if mapData['Flip']:
+        Page.Choice = ['+: shift up','-: shift down','0: reset shift','l: move left','r: move right']
+    else:
+        Page.Choice = ['+: shift up','-: shift down','0: reset shift']
+    Page.keyPress = OnPlotKeyPress
     Map = General['4DmapData']
     MapType = Map['MapType']
     rhoSize = np.array(Map['rho'].shape)

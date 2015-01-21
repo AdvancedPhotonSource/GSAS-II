@@ -171,6 +171,33 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             if self.clockWd:
                 x = Tmap2TOF(self.TimeMap,self.clockWd)[:-2]
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
+           
+        def GetALTdata(File,Pos,Bank):
+            File.seek(Pos)
+            cons = Bank.split()
+            x = []
+            y = []
+            w = []
+            S = File.readline()
+            j = 0
+            while S and S[:4] != 'BANK' and S[0] != '#':
+                for i in range(0,80,20):
+                    xi = sfloat(S[i:i+9])/3200.
+                    yi = sfloat(S[i+9:i+16])/1000.
+                    ei = sfloat(S[i+16:i+21])/1000.
+                    x.append(xi)
+                    if yi > 0.0:
+                        y.append(yi)
+                        w.append(1.0/ei**2)
+                    else:              
+                        y.append(0.0)
+                        w.append(0.0)
+                    j += 1
+                S = File.readline()
+            N = len(x)
+            if self.clockWd:
+                x = Tmap2TOF(self.TimeMap,clockWd)
+            return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
             
         def GetTimeMap(File,Pos,TimeMap):
             File.seek(Pos)
@@ -316,6 +343,9 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             elif 'STD' in Bank:
                 self.errors = 'Error reading STD data in Bank\n  '+Banks[selblk]
                 self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])
+            elif 'ALT' in Bank:
+                self.errors = 'Error reading ALT data in Bank\n  '+Banks[selblk]
+                self.powderdata = GetALTdata(filepointer,Pos[selblk],Banks[selblk])
             else:
                 self.errors = 'Error reading STD data in Bank\n  '+Banks[selblk]
                 self.powderdata = GetSTDdata(filepointer,Pos[selblk],Banks[selblk])

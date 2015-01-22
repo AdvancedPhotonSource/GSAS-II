@@ -2852,7 +2852,11 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
                 scof.append(spos[0][:3])
                 ccof.append(spos[0][3:])
         wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof))
-    Title = MapType+' modulation map for atom '+atom[0]+    \
+    if mapData['Flip']:
+        Title = 'Charge flip'
+    else:
+        Title = MapType
+    Title += ' map for atom '+atom[0]+    \
         ' at %.4f %.4f %.4f'%(atxyz[0],atxyz[1],atxyz[2])
     ix = -np.array(np.rint(rhoSize[:3]*atxyz),dtype='i')
     ix += (rhoSize[:3]/2)
@@ -2872,8 +2876,8 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     Plot.set_title(Title)
     Plot.set_xlabel('t')
     Plot.set_ylabel(r'$\mathsf{\Delta}$%s'%(Ax))
-    Slab = np.concatenate((slab,slab),axis=1)
-    Plot.contour(Slab,20,extent=(0.,2.,-.5+Off*.005,.5+Off*.005))
+    Slab = np.hstack((slab,slab,slab))
+    Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Off*.005,.5+Off*.005))
     Page.canvas.draw()
    
 ################################################################################
@@ -4031,6 +4035,8 @@ def PlotStructure(G2frame,data,firstCall=False):
     A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     SGData = generalData['SGData']
+    if generalData['Type'] in ['modulated','magnetic']:
+        SSGData = generalData['SSGData']
     Mydir = generalData['Mydir']
     atomData = data['Atoms']
     mapPeaks = []
@@ -4107,6 +4113,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     altDown = False
     shiftDown = False
     ctrlDown = False
+    G2frame.tau = 0.
     
     def OnKeyBox(event):
 #        Draw()                          #make sure plot is fresh!!
@@ -4214,6 +4221,14 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Set4DMapRoll(dirDict[key])
             SetPeakRoll(dirDict[key])
             SetMapPeaksText(mapPeaks)
+        elif key in ['+','-','0'] and generalData['Type'] in ['modulated','magnetic']:
+            if key == '0':
+                G2frame.tau = 0.
+            elif key =='+':
+                G2frame.tau += 0.05
+            elif key =='-':
+                G2frame.tau -= 0.05
+            G2frame.tau %= 1.   #force 0-1 range
         Draw('key')
             
     def GetTruePosition(xy,Add=False):
@@ -4990,6 +5005,9 @@ def PlotStructure(G2frame,data,firstCall=False):
             'u: roll up','d: roll down','l: roll left','r: roll right']
     else:
         choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2','n: next','p: previous']
+    if generalData['Type'] in ['modulated','magnetic',] and len(drawAtoms):
+        choice += ['+: increase tau','-: decrease tau','0: set tau = 0']
+
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as/key:')

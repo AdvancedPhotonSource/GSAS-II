@@ -2080,8 +2080,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             waveHead.Add(waveAdd,0,WACV)
             waveSizer.Add(waveHead)
             if len(waveBlk):
-                CSI = G2spc.GetSSfxuinel(xyz,uij,SGData,SSGData)
                 for iwave,wave in enumerate(waveBlk):
+                    if not iwave:
+                        CSI = G2spc.GetSSfxuinel(waveType,xyz,uij,SGData,SSGData)
+                    else:
+                        CSI = G2spc.GetSSfxuinel('Fourier',xyz,uij,SGData,SSGData)
                     waveName = 'Fourier'
                     if Stype == 'Sfrac':
                         if 'Crenel' in waveType and not iwave:
@@ -2189,14 +2192,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             continue
                         if generalData['Type'] != 'magnetic' and Stype == 'Smag':
                             break
-                        mainSizer.Add(WaveSizer(atom[-1][SS]['waveType'],atom[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype]))
-                        
+                        mainSizer.Add(WaveSizer(atom[-1][SS]['waveType'],atom[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype]))                        
         SetPhaseWindow(G2frame.dataFrame,waveData,mainSizer)
                        
     def On4DMapCompute(event):
         generalData = data['General']
         mapData = generalData['4DmapData']
         reflName = mapData['RefList']
+        generalData['Map']['Flip'] = False
         if not reflName:
             G2frame.ErrorDialog('Fourier map','No reflections defined for Fourier map')
             return
@@ -5033,9 +5036,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
             screenSize = wx.ClientDisplayRect()
             Size = pgbar.GetSize()
-            Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
-            pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-            pgbar.SetSize(Size)
+            if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+                pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+                pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         else:
             pgbar = None
         try:
@@ -5625,9 +5628,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = pgbar.GetSize()
-        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
-        pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-        pgbar.SetSize(Size)
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+            pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
             newMap,new4Dmap = G2mth.SSChargeFlip(data,reflDict,pgbar)
         finally:
@@ -5673,9 +5676,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = pgbar.GetSize()
-        Size = (int(Size[0]*1.2),Size[1]) # increase size a bit along x
-        pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
-        pgbar.SetSize(Size)
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+            pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
             mapData.update(G2mth.ChargeFlip(data,reflDict,pgbar))
         finally:

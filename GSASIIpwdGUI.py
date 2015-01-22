@@ -451,7 +451,9 @@ def UpdatePeakGrid(G2frame, data):
                     style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
                 screenSize = wx.ClientDisplayRect()
                 Size = dlg.GetSize()
-                dlg2.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+                if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+                    dlg2.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+                    dlg2.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
                 try:
                     peaks['sigDict'],result,sig,Rvals,varyList,parmDict,fullvaryList,badVary = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],
                         background,limits,inst,inst2,data,prevVaryList,oneCycle,controls,dlg2)
@@ -510,7 +512,9 @@ def UpdatePeakGrid(G2frame, data):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = dlg.GetSize()
-        dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+        if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
+            dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
+            dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
             peaks['sigDict'] = G2pwd.DoPeakFit(FitPgm,peaks['peaks'],background,limits,inst,inst2,data,[],oneCycle,controls,dlg)[0]
         finally:

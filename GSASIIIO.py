@@ -715,7 +715,14 @@ def GetTifData(filename,imageOnly=False):
                     image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.float32)
                 else:
                     image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
-                
+            elif IFD[258][2][0] == 16: 
+                tifType = 'MedOptics D1'
+                pixy = [46.9,46.9]
+                File.seek(8)
+                if not imageOnly:
+                    print 'Read MedOptics D1 tiff file: ',filename
+                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+                  
         elif IFD[273][2][0] == 4096:
             if sizexy[0] == 3072:
                 pixy =  [73,73]

@@ -710,13 +710,13 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij*Mdata*Fdata/len(Uniq)
         fa = np.array([(FF+FP-Bab)*cosp*Tcorr,-FPP*sinp*Tcorr])
-        fb = 0.
+        fb = np.zeros_like(fa)
         if not SGData['SGInv']:
             fb = np.array([(FF+FP-Bab)*sinp*Tcorr,FPP*cosp*Tcorr])
-        fa = fa*GfpuA.T-fb*GfpuB.T
-        fb = fb*GfpuA.T+fa*GfpuB.T
-        fas = np.sum(np.sum(fa,axis=1),axis=1)        #real
-        fbs = np.sum(np.sum(fb,axis=1),axis=1)
+        fa = fa*GfpuA-fb*GfpuB
+        fb = fb*GfpuA+fa*GfpuB
+        fas = np.real(np.sum(np.sum(fa,axis=1),axis=1))        #real
+        fbs = np.real(np.sum(np.sum(fb,axis=1),axis=1))
             
         fasq = fas**2
         fbsq = fbs**2        #imaginary
@@ -942,8 +942,6 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         if 'T' in calcControls[hfx+'histType']:
             FP,FPP = G2el.BlenResCW(Tdata,BLtables,refl.T[12+im])
         H = np.array(refl[:4])
-        if H[3]:
-            continue
         SQ = 1./(2.*refl[4+im])**2             # or (sin(theta)/lambda)**2
         SQfactor = 8.0*SQ*np.pi**2
         dBabdA = np.exp(-parmDict[phfx+'BabU']*SQfactor)
@@ -954,14 +952,16 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         SSUniq = np.inner(H,SSGMT)
         Phi = np.inner(H[:3],SGT)
         SSPhi = np.inner(H,SSGT)
-        GfpuA,GfpuB = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata)        
+        GfpuA,GfpuB = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata)
+        dGAdk,dGBdk = G2mth.ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata)
+        #need ModulationDerv here dGAdXsin, etc  
         phase = twopi*(np.inner((dXdata.T+Xdata.T),Uniq)+Phi[np.newaxis,:])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
         occ = Mdata*Fdata/len(Uniq)
         biso = -SQfactor*Uisodata
         Tiso = np.where(biso<1.,np.exp(biso),1.0)
-        HbH = -np.inner(H,np.inner(bij,H))
+        HbH = -np.inner(H[:3],np.inner(bij,H[:3]))
         Hij = np.array([Mast*np.multiply.outer(U,U) for U in Uniq])
         Hij = np.array([G2lat.UijtoU6(Uij) for Uij in Hij])
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
@@ -970,11 +970,17 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         fotp = FPP*occ*Tcorr
         fa = np.array([fot[:,np.newaxis]*cosp,fotp[:,np.newaxis]*cosp])       #non positions
         fb = np.array([fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])
+        GfpuA = np.swapaxes(GfpuA,1,2)
+        GfpuB = np.swapaxes(GfpuB,1,2)
+        fa = fa*GfpuA-fb*GfpuB
+        fb = fb*GfpuA+fa*GfpuB
         
         fas = np.sum(np.sum(fa,axis=1),axis=1)
         fbs = np.sum(np.sum(fb,axis=1),axis=1)
         fax = np.array([-fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])   #positions
         fbx = np.array([fot[:,np.newaxis]*cosp,-fot[:,np.newaxis]*cosp])
+        fax = fax*GfpuA-fbx*GfpuB
+        fbx = fbx*GfpuA+fax*GfpuB
         #sum below is over Uniq
         dfadfr = np.sum(fa/occ[:,np.newaxis],axis=2)        #Fdata != 0 ever avoids /0. problem
         dfadx = np.sum(twopi*Uniq*fax[:,:,:,np.newaxis],axis=2)
@@ -987,6 +993,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dFdui[iref] = 2.*(fas[0]*dfadui[0]+fas[1]*dfadui[1])
         dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])
         dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
+        #need dFdXsin, etc for modulations...
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ[:,np.newaxis],axis=2)        #Fdata != 0 ever avoids /0. problem
             dfbdx = np.sum(twopi*Uniq*fbx[:,:,:,np.newaxis],axis=2)           
@@ -998,6 +1005,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             dFdui[iref] += 2.*(fbs[0]*dfbdui[0]-fbs[1]*dfbdui[1])
             dFdua[iref] += 2.*(fbs[0]*dfbdua[0]+fbs[1]*dfbdua[1])
             dFdbab[iref] += 2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
+        #need dFdXsin, etc for modulations...
         #loop over atoms - each dict entry is list of derivatives for all the reflections
     for i in range(len(Mdata)):     
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
@@ -1011,6 +1019,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dFdvDict[pfx+'AU12:'+str(i)] = 2.*dFdua.T[3][i]
         dFdvDict[pfx+'AU13:'+str(i)] = 2.*dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = 2.*dFdua.T[5][i]
+        #need dFdvDict[pfx+'Xsin:'+str[i]:str(m)], etc for modulations...
     dFdvDict[pfx+'BabA'] = dFdbab.T[0]
     dFdvDict[pfx+'BabU'] = dFdbab.T[1]
     return dFdvDict

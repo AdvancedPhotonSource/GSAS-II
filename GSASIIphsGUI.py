@@ -2080,11 +2080,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             waveHead.Add(waveAdd,0,WACV)
             waveSizer.Add(waveHead)
             if len(waveBlk):
+                nFour = 0
                 for iwave,wave in enumerate(waveBlk):
+                    if waveType == 'Fourier':
+                        nFour += 1
                     if not iwave:
-                        CSI = G2spc.GetSSfxuinel(waveType,xyz,uij,SGData,SSGData)
+                        CSI = G2spc.GetSSfxuinel(waveType,nFour,xyz,SGData,SSGData)
                     else:
-                        CSI = G2spc.GetSSfxuinel('Fourier',xyz,uij,SGData,SSGData)
+                        CSI = G2spc.GetSSfxuinel('Fourier',nFour,xyz,SGData,SSGData)
                     waveName = 'Fourier'
                     if Stype == 'Sfrac':
                         if 'Crenel' in waveType and not iwave:
@@ -2106,14 +2109,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Waves = wx.FlexGridSizer(1,8,5,5)
                     waveSizer.Add(wx.StaticText(waveData,label=' %s  parameters: %s'%(waveName,str(names).rstrip(']').lstrip('[').replace("'",''))),0,WACV)
                     for ival,val in enumerate(wave[0]):
-                        if CSI[Stype][0][ival] == 0:
-                            waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_READONLY)
-                            waveVal.SetBackgroundColour(VERY_LIGHT_GREY)
-                        else:
+                        if any(CSI[Stype][0][ival]):
                             waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_PROCESS_ENTER)
                             waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
                             waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
                             Indx[waveVal.GetId()] = [iatm,Stype,iwave,ival]
+                        else:
+                            waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_READONLY)
+                            waveVal.SetBackgroundColour(VERY_LIGHT_GREY)
                         Waves.Add(waveVal,0,WACV)
                         if len(wave[0]) > 6 and ival == 5:
                             Waves.Add((5,5),0)

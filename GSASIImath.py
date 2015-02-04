@@ -708,13 +708,37 @@ def XAnomAbs(Elements,wave):
     
 def Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata):
     import scipy.special as sp
-    for iwt,wt in enumerate(waveTypes):    #atom loop!
-        if wt == 'Fourier':
-            A = np.array([[a,b] for a,b in zip(XSSdata[:3],XSSdata[3:])])
-            HdotA = twopi*np.inner(A.T,SSUniq.T[:3].T)
-            m = SSUniq.T[3]
-            Gp = sp.jn(-m,HdotA)
-    return np.real(Gp),np.imag(Gp)
+    import scipy.integrate as si
+    m = SSUniq.T[3]
+    nh = np.zeros(1)
+    if XSSdata.ndim > 2:
+        nh = np.arange(XSSdata.shape[1])        
+    M = np.where(m>0,m+nh[:,np.newaxis],m-nh[:,np.newaxis])
+    A = np.array(XSSdata[:3])
+    B = np.array(XSSdata[3:])
+    HdotA = (np.inner(A.T,SSUniq.T[:3].T)+SSPhi)
+    HdotB = (np.inner(B.T,SSUniq.T[:3].T)+SSPhi)
+    GpA = sp.jn(M[:,np.newaxis],twopi*HdotA)
+    GpB = sp.jn(M[:,np.newaxis],twopi*HdotB)*(1.j)**M
+    Gp = np.sum(GpA+GpB,axis=0)
+    return np.real(Gp).T,np.imag(Gp).T
+    
+def ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata):
+    import scipy.special as sp
+    m = SSUniq.T[3]
+    nh = np.zeros(1)
+    if XSSdata.ndim > 2:
+        nh = np.arange(XSSdata.shape[1])        
+    M = np.where(m>0,m+nh[:,np.newaxis],m-nh[:,np.newaxis])
+    A = np.array([[a,b] for a,b in zip(XSSdata[:3],XSSdata[3:])])
+    HdotA = twopi*(np.inner(SSUniq.T[:3].T,A.T)+SSPhi)
+    Gpm = sp.jn(M[:,np.newaxis,:]-1,HdotA)
+    Gpp = sp.jn(M[:,np.newaxis,:]+1,HdotA)
+    if Gpm.ndim > 3: #sum over multiple harmonics
+        Gpm = np.sum(Gpm,axis=0)
+        Gpp = np.sum(Gpp,axis=0)
+    dGpdk = 0.5*(Gpm+Gpp)
+    return np.real(dGpdk),np.imag(dGpdk)
     
 def posFourier(tau,psin,pcos):
     A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])

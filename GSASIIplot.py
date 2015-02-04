@@ -221,7 +221,7 @@ class GSASIItoolbar(Toolbar):
         '''Adds additional icons to toolbar'''
         Toolbar.__init__(self,plotCanvas)
         self.plotCanvas = plotCanvas
-        POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6 # remove one button
+        POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6 # remove one button, nos. start at 1!
         self.DeleteToolByPos(POSITION_OF_CONFIGURE_SUBPLOTS_BTN)
         self.parent = self.GetParent()
         key = os.path.join(os.path.split(__file__)[0],'key.ico')

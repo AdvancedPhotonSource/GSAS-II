@@ -1091,11 +1091,14 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
                     AtomSS = at[-1]['SS1']
                     waveType = AtomSS['waveType']
                     phaseDict[pfx+'waveType:'+str(i)] = waveType    
-                    CSI = G2spc.GetSSfxuinel(at[cx:cx+3],at[cia+2:cia+8],SGData,SSGData)
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         Waves = AtomSS[Stype]
                         uId,uCoef = CSI[Stype]
                         for iw,wave in enumerate(Waves):
+                            if not iw:
+                                CSI = G2spc.GetSSfxuinel(waveType,at[cx:cx+3],SGData,SSGData)
+                            else:
+                                CSI = G2spc.GetSSfxuinel('Fourier',at[cx:cx+3],SGData,SSGData)
                             stiw = str(i)+':'+str(iw)
                             if Stype == 'Spos':
                                 if waveType in ['ZigZag','Sawtooth'] and not iw:
@@ -1495,27 +1498,72 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
     def PrintWavesAndSig(General,Atoms,wavesSig):
         cx,ct,cs,cia = General['AtomPtrs']
         print >>pFile,'\n Modulation waves'
-#        names = {'Sfrac':['Fsin','Fcos','Fzero','Fwid'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tzero','Xslope','Yslope','Zslope'],
-#            'Sadp':['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin','U11cos','U22cos',
-#            'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
-#        print >>pFile,135*'-'
-#        for i,at in enumerate(Atoms):
-#            AtomSS = at[-1]['SS1']
-#            for Stype in ['Sfrac','Spos','Sadp','Smag']:
-#                Waves = AtomSS[Stype]
-#                if len(Waves):
-#                    print >>pFile,' atom: %s, site sym: %s, type: %s wave type: %s:'    \
-#                        %(at[ct-1],at[cs],Stype,AtomSS['waveType'])
-#                    line = ''
-#                    for item in names[Stype]:
-#                        line += '%8s '%(item)
-#                    print >>pFile,line
-#                for wave in Waves:                    
-#                    line = ''
-#                    for item in wave[0]:
-#                        line += '%8.4f '%(item)
-#                    line += ' Refine? '+str(wave[1])
-#                    print >>pFile,line
+        names = {'Sfrac':['Fsin','Fcos','Fzero','Fwid'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tzero','Xslope','Yslope','Zslope'],
+            'Sadp':['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin','U11cos','U22cos',
+            'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
+        print >>pFile,135*'-'
+        for i,at in enumerate(Atoms):
+            AtomSS = at[-1]['SS1']
+            waveType = AtomSS['waveType']
+            for Stype in ['Sfrac','Spos','Sadp','Smag']:
+                Waves = AtomSS[Stype]
+                if len(Waves):
+                    print >>pFile,' atom: %s, site sym: %s, type: %s wave type: %s:'    \
+                        %(at[ct-1],at[cs],Stype,waveType)
+                    line = ''
+                    for iw,wave in enumerate(Waves):
+                        stiw = ':'+str(i)+':'+str(iw)
+                        namstr = '  names :'
+                        valstr = '  values:'
+                        sigstr = '  esds  :'
+                        if Stype == 'Spos':
+                            nt = 6
+                            ot = 0
+                            if waveType in ['Sawtooth','ZigZag'] and not iw:
+                                nt = 4
+                                ot = 6
+                            for j in range(nt):
+                                name = names['Spos'][j+ot]
+                                namstr += '%12s'%(name)
+                                valstr += '%12.4f'%(wave[0][j])
+                                if name+stiw in wavesSig:
+                                    sigstr += '%12.4f'%(wavesSig[name+stiw])
+                                else:
+                                    sigstr += 12*' '
+                        elif Stype == 'Sfrac':
+                            ot = 0
+                            if 'Crenel' in waveType and not iw:
+                                ot = 2
+                            for j in range(2):
+                                name = names['Sfrac'][j+ot]
+                                namstr += '%12s'%(names['Sfrac'][j+ot])
+                                valstr += '%12.4f'%(wave[0][j])
+                                if name+stiw in wavesSig:
+                                    sigstr += '%12.4f'%(wavesSig[name+stiw])
+                                else:
+                                    sigstr += 12*' '
+                        elif Stype == 'Sadp':
+                            for j in range(12):
+                                name = names['Sadp'][j]
+                                namstr += '%10s'%(names['Sadp'][j])
+                                valstr += '%10.6f'%(wave[0][j])
+                                if name+stiw in wavesSig:
+                                    sigstr += '%10.6f'%(wavesSig[name+stiw])
+                                else:
+                                    sigstr += 10*' '
+                        elif Stype == 'Smag':
+                            for j in range(6):
+                                name = names['Smag'][j]
+                                namstr += '%12s'%(names['Smag'][j])
+                                valstr += '%12.4f'%(wave[0][j])
+                                if name+stiw in wavesSig:
+                                    sigstr += '%12.4f'%(wavesSig[name+stiw])
+                                else:
+                                    sigstr += 12*' '
+                                
+                    print >>pFile,namstr
+                    print >>pFile,valstr
+                    print >>pFile,sigstr
         
                 
     def PrintRBObjPOAndSig(rbfx,rbsx):
@@ -1783,27 +1831,27 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                             stiw = str(i)+':'+str(iw)
                             if Stype == 'Spos':
                                 if waveType in ['ZigZag','Sawtooth'] and not iw:
-                                    names = [pfx+'Tzero:'+stiw,pfx+'Xslope:'+stiw,pfx+'Yslope:'+stiw,pfx+'Zslope:'+stiw]
+                                    names = ['Tzero:'+stiw,'Xslope:'+stiw,'Yslope:'+stiw,'Zslope:'+stiw]
                                 else:
-                                    names = [pfx+'Xsin:'+stiw,pfx+'Ysin:'+stiw,pfx+'Zsin:'+stiw,
-                                        pfx+'Xcos:'+stiw,pfx+'Ycos:'+stiw,pfx+'Zcos:'+stiw]
+                                    names = ['Xsin:'+stiw,'Ysin:'+stiw,'Zsin:'+stiw,
+                                        'Xcos:'+stiw,'Ycos:'+stiw,'Zcos:'+stiw]
                             elif Stype == 'Sadp':
-                                names = [pfx+'U11sin:'+stiw,pfx+'U22sin:'+stiw,pfx+'U33sin:'+stiw,
-                                    pfx+'U12sin:'+stiw,pfx+'U13sin:'+stiw,pfx+'U23sin:'+stiw,
-                                    pfx+'U11cos:'+stiw,pfx+'U22cos:'+stiw,pfx+'U33cos:'+stiw,
-                                    pfx+'U12cos:'+stiw,pfx+'U13cos:'+stiw,pfx+'U23cos:'+stiw]
+                                names = ['U11sin:'+stiw,'U22sin:'+stiw,'U33sin:'+stiw,
+                                    'U12sin:'+stiw,'U13sin:'+stiw,'U23sin:'+stiw,
+                                    'U11cos:'+stiw,'U22cos:'+stiw,'U33cos:'+stiw,
+                                    'U12cos:'+stiw,'U13cos:'+stiw,'U23cos:'+stiw]
                             elif Stype == 'Sfrac':
                                 if 'Crenel' in waveType and not iw:
-                                    names = [pfx+'Fzero:'+stiw,pfx+'Fwid:'+stiw]
+                                    names = ['Fzero:'+stiw,'Fwid:'+stiw]
                                 else:
-                                    names = [pfx+'Fsin:'+stiw,pfx+'Fcos:'+stiw]
+                                    names = ['Fsin:'+stiw,'Fcos:'+stiw]
                             elif Stype == 'Smag':
-                                names = [pfx+'MXsin:'+stiw,pfx+'MYsin:'+stiw,pfx+'MZsin:'+stiw,
-                                    pfx+'MXcos:'+stiw,pfx+'MYcos:'+stiw,pfx+'MZcos:'+stiw]
+                                names = ['MXsin:'+stiw,'MYsin:'+stiw,'MZsin:'+stiw,
+                                    'MXcos:'+stiw,'MYcos:'+stiw,'MZcos:'+stiw]
                             for iname,name in enumerate(names):
-                                AtomSS[Stype][iw][0][iname] = parmDict[name]
-                                if name in sigDict:
-                                    wavesSig[name] = sigDict[name]
+                                AtomSS[Stype][iw][0][iname] = parmDict[pfx+name]
+                                if pfx+name in sigDict:
+                                    wavesSig[name] = sigDict[pfx+name]
                     
             PrintAtomsAndSig(General,Atoms,atomsSig)
             if General['Type'] in ['modulated','magnetic']:

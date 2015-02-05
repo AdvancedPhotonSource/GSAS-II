@@ -1539,6 +1539,13 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         ssopinv = nl.inv(ssop[0])
         mst = ssopinv[3][:3]
         epsinv = ssopinv[3][3]
+        sdet = nl.det(sop[0])
+        ssdet = nl.det(ssop[0])
+        dtau = mst*(XYZ-sop[1])-epsinv*ssop[1][3]
+        dT = 1.0
+        if np.any(dtau%.5):
+            dT = np.tan(np.pi*np.sum(dtau))
+        print sdet,ssdet,dtau,np.sum(dtau),dT
         tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3])
         if waveType == 'Fourier':
             dXT = posFourier(np.sort(tauT),nH,delt6[:3],delt6[3:])   #+np.array(XYZ)[:,np.newaxis,np.newaxis]
@@ -1548,38 +1555,54 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
             dXT = posZigZag(tauT,delt4[0],delt4[1:])+np.array(XYZ)[:,np.newaxis,np.newaxis]            
         dXT = np.inner(sop[0],dXT.T)
         dXT = np.swapaxes(dXT,1,2)
-#        dXT = dXT[:,:,np.argsort(tauT)]
+        dXT[:,:3,:] *= ssdet
         dXTP.append(dXT)
         if waveType == 'Fourier':
-            for i in range(3):
-                if np.allclose(dX[i,i,:],dXT[i,i,:]):
-                    xsc[i] = 1
-                else:
-                    xsc[i] = 0
-                if np.allclose(dX[i,i+3,:],dXT[i,i+3,:]):
-                    xsc[i+3] = 1
-                else:
-                    xsc[i+3] = 0
+            if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
+                dt = sdet*dT**sdet
+                CSI['Spos'] = [[[1,0,0],[2,0,0],[3,0,0], [1,0,0],[2,0,0],[3,0,0]],
+                    [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
+                if '(x)' in siteSym:
+                    CSI['Spos'][1][3:] = [1./dt,0.,0.],[-dt,0.,0.],[-dt,0.,0.]
+                elif '(y)' in siteSym:
+                    CSI['Spos'][1][3:] = [-dt,0.,0.],[1./dt,0.,0.],[-dt,0.,0.]
+                elif '(z)' in siteSym:
+                    CSI['Spos'][1][3:] = [-dt,0.,0.],[-dt,0.,0.],[1./dt,0.,0.]
+            else:
+                for i in range(3):
+                    if np.allclose(dX[i,i,:],dXT[i,i,:]*sdet):
+                        xsc[i] = 1
+                    else:
+                        xsc[i] = 0
+                    if np.allclose(dX[i,i+3,:],dXT[i,i+3,:]):
+                        xsc[i+3] = 1
+                    else:
+                        xsc[i+3] = 0
             XSC &= xsc
             
         fsc = np.ones(2,dtype='i')
-        vfsc = np.ones(2)
         if 'Crenel' in waveType:
             dFT = fracCrenel(tauT,delt2[:1],delt2[1:]).squeeze()
+            fsc = [1,1]
         else:
             dFT = fracFourier(tauT,nH,delt2[:1],delt2[1:]).squeeze()
-        dFT = nl.det(sop[0])*dFT
-        dFT = dFT[:,np.argsort(tauT)]
-        dFTP.append(dFT)
-        for i in range(2):
-            if np.allclose(dF[i,:],dFT[i,:],atol=1.e-6):
-                fsc[i] = 1
-                vfsc[i] = 1.0               
+            dFT = nl.det(sop[0])*dFT
+            dFT = dFT[:,np.argsort(tauT)]
+            dFT[0] *= ssdet
+            dFT[1] *= sdet
+            dFTP.append(dFT)
+        
+            if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
+                dt = dT     #**sdet
+                fsc = [1,1]
+                CSI['Sfrac'] = [[[1,0],[1,0]],[[1.,0.],[1/dt,0.]]]
             else:
-                fsc[i] = 0
-                vfsc[i] = 0.
+                for i in range(2):
+                    if np.allclose(dF[i,:],dFT[i,:],atol=1.e-6):
+                        fsc[i] = 1
+                    else:
+                        fsc[i] = 0
         FSC &= fsc
-        VFSC = vfsc
             
         usc = np.ones(12,dtype='i')
         # make 12x12x4x4 with tau layers?
@@ -1588,39 +1611,54 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         dUijT = np.rollaxis(np.inner(np.inner(sop[0],dUijT),sop[0].T),3)
         dUT = np.array(U2Uij(dUijT))
         dUT = dUT[:,:,np.argsort(tauT)]
+        dUT[:,:6,:] *= ssdet*sdet
         dUTP.append(dUT)
-        for i in range(6):
-            if np.allclose(dU[i,i,:],dUT[i,i,:]):
-                usc[i] = 1
-            else:
-                usc[i] = 0
-            if np.allclose(dU[i,i+6,:],dUT[i,i+6,:]):
-                usc[i+6] = 1
-            else:
-                usc[i+6] = 0
-        USC &= usc
-    n = -1
-    for i,U in enumerate(USC):
-        if U:
-            n += 1
-            CSI['Sadp'][0][i][0] = n+1
-            CSI['Sadp'][1][i][0] = 1.0
-    if waveType == 'Fourier':
-        n = -1
-        for i,X in enumerate(XSC):
-            if X:
-                n += 1
-                CSI['Spos'][0][i][0] = n+1
-                CSI['Spos'][1][i][0] = 1.0
-    n = -1
-    for i,[F,VF] in enumerate(zip(FSC,VFSC)):
-        if F:
-            n += 1
-            CSI['Sfrac'][0][i] = n+1
-            CSI['Sfrac'][1][i] = VF
+        if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
+            dt = dT     #**sdet
+            CSI['Sadp'] = [[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0], 
+            [1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],
+            [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.],
+            [1./dt,0.,0.],[1./dt,0.,0.],[1./dt,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
+            if '(x)' in siteSym:
+                CSI['Sadp'][1][9:] = [-dt,0.,0.],[-dt,0.,0.],[1./dt,0.,0.]
+            elif '(y)' in siteSym:
+                CSI['Sadp'][1][9:] = [-dt,0.,0.],[1./dt,0.,0.],[-dt,0.,0.]
+            elif '(z)' in siteSym:
+                CSI['Sadp'][1][9:] = [1./dt,0.,0.],[-dt,0.,0.],[-dt,0.,0.]
         else:
-            CSI['Sfrac'][0][i] = 0
-            CSI['Sfrac'][1][i] = 0.            
+            for i in range(6):
+                if np.allclose(dU[i,i,:],dUT[i,i,:]):
+                    usc[i] = 1
+                else:
+                    usc[i] = 0
+                if np.allclose(dU[i,i+6,:],dUT[i,i+6,:]):
+                    usc[i+6] = 1
+                else:
+                    usc[i+6] = 0
+        USC &= usc
+    if not np.any(dtau%.5):
+        n = -1
+        for i,U in enumerate(USC):
+            if U:
+                n += 1
+                CSI['Sadp'][0][i][0] = n+1
+                CSI['Sadp'][1][i][0] = 1.0
+        if waveType == 'Fourier':
+            n = -1
+            for i,X in enumerate(XSC):
+                if X:
+                    n += 1
+                    CSI['Spos'][0][i][0] = n+1
+                    CSI['Spos'][1][i][0] = 1.0
+        n = -1
+        for i,F in enumerate(FSC):
+            if F:
+                n += 1
+                CSI['Sfrac'][0][i] = n+1
+                CSI['Sfrac'][1][i] = 1.0
+            else:
+                CSI['Sfrac'][0][i] = 0
+                CSI['Sfrac'][1][i] = 0.            
     if debug:
         return CSI,[tau,tauT],[dF,dFTP],[dX,dXTP],[dU,dUTP]
     else:

@@ -795,14 +795,17 @@ def ellipseSizeDerv(H,Sij,GB):
         dRdS[i] = (lenP-lenM)/(2.*delt)
     return lenR,dRdS
 
-def getHKLpeak(dmin,Inst,SGData,A):
+def getHKLpeak(dmin,SGData,A,Inst=None):
     'needs a doc string'
     HKL = G2lat.GenHLaue(dmin,SGData,A)        
     HKLs = []
     for h,k,l,d in HKL:
         ext = G2spc.GenHKLf([h,k,l],SGData)[0]
         if not ext:
-            HKLs.append([h,k,l,d,G2lat.Dsp2pos(Inst,d),-1])
+            if Inst == None:
+                HKLs.append([h,k,l,d,0,-1])
+            else:
+                HKLs.append([h,k,l,d,G2lat.Dsp2pos(Inst,d),-1])
     return HKLs
 
 def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):

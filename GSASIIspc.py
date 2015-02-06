@@ -1491,11 +1491,19 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
     #build set of sym ops around special poasition        
     SSop = []
     Sop = []
+    Sdtau = []
     for iop,Op in enumerate(SGOps):         
         nxyz = (np.inner(Op[0],xyz)+Op[1])%1.
         if np.allclose(xyz,nxyz,1.e-4) and iop and MT2text(Op).replace(' ','') != '-X,-Y,-Z':
             SSop.append(SSGOps[iop])
             Sop.append(SGOps[iop])
+            ssopinv = nl.inv(SSGOps[iop][0])
+            mst = ssopinv[3][:3]
+            epsinv = ssopinv[3][3]
+            Sdtau.append(np.sum(mst*(XYZ-SGOps[iop][1])-epsinv*SSGOps[iop][1][3]))
+    Sdtau = np.array(Sdtau)
+    SdIndx = np.argsort(Sdtau)
+    print SdIndx
     OpText =  [MT2text(s).replace(' ','') for s in Sop]         #debug?
     SSOpText = [SSMT2text(ss).replace(' ','') for ss in SSop]   #debug?
     print 'special pos super operators: ',SSOpText
@@ -1533,7 +1541,9 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
     dFTP = []
     dXTP = []
     dUTP = []
-    for sop,ssop in zip(Sop,SSop):
+    for i in SdIndx:
+        sop = Sop[i]
+        ssop = SSop[i]
         fsc = np.ones(2,dtype='i')
         xsc = np.ones(6,dtype='i')
         ssopinv = nl.inv(ssop[0])
@@ -1545,7 +1555,6 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         dT = 1.0
         if np.any(dtau%.5):
             dT = np.tan(np.pi*np.sum(dtau))
-        print sdet,ssdet,dtau,np.sum(dtau),dT
         tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3])
         if waveType == 'Fourier':
             dXT = posFourier(np.sort(tauT),nH,delt6[:3],delt6[3:])   #+np.array(XYZ)[:,np.newaxis,np.newaxis]

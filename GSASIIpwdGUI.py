@@ -2395,7 +2395,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             M20,X20 = G2indx.calc_M20SS(peaks[0],G2frame.HKL)
         else:
             dmin = peaks[0][-1][7]
-            G2frame.HKL = G2pwd.getHKLpeak(dmin,Inst,SGData,A)
+            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
             peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
             M20,X20 = G2indx.calc_M20(peaks[0],G2frame.HKL)
         print ' new M20,X20: %.2f %d fraction found: %.3f'%(M20,X20,float(len(peaks[0]))/len(G2frame.HKL))
@@ -2477,11 +2477,11 @@ def UpdateUnitCellsGrid(G2frame, data):
                 Lhkl,M20,X20,Aref,Vec,Zero = \
                     G2indx.refinePeaksZSS(peaks[0],wave,Inst,SGData,SSGData,ssopt['maxH'],ibrav,A,ssopt['ModVec'],vecFlags,controls[1],controls[0])
             else:
-                G2frame.HKL = G2pwd.getHKLpeak(dmin,Inst,SGData,A)
+                G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
                 peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
                 Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks[0],wave,ibrav,A,controls[1],controls[0])
         else:   #'T'OF - doesn't seem to work
-            G2frame.HKL = G2pwd.getHKLpeak(dmin,Inst,SGData,A)
+            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
             peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
             Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])            
         controls[1] = Zero
@@ -2495,7 +2495,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             ssopt['ModVec'] = Vec
             G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
         else:
-            G2frame.HKL = G2pwd.getHKLpeak(dmin,Inst,SGData,A)
+            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
         data = [controls,bravais,cells,dmin,ssopt]
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
         print " %s%10.3f" % ('refinement M20 = ',M20)

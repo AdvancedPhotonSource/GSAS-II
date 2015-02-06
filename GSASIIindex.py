@@ -291,7 +291,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
     else:
         difC = Inst['difC'][1]
     SGData = G2spc.SpcGroup(controls[13])[1]
-    SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])
+    SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
     A = G2lat.cell2A(controls[6:12])
     Z = controls[1]
     Vref = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]

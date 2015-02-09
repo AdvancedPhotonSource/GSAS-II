@@ -1781,7 +1781,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         page = event.GetSelection()
         text = G2frame.dataDisplay.GetPageText(page)
         G2frame.dataFrame.RestraintEdit.SetLabel(G2gd.wxID_RESRCHANGEVAL,'Change value')
-        SetStatusLine('')
         if text == 'Bond restraints':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
             G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTRAINTADD,True)
@@ -1838,9 +1837,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             
         event.Skip()
 
-    def SetStatusLine(text):
-        Status.SetStatusText(text)                                      
-
     def RaisePage(event):
         'Respond to a "select tab" menu button'
         # class PseudoEvent(object):
@@ -1859,9 +1855,6 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RestraintMenu)
     G2frame.dataFrame.SetLabel('restraints for '+phaseName)
-    if not G2frame.dataFrame.GetStatusBar():
-        Status = G2frame.dataFrame.CreateStatusBar()
-    SetStatusLine('')
     
     G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_RESTSELPHASE,False)
     if len(Phases) > 1:

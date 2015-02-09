@@ -1603,9 +1603,6 @@ def Fourier4DMap(data,reflDict):
     
     '''
     generalData = data['General']
-    if not generalData['4DmapData']['RefList']:
-        print '**** ERROR - 4D Fourier map data not defined'
-        return
     mapData = generalData['4DmapData']
     dmin = mapData['Resolution']
     SGData = generalData['SGData']
@@ -1659,9 +1656,6 @@ def FourierMap(data,reflDict):
     
     '''
     generalData = data['General']
-    if not generalData['Map']['MapType']:
-        print '**** ERROR - Fourier map not defined'
-        return
     mapData = generalData['Map']
     dmin = mapData['Resolution']
     SGData = generalData['SGData']

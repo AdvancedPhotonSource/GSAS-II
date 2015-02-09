@@ -92,6 +92,33 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
       is to bring up the General tab.
 
     '''
+    
+    def GetReflData(G2frame,phaseName,reflNames):
+        ReflData = {'RefList':[],'Type':''}
+        for reflName in reflNames:
+            if 'PWDR' in reflName:
+                PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+                reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
+                reflData = reflSets[phaseName]
+                if 'list' in str(type(reflData)):       #patch for old reflection data
+                    RefData = {'RefList':[],'FF':[]}
+                    for ref in reflDict:
+                        RefData['RefList'].append(ref[:11]+[ref[13],])
+                        RefData['FF'].append(ref[14])
+                    RefData['RefList'] = np.array(RefData['RefList'])
+                    reflData = RefData
+            elif 'HKLF' in reflName:
+                PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
+                reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+                if 'Type' not in reflData:
+                    reflData['Type'] = 'SXC'
+            if ReflData['Type'] and reflData['Type'] != ReflData['Type']:
+                G2frame.ErrorDialog('Data type conflict',
+                    reflName+' conflicts with previous '+ReflData['Type'])
+                return None
+            ReflData['RefList'] += list(reflData['RefList'])
+            ReflData['Type'] = reflData['Type']
+        return ReflData
 
     # UpdatePhaseData execution continues below
     
@@ -679,7 +706,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Map['MapType'] = mapType.GetValue()
                 
             def OnRefList(event):
-                Map['RefList'] = refList.GetValue()
+                dlg = G2gd.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
+                    'Use data',refsList,filterBox=False)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        Map['RefList'] = [refsList[i] for i in dlg.GetSelections()]
+                    else:
+                        return
+                finally:
+                    dlg.Destroy()
+                wx.CallAfter(UpdateGeneral)                
                 
             def OnResVal(event):
                 try:
@@ -703,21 +739,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if 'cutOff' not in Map:
                 Map['cutOff'] = 100.0
             mapTypes = ['Fobs','Fcalc','delt-F','2*Fo-Fc','Omit','2Fo-Fc Omit','Patterson']
-            refList = data['Histograms'].keys()
+            refsList = data['Histograms'].keys()
             if not generalData['AtomTypes']:
                  mapTypes = ['Patterson',]
                  Map['MapType'] = 'Patterson'
             mapSizer = wx.BoxSizer(wx.VERTICAL)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
             lineSizer.Add(wx.StaticText(General,label=' Fourier map controls: Map type: '),0,WACV)
-            mapType = wx.ComboBox(General,-1,value=Map['MapType'],choices=mapTypes,
+            mapType = wx.ComboBox(General,value=Map['MapType'],choices=mapTypes,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             mapType.Bind(wx.EVT_COMBOBOX,OnMapType)
             lineSizer.Add(mapType,0,WACV)
-            lineSizer.Add(wx.StaticText(General,label=' Reflection set from: '),0,WACV)
-            refList = wx.ComboBox(General,-1,value=Map['RefList'],choices=refList,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            refList.Bind(wx.EVT_COMBOBOX,OnRefList)
+            lineSizer.Add(wx.StaticText(General,label=' Reflection sets: '),0,WACV)
+            if 'list' not in str(type(Map['RefList'])):     #patch
+                Map['RefList'] = [Map['RefList'],]
+            lineSizer.Add(wx.ComboBox(General,value=Map['RefList'][0],choices=Map['RefList'],
+                style=wx.CB_DROPDOWN),0,WACV)
+            refList = wx.Button(General,label='Select reflection sets')
+            refList.Bind(wx.EVT_BUTTON,OnRefList)
             lineSizer.Add(refList,0,WACV)
             mapSizer.Add(lineSizer,0,WACV)
             line2Sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -738,7 +777,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if 'k-Max' not in Flip: Flip['k-Max'] = 20.
             
             def OnRefList(event):
-                Flip['RefList'] = refList.GetValue()
+                dlg = G2gd.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
+                    'Use data',refsList,filterBox=False)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        Flip['RefList'] = [refsList[i] for i in dlg.GetSelections()]
+                    else:
+                        return
+                finally:
+                    dlg.Destroy()
+                wx.CallAfter(UpdateGeneral)                
                 
             def OnNormElem(event):
                 PE = G2elemGUI.PickElement(G2frame,ifNone=True)
@@ -774,13 +822,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     pass
                 kMax.SetValue("%.1f"%(Flip['k-Max']))          #reset in case of error
 
-            refList = data['Histograms'].keys()
+            refsList = data['Histograms'].keys()
             flipSizer = wx.BoxSizer(wx.VERTICAL)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-            lineSizer.Add(wx.StaticText(General,label=' Charge flip controls: Reflection set from: '),0,WACV)
-            refList = wx.ComboBox(General,-1,value=Flip['RefList'],choices=refList,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            refList.Bind(wx.EVT_COMBOBOX,OnRefList)
+            lineSizer.Add(wx.StaticText(General,label=' Charge flip controls: Reflection sets: '),0,WACV)
+            if 'list' not in str(type(Flip['RefList'])):     #patch
+                Flip['RefList'] = [Flip['RefList'],]
+            lineSizer.Add(wx.ComboBox(General,value=Flip['RefList'][0],choices=Flip['RefList'],
+                style=wx.CB_DROPDOWN),0,WACV)
+            refList = wx.Button(General,label='Select reflection sets')
+            refList.Bind(wx.EVT_BUTTON,OnRefList)
             lineSizer.Add(refList,0,WACV)
             lineSizer.Add(wx.StaticText(General,label=' Normalizing element: '),0,WACV)
             normElem = wx.Button(General,label=Flip['Norm element'],style=wx.TE_READONLY)
@@ -2139,19 +2190,33 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def MapSizer():
 
             def OnRefList(event):
-                Map['RefList'] = refList.GetValue()
+                dlg = G2gd.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
+                    'Use data',refsList,filterBox=False)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        Map['RefList'] = [refsList[i] for i in dlg.GetSelections()]
+                    else:
+                        return
+                finally:
+                    dlg.Destroy()
+                UpdateWavesData()
                 
             def OnMapType(event):
                 Map['MapType'] = mapType.GetValue()
                 
             Map['Resolution'] = 0.25
-            refList = data['Histograms'].keys()
+            refsList = data['Histograms'].keys()
             mapSizer = wx.BoxSizer(wx.HORIZONTAL)
+            
             mapSizer.Add(wx.StaticText(waveData,label=' 4D map data: Reflection set from: '),0,WACV)
-            refList = wx.ComboBox(waveData,-1,value=Map['RefList'],choices=refList,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            refList.Bind(wx.EVT_COMBOBOX,OnRefList)
+            if 'list' not in str(type(Map['RefList'])):     #patch
+                Map['RefList'] = [Map['RefList'],]
+            mapSizer.Add(wx.ComboBox(waveData,value=Map['RefList'][0],choices=Map['RefList'],
+                style=wx.CB_DROPDOWN),0,WACV)
+            refList = wx.Button(waveData,label='Select reflection sets')
+            refList.Bind(wx.EVT_BUTTON,OnRefList)
             mapSizer.Add(refList,0,WACV)
+            
             mapTypes = ['Fobs','delt-F']
             mapSizer.Add(wx.StaticText(waveData,label=' Map type: '),0,WACV)
             mapType = wx.ComboBox(waveData,-1,value=Map['MapType'],choices=mapTypes,
@@ -2201,20 +2266,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def On4DMapCompute(event):
         generalData = data['General']
         mapData = generalData['4DmapData']
-        reflName = mapData['RefList']
+        reflNames = mapData['RefList']
         generalData['Map']['Flip'] = False
-        if not reflName:
-            G2frame.ErrorDialog('Fourier map','No reflections defined for Fourier map')
+        if not len(reflNames):
+            G2frame.ErrorDialog('Fourier map error','No reflections defined for Fourier map')
             return
         phaseName = generalData['Name']
-        if 'PWDR' in reflName:
-            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
-            reflData = reflSets[phaseName]
-        elif 'HKLF' in reflName:
-            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-        mapData.update(G2mth.Fourier4DMap(data,reflData))
+        ReflData = GetReflData(G2frame,phaseName,reflNames)
+        if ReflData == None: return
+        mapData.update(G2mth.Fourier4DMap(data,ReflData))
         mapSig = np.std(mapData['rho'])
         print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
             
@@ -5514,33 +5574,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def OnFourierMaps(event):
         generalData = data['General']
         mapData = generalData['Map']
-        reflName = mapData['RefList']
-        if not reflName:
-            G2frame.ErrorDialog('Fourier map','No reflections defined for Fourier map')
+        reflNames = mapData['RefList']
+        if not generalData['Map']['MapType']:
+            G2frame.ErrorDialog('Fourier map error','Fourier map type not defined')
+            return
+        if not len(reflNames):
+            G2frame.ErrorDialog('Fourier map error','No reflections defined for Fourier map')
             return
         phaseName = generalData['Name']
-        if 'PWDR' in reflName:
-            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
-            reflData = reflSets[phaseName]
-            if 'list' in str(type(reflData)):       #patch for old reflection data
-            #if isinstance(reflData,list):       #patch for old reflection data
-                RefData = {'RefList':[],'FF':[]}
-                for ref in reflData:
-                    RefData['RefList'].append(ref[:11]+[ref[13],])
-                    RefData['FF'].append(ref[14])
-                RefData['RefList'] = np.array(RefData['RefList'])
-                reflData = RefData
-        elif 'HKLF' in reflName:
-            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+        ReflData = GetReflData(G2frame,phaseName,reflNames)
+        if ReflData == None: return
         if 'Omit' in mapData['MapType']:
             pgbar = wx.ProgressDialog('Omit map','Blocks done',65, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-            mapData.update(G2mth.OmitMap(data,reflData,pgbar))
+            mapData.update(G2mth.OmitMap(data,ReflData,pgbar))
             pgbar.Destroy()
         else:
-            mapData.update(G2mth.FourierMap(data,reflData))
+            mapData.update(G2mth.FourierMap(data,ReflData))
         mapData['Flip'] = False
         mapSig = np.std(mapData['rho'])
         if not data['Drawing']:                 #if new drawing - no drawing data!
@@ -5615,18 +5665,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mapData = generalData['Map']
         map4DData = generalData['4DmapData']
         flipData = generalData['Flip']
-        reflName = flipData['RefList']
-        phaseName = generalData['Name']
-        if 'PWDR' in reflName:
-            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
-            reflDict = reflSets[phaseName]
-        elif 'HKLF' in reflName:
-            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflDict = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-        else:
-            print '**** ERROR - No data defined for charge flipping'
+        reflNames = flipData['RefList']
+        if not len(reflNames):
+            G2frame.ErrorDialog('Charge flip error','No reflections defined for charge flipping')
             return
+        phaseName = generalData['Name']
+        ReflData = GetReflData(G2frame,phaseName,reflNames)
+        if ReflData == None: return
         pgbar = wx.ProgressDialog('Charge flipping','Residual Rcf =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
@@ -5635,7 +5680,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
             pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            newMap,new4Dmap = G2mth.SSChargeFlip(data,reflDict,pgbar)
+            newMap,new4Dmap = G2mth.SSChargeFlip(data,ReflData,pgbar)
         finally:
             pgbar.Destroy()
         mapData.update(newMap)
@@ -5656,25 +5701,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         mapData = generalData['Map']
         flipData = generalData['Flip']
-        reflName = flipData['RefList']
-        phaseName = generalData['Name']
-        if 'PWDR' in reflName:
-            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
-            reflDict = reflSets[phaseName]
-            if 'list' in str(type(reflDict)):       #patch for old reflection data
-                RefData = {'RefList':[],'FF':[]}
-                for ref in reflDict:
-                    RefData['RefList'].append(ref[:11]+[ref[13],])
-                    RefData['FF'].append(ref[14])
-                RefData['RefList'] = np.array(RefData['RefList'])
-                reflDict = RefData
-        elif 'HKLF' in reflName:
-            PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
-            reflDict = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-        else:
-            print '**** ERROR - No data defined for charge flipping'
+        reflNames = flipData['RefList']
+        if not len(reflNames):
+            G2frame.ErrorDialog('Charge flip error','No reflections defined for charge flipping')
             return
+        phaseName = generalData['Name']
+        ReflData = GetReflData(G2frame,phaseName,reflNames)
+        if ReflData == None: return
         pgbar = wx.ProgressDialog('Charge flipping','Residual Rcf =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
@@ -5683,7 +5716,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
             pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            mapData.update(G2mth.ChargeFlip(data,reflDict,pgbar))
+            mapData.update(G2mth.ChargeFlip(data,ReflData,pgbar))
         finally:
             pgbar.Destroy()
         mapData['Flip'] = True        

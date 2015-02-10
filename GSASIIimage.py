@@ -153,27 +153,27 @@ def FitDetector(rings,varyList,parmDict,Print=True):
         print sigstr        
         
     def ellipseCalcD(B,xyd,varyList,parmDict):
+        
         x,y,dsp = xyd
-        wave = parmDict['wave']
-        if 'dep' in varyList:
-            dist,x0,y0,tilt,chi,dep = B[:6]
-        else:
-            dist,x0,y0,tilt,chi = B[:5]
-            dep = parmDict['dep']
-        if 'wave' in varyList:
-            wave = B[-1]
-        phi = chi-90.               #get rotation of major axis from tilt axis
-        tth = 2.0*npasind(wave/(2.*dsp))
-        phi0 = npatan2d(y-y0,x-x0)
-        dxy = peneCorr(tth,dep,tilt,phi0)
+        varyDict = dict(zip(varyList,B))
+        parms = {}
+        for parm in parmDict:
+            if parm in varyList:
+                parms[parm] = varyDict[parm]
+            else:
+                parms[parm] = parmDict[parm]
+        phi = parms['phi']-90.               #get rotation of major axis from tilt axis
+        tth = 2.0*npasind(parms['wave']/(2.*dsp))
+        phi0 = npatan2d(y-parms['det-Y'],x-parms['det-X'])
+        dxy = peneCorr(tth,parms['dep'],parms['tilt'],phi0)
         ttth = nptand(tth)
         stth = npsind(tth)
-        cosb = npcosd(tilt)
-        tanb = nptand(tilt)        
-        tbm = nptand((tth-tilt)/2.)
-        tbp = nptand((tth+tilt)/2.)
-        sinb = npsind(tilt)
-        d = dist+dxy
+        cosb = npcosd(parms['tilt'])
+        tanb = nptand(parms['tilt'])        
+        tbm = nptand((tth-parms['tilt'])/2.)
+        tbp = nptand((tth+parms['tilt'])/2.)
+        sinb = npsind(parms['tilt'])
+        d = parms['dist']+dxy
         fplus = d*tanb*stth/(cosb+stth)
         fminus = d*tanb*stth/(cosb-stth)
         vplus = d*(tanb+(1+tbm)/(1-tbm))*stth/(cosb+stth)
@@ -181,7 +181,7 @@ def FitDetector(rings,varyList,parmDict,Print=True):
         R0 = np.sqrt((vplus+vminus)**2-(fplus+fminus)**2)/2.      #+minor axis
         R1 = (vplus+vminus)/2.                                    #major axis
         zdis = (fplus-fminus)/2.
-        Robs = np.sqrt((x-x0)**2+(y-y0)**2)
+        Robs = np.sqrt((x-parms['det-X'])**2+(y-parms['det-Y'])**2)
         rsqplus = R0**2+R1**2
         rsqminus = R0**2-R1**2
         R = rsqminus*npcosd(2.*phi0-2.*phi)+rsqplus
@@ -200,10 +200,9 @@ def FitDetector(rings,varyList,parmDict,Print=True):
     vals = list(result[0])
     sig = list(np.sqrt(chisq*np.diag(result[1])))
     sigList = np.zeros(7)
-    for i,name in enumerate(names):
-        if name in varyList:
-            sigList[i] = sig[varyList.index(name)]
-    ValSig = zip(names,fmt,vals,sig)
+    for i,name in enumerate(varyList):
+        sigList[i] = sig[varyList.index(name)]
+    ValSig = zip(varyList,fmt,vals,sig)
     if Print:
         CalibPrint(ValSig,chisq,rings.shape[0])
     return chisq
@@ -516,7 +515,7 @@ def ImageRecalibrate(self,data,masks):
             hkl = G2lat.GenHBravais(dmin,bravais,A)
             HKL += hkl
     HKL = G2lat.sortHKLd(HKL,True,False)
-    varyList = ['dist','det-X','det-Y','tilt','phi']
+    varyList = [item for item in data['varyList'] if data['varyList'][item]]
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     Found = False
@@ -546,8 +545,6 @@ def ImageRecalibrate(self,data,masks):
             continue
 #            break
     rings = np.concatenate((data['rings']),axis=0)
-    if data['DetDepthRef']:
-        varyList.append('dep')
     chisq = FitDetector(rings,varyList,parmDict)
     data['distance'] = parmDict['dist']
     data['center'] = [parmDict['det-X'],parmDict['det-Y']]
@@ -666,8 +663,8 @@ def ImageCalibrate(self,data):
         print fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1])
         Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,self.ImageZ)
         parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
-            'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}
-        varyList = ['dist','det-X','det-Y','tilt','phi']
+            'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}        
+        varyList = [item for item in data['varyList'] if data['varyList'][item]]
         if len(Ringp) > 10:
             chip = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)
             tiltp = parmDict['tilt']
@@ -705,9 +702,7 @@ def ImageCalibrate(self,data):
     G2plt.PlotImage(self,newImage=True)
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
-    varyList = ['dist','det-X','det-Y','tilt','phi']
-    if data['DetDepthRef']:
-        varyList.append('dep')
+    varyList = [item for item in data['varyList'] if data['varyList'][item]]
     data['rings'] = []
     data['ellipses'] = []
     for i,H in enumerate(HKL):

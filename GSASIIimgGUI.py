@@ -98,7 +98,6 @@ def UpdateImageControls(G2frame,data,masks):
         data['GonioAngles'] = [0.,0.,0.]
     if 'DetDepth' not in data:
         data['DetDepth'] = 0.
-        data['DetDepthRef'] = False
     if 'SampleAbs' not in data:
         data['SampleShape'] = 'Cylinder'
         data['SampleAbs'] = [0.0,False]
@@ -107,6 +106,8 @@ def UpdateImageControls(G2frame,data,masks):
             data['binType'] = '2-theta'
         elif 'SASD' in data['type']:
             data['binType'] = 'log(q)'
+    if 'varyList' not in data:
+        data['varyList'] = {'dist':True,'det-X':True,'det-Y':True,'tilt':True,'phi':True,'dep':False,'wave':False}
 #end patch
     
 # Menu items
@@ -479,7 +480,7 @@ def UpdateImageControls(G2frame,data,masks):
             waveSel.SetValue("%7.5f" % (data['wavelength']))          #reset in case of error
             
         def OnDetDepthRef(event):
-            data['DetDepthRef'] = penSel.GetValue()
+            data['varyList']['dep'] = penSel.GetValue()
             
         def OnDetDepth(event):
             try:
@@ -504,7 +505,7 @@ def UpdateImageControls(G2frame,data,masks):
         waveSel.Bind(wx.EVT_KILL_FOCUS,OnWavelength)
         calibSizer.Add(waveSel,0,WACV)             
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Distance'),0,WACV)
-#        dist = wx.CheckBox(G2frame.dataDisplay,label=' Distance')  #possible future mod. to allow fix of calib. parms.?
+#        distVary = wx.CheckBox(G2frame.dataDisplay,label=' Distance')
         distSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%8.2f"%(data['distance'])),style=wx.TE_READONLY)
         distSel.SetBackgroundColour(VERY_LIGHT_GREY)
         calibSizer.Add(distSel,0,WACV)
@@ -520,7 +521,7 @@ def UpdateImageControls(G2frame,data,masks):
             penSel = wx.CheckBox(parent=G2frame.dataDisplay,label='Penetration?')
             calibSizer.Add(penSel,0,WACV)
             penSel.Bind(wx.EVT_CHECKBOX, OnDetDepthRef)
-            penSel.SetValue(data['DetDepthRef'])
+            penSel.SetValue(data['varyList']['dep'])
             penVal = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%6.5f" % (data['DetDepth'])),
                 style=wx.TE_PROCESS_ENTER)
             penVal.Bind(wx.EVT_TEXT_ENTER,OnDetDepth)

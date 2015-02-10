@@ -4793,7 +4793,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         if len(mapData['rho']):
             VP = np.array(drawingData['viewPoint'][0])-np.array([.5,.5,.5])
             contLevel = drawingData['contourLevel']*mapData['rhoMax']
-            if 'delt-F' in mapData['MapType']:
+            if 'delt-F' in mapData['MapType'] or 'N' in mapData['Type']:
                 rho = ma.array(mapData['rho'],mask=(np.abs(mapData['rho'])<contLevel))
             else:
                 rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))

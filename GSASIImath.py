@@ -1642,6 +1642,7 @@ def Fourier4DMap(data,reflDict):
                     Fhkl[h,k,l,m] = dF*phasem
     rho = fft.fftn(fft.fftshift(Fhkl))/cell[6]
     print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
+    mapData['Type'] = reflDict['Type']
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     return mapData
@@ -1710,6 +1711,7 @@ def FourierMap(data,reflDict):
                     Fhkl[h,k,l] = complex(Fosq,0.)
     rho = fft.fftn(fft.fftshift(Fhkl))/cell[6]
     print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
+    mapData['Type'] = reflDict['Type']
     mapData['rho'] = np.real(rho)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     return mapData
@@ -1907,6 +1909,7 @@ def ChargeFlip(data,reflDict,pgbar):
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
+    mapData['Type'] = reflDict['Type']
     return mapData
     
 def findSSOffset(SGData,SSGData,A,Fhklm):    
@@ -2068,10 +2071,12 @@ def SSChargeFlip(data,reflDict,pgbar):
     mapData['Rcf'] = Rcf
     mapData['rho'] = np.roll(np.roll(np.roll(CErho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
+    mapData['Type'] = reflDict['Type']
 
     map4DData['Rcf'] = Rcf
     map4DData['rho'] = np.real(np.roll(np.roll(np.roll(np.roll(SSrho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2),roll[3],axis=3))
     map4DData['rhoMax'] = max(np.max(map4DData['rho']),-np.min(map4DData['rho']))
+    map4DData['Type'] = reflDict['Type']
     return mapData,map4DData
     
 def SearchMap(generalData,drawingData):

@@ -2868,7 +2868,10 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
         Super = General.get('Super',0)
         SuperVec = General.get('SuperVec',[])
-        refList = np.array(data[phaseName]['RefList'])
+        if 'list' in str(type(data)):   #single crystal data is 2 dict in list
+            refList = data[1]['RefList']
+        else:                           #powder data is a dict of dicts; each same structure as SC 2nd dict
+            refList = np.array(data[phaseName]['RefList'])
         FoMax = np.max(refList.T[8+Super])
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
         Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
@@ -2885,7 +2888,10 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
         Super = General.get('Super',0)
         SuperVec = General.get('SuperVec',[])
-        refList = np.array(data[phaseName]['RefList'])
+        if 'list' in str(type(data)):   #single crystal data is 2 dict in list
+            refList = data[1]['RefList']
+        else:                           #powder data is a dict of dicts; each same structure as SC 2nd dict
+            refList = np.array(data[phaseName]['RefList'])
         FoMax = np.max(refList.T[8+Super])
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
         Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])

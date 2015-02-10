@@ -1154,7 +1154,7 @@ def GenHKLf(HKL,SGData):
      *   phi = phase offset for each equivalent h,k,l
 
     '''
-    hklf = HKL+[0,]
+    hklf = list(HKL)+[0,]       #could be numpy array!
     Ops = SGData['SGOps']
     OpM = np.array([op[0] for op in Ops])
     OpT = np.array([op[1] for op in Ops])

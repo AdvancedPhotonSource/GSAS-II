@@ -1684,7 +1684,7 @@ class ImportStructFactor(ImportBaseclass):
         self.Parameters = []
         'self.Parameters is a list with two dicts for data parameter settings'
         self.InitParameters()
-        self.RefDict = {'RefList':[],'FF':[],'Super':0}
+        self.RefDict = {'RefList':[],'FF':{},'Super':0}
         self.Banks = []             #for multi bank data (usually TOF)
         '''self.RefDict is a dict containing the reflection information, as read from the file.
         Item 'RefList' contains the reflection information. See the
@@ -1698,7 +1698,7 @@ class ImportStructFactor(ImportBaseclass):
         ImportBaseclass.ReInitialize(self)
         self.InitParameters()
         self.Banks = []             #for multi bank data (usually TOF)
-        self.RefDict = {'RefList':[],'FF':[],'Super':0}
+        self.RefDict = {'RefList':[],'FF':{},'Super':0}
         
     def InitParameters(self):
         'initialize the instrument parameters structure'

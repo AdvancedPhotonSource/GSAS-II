@@ -754,7 +754,7 @@ class GSASII(wx.Frame):
                     print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
                     Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
                     if not Bank['RefDict'].get('FF'):
-                        Bank['RefDict']['FF'] = [{} for i in range(len(Bank['RefDict']['RefList']))]
+                        Bank['RefDict']['FF'] = {}
                     self.PatternTree.SetItemPyData(Id,[valuesdict,Bank['RefDict']])
                     Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
                     self.PatternTree.SetItemPyData(Sub,copy.copy(rd.Parameters))
@@ -766,7 +766,7 @@ class GSASII(wx.Frame):
                 HistName = G2obj.MakeUniqueLabel(HistName,HKLFlist)
                 print 'Read structure factor table '+str(HistName)+' from file '+str(self.lastimport)
                 if not rd.RefDict.get('FF'):
-                    rd.RefDict['FF'] = [{} for i in range(len(rd.RefDict['RefList']))]
+                    rd.RefDict['FF'] = {}
                 Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
                 self.PatternTree.SetItemPyData(Id,[valuesdict,rd.RefDict])
                 Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')

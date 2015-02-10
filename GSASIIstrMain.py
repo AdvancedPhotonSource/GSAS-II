@@ -526,8 +526,7 @@ def RetDistAngle(DisAglCtls,DisAglData):
                         angles[i][j],angsig[i][j] = G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)
                         if i <= j: continue
                         AngArray[Oatom[0]].append((i,j,
-                                                   G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)
-                                                   ))
+                            G2mth.getAngSig(VectA[i],VectA[j],Amat,SGData,covData)))
     return AtomLabels,DistArray,AngArray
 
 def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):

@@ -1089,8 +1089,7 @@ def getAngSig(VA,VB,Amat,SGData,covData={}):
     
     '''
     def calcVec(Ox,Tx,U,inv,C,M,T,Amat):
-        TxT = inv*(np.inner(M,Tx)+T)+C
-        TxT = G2spc.MoveToUnitCell(TxT)+U
+        TxT = inv*(np.inner(M,Tx)+T)+C+U
         return np.inner(Amat,(TxT-Ox))
         
     def calcAngle(Ox,TxA,TxB,unitA,unitB,invA,CA,MA,TA,invB,CB,MB,TB,Amat):

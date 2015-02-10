@@ -526,7 +526,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
 ##### Plot3DSngl
 ################################################################################
 
-def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title='no phase'):
+def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     '''3D Structure factor plotting package - displays reflections as rings proportional
         to F, F**2, etc. as requested as 3D array
     '''
@@ -544,7 +544,11 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title='no phase'):
                 except ImportError:
                     print "PIL/pillow Image module not present. Cannot save images without this"
                     raise Exception("PIL/pillow Image module not found")
-            Fname = os.path.join(Mydir,generalData['Name']+'.'+mode)
+            try:
+                Fname = os.path.join(Mydir,generalData['Name']+'.'+mode)
+            except NameError:   #for when generalData doesn't exist!
+                Fname = os.path.join(Mydir,'unknown'+'.'+mode)
+            print Fname+' saved'
             size = Page.canvas.GetSize()
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
             if mode in ['jpeg',]:
@@ -599,7 +603,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title='no phase'):
         Draw('key')
             
     Name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-    if Title != 'no phase': #NB: save image as e.g. jpeg will fail if no phase; MyDir is unknown
+    if Title: #NB: save image as e.g. jpeg will fail if False; MyDir is unknown
         generalData = G2frame.GetPhaseData()[Title]['General']
         cell = generalData['Cell'][1:7]
         Mydir = generalData['Mydir']

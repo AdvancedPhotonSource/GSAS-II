@@ -2079,12 +2079,14 @@ def SSChargeFlip(data,reflDict,pgbar):
     map4DData['Type'] = reflDict['Type']
     return mapData,map4DData
     
-def SearchMap(generalData,drawingData):
+def SearchMap(generalData,drawingData,Neg=False):
     '''Does a search of a density map for peaks meeting the criterion of peak
     height is greater than mapData['cutOff']/100 of mapData['rhoMax'] where 
     mapData is data['General']['mapData']; the map is also in mapData.
 
-    :param data: the phase data structure
+    :param generalData: the phase data structure; includes the map
+    :param drawingData: the drawing data structure
+    :param Neg:  if True then search for negative peaks (i.e. H-atoms & neutron data)
 
     :returns: (peaks,mags,dzeros) where
 
@@ -2157,7 +2159,10 @@ def SearchMap(generalData,drawingData):
     try:
         mapData = generalData['Map']
         contLevel = mapData['cutOff']*mapData['rhoMax']/100.
-        rho = copy.copy(mapData['rho'])     #don't mess up original
+        if Neg:
+            rho = -copy.copy(mapData['rho'])     #flip +/-
+        else:
+            rho = copy.copy(mapData['rho'])     #don't mess up original
         mapHalf = np.array(rho.shape)/2
         res = mapData['Resolution']
         incre = np.array(rho.shape,dtype=np.float)
@@ -2192,7 +2197,10 @@ def SearchMap(generalData,drawingData):
         peak = fixSpecialPos(peak,SGData,Amat)
         rho = rollMap(rho,-ind)        
     dzeros = np.sqrt(np.sum(np.inner(Amat,peaks)**2,axis=0))
-    return np.array(peaks),np.array([mags,]).T,np.array([dzeros,]).T
+    if Neg:     #want negative magnitudes for negative peaks
+        return np.array(peaks),-np.array([mags,]).T,np.array([dzeros,]).T
+    else:
+        return np.array(peaks),np.array([mags,]).T,np.array([dzeros,]).T
     
 def sortArray(data,pos,reverse=False):
     '''data is a list of items

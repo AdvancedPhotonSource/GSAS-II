@@ -4120,7 +4120,6 @@ def PlotStructure(G2frame,data,firstCall=False):
     G2frame.tau = 0.
     
     def OnKeyBox(event):
-#        Draw()                          #make sure plot is fresh!!
         mode = cb.GetValue()
         if mode in ['jpeg','bmp','tiff',]:
             try:
@@ -4151,7 +4150,6 @@ def PlotStructure(G2frame,data,firstCall=False):
         Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
 
     def OnKey(event):           #on key UP!!
-#        Draw()                          #make sure plot is fresh!!
         try:
             keyCode = event.GetKeyCode()
             if keyCode > 255:
@@ -4954,7 +4952,10 @@ def PlotStructure(G2frame,data,firstCall=False):
                 if ind in Ind and pageName == 'Map peaks':
                     RenderMapPeak(x,y,z,Gr,1.0)
                 else:
-                    RenderMapPeak(x,y,z,Wt,mag/peakMax)
+                    if mag > 0.:
+                        RenderMapPeak(x,y,z,Wt,mag/peakMax)
+                    else:
+                        RenderMapPeak(x,y,z,Rd,-mag/peakMax)
                 if showBonds:
                     RenderLines(x,y,z,mapBonds[ind],Wt)
         if len(testRBObj) and pageName == 'RB Models':

@@ -900,6 +900,7 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
                         alp = np.interp(dsp,Pdabc[0],Pdabc[1])
                     else:
                         alp = G2mth.getTOFalpha(parmDict,dsp)
+                alp = max(0.0001,alp)
                 betName = 'bet'+str(iPeak)
                 if betName in varyList:
                     bet = parmDict[betName]
@@ -908,6 +909,7 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
                         bet = np.interp(dsp,Pdabc[0],Pdabc[2])
                     else:
                         bet = G2mth.getTOFbeta(parmDict,dsp)
+                bet = max(0.0001,bet)
                 sigName = 'sig'+str(iPeak)
                 if sigName in varyList:
                     sig = parmDict[sigName]

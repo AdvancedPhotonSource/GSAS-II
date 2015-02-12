@@ -1052,7 +1052,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2frame.Interpolate = 'nearest'
             dlg.Destroy()
         else:
-            print 'no binding for key',event.key
+#            print 'no binding for key',event.key
             #GSASIIpath.IPyBreak()
             return
         wx.CallAfter(PlotPatterns,G2frame,newPlot=newPlot,plotType=plottype)

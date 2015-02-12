@@ -1,0 +1,213 @@
+     VERSION    6                                                               
+      DESCR   Sample 4 Corundum, Magenitite & Zircon                            
+    HSTRY 59 GENLES  MS-DOS 17:21:47 01-FEB-1998 Sdsq=  .333E+05 S/E=  .189     
+    HSTRY 60 EXPEDT  MS-DOS 17:25:42 01-FEB-1998             L   O              
+    HSTRY 61 GENLES  MS-DOS 17:28:48 01-FEB-1998 Sdsq=  .359E+05 S/E=  .355     
+    HSTRY 62 EXPEDT  MS-DOS 13:48:50 02-FEB-1998             LA  O              
+    HSTRY 63 EXPEDT  MS-DOS 14:00:59 02-FEB-1998             L   O              
+    HSTRY 64 GENLES  MS-DOS 14:03:51 02-FEB-1998 Sdsq=  .371E+05 S/E=  .613     
+    HSTRY 65 EXPEDT  MS-DOS 18:47:09 07-FEB-1998             LA  O              
+    HSTRY 66 POWPREF MS-DOS 18:47:16 07-FEB-1998                                
+    HSTRY 67 GENLES  MS-DOS 18:49:00 07-FEB-1998 Sdsq=  .455E+05 S/E=  1.47     
+    HSTRY 68 EXPEDT  MS-DOS 18:52:47 07-FEB-1998             L   O              
+    HSTRY 69 POWPREF MS-DOS 18:52:50 07-FEB-1998                                
+    HSTRY 70 GENLES  MS-DOS 18:54:49 07-FEB-1998 Sdsq=  .357E+05 S/E=  .417E-02 
+    HSTRY 71 EXPEDT  MS-DOS 16:19:34 08-FEB-1998             L   O              
+    HSTRY 72 GENLES  MS-DOS 16:22:11 08-FEB-1998 Sdsq=  .310E+05 S/E=  .172     
+    HSTRY 73 EXPEDT  MS-DOS 16:24:38 08-FEB-1998             L   O              
+    HSTRY 74 EXPEDT  MS-DOS 16:27:16 08-FEB-1998             L   O              
+    HSTRY 75 GENLES  MS-DOS 16:29:54 08-FEB-1998 Sdsq=  .312E+05 S/E=  64.8     
+    HSTRY 76 EXPEDT  MS-DOS 16:36:43 08-FEB-1998             L   O              
+    HSTRY 77 POWPREF MS-DOS 16:36:56 08-FEB-1998                                
+    HSTRY 78 GENLES  MS-DOS 16:41:05 08-FEB-1998 Sdsq=  .330E+05 S/E=  52.1     
+    HSTRY 79 EXPEDT  MS-DOS 16:43:10 08-FEB-1998             L   O              
+    HSTRY 80 GENLES  MS-DOS 16:47:05 08-FEB-1998 Sdsq=  .322E+05 S/E=  .370     
+    HSTRY 81 EXPEDT  MS-DOS 16:55:58 08-FEB-1998             LA                 
+    HSTRY 82 GENLES  MS-DOS 16:58:39 08-FEB-1998 Sdsq=  .322E+05 S/E=  .915E-03 
+    HSTRY 83 EXPEDT  MS-DOS 17:04:14 08-FEB-1998             L   O              
+    HSTRY 84 EXPEDT  MS-DOS 09:20:13 09-FEB-1998             L   O              
+    HSTRY 85 GENLES  MS-DOS 09:23:40 09-FEB-1998 Sdsq=  .475E+05 S/E=  .137     
+    HSTRY 86 EXPEDT  MS-DOS 16:27:23 09-FEB-1998             L   O              
+    HSTRY 87 GENLES  MS-DOS 16:30:53 09-FEB-1998 Sdsq=  .358E+05 S/E=  .558     
+    HSTRY 88 EXPEDT  MS-DOS 16:34:41 09-FEB-1998             L   O              
+    HSTRY 89 GENLES  MS-DOS 16:38:11 09-FEB-1998 Sdsq=  .342E+05 S/E=  .583E-01 
+    HSTRY 90 EXPEDT  MS-DOS 16:44:14 09-FEB-1998             L   O              
+    HSTRY 91 GENLES  MS-DOS 16:47:52 09-FEB-1998 Sdsq=  .348E+05 S/E=  .493E-02 
+    HSTRY 92 POWPREF MS-DOS 16:49:30 09-FEB-1998                                
+    HSTRY 93 GENLES  MS-DOS 16:51:02 09-FEB-1998 Sdsq=  .348E+05 S/E=  .806E-02 
+    HSTRY 94 EXPEDT  MS-DOS 16:52:04 09-FEB-1998             LA                 
+    HSTRY 95 GENLES  MS-DOS 16:52:44 09-FEB-1998 Sdsq=  .348E+05 S/E=  .241E-01 
+    HSTRY 96 EXPEDT  MS-DOS 14:26:23 21-MAR-1998             L   O              
+  DSGL CDAT2  DRAD ARAD NOFO                                                    
+  DSGL CDAT3  DRAD ARAD NOFO                                                    
+  GNLS  RUN on 16:53:19 09-FEB-1998    Total cycles run 161       34782.        
+  GNLS CDAT1  MXCY  5                                                           
+ AFAC  O     3.048513.2771 2.2868 5.7011 1.5463  .3239  .867032.9089  .2508 RHF 
+ AFAC  O_    15.999 .5805      .00019                                           
+ AFAC  O_SIZ      1.09      0.89 1.40   96                                      
+ AFAC  O_XAB  988.0 590.6 293.1 30.48 17.21                                     
+ AFAC  O_XAN   .090  .073  .069  .052  .047  .032  .008  .006  .003  .004       
+ AFAC AL     6.4202 3.0387 1.9002  .7426 1.593631.5472 1.964685.0886 1.1151 RHF 
+ AFAC AL_    26.982 .3449        .231                                           
+ AFAC AL_SIZ      1.60      1.43 2.05  109                                      
+ AFAC AL_XAB   7074  4368  2249 225.8 113.7                                     
+ AFAC AL_XAN   .318  .522  .269  .381  .204  .246  .056  .052  .032  .031       
+ AFAC FE    11.7695 4.7611 7.3573  .3072 3.522215.3535 2.304576.8805 1.0369 RHF 
+ AFAC FE+2  11.0424 4.6538 7.3740  .3053 4.134612.0546  .439931.2809 1.0097 RHF 
+ AFAC FE+3  11.1764 4.6147 7.3863  .3005 3.394811.6729  .072438.5566  .9707 RHF 
+ AFAC FE_    55.847  .954        2.56                                           
+ AFAC FE_SIZ      1.47      1.27 2.15   32                                      
+ AFAC FE_XAB  10490  6528 28230  3500  1791                                     
+ AFAC FE_XAN -1.339  .764-2.095  .566-1.179 3.204  .301  .845  .244  .545       
+ AFAC SI     6.2915 2.4386 3.035332.3337 1.9891  .6785 1.541081.6937 1.1407 RHF 
+ AFAC SI_    28.086 .4149        .171                                           
+ AFAC SI_SIZ      1.52      1.32 2.00  112                                      
+ AFAC SI_XAB   9456  5878  3047 304.7 151.8                                     
+ AFAC SI_XAN   .355  .693  .311  .509  .244  .330  .072  .071  .042  .043       
+ AFAC ZR    17.87651.2761810.948011.91605.41732.1176223.6572187.66272.06929*RHF 
+ AFAC ZR_     91.22  .716        .185                                           
+ AFAC ZR_SIZ      1.80      1.60 2.25   95                                      
+ AFAC ZR_XAB  60370 38440 20710 11390  8367                                     
+ AFAC ZR_XAN   .007 4.422 -.061 3.329 -.314 2.245-2.965  .560 -.639 2.630       
+ EXPR  HTYP1  PXC  ZPF                                                          
+ EXPR  NATYP    5                                                               
+ EXPR  NHST     2                                                               
+ EXPR ATYP 1  AL          1      1.60      1.43 2.05  109                       
+ EXPR ATYP 2  O           3      1.09      0.89 1.40   96                       
+ EXPR ATYP 4  ZR          1      1.80      1.60 2.25   95                       
+ EXPR ATYP 5  SI          1      1.52      1.32 2.00  112                       
+ EXPR ATYP 6  FE          2      1.47      1.27 2.15   32                       
+ EXPR NPHAS     1    1    1    0    0    0    0    0    0                       
+ REFN GDNFT  Reduced CHI**2 =  5.191     for  31 variables                      
+ REFN STATS  Cycle 161 There were  6732 observations. Total CHI**2 = 3.4782E+04 
+CRS1    PNAM  corundum                                                          
+CRS1   NATOM    2                                                               
+CRS1  ABC     4.757450  4.757464 12.987070    Y    0                            
+CRS1  ABCSIG   .000082   .000082   .000313                                      
+CRS1  ANGLES   90.0000   90.0000  120.0000                                      
+CRS1  ANGSIG     .0000     .0000     .0000                                      
+CRS1  AT  1A  AL         .000000   .000000   .352280  1.000000AL1       12 000  
+CRS1  AT  1B   .004053                                                    I     
+CRS1  AT  2A  O          .306400   .000000   .250000  1.000000O2        18 000  
+CRS1  AT  2B   .004179                                                    I     
+CRS1  CELVOL   254.561      .010                                                
+CRS1  ODF                                                                       
+CRS1  SG SYM  R -3 c                                                            
+CRS1  SPAXIS    0    0    1                                                     
+CRS2    PNAM  Magnetite                                                         
+CRS2   NATOM    3                                                               
+CRS2  ABC     8.392599  8.392599  8.392599    Y    0                            
+CRS2  ABCSIG   .000318   .000318   .000318                                      
+CRS2  ANGLES   90.0000   90.0000   90.0000                                      
+CRS2  ANGSIG     .0000     .0000     .0000                                      
+CRS2  AT  1A  FE         .125000   .125000   .125000  1.000000FE1        8 000  
+CRS2  AT  1B   .002026                                                    I     
+CRS2  AT  2A  FE         .500000   .500000   .500000  1.000000FE2       16 000  
+CRS2  AT  2B   .010892                                                    I     
+CRS2  AT  3A  O          .254800   .254800   .254800  1.000000O3        32 000  
+CRS2  AT  3B   .008232                                                    I     
+CRS2  CELVOL   591.139      .067                                                
+CRS2  ODF       0    0    0 NNNN    0    0     .0000     .0000     .0000        
+CRS2  ODF 1A   4  0  1   6  0  1   8  0  1  10  0  1                            
+CRS2  ODF 1B     -.641     2.564     2.464     3.927                            
+CRS2  ODF 1C .1220E+00 .1239E+00 .9313E-01 .1887E+00                            
+CRS2  SG SYM  F d 3 m                                                           
+CRS2  SPAXIS   1.   1.   1.        0.   0.   0.   0.   0.   0.                  
+CRS3    PNAM  Zircon                                                            
+CRS3   NATOM    3                                                               
+CRS3  ABC     6.604866  6.604866  5.993814    Y    0                            
+CRS3  ABCSIG   .000162   .000162   .000377                                      
+CRS3  ANGLES   90.0000   90.0000   90.0000                                      
+CRS3  ANGSIG     .0000     .0000     .0000                                      
+CRS3  AT  1A  ZR         .000000   .750000   .125000  1.000000ZR1        4 000  
+CRS3  AT  1B   .003546                                                    I     
+CRS3  AT  2A  SI         .000000   .250000   .375000  1.000000SI2        4 000  
+CRS3  AT  2B   .003926                                                    I     
+CRS3  AT  3A  O          .000000   .066000   .195100  1.000000O3        16 000  
+CRS3  AT  3B   .006332                                                    I     
+CRS3  CELVOL   261.476      .019                                                
+CRS3  ODF      10   11    0 NNNY    0    0     .0000     .0000     .0000        
+CRS3  ODF 1A   2  0  0   4  0  0   4  0  4   6  0  0   6  0  4   8  0  0        
+CRS3  ODF 1B     1.138     -.010     -.238     -.631    -2.327     -.707        
+CRS3  ODF 1C .3784E-01 .7106E-01 .5658E-01 .8226E-01 .9361E-01 .1289E+00        
+CRS3  ODF 2A   8  0  4   8  0  8  10  0  0  10  0  4  10  0  8                  
+CRS3  ODF 2B     1.713     -.110     -.742     1.571     1.240                  
+CRS3  ODF 2C .9240E-01 .1159E+00 .1641E+00 .1409E+00 .1493E+00                  
+CRS3  SG SYM  I 41/a m d                                                        
+CRS3  SPAXIS    0    0    1                                                     
+HAP1 1 ZONE     0    0    0    0                                                
+HAP1 1EXTPOW    0.00000E+00    N    0                                           
+HAP1 1NAXIS     1                                                               
+HAP1 1PHSFR      38.366        Y    0                                           
+HAP1 1PRCF      3   19    .00500    0NNNNYYNNYYNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP1 1PRCF 1    .000000E+00    .000000E+00    .736916E+01    .129630E+00        
+HAP1 1PRCF 2    .453672E+01    .478730E+01    .199300E-01    .338500E-01        
+HAP1 1PRCF 3    .166060E+01   -.733321E+01    .000000E+00    .000000E+00        
+HAP1 1PRCF 4    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP1 1PRCF 5    .000000E+00    .000000E+00    .000000E+00                       
+HAP1 1PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP2 1 ZONE     0    0    0    0                                                
+HAP2 1EXTPOW    0.00000E+00    N    0                                           
+HAP2 1NAXIS     1                                                               
+HAP2 1PHSFR      1.3118        Y    0                                           
+HAP2 1PRCF      3   19    .00500    0NNNNYYNNYYNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP2 1PRCF 1    .000000E+00    .000000E+00    .736916E+01    .129630E+00        
+HAP2 1PRCF 2    .121213E+02    .000000E+00    .199300E-01    .338500E-01        
+HAP2 1PRCF 3    .166060E+01   -.733321E+01    .000000E+00    .000000E+00        
+HAP2 1PRCF 4    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP2 1PRCF 5    .000000E+00    .000000E+00    .000000E+00                       
+HAP2 1PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP3 1 ZONE     0    0    0    0                                                
+HAP3 1EXTPOW    0.00000E+00    N    0                                           
+HAP3 1NAXIS     1                                                               
+HAP3 1PHSFR      9.1909        Y    0                                           
+HAP3 1PRCF      3   19    .00500    0NNNNYYNNYYYNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP3 1PRCF 1    .000000E+00    .000000E+00    .736916E+01    .129630E+00        
+HAP3 1PRCF 2    .236922E+01    .141716E+02    .199300E-01    .338500E-01        
+HAP3 1PRCF 3    .166558E+01   -.733323E+01    .105399E+02    .000000E+00        
+HAP3 1PRCF 4    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP3 1PRCF 5    .000000E+00    .000000E+00    .000000E+00                       
+HAP3 1PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HST  1  HFIL  cpd-4.gss                                                         
+HST  1  HNAM  SampleIdent CPD RR S                                              
+HST  1  IFIL  inst_xry.prm                                                      
+HST  1 BANK     1                                                               
+HST  1 BIGFO    .000000E+00                                                     
+HST  1 CHANS       551         1      6699 104132608      7251    1             
+HST  1 EPHAS    0    0    0    0    0    0    0    0    0    F                  
+HST  1 ICONR 1.5405000 1.5443000  -7.56819         0    .51919    0    .46      
+HST  1 ICONS 1.5405000 1.5443000  -7.56800         0    .51919    0    .46000   
+HST  1 IRAD     3                                                               
+HST  1 MAXRF   40                                                               
+HST  1 NEXC     2                                                               
+HST  1 NPHAS    1    1    1    0    0    0    0    0    0                       
+HST  1 NREF   400     .7937    N    Y                                           
+HST  1 TRNGE  16.02000 149.98000                                                
+HST  1ABSCOR    .000000E+00    .000000E+00    N    5    3                       
+HST  1BAKGD     2    3    Y    0    Y                                           
+HST  1BAKGD1    .247103E+02    .140920E+01    .702915E+01                       
+HST  1CHI       90.000                                                          
+HST  1EXC  1      .000    16.000                                                
+HST  1EXC  2   152.000  1000.000                                                
+HST  1HSCALE     1.0000        N    0                                           
+HST  1I HEAD  DUMMY INCIDENT SPECTRUM FOR X-RAY DIFFRACTOMETER                  
+HST  1I ITYP    0    0.0000  180.0000         1                                 
+HST  1MNREF     0    1.0000                                                     
+HST  1OMEGA       .000    Y                                                     
+HST  1PHI         .000                                                          
+HST  1PRCF 3    .000000E+00   -.118361E+02    .000000E+00    .000000E+00        
+HST  1PRCF1     3   12      0.01                                                
+HST  1PRCF11    .000000E+00    .000000E+00    .736916E+01    .129630E+00        
+HST  1PRCF12   0.000000E+00   0.000000E+00    .450790E-01    .152532E-01        
+HST  2ZPF       4   24                                                          
+HST  2ZPF  1    3    1    0    0     .0100   12   -1.0000                       
+HST  2ZPF  2    3    0    1    0     .0100   12   -1.0000                       
+HST  2ZPF  3    3    0    0    1     .0100    0   -1.0000                       
+HST  2ZPF  4    3    1    1    0     .0100    9   -1.0000                       
+HST  2ZPF  5    3    0    0    1     .0100   20   -1.0000                       
+HST  2ZPF  6    3    0    0    1     .0100    1   -1.0000                       
+LEQV PF 9       1    1                                                          
+LEQV PF 9 11  ALL,1         1.000                                               
+LEQV PF10       1    1                                                          
+LEQV PF10 11  ALL,1         1.000                                               
+ZZZZZZZZZZZZ  Last EXP file record                                              

@@ -1,0 +1,489 @@
+     VERSION    6                                                               
+      DESCR   Sample 2 Corundum, Fluorite, Zincite & Brucite Pref. Ori.         
+    HSTRY  1 EXPEDT  MS-DOS 1999-01-28T22:43:18  P PH        L   O              
+    HSTRY  2 POWPREF MS-DOS 1999-01-28T22:43:27                                 
+    HSTRY  3 GENLES  MS-DOS 1999-01-28T22:45:19  Sdsq=  .161E+06 S/E=  1.94     
+    HSTRY  4 EXPEDT  MS-DOS 1999-01-28T22:47:21              L   O              
+    HSTRY  5 GENLES  MS-DOS 1999-01-28T22:49:09  Sdsq=  .987E+05 S/E=  19.7     
+    HSTRY  6 EXPEDT  MS-DOS 1999-01-28T22:52:10              L   O              
+    HSTRY  7 GENLES  MS-DOS 1999-01-28T22:54:05  Sdsq=  .299E+05 S/E=  .220     
+    HSTRY  8 POWPREF MS-DOS 1999-01-28T22:55:11                                 
+    HSTRY  9 GENLES  MS-DOS 1999-01-28T22:56:23  Sdsq=  .299E+05 S/E=  .583E-03 
+    HSTRY 10 EXPEDT  MS-DOS 1999-01-28T23:09:11              L   O              
+    HSTRY 11 GENLES  MS-DOS 1999-01-28T23:11:17  Sdsq=  .300E+05 S/E=  .178E-01 
+    HSTRY 12 EXPEDT  MS-DOS 1999-01-28T23:14:00              L   O              
+    HSTRY 13 GENLES  MS-DOS 1999-01-28T23:14:11  Sdsq=  .300E+05 S/E=  .107E-02 
+    HSTRY 14 EXPEDT  MS-DOS 1999-01-28T23:15:25              L   O              
+  GNLS  RUN on 1999-01-28T23:16:31     Total cycles run  16       30001.        
+  GNLS CDAT1  MXCY  3                                                           
+  GNLS SHFTS       .02       .00                                                
+ AFAC  F     3.539210.2825 2.6412 4.2944 1.5170  .2615 1.024326.1476  .2776 RHF 
+ AFAC  F_    18.998  .565       .0096                                           
+ AFAC  F_SIZ      1.30      1.10 1.35   67                                      
+ AFAC  F_XAB   1676  1008 503.2 49.99 26.84                                     
+ AFAC  F_XAN   .129  .119  .100  .085  .069  .053  .014  .010  .006  .006       
+ AFAC  H    .49300210.5109.32291226.1257.1401913.14236.04081057.7997.003038 SDS 
+ AFAC  H_     1.008 -.374  20.6  19.2                                           
+ AFAC  H_SIZ      0.98      0.78 1.20  118                                      
+ AFAC  H_XAB  .6888 .6700 .6548 .6238 .6131                                     
+ AFAC  H_XAN     0.    0.    0.    0.    0.    0.    0.    0.    0.    0.       
+ AFAC  O     3.048513.2771 2.2868 5.7011 1.5463  .3239  .867032.9089  .2508 RHF 
+ AFAC  O_    15.999 .5805      .00019                                           
+ AFAC  O_SIZ      1.09      0.89 1.40   96                                      
+ AFAC  O_XAB  988.0 590.6 293.1 30.48 17.21                                     
+ AFAC  O_XAN   .090  .073  .069  .052  .047  .032  .008  .006  .003  .004       
+ AFAC AL     6.4202 3.0387 1.9002  .7426 1.593631.5472 1.964685.0886 1.1151 RHF 
+ AFAC AL_    26.982 .3449        .231                                           
+ AFAC AL_SIZ      1.60      1.43 2.05  109                                      
+ AFAC AL_XAB   7074  4368  2249 225.8 113.7                                     
+ AFAC AL_XAN   .318  .522  .269  .381  .204  .246  .056  .052  .032  .031       
+ AFAC CA     8.626610.4421 7.3873  .6599 1.589985.7484 1.0211178.437 1.3751 RHF 
+ AFAC CA_     40.08  .490         .43                                           
+ AFAC CA_SIZ      2.17      1.97 2.00  007                                      
+ AFAC CA_XAB  33250 21230 11410  1264 637.1                                     
+ AFAC CA_XAN  -.221 2.514  .163 1.904  .341 1.286  .203  .306  .137  .193       
+ AFAC MG     5.4204 2.8275 2.173579.2611 1.2269  .3808 2.3073 7.1937  .8584 RHF 
+ AFAC MG_    24.312 .5375        .063                                           
+ AFAC MG_SIZ      1.80      1.60 2.00   16                                      
+ AFAC MG_XAB   5283  3239  1651 160.7 80.94                                     
+ AFAC MG_XAN   .272  .381  .224  .277  .165  .177  .042  .036  .023  .022       
+ AFAC ZN    14.0743 3.2655 7.0318  .2333 5.165210.3163 2.410058.7097 1.3041 RHF 
+ AFAC ZN_     65.37 .5680        1.11                                           
+ AFAC ZN_SIZ      1.59      1.39 2.10   23                                      
+ AFAC ZN_XAB  18640 11900  6460  6021  3118                                     
+ AFAC ZN_XAN  -.684 1.373 -.978 1.021-1.612  .678  .222 1.431  .260  .938       
+ EXPR  HTYP1  PNT  PNT  PNT  PNT                                                
+ EXPR  NATYP    7                                                               
+ EXPR  NHST     4                                                               
+ EXPR ATYP 1  AL          1      1.60      1.43 2.05  109                       
+ EXPR ATYP 2  O           3      1.09      0.89 1.40   96                       
+ EXPR ATYP 3  CA          1      2.17      1.97 2.00  007                       
+ EXPR ATYP 4  F           1      1.30      1.10 1.35   67                       
+ EXPR ATYP 5  ZN          1      1.59      1.39 2.10   23                       
+ EXPR ATYP 6  MG          1      1.80      1.60 2.00   16                       
+ EXPR ATYP 7  H           1      0.98      0.78 1.20  118                       
+ EXPR NPHAS     1    1    1    1    0    0    0    0    0                       
+ REFN GDNFT  Reduced CHI**2 =  1.637     for  89 variables                      
+ REFN STATS  Cycle  16 There were 18416 observations. Total CHI**2 = 3.0001E+04 
+CRS1    PNAM  corundum                                                          
+CRS1   NATOM    2                                                               
+CRS1  ABC     4.757563  4.757572 12.987430                                      
+CRS1  ABCSIG   .000069   .000069   .000297                                      
+CRS1  ANGLES   90.0000   90.0000  120.0000                                      
+CRS1  ANGSIG     .0000     .0000     .0000                                      
+CRS1  AT  1A  AL         .000000   .000000   .352280  1.000000AL1       12 000  
+CRS1  AT  1B   .004053                                                    I     
+CRS1  AT  2A  O          .306400   .000000   .250000  1.000000O2        18 000  
+CRS1  AT  2B   .004179                                                    I     
+CRS1  CELVOL   254.580      .006                                                
+CRS1  ODF                                                                       
+CRS1  SG SYM  R -3 c                                                            
+CRS1  SPAXIS    0    0    1                                                     
+CRS2    PNAM  Fluorite                                                          
+CRS2   NATOM    2                                                               
+CRS2  ABC     5.462071  5.462071  5.462071                                      
+CRS2  ABCSIG   .000048   .000048   .000048                                      
+CRS2  ANGLES   90.0000   90.0000   90.0000                                      
+CRS2  ANGSIG     .0000     .0000     .0000                                      
+CRS2  AT  1A  CA         .000000   .000000   .000000  1.000000CA1        4 000  
+CRS2  AT  1B   .005193                                                    I     
+CRS2  AT  2A  F          .250000   .250000   .250000  1.000000O2         8 000  
+CRS2  AT  2B   .007852                                                    I     
+CRS2  CELVOL   162.957      .004                                                
+CRS2  SG SYM  F m 3 m                                                           
+CRS2  SPAXIS    0    0    1                                                     
+CRS3    PNAM  Zincite                                                           
+CRS3   NATOM    2                                                               
+CRS3  ABC     3.248624  3.248626  5.204726                                      
+CRS3  ABCSIG   .000028   .000028   .000060                                      
+CRS3  ANGLES   90.0000   90.0000  120.0000                                      
+CRS3  ANGSIG     .0000     .0000     .0000                                      
+CRS3  AT  1A  ZN         .333333   .666667   .500000  1.000000ZN1        2 000  
+CRS3  AT  1B   .005750                                                    I     
+CRS3  AT  2A  O          .333333   .666667   .880500  1.000000O2         2 000  
+CRS3  AT  2B   .009271                                                    I     
+CRS3  CELVOL    47.569      .001                                                
+CRS3  SG SYM  P 63 m c                                                          
+CRS3  SPAXIS    0    0    1                                                     
+CRS4    PNAM  Brucite                                                           
+CRS4   NATOM    3                                                               
+CRS4  ABC     3.146065  3.146065  4.766419                                      
+CRS4  ABCSIG   .000059   .000059   .000090                                      
+CRS4  ANGLES  90.00000  90.00000 120.00000                                      
+CRS4  ANGSIG     .0000     .0000     .0000                                      
+CRS4  AT  1A  MG         .000000   .000000   .000000  1.000000MG1        1 000  
+CRS4  AT  1B   .006332                                                    I     
+CRS4  AT  2A  O          .333333   .666667   .221600  1.000000O2         2 000  
+CRS4  AT  2B   .012665                                                    I     
+CRS4  AT  3A  H          .333333   .666667   .430000  1.000000H3         2 000  
+CRS4  AT  3B   .012665                                                    I     
+CRS4  CELVOL    40.856      .001                                                
+CRS4  ODF       6    6    0 NNNY    0    0     .0000     .0000     .0000        
+CRS4  ODF 1A   2  0  0   4  0  0   4  0  3   6  0  0   6  0  3   6  0  6        
+CRS4  ODF 1B      .093      .305     -.012      .851     -.426      .358        
+CRS4  ODF 1C .2000E-01 .4131E-01 .2887E-01 .3388E-01 .3746E-01 .4210E-01        
+CRS4  SG SYM  P -3 m 1                                                          
+CRS4  SPAXIS    0    0    1                                                     
+HAP1 1 ZONE     0    0    0    0                                                
+HAP1 1EXTPOW    0.00000E+00    N    0                                           
+HAP1 1NAXIS     1                                                               
+HAP1 1PHSFR      .12000        Y    0                                           
+HAP1 1PRCF      1   12    .01000    0NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP1 1PRCF 1    .000000E+00    .500000E+01    .281732E-01    .712807E-02        
+HAP1 1PRCF 2    .000000E+00    .458784E+02    .000000E+00    .538864E+01        
+HAP1 1PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP1 1PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP1 2 ZONE     0    0    0    0                                                
+HAP1 2EXTPOW    0.00000E+00    N    0                                           
+HAP1 2NAXIS     1                                                               
+HAP1 2PHSFR      .12000        Y    0                                           
+HAP1 2PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP1 2PRCF 1    .000000E+00    .500000E+01    .275585E-01    .728077E-02        
+HAP1 2PRCF 2    .000000E+00    .888590E+02    .000000E+00    .517763E+01        
+HAP1 2PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP1 2PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP1 3 ZONE     0    0    0    0                                                
+HAP1 3EXTPOW    0.00000E+00    N    0                                           
+HAP1 3NAXIS     1                                                               
+HAP1 3PHSFR      .12000        Y    0                                           
+HAP1 3PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP1 3PRCF 1    .000000E+00    .500000E+01    .288849E-01    .351727E-02        
+HAP1 3PRCF 2    .000000E+00    .773777E+02    .000000E+00    .865914E+01        
+HAP1 3PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP1 3PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP1 4 ZONE     0    0    0    0                                                
+HAP1 4EXTPOW    0.00000E+00    N    0                                           
+HAP1 4NAXIS     1                                                               
+HAP1 4PHSFR      .12000        Y    0                                           
+HAP1 4PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP1 4PRCF 1    .000000E+00    .500000E+01    .286571E-01    .123176E-01        
+HAP1 4PRCF 2    .000000E+00    .190120E+03    .000000E+00    .101621E+02        
+HAP1 4PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP1 4PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP2 1 ZONE     0    0    0    0                                                
+HAP2 1EXTPOW    0.00000E+00    N    0                                           
+HAP2 1NAXIS     1                                                               
+HAP2 1PHSFR      .22711        Y    0                                           
+HAP2 1PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP2 1PRCF 1    .000000E+00    .500000E+01    .281732E-01    .712807E-02        
+HAP2 1PRCF 2    .000000E+00    .560649E+02    .000000E+00    .532366E+01        
+HAP2 1PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP2 1PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP2 2 ZONE     0    0    0    0                                                
+HAP2 2EXTPOW    0.00000E+00    N    0                                           
+HAP2 2NAXIS     1                                                               
+HAP2 2PHSFR      .22711        Y    0                                           
+HAP2 2PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP2 2PRCF 1    .000000E+00    .500000E+01    .275585E-01    .728077E-02        
+HAP2 2PRCF 2    .000000E+00    .991901E+02    .000000E+00    .582591E+01        
+HAP2 2PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP2 2PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP2 3 ZONE     0    0    0    0                                                
+HAP2 3EXTPOW    0.00000E+00    N    0                                           
+HAP2 3NAXIS     1                                                               
+HAP2 3PHSFR      .22711        Y    0                                           
+HAP2 3PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP2 3PRCF 1    .000000E+00    .500000E+01    .288849E-01    .351727E-02        
+HAP2 3PRCF 2    .000000E+00    .711345E+02    .000000E+00    .850201E+01        
+HAP2 3PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP2 3PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP2 4 ZONE     0    0    0    0                                                
+HAP2 4EXTPOW    0.00000E+00    N    0                                           
+HAP2 4NAXIS     1                                                               
+HAP2 4PHSFR      .22711        Y    0                                           
+HAP2 4PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP2 4PRCF 1    .000000E+00    .500000E+01    .286571E-01    .123176E-01        
+HAP2 4PRCF 2    .000000E+00    .175673E+03    .000000E+00    .103657E+02        
+HAP2 4PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP2 4PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP3 1 ZONE     0    0    0    0                                                
+HAP3 1EXTPOW    0.00000E+00    N    0                                           
+HAP3 1NAXIS     1                                                               
+HAP3 1PHSFR      .42079        Y    0                                           
+HAP3 1PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP3 1PRCF 1    .000000E+00    .500000E+01    .281732E-01    .712807E-02        
+HAP3 1PRCF 2    .000000E+00    .358329E+02    .000000E+00    .491049E+01        
+HAP3 1PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP3 1PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP3 2 ZONE     0    0    0    0                                                
+HAP3 2EXTPOW    0.00000E+00    N    0                                           
+HAP3 2NAXIS     1                                                               
+HAP3 2PHSFR      .42079        Y    0                                           
+HAP3 2PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP3 2PRCF 1    .000000E+00    .500000E+01    .275585E-01    .728077E-02        
+HAP3 2PRCF 2    .000000E+00    .694669E+02    .000000E+00    .544199E+01        
+HAP3 2PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP3 2PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP3 3 ZONE     0    0    0    0                                                
+HAP3 3EXTPOW    0.00000E+00    N    0                                           
+HAP3 3NAXIS     1                                                               
+HAP3 3PHSFR      .42079        Y    0                                           
+HAP3 3PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP3 3PRCF 1    .000000E+00    .500000E+01    .288849E-01    .351727E-02        
+HAP3 3PRCF 2    .000000E+00    .550724E+02    .000000E+00    .933217E+01        
+HAP3 3PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP3 3PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP3 4 ZONE     0    0    0    0                                                
+HAP3 4EXTPOW    0.00000E+00    N    0                                           
+HAP3 4NAXIS     1                                                               
+HAP3 4PHSFR      .42079        Y    0                                           
+HAP3 4PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP3 4PRCF 1    .000000E+00    .500000E+01    .286571E-01    .123176E-01        
+HAP3 4PRCF 2    .000000E+00    .175165E+03    .000000E+00    .102160E+02        
+HAP3 4PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP3 4PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP4 1 ZONE     0    0    0    0                                                
+HAP4 1EXTPOW    0.00000E+00    N    0                                           
+HAP4 1NAXIS     1                                                               
+HAP4 1PHSFR      2.0723        Y    0                                           
+HAP4 1PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP4 1PRCF 1    .000000E+00    .500000E+01    .281732E-01    .712807E-02        
+HAP4 1PRCF 2    .000000E+00    .693472E+02    .000000E+00    .577698E+01        
+HAP4 1PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP4 1PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP4 2 ZONE     0    0    0    0                                                
+HAP4 2EXTPOW    0.00000E+00    N    0                                           
+HAP4 2NAXIS     1                                                               
+HAP4 2PHSFR      2.0723        Y    0                                           
+HAP4 2PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP4 2PRCF 1    .000000E+00    .500000E+01    .275585E-01    .728077E-02        
+HAP4 2PRCF 2    .000000E+00    .130631E+03    .000000E+00    .617869E+01        
+HAP4 2PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP4 2PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP4 3 ZONE     0    0    0    0                                                
+HAP4 3EXTPOW    0.00000E+00    N    0                                           
+HAP4 3NAXIS     1                                                               
+HAP4 3PHSFR      2.0723        Y    0                                           
+HAP4 3PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP4 3PRCF 1    .000000E+00    .500000E+01    .288849E-01    .351727E-02        
+HAP4 3PRCF 2    .000000E+00    .972019E+02    .000000E+00    .914771E+01        
+HAP4 3PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP4 3PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HAP4 4 ZONE     0    0    0    0                                                
+HAP4 4EXTPOW    0.00000E+00    N    0                                           
+HAP4 4NAXIS     1                                                               
+HAP4 4PHSFR      2.0723        Y    0                                           
+HAP4 4PRCF      1   12   0.01000     NNNNNYNYNNNNNNNNNNNNNNNNNNNNNNNNNNNN       
+HAP4 4PRCF 1    .000000E+00    .500000E+01    .286571E-01    .123176E-01        
+HAP4 4PRCF 2    .000000E+00    .213963E+03    .000000E+00    .113278E+02        
+HAP4 4PRCF 3    .000000E+00    .000000E+00    .000000E+00    .000000E+00        
+HAP4 4PREFO1  1.000000  1.000000   .000000   .000000  1.000000   NN    0    0   
+HST  1  HFIL  6730.dat                                                          
+HST  1  HNAM  ROUND ROBIN SAMPLE 2                                              
+HST  1  IFIL  I22JAN99.PRM                                                      
+HST  1 BANK     1                                                               
+HST  1 BIGFO    .177007E+02                                                     
+HST  1 CHANS      3359         1      4190 210112669      7550    1             
+HST  1 EPHAS    0    0    0    0    0    0    0    0    0    T                  
+HST  1 ICONR   5074.11     -2.10      3.29                                      
+HST  1 ICONS   5074.11     -2.10      3.29                                      
+HST  1 MAXRF   42                                                               
+HST  1 NEXC     2                                                               
+HST  1 NPHAS    1    1    1    1    0    0    0    0    0                       
+HST  1 NREF   381     .5903    Y    Y                                           
+HST  1 R-FAC N-obs  380 R-factor  .16901                                        
+HST  1 RPOWD     .0402     .0292                                                
+HST  1 TRNGE   2.99958  23.99368                                                
+HST  1 WREXP     .0327                                                          
+HST  1ABSCOR   -.817947E-01    .000000E+00    Y    0    0                       
+HST  1BAKGD     7   10    Y    0    Y    0000000000000                          
+HST  1BAKGD1    .555556E-01    .808018E-01    .117162E+00    .120772E+00        
+HST  1BAKGD2    .175405E+00    .178681E+00    .195034E+00    .217185E+00        
+HST  1BAKGD3    .215731E+00    .240064E+00                                      
+HST  1BNKNAM  PLUS_153                                                          
+HST  1BNKPAR    1.2495   151.000      25.0     1.321     30.48   16   73        
+HST  1BNKTC1 5074.60 5070.80 5067.00 5063.10 5059.20 5055.20 5051.20 5047.20    
+HST  1BNKTC2 5043.10 5039.00 5034.90 5030.70 5026.50 5022.20 5017.90 5013.60    
+HST  1CHI      90.0000                                                          
+HST  1EXC  1      .000     2.998                                                
+HST  1EXC  2    24.000  1000.000                                                
+HST  1HSCALE     .96231        N    0                                           
+HST  1I HEAD  CALIBRATION V/NB                                                  
+HST  1I ITYP    4    1.0000   23.9997     40986                                 
+HST  1ICOFF1    .110505E+05    .717272E+08    .248796E+02    .127893E+05        
+HST  1ICOFF2   -.239981E+03   -.144069E+04    .134999E+04   -.619964E+01        
+HST  1ICOFF3   -.646169E+03    .255458E+03    .157314E+03   -.163699E+03        
+HST  1IECOF1    .291083E+02    .343930E+06    .602575E-01    .265822E+02        
+HST  1IECOF2    .490782E+02    .344702E+02    .226153E+02    .373901E+02        
+HST  1IECOF3    .136656E+02    .173521E+02    .173310E+02    .130859E+02        
+HST  1IECOR1 1.000 -.557  .815 -.491 -.808  .929  .729 -.821  .125  .705        
+HST  1IECOR2 -.652 -.862 1.000 -.099  .542  .571 -.647 -.048  .589 -.294        
+HST  1IECOR3 -.181  .760  .501 1.000 -.569 -.806  .681  .768 -.772 -.175        
+HST  1IECOR4  .711 -.426 -.830 1.000  .896 -.450 -.161  .823  .218 -.288        
+HST  1IECOR5  .706  .738 1.000 -.706 -.452  .949  .137 -.541  .750  .898        
+HST  1IECOR6 1.000  .762 -.707  .299  .693 -.625 -.767 1.000 -.368  .267        
+HST  1IECOR7  .773 -.172 -.569 1.000  .279 -.435  .801  .910 1.000  .465        
+HST  1IECOR8  .144  .128 1.000 -.049 -.477 1.000  .832 1.000                    
+HST  1MNREF     0    1.0000                                                     
+HST  1OMEGA     0.0000                                                          
+HST  1PHI       0.0000                                                          
+HST  1PRCF1     1    9   0.01000                                                
+HST  1PRCF11    .000000E+00    .500000E+01    .281732E-01    .712807E-02        
+HST  1PRCF12    .000000E+00    .382428E+02    .000000E+00    .000000E+00        
+HST  1PRCF13   0.000000E+00                                                     
+HST  2  HFIL  6730.dat                                                          
+HST  2  HNAM  ROUND ROBIN SAMPLE 2                                              
+HST  2  IFIL  I22JAN99.PRM                                                      
+HST  2 BANK     2                                                               
+HST  2 BIGFO    .172744E+02                                                     
+HST  2 CHANS      3359         1      4190 105874146      7550    1             
+HST  2 EPHAS    0    0    0    0    0    0    0    0    0    T                  
+HST  2 ICONR   5073.42     -1.73      5.11                                      
+HST  2 ICONS   5073.42     -1.73      5.11                                      
+HST  2 MAXRF   42                                                               
+HST  2 NEXC     2                                                               
+HST  2 NPHAS    1    1    1    1    0    0    0    0    0                       
+HST  2 NREF   381     .5902    Y    Y                                           
+HST  2 R-FAC N-obs  380 R-factor  .13951                                        
+HST  2 RPOWD     .0397     .0279                                                
+HST  2 TRNGE   2.99958  23.99368                                                
+HST  2 WREXP     .0331                                                          
+HST  2ABSCOR   -.663940E-01    .000000E+00    Y    0    0                       
+HST  2BAKGD     7   10    Y    0    Y    0000000000000                          
+HST  2BAKGD1    .560425E-01    .796545E-01    .108835E+00    .120706E+00        
+HST  2BAKGD2    .161948E+00    .158422E+00    .181624E+00    .197710E+00        
+HST  2BAKGD3    .200899E+00    .201249E+00                                      
+HST  2BNKNAM  MINUS_153                                                         
+HST  2BNKPAR    1.2495  -151.000      25.0     1.321     30.48   16   77        
+HST  2BNKTC1 5018.60 5022.60 5026.50 5030.40 5034.30 5038.20 5042.10 5046.00    
+HST  2BNKTC2 5049.80 5053.70 5057.50 5061.40 5065.20 5069.00 5072.80 5076.60    
+HST  2CHI      90.0000                                                          
+HST  2EXC  1      .000     2.999                                                
+HST  2EXC  2    24.000  1000.000                                                
+HST  2HSCALE     1.0116        Y    0                                           
+HST  2I HEAD  CALIBRATION V/NB                                                  
+HST  2I ITYP    1    1.0000   23.9997     41946                                 
+HST  2ICOFF1    .208819E+01    .161677E+05    .386291E+00    .546976E+05        
+HST  2ICOFF2    .645872E-01   -.103173E+05    .652500E-02   -.362341E+05        
+HST  2ICOFF3    .311174E-01    .665847E+04    .213234E+00    .000000E+00        
+HST  2IECOF1    .155162E+00    .627270E+03    .295853E-02    .541401E+03        
+HST  2IECOF2    .488847E-03    .309000E+03    .800190E-04    .155406E+03        
+HST  2IECOF3    .112486E-03    .118681E+03    .472194E-02    .000000E+00        
+HST  2IECOR1 1.000  .716  .760 -.605  .420  .525  .222 -.456  .012 -.516        
+HST  2IECOR2  .048  .000 1.000  .992 -.888  .775  .868  .499 -.718 -.044        
+HST  2IECOR3 -.756  .092  .000 1.000 -.871  .720  .827  .444 -.691 -.027        
+HST  2IECOR4 -.740  .085  .000 1.000 -.633 -.948 -.285  .423 -.265  .536        
+HST  2IECOR5  .038  .000 1.000  .817  .912 -.854 -.288 -.737  .175  .000        
+HST  2IECOR6 1.000  .534 -.563  .107 -.606  .025  .000 1.000 -.818 -.422        
+HST  2IECOR7 -.613  .208  .000 1.000  .284  .679  .007  .000 1.000  .446        
+HST  2IECOR8 -.579  .000 1.000 -.087  .000 1.000  .000  .000                    
+HST  2MNREF     0    1.0000                                                     
+HST  2OMEGA     0.0000                                                          
+HST  2PHI       0.0000                                                          
+HST  2PRCF1     1    9   0.01000                                                
+HST  2PRCF11    .000000E+00    .500000E+01    .275585E-01    .728077E-02        
+HST  2PRCF12    .000000E+00    .730770E+02    .000000E+00    .000000E+00        
+HST  2PRCF13   0.000000E+00                                                     
+HST  3  HFIL  6730.dat                                                          
+HST  3  HNAM  ROUND ROBIN SAMPLE 2                                              
+HST  3  IFIL  I22JAN99.PRM                                                      
+HST  3 BANK     3                                                               
+HST  3 BIGFO    .131263E+03                                                     
+HST  3 CHANS      2530         1      5019  94236950      7550    1             
+HST  3 EPHAS    0    0    0    0    0    0    0    0    0    T                  
+HST  3 ICONR   3817.70     -3.01     -6.00                                      
+HST  3 ICONS   3817.70     -3.01     -6.00                                      
+HST  3 MAXRF   72                                                               
+HST  3 NEXC     2                                                               
+HST  3 NPHAS    1    1    1    1    0    0    0    0    0                       
+HST  3 NREF   543     .5250    Y    Y                                           
+HST  3 R-FAC N-obs  543 R-factor  .14797                                        
+HST  3 RPOWD     .0301     .0219                                                
+HST  3 TRNGE   1.99878  23.99368                                                
+HST  3 WREXP     .0226                                                          
+HST  3ABSCOR   -.401539E-01    .000000E+00    Y    0    0                       
+HST  3BAKGD     7   10    Y    0    Y    0000000000000                          
+HST  3BAKGD1    .531797E-01    .686879E-01    .866210E-01    .112385E+00        
+HST  3BAKGD2    .130485E+00    .149004E+00    .165231E+00    .203295E+00        
+HST  3BAKGD3    .200987E+00    .188998E+00                                      
+HST  3BNKNAM  PLUS_90                                                           
+HST  3BNKPAR     1.016      90.0       0.0     1.321     30.48   16   65        
+HST  3BNKTC1 3466.60 3490.50 3514.40 3538.20 3562.00 3585.60 3609.20 3632.70    
+HST  3BNKTC2 3656.10 3679.40 3702.70 3725.80 3748.90 3772.00 3794.90 3817.70    
+HST  3CHI      90.0000                                                          
+HST  3EXC  1      .000     1.998                                                
+HST  3EXC  2    24.000  1000.000                                                
+HST  3HSCALE     1.0230        Y    0                                           
+HST  3I HEAD  CALIBRATION V/NB                                                  
+HST  3I ITYP    1    1.0000   23.9997     42336                                 
+HST  3ICOFF1    .468304E+01    .472700E+05    .409125E+00    .116381E+06        
+HST  3ICOFF2    .706951E-01   -.249910E+05    .886590E-02   -.358594E+05        
+HST  3ICOFF3    .116236E-01   -.377035E+05    .161391E-01    .000000E+00        
+HST  3IECOF1    .172607E+00    .747658E+03    .129637E-02    .155164E+04        
+HST  3IECOF2    .204500E-03    .665376E+03    .685466E-04    .428335E+03        
+HST  3IECOF3    .108612E-03    .296310E+03    .108900E-03    .000000E+00        
+HST  3IECOR1 1.000  .606  .661 -.490 -.001  .455 -.046  .155  .296  .256        
+HST  3IECOR2  .154  .000 1.000  .987 -.793  .296  .769  .180  .172  .561        
+HST  3IECOR3  .441  .335  .000 1.000 -.788  .208  .755  .103  .194  .532        
+HST  3IECOR4  .430  .306  .000 1.000  .127 -.991  .146 -.629 -.472 -.528        
+HST  3IECOR5  .115  .000 1.000 -.100  .941 -.569  .399  .092  .642  .000        
+HST  3IECOR6 1.000 -.141  .644  .414  .480 -.143  .000 1.000 -.528  .495        
+HST  3IECOR7  .189  .587  .000 1.000 -.250 -.139 -.802  .000 1.000  .901        
+HST  3IECOR8  .580  .000 1.000  .466  .000 1.000  .000  .000                    
+HST  3MNREF     0    1.0000                                                     
+HST  3OMEGA     0.0000                                                          
+HST  3PHI       0.0000                                                          
+HST  3PRCF1     1    9   0.01000                                                
+HST  3PRCF11    .000000E+00    .500000E+01    .288849E-01    .351727E-02        
+HST  3PRCF12    .000000E+00    .886754E+02    .000000E+00    .000000E+00        
+HST  3PRCF13   0.000000E+00                                                     
+HST  4  HFIL  6730.dat                                                          
+HST  4  HNAM  ROUND ROBIN SAMPLE 2                                              
+HST  4  IFIL  I22JAN99.PRM                                                      
+HST  4 BANK     4                                                               
+HST  4 BIGFO    .109533E+03                                                     
+HST  4 CHANS      2532         1      5017  83862660      7550    1             
+HST  4 EPHAS    0    0    0    0    0    0    0    0    0    T                  
+HST  4 ICONR   3807.24     -1.77      1.17                                      
+HST  4 ICONS   3807.24     -1.77      1.17                                      
+HST  4 MAXRF   52                                                               
+HST  4 NEXC     2                                                               
+HST  4 NPHAS    1    1    1    1    0    0    0    0    0                       
+HST  4 NREF   514     .5249    Y    Y                                           
+HST  4 R-FAC N-obs  514 R-factor  .17276                                        
+HST  4 RPOWD     .0279     .0204                                                
+HST  4 TRNGE   2.00070  23.99368                                                
+HST  4 WREXP     .0211                                                          
+HST  4ABSCOR   -.419117E-01    .000000E+00    Y    0    0                       
+HST  4BAKGD     7   10    Y    0    Y    0000000000000                          
+HST  4BAKGD1    .577976E-01    .715124E-01    .860910E-01    .107119E+00        
+HST  4BAKGD2    .121381E+00    .132577E+00    .138185E+00    .165094E+00        
+HST  4BAKGD3    .170643E+00    .161534E+00                                      
+HST  4BNKNAM  MINUS_90                                                          
+HST  4BNKPAR     1.016    -90.00       0.0     1.321     30.48   16   69        
+HST  4BNKTC1 3811.10 3788.50 3765.70 3742.80 3719.70 3696.50 3673.20 3649.70    
+HST  4BNKTC2 3626.10 3602.30 3578.40 3554.30 3530.10 3505.80 3481.30 3456.70    
+HST  4CHI      90.0000                                                          
+HST  4EXC  1      .000     1.999                                                
+HST  4EXC  2    24.000  1000.000                                                
+HST  4HSCALE     1.0202        Y    0                                           
+HST  4I HEAD  CALIBRATION V/NB                                                  
+HST  4I ITYP    1    1.0000   23.9997     44263                                 
+HST  4ICOFF1    .553744E+01    .435359E+05    .384803E+00    .114387E+06        
+HST  4ICOFF2    .659711E-01   -.228667E+05    .791199E-02   -.350288E+05        
+HST  4ICOFF3    .120252E-01   -.380769E+05    .160239E-01    .000000E+00        
+HST  4IECOF1    .210867E+00    .649651E+03    .119295E-02    .132249E+04        
+HST  4IECOF2    .193978E-03    .580624E+03    .631571E-04    .408420E+03        
+HST  4IECOF3    .112617E-03    .302003E+03    .104215E-03    .000000E+00        
+HST  4IECOR1 1.000  .646  .703 -.497  .041  .460 -.056  .053  .335  .257        
+HST  4IECOR2  .212  .000 1.000  .987 -.745  .357  .728  .169 -.018  .572        
+HST  4IECOR3  .411  .411  .000 1.000 -.744  .270  .716  .094  .012  .549        
+HST  4IECOR4  .402  .381  .000 1.000  .141 -.991  .249 -.504 -.536 -.507        
+HST  4IECOR5  .073  .000 1.000 -.090  .945 -.632  .313  .082  .646  .000        
+HST  4IECOR6 1.000 -.214  .509  .495  .469 -.084  .000 1.000 -.636  .344        
+HST  4IECOR7  .117  .592  .000 1.000 -.321 -.297 -.849  .000 1.000  .922        
+HST  4IECOR8  .553  .000 1.000  .512  .000 1.000  .000  .000                    
+HST  4MNREF     0    1.0000                                                     
+HST  4OMEGA     0.0000                                                          
+HST  4PHI       0.0000                                                          
+HST  4PRCF1     1    9   0.01000                                                
+HST  4PRCF11    .000000E+00    .500000E+01    .286571E-01    .123176E-01        
+HST  4PRCF12    .000000E+00    .181839E+03    .000000E+00    .000000E+00        
+HST  4PRCF13   0.000000E+00                                                     
+LEQV PSFR       4    1    1    1    1                                           
+LEQV PSFR 11  1,ALL         1.000                                               
+LEQV PSFR 21  2,ALL         1.000                                               
+LEQV PSFR 31  3,ALL         1.000                                               
+LEQV PSFR 41  4,ALL         1.000                                               
+ZZZZZZZZZZZZ  Last EXP file record                                              
+    HSTRY 15 GENLES  MS-DOS 1999-01-28T23:15:38  Sdsq=  .300E+05 S/E=  .508E-03 

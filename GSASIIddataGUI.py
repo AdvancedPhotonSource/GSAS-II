@@ -158,7 +158,6 @@ def UpdateDData(G2frame,DData,data):
         G2plt.PlotSizeStrainPO(G2frame,data)
         
     def OnCopyData(event):
-        #how about HKLF data? This is only for PWDR data
         Obj = event.GetEventObject()
         hist = Indx[Obj.GetId()]
         sourceDict = UseList[hist]
@@ -195,7 +194,7 @@ def UpdateDData(G2frame,DData,data):
         for name in copyNames:
             if name in ['Scale','Extinction','HStrain']:
                 if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
-                    copyDict[name] = {name:[sourceDict[name][:1]]}
+                    copyDict[name] = {name:[sourceDict[name][:2]]}
                     for item in ['Eg','Es','Ep']:
                         copyDict[name][item] = sourceDict[name][2][item][1]
                 else:
@@ -227,7 +226,7 @@ def UpdateDData(G2frame,DData,data):
                         for name in copyNames:
                             if name in ['Scale','Extinction','HStrain']:
                                 if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
-                                    UseList[item][name][:1] = copy.deepcopy(sourceDict[name][:1])
+                                    UseList[item][name][:2] = copy.deepcopy(sourceDict[name][:2])
                                     for itm in ['Eg','Es','Ep']:
                                         UseList[item][name][2][itm][1] = copy.deepcopy(copyDict[name][itm])
                                 else:

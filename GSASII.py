@@ -2089,6 +2089,7 @@ class GSASII(wx.Frame):
         self.Weight = False
         self.IparmName = ''  # to be removed when SelectPowderData & GetInstrumentFile is
         self.IfPlot = False
+        self.DDShowAll = False
         self.PatternId = 0
         self.PickId = 0
         self.PeakTable = []

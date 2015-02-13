@@ -3805,6 +3805,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
             finally:
                 dlg.Destroy()
+                
+    def OnShowAll(event):
+        G2frame.DDShowAll = not G2frame.DDShowAll
+        UseList = data['Histograms']
+        for hist in UseList:
+            UseList[hist]['Show'] = G2frame.DDShowAll
+        wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
         
     def OnDataDelete(event):
         UseList = data['Histograms']
@@ -5841,6 +5848,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataMenu)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnShowAll, id=G2gd.wxID_SHOWALL)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)
         # Atoms
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.AtomsMenu)

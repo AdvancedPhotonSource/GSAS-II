@@ -391,3 +391,70 @@ class NT_JANA2K_ReaderClass(G2IO.ImportStructFactor):
             traceback.print_exc(file=sys.stdout)
             return False
 
+class ISIS_SXD_INT_ReaderClass(G2IO.ImportStructFactor):
+    'Routines to import neutron TOF F**2, sig(F**2) reflections from a ISIS int file'
+    def __init__(self):
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.int','.INT'),
+            strictExtension=False,
+            formatName = u'Neutron SXD TOF HKL F\u00b2',
+            longFormatName = u'Neutron SXD TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
+            )
+
+    def ContentsValidator(self, filepointer):
+        'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
+        oldNo = -1
+        for line,S in enumerate(filepointer):
+            if not S:   #empty line terminates read
+                break
+            if S[0] == '#': continue       #ignore comments, if any
+            if S[0] == '(': continue        #ignore format line
+            bankNo = S.split()[5]
+            if bankNo != oldNo:
+                self.Banks.append({'RefDict':{'RefList':[],}})
+                oldNo = bankNo
+        filepointer.seek(0)
+        return ColumnValidator(self, filepointer,nCol=8)
+
+    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        'Read the file'
+        filepointer.seek(0)
+        try:
+            for line,S in enumerate(filepointer):
+                self.errors = '  Error reading line '+str(line+1)
+                if S[0] == '#': continue       #ignore comments, if any
+                if S[0] == '(': continue        #ignore the format line
+                data = S.split()
+                h,k,l,Fo,sigFo,bN,wave,x,x,tbar = data[:10]                   
+                h,k,l = [int(h),int(k),int(l)]
+                if not any([h,k,l]):
+                    break
+                Fo = float(Fo)
+                sigFo = float(sigFo)
+                wave = float(wave)
+                tbar = float(tbar)
+                if len(self.Banks):
+                    self.Banks[int(bN)-1]['RefDict']['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+                else:
+                # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
+                    self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+            if len(self.Banks):
+                self.UpdateParameters(Type='SNT',Wave=None) # histogram type
+                for Bank in self.Banks:
+                    Bank['RefDict']['RefList'] = np.array(Bank['RefDict']['RefList'])
+                    Bank['RefDict']['Type'] = 'SNT'                    
+                    Bank['RefDict']['Super'] = 0
+            else:
+                self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+                self.RefDict['Type'] = 'SNT'
+                self.RefDict['Super'] = 0
+                self.errors = 'Error after reading reflections (unexpected!)'
+                self.UpdateParameters(Type='SNT',Wave=None) # histogram type
+            return True
+        except Exception as detail:
+            self.errors += '\n  '+str(detail)
+            print '\n\n'+self.formatName+' read error: '+str(detail) # for testing
+            import traceback
+            traceback.print_exc(file=sys.stdout)
+            return False
+

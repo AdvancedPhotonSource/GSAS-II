@@ -56,8 +56,6 @@ def UpdateImageData(G2frame,data):
         Obj.SetValue('%.3f'%(data['pixelSize'][id]))
         G2plt.PlotExposedImage(G2frame,newPlot=True,event=event)
         
-        
-        
     if G2frame.dataDisplay:
         G2frame.dataDisplay.Destroy()
     if not G2frame.dataFrame.GetStatusBar():
@@ -469,65 +467,60 @@ def UpdateImageControls(G2frame,data,masks):
         
     def CalibCoeffSizer():
         
-        def OnWavelength(event):
+        def OnCalRef(event):
+            Obj = event.GetEventObject()
+            name = Indx[Obj]
+            data['varyList'][name] = Obj.GetValue()
+            
+        def OnCalVal(event):
+            Obj = event.GetEventObject()
+            name = Indx[Obj]
             try:
-                wave = float(waveSel.GetValue())
-                if wave < .01:
+                value = float(Obj.GetValue())
+                if name == 'wave' and value < 0.01:
                     raise ValueError
-                data['wavelength'] = wave
             except ValueError:
-                pass
-            waveSel.SetValue("%7.5f" % (data['wavelength']))          #reset in case of error
-            
-        def OnDetDepthRef(event):
-            data['varyList']['dep'] = penSel.GetValue()
-            
-        def OnDetDepth(event):
-            try:
-                data['DetDepth'] = float(penVal.GetValue())
-            except ValueError:
-                pass
-            penVal.SetValue("%6.3f" % (data['DetDepth']))          #reset in case of error                      
+                value = Parms[name][2]
+            if name == 'dist':
+                data['distance'] = value
+            elif name == 'det-X':
+                data['center'][0] = value
+            elif name == 'det-Y':
+                data['center'][1] = value
+            elif name == 'tilt':
+                data['tilt'] = value
+            elif name == 'phi':
+                data['rotation'] = value
+            elif name == 'wave':
+                data['wavelength'] = value
+            elif name == 'dep':
+                data['DetDepth'] = value                                
+            Parms[name][2] = value
+            Obj.SetValue(Parms[name][1]%(value))
             
         calibSizer = wx.FlexGridSizer(0,2,5,5)
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibration coefficients'),0,WACV)    
         calibSizer.Add((5,0),0)
         cent = data['center']
-        for axis,cnt in zip(['X','Y'],cent):
-            calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Beam center '+axis),0,WACV)
-            centText = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%7.2f" % (cnt)),style=wx.TE_READONLY)
-            centText.SetBackgroundColour(VERY_LIGHT_GREY)
-            calibSizer.Add(centText,0,WACV)        
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Wavelength'),0,WACV)
-        waveSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%7.5f" % (data['wavelength'])),
-            style=wx.TE_PROCESS_ENTER)
-        waveSel.Bind(wx.EVT_TEXT_ENTER,OnWavelength)
-        waveSel.Bind(wx.EVT_KILL_FOCUS,OnWavelength)
-        calibSizer.Add(waveSel,0,WACV)             
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Distance'),0,WACV)
-#        distVary = wx.CheckBox(G2frame.dataDisplay,label=' Distance')
-        distSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%8.2f"%(data['distance'])),style=wx.TE_READONLY)
-        distSel.SetBackgroundColour(VERY_LIGHT_GREY)
-        calibSizer.Add(distSel,0,WACV)
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Tilt angle'),0,WACV)
-        tiltSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%9.3f"%(data['tilt'])),style=wx.TE_READONLY)
-        tiltSel.SetBackgroundColour(VERY_LIGHT_GREY)
-        calibSizer.Add(tiltSel,0,WACV)
-        calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Tilt rotation'),0,WACV)
-        rotSel = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%9.3f"%(data['rotation'])),style=wx.TE_READONLY)
-        rotSel.SetBackgroundColour(VERY_LIGHT_GREY)
-        calibSizer.Add(rotSel,0,WACV)
+        Names = ['det-X','det-Y','wave','dist','tilt','phi']
         if 'PWDR' in data['type']:
-            penSel = wx.CheckBox(parent=G2frame.dataDisplay,label='Penetration?')
-            calibSizer.Add(penSel,0,WACV)
-            penSel.Bind(wx.EVT_CHECKBOX, OnDetDepthRef)
-            penSel.SetValue(data['varyList']['dep'])
-            penVal = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%6.5f" % (data['DetDepth'])),
-                style=wx.TE_PROCESS_ENTER)
-            penVal.Bind(wx.EVT_TEXT_ENTER,OnDetDepth)
-            penVal.Bind(wx.EVT_KILL_FOCUS,OnDetDepth)
-            calibSizer.Add(penVal,0,WACV)             
-        
+            Names.append('dep') 
+        Parms = {'dist':['Distance','%.3f',data['distance']],'det-X':['Beam center X','%.3f',data['center'][0]],
+            'det-Y':['Beam center X','%.3f',data['center'][1]],'tilt':['Tilt angle','%.3f',data['tilt']],
+            'phi':['Tilt rotation','%.2f',data['rotation']],'dep':['Penetration','%.2f',data['DetDepth']],
+            'wave':['Wavelength','%.6f',data['wavelength']]}
+        Indx = {}
+        for name in Names:
+            calSel = wx.CheckBox(parent=G2frame.dataDisplay,label=Parms[name][0])
+            calibSizer.Add(calSel,0,WACV)
+            calSel.Bind(wx.EVT_CHECKBOX, OnCalRef)
+            calSel.SetValue(data['varyList'][name])
+            Indx[calSel] = name
+            calVal = wx.TextCtrl(G2frame.dataDisplay,value=(Parms[name][1]%(Parms[name][2])),style=wx.TE_PROCESS_ENTER)
+            calVal.Bind(wx.EVT_TEXT_ENTER,OnCalVal)
+            calVal.Bind(wx.EVT_KILL_FOCUS,OnCalVal)
+            Indx[calVal] = name
+            calibSizer.Add(calVal,0,WACV)
         return calibSizer
     
     def IntegrateSizer():

@@ -49,6 +49,8 @@ nptand = lambda x: np.tan(x*np.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
+debug = False
+    
 def pointInPolygon(pXY,xy):
     'Needs a doc string'
     #pXY - assumed closed 1st & last points are duplicates
@@ -138,14 +140,14 @@ def FitDetector(rings,varyList,parmDict,Print=True):
         ptlbls = 'names :'
         ptstr =  'values:'
         sigstr = 'esds  :'
-        for name,fmt,value,sig in ValSig:
+        for name,value,sig in ValSig:
             ptlbls += "%s" % (name.rjust(12))
             if name == 'phi':
-                ptstr += fmt % (value%360.)
+                ptstr += Fmt[name] % (value%360.)
             else:
-                ptstr += fmt % (value)
+                ptstr += Fmt[name] % (value)
             if sig:
-                sigstr += fmt % (sig)
+                sigstr += Fmt[name] % (sig)
             else:
                 sigstr += 12*' '
         print ptlbls
@@ -192,7 +194,8 @@ def FitDetector(rings,varyList,parmDict,Print=True):
         return M
         
     names = ['dist','det-X','det-Y','tilt','phi','dep','wave']
-    fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.5f']
+    fmt = ['%12.3f','%12.3f','%12.3f','%12.3f','%12.3f','%12.2f','%12.6f']
+    Fmt = dict(zip(names,fmt))
     p0 = [parmDict[key] for key in varyList]
     result = leastsq(ellipseCalcD,p0,args=(rings.T,varyList,parmDict),full_output=True,ftol=1.e-8)
     chisq = np.sum(result[2]['fvec']**2)/(rings.shape[0]-len(p0))   #reduced chi^2 = M/(Nobs-Nvar)
@@ -202,7 +205,7 @@ def FitDetector(rings,varyList,parmDict,Print=True):
     sigList = np.zeros(7)
     for i,name in enumerate(varyList):
         sigList[i] = sig[varyList.index(name)]
-    ValSig = zip(varyList,fmt,vals,sig)
+    ValSig = zip(varyList,vals,sig)
     if Print:
         CalibPrint(ValSig,chisq,rings.shape[0])
     return chisq
@@ -525,7 +528,7 @@ def ImageRecalibrate(self,data,masks):
     if frame:
         tam = ma.mask_or(tam,MakeFrameMask(data,frame))
     for iH,H in enumerate(HKL):
-        print H 
+        if debug:   print H 
         dsp = H[3]
         tth = 2.0*asind(wave/(2.*dsp))
         if tth+abs(data['tilt']) > 90.:
@@ -546,6 +549,7 @@ def ImageRecalibrate(self,data,masks):
 #            break
     rings = np.concatenate((data['rings']),axis=0)
     chisq = FitDetector(rings,varyList,parmDict)
+    data['wavelength'] = parmDict['wave']
     data['distance'] = parmDict['dist']
     data['center'] = [parmDict['det-X'],parmDict['det-Y']]
     data['rotation'] = np.mod(parmDict['phi'],360.0)
@@ -556,8 +560,7 @@ def ImageRecalibrate(self,data,masks):
     data['ellipses'] = []           #clear away individual ellipse fits
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
-        data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
-    
+        data['ellipses'].append(copy.deepcopy(ellipse+('b',)))    
     print 'calibration time = ',time.time()-time0
     G2plt.PlotImage(self,newImage=True)        
     return True
@@ -574,8 +577,12 @@ def ImageCalibrate(self,data):
     scaley = 1000./pixelSize[1]
     pixLimit = data['pixLimit']
     cutoff = data['cutoff']
+    varyDict = data['varyList']
+    if varyDict['dist'] and varyDict['wave']:
+        print 'ERROR - you can not simultaneously calibrate distance and wavelength'
+        return False
     if len(ring) < 5:
-        print 'not enough inner ring points for ellipse'
+        print 'ERROR - not enough inner ring points for ellipse'
         return False
         
     #fit start points on inner ring
@@ -600,7 +607,9 @@ def ImageCalibrate(self,data):
     else:
         print '1st ring not sufficiently complete to proceed'
         return False
-    print fmt2%('inner ring:    ',ellipse[0][0],ellipse[0][1],ellipse[1],ellipse[2][0],ellipse[2][1],0.,len(Ring))     #cent,phi,radii
+    if debug:
+        print fmt2%('inner ring:    ',ellipse[0][0],ellipse[0][1],ellipse[1],
+            ellipse[2][0],ellipse[2][1],0.,len(Ring))     #cent,phi,radii
     data['ellipses'].append(ellipse[:]+('r',))
     data['rings'].append(np.array(Ring))
     G2plt.PlotImage(self,newImage=True)
@@ -637,72 +646,79 @@ def ImageCalibrate(self,data):
     stth = npsind(tth)
     ctth = npcosd(tth)
 #1st estimate of tilt; assume ellipse - don't know sign though
-    tilt = npasind(np.sqrt(max(0.,1.-(radii[0]/radii[1])**2))*ctth)
-    if not tilt:
-        print 'WARNING - selected ring was fitted as a circle'
-        print ' - if detector was tilted we suggest you skip this ring - WARNING'
+    if varyDict['tilt']:
+        tilt = npasind(np.sqrt(max(0.,1.-(radii[0]/radii[1])**2))*ctth)
+        if not tilt:
+            print 'WARNING - selected ring was fitted as a circle'
+            print ' - if detector was tilted we suggest you skip this ring - WARNING'
+    else:
+        tilt = data['tilt']
 #1st estimate of dist: sample to detector normal to plane
-    data['distance'] = dist = radii[0]**2/(ttth*radii[1])
+    if varyDict['dist']:
+        data['distance'] = dist = radii[0]**2/(ttth*radii[1])
+    else:
+        dist = data['distance']
+    if varyDict['tilt']:
 #ellipse to cone axis (x-ray beam); 2 choices depending on sign of tilt
-    zdisp = radii[1]*ttth*tand(tilt)
-    zdism = radii[1]*ttth*tand(-tilt)
+        zdisp = radii[1]*ttth*tand(tilt)
+        zdism = radii[1]*ttth*tand(-tilt)
 #cone axis position; 2 choices. Which is right?     
 #NB: zdisp is || to major axis & phi is rotation of minor axis
 #thus shift from beam to ellipse center is [Z*sin(phi),-Z*cos(phi)]
-    centp = [elcent[0]+zdisp*sind(phi),elcent[1]-zdisp*cosd(phi)]
-    centm = [elcent[0]+zdism*sind(phi),elcent[1]-zdism*cosd(phi)]
+        centp = [elcent[0]+zdisp*sind(phi),elcent[1]-zdisp*cosd(phi)]
+        centm = [elcent[0]+zdism*sind(phi),elcent[1]-zdism*cosd(phi)]
 #check get same ellipse parms either way
 #now do next ring; estimate either way & do a FitDetector each way; best fit is correct one
-    fail = True
-    i2 = 1
-    while fail:
-        dsp = HKL[i2][3]
-        print '2nd ring: try %.4f'%(dsp)
-        tth = 2.0*asind(wave/(2.*dsp))
-        ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
-        print fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1])
-        Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,self.ImageZ)
-        parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
-            'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}        
-        varyList = [item for item in data['varyList'] if data['varyList'][item]]
-        if len(Ringp) > 10:
-            chip = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)
-            tiltp = parmDict['tilt']
-            phip = parmDict['phi']
-            centp = [parmDict['det-X'],parmDict['det-Y']]
-            fail = False
+        fail = True
+        i2 = 1
+        while fail:
+            dsp = HKL[i2][3]
+            print '2nd ring: try %.4f'%(dsp)
+            tth = 2.0*asind(wave/(2.*dsp))
+            ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
+            print fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1])
+            Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,self.ImageZ)
+            parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
+                'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}        
+            varyList = [item for item in varyDict if varyDict[item]]
+            if len(Ringp) > 10:
+                chip = FitDetector(np.array(Ring0+Ringp),varyList,parmDict,True)
+                tiltp = parmDict['tilt']
+                phip = parmDict['phi']
+                centp = [parmDict['det-X'],parmDict['det-Y']]
+                fail = False
+            else:
+                chip = 1e6
+            ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
+            print fmt%('minus ellipse:',ellipsem[0][0],ellipsem[0][1],ellipsem[1],ellipsem[2][0],ellipsem[2][1])
+            Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,self.ImageZ)
+            if len(Ringm) > 10:
+                parmDict['tilt'] *= -1
+                chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)
+                tiltm = parmDict['tilt']
+                phim = parmDict['phi']
+                centm = [parmDict['det-X'],parmDict['det-Y']]
+                fail = False
+            else:
+                chim = 1e6
+            if fail:
+                i2 += 1
+        if chip < chim:
+            data['tilt'] = tiltp
+            data['center'] = centp
+            data['rotation'] = phip
         else:
-            chip = 1e6
-        ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
-        print fmt%('minus ellipse:',ellipsem[0][0],ellipsem[0][1],ellipsem[1],ellipsem[2][0],ellipsem[2][1])
-        Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,self.ImageZ)
-        if len(Ringm) > 10:
-            parmDict['tilt'] *= -1
-            chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)
-            tiltm = parmDict['tilt']
-            phim = parmDict['phi']
-            centm = [parmDict['det-X'],parmDict['det-Y']]
-            fail = False
-        else:
-            chim = 1e6
-        if fail:
-            i2 += 1
-    if chip < chim:
-        data['tilt'] = tiltp
-        data['center'] = centp
-        data['rotation'] = phip
-    else:
-        data['tilt'] = tiltm
-        data['center'] = centm
-        data['rotation'] = phim
-    data['ellipses'].append(ellipsep[:]+('b',))
-    data['rings'].append(np.array(Ringp))
-    data['ellipses'].append(ellipsem[:]+('r',))
-    data['rings'].append(np.array(Ringm))
-    G2plt.PlotImage(self,newImage=True)
+            data['tilt'] = tiltm
+            data['center'] = centm
+            data['rotation'] = phim
+        data['ellipses'].append(ellipsep[:]+('b',))
+        data['rings'].append(np.array(Ringp))
+        data['ellipses'].append(ellipsem[:]+('r',))
+        data['rings'].append(np.array(Ringm))
+        G2plt.PlotImage(self,newImage=True)
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
-    varyList = [item for item in data['varyList'] if data['varyList'][item]]
+    varyList = [item for item in varyDict if varyDict[item]]
     data['rings'] = []
     data['ellipses'] = []
     for i,H in enumerate(HKL):
@@ -711,10 +727,10 @@ def ImageCalibrate(self,data):
         if tth+abs(data['tilt']) > 90.:
             print 'next line is a hyperbola - search stopped'
             break
-        print 'HKLD:',H[:4],'2-theta: %.4f'%(tth)
+        if debug:   print 'HKLD:',H[:4],'2-theta: %.4f'%(tth)
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
         data['ellipses'].append(copy.deepcopy(ellipse+('g',)))
-        print fmt%('predicted ellipse:',elcent[0],elcent[1],phi,radii[0],radii[1])
+        if debug:   print fmt%('predicted ellipse:',elcent[0],elcent[1],phi,radii[0],radii[1])
         Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
         if Ring:
             data['rings'].append(np.array(Ring))
@@ -728,11 +744,11 @@ def ImageCalibrate(self,data):
                 data['DetDepth'] = parmDict['dep']
                 data['chisq'] = chisq
                 elcent,phi,radii = ellipse = GetEllipse(dsp,data)
-                print fmt2%('fitted ellipse:   ',elcent[0],elcent[1],phi,radii[0],radii[1],chisq,len(rings))
+                if debug:   print fmt2%('fitted ellipse:   ',elcent[0],elcent[1],phi,radii[0],radii[1],chisq,len(rings))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
 #            G2plt.PlotImage(self,newImage=True)
         else:
-            print 'insufficient number of points in this ellipse to fit'
+            if debug:   print 'insufficient number of points in this ellipse to fit'
 #            break
     G2plt.PlotImage(self,newImage=True)
     fullSize = len(self.ImageZ)/scalex
@@ -741,6 +757,7 @@ def ImageCalibrate(self,data):
     N = len(data['ellipses'])
     if N > 2:
         FitDetector(rings,varyList,parmDict)
+        data['wavelength'] = parmDict['wave']
         data['distance'] = parmDict['dist']
         data['center'] = [parmDict['det-X'],parmDict['det-Y']]
         data['rotation'] = parmDict['phi']

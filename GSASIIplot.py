@@ -595,6 +595,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         elif key == '-':
             Data['Scale'] /= 1.25
         elif key == '0':
+            drawingData['viewPoint'][0] = [0,0,0]
             Data['Scale'] = 1.0
         elif key == 'I':
             Data['Iscale'] = not Data['Iscale']
@@ -925,6 +926,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Page.camera['position'] = drawingData['cameraPos']
     Page.camera['viewPoint'] = np.inner(Amat,drawingData['viewPoint'][0])
     Page.camera['backColor'] = np.array(list(drawingData['backColor'])+[0,])/255.
+    Page.controls = Data
     try:
         Page.canvas.SetCurrent()
     except:

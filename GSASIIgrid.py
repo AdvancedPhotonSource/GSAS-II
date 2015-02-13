@@ -4383,11 +4383,23 @@ def UpdatePWHKPlot(G2frame,kind,item):
             SuperVec = []       
         refList = data[1]['RefList']
         FoMax = np.max(refList.T[5+data[1].get('Super',0)])
-        controls = {'Type' : 'Fo','ifFc' : True,     
-            'HKLmax' : [int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))],
-            'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],
-            'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,'Super':Super,'SuperVec':SuperVec}
-        G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList)
+        page = G2frame.G2plotNB.nb.GetSelection()
+        tab = ''
+        if page >= 0:
+            tab = G2frame.G2plotNB.nb.GetPageText(page)
+        if '3D' in tab:
+            Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
+            Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
+            Vpoint = [int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))]
+            Page = G2frame.G2plotNB.nb.GetPage(page)
+            controls = Page.controls
+            G2plt.Plot3DSngl(G2frame,newPlot=False,Data=controls,hklRef=refList,Title=phaseName)
+        else:
+            controls = {'Type' : 'Fo','ifFc' : True,     
+                'HKLmax' : [int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))],
+                'HKLmin' : [int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))],
+                'FoMax' : FoMax,'Zone' : '001','Layer' : 0,'Scale' : 1.0,'Super':Super,'SuperVec':SuperVec}
+            G2plt.PlotSngl(G2frame,newPlot=True,Data=controls,hklRef=refList)
                  
 ################################################################################
 #####  Pattern tree routines

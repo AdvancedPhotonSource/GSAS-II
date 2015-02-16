@@ -75,6 +75,7 @@ def SetPhaseWindow(mainFrame,phasePage,mainSizer):
     phasePage.SetSize(Size)
     phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
     mainFrame.setSizePosLeft(Size)
+    mainFrame.SendSizeEvent()
     
 def UpdatePhaseData(G2frame,Item,data,oldPage):
     '''Create the data display window contents when a phase is clicked on
@@ -1068,8 +1069,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if generalData['Type'] in ['nuclear','macromolecular']:
             G2gd.HorizontalLine(mainSizer,General)
             mainSizer.Add(MCSASizer())
-        SetPhaseWindow(G2frame.dataFrame,General,mainSizer)
         G2frame.dataFrame.SetStatusText('')
+        SetPhaseWindow(G2frame.dataFrame,General,mainSizer)
 
 ################################################################################
 #####  Atom routines

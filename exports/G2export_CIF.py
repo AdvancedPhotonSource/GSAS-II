@@ -39,6 +39,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIgrid as G2gd
+import GSASIIctrls as G2ctrls
 import GSASIIstrIO as G2stIO
 import GSASIImath as G2mth
 import GSASIIlattice as G2lat
@@ -110,13 +111,21 @@ class ExportCIF(G2IO.ExportBaseclass):
 
             More could be done here, but this is a good start.
             '''
-            WriteCIFitem('_pd_proc_info_datetime', self.CIFdate)
-            WriteCIFitem('_pd_calc_method', 'Rietveld Refinement')
+            if self.ifPWDR:
+                WriteCIFitem('_pd_proc_info_datetime', self.CIFdate)
+                WriteCIFitem('_pd_calc_method', 'Rietveld Refinement')
             #WriteCIFitem('_refine_ls_shift/su_max',DAT1)
             #WriteCIFitem('_refine_ls_shift/su_mean',DAT2)
             #WriteCIFitem('_refine_diff_density_max',rhomax)    #these need to be defined for each phase!
             #WriteCIFitem('_refine_diff_density_min',rhomin)
             WriteCIFitem('_computing_structure_refinement','GSAS-II (Toby & Von Dreele, J. Appl. Cryst. 46, 544-549, 2013)')
+            if self.ifHKLF:
+                controls = self.OverallParms['Controls']
+                if controls['F**2']:
+                    thresh = 'F**2>%.1fu(F**2)'%(controls['minF/sig'])
+                else:
+                    thresh = 'F>%.1fu(F)'%(controls['minF/sig'])
+                WriteCIFitem('_reflns_threshold_expression', thresh)                
             try:
                 vars = str(len(self.OverallParms['Covariance']['varyList']))
             except:
@@ -1220,11 +1229,44 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteCIFitem(s)
             if not self.quickmode: # statistics only in a full CIF
                 WriteReflStat(refcount,hklmin,hklmax,dmin,dmax)
-                hId = histblk[0]['hId']
-                pfx = '0:'+str(hId)+':'
-                WriteCIFitem('_reflns_wR_factor_obs    ','%.4f'%(histblk[0]['wR']/100.))
-                WriteCIFitem('_reflns_R_F_factor_obs   ','%.4f'%(histblk[0][pfx+'Rf']/100.))
-                WriteCIFitem('_reflns_R_Fsqd_factor_obs','%.4f'%(histblk[0][pfx+'Rf^2']/100.))
+                hId = histblk['hId']
+                hfx = '0:'+str(hId)+':'
+                phfx = '%d:%d:'%(0,hId)
+                extType,extModel,extParms = self.Phases[phasenam]['Histograms'][histlbl]['Extinction']
+                if extModel != 'None':
+                    WriteCIFitem('_refine_ls_extinction_method','Becker-Coppens %s %s'%(extModel,extType))
+                    sig = -1.e-3
+                    if extModel == 'Primary':
+                        parm = extParms['Ep'][0]*1.e5
+                        if extParms['Ep'][1]:
+                            sig = self.sigDict[phfx+'Ep']*1.e5
+                        text = G2mth.ValEsd(parm,sig)
+                    elif extModel == 'Secondary Type I':
+                        parm = extParms['Eg'][0]*1.e5
+                        if extParms['Eg'][1]:
+                            sig = self.sigDict[phfx+'Eg']*1.e5
+                        text = G2mth.ValEsd(parm,sig)
+                    elif extModel == 'Secondary Type II':
+                        parm = extParms['Es'][0]*1.e5
+                        if extParms['Es'][1]:
+                            sig = self.sigDict[phfx+'Es']*1.e5
+                        text = G2mth.ValEsd(parm,sig)
+                    elif extModel == 'Secondary Type I & II':
+                        parm = extParms['Eg'][0]*1.e5
+                        if extParms['Es'][1]:
+                            sig = self.sigDict[phfx+'Es']*1.e5
+                        text = G2mth.ValEsd(parm,sig)
+                        sig = -1.0e-3
+                        parm = extParms['Es'][0]*1.e5
+                        if extParms['Es'][1]:
+                            sig = self.sigDict[phfx+'Es']*1.e5
+                        text += G2mth.ValEsd(parm,sig)
+                    WriteCIFitem('_refine_ls_extinction_coef',text)
+                    WriteCIFitem('_refine_ls_extinction_expression','Becker & Coppens (1974). Acta Cryst. A30, 129-147')
+
+                WriteCIFitem('_refine_ls_wR_factor_gt    ','%.4f'%(histblk['wR']/100.))
+                WriteCIFitem('_refine_ls_R_factor_gt     ','%.4f'%(histblk[hfx+'Rf']/100.))
+                WriteCIFitem('_refine_ls_R_Fsqd_factor   ','%.4f'%(histblk[hfx+'Rf^2']/100.))
         def EditAuthor(event=None):
             'dialog to edit the CIF author info'
             'Edit the CIF author name'
@@ -1261,7 +1303,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 instrname = d.get('InstrName')
                 if instrname is None:
                     d['InstrName'] = ''
-            return G2gd.CallScrolledMultiEditor(
+            return G2ctrls.CallScrolledMultiEditor(
                 self.G2frame,dictlist,keylist,
                 prelbl=range(1,len(dictlist)+1),
                 postlbl=lbllist,
@@ -1618,14 +1660,18 @@ class ExportCIF(G2IO.ExportBaseclass):
         self.shortauthorname = self.author.replace(',','').replace(' ','')[:20]
 
         # check there is an instrument name for every histogram
+        self.ifPWDR = False
+        self.ifHKLF = False
         if not self.quickmode:
             invalid = 0
             key3 = 'InstrName'
             for hist in self.Histograms:
-                if hist.startswith("PWDR"): 
+                if hist.startswith("PWDR"):
+                    self.ifPWDR = True
                     key2 = "Sample Parameters"
                     d = self.Histograms[hist][key2]
-                elif hist.startswith("HKLF"): 
+                elif hist.startswith("HKLF"):
+                    self.ifHKLF = True
                     key2 = "Instrument Parameters"
                     d = self.Histograms[hist][key2][0]                    
                 instrname = d.get(key3)
@@ -2396,14 +2442,14 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                     if '.' in rng[0] or '.' in rng[1]: hint = float
                     if rng[0]: mn = hint(rng[0])
                     if rng[1]: mx = hint(rng[1])
-                    ent = G2gd.ValidatedTxtCtrl(
+                    ent = G2ctrls.ValidatedTxtCtrl(
                         self,dct,item,typeHint=hint,min=mn,max=mx,
                         CIFinput=True,
                         OKcontrol=self.ControlOKButton)
                     self.ValidatedControlsList.append(ent)
                     return ent
         rw1 = rw.ResizeWidget(self)
-        ent = G2gd.ValidatedTxtCtrl(
+        ent = G2ctrls.ValidatedTxtCtrl(
             rw1,dct,item,size=(100, 20),
             style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER,
             CIFinput=True,

@@ -72,6 +72,8 @@ def FormatValue(val,maxdigits=None):
 
     :returns: a string with <= maxdigits characters (usually).  
     '''
+    if 'str' in str(type(val)) and (val == '?' or val == '.'):
+        return val        
     if maxdigits is None:
         digits = [10,2]
     else:
@@ -129,6 +131,8 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
 
     :returns: a string with <= maxdigits characters (I hope).  
     '''
+    if 'str' in str(type(val)) and (val == '?' or val == '.'):
+        return val        
     if treatAsZero is not None:
         if abs(val) < treatAsZero:
             return '0.0'

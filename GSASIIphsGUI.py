@@ -48,6 +48,7 @@ import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
+import GSASIIctrls as G2G
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
@@ -1943,7 +1944,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for lbl,xyz,var,val,G2var in zip(ISO['IsoVarList'],deltaList,
                                              ISO['IsoModeList'],modeVals,ISO['G2ModeList']):
                 if G2var in constDict:
-                    ch = G2gd.HelpButton(panel2,fmtHelp(constDict[G2var],var))
+                    ch = G2G.HelpButton(panel2,fmtHelp(constDict[G2var],var))
                     subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
                 else:
                     subSizer2.Add((-1,-1))
@@ -1977,7 +1978,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for lbl,xyz,var,val,G2var in zip(ISO['OccVarList'],deltaList,
                                              ISO['OccModeList'],modeVals,ISO['G2OccModeList']):
                 if G2var in constDict:
-                    ch = G2gd.HelpButton(panel2,fmtHelp(constDict[G2var],var))
+                    ch = G2G.HelpButton(panel2,fmtHelp(constDict[G2var],var))
                     subSizer2.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
                 else:
                     subSizer2.Add((-1,-1))

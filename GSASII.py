@@ -83,7 +83,6 @@ import GSASIIlog as log
 wxInspector = False
 
 __version__ = '0.2.0'
-G2gd.__version__ = __version__
 
 # PATCH: for Mavericks (OS X 10.9.x), wx produces an annoying warning about LucidaGrandeUI.
 # In case stderr has been suppressed there, redirect python error output to stdout. Nobody
@@ -256,6 +255,7 @@ class GSASII(wx.Frame):
         #    'imports')
         pathlist = sys.path[:]
         #if path2GSAS2 not in pathlist: pathlist.append(path2GSAS2)
+        if '.' not in pathlist: pathlist.append('.') # insert the directory where G2 is started
 
         filelist = []
         for path in pathlist:
@@ -1280,6 +1280,10 @@ class GSASII(wx.Frame):
                 Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
                 if rd.repeat_instparm: 
                     lastIparmfile = rd.instfile
+                # override any keys in read instrument parameters with ones set in import
+                for key in Iparm1:  
+                    if key in rd.instdict:
+                        Iparm1[key] = rd.instdict[key]
             else:
                 Iparm1,Iparm2 = rd.pwdparms['Instrument Parameters']
             lastdatafile = rd.powderentry[0]
@@ -2002,7 +2006,7 @@ class GSASII(wx.Frame):
             self.MacroMenu = wx.Menu(title='')
             menubar.Append(menu=self.MacroMenu, title='Macro')
             self._init_Macro()
-        HelpMenu=G2gd.MyHelp(self,helpType='Data tree',
+        HelpMenu=G2G.MyHelp(self,helpType='Data tree',
             morehelpitems=[('&Tutorials','Tutorials')])
         menubar.Append(menu=HelpMenu,title='&Help')
 

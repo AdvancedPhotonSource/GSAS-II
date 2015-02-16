@@ -32,3 +32,6 @@ Enable_logging = None
 
 logging_debug = None
 'Set to True to enable debug for logging'
+
+Help_mode = None
+'Set to "internal" to use a Python-based web viewer rather than a web browser'

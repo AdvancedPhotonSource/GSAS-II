@@ -308,6 +308,38 @@ def svnUpdateProcess(version=None,projectfile=None):
     subprocess.Popen([sys.executable,__file__,projectfile,version])
     sys.exit()
 
+def svnSwitchDir(rpath,URL):
+    '''This performs a switch command to move files between subversion trees.
+
+    This is currently used for moving tutorial web pages and demo files
+    into the GSAS-II source tree. 
+    
+    :param str rpath: path to locate files, relative to the GSAS-II
+      installation path (path2GSAS2)
+    :param str URL: the repository URL
+    '''
+    import subprocess
+    svn = whichsvn()
+    if not svn: return
+    fpath = os.path.join(path2GSAS2,rpath)
+    cmd = [svn,'switch','--ignore-ancestry',URL,fpath,
+           '--non-interactive',
+           '--accept','theirs-conflict','--force']
+    print("Loading files from "+URL)
+    s = subprocess.Popen(cmd+['--trust-server-cert'], 
+                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = s.communicate()
+    print out
+    if err:
+        s = subprocess.Popen(cmd,
+                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        out,err = s.communicate()
+        if err:
+            print(60*"=")
+            print ("****** An error was noted, see below *********")
+            print(60*"=")
+            print err
+
 def IPyBreak_base():
     '''A routine that invokes an IPython session at the calling location
     This routine is only used when debug=True is set in config.py

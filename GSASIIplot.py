@@ -36,6 +36,7 @@ import GSASIIphsGUI as G2phG
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIImath as G2mth
+import GSASIIctrls as G2G
 import pytexture as ptx
 from  OpenGL.GL import *
 from OpenGL.GLU import *
@@ -295,7 +296,7 @@ class GSASIItoolbar(Toolbar):
         pageNo = Page.GetSelection()
         bookmark = Page.GetPageText(pageNo)
         bookmark = bookmark.strip(')').replace('(','_')
-        G2gd.ShowHelp(bookmark,self.TopLevelParent)
+        G2G.ShowHelp(bookmark,self.TopLevelParent)
     def OnKey(self,event):
         '''Provide user with list of keystrokes defined for plot as well as an
         alternate way to access the same functionality

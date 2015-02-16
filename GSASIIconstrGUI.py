@@ -834,7 +834,7 @@ def UpdateConstraints(G2frame,data):
             Indx[constDel.GetId()] = [Id,name]
             constSizer.Add(constDel,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)             # delete button
             if helptext:
-                ch = G2gd.HelpButton(pageDisplay,helptext)
+                ch = G2G.HelpButton(pageDisplay,helptext)
                 constSizer.Add(ch,0,wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER,1)
             else:
                 constSizer.Add((-1,-1))

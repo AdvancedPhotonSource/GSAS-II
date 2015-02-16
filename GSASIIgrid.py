@@ -11,6 +11,12 @@
 *GSASIIgrid: Basic GUI routines*
 --------------------------------
 
+Note that a number of routines here should be moved to GSASIIctrls eventually, such as
+G2LoggedButton, EnumSelector, G2ChoiceButton, SingleFloatDialog, SingleStringDialog,
+MultiStringDialog, G2MultiChoiceDialog, G2SingleChoiceDialog, G2ColumnIDDialog, ItemSelector, GridFractionEditor
+
+Probably SGMessageBox, SymOpDialog, DisAglDialog, too. 
+
 '''
 import wx
 import wx.grid as wg
@@ -25,8 +31,6 @@ import os
 import numpy as np
 import numpy.ma as ma
 import scipy.optimize as so
-import wx.html        # could postpone this for quicker startup
-import webbrowser     # could postpone this for quicker startup
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIImath as G2mth
@@ -52,16 +56,7 @@ sind = lambda x: np.sin(x*np.pi/180.)
 tand = lambda x: np.tan(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
 
-# globals we will use later
-__version__ = None # gets overridden in GSASII.py
-path2GSAS2 = os.path.dirname(os.path.realpath(__file__)) # save location of this file
-helpLocDict = {}
-htmlPanel = None
-htmlFrame = None
-helpMode = 'browser'
-#if sys.platform.lower().startswith('win'): helpMode = 'internal' # need a global control to set this
-    
-htmlFirstUse = True
+# Define a short name for convenience
 WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_FOURCALC, wxID_FOURSEARCH, wxID_FOURCLEAR, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, 
@@ -234,6 +229,9 @@ class G2LoggedButton(wx.Button):
         'create log event and call handler'
         log.MakeButtonLog(self.locationcode,self.label)
         self.handler(event)
+        
+################################################################################
+################################################################################
 class EnumSelector(wx.ComboBox):
     '''A customized :class:`wxpython.ComboBox` that selects items from a list
     of choices, but sets a dict (list) entry to the corresponding
@@ -1361,7 +1359,7 @@ class ShowLSParms(wx.Dialog):
             if v is None or v[-1] is None:
                 subSizer.Add((-1,-1))
             else:                
-                ch = HelpButton(panel,G2obj.fmtVarDescr(name))
+                ch = G2G.HelpButton(panel,G2obj.fmtVarDescr(name))
                 subSizer.Add(ch,0,wx.LEFT|wx.RIGHT|WACV|wx.ALIGN_CENTER,1)
             subSizer.Add(wx.StaticText(panel,wx.ID_ANY,str(name)))
             if name in varyList:
@@ -1399,440 +1397,6 @@ class ShowLSParms(wx.Dialog):
     def _onClose(self,event):
         self.EndModal(wx.ID_CANCEL)
  
-################################################################################
-class downdate(wx.Dialog):
-    '''Dialog to allow a user to select a version of GSAS-II to install
-    '''
-    def __init__(self,parent=None):
-        style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
-        wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Select Version', style=style)
-        pnl = wx.Panel(self)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        insver = GSASIIpath.svnGetRev(local=True)
-        curver = int(GSASIIpath.svnGetRev(local=False))
-        label = wx.StaticText(
-            pnl,  wx.ID_ANY,
-            'Select a specific GSAS-II version to install'
-            )
-        sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
-        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer1.Add(
-            wx.StaticText(pnl,  wx.ID_ANY,
-                          'Currently installed version: '+str(insver)),
-            0, wx.ALIGN_CENTRE|wx.ALL, 5)
-        sizer.Add(sizer1)
-        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer1.Add(
-            wx.StaticText(pnl,  wx.ID_ANY,
-                          'Select GSAS-II version to install: '),
-            0, wx.ALIGN_CENTRE|wx.ALL, 5)
-        self.spin = wx.SpinCtrl(pnl, wx.ID_ANY,size=(150,-1))
-        self.spin.SetRange(1, curver)
-        self.spin.SetValue(curver)
-        self.Bind(wx.EVT_SPINCTRL, self._onSpin, self.spin)
-        self.Bind(wx.EVT_KILL_FOCUS, self._onSpin, self.spin)
-        sizer1.Add(self.spin)
-        sizer.Add(sizer1)
-
-        line = wx.StaticLine(pnl,-1, size=(-1,3), style=wx.LI_HORIZONTAL)
-        sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
-
-        self.text = wx.StaticText(pnl,  wx.ID_ANY, "")
-        sizer.Add(self.text, 0, wx.ALIGN_LEFT|wx.EXPAND|wx.ALL, 5)
-
-        line = wx.StaticLine(pnl,-1, size=(-1,3), style=wx.LI_HORIZONTAL)
-        sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
-        sizer.Add(
-            wx.StaticText(
-                pnl,  wx.ID_ANY,
-                'If "Install" is pressed, your project will be saved;\n'
-                'GSAS-II will exit; The specified version will be loaded\n'
-                'and GSAS-II will restart. Press "Cancel" to abort.'),
-            0, wx.EXPAND|wx.ALL, 10)
-        btnsizer = wx.StdDialogButtonSizer()
-        btn = wx.Button(pnl, wx.ID_OK, "Install")
-        btn.SetDefault()
-        btnsizer.AddButton(btn)
-        btn = wx.Button(pnl, wx.ID_CANCEL)
-        btnsizer.AddButton(btn)
-        btnsizer.Realize()
-        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
-        pnl.SetSizer(sizer)
-        sizer.Fit(self)
-        self.topsizer=sizer
-        self.CenterOnParent()
-        self._onSpin(None)
-
-    def _onSpin(self,event):
-        'Called to load info about the selected version in the dialog'
-        ver = self.spin.GetValue()
-        d = GSASIIpath.svnGetLog(version=ver)
-        date = d.get('date','?').split('T')[0]
-        s = '(Version '+str(ver)+' created '+date
-        s += ' by '+d.get('author','?')+')'
-        msg = d.get('msg')
-        if msg: s += '\n\nComment: '+msg
-        self.text.SetLabel(s)
-        self.topsizer.Fit(self)
-
-    def getVersion(self):
-        'Get the version number in the dialog'
-        return self.spin.GetValue()
-
-################################################################################
-class MyHelp(wx.Menu):
-    '''
-    A class that creates the contents of a help menu.
-    The menu will start with two entries:
-
-    * 'Help on <helpType>': where helpType is a reference to an HTML page to
-      be opened
-    * About: opens an About dialog using OnHelpAbout. N.B. on the Mac this
-      gets moved to the App menu to be consistent with Apple style.
-
-    NOTE: for this to work properly with respect to system menus, the title
-    for the menu must be &Help, or it will not be processed properly:
-
-    ::
-
-       menu.Append(menu=MyHelp(self,...),title="&Help")
-
-    '''
-    def __init__(self,frame,helpType=None,helpLbl=None,morehelpitems=[],title=''):
-        wx.Menu.__init__(self,title)
-        self.HelpById = {}
-        self.frame = frame
-        self.Append(help='', id=wx.ID_ABOUT, kind=wx.ITEM_NORMAL,
-            text='&About GSAS-II')
-        frame.Bind(wx.EVT_MENU, self.OnHelpAbout, id=wx.ID_ABOUT)
-        if GSASIIpath.whichsvn():
-            helpobj = self.Append(
-                help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
-                text='&Check for updates')
-            frame.Bind(wx.EVT_MENU, self.OnCheckUpdates, helpobj)
-            helpobj = self.Append(
-                help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
-                text='&Regress to an old GSAS-II version')
-            frame.Bind(wx.EVT_MENU, self.OnSelectVersion, helpobj)
-        for lbl,indx in morehelpitems:
-            helpobj = self.Append(text=lbl,
-                id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
-            frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
-            self.HelpById[helpobj.GetId()] = indx
-        # add a help item only when helpType is specified
-        if helpType is not None:
-            self.AppendSeparator()
-            if helpLbl is None: helpLbl = helpType
-            helpobj = self.Append(text='Help on '+helpLbl,
-                                  id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
-            frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
-            self.HelpById[helpobj.GetId()] = helpType
-       
-    def OnHelpById(self,event):
-        '''Called when Help on... is pressed in a menu. Brings up
-        a web page for documentation.
-        '''
-        helpType = self.HelpById.get(event.GetId())
-        if helpType is None:
-            print 'Error: help lookup failed!',event.GetEventObject()
-            print 'id=',event.GetId()
-        else:
-            if helpType == 'Tutorials':
-                self.frame.Tutorials = True 
-            ShowHelp(helpType,self.frame)
-
-    def OnHelpAbout(self, event):
-        "Display an 'About GSAS-II' box"
-        global __version__
-        info = wx.AboutDialogInfo()
-        info.Name = 'GSAS-II'
-        ver = GSASIIpath.svnGetRev()
-        if ver: 
-            info.Version = 'Revision '+str(ver)+' (svn), version '+__version__
-        else:
-            info.Version = 'Revision '+str(GSASIIpath.GetVersionNumber())+' (.py files), version '+__version__
-        #info.Developers = ['Robert B. Von Dreele','Brian H. Toby']
-        info.Copyright = ('(c) ' + time.strftime('%Y') +
-''' Argonne National Laboratory
-This product includes software developed
-by the UChicago Argonne, LLC, as 
-Operator of Argonne National Laboratory.''')
-        info.Description = '''General Structure Analysis System-II (GSAS-II)
-Robert B. Von Dreele and Brian H. Toby
-
-Please cite as:
-B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
-
-        info.WebSite = ("https://subversion.xray.aps.anl.gov/trac/pyGSAS","GSAS-II home page")
-        wx.AboutBox(info)
-
-    def OnCheckUpdates(self,event):
-        '''Check if the GSAS-II repository has an update for the current source files
-        and perform that update if requested.
-        '''
-        if not GSASIIpath.whichsvn():
-            dlg = wx.MessageDialog(self.frame,
-                                   'No Subversion','Cannot update GSAS-II because subversion (svn) was not found.',
-                                   wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        wx.BeginBusyCursor()
-        local = GSASIIpath.svnGetRev()
-        if local is None: 
-            wx.EndBusyCursor()
-            dlg = wx.MessageDialog(self.frame,
-                                   'Unable to run subversion on the GSAS-II current directory. Is GSAS-II installed correctly?',
-                                   'Subversion error',
-                                   wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        print 'Installed GSAS-II version: '+local
-        repos = GSASIIpath.svnGetRev(local=False)
-        wx.EndBusyCursor()
-        if repos is None: 
-            dlg = wx.MessageDialog(self.frame,
-                                   'Unable to access the GSAS-II server. Is this computer on the internet?',
-                                   'Server unavailable',
-                                   wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        print 'GSAS-II version on server: '+repos
-        if local == repos:
-            dlg = wx.MessageDialog(self.frame,
-                                   'GSAS-II is up-to-date. Version '+local+' is already loaded.',
-                                   'GSAS-II Up-to-date',
-                                   wx.OK)
-            dlg.ShowModal()
-            dlg.Destroy()
-            return
-        mods = GSASIIpath.svnFindLocalChanges()
-        if mods:
-            dlg = wx.MessageDialog(self.frame,
-                                   'You have version '+local+
-                                   ' of GSAS-II installed, but the current version is '+repos+
-                                   '. However, '+str(len(mods))+
-                                   ' file(s) on your local computer have been modified.'
-                                   ' Updating will attempt to merge your local changes with '
-                                   'the latest GSAS-II version, but if '
-                                   'conflicts arise, local changes will be '
-                                   'discarded. It is also possible that the '
-                                   'local changes my prevent GSAS-II from running. '
-                                   'Press OK to start an update if this is acceptable:',
-                                   'Local GSAS-II Mods',
-                                   wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK:
-                dlg.Destroy()
-                return
-            else:
-                dlg.Destroy()
-        else:
-            dlg = wx.MessageDialog(self.frame,
-                                   'You have version '+local+
-                                   ' of GSAS-II installed, but the current version is '+repos+
-                                   '. Press OK to start an update:',
-                                   'GSAS-II Updates',
-                                   wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK:
-                dlg.Destroy()
-                return
-            dlg.Destroy()
-        print 'start updates'
-        dlg = wx.MessageDialog(self.frame,
-                               'Your project will now be saved, GSAS-II will exit and an update '
-                               'will be performed and GSAS-II will restart. Press Cancel to '
-                               'abort the update',
-                               'Start update?',
-                               wx.OK|wx.CANCEL)
-        if dlg.ShowModal() != wx.ID_OK:
-            dlg.Destroy()
-            return
-        dlg.Destroy()
-        self.frame.OnFileSave(event)
-        GSASIIpath.svnUpdateProcess(projectfile=self.frame.GSASprojectfile)
-        return
-
-    def OnSelectVersion(self,event):
-        '''Allow the user to select a specific version of GSAS-II
-        '''
-        if not GSASIIpath.whichsvn():
-            dlg = wx.MessageDialog(self,'No Subversion','Cannot update GSAS-II because subversion (svn) '+
-                                   'was not found.'
-                                   ,wx.OK)
-            dlg.ShowModal()
-            return
-        local = GSASIIpath.svnGetRev()
-        if local is None: 
-            dlg = wx.MessageDialog(self.frame,
-                                   'Unable to run subversion on the GSAS-II current directory. Is GSAS-II installed correctly?',
-                                   'Subversion error',
-                                   wx.OK)
-            dlg.ShowModal()
-            return
-        mods = GSASIIpath.svnFindLocalChanges()
-        if mods:
-            dlg = wx.MessageDialog(self.frame,
-                                   'You have version '+local+
-                                   ' of GSAS-II installed'
-                                   '. However, '+str(len(mods))+
-                                   ' file(s) on your local computer have been modified.'
-                                   ' Downdating will attempt to merge your local changes with '
-                                   'the selected GSAS-II version. '
-                                   'Downdating is not encouraged because '
-                                   'if merging is not possible, your local changes will be '
-                                   'discarded. It is also possible that the '
-                                   'local changes my prevent GSAS-II from running. '
-                                   'Press OK to continue anyway.',
-                                   'Local GSAS-II Mods',
-                                   wx.OK|wx.CANCEL)
-            if dlg.ShowModal() != wx.ID_OK:
-                dlg.Destroy()
-                return
-            dlg.Destroy()
-        dlg = downdate(parent=self.frame)
-        if dlg.ShowModal() == wx.ID_OK:
-            ver = dlg.getVersion()
-        else:
-            dlg.Destroy()
-            return
-        dlg.Destroy()
-        print('start regress to '+str(ver))
-        GSASIIpath.svnUpdateProcess(
-            projectfile=self.frame.GSASprojectfile,
-            version=str(ver)
-            )
-        self.frame.OnFileSave(event)
-        return
-
-################################################################################
-class AddHelp(wx.Menu):
-    '''For the Mac: creates an entry to the help menu of type 
-    'Help on <helpType>': where helpType is a reference to an HTML page to
-    be opened.
-
-    NOTE: when appending this menu (menu.Append) be sure to set the title to
-    '&Help' so that wx handles it correctly.
-    '''
-    def __init__(self,frame,helpType,helpLbl=None,title=''):
-        wx.Menu.__init__(self,title)
-        self.frame = frame
-        if helpLbl is None: helpLbl = helpType
-        # add a help item only when helpType is specified
-        helpobj = self.Append(text='Help on '+helpLbl,
-                              id=wx.ID_ANY, kind=wx.ITEM_NORMAL)
-        frame.Bind(wx.EVT_MENU, self.OnHelpById, helpobj)
-        self.HelpById = helpType
-       
-    def OnHelpById(self,event):
-        '''Called when Help on... is pressed in a menu. Brings up
-        a web page for documentation.
-        '''
-        ShowHelp(self.HelpById,self.frame)
-
-################################################################################
-class HelpButton(wx.Button):
-    '''Create a help button that displays help information.
-    The text is displayed in a modal message window.
-
-    TODO: it might be nice if it were non-modal: e.g. it stays around until
-    the parent is deleted or the user closes it, but this did not work for
-    me. 
-
-    :param parent: the panel which will be the parent of the button
-    :param str msg: the help text to be displayed
-    '''
-    def __init__(self,parent,msg):
-        if sys.platform == "darwin": 
-            wx.Button.__init__(self,parent,wx.ID_HELP)
-        else:
-            wx.Button.__init__(self,parent,wx.ID_ANY,'?',style=wx.BU_EXACTFIT)
-        self.Bind(wx.EVT_BUTTON,self._onPress)
-        self.msg=msg
-        self.parent = parent
-    def _onClose(self,event):
-        self.dlg.EndModal(wx.ID_CANCEL)
-    def _onPress(self,event):
-        'Respond to a button press by displaying the requested text'
-        #dlg = wx.MessageDialog(self.parent,self.msg,'Help info',wx.OK)
-        self.dlg = wx.Dialog(self.parent,wx.ID_ANY,'Help information', 
-                        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        #self.dlg.SetBackgroundColour(wx.WHITE)
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
-        txt = wx.StaticText(self.dlg,wx.ID_ANY,self.msg)
-        mainSizer.Add(txt,1,wx.ALL|wx.EXPAND,10)
-        txt.SetBackgroundColour(wx.WHITE)
-
-        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
-        btn = wx.Button(self.dlg, wx.ID_CLOSE) 
-        btn.Bind(wx.EVT_BUTTON,self._onClose)
-        btnsizer.Add(btn)
-        mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
-        self.dlg.SetSizer(mainSizer)
-        mainSizer.Fit(self.dlg)
-        self.dlg.ShowModal()
-        self.dlg.Destroy()
-################################################################################
-class MyHtmlPanel(wx.Panel):
-    '''Defines a panel to display HTML help information, as an alternative to
-    displaying help information in a web browser.
-    '''
-    def __init__(self, frame, id):
-        self.frame = frame
-        wx.Panel.__init__(self, frame, id)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        back = wx.Button(self, -1, "Back")
-        back.Bind(wx.EVT_BUTTON, self.OnBack)
-        self.htmlwin = G2HtmlWindow(self, id, size=(750,450))
-        sizer.Add(self.htmlwin, 1,wx.EXPAND)
-        sizer.Add(back, 0, wx.ALIGN_LEFT, 0)
-        self.SetSizer(sizer)
-        sizer.Fit(frame)        
-        self.Bind(wx.EVT_SIZE,self.OnHelpSize)
-    def OnHelpSize(self,event):         #does the job but weirdly!!
-        anchor = self.htmlwin.GetOpenedAnchor()
-        if anchor:            
-            self.htmlwin.ScrollToAnchor(anchor)
-            wx.CallAfter(self.htmlwin.ScrollToAnchor,anchor)
-            event.Skip()
-    def OnBack(self, event):
-        self.htmlwin.HistoryBack()
-    def LoadFile(self,file):
-        pos = file.rfind('#')
-        if pos != -1:
-            helpfile = file[:pos]
-            helpanchor = file[pos+1:]
-        else:
-            helpfile = file
-            helpanchor = None
-        self.htmlwin.LoadPage(helpfile)
-        if helpanchor is not None:
-            self.htmlwin.ScrollToAnchor(helpanchor)
-            xs,ys = self.htmlwin.GetViewStart()
-            self.htmlwin.Scroll(xs,ys-1)
-
-class G2HtmlWindow(wx.html.HtmlWindow):
-    '''Displays help information in a primitive HTML browser type window
-    '''
-    def __init__(self, parent, *args, **kwargs):
-        self.parent = parent
-        wx.html.HtmlWindow.__init__(self, parent, *args, **kwargs)
-    def LoadPage(self, *args, **kwargs):
-        wx.html.HtmlWindow.LoadPage(self, *args, **kwargs)
-        self.TitlePage()
-    def OnLinkClicked(self, *args, **kwargs):
-        wx.html.HtmlWindow.OnLinkClicked(self, *args, **kwargs)
-        xs,ys = self.GetViewStart()
-        self.Scroll(xs,ys-1)
-        self.TitlePage()
-    def HistoryBack(self, *args, **kwargs):
-        wx.html.HtmlWindow.HistoryBack(self, *args, **kwargs)
-        self.TitlePage()
-    def TitlePage(self):
-        self.parent.frame.SetTitle(self.GetOpenedPage() + ' -- ' + 
-            self.GetOpenedPageTitle())
-
 ################################################################################
 class DataFrame(wx.Frame):
     '''Create the data item window and all the entries in menus used in
@@ -1892,10 +1456,10 @@ class DataFrame(wx.Frame):
         if sys.platform == "darwin": # mac
             if not empty:
                 menu.Append(wx.Menu(title=''),title='|') # add another separator
-            menu.Append(AddHelp(self.G2frame,helpType=helpType, helpLbl=helpLbl),
+            menu.Append(G2G.AddHelp(self.G2frame,helpType=helpType, helpLbl=helpLbl),
                         title='&Help')
         else: # other
-            menu.Append(menu=MyHelp(self,helpType=helpType, helpLbl=helpLbl),
+            menu.Append(menu=G2G.MyHelp(self,helpType=helpType, helpLbl=helpLbl),
                         title='&Help')
 
     def _init_menus(self):
@@ -2927,39 +2491,6 @@ class Table(wg.PyGridTableBase):
                 print self.data
                 self.data[row][col] = value
         innerSetValue(row, col, value)
-        
-################################################################################
-#### Help
-################################################################################
-
-def ShowHelp(helpType,frame):
-    '''Called to bring up a web page for documentation.'''
-    global htmlFirstUse
-    # look up a definition for help info from dict
-    helplink = helpLocDict.get(helpType)
-    if helplink is None:
-        # no defined link to use, create a default based on key
-        helplink = 'gsasII.html#'+helpType.replace(' ','_')
-    helplink = os.path.join(path2GSAS2,'help',helplink)
-    if helpMode == 'internal':
-        try:
-            htmlPanel.LoadFile(helplink)
-            htmlFrame.Raise()
-        except:
-            htmlFrame = wx.Frame(frame, -1, size=(610, 510))
-            htmlFrame.Show(True)
-            htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
-            htmlPanel = MyHtmlPanel(htmlFrame,-1)
-            htmlPanel.LoadFile(helplink)
-    else:
-        pfx = "file://"
-        if sys.platform.lower().startswith('win'):
-            pfx = ''
-        if htmlFirstUse:
-            webbrowser.open_new(pfx+helplink)
-            htmlFirstUse = False
-        else:
-            webbrowser.open(pfx+helplink, new=0, autoraise=True)
 
 ################################################################################
 #####  Notebook

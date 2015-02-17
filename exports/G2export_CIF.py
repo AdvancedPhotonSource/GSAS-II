@@ -116,8 +116,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteCIFitem('_pd_calc_method', 'Rietveld Refinement')
             #WriteCIFitem('_refine_ls_shift/su_max',DAT1)
             #WriteCIFitem('_refine_ls_shift/su_mean',DAT2)
-            #WriteCIFitem('_refine_diff_density_max',rhomax)    #these need to be defined for each phase!
-            #WriteCIFitem('_refine_diff_density_min',rhomin)
             WriteCIFitem('_computing_structure_refinement','GSAS-II (Toby & Von Dreele, J. Appl. Cryst. 46, 544-549, 2013)')
             if self.ifHKLF:
                 controls = self.OverallParms['Controls']
@@ -877,6 +875,11 @@ class ExportCIF(G2IO.ExportBaseclass):
             WriteComposition(phasenam)
             if not self.quickmode and phasedict['General']['Type'] == 'nuclear':      # report distances and angles
                 WriteDistances(phasenam,SymOpList,offsetList,symOpList,G2oprList)
+            if 'Map' in phasedict['General'] and 'minmax' in phasedict['General']['Map']:
+                WriteCIFitem('\n# Difference density results')
+                MinMax = phasedict['General']['Map']['minmax']
+                WriteCIFitem('_refine_diff_density_max',G2mth.ValEsd(MinMax[1],-0.009))
+                WriteCIFitem('_refine_diff_density_min',G2mth.ValEsd(MinMax[0],-0.009))
                 
         def Yfmt(ndec,val):
             'Format intensity values'
@@ -1234,6 +1237,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 phfx = '%d:%d:'%(0,hId)
                 extType,extModel,extParms = self.Phases[phasenam]['Histograms'][histlbl]['Extinction']
                 if extModel != 'None':
+                    WriteCIFitem('# Extinction scaled by 1.e5')
                     WriteCIFitem('_refine_ls_extinction_method','Becker-Coppens %s %s'%(extModel,extType))
                     sig = -1.e-3
                     if extModel == 'Primary':
@@ -1891,14 +1895,15 @@ class ExportCIF(G2IO.ExportBaseclass):
                     writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
                     WritePhaseInfo(phasenam)
                     # preferred orientation
-                    SH = FormatSH(phasenam)
-                    MD = FormatHAPpo(phasenam)
-                    if SH and MD:
-                        WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + '\n' + MD)
-                    elif SH or MD:
-                        WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + MD)
-                    else:
-                        WriteCIFitem('_pd_proc_ls_pref_orient_corr', 'none')
+                    if self.ifPWDR:
+                        SH = FormatSH(phasenam)
+                        MD = FormatHAPpo(phasenam)
+                        if SH and MD:
+                            WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + '\n' + MD)
+                        elif SH or MD:
+                            WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + MD)
+                        else:
+                            WriteCIFitem('_pd_proc_ls_pref_orient_corr', 'none')
                     # report sample profile terms
                     PP = FormatPhaseProfile(phasenam)
                     if PP:

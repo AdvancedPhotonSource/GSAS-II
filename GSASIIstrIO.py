@@ -460,6 +460,7 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
 
     '''
                         
+    import distutils.file_util as dfu
     GPXback = GPXBackup(GPXfile,makeBack)
     print 'Read from file:',GPXback
     print 'Save to file  :',GPXfile
@@ -492,10 +493,16 @@ def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,mak
                     datus[1] = histogram[datus[0]]
         except KeyError:
             pass
-                                
-        cPickle.dump(data,outfile,1)
-    infile.close()
-    outfile.close()
+        try:                        
+            cPickle.dump(data,outfile,1)
+        except AttributeError:
+            print 'ERROR - bad data in least squares result'
+            infile.close()
+            outfile.close()
+            dfu.copy_file(GPXback,GPXfile)
+            print 'GPX file save failed - old version retained'
+            return
+            
     print 'GPX file save successful'
     
 def SetSeqResult(GPXfile,Histograms,SeqResult):
@@ -2100,6 +2107,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     Uniq = []
                     Phi = []
                     if Phases[phase]['General']['Type'] in ['modulated','magnetic']:
+                        ifSuper = True
                         HKLd = np.array(G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A))
                         HKLd = G2mth.sortArray(HKLd,4,reverse=True)
                         for h,k,l,m,d in HKLd:
@@ -2122,6 +2130,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                         Uniq.append(uniq)
                                         Phi.append(phi)
                     else:
+                        ifSuper = False
                         HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
                         HKLd = G2mth.sortArray(HKLd,3,reverse=True)
                         for h,k,l,d in HKLd:
@@ -2144,7 +2153,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                     # ... sig,gam,fotsq,fctsq, phase,icorr,alp,bet,wave, prfo,abs,ext
                                     Uniq.append(uniq)
                                     Phi.append(phi)
-                    Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{},'Type':inst['Type'][0]}
+                    Histogram['Reflection Lists'][phase] = {'RefList':np.array(refList),'FF':{},'Type':inst['Type'][0],'Super':ifSuper}
             elif 'HKLF' in histogram:
                 inst = Histogram['Instrument Parameters'][0]
                 hId = Histogram['hId']

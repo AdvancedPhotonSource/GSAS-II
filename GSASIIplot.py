@@ -1684,7 +1684,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     peaks = Phases[phase]
                 if not len(peaks):
                     continue
-                if len(peaks[0]) > 15:  #is there a way to plot ss lines differnt color than main ones?
+                if Phases[phase].get('Super',False):
                     peak = np.array([[peak[5],peak[6]] for peak in peaks])
                 else:
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])

@@ -4167,7 +4167,7 @@ def MovePatternTreeToGrid(G2frame,item):
         G2plt.PlotPatterns(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Limits':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-        datatype = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[2][:4]
+        datatype = G2frame.PatternTree.GetItemText(G2frame.PatternId)[:4]
         G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdateLimitsGrid(G2frame,data,datatype)

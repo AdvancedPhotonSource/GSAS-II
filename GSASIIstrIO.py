@@ -634,7 +634,8 @@ def cellVary(pfx,SGData):
         return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3']
     elif SGData['SGLaue'] in ['3R', '3mR']:
         G2mv.StoreEquivalence(pfx+'A0',(pfx+'A1',pfx+'A2',))
-        return [pfx+'A0',pfx+'A1',pfx+'A2']                       
+        G2mv.StoreEquivalence(pfx+'A3',(pfx+'A4',pfx+'A5',))
+        return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']                       
     elif SGData['SGLaue'] in ['m3m','m3']:
         G2mv.StoreEquivalence(pfx+'A0',(pfx+'A1',pfx+'A2',))
         return [pfx+'A0',pfx+'A1',pfx+'A2']
@@ -1008,7 +1009,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
         phaseDict.update({pfx+'A0':A[0],pfx+'A1':A[1],pfx+'A2':A[2],
             pfx+'A3':A[3],pfx+'A4':A[4],pfx+'A5':A[5],pfx+'Vol':G2lat.calc_V(A)})
         if cell[0]:
-            phaseVary += cellVary(pfx,SGData)
+            phaseVary += cellVary(pfx,SGData)       #also fills in symmetry required constraints 
         SSGtext = []    #no superstructure
         im = 0
         if General['Type'] in ['modulated','magnetic']:

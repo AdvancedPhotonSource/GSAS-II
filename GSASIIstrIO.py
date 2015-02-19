@@ -627,13 +627,17 @@ def cellVary(pfx,SGData):
     elif SGData['SGLaue'] in ['mmm',]:
         return [pfx+'A0',pfx+'A1',pfx+'A2']
     elif SGData['SGLaue'] in ['4/m','4/mmm']:
-        return [pfx+'A0',pfx+'A2']
+        G2mv.StoreEquivalence(pfx+'A0',(pfx+'A1',))
+        return [pfx+'A0',pfx+'A1',pfx+'A2']
     elif SGData['SGLaue'] in ['6/m','6/mmm','3m1', '31m', '3']:
-        return [pfx+'A0',pfx+'A2']
+        G2mv.StoreEquivalence(pfx+'A0',(pfx+'A1',pfx+'A3',))
+        return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3']
     elif SGData['SGLaue'] in ['3R', '3mR']:
-        return [pfx+'A0',pfx+'A3']                       
+        G2mv.StoreEquivalence(pfx+'A0',(pfx+'A1',pfx+'A2',))
+        return [pfx+'A0',pfx+'A1',pfx+'A2']                       
     elif SGData['SGLaue'] in ['m3m','m3']:
-        return [pfx+'A0',]
+        G2mv.StoreEquivalence(pfx+'A0',(pfx+'A1',pfx+'A2',))
+        return [pfx+'A0',pfx+'A1',pfx+'A2']
         
 def modVary(pfx,SSGData):
     vary = []

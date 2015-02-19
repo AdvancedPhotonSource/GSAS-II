@@ -3749,7 +3749,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
                                   'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
                                   'Extinction':['Lorentzian','None',
-                                                {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]},]}                        
+                                                {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},]}                        
             UpdateHKLFdata(histoName)
             data['Histograms'] = UseList
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)

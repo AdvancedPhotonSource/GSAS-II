@@ -2329,9 +2329,8 @@ class ExportBaseclass(object):
         try:
             pfx = str(phasedict['pId'])+'::'
             A,sigA = G2stIO.cellFill(pfx,phasedict['General']['SGData'],self.parmDict,self.sigDict)
-            cellSig = G2stIO.getCellEsd(pfx,
-                                        phasedict['General']['SGData'],A,
-                                        self.OverallParms['Covariance'])  # returns 7 vals, includes sigVol
+            cellSig = G2stIO.getCellEsd(pfx,phasedict['General']['SGData'],A,
+                self.OverallParms['Covariance'])  # returns 7 vals, includes sigVol
             cellList = G2lat.A2cell(A) + (G2lat.calc_V(A),)
             return cellList,cellSig
         except KeyError:

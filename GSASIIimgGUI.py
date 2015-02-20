@@ -1581,7 +1581,7 @@ def UpdateStressStrain(G2frame,data):
                     for i,item in enumerate(StaCtrls['d-zero']):
                         variables += item['Emat']
                         sig += item['Esig']
-                        varylist = ['%d%s%s'%(i,':',Name) for Name in varyNames]
+                        varylist = ['%d%s%s'%(i,';',Name) for Name in varyNames]
                         varyList += varylist
                         parmDict.update(dict(zip(varylist,item['Emat'])))
                         parmDict['%d:Dcalc'%(i)] = item['Dcalc']

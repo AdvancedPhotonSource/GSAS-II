@@ -635,12 +635,17 @@ def ImageCalibrate(self,data):
             hkl = G2lat.GenHBravais(dmin,bravais,A)
             HKL += hkl
     HKL = G2lat.sortHKLd(HKL,True,False)[skip:]
-    wave = data['wavelength']
 #set up 1st ring
     elcent,phi,radii = ellipse              #from fit of 1st ring
     dsp = HKL[0][3]
     print '1st ring: try %.4f'%(dsp)
-    tth = 2.0*asind(wave/(2.*dsp))
+    if varyDict['dist']:
+        wave = data['wavelength']
+        tth = 2.0*asind(wave/(2.*dsp))
+    else:   #varyDict['wave']!
+        dist = data['distance']
+        tth = npatan2d(radii[0],dist)
+        data['wavelength'] = wave =  2.0*dsp*sind(tth/2.0)
     Ring0 = makeRing(dsp,ellipse,3,cutoff,scalex,scaley,self.ImageZ)
     ttth = nptand(tth)
     stth = npsind(tth)

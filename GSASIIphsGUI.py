@@ -1443,7 +1443,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     rbAtmDict[id] += 'U'            
         # exclList will be 'x' or 'xu' if TLS used in RB
         Items = [G2gd.wxID_ATOMSEDITINSERT,G2gd.wxID_ATOMSEDITDELETE,G2gd.wxID_ATOMSREFINE, 
-            G2gd.wxID_ATOMSMODIFY,G2gd.wxID_ATOMSTRANSFORM,G2gd.wxID_ATOMVIEWINSERT,G2gd.wxID_ATOMMOVE]
+            G2gd.wxID_ATOMSMODIFY,G2gd.wxID_ATOMSTRANSFORM,G2gd.wxID_MAKEMOLECULE,
+            G2gd.wxID_ATOMVIEWINSERT,G2gd.wxID_ATOMMOVE]
         if atomData:
             for item in Items:    
                 G2frame.dataFrame.AtomsMenu.Enable(item,True)
@@ -1795,6 +1796,130 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 FillAtomsGrid(Atoms)
             else:
                 Atoms.ForceRefresh()
+                
+    def MakeMolecule(event):      
+        
+        def FindMolecule(ind):                    #uses numpy & masks - very fast even for proteins!
+
+            def getNeighbors(atom,radius):
+                neighList = []  
+                Dx = IARS[1]-np.array(atom[cx:cx+3])
+                dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of disorder "bonds" < 0.5A
+                sumR = IARS[2]+radius
+                return set(ma.nonzero(ma.masked_greater(dist-factor*sumR,0.))[0])                #get indices of bonded atoms
+        
+            import numpy.ma as ma
+            indices = (-1,0,1)
+            Units = np.array([[h,k,l] for h in indices for k in indices for l in indices],dtype='f')
+            cx,ct,cs,ci = generalData['AtomPtrs']
+            SGData = generalData['SGData']
+            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+            radii = DisAglCtls['BondRadii']
+            atomTypes = DisAglCtls['AtomTypes']
+            factor = DisAglCtls['Factors'][0]
+            unit = np.zeros(3)
+            try:
+                indH = atomTypes.index('H')
+                radii[indH] = 0.5
+            except:
+                pass            
+            nAtom = len(atomData)
+            Indx = range(nAtom)
+            UAtoms = []
+            SymOp = []
+            Radii = []
+            for atom in atomData:
+                UAtoms.append(np.array(atom[cx:cx+3]))
+                Radii.append(radii[atomTypes.index(atom[ct])])
+                SymOp += [[1,0,unit],]
+            UAtoms = np.array(UAtoms)
+            Radii = np.array(Radii)
+            for nOp,Op in enumerate(SGData['SGOps'][1:]):
+                UAtoms = np.concatenate((UAtoms,(np.inner(Op[0],UAtoms[:nAtom]).T+Op[1])))
+                Radii = np.concatenate((Radii,Radii[:nAtom]))
+                SymOp += [[nOp,0,unit] for symop in SymOp]
+                Indx += Indx[:nAtom]
+            for icen,cen in enumerate(SGData['SGCen'][1:]):
+                UAtoms = np.concatenate((UAtoms,(UAtoms+cen)))
+                Radii = np.concatenate((Radii,Radii))
+                SymOp += [[symop[0],icen+1,unit] for symop in SymOp]
+                Indx += Indx[:nAtom]
+            if SGData['SGInv']:
+                UAtoms = np.concatenate((UAtoms,-UAtoms))
+                Radii = np.concatenate((Radii,Radii))
+                SymOp += [[-symop[0],symop[1],unit] for symop in SymOp]
+                Indx += Indx
+            UAtoms %= 1.
+            mAtoms = len(UAtoms)
+            for unit in Units:
+                if np.any(unit):    #skip origin cell
+                    UAtoms = np.concatenate((UAtoms,UAtoms[:mAtoms]+unit))
+                    Radii = np.concatenate((Radii,Radii[:mAtoms]))
+                    SymOp += [[symop[0],symop[1],unit] for symop in SymOp[:mAtoms]]                        
+                    Indx += Indx[:mAtoms]
+            UAtoms = np.array(UAtoms)
+            Radii = np.array(Radii)
+            IARS = [Indx,UAtoms,Radii,SymOp]
+            newAtoms = [atomData[ind],]
+            atomData[ind] = None
+            radius = Radii[ind]
+            IndB = getNeighbors(newAtoms[-1],radius)
+            while True:
+                if not len(IndB):
+                    break
+                indb = IndB.pop()
+                if atomData[Indx[indb]] == None:
+                    continue
+                while True:
+                    try:
+                        jndb = Indb.index(indb)
+                        Indb.remove(jndb)
+                    except:
+                        break
+                newAtom = copy.copy(atomData[Indx[indb]])
+#                ops = SymOp[indb]
+#                sop = SGData['SGOps'][abs(ops[0])-1]
+#                xyz = np.array(newAtom[cx:cx+3])
+#                xyz = np.inner(sop[0],xyz)+sop[1]
+#                xyz += SGData['SGCen'][ops[1]]
+#                if ops[0] < 0:
+#                    xyz *= -1
+#                xyz %= 1.
+#                xyz += ops[2]
+                newAtom[cx:cx+3] = UAtoms[indb]
+                newAtoms.append(newAtom)
+                atomData[Indx[indb]] = None
+                IndB = set(list(IndB)+list(getNeighbors(newAtoms[-1],radius)))
+            for atom in atomData:
+                if atom != None:
+                    newAtoms.append(atom)
+            return newAtoms
+        
+        indx = Atoms.GetSelectedRows()
+        Oxyz = []
+        xyz = []
+        DisAglCtls = {}
+        if len(indx) == 1:
+            generalData = data['General']
+            if 'DisAglCtls' in generalData:
+                DisAglCtls = generalData['DisAglCtls']
+            dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData)
+            if dlg.ShowModal() == wx.ID_OK:
+                DisAglCtls = dlg.GetData()
+            else:
+                dlg.Destroy()
+                return
+            dlg.Destroy()
+            generalData['DisAglCtls'] = DisAglCtls
+            atomData = copy.deepcopy(data['Atoms'])
+            data['Atoms'] = FindMolecule(indx[0])
+            FillAtomsGrid(Atoms)
+            
+            
+#                G2frame.ErrorDialog('Distance/Angle calculation','try again but do "Reset" to fill in missing atom types')
+        else:
+            print "select one atom"
+            G2frame.ErrorDialog('Select one atom',"select one atom to begin molecule build then redo")
 
     def OnDistAnglePrt(event):
         'save distances and angles to a file'    
@@ -5863,6 +5988,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, MakeMolecule, id=G2gd.wxID_MAKEMOLECULE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2gd.wxID_ATOMSPDISAGL)

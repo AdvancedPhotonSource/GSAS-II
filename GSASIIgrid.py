@@ -70,9 +70,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
-    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,
+    wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_MAKEMOLECULE,
     wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL, wxID_ISODISP,
-] = [wx.NewId() for item in range(14)]
+] = [wx.NewId() for item in range(15)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -1986,6 +1986,8 @@ class DataFrame(wx.Frame):
             help='Select atoms to modify first')
         self.AtomEdit.Append(id=wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
             help='Select atoms to transform first')
+        self.AtomEdit.Append(id=wxID_MAKEMOLECULE, kind=wx.ITEM_NORMAL,text='Assemble molecule',
+            help='Assemble molecule from scatterd atom positions')
         self.AtomEdit.Append(id=wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',
             help='Reload atom drawing list')
         submenu = wx.Menu()

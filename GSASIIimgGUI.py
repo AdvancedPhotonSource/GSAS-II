@@ -527,15 +527,19 @@ def UpdateImageControls(G2frame,data,masks):
         
         def OnNewBinType(event):
             data['binType'] = binSel.GetValue()
+            wx.CallAfter(UpdateImageControls,G2frame,data,masks)
         
         def OnIOtth(event):
             Ltth = max(float(G2frame.InnerTth.GetValue()),0.001)
             Utth = float(G2frame.OuterTth.GetValue())
             if Ltth > Utth:
                 Ltth,Utth = Utth,Ltth
-            data['IOtth'] = [Ltth,Utth]
+            if 'q' in data['binType']:
+                data['IOtth'] = [2.*asind(Ltth*wave/(4.*math.pi)),2.*asind(Utth*wave/(4.*math.pi))]
+            else:
+                data['IOtth'] = [Ltth,Utth]
             G2frame.InnerTth.SetValue("%8.3f" % (Ltth))
-            G2frame.OuterTth.SetValue("%8.2f" % (Utth))
+            G2frame.OuterTth.SetValue("%8.3f" % (Utth))
             G2plt.PlotExposedImage(G2frame,event=event)
         
         def OnLRazim(event):
@@ -670,8 +674,14 @@ def UpdateImageControls(G2frame,data,masks):
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         binSel.Bind(wx.EVT_COMBOBOX, OnNewBinType)
         dataSizer.Add(binSel,0,WACV)
-        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Inner/Outer 2-theta'),0,WACV)            
-        IOtth = data['IOtth']
+        binType = '2-theta'
+        if 'q' in data['binType']:
+            binType = 'q'
+        dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Inner/Outer '+binType),0,WACV)            
+        IOtth = data['IOtth'][:]
+        if 'q' in data['binType']:
+            wave = data['wavelength']
+            IOtth = [4.*math.pi*sind(IOtth[0]/2.)/wave,4.*math.pi*sind(IOtth[1]/2.)/wave]
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         G2frame.InnerTth = wx.TextCtrl(parent=G2frame.dataDisplay,
             value=("%8.3f" % (IOtth[0])),style=wx.TE_PROCESS_ENTER)
@@ -1041,7 +1051,7 @@ def UpdateMasks(G2frame,data):
         Obj.SetToolTipString('Drag this mask on 2D Powder Image with mouse to change ')
 
     def Replot(*args,**kwargs):
-        G2plt.PlotExposedImage(G2frame)        
+        G2plt.PlotExposedImage(G2frame,newPlot=True)        
 
     def onDeleteMask(event):
         Obj = event.GetEventObject()
@@ -1130,7 +1140,9 @@ def UpdateMasks(G2frame,data):
                         continue
                     [key,val] = S[:-1].split(':')
                     if key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds']:
-                        if ignoreThreshold and key == 'Thresholds': continue
+                        if ignoreThreshold and key == 'Thresholds':
+                            S = File.readline() 
+                            continue
                         save[key] = eval(val)
                         if key == 'Thresholds':
                             save[key][0] = oldThreshold
@@ -1325,7 +1337,7 @@ def UpdateMasks(G2frame,data):
         mainSizer.Add(littleSizer,0,)
     if frame:
         lbl = wx.StaticText(parent=G2frame.dataDisplay,
-            label=' Frame mask (on plot RB vertex drag to move,\nLB vertex drag to insert)')
+            label=' Frame mask (on plot RB vertex drag to move,LB vertex drag to insert)')
         lbl.SetBackgroundColour(wx.Colour(200,200,210))
         mainSizer.Add(lbl,0,wx.EXPAND|wx.ALIGN_CENTER,0)
         littleSizer = wx.FlexGridSizer(0,2,0,5)

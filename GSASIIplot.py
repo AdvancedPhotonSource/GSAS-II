@@ -4951,7 +4951,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         if len(mapPeaks):
             XYZ = mapPeaks.T[1:4].T
             mapBonds = FindPeaksBonds(XYZ)
-            for ind,[mag,x,y,z,d] in enumerate(mapPeaks):
+            for ind,[mag,x,y,z] in enumerate(mapPeaks[:,:4]):
                 if ind in Ind and pageName == 'Map peaks':
                     RenderMapPeak(x,y,z,Gr,1.0)
                 else:

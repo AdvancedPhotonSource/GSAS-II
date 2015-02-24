@@ -2432,7 +2432,7 @@ class Table(wg.PyGridTableBase):
         try:
             if self.data[row][col] is None: return None
             return self.dataTypes[col]
-        except TypeError:
+        except (TypeError,IndexError):
             return None
 
     def GetValue(self, row, col):

@@ -1798,103 +1798,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Atoms.ForceRefresh()
                 
     def MakeMolecule(event):      
-        
-        def FindMolecule(ind):                    #uses numpy & masks - very fast even for proteins!
-
-            def getNeighbors(atom,radius):
-                neighList = []  
-                Dx = IARS[1]-np.array(atom[cx:cx+3])
-                dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of disorder "bonds" < 0.5A
-                sumR = IARS[2]+radius
-                return set(ma.nonzero(ma.masked_greater(dist-factor*sumR,0.))[0])                #get indices of bonded atoms
-        
-            import numpy.ma as ma
-            indices = (-1,0,1)
-            Units = np.array([[h,k,l] for h in indices for k in indices for l in indices],dtype='f')
-            cx,ct,cs,ci = generalData['AtomPtrs']
-            SGData = generalData['SGData']
-            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-            radii = DisAglCtls['BondRadii']
-            atomTypes = DisAglCtls['AtomTypes']
-            factor = DisAglCtls['Factors'][0]
-            unit = np.zeros(3)
-            try:
-                indH = atomTypes.index('H')
-                radii[indH] = 0.5
-            except:
-                pass            
-            nAtom = len(atomData)
-            Indx = range(nAtom)
-            UAtoms = []
-            SymOp = []
-            Radii = []
-            for atom in atomData:
-                UAtoms.append(np.array(atom[cx:cx+3]))
-                Radii.append(radii[atomTypes.index(atom[ct])])
-                SymOp += [[1,0,unit],]
-            UAtoms = np.array(UAtoms)
-            Radii = np.array(Radii)
-            for nOp,Op in enumerate(SGData['SGOps'][1:]):
-                UAtoms = np.concatenate((UAtoms,(np.inner(Op[0],UAtoms[:nAtom]).T+Op[1])))
-                Radii = np.concatenate((Radii,Radii[:nAtom]))
-                SymOp += [[nOp,0,unit] for symop in SymOp]
-                Indx += Indx[:nAtom]
-            for icen,cen in enumerate(SGData['SGCen'][1:]):
-                UAtoms = np.concatenate((UAtoms,(UAtoms+cen)))
-                Radii = np.concatenate((Radii,Radii))
-                SymOp += [[symop[0],icen+1,unit] for symop in SymOp]
-                Indx += Indx[:nAtom]
-            if SGData['SGInv']:
-                UAtoms = np.concatenate((UAtoms,-UAtoms))
-                Radii = np.concatenate((Radii,Radii))
-                SymOp += [[-symop[0],symop[1],unit] for symop in SymOp]
-                Indx += Indx
-            UAtoms %= 1.
-            mAtoms = len(UAtoms)
-            for unit in Units:
-                if np.any(unit):    #skip origin cell
-                    UAtoms = np.concatenate((UAtoms,UAtoms[:mAtoms]+unit))
-                    Radii = np.concatenate((Radii,Radii[:mAtoms]))
-                    SymOp += [[symop[0],symop[1],unit] for symop in SymOp[:mAtoms]]                        
-                    Indx += Indx[:mAtoms]
-            UAtoms = np.array(UAtoms)
-            Radii = np.array(Radii)
-            IARS = [Indx,UAtoms,Radii,SymOp]
-            newAtoms = [atomData[ind],]
-            atomData[ind] = None
-            radius = Radii[ind]
-            IndB = getNeighbors(newAtoms[-1],radius)
-            while True:
-                if not len(IndB):
-                    break
-                indb = IndB.pop()
-                if atomData[Indx[indb]] == None:
-                    continue
-                while True:
-                    try:
-                        jndb = Indb.index(indb)
-                        Indb.remove(jndb)
-                    except:
-                        break
-                newAtom = copy.copy(atomData[Indx[indb]])
-#                ops = SymOp[indb]
-#                sop = SGData['SGOps'][abs(ops[0])-1]
-#                xyz = np.array(newAtom[cx:cx+3])
-#                xyz = np.inner(sop[0],xyz)+sop[1]
-#                xyz += SGData['SGCen'][ops[1]]
-#                if ops[0] < 0:
-#                    xyz *= -1
-#                xyz %= 1.
-#                xyz += ops[2]
-                newAtom[cx:cx+3] = UAtoms[indb]
-                newAtoms.append(newAtom)
-                atomData[Indx[indb]] = None
-                IndB = set(list(IndB)+list(getNeighbors(newAtoms[-1],radius)))
-            for atom in atomData:
-                if atom != None:
-                    newAtoms.append(atom)
-            return newAtoms
-        
         indx = Atoms.GetSelectedRows()
         Oxyz = []
         xyz = []
@@ -1912,7 +1815,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dlg.Destroy()
             generalData['DisAglCtls'] = DisAglCtls
             atomData = copy.deepcopy(data['Atoms'])
-            data['Atoms'] = FindMolecule(indx[0])
+            data['Atoms'] = G2mth.FindMolecule(indx[0],generalData,atomData)
+            OnReloadDrawAtoms(event)            
             FillAtomsGrid(Atoms)
             
             
@@ -5556,9 +5460,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             elif r < 0:                 #a column pick
                 mapPeaks = data['Map Peaks']
                 c =  event.GetCol()
-                if colLabels[c] == 'mag':
+                if colLabels[c] == 'mag':   #big to small order
                     mapPeaks = G2mth.sortArray(mapPeaks,c,reverse=True)
-                elif colLabels[c] in ['x','y','z','dzero']:
+                elif colLabels[c] in ['x','y','z','dzero','dcent']:     #small to big
                     mapPeaks = G2mth.sortArray(mapPeaks,c)
                 else:
                     return
@@ -5566,15 +5470,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.CallAfter(FillMapPeaksGrid)
             G2plt.PlotStructure(G2frame,data)                    
             
-        G2frame.dataFrame.setSizePosLeft([450,300])
+        G2frame.dataFrame.setSizePosLeft([500,300])
         G2frame.dataFrame.SetStatusText('')
         if 'Map Peaks' in data:
-            G2frame.dataFrame.SetStatusText('Select mag or dzero columns to sort')
+            G2frame.dataFrame.SetStatusText('Double click any column heading to sort')
             mapPeaks = data['Map Peaks']                        
             rowLabels = []
             for i in range(len(mapPeaks)): rowLabels.append(str(i))
-            colLabels = ['mag','x','y','z','dzero']
-            Types = 5*[wg.GRID_VALUE_FLOAT+':10,4',]
+            colLabels = ['mag','x','y','z','dzero','dcent']
+            Types = 6*[wg.GRID_VALUE_FLOAT+':10,4',]
             G2frame.MapPeaksTable = G2gd.Table(mapPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             MapPeaks.SetTable(G2frame.MapPeaksTable, True)
             MapPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
@@ -5590,7 +5494,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             peakMax = np.max(mapPeaks.T[0])
             Ind = MapPeaks.GetSelectedRows()
             for ind in Ind:
-                mag,x,y,z,d = mapPeaks[ind]
+                mag,x,y,z = mapPeaks[ind][:4]
                 AtomAdd(x,y,z,'H',Name='M '+'%d'%(int(100*mag/peakMax)))
             G2plt.PlotStructure(G2frame,data)
     
@@ -5769,8 +5673,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     
     def OnSearchMaps(event):
                                     
-        peaks = []
-        mags = []
         print ' Begin fourier map search - can take some time'
         time0 = time.time()
         generalData = data['General']
@@ -5779,16 +5681,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if len(mapData['rho']):
             wx.BeginBusyCursor()
             try:
-                peaks,mags,dzeros = G2mth.SearchMap(generalData,drawingData)
+                peaks,mags,dzeros,dcents = G2mth.SearchMap(generalData,drawingData)
                 if 'N' in mapData['Type']:      #look for negatives in neutron maps
-                    npeaks,nmags,ndzeros = G2mth.SearchMap(generalData,drawingData,Neg=True)
+                    npeaks,nmags,ndzeros,ndcents = G2mth.SearchMap(generalData,drawingData,Neg=True)
                     peaks = np.concatenate((peaks,npeaks))
                     mags = np.concatenate((mags,nmags))
                     dzeros = np.concatenate((dzeros,ndzeros))
+                    dcents = np.concatenate((dcents,ndcents))
             finally:
                 wx.EndBusyCursor()
             if len(peaks):
-                mapPeaks = np.concatenate((mags,peaks,dzeros),axis=1)
+                mapPeaks = np.concatenate((mags,peaks,dzeros,dcents),axis=1)
                 data['Map Peaks'] = G2mth.sortArray(mapPeaks,0,reverse=True)            
             print ' Map search finished, time = %.2fs'%(time.time()-time0)
             print ' No.peaks found:',len(peaks)    

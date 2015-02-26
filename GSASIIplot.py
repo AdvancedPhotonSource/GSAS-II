@@ -950,7 +950,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     global DifLine
     global Ymax
     plottype = plotType
-    
+#patch
+    data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
+    if 'Offset' not in data[0] and plotType in ['PWDR','SASD']:     #plot offset data
+        data[0].update({'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,
+            'refDelt':0.01,'qPlot':False,'dPlot':False,'sqrtPlot':False})
+        G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
+#end patch
     def OnPlotKeyPress(event):
         try:        #one way to check if key stroke will work on plot
             Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
@@ -975,7 +981,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             else:
                 G2frame.logPlot = not G2frame.logPlot
                 if not G2frame.logPlot:
-                    G2frame.Offset[0] = 0
+                    Pattern[0]['Offset'][0] = 0
                 newPlot = True
         elif event.key == 's' and 'PWDR' in plottype:
             if G2frame.Contour:
@@ -989,55 +995,55 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     G2frame.ContourColor = 'Paired'
                 dlg.Destroy()
             elif G2frame.SinglePlot:
-                G2frame.SqrtPlot = not G2frame.SqrtPlot
-                if G2frame.SqrtPlot:
-                    G2frame.delOffset = .002
-                    G2frame.refOffset = -1.0
-                    G2frame.refDelt = .001
+                Pattern[0]['sqrtPlot'] = not Pattern[0]['sqrtPlot']
+                if Pattern[0]['sqrtPlot']:
+                    Pattern[0]['delOffset'] = .002
+                    Pattern[0]['refOffset'] = -1.0
+                    Pattern[0]['refDelt'] = .001
                 else:
-                    G2frame.delOffset = .02
-                    G2frame.refOffset = -1.0
-                    G2frame.refDelt = .01
+                    Pattern[0]['delOffset'] = .02
+                    Pattern[0]['refOffset'] = -1.0
+                    Pattern[0]['refDelt'] = .01
             newPlot = True
         elif event.key == 'u' and (G2frame.Contour or not G2frame.SinglePlot):
             if G2frame.Contour:
                 G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
-            elif G2frame.Offset[0] < 100.:
-                G2frame.Offset[0] += 1.
+            elif Pattern[0]['Offset'][0] < 100.:
+                Pattern[0]['Offset'][0] += 1.
         elif event.key == 'd' and (G2frame.Contour or not G2frame.SinglePlot):
             if G2frame.Contour:
                 G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
-            elif G2frame.Offset[0] > 0.:
-                G2frame.Offset[0] -= 1.
+            elif Pattern[0]['Offset'][0] > 0.:
+                Pattern[0]['Offset'][0] -= 1.
         elif event.key == 'l' and not G2frame.SinglePlot:
-            G2frame.Offset[1] -= 1.
+            Pattern[0]['Offset'][1] -= 1.
         elif event.key == 'r' and not G2frame.SinglePlot:
-            G2frame.Offset[1] += 1.
+            Pattern[0]['Offset'][1] += 1.
         elif event.key == 'o' and not G2frame.SinglePlot:
             G2frame.Cmax = 1.0
-            G2frame.Offset = [0,0]
+            Pattern[0]['Offset'] = [0,0]
         elif event.key == 'c' and 'PWDR' in plottype:
             newPlot = True
             if not G2frame.Contour:
                 G2frame.SinglePlot = False
-                G2frame.Offset = [0.,0.]
+                Pattern[0]['Offset'] = [0.,0.]
             else:
                 G2frame.SinglePlot = True                
             G2frame.Contour = not G2frame.Contour
         elif event.key == 'q': 
             if 'PWDR' in plottype:
                 newPlot = True
-                G2frame.qPlot = not G2frame.qPlot
-                G2frame.dPlot = False
+                Pattern[0]['qPlot'] = not Pattern[0]['qPlot']
+                Pattern[0]['dPlot'] = False
             elif 'SASD' in plottype:
                 newPlot = True
                 G2frame.sqPlot = not G2frame.sqPlot
         elif event.key == 't' and 'PWDR' in plottype:
-            G2frame.dPlot = not G2frame.dPlot
-            G2frame.qPlot = False
+            Pattern[0]['dPlot'] = not Pattern[0]['dPlot']
+            Pattern[0]['qPlot'] = False
             newPlot = True      
         elif event.key == 'm':
-            G2frame.SqrtPlot = False
+            Pattern[0]['sqrtPlot'] = False
             G2frame.SinglePlot = not G2frame.SinglePlot                
             newPlot = True
         elif event.key == '+':
@@ -1067,7 +1073,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
                 Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
-                if G2frame.qPlot and 'PWDR' in plottype:
+                if Pattern[0]['qPlot'] and 'PWDR' in plottype:
                     q = xpos
                     dsp = 2.*np.pi/q
                     try:
@@ -1077,7 +1083,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 elif 'SASD' in plottype:
                     q = xpos
                     dsp = 2.*np.pi/q
-                elif G2frame.dPlot:
+                elif Pattern[0]['dPlot']:
                     dsp = xpos
                     q = 2.*np.pi/dsp
                     xpos = G2lat.Dsp2pos(Parms,xpos)
@@ -1096,14 +1102,14 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 else:
                     if 'C' in Parms['Type'][0]:
                         if 'PWDR' in plottype:
-                            if G2frame.SqrtPlot:
+                            if Pattern[0]['sqrtPlot']:
                                 G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                             else:
                                 G2frame.G2plotNB.status.SetStatusText('2-theta =%9.3f d =%9.5f q = %9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
                         elif 'SASD' in plottype:
                             G2frame.G2plotNB.status.SetStatusText('q =%12.5g Intensity =%12.5g d =%9.1f'%(q,ypos,dsp),1)
                     else:
-                        if G2frame.SqrtPlot:
+                        if Pattern[0]['sqrtPlot']:
                             G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f sqrt(Intensity) =%9.2f'%(xpos,dsp,q,ypos),1)
                         else:
                             G2frame.G2plotNB.status.SetStatusText('TOF =%9.3f d =%9.5f q =%9.5f Intensity =%9.2f'%(xpos,dsp,q,ypos),1)
@@ -1154,9 +1160,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):                                    #picked a data point
                 data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
-                if G2frame.qPlot:                              #qplot - convert back to 2-theta
+                if Pattern[0]['qPlot']:                              #qplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
-                elif G2frame.dPlot:                            #dplot - convert back to 2-theta
+                elif Pattern[0]['dPlot']:                            #dplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms,xy[0])
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
                 data['peaks'].append(XY)
@@ -1169,9 +1175,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
                 data = G2frame.PatternTree.GetItemPyData(LimitId)
-                if G2frame.qPlot:                              #qplot - convert back to 2-theta
+                if Pattern[0]['qPlot']:                              #qplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
-                elif G2frame.dPlot:                            #dplot - convert back to 2-theta
+                elif Pattern[0]['dPlot']:                            #dplot - convert back to 2-theta
                     xy[0] = G2lat.Dsp2pos(Parms,xy[0])
                 if G2frame.ifGetExclude:
                     excl = [0,0]
@@ -1208,15 +1214,17 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         
     def OnRelease(event):
         if G2frame.itemPicked is None: return
+        PickId = G2frame.PickId
         if str(DifLine[0]) == str(G2frame.itemPicked):
+            data = G2frame.PatternTree.GetItemPyData(PickId)
             ypos = event.ydata
-            G2frame.delOffset = -ypos/Ymax
+            data[0]['delOffset'] = -ypos/Ymax
             G2frame.itemPicked = None
+            G2frame.PatternTree.SetItemPyData(PickId,data)
             PlotPatterns(G2frame,plotType=plottype)
             return
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         xpos = event.xdata
-        PickId = G2frame.PickId
         if G2frame.PatternTree.GetItemText(PickId) in ['Peak List','Limits'] and xpos:
             lines = []
             for line in G2frame.Lines: 
@@ -1230,9 +1238,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 data = G2frame.PatternTree.GetItemPyData(LimitId)
                 id = lineNo/2+1
                 id2 = lineNo%2
-                if G2frame.qPlot and 'PWDR' in plottype:
+                if Pattern[0]['qPlot'] and 'PWDR' in plottype:
                     data[id][id2] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
-                elif G2frame.dPlot and 'PWDR' in plottype:
+                elif Pattern[0]['dPlot'] and 'PWDR' in plottype:
                     data[id][id2] = G2lat.Dsp2pos(Parms,xpos)
                 else:
                     data[id][id2] = xpos
@@ -1249,9 +1257,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if event.button == 3:
                     del data['peaks'][lineNo-2]
                 else:
-                    if G2frame.qPlot:
+                    if Pattern[0]['qPlot']:
                         data['peaks'][lineNo-2][0] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
-                    elif G2frame.dPlot:
+                    elif Pattern[0]['dPlot']:
                         data['peaks'][lineNo-2][0] = G2lat.Dsp2pos(Parms,xpos)
                     else:
                         data['peaks'][lineNo-2][0] = xpos
@@ -1278,11 +1286,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             pick = str(G2frame.itemPicked).split('(')[1].strip(')')
             if 'line' not in pick:       #avoid data points, etc.
+                data = G2frame.PatternTree.GetItemPyData(PickId)
                 num = Phases.keys().index(pick)
                 if num:
-                    G2frame.refDelt = -(event.ydata-G2frame.refOffset)/(num*Ymax)
+                    data[0]['refDelt'] = -(event.ydata-Pattern[0]['refOffset'])/(num*Ymax)
                 else:       #1st row of refl ticks
-                    G2frame.refOffset = event.ydata
+                    data[0]['refOffset'] = event.ydata
+                G2frame.PatternTree.SetItemPyData(PickId,data)
         PlotPatterns(G2frame,plotType=plottype)
         G2frame.itemPicked = None    
 
@@ -1413,13 +1423,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if Ymax is None: Ymax = max(xye[1])
         Ymax = max(Ymax,max(xye[1]))
     if Ymax is None: return # nothing to plot
-    offset = G2frame.Offset[0]*Ymax/100.0
+    offset = Pattern[0]['Offset'][0]*Ymax/100.0
     if G2frame.logPlot:
         Title = 'log('+Title+')'
     Plot.set_title(Title)
-    if G2frame.qPlot or 'SASD' in plottype and not G2frame.Contour:
+    if Pattern[0]['qPlot'] or 'SASD' in plottype and not G2frame.Contour:
         Plot.set_xlabel(r'$Q, \AA^{-1}$',fontsize=16)
-    elif G2frame.dPlot and 'PWDR' in plottype and not G2frame.Contour:
+    elif Pattern[0]['dPlot'] and 'PWDR' in plottype and not G2frame.Contour:
         Plot.set_xlabel(r'$d, \AA$',fontsize=16)
     else:
         if 'C' in ParmList[0]['Type'][0]:        
@@ -1437,7 +1447,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     else:
         if 'C' in ParmList[0]['Type'][0]:
             if 'PWDR' in plottype:
-                if G2frame.SqrtPlot:
+                if Pattern[0]['sqrtPlot']:
                     Plot.set_ylabel(r'$\sqrt{Intensity}$',fontsize=16)
                 else:
                     Plot.set_ylabel(r'$Intensity$',fontsize=16)
@@ -1447,7 +1457,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 else:
                     Plot.set_ylabel(r'$Intensity, cm^{-1}$',fontsize=16)
         else:
-            if G2frame.SqrtPlot:
+            if Pattern[0]['sqrtPlot']:
                 Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
             else:
                 Plot.set_ylabel(r'$Normalized\ intensity$',fontsize=16)
@@ -1474,10 +1484,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             excls = limits[2:]
             for excl in excls:
                 xye[0] = ma.masked_inside(xye[0],excl[0],excl[1])
-        if G2frame.qPlot and 'PWDR' in plottype:
+        if Pattern[0]['qPlot'] and 'PWDR' in plottype:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
             X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye[0])
-        elif G2frame.dPlot and 'PWDR' in plottype:
+        elif Pattern[0]['dPlot'] and 'PWDR' in plottype:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
             X = G2lat.Pos2dsp(Parms,xye[0])
         else:
@@ -1485,7 +1495,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if not lenX:
             lenX = len(X)
         if 'PWDR' in plottype:
-            if G2frame.SqrtPlot:
+            if Pattern[0]['sqrtPlot']:
                 olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                 Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))
                 np.seterr(invalid=olderr['invalid'])
@@ -1494,15 +1504,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         elif 'SASD' in plottype:
             B = xye[5]
             if G2frame.sqPlot:
-                Y = xye[1]*Sample['Scale'][0]*(1.05)**(G2frame.Offset[0]*N)*X**4
+                Y = xye[1]*Sample['Scale'][0]*(1.05)**(Pattern[0]['Offset'][0]*N)*X**4
             else:
-                Y = xye[1]*Sample['Scale'][0]*(1.05)**(G2frame.Offset[0]*N)
+                Y = xye[1]*Sample['Scale'][0]*(1.05)**(Pattern[0]['Offset'][0]*N)
         if LimitId and ifpicked:
             limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))
             lims = limits[1]
-            if G2frame.qPlot and 'PWDR' in plottype:
+            if Pattern[0]['qPlot'] and 'PWDR' in plottype:
                 lims = 2.*np.pi/G2lat.Pos2dsp(Parms,lims)
-            elif G2frame.dPlot and 'PWDR' in plottype:
+            elif Pattern[0]['dPlot'] and 'PWDR' in plottype:
                 lims = G2lat.Pos2dsp(Parms,lims)
             Lines.append(Plot.axvline(lims[0],color='g',dashes=(5,5),picker=3.))    
             Lines.append(Plot.axvline(lims[1],color='r',dashes=(5,5),picker=3.))
@@ -1522,27 +1532,27 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
             if 'SASD' in plottype and G2frame.logPlot:
-                X *= (1.01)**(G2frame.Offset[1]*N)
+                X *= (1.01)**(Pattern[0]['Offset'][1]*N)
             else:
-                X += G2frame.Offset[1]*.005*N
+                X += Pattern[0]['Offset'][1]*.005*N
             Xum = ma.getdata(X)
             DifLine = ['']
             if ifpicked:
-                if G2frame.SqrtPlot:
+                if Pattern[0]['sqrtPlot']:
                     olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                     Z = np.where(xye[3]>=0.,np.sqrt(xye[3]),-np.sqrt(-xye[3]))
                     np.seterr(invalid=olderr['invalid'])
                 else:
                     Z = xye[3]+offset*N
                 if 'PWDR' in plottype:
-                    if G2frame.SqrtPlot:
+                    if Pattern[0]['sqrtPlot']:
                         olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
                         W = np.where(xye[4]>=0.,np.sqrt(xye[4]),-np.sqrt(-xye[4]))
                         np.seterr(invalid=olderr['invalid'])
-                        D = np.where(xye[5],(Y-Z),0.)-Ymax*G2frame.delOffset
+                        D = np.where(xye[5],(Y-Z),0.)-Ymax*Pattern[0]['delOffset']
                     else:
                         W = xye[4]+offset*N
-                        D = xye[5]-Ymax*G2frame.delOffset  #powder background
+                        D = xye[5]-Ymax*Pattern[0]['delOffset']  #powder background
                 elif 'SASD' in plottype:
                     if G2frame.sqPlot:
                         W = xye[4]*X**4
@@ -1594,7 +1604,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     DY = xye[1]*np.sqrt(xye[2])
                     Ymax = max(DY)
                     DZ = xye[3]*np.sqrt(xye[2])
-                    DS = xye[5]*np.sqrt(xye[2])-Ymax*G2frame.delOffset
+                    DS = xye[5]*np.sqrt(xye[2])-Ymax*Pattern[0]['delOffset']
                     ObsLine = Plot.plot(X,DY,colors[N%6]+'+',picker=3.,clip_on=False)         #Io/sig(Io)
                     Plot.plot(X,DZ,colors[(N+1)%6],picker=False)                    #Ic/sig(Io)
                     DifLine = Plot.plot(X,DS,colors[(N+3)%6],picker=1.)                    #(Io-Ic)/sig(Io)
@@ -1624,9 +1634,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Page.canvas.SetToolTipString(tip)
                     data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
                     for item in data['peaks']:
-                        if G2frame.qPlot:
+                        if Pattern[0]['qPlot']:
                             Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,item[0]),color=colors[N%6],picker=2.))
-                        elif G2frame.dPlot:
+                        elif Pattern[0]['dPlot']:
                             Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,item[0]),color=colors[N%6],picker=2.))
                         else:
                             Lines.append(Plot.axvline(item[0],color=colors[N%6],picker=2.))
@@ -1657,9 +1667,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             if not len(peaks): return # are there any peaks?
             for peak in peaks[0]:
                 if peak[2]:
-                    if G2frame.qPlot:
+                    if Pattern[0]['qPlot']:
                         Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,peak[0]),color='b')
-                    if G2frame.dPlot:
+                    if Pattern[0]['dPlot']:
                         Plot.axvline(G2lat.Pos2dsp(Parms,peak[0]),color='b')
                     else:
                         Plot.axvline(peak[0],color='b')
@@ -1667,9 +1677,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 clr = 'r'
                 if len(hkl) > 6 and hkl[3]:
                     clr = 'g'
-                if G2frame.qPlot:
+                if Pattern[0]['qPlot']:
                     Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(5,5))
-                if G2frame.dPlot:
+                if Pattern[0]['dPlot']:
                     Plot.axvline(G2lat.Pos2dsp(Parms,hkl[-2]),color=clr,dashes=(5,5))
                 else:
                     Plot.axvline(hkl[-2],color=clr,dashes=(5,5))
@@ -1688,10 +1698,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     peak = np.array([[peak[5],peak[6]] for peak in peaks])
                 else:
                     peak = np.array([[peak[4],peak[5]] for peak in peaks])
-                pos = G2frame.refOffset-pId*Ymax*G2frame.refDelt*np.ones_like(peak)
-                if G2frame.qPlot:
+                pos = Pattern[0]['refOffset']-pId*Ymax*Pattern[0]['refDelt']*np.ones_like(peak)
+                if Pattern[0]['qPlot']:
                     Plot.plot(2*np.pi/peak.T[0],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
-                elif G2frame.dPlot:
+                elif Pattern[0]['dPlot']:
                     Plot.plot(peak.T[0],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
                 else:
                     Plot.plot(peak.T[1],pos,refColors[pId%6]+'|',mew=1,ms=8,picker=3.,label=phase)
@@ -1798,25 +1808,25 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         if event.key == 'u':
             if G2frame.Contour:
                 G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
-            elif G2frame.Offset[0] < 100.:
-                G2frame.Offset[0] += 1.
+            elif Pattern[0]['Offset'][0] < 100.:
+                Pattern[0]['Offset'][0] += 1.
         elif event.key == 'd':
             if G2frame.Contour:
                 G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
-            elif G2frame.Offset[0] > 0.:
-                G2frame.Offset[0] -= 1.
+            elif Pattern[0]['Offset'][0] > 0.:
+                Pattern[0]['Offset'][0] -= 1.
         elif event.key == 'l':
-            G2frame.Offset[1] -= 1.
+            Pattern[0]['Offset'][1] -= 1.
         elif event.key == 'r':
-            G2frame.Offset[1] += 1.
+            Pattern[0]['Offset'][1] += 1.
         elif event.key == 'o':
-            G2frame.Offset = [0,0]
+            Pattern[0]['Offset'] = [0,0]
         elif event.key == 'c':
             newPlot = True
             G2frame.Contour = not G2frame.Contour
             if not G2frame.Contour:
                 G2frame.SinglePlot = False
-                G2frame.Offset = [0.,0.]
+                Pattern[0]['Offset'] = [0.,0.]
         elif event.key == 's':
             if G2frame.Contour:
                 choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
@@ -1935,7 +1945,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         except IndexError:
             return
         Ymax = max(Ymax,max(xye[1]))
-    offset = G2frame.Offset[0]*Ymax/100.0
+    offset = Pattern[0]['Offset'][0]*Ymax/100.0
     if G2frame.Contour:
         ContourZ = []
         ContourY = []
@@ -1956,7 +1966,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
-            X = xye[0]+G2frame.Offset[1]*.005*N
+            X = xye[0]+Pattern[0]['Offset'][1]*.005*N
             if ifpicked:
                 Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                 Page.canvas.SetToolTipString('')

@@ -2086,19 +2086,18 @@ class GSASII(wx.Frame):
         self.exportDir = None  # the last directory used for exports, if any.
         self.undofile = ''
         self.TreeItemDelete = False
-        self.Offset = [0.0,0.0]
-        self.delOffset = .02
-        self.refOffset = -1.0
-        self.refDelt = .01
+#        self.Offset = [0.0,0.0]
+#        self.delOffset = .02
+#        self.refOffset = -1.0
+#        self.refDelt = .01
         self.Weight = False
-        self.IparmName = ''  # to be removed when SelectPowderData & GetInstrumentFile is
         self.IfPlot = False
         self.DDShowAll = False
         self.PatternId = 0
         self.PickId = 0
         self.PeakTable = []
         self.LimitsTable = []
-        self.ifX20 = True   #use M20 /= (1+X20)
+        self.ifX20 = True   #use M20 /= (1+X20) in powder indexing, etc.
         self.HKL = []
         self.Lines = []
         self.itemPicked = None
@@ -2109,10 +2108,7 @@ class GSASII(wx.Frame):
         self.RamaColor = 'Blues'
         self.Projection = 'equal area'
         self.logPlot = False
-        self.qPlot = False
-        self.dPlot = False
         self.sqPlot = False
-        self.SqrtPlot = False
         self.ErrorBars = False
         self.Contour = False
         self.Legend = False
@@ -2576,6 +2572,8 @@ class GSASII(wx.Frame):
                             'wtFactor':1.0,
                             'Dummy':False,
                             'ranId':ran.randint(0,sys.maxint),
+                            'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,
+                            'qPlot':False,'dPlot':False,'sqrtPlot':False
                             }
                         self.PatternTree.SetItemPyData(Id,[valuesdict,[np.array(Xsum),np.array(Ysum),np.array(Wsum),
                             np.array(YCsum),np.array(YBsum),np.array(YDsum)]])

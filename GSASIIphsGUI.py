@@ -1815,7 +1815,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dlg.Destroy()
             generalData['DisAglCtls'] = DisAglCtls
             atomData = copy.deepcopy(data['Atoms'])
-            data['Atoms'] = G2mth.FindMolecule(indx[0],generalData,atomData)
+            result = G2mth.FindMolecule(indx[0],generalData,atomData)
+            if 'str' in str(type(result)):
+                G2frame.ErrorDialog('Assemble molecule',result)
+            else:   
+                data['Atoms'] = result
             OnReloadDrawAtoms(event)            
             FillAtomsGrid(Atoms)
             

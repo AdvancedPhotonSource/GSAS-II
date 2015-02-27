@@ -55,8 +55,8 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
         self.Write( 'INS  1I ITYP    0    0.0000  180.0000         1                                 ')
         self.Write(('INS  1DETAZM%10.3f                                                          ')%(Inst['Azimuth'][0]))
         self.Write( 'INS  1PRCF1     3    8   0.00100                                                ')
-        self.Write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   ')%(Inst['U'][1],Inst['V'][1],Inst['W'][1],0.0))
-        self.Write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   ')%(Inst['X'][1],Inst['Y'][1],Inst['SH/L'][1]/2.,Inst['SH/L'][1]/2.))
+        self.Write(('INS  1PRCF11%15.6e%15.6e%15.6e%15.6e   ')%(Inst['U'][1],Inst['V'][1],Inst['W'][1],0.0))
+        self.Write(('INS  1PRCF12%15.6e%15.6e%15.6e%15.6e   ')%(Inst['X'][1],Inst['Y'][1],Inst['SH/L'][1]/2.,Inst['SH/L'][1]/2.))
         self.CloseFile()
         print('Parameters from '+str(hist)+' written to file '+str(prmname))
         return prmname

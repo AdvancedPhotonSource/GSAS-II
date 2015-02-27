@@ -206,16 +206,52 @@ def SetCopyNames(histName,dataType,addNames=[]):
     if len(addNames):
         copyNames += addNames
     return histType,copyNames
-
-def CopySelectedHistItems(G2frame):
-    '''Global copy: Copy items from current histogram to others.
-    This is called from the menubar and is available only when the top histogram tree entry
-    is selected.
+    
+def CopyPlotCtrls(G2frame):
+    '''Global copy: Copy plot controls from current histogram to others.
     '''
     hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
     histList = GetHistsLikeSelected(G2frame)
     if not histList:
-        G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+        G2frame.ErrorDialog('No match','No other histograms match '+hst,G2frame.dataFrame)
+        return
+    sourceData = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
+    
+    if 'Offset' not in sourceData[0]:    #patch for old data
+        sourceData[0].update({'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,
+            'refDelt':0.01,'qPlot':False,'dPlot':False,'sqrtPlot':False})
+        G2frame.PatternTree.SetItemPyData(G2frame.PatternId,sourceData)
+        
+    dlg = G2gd.G2MultiChoiceDialog(
+        G2frame.dataFrame, 
+        'Copy plot controls from\n'+str(hst[5:])+' to...',
+        'Copy plot controls', histList)
+    results = []
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            results = dlg.GetSelections()
+    finally:
+        dlg.Destroy()
+    copyList = []
+    for i in results: 
+        copyList.append(histList[i])
+
+    keys = ['Offset','delOffset','refOffset','refDelt','qPlot','dPlot','sqrtPlot']
+    source = dict(zip(keys,[sourceData[0][item] for item in keys]))
+    for hist in copyList:
+        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
+        data = G2frame.PatternTree.GetItemPyData(Id)
+        data[0].update(source)
+        G2frame.PatternTree.SetItemPyData(Id,data)
+    print 'Copy of plot controls successful'
+
+def CopySelectedHistItems(G2frame):
+    '''Global copy: Copy items from current histogram to others.
+    '''
+    hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+    histList = GetHistsLikeSelected(G2frame)
+    if not histList:
+        G2frame.ErrorDialog('No match','No other histograms match '+hst,G2frame.dataFrame)
         return
     choices = ['Limits','Background','Instrument Parameters','Sample Parameters']
     dlg = G2gd.G2MultiChoiceDialog(

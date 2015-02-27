@@ -65,8 +65,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_SINGLEMCSA, wxID_4DMAPCOMPUTE,wxID_4DCHARGEFLIP,
 ] = [wx.NewId() for item in range(17)]
 
-[ wxID_PWDRADD, wxID_HKLFADD, wxID_PWDANALYSIS, wxID_PWDCOPY, wxID_DATADELETE, wxID_SHOWALL,
-] = [wx.NewId() for item in range(6)]
+[ wxID_PWDRADD, wxID_HKLFADD, wxID_PWDANALYSIS, wxID_PWDCOPY, wxID_PLOTCTRLCOPY, 
+    wxID_DATADELETE, wxID_SHOWALL,
+] = [wx.NewId() for item in range(7)]
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
@@ -1620,6 +1621,9 @@ class DataFrame(wx.Frame):
             help='Error analysis on powder pattern')
         self.ErrorAnal.Append(id=wxID_PWDCOPY,kind=wx.ITEM_NORMAL,text='Copy params',
             help='Copy of PWDR parameters')
+        self.ErrorAnal.Append(id=wxID_PLOTCTRLCOPY,kind=wx.ITEM_NORMAL,text='Copy plot controls',
+            help='Copy of PWDR plot controls')
+            
         self.PostfillDataMenu()
             
         # HKLF 
@@ -3823,6 +3827,12 @@ def UpdatePWHKPlot(G2frame,kind,item):
             val = data[0]['wtFactor']
         data[0]['wtFactor'] = val
         wtval.SetValue('%.3f'%(val))
+        
+    def onCopyPlotCtrls(event):
+        '''Respond to menu item to copy multiple sections from a histogram.
+        Need this here to pass on the G2frame object. 
+        '''
+        G2pdG.CopyPlotCtrls(G2frame)
 
     def onCopySelectedItems(event):
         '''Respond to menu item to copy multiple sections from a histogram.
@@ -3849,6 +3859,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         SetDataMenuBar(G2frame,G2frame.dataFrame.PWDRMenu)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=wxID_PWDANALYSIS)
         G2frame.dataFrame.Bind(wx.EVT_MENU, onCopySelectedItems, id=wxID_PWDCOPY)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, onCopyPlotCtrls, id=wxID_PLOTCTRLCOPY)
     elif kind in ['HKLF',]:
         SetDataMenuBar(G2frame,G2frame.dataFrame.HKLFMenu)
 #        G2frame.dataFrame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=wxID_PWDANALYSIS)

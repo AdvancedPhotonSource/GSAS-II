@@ -287,6 +287,9 @@ def FindMolecule(ind,generalData,atomData):                    #uses numpy & mas
         newAtoms.append(newAtom)
         atomData[Indx[indb]] = None
         IndB = set(list(IndB)+list(getNeighbors(newAtoms[-1],radius)))
+        if len(IndB) > nAtom:
+            print 'Assemble molecule cannot be used on extended structures'
+            return atomData
     for atom in atomData:
         if atom != None:
             newAtoms.append(atom)

@@ -524,20 +524,24 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
     nBak = 0
     cw = np.diff(xdata)
     cw = np.append(cw,cw[-1])
+    sumBk = [0.,0.,0]
     while True:
         key = pfx+'Back;'+str(nBak)
         if key in parmDict:
             nBak += 1
         else:
             break
+#empirical functions
     if bakType in ['chebyschev','cosine']:
         dt = xdata[-1]-xdata[0]    
         for iBak in range(nBak):
             key = pfx+'Back;'+str(iBak)
             if bakType == 'chebyschev':
-                yb += parmDict[key]*(2.*(xdata-xdata[0])/dt-1.)**iBak
+                ybi = parmDict[key]*(2.*(xdata-xdata[0])/dt-1.)**iBak
             elif bakType == 'cosine':
-                yb += parmDict[key]*npcosd(xdata*iBak)
+                ybi = parmDict[key]*npcosd(xdata*iBak)
+            yb += ybi
+            sumBk[0] = np.sum(ybi)
     elif bakType in ['lin interpolate','inv interpolate','log interpolate',]:
         if nBak == 1:
             yb = np.ones_like(xdata)*parmDict[pfx+'Back;0']
@@ -560,6 +564,8 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
                 bakVals[i] = parmDict[pfx+'Back;'+str(i)]
             bakInt = si.interp1d(bakPos,bakVals,'linear')
             yb = bakInt(xdata)
+        sumBk[0] = np.sum(yb)
+#Debye function        
     if pfx+'difC' in parmDict:
         ff = 1.
     else:        
@@ -577,10 +583,13 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
             dbA = parmDict[pfx+'DebyeA;'+str(iD)]
             dbR = parmDict[pfx+'DebyeR;'+str(iD)]
             dbU = parmDict[pfx+'DebyeU;'+str(iD)]
-            yb += ff*dbA*np.sin(q*dbR)*np.exp(-dbU*q**2)/(q*dbR)
+            ybi = ff*dbA*np.sin(q*dbR)*np.exp(-dbU*q**2)/(q*dbR)
+            yb += ybi
+            sumBk[1] += np.sum(ybi)
             iD += 1       
         except KeyError:
             break
+#peaks
     iD = 0
     while True:
         try:
@@ -602,16 +611,19 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
             else:
                 iFin = np.searchsorted(xdata,pkP+fmax)
             if 'C' in dataType:
-                yb[iBeg:iFin] += pkI*getFCJVoigt3(pkP,pkS,pkG,0.002,xdata[iBeg:iFin])
+                ybi = pkI*getFCJVoigt3(pkP,pkS,pkG,0.002,xdata[iBeg:iFin])
+                yb[iBeg:iFin] += ybi
             else:   #'T'OF
-                yb[iBeg:iFin] += pkI*getEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])
+                ybi = pkI*getEpsVoigt(pkP,1.,1.,pkS,pkG,xdata[iBeg:iFin])
+                yb[iBeg:iFin] += ybi
+            sumBk[2] += np.sum(ybi)
             iD += 1       
         except KeyError:
             break
         except ValueError:
             print '**** WARNING - backround peak '+str(iD)+' sigma is negative; fix & try again ****'
             break        
-    return yb
+    return yb,sumBk
     
 def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
     'needs a doc string'
@@ -835,7 +847,7 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
 def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
     'needs a doc string'
     
-    yb = getBackground('',parmDict,bakType,dataType,xdata)
+    yb = getBackground('',parmDict,bakType,dataType,xdata)[0]
     yc = np.zeros_like(yb)
     cw = np.diff(xdata)
     cw = np.append(cw,cw[-1])
@@ -1573,7 +1585,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
             return {}
         
     sigDict = dict(zip(varyList,sig))
-    yb[xBeg:xFin] = getBackground('',parmDict,bakType,dataType,x[xBeg:xFin])
+    yb[xBeg:xFin] = getBackground('',parmDict,bakType,dataType,x[xBeg:xFin])[0]
     yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],varyList,bakType)
     yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
     GetBackgroundParms(parmDict,Background)
@@ -1684,10 +1696,10 @@ def test0():
     if NeedTestData: TestData()
     msg = 'test '
     gplot = plotter.add('FCJ-Voigt, 11BM').gca()
-    gplot.plot(xdata,getBackground('',parmDict0,bakType,'PXC',xdata))   
+    gplot.plot(xdata,getBackground('',parmDict0,bakType,'PXC',xdata)[0])   
     gplot.plot(xdata,getPeakProfile(parmDict0,xdata,varyList,bakType))
     fplot = plotter.add('FCJ-Voigt, Ka1+2').gca()
-    fplot.plot(xdata,getBackground('',parmDict1,bakType,'PXC',xdata))   
+    fplot.plot(xdata,getBackground('',parmDict1,bakType,'PXC',xdata)[0])   
     fplot.plot(xdata,getPeakProfile(parmDict1,xdata,varyList,bakType))
     
 def test1():

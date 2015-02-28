@@ -1771,6 +1771,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 sumdF = 0.0
                 sumFosq = 0.0
                 sumdFsq = 0.0
+                sumInt = 0.0
                 for refl in refDict['RefList']:
                     if 'C' in calcControls[hfx+'histType']:
                         yp = np.zeros_like(yb)
@@ -1784,13 +1785,16 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                             break
                         elif iBeg < iFin:
                             yp[iBeg:iFin] = refl[11+im]*refl[9+im]*G2pwd.getFCJVoigt3(refl[5+im],refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg:iFin]))    #>90% of time spent here
+                            sumInt += refl[11+im]*refl[9+im]
                             if Ka2:
                                 pos2 = refl[5+im]+lamRatio*tand(refl[5+im]/2.0)       # + 360/pi * Dlam/lam * tan(th)
                                 Wd,fmin,fmax = G2pwd.getWidthsCW(pos2,refl[6+im],refl[7+im],shl)
                                 iBeg2 = max(xB,np.searchsorted(x,pos2-fmin))
                                 iFin2 = min(np.searchsorted(x,pos2+fmax),xF)
                                 yp[iBeg2:iFin2] += refl[11+im]*refl[9+im]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg2:iFin2]))        #and here
+                                sumInt += refl[11+im]*refl[9+im]*kRatio
                             refl[8+im] = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[11+im]*(1.+kRatio)),0.0))
+                                
                     elif 'T' in calcControls[hfx+'histType']:
                         yp = np.zeros_like(yb)
                         Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im])
@@ -1799,6 +1803,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                         if iBeg < iFin:
                             yp[iBeg:iFin] = refl[11+im]*refl[9+im]*G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],ma.getdata(x[iBeg:iFin]))  #>90% of time spent here
                             refl[8+im] = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11+im],0.0))
+                            sumInt += refl[11+im]*refl[9+im]
                     Fo = np.sqrt(np.abs(refl[8+im]))
                     Fc = np.sqrt(np.abs(refl[9]+im))
                     sumFo += Fo
@@ -1811,6 +1816,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 else:
                     Histogram['Residuals'][phfx+'Rf'] = 100.
                     Histogram['Residuals'][phfx+'Rf^2'] = 100.
+                Histogram['Residuals'][phfx+'sumInt'] = sumInt
                 Histogram['Residuals'][phfx+'Nref'] = len(refDict['RefList'])
                 Histogram['Residuals']['hId'] = hId
         elif 'HKLF' in histogram[:4]:
@@ -1851,7 +1857,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
     hId = Histogram['hId']
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
-    yb = G2pwd.getBackground(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
+    yb,Histogram['sumBk'] = G2pwd.getBackground(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
     yc = np.zeros_like(yb)
     cw = np.diff(x)
     cw = np.append(cw,cw[-1])

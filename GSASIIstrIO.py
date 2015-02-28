@@ -2474,6 +2474,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                 if 'PWDR' in histogram:
                     print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
                         %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'])
+                    print >>pFile,' Bragg intensity sum = %.3g'%(Histogram['Residuals'][pfx+'sumInt'])
                 
                     if pfx+'Scale' in PhFrExtPOSig:
                         wtFr = hapData['Scale'][0]*General['Mass']/wtFrSum[hId]
@@ -2850,6 +2851,9 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
                 print >>pFile,names
                 print >>pFile,ptstr
                 print >>pFile,sigstr
+        sumBk = np.array(Histogram['sumBk'])
+        print >>pFile,' Background sums: empirical %.3g, Debye %.3g, peaks %.3g, Total %.3g'    \
+            %(sumBk[0],sumBk[1],sumBk[2],np.sum(sumBk))
         
     def PrintInstParmsSig(Inst,instSig):
         refine = False

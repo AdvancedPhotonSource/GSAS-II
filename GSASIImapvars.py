@@ -569,10 +569,12 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
                 else:
                     if notvaried: notvaried += ', '
                     notvaried += mv
-                if mv not in indepVarList: indepVarList.append(mv)
                 if parmDict is not None and mv not in parmDict:
-                    msg += "\nCannot equivalence to variable "+str(mv)+". Not defined in this refinement"
-                    continue
+                    print "Dropping equivalence for variable "+str(mv)+". Not defined in this refinement"
+                    #msg += "\nCannot equivalence to variable "+str(mv)+". Not defined in this refinement"
+                    #continue
+                else: 
+                    if mv not in indepVarList: indepVarList.append(mv)
                 for v,m in zip(varlist,invmultarr):
                     if parmDict is not None and v not in parmDict:
                         print "Dropping equivalence for variable "+str(v)+". Not defined in this refinement"
@@ -872,7 +874,10 @@ def ComputeDepESD(covMatrix,varyList,parmDict):
     sigmaDict = {}
     for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
         #if invmultarr is None: continue # probably not needed
-        valuelist = [parmDict[var] for var in mapvars]
+        try: 
+            valuelist = [parmDict[var] for var in mapvars]
+        except KeyError:
+            continue
         # get the v-covar matrix for independent parameters 
         vcov = np.zeros((len(mapvars),len(mapvars)))
         for i1,name1 in enumerate(mapvars):
@@ -1065,7 +1070,10 @@ def Dict2Map(parmDict,varyList):
     parmDict.update(fixedDict)
     for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
         #if invmultarr is None: continue
-        valuelist = [parmDict[var] for var in mapvars]
+        try: 
+            valuelist = [parmDict[var] for var in mapvars]
+        except KeyError:
+            continue
         parmDict.update(zip(varlist,
                             np.dot(invmultarr,np.array(valuelist)))
                         )

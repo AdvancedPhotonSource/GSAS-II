@@ -2508,8 +2508,12 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
         Hess += np.inner(dpdv*pWt,dpdv)
     return Vec,Hess
 
-def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg):        
-    'Needs a doc string'
+def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg=None):        
+    '''Computes the point-by-point discrepancies between every data point in every histogram
+    and the observed value
+    
+    :returns: an np array of differences between observed and computed diffraction values.
+    '''
     Values2Dict(parmDict, varylist, values)
     G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases

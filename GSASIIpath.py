@@ -308,20 +308,23 @@ def svnUpdateProcess(version=None,projectfile=None):
     subprocess.Popen([sys.executable,__file__,projectfile,version])
     sys.exit()
 
-def svnSwitchDir(rpath,URL):
+def svnSwitchDir(rpath,URL,loadpath=None):
     '''This performs a switch command to move files between subversion trees.
 
     This is currently used for moving tutorial web pages and demo files
     into the GSAS-II source tree. 
     
     :param str rpath: path to locate files, relative to the GSAS-II
-      installation path (path2GSAS2)
+      installation path (defaults to path2GSAS2)
     :param str URL: the repository URL
     '''
     import subprocess
     svn = whichsvn()
     if not svn: return
-    fpath = os.path.join(path2GSAS2,rpath)
+    if loadpath:
+        fpath = os.path.join(loadpath,rpath)
+    else:
+        fpath = os.path.join(path2GSAS2,rpath)
     cmd = [svn,'switch','--ignore-ancestry',URL,fpath,
            '--non-interactive',
            '--accept','theirs-conflict','--force']

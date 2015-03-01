@@ -208,9 +208,9 @@ def FindMolecule(ind,generalData,atomData):                    #uses numpy & mas
 
     def getNeighbors(atom,radius):
         neighList = []  
-        Dx = IARS[1]-np.array(atom[cx:cx+3])
+        Dx = UAtoms-np.array(atom[cx:cx+3])
         dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of disorder "bonds" < 0.5A
-        sumR = IARS[2]+radius
+        sumR = Radii+radius
         return set(ma.nonzero(ma.masked_greater(dist-factor*sumR,0.))[0])                #get indices of bonded atoms
 
     import numpy.ma as ma
@@ -232,28 +232,23 @@ def FindMolecule(ind,generalData,atomData):                    #uses numpy & mas
     nAtom = len(atomData)
     Indx = range(nAtom)
     UAtoms = []
-    SymOp = []
     Radii = []
     for atom in atomData:
         UAtoms.append(np.array(atom[cx:cx+3]))
         Radii.append(radii[atomTypes.index(atom[ct])])
-        SymOp += [[1,0,unit],]
     UAtoms = np.array(UAtoms)
     Radii = np.array(Radii)
     for nOp,Op in enumerate(SGData['SGOps'][1:]):
         UAtoms = np.concatenate((UAtoms,(np.inner(Op[0],UAtoms[:nAtom]).T+Op[1])))
         Radii = np.concatenate((Radii,Radii[:nAtom]))
-        SymOp += [[nOp,0,unit] for symop in SymOp]
         Indx += Indx[:nAtom]
     for icen,cen in enumerate(SGData['SGCen'][1:]):
         UAtoms = np.concatenate((UAtoms,(UAtoms+cen)))
         Radii = np.concatenate((Radii,Radii))
-        SymOp += [[symop[0],icen+1,unit] for symop in SymOp]
         Indx += Indx[:nAtom]
     if SGData['SGInv']:
         UAtoms = np.concatenate((UAtoms,-UAtoms))
         Radii = np.concatenate((Radii,Radii))
-        SymOp += [[-symop[0],symop[1],unit] for symop in SymOp]
         Indx += Indx
     UAtoms %= 1.
     mAtoms = len(UAtoms)
@@ -261,11 +256,9 @@ def FindMolecule(ind,generalData,atomData):                    #uses numpy & mas
         if np.any(unit):    #skip origin cell
             UAtoms = np.concatenate((UAtoms,UAtoms[:mAtoms]+unit))
             Radii = np.concatenate((Radii,Radii[:mAtoms]))
-            SymOp += [[symop[0],symop[1],unit] for symop in SymOp[:mAtoms]]                        
             Indx += Indx[:mAtoms]
     UAtoms = np.array(UAtoms)
     Radii = np.array(Radii)
-    IARS = [Indx,UAtoms,Radii,SymOp]
     newAtoms = [atomData[ind],]
     atomData[ind] = None
     radius = Radii[ind]

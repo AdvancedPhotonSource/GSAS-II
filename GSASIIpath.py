@@ -312,11 +312,13 @@ def svnSwitchDir(rpath,URL,loadpath=None):
     '''This performs a switch command to move files between subversion trees.
 
     This is currently used for moving tutorial web pages and demo files
-    into the GSAS-II source tree. 
+    into the GSAS-II source tree. Note that if the files were previously downloaded
+    the switch command will update the files to the newest version. 
     
     :param str rpath: path to locate files, relative to the GSAS-II
       installation path (defaults to path2GSAS2)
     :param str URL: the repository URL
+    :param str loadpath: the prefix for the path, if specified. Defaults to path2GSAS2
     '''
     import subprocess
     svn = whichsvn()
@@ -332,7 +334,6 @@ def svnSwitchDir(rpath,URL,loadpath=None):
     s = subprocess.Popen(cmd+['--trust-server-cert'], 
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
-    print out
     if err:
         s = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -342,7 +343,40 @@ def svnSwitchDir(rpath,URL,loadpath=None):
             print ("****** An error was noted, see below *********")
             print(60*"=")
             print err
+            return False
+    return True
 
+def svnInstallDir(URL,loadpath):
+    '''Load a subversion tree into a specified directory
+
+    :param str rpath: path to locate files, relative to the GSAS-II
+      installation path (defaults to path2GSAS2)
+    :param str URL: the repository URL
+    '''
+    import subprocess
+    svn = whichsvn()
+    if not svn: return
+    if os.path.exists(loadpath):
+        raise Exception("Error: Attempting to create existing directory "+loadpath)
+    cmd = [svn,'co',URL,loadpath,'--non-interactive']
+    print("Loading files from "+URL)
+    s = subprocess.Popen(cmd+['--trust-server-cert'], 
+                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = s.communicate()
+    if err:
+        print out
+        s = subprocess.Popen(cmd,
+                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        out,err = s.communicate()
+        if err:
+            print(60*"=")
+            print ("****** An error was noted, see below *********")
+            print(60*"=")
+            print err
+            return False
+    return True
+
+            
 def IPyBreak_base():
     '''A routine that invokes an IPython session at the calling location
     This routine is only used when debug=True is set in config.py

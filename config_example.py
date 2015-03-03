@@ -35,3 +35,12 @@ logging_debug = None
 
 Help_mode = None
 'Set to "internal" to use a Python-based web viewer rather than a web browser'
+
+Tutorial_location = None
+'''Change this to place tutorials by in a different spot. If None, this defaults to
+the location where GSAS-II is loaded GSASIIpath.path2GSAS2. For installations where
+G2 is installed by an administrator, it is a good idea to use something like this:
+    import os.path
+    Tutorial_location = os.path.expanduser('~/G2tutorials')
+This will allow users to download tutorial files into their own file space.
+'''

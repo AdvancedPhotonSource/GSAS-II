@@ -1480,9 +1480,16 @@ class MyHelp(wx.Menu):
         if helpType is None:
             print 'Error: help lookup failed!',event.GetEventObject()
             print 'id=',event.GetId()
+        elif helpType == 'Tutorials':
+            self.frame.Tutorials = True
+            ShowHelp(helpType,self.frame)
+        elif helpType == 'NewTutorials': # this is just for testing
+            dlg = OpenTutorial(self.frame)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.frame.Tutorials = True
+            dlg.Destroy()
+            return
         else:
-            if helpType == 'Tutorials':
-                self.frame.Tutorials = True 
             ShowHelp(helpType,self.frame)
 
     def OnHelpAbout(self, event):
@@ -1693,7 +1700,7 @@ class HelpButton(wx.Button):
         else:
             wx.Button.__init__(self,parent,wx.ID_ANY,'?',style=wx.BU_EXACTFIT)
         self.Bind(wx.EVT_BUTTON,self._onPress)
-        self.msg=msg
+        self.msg=StripIndents(msg)
         self.parent = parent
     def _onClose(self,event):
         self.dlg.EndModal(wx.ID_CANCEL)
@@ -1755,7 +1762,7 @@ class MyHtmlPanel(wx.Panel):
             self.htmlwin.ScrollToAnchor(helpanchor)
             xs,ys = self.htmlwin.GetViewStart()
             self.htmlwin.Scroll(xs,ys-1)
-
+################################################################################
 class G2HtmlWindow(wx.html.HtmlWindow):
     '''Displays help information in a primitive HTML browser type window
     '''
@@ -1776,6 +1783,23 @@ class G2HtmlWindow(wx.html.HtmlWindow):
     def TitlePage(self):
         self.parent.frame.SetTitle(self.GetOpenedPage() + ' -- ' + 
             self.GetOpenedPageTitle())
+
+################################################################################
+def StripIndents(msg):
+    'Strip indentation from multiline strings'
+    msg1 = msg.replace('\n ','\n')
+    while msg != msg1:
+        msg = msg1
+        msg1 = msg.replace('\n ','\n')
+    return msg.replace('\n\t','\n')
+
+def G2MessageBox(parent,msg,title='Error'):
+    '''Simple code to display a error or warning message
+    '''
+    dlg = wx.MessageDialog(parent,StripIndents(msg), title, wx.OK)
+    dlg.ShowModal()
+    dlg.Destroy()
+        
 ################################################################################
 class downdate(wx.Dialog):
     '''Dialog to allow a user to select a version of GSAS-II to install
@@ -1897,15 +1921,284 @@ def ShowHelp(helpType,frame):
             htmlFirstUse = False
         else:
             webbrowser.open(pfx+helplink, new=0, autoraise=True)
+def ShowWebPage(URL,frame):
+    '''Called to show a tutorial web page.
+    '''
+    global htmlFirstUse
+    # determine if a web browser or the internal viewer should be used for help info
+    if GSASIIpath.GetConfigValue('Help_mode'):
+        helpMode = GSASIIpath.GetConfigValue('Help_mode')
+    else:
+        helpMode = 'browser'
+    if helpMode == 'internal':
+        try:
+            htmlPanel.LoadFile(URL)
+            htmlFrame.Raise()
+        except:
+            htmlFrame = wx.Frame(frame, -1, size=(610, 510))
+            htmlFrame.Show(True)
+            htmlFrame.SetTitle("HTML Window") # N.B. reset later in LoadFile
+            htmlPanel = MyHtmlPanel(htmlFrame,-1)
+            htmlPanel.LoadFile(URL)
+    else:
+        if URL.startswith('http'): 
+            pfx = ''
+        elif sys.platform.lower().startswith('win'):
+            pfx = ''
+        else:
+            pfx = "file://"
+        if htmlFirstUse:
+            webbrowser.open_new(pfx+URL)
+            htmlFirstUse = False
+        else:
+            webbrowser.open(pfx+URL, new=0, autoraise=True)
 ################################################################################
 #### Tutorials selector
 ################################################################################
+G2BaseURL = "https://subversion.xray.aps.anl.gov/pyGSAS"
+tutorialCatalog = (
+    # tutorial dir,      exercise dir,      web page file name                                title for page
+    ['TOF Calibration', 'TOF Calibration', 'Calibration of a TOF powder diffractometer.htm', 'Calibration of a TOF powder diffractometer'],
+    ['TOF Charge Flipping', 'TOF Charge Flipping', 'Charge Flipping with TOF single crystal data in GSASII.htm',
+     'Charge flipping with neutron TOF single crystal data'],
+    ['TOF Sequential Single Peak Fit', 'TOF Sequential Single Peak Fit', '', ''],
+    ['TOF Single Crystal Refinement', 'TOF Single Crystal Refinement', '', ''],
+    ['TOF-CW Joint Refinement', 'TOF-CW Joint Refinement', '', ''],
+    )
+if GSASIIpath.GetConfigValue('Tutorial_location'):
+    tutorialPath = GSASIIpath.GetConfigValue('Tutorial_location')
+else:
+    tutorialPath = GSASIIpath.path2GSAS2
+    
+class OpenTutorial(wx.Dialog):
+    '''Open a tutorial, optionally copying it to the local disk. Always copy
+    the data files locally.
+
+    For now tutorials will always be copied into the source code tree, but it
+    might be better to have an option to copy them somewhere else, for people
+    who don't have write access to the GSAS-II source code location. 
+    '''
+    # TODO: set default input-file open location to the download location
+    def __init__(self,parent=None):
+        style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Open Tutorial', style=style)
+        self.frame = parent
+        pnl = wx.Panel(self)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        label = wx.StaticText(
+            pnl,  wx.ID_ANY,
+            'Select the tutorial to be run and the mode of access'
+            )
+        sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        msg = '''To save download time for GSAS-II tutorials and their
+        sample data files are being moved out of the standard
+        distribution. This dialog allows users to load selected
+        tutorials to their computer.
+
+        Tutorials can be viewed over the internet or downloaded
+        to this computer. The sample data can be downloaded or not,
+        (but it is not possible to run the tutorial without the
+        data). If no web access is available, tutorials that were
+        previously downloaded can be viewed.
+
+        By default, files are downloaded into the location used
+        for the GSAS-II distribution, but this may not be possible
+        if the software is installed by a administrator. The
+        download location can be changed using the "Set data
+        location" or the "Tutorial_location" configuration option
+        (see config_example.py).
+        '''
+        hlp = HelpButton(pnl,msg)
+        sizer.Add(hlp,0,wx.ALIGN_RIGHT|wx.ALL)
+        #======================================================================
+        # This is needed only until we get all the tutorials items moved
+        btn = wx.Button(pnl, wx.ID_ANY, "Open older tutorials") 
+        btn.Bind(wx.EVT_BUTTON, self.OpenOld)
+        sizer.Add(btn,0,wx.ALIGN_CENTRE|wx.ALL)
+        #======================================================================
+        self.BrowseMode = 1
+        choices = [
+            'make local copy of tutorial and data, then open',
+            'run from web (copy data locally)',
+            'browse on web (data not loaded)', 
+            'open from local tutorial copy',
+        ]
+        self.mode = wx.RadioBox(pnl,wx.ID_ANY,'access mode:',
+                                wx.DefaultPosition, wx.DefaultSize,
+                                choices, 1, wx.RA_SPECIFY_COLS)
+        self.mode.SetSelection(self.BrowseMode)
+        self.mode.Bind(wx.EVT_RADIOBOX, self.OnModeSelect)
+        sizer.Add(self.mode,0,WACV)
+        sizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        btn = wx.Button(pnl, wx.ID_ANY, "Set download location")
+        btn.Bind(wx.EVT_BUTTON, self.SelectDownloadLoc)
+        sizer1.Add(btn,0,WACV)
+        self.dataLoc = wx.StaticText(pnl, wx.ID_ANY,tutorialPath)
+        sizer1.Add(self.dataLoc,0,WACV)
+        sizer.Add(sizer1)
+        self.listbox = wx.ListBox(pnl, wx.ID_ANY, size=(450, 100), style=wx.LB_SINGLE)
+        self.listbox.Bind(wx.EVT_LISTBOX, self.OnTutorialSelected)
+        self.OnModeSelect(None)
+        #self.FillListBox()
+        sizer.Add(self.listbox,1,WACV|wx.EXPAND|wx.ALL,1)
+        
+        btnsizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(pnl, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        pnl.SetSizer(sizer)
+        sizer.Fit(self)
+        self.topsizer=sizer
+        self.CenterOnParent()
+    def OpenOld(self,event):
+        '''Open old tutorials. This is needed only until we get all the tutorials items moved
+        '''
+        self.EndModal(wx.ID_OK)
+        self.frame.Tutorials = True 
+        ShowHelp('Tutorials',self.frame)
+    def OnModeSelect(self,event):
+        '''Respond when the mode is changed
+        '''
+        self.BrowseMode = self.mode.GetSelection()
+        #self.FillListBox()
+    #def FillListBox(self):
+        if self.BrowseMode == 3:
+            import glob
+            filelist = glob.glob(tutorialPath+'/help/*/*.htm')
+            taillist = [os.path.split(f)[1] for f in filelist]
+            itemlist = [tut[-1] for tut in tutorialCatalog if tut[2] in taillist]
+        else:
+            itemlist = [tut[-1] for tut in tutorialCatalog if tut[-1]]
+        self.listbox.Clear()
+        self.listbox.AppendItems(itemlist)
+    def OnTutorialSelected(self,event):
+        '''Respond when a tutorial is selected. Load tutorials and data locally,
+        as needed and then display the page
+        '''
+        for tutdir,exedir,htmlname,title in tutorialCatalog:
+            if title == event.GetString(): break
+        else:
+            raise Exception("Match to file not found")
+        if self.BrowseMode == 0 or self.BrowseMode == 1:
+            try: 
+                self.ValidateTutorialDir(tutorialPath,G2BaseURL)
+            except:
+                G2MessageBox(self.frame,
+            '''The selected directory is not valid.
+            
+            You must use a directory that you have write access
+            to. You can reuse a directory previously used for 
+            downloads, but the help and Tutorials subdirectories
+             must be created by this routine. 
+            ''')
+                return
+        self.dataLoc.SetLabel(tutorialPath)
+        if self.BrowseMode == 0:
+            # xfer data & web page locally, then open web page
+            self.LoadTutorial(tutdir,tutorialPath,G2BaseURL)
+            self.LoadExercise(exedir,tutorialPath,G2BaseURL)
+            URL = os.path.join(tutorialPath,'help',tutdir,htmlname)
+            ShowWebPage(URL,self.frame)
+        elif self.BrowseMode == 1:
+            # xfer data locally, open web page remotely
+            self.LoadExercise(exedir,tutorialPath,G2BaseURL)
+            URL = os.path.join(G2BaseURL,'Tutorials',tutdir,htmlname)
+            ShowWebPage(URL,self.frame)
+        elif self.BrowseMode == 2:
+            # open web page remotely, don't worry about data
+            URL = os.path.join(G2BaseURL,'Tutorials',tutdir,htmlname)
+            ShowWebPage(URL,self.frame)
+        elif self.BrowseMode == 3:
+            # open web page that has already been transferred
+            URL = os.path.join(tutorialPath,'help',tutdir,htmlname)
+            ShowWebPage(URL,self.frame)
+        else:
+            raise Exception("How did this happen!")
+        self.EndModal(wx.ID_OK)
+    def ValidateTutorialDir(self,fullpath=tutorialPath,baseURL=G2BaseURL):
+        '''Load help to new directory or make sure existing directory looks correctly set up
+        throws an exception if there is a problem.
+        '''
+        if os.path.exists(fullpath):
+            if os.path.exists(os.path.join(fullpath,"help")):
+                if not GSASIIpath.svnGetRev(os.path.join(fullpath,"help")):
+                    raise Exception("Problem with "+fullpath+" dir help exists but is not in SVN")
+            else:
+                raise Exception("Problem: dir "+fullpath+" exists does not contain help")
+            if os.path.exists(os.path.join(fullpath,"Exercises")):
+                if not GSASIIpath.svnGetRev(os.path.join(fullpath,"Exercises")):
+                    raise Exception("Problem with "+fullpath+" dir Exercises exists but is not in SVN")
+            else:
+                raise Exception("Problem: dir "+fullpath+" exists does not contain Exercises")
+        else:
+            if not GSASIIpath.svnInstallDir(baseURL+"/MT",fullpath):
+                raise Exception("Problem transferring empty directory from web")
+        return True
+
+    def LoadTutorial(self,tutorialname,fullpath=tutorialPath,baseURL=G2BaseURL):
+        'Load a Tutorial to the selected location'
+        if GSASIIpath.svnSwitchDir("help/"+tutorialname,baseURL+"/Tutorials/"+tutorialname,fullpath):
+            return True
+        raise Exception("Problem transferring Tutorial from web")
+    def LoadExercise(self,tutorialname,fullpath=tutorialPath,baseURL=G2BaseURL):
+        'Load Exercise file(s) for a Tutorial to the selected location'
+        if GSASIIpath.svnSwitchDir("Exercises/"+tutorialname,baseURL+"/Exercises/"+tutorialname,fullpath):
+            return True
+        raise Exception("Problem transferring Exercise from web")
+    def SelectDownloadLoc(self,event):
+        '''Select a download location,
+        Cancel resets to the default
+        '''
+        global tutorialPath
+        localpath = os.path.abspath(os.path.expanduser('~/G2tutorials'))
+        dlg = wx.DirDialog(self, "Choose a directory for downloads:",
+                           defaultPath=localpath)#,style=wx.DD_DEFAULT_STYLE)
+                           #)
+        if dlg.ShowModal() == wx.ID_OK:
+            pth = dlg.GetPath()
+        else:
+            if GSASIIpath.GetConfigValue('Tutorial_location'):
+                pth = GSASIIpath.GetConfigValue('Tutorial_location')
+            else:
+                pth = GSASIIpath.path2GSAS2
+        if not os.path.exists(pth):
+            try:
+                os.makedirs(pth)
+            except OSError:
+                G2MessageBox(self.frame,
+                '''The selected directory is not valid.
                 
+                It appears you do not have write access to this location.
+                ''')
+                return
+        try: 
+            self.ValidateTutorialDir(pth,G2BaseURL)
+            tutorialPath = pth
+        except:
+            G2MessageBox(self.frame,
+            '''The selected directory is not valid.
+            
+            You must use a directory that you have write access
+            to. You can reuse a directory previously used for 
+            downloads, but the help and Tutorials subdirectories
+             must be created by this routine. 
+            ''')
+        self.dataLoc.SetLabel(tutorialPath)
+    
 if __name__ == '__main__':
     app = wx.PySimpleApp()
+    GSASIIpath.InvokeDebugOpts()
     frm = wx.Frame(None) # create a frame
     frm.Show(True)
-
+    dlg = OpenTutorial(frm)
+    if dlg.ShowModal() == wx.ID_OK:
+        print "OK"
+    else:
+        print "Cancel"
+    dlg.Destroy()
+    import sys
+    sys.exit()
     #======================================================================
     # test ScrolledMultiEditor
     #======================================================================

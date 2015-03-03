@@ -133,10 +133,10 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_GLOBALTHERM,wxID_VECTORBODYADD
 ] = [wx.NewId() for item in range(10)]
 
-[ wxID_RENAMESEQSEL,wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_PLOTSEQSEL,wxID_ORGSEQSEL,
-  wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,wxCOPYPARFIT,
+[ wxID_RENAMESEQSEL,wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_SAVESEQCSV,wxID_PLOTSEQSEL,
+  wxID_ORGSEQSEL,wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,wxCOPYPARFIT,
   wxADDPARFIT,wxDELPARFIT,wxEDITPARFIT,wxDOPARFIT,
-] = [wx.NewId() for item in range(13)]
+] = [wx.NewId() for item in range(14)]
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
@@ -1575,6 +1575,8 @@ class DataFrame(wx.Frame):
             help='Rename selected sequential refinement columns')
         self.SequentialFile.Append(id=wxID_SAVESEQSEL, kind=wx.ITEM_NORMAL,text='Save selected as text',
             help='Save selected sequential refinement results as a text file')
+        self.SequentialFile.Append(id=wxID_SAVESEQCSV, kind=wx.ITEM_NORMAL,text='Save all as CSV',
+            help='Save all sequential refinement results as a CSV spreadsheet file')
         self.SequentialFile.Append(id=wxID_SAVESEQSELCSV, kind=wx.ITEM_NORMAL,text='Save selected as CSV',
             help='Save selected sequential refinement results as a CSV spreadsheet file')
         self.SequentialFile.Append(id=wxID_PLOTSEQSEL, kind=wx.ITEM_NORMAL,text='Plot selected',
@@ -2879,8 +2881,12 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         'export the selected columns to a .csv file from menu command'
         OnSaveSelSeq(event,csv=True)
         
-    def OnSaveSelSeq(event,csv=False):
-        'export the selected columns to a .txt file from menu command'
+    def OnSaveSeqCSV(event):
+        'export all columns to a .csv file from menu command'
+        OnSaveSelSeq(event,csv=True,allcols=True)
+        
+    def OnSaveSelSeq(event,csv=False,allcols=False):
+        'export the selected columns to a .txt or .csv file from menu command'
         def WriteCSV():
             def WriteList(headerItems):
                 line = ''
@@ -2891,6 +2897,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             head = ['name']
             for col in cols:
                 item = G2frame.SeqTable.GetColLabelValue(col)
+                # get rid of labels that have Unicode characters
+                if not all([ord(c) < 128 and ord(c) != 0 for c in item]): item = '?'
                 if col in havesig:
                     head += [item,'esd-'+item]
                 else:
@@ -2924,7 +2932,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 SeqFile.write(line+'\n')
 
         # start of OnSaveSelSeq code
-        cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
+        if allcols:
+            cols = range(G2frame.SeqTable.GetNumberCols())
+        else:
+            cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
         nrows = G2frame.SeqTable.GetNumberRows()
         if not cols:
             G2frame.ErrorDialog('Select columns',
@@ -3482,6 +3493,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnRenameSelSeq, id=wxID_RENAMESEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeq, id=wxID_SAVESEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeqCSV, id=wxID_SAVESEQSELCSV)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSeqCSV, id=wxID_SAVESEQCSV)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotSelSeq, id=wxID_PLOTSEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnReOrgSelSeq, id=wxID_ORGSEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewPseudoVar, id=wxADDSEQVAR)
@@ -3714,7 +3726,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         {var:val for var,val in data[name].get('newCellDict',{}).values()} #  add varied reciprocal cell terms
     )
     name = histNames[0]
-    
+
+    #******************************************************************************
+    # this does not work for refinements that have differing numbers of variables.
+    #raise Exception
     indepVarDict = {     #  values in table w/o ESDs
         var:colList[i][0] for i,var in enumerate(colLabels) if colSigs[i] is None
         }
@@ -3725,7 +3740,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         }
     # add recip cell coeff. values
     depVarDict.update({var:val for var,val in data[name].get('newCellDict',{}).values()})
-    
+
     G2frame.dataDisplay = GSGrid(parent=G2frame.dataFrame)
     G2frame.SeqTable = Table(
         [list(c) for c in zip(*colList)],     # convert from columns to rows

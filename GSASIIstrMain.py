@@ -53,6 +53,14 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
     while True:
         begin = time.time()
         values =  np.array(G2stMth.Dict2Values(parmDict, varyList))
+        # test code to compute GOF and save for external repeat
+        #args = ([Histograms,Phases,restraintDict,rigidbodyDict],parmDict,varyList,calcControls,pawleyLookup,dlg)
+        #print '*** before fit chi**2',np.sum(G2stMth.errRefine(values,*args)**2)            
+        #fl = open('beforeFit.cpickle','wb')
+        #import cPickle
+        #cPickle.dump(values,fl,1)
+        #cPickle.dump(args[:-1],fl,1)
+        #fl.close()
         Ftol = Controls['min dM/M']
         Factor = Controls['shift factor']
         if 'Jacobian' in Controls['deriv type']:            
@@ -328,9 +336,10 @@ def SeqRefine(GPXfile,dlg):
                     items[1] = ''
                 item = ':'.join(items)
                 newVaryList.append(item)
-        if newVaryList != firstVaryList:
-            # variable lists are expected to match between sequential refinements
+        if newVaryList != firstVaryList and Controls['Copy2Next']:
+            # variable lists are expected to match between sequential refinements when Copy2Next is on
             print '**** ERROR - variable list for this histogram does not match previous'
+            print '     Copy of variables is not possible'
             print '\ncurrent histogram',histogram,'has',len(newVaryList),'variables'
             combined = list(set(firstVaryList+newVaryList))
             c = [var for var in combined if var not in newVaryList]

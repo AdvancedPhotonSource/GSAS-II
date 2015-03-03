@@ -2009,6 +2009,10 @@ class GSASII(wx.Frame):
         HelpMenu=G2G.MyHelp(self,helpType='Data tree',
             morehelpitems=[('&Tutorials','Tutorials')])
         menubar.Append(menu=HelpMenu,title='&Help')
+        # this will eventually go away
+        HelpMenu=G2G.MyHelp(self,helpType='Data tree',
+            morehelpitems=[('&New Tutorials','NewTutorials')])
+        menubar.Append(menu=HelpMenu,title='&Help')
 
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='GSASII', parent=parent,

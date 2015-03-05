@@ -3528,14 +3528,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Obj = event.GetEventObject()
             textureData['Order'] = int(Obj.GetValue())
             textureData['SH Coeff'][1] = SetSHCoef()
-            wx.CallAfter(UpdateTexture)
+            wx.CallLater(100,UpdateTexture)
             G2plt.PlotTexture(G2frame,data)
                         
         def OnShModel(event):
             Obj = event.GetEventObject()
             textureData['Model'] = Obj.GetValue()
             textureData['SH Coeff'][1] = SetSHCoef()
-            wx.CallAfter(UpdateTexture)
+            wx.CallLater(100,UpdateTexture)
             G2plt.PlotTexture(G2frame,data)
             
         def OnSHRefine(event):
@@ -3545,7 +3545,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def OnSHShow(event):
             Obj = event.GetEventObject()
             textureData['SHShow'] = Obj.GetValue()
-            wx.CallAfter(UpdateTexture)
+            wx.CallLater(100,UpdateTexture)
             
         def OnProjSel(event):
             Obj = event.GetEventObject()
@@ -3583,7 +3583,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def OnPfType(event):
             Obj = event.GetEventObject()
             textureData['PlotType'] = Obj.GetValue()
-            wx.CallAfter(UpdateTexture)
+            wx.CallLater(100,UpdateTexture)
             G2plt.PlotTexture(G2frame,data)
             
         def OnPFValue(event):

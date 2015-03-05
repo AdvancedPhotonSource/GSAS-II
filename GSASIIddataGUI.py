@@ -77,7 +77,7 @@ def UpdateDData(G2frame,DData,data):
         def OnPlotSel(event):
             Obj = event.GetEventObject()
             generalData['Data plot type'] = Obj.GetStringSelection()
-            wx.CallAfter(UpdateDData,G2frame,DData,data)
+            wx.CallLater(100,UpdateDData,G2frame,DData,data)
             G2plt.PlotSizeStrainPO(G2frame,data)
             
         def OnPOhkl(event):
@@ -154,7 +154,7 @@ def UpdateDData(G2frame,DData,data):
         Obj = event.GetEventObject()
         hist = Indx[Obj.GetId()]
         UseList[hist]['Show'] = Obj.GetValue()
-        wx.CallAfter(UpdateDData,G2frame,DData,data)
+        wx.CallLater(100,UpdateDData,G2frame,DData,data)
         G2plt.PlotSizeStrainPO(G2frame,data)
         
     def OnCopyData(event):
@@ -177,7 +177,7 @@ def UpdateDData(G2frame,DData,data):
                 if dlg.ShowModal() == wx.ID_OK:
                     for sel in dlg.GetSelections():
                         UseList[keyList[sel]].update(copy.deepcopy(copyDict))
-                    wx.CallAfter(UpdateDData,G2frame,DData,data)
+                    wx.CallLater(100,UpdateDData,G2frame,DData,data)
             finally:
                 dlg.Destroy()
                 
@@ -246,7 +246,7 @@ def UpdateDData(G2frame,DData,data):
                             elif name == 'Babinet':
                                 for bab in babNames:
                                     UseList[item][name][bab][1] = copy.deepcopy(copyDict[name][bab])                                              
-                    wx.CallAfter(UpdateDData,G2frame,DData,data)
+                    wx.CallLater(100,UpdateDData,G2frame,DData,data)
             finally:
                 dlg.Destroy()
                 
@@ -273,7 +273,7 @@ def UpdateDData(G2frame,DData,data):
         hist = Indx[Obj.GetId()]
         UseList[hist]['Size'][0] = Obj.GetValue()
         G2plt.PlotSizeStrainPO(G2frame,data)
-        wx.CallAfter(UpdateDData,G2frame,DData,data)
+        wx.CallLater(100,UpdateDData,G2frame,DData,data)
         
     def OnSizeRef(event):
         Obj = event.GetEventObject()
@@ -334,13 +334,13 @@ def UpdateDData(G2frame,DData,data):
                 UseList[item]['Size'][4][i] = 1.0
                 UseList[item]['Size'][4][i+3] = 0.0
         G2plt.PlotSizeStrainPO(G2frame,data)
-        wx.CallAfter(UpdateDData,G2frame,DData,data)
+        wx.CallLater(100,UpdateDData,G2frame,DData,data)
             
     def OnStrainType(event):
         Obj = event.GetEventObject()
         hist = Indx[Obj.GetId()]
         UseList[hist]['Mustrain'][0] = Obj.GetValue()
-        wx.CallAfter(UpdateDData,G2frame,DData,data)
+        wx.CallLater(100,UpdateDData,G2frame,DData,data)
         G2plt.PlotSizeStrainPO(G2frame,data)
         
     def OnStrainRef(event):
@@ -405,7 +405,7 @@ def UpdateDData(G2frame,DData,data):
             for i in range(nTerm):
                 UseList[item]['Mustrain'][4][i] = vals[i]
         G2plt.PlotSizeStrainPO(G2frame,data)
-        wx.CallAfter(UpdateDData,G2frame,DData,data)
+        wx.CallLater(100,UpdateDData,G2frame,DData,data)
             
     def OnHstrainRef(event):
         Obj = event.GetEventObject()
@@ -454,7 +454,7 @@ def UpdateDData(G2frame,DData,data):
         Order = int(Obj.GetValue())
         UseList[hist]['Pref.Ori.'][4] = Order
         UseList[hist]['Pref.Ori.'][5] = SetPOCoef(Order,hist)
-        wx.CallAfter(UpdateDData,G2frame,DData,data)
+        wx.CallLater(100,UpdateDData,G2frame,DData,data)
 
     def OnPOType(event):
         Obj = event.GetEventObject()
@@ -463,7 +463,7 @@ def UpdateDData(G2frame,DData,data):
             UseList[hist]['Pref.Ori.'][0] = 'MD'
         else:
             UseList[hist]['Pref.Ori.'][0] = 'SH'
-        wx.CallAfter(UpdateDData,G2frame,DData,data)            
+        wx.CallLater(100,UpdateDData,G2frame,DData,data)
 
     def OnPORef(event):
         Obj = event.GetEventObject()
@@ -549,7 +549,7 @@ def UpdateDData(G2frame,DData,data):
         Obj = event.GetEventObject()
         item = Indx[Obj.GetId()]
         UseList[item[0]]['Extinction'][item[1]] = Obj.GetValue()
-        wx.CallAfter(UpdateDData,G2frame,DData,data)
+        wx.CallLater(100,UpdateDData,G2frame,DData,data)
             
     def checkAxis(axis):
         if not np.any(np.array(axis)):

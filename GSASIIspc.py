@@ -1501,9 +1501,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
             mst = ssopinv[3][:3]
             epsinv = ssopinv[3][3]
             Sdtau.append(np.sum(mst*(XYZ-SGOps[iop][1])-epsinv*SSGOps[iop][1][3]))
-    Sdtau = np.array(Sdtau)
-    SdIndx = np.argsort(Sdtau)
-    print SdIndx,[Sdtau[i] for i in SdIndx]
+    SdIndx = np.argsort(np.array(Sdtau))     # just to do in sensible order
     OpText =  [MT2text(s).replace(' ','') for s in Sop]         #debug?
     SSOpText = [SSMT2text(ss).replace(' ','') for ss in SSop]   #debug?
     print 'special pos super operators: ',SSOpText
@@ -1554,7 +1552,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         dtau = mst*(XYZ-sop[1])-epsinv*ssop[1][3]
         dT = 1.0
         if np.any(dtau%.5):
-            dT = np.tan(np.pi*np.sum(dtau))
+            dT = np.tan(np.pi*np.sum(dtau%.5))
         tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3])
         if waveType == 'Fourier':
             dXT = posFourier(np.sort(tauT),nH,delt6[:3],delt6[3:])   #+np.array(XYZ)[:,np.newaxis,np.newaxis]
@@ -1566,17 +1564,23 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         dXT = np.swapaxes(dXT,1,2)
         dXT[:,:3,:] *= ssdet
         dXTP.append(dXT)
+        print 'dtau,dT',dtau,dT
         if waveType == 'Fourier':
             if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
-                dt = dT**(sdet*epsinv)
                 CSI['Spos'] = [[[1,0,0],[2,0,0],[3,0,0], [1,0,0],[2,0,0],[3,0,0]],
-                    [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
+                    [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]                    
                 if '(x)' in siteSym:
-                    CSI['Spos'][1][3:] = [1./dt,0.,0.],[-dt,0.,0.],[-dt,0.,0.]
+                    CSI['Spos'][1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]
+                    if 'm' in siteSym and len(SdIndx) == 1:
+                        CSI['Spos'][1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[1./dT,0.,0.]
                 elif '(y)' in siteSym:
-                    CSI['Spos'][1][3:] = [-dt,0.,0.],[1./dt,0.,0.],[-dt,0.,0.]
+                    CSI['Spos'][1][3:] = [-dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
+                    if 'm' in siteSym and len(SdIndx) == 1:
+                        CSI['Spos'][1][3:] = [1./dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
                 elif '(z)' in siteSym:
-                    CSI['Spos'][1][3:] = [-dt,0.,0.],[-dt,0.,0.],[1./dt,0.,0.]
+                    CSI['Spos'][1][3:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
+                    if 'm' in siteSym and len(SdIndx) == 1:
+                        CSI['Spos'][1][3:] = [1./dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
                 for i in range(3):
                     if not XSC[i]:
                         CSI['Spos'][0][i] = [0,0,0]
@@ -1608,9 +1612,8 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
             dFTP.append(dFT)
         
             if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
-                dt = dT     #**epsinv
                 fsc = [1,1]
-                CSI['Sfrac'] = [[[1,0],[1,0]],[[1.,0.],[1/dt,0.]]]
+                CSI['Sfrac'] = [[[1,0],[1,0]],[[1.,0.],[1/dT,0.]]]
                 for i in range(2):
                     if not FSC[i]:
                         CSI['Sfrac'][0][i] = [0,0]
@@ -1630,21 +1633,19 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         dUijT = np.rollaxis(np.inner(np.inner(sop[0],dUijT),sop[0].T),3)
         dUT = np.array(U2Uij(dUijT))
         dUT = dUT[:,:,np.argsort(tauT)]
-        dUT[:,:6,:] *= ssdet*sdet
+        dUT[:,:6,:] *= ssdet*sdet*epsinv
         dUTP.append(dUT)
         if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
-            dt = dT**(sdet*epsinv)
-            print epsinv,sdet,ssdet,dT,dt
             CSI['Sadp'] = [[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0], 
             [1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],
             [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.],
-            [1./dt,0.,0.],[1./dt,0.,0.],[1./dt,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
+            [1./dT,0.,0.],[1./dT,0.,0.],[1./dT,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
             if '(x)' in siteSym:
-                CSI['Sadp'][1][9:] = [-dt,0.,0.],[-dt,0.,0.],[1./dt,0.,0.]
+                CSI['Sadp'][1][9:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
             elif '(y)' in siteSym:
-                CSI['Sadp'][1][9:] = [-dt,0.,0.],[1./dt,0.,0.],[-dt,0.,0.]
+                CSI['Sadp'][1][9:] = [-dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
             elif '(z)' in siteSym:
-                CSI['Sadp'][1][9:] = [1./dt,0.,0.],[-dt,0.,0.],[-dt,0.,0.]
+                CSI['Sadp'][1][9:] = [1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]
             for i in range(6):
                 if not USC[i]:
                     CSI['Sadp'][0][i] = [0,0,0]

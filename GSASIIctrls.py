@@ -2141,11 +2141,13 @@ class OpenTutorial(wx.Dialog):
         if GSASIIpath.svnSwitchDir("help/"+tutorialname,baseURL+"/Tutorials/"+tutorialname,fullpath):
             return True
         raise Exception("Problem transferring Tutorial from web")
+        
     def LoadExercise(self,tutorialname,fullpath=tutorialPath,baseURL=G2BaseURL):
         'Load Exercise file(s) for a Tutorial to the selected location'
         if GSASIIpath.svnSwitchDir("Exercises/"+tutorialname,baseURL+"/Exercises/"+tutorialname,fullpath):
             return True
         raise Exception("Problem transferring Exercise from web")
+        
     def SelectDownloadLoc(self,event):
         '''Select a download location,
         Cancel resets to the default

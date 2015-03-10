@@ -339,7 +339,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             Data['Scale'] *= 1.1
         elif event.key == 'd':
             Data['Scale'] /= 1.1
-        elif event.key == '+':
+        elif event.key in ['+','=']:
             Data['Layer'] = min(Data['Layer']+1,HKLmax[i])
         elif event.key == '-':
             Data['Layer'] = max(Data['Layer']-1,HKLmin[i])
@@ -591,7 +591,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             Q = drawingData['Quaternion']
         elif key in 'B':
             ifBox = not ifBox
-        elif key == '+':
+        elif key in ['+','=']:
             Data['Scale'] *= 1.25
         elif key == '-':
             Data['Scale'] /= 1.25
@@ -1046,7 +1046,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Pattern[0]['sqrtPlot'] = False
             G2frame.SinglePlot = not G2frame.SinglePlot                
             newPlot = True
-        elif event.key == '+':
+        elif event.key in ['+','=']:
             if G2frame.PickId:
                 G2frame.PickId = False
         elif event.key == 'i' and G2frame.Contour:                  #for smoothing contour plot
@@ -1423,7 +1423,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if Ymax is None: Ymax = max(xye[1])
         Ymax = max(Ymax,max(xye[1]))
     if Ymax is None: return # nothing to plot
-    offset = Pattern[0]['Offset'][0]*Ymax/100.0
+    offsetX = Pattern[0]['Offset'][1]
+    offsetY = Pattern[0]['Offset'][0]
     if G2frame.logPlot:
         Title = 'log('+Title+')'
     Plot.set_title(Title)
@@ -1500,13 +1501,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Y = np.where(xye[1]>=0.,np.sqrt(xye[1]),-np.sqrt(-xye[1]))
                 np.seterr(invalid=olderr['invalid'])
             else:
-                Y = xye[1]+offset*N
+                Y = xye[1]+offsetY*N*Ymax/100.0
         elif 'SASD' in plottype:
             B = xye[5]
             if G2frame.sqPlot:
-                Y = xye[1]*Sample['Scale'][0]*(1.05)**(Pattern[0]['Offset'][0]*N)*X**4
+                Y = xye[1]*Sample['Scale'][0]*(1.05)**(offsetY*N)*X**4
             else:
-                Y = xye[1]*Sample['Scale'][0]*(1.05)**(Pattern[0]['Offset'][0]*N)
+                Y = xye[1]*Sample['Scale'][0]*(1.05)**(offsetY*N)
         if LimitId and ifpicked:
             limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))
             lims = limits[1]
@@ -1532,9 +1533,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
             if 'SASD' in plottype and G2frame.logPlot:
-                X *= (1.01)**(Pattern[0]['Offset'][1]*N)
+                X *= (1.01)**(offsetX*N)
             else:
-                X += Pattern[0]['Offset'][1]*.005*N
+                X += offsetX*.005*N
             Xum = ma.getdata(X)
             DifLine = ['']
             if ifpicked:
@@ -1543,7 +1544,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Z = np.where(xye[3]>=0.,np.sqrt(xye[3]),-np.sqrt(-xye[3]))
                     np.seterr(invalid=olderr['invalid'])
                 else:
-                    Z = xye[3]+offset*N
+                    Z = xye[3]+offsetY*N*Ymax/100.0
                 if 'PWDR' in plottype:
                     if Pattern[0]['sqrtPlot']:
                         olderr = np.seterr(invalid='ignore') #get around sqrt(-ve) error
@@ -1551,7 +1552,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         np.seterr(invalid=olderr['invalid'])
                         D = np.where(xye[5],(Y-Z),0.)-Ymax*Pattern[0]['delOffset']
                     else:
-                        W = xye[4]+offset*N
+                        W = xye[4]+offsetY*N*Ymax/100.0
                         D = xye[5]-Ymax*Pattern[0]['delOffset']  #powder background
                 elif 'SASD' in plottype:
                     if G2frame.sqPlot:
@@ -2808,10 +2809,10 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     
     def OnPlotKeyPress(event):
         global Off,Atom,Ax
-        newPlot = False        
+        newPlot = False
         if event.key == '0':
             Off = 0
-        elif event.key == '+':
+        elif event.key in ['+','=']:
             Off += 1
         elif event.key == '-':
             Off -= 1
@@ -4236,12 +4237,12 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Set4DMapRoll(dirDict[key])
             SetPeakRoll(dirDict[key])
             SetMapPeaksText(mapPeaks)
-        elif key in ['+','-','0'] and generalData['Type'] in ['modulated','magnetic']:
+        elif key in ['+','-','=','0'] and generalData['Type'] in ['modulated','magnetic']:
             if key == '0':
                 G2frame.tau = 0.
-            elif key =='+':
+            elif key in ['+','=']:
                 G2frame.tau += 0.05
-            elif key =='-':
+            elif key == '-':
                 G2frame.tau -= 0.05
             G2frame.tau %= 1.   #force 0-1 range
         Draw('key')

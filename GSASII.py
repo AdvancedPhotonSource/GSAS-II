@@ -1324,6 +1324,8 @@ class GSASII(wx.Frame):
                 'wtFactor':1.0,
                 'Dummy':False,
                 'ranId':ran.randint(0,sys.maxint),
+                'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,
+                'qPlot':False,'dPlot':False,'sqrtPlot':False
                 }
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
             self.PatternTree.SetItemPyData(Id,[valuesdict,rd.powderdata])
@@ -1497,6 +1499,8 @@ class GSASII(wx.Frame):
             'wtFactor':1.0,
             'Dummy':True,
             'ranId':ran.randint(0,sys.maxint),
+            'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,
+            'qPlot':False,'dPlot':False,'sqrtPlot':False
             }
         self.PatternTree.SetItemPyData(Id,[valuesdict,rd.powderdata])
         self.PatternTree.SetItemPyData(

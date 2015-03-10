@@ -34,6 +34,7 @@ import GSASIIgrid as G2gd
 import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
 import GSASIIpwdGUI as G2pdG
+import GSASIIimage as G2img
 import GSASIIElem as G2el
 import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
@@ -1039,7 +1040,7 @@ def SaveIntegration(G2frame,PickId,data):
         Azms = [45.0,]                              #a poor man's average?
     else:
         for i,azm in enumerate(azms[:-1]):
-            Azms.append((azms[i+1]+azm)/2.)
+            Azms.append(G2img.meanAzm(azm,azms[i+1]))
     for i,azm in enumerate(azms[:-1]):
         Aname = name+" Azm= %.2f"%(Azms[i])
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
@@ -1087,6 +1088,8 @@ def SaveIntegration(G2frame,PickId,data):
             'wtFactor':1.0,
             'Dummy':False,
             'ranId':ran.randint(0,sys.maxint),
+            'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,
+            'qPlot':False,'dPlot':False,'sqrtPlot':False
             }
         G2frame.PatternTree.SetItemPyData(
             Id,[valuesdict,

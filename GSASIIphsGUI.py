@@ -2181,18 +2181,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             names = Names[2:]
                         else:
                             names = Names[:2]
-                        Waves = wx.FlexGridSizer(1,4,5,5)
+                        Waves = wx.FlexGridSizer(0,4,5,5)
                     elif Stype == 'Spos':
                         if waveType in ['ZigZag','Sawtooth'] and not iwave:
                             names = Names[6:]
-                            Waves = wx.FlexGridSizer(1,6,5,5)
+                            Waves = wx.FlexGridSizer(0,6,5,5)
                             waveName = waveType
                         else:
                             names = Names[:6]
-                            Waves = wx.FlexGridSizer(1,8,5,5)
+                            Waves = wx.FlexGridSizer(0,8,5,5)
                     else:
                         names = Names
-                        Waves = wx.FlexGridSizer(1,8,5,5)
+                        Waves = wx.FlexGridSizer(0,8,5,5)
                     waveSizer.Add(wx.StaticText(waveData,label=' %s  parameters: %s'%(waveName,str(names).rstrip(']').lstrip('[').replace("'",''))),0,WACV)
                     for ival,val in enumerate(wave[0]):
                         if any(CSI[Stype][0][ival]):

@@ -1564,7 +1564,6 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         dXT = np.swapaxes(dXT,1,2)
         dXT[:,:3,:] *= ssdet
         dXTP.append(dXT)
-        print 'dtau,dT',dtau,dT
         if waveType == 'Fourier':
             if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
                 CSI['Spos'] = [[[1,0,0],[2,0,0],[3,0,0], [1,0,0],[2,0,0],[3,0,0]],
@@ -1627,13 +1626,11 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         FSC &= fsc
             
         usc = np.ones(12,dtype='i')
-        # make 12x12x4x4 with tau layers?
-        dUT = posFourier(tauT,nH,delt12[:6],delt12[6:])                  #Uij modulations - 6x12x12 array
-        dUijT = np.rollaxis(np.rollaxis(np.array(Uij2U(dUT)),3),3)    #convert dUT to 12x12x3x3 
+        dUT = posFourier(tauT,nH,delt12[:6],delt12[6:])                  #Uij modulations - 6x12x49 array
+        dUijT = np.rollaxis(np.rollaxis(np.array(Uij2U(dUT)),3),3)    #convert dUT to 12x49x3x3 
         dUijT = np.rollaxis(np.inner(np.inner(sop[0],dUijT),sop[0].T),3)
         dUT = np.array(U2Uij(dUijT))
         dUT = dUT[:,:,np.argsort(tauT)]
-        dUT[:,:6,:] *= ssdet*sdet*epsinv
         dUTP.append(dUT)
         if np.any(dtau%.5) and ('1/2' in SSGData['modSymb'] or '1' in SSGData['modSymb']):
             CSI['Sadp'] = [[[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0], 
@@ -1653,8 +1650,9 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                     CSI['Sadp'][0][i+6] = [0,0,0]
                     CSI['Sadp'][1][i+6] = [0.,0.,0.]
         else:
+                        
             for i in range(6):
-                if np.allclose(dU[i,i,:],dUT[i,i,:]):
+                if np.allclose(dU[i,i,:],dUT[i,i,:]*sdet):
                     usc[i] = 1
                 else:
                     usc[i] = 0
@@ -1662,6 +1660,28 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                     usc[i+6] = 1
                 else:
                     usc[i+6] = 0
+            if '4/m' in siteSym and np.any(dUT[0,1,:]):
+                CSI['Sadp'][0][6:8] = [[12,0,0],[12,0,0]]
+                if ssop[1][3]:
+                    CSI['Sadp'][1][6:8] = [[1.,0.,0.],[-1.,0.,0.]]
+                    usc[9] = 1
+                else:
+                    CSI['Sadp'][1][6:8] = [[1.,0.,0.],[1.,0.,0.]]
+                    usc[9] = 0
+            elif '4' in siteSym and np.any(dUT[0,1,:]):
+                CSI['Sadp'][0][6:8] = [[12,0,0],[12,0,0]]
+                CSI['Sadp'][0][:2] = [[11,0,0],[11,0,0]]
+                if ssop[1][3]:
+                    CSI['Sadp'][1][:2] = [[1.,0.,0.],[-1.,0.,0.]]
+                    CSI['Sadp'][1][6:8] = [[1.,0.,0.],[-1.,0.,0.]]
+                    usc[3] = 1
+                    usc[9] = 1
+                else:
+                    CSI['Sadp'][1][:2] = [[1.,0.,0.],[1.,0.,0.]]
+                    CSI['Sadp'][1][6:8] = [[1.,0.,0.],[1.,0.,0.]]
+                    usc[3] = 0                
+                    usc[9] = 0
+            print SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,usc
         USC &= usc
     if not np.any(dtau%.5):
         n = -1

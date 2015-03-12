@@ -1758,7 +1758,8 @@ class ImportPowderData(ImportBaseclass):
         '''                            
         self.comments = []
         self.idstring = ''
-        self.Sample = G2pdG.SetDefaultSample()
+        self.Sample = G2pdG.SetDefaultSample() # default sample parameters
+        self.Controls = {}  # items to be placed in top-level Controls 
         self.GSAS = None     # used in TOF
         self.repeat_instparm = True # Should a parm file be
         #                             used for multiple histograms? 

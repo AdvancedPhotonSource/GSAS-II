@@ -1362,6 +1362,9 @@ class GSASII(wx.Frame):
             self.PatternTree.SetItemPyData(
                 self.PatternTree.AppendItem(Id,text='Reflection Lists'),
                 {})
+            # if any Control values have been set, move them into tree
+            Controls = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Controls'))
+            Controls.update(rd.Controls)
             newHistList.append(HistName)
         else:
             self.EnablePlot = True

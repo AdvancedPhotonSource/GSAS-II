@@ -1961,15 +1961,15 @@ tutorialCatalog = (
     ['TOF Calibration', 'TOF Calibration', 'Calibration of a TOF powder diffractometer.htm', 'Calibration of a TOF powder diffractometer'],
     ['TOF Charge Flipping', 'TOF Charge Flipping', 'Charge Flipping with TOF single crystal data in GSASII.htm',
      'Charge flipping with neutron TOF single crystal data'],
+    ['TOF-CW Joint Refinement', 'TOF-CW Joint Refinement', 'TOF combined XN Rietveld refinement in GSAS.htm', 'Combined XN Rietveld refinement with TOF data'],
     ['TOF Sequential Single Peak Fit', 'TOF Sequential Single Peak Fit', '', ''],
     ['TOF Single Crystal Refinement', 'TOF Single Crystal Refinement', '', ''],
-    ['TOF-CW Joint Refinement', 'TOF-CW Joint Refinement', '', ''],
     )
 if GSASIIpath.GetConfigValue('Tutorial_location'):
     tutorialPath = GSASIIpath.GetConfigValue('Tutorial_location')
 else:
     tutorialPath = GSASIIpath.path2GSAS2
-    
+
 class OpenTutorial(wx.Dialog):
     '''Open a tutorial, optionally copying it to the local disk. Always copy
     the data files locally.
@@ -2061,11 +2061,9 @@ class OpenTutorial(wx.Dialog):
         '''Respond when the mode is changed
         '''
         self.BrowseMode = self.mode.GetSelection()
-        #self.FillListBox()
-    #def FillListBox(self):
         if self.BrowseMode == 3:
             import glob
-            filelist = glob.glob(tutorialPath+'/help/*/*.htm')
+            filelist = glob.glob(os.path.join(tutorialPath,'help','*','*.htm'))
             taillist = [os.path.split(f)[1] for f in filelist]
             itemlist = [tut[-1] for tut in tutorialCatalog if tut[2] in taillist]
         else:
@@ -2094,6 +2092,7 @@ class OpenTutorial(wx.Dialog):
             ''')
                 return
         self.dataLoc.SetLabel(tutorialPath)
+        self.EndModal(wx.ID_OK)
         if self.BrowseMode == 0:
             # xfer data & web page locally, then open web page
             self.LoadTutorial(tutdir,tutorialPath,G2BaseURL)
@@ -2115,7 +2114,6 @@ class OpenTutorial(wx.Dialog):
             ShowWebPage(URL,self.frame)
         else:
             raise Exception("How did this happen!")
-        self.EndModal(wx.ID_OK)
     def ValidateTutorialDir(self,fullpath=tutorialPath,baseURL=G2BaseURL):
         '''Load help to new directory or make sure existing directory looks correctly set up
         throws an exception if there is a problem.
@@ -2138,13 +2136,13 @@ class OpenTutorial(wx.Dialog):
 
     def LoadTutorial(self,tutorialname,fullpath=tutorialPath,baseURL=G2BaseURL):
         'Load a Tutorial to the selected location'
-        if GSASIIpath.svnSwitchDir("help/"+tutorialname,baseURL+"/Tutorials/"+tutorialname,fullpath):
+        if GSASIIpath.svnSwitchDir("help",tutorialname,baseURL+"/Tutorials",fullpath):
             return True
         raise Exception("Problem transferring Tutorial from web")
         
     def LoadExercise(self,tutorialname,fullpath=tutorialPath,baseURL=G2BaseURL):
         'Load Exercise file(s) for a Tutorial to the selected location'
-        if GSASIIpath.svnSwitchDir("Exercises/"+tutorialname,baseURL+"/Exercises/"+tutorialname,fullpath):
+        if GSASIIpath.svnSwitchDir("Exercises",tutorialname,baseURL+"/Exercises",fullpath):
             return True
         raise Exception("Problem transferring Exercise from web")
         

@@ -3510,19 +3510,19 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     # scan for locations where the variables change
     VaryListChanges = [] # histograms where there is a change
     combinedVaryList = []
-    firstValueList = []
+    firstValueDict = {}
     vallookup = {}
     posdict = {}
+    prevVaryList = []
     for i,name in enumerate(histNames):
-        newval = False
-        for var,val in zip(data[name]['varyList'],data[name]['variables']):
-            svar = striphist(var,'*')
-            if svar in combinedVaryList: continue
-            # add variables to list as they appear
-            combinedVaryList.append(svar)
-            firstValueList.append(val)
-            newval = True
-        if newval:
+        for var,val,sig in zip(data[name]['varyList'],data[name]['variables'],data[name]['sig']):
+            svar = striphist(var,'*') # wild-carded
+            if svar not in combinedVaryList:
+                # add variables to list as they appear
+                combinedVaryList.append(svar)
+                firstValueDict[svar] = (val,sig)
+        if prevVaryList != data[name]['varyList']: # this refinement has a different refinement list from previous
+            prevVaryList = data[name]['varyList']
             vallookup[name] = dict(zip(data[name]['varyList'],data[name]['variables']))
             posdict[name] = {}
             for var in data[name]['varyList']:
@@ -3616,34 +3616,17 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     for name in histNames:
         if name in posdict:
             varsellist = [posdict[name].get(i) for i in range(varcols)]
-            #sellist = [data[name]['varyList'].index(v) if v is not None else None for v in varsellist]
-            sellist = [i if striphist(v,'*') in varsellist else None for i,v in enumerate(data[name]['varyList'])]
+            # translate variable names to how they will be used in the headings
+            vs = [striphist(v,'*') for v in data[name]['varyList']]
+            # determine the index for each column (or None) in the data[]['variables'] and ['sig'] lists
+            sellist = [vs.index(v) if v is not None else None for v in varsellist]
+            #sellist = [i if striphist(v,'*') in varsellist else None for i,v in enumerate(data[name]['varyList'])]
         if not varsellist: raise Exception()
         vals.append([data[name]['variables'][s] if s is not None else None for s in sellist])
         esds.append([data[name]['sig'][s] if s is not None else None for s in sellist])
+        #GSASIIpath.IPyBreak()
     colList += zip(*vals)
     colSigs += zip(*esds)
-    # add the variables that were refined; change from rows to columns
-    #colList += zip(*[data[name]['variables'] for name in histNames])
-    #colLabels += data[histNames[0]]['varyList']
-    #Types += len(data[histNames[0]]['varyList'])*[wg.GRID_VALUE_FLOAT]
-    #colSigs += zip(*[data[name]['sig'] for name in histNames])
-
-    # for var in combinedVaryList:
-    #     colLabels += [var]
-    #     Types += [wg.GRID_VALUE_FLOAT]
-    #     vals = []
-    #     sigs = []
-    #     for name in histNames:
-    #         try:
-    #             i = data[name]['varyList'].index(var)
-    #             vals.append(data[name]['variables'][i])
-    #             sigs.append(data[name]['sig'][i])
-    #         except ValueError: # var not in list
-    #             vals.append(None)
-    #             sigs.append(None)
-    #     colList += [vals]
-    #     colSigs += [sigs]
                 
     # tabulate constrained variables, removing histogram numbers if needed
     # from parameter label
@@ -3728,16 +3711,25 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     name = histNames[0]
 
     #******************************************************************************
+    # create a set of values for example evaluation of pseudovars and 
     # this does not work for refinements that have differing numbers of variables.
     #raise Exception
-    indepVarDict = {     #  values in table w/o ESDs
-        var:colList[i][0] for i,var in enumerate(colLabels) if colSigs[i] is None
-        }
-    # make dict of dependent vars (w/ESDs) that are not converted (Dij to Ak or dAx to Ax) 
-    depVarDict = {
-        var:colList[i][0] for i,var in enumerate(colLabels)
-        if colSigs[i] is not None and striphist(var) not in Dlookup
-        }
+    indepVarDict = {}     #  values in table w/o ESDs
+    depVarDict = {}
+    for i,var in enumerate(colLabels):
+        if var == 'Use': continue
+        if colList[i][0] is None:
+            val,sig = firstValueDict.get(var,[None,None])
+        elif colSigs[i]:
+            val,sig = colList[i][0],colSigs[i][0]
+        else:
+            val,sig = colList[i][0],None
+        if val is None:
+            continue
+        elif sig is None:
+            indepVarDict[var] = val
+        elif striphist(var) not in Dlookup:
+            depVarDict[var] = val
     # add recip cell coeff. values
     depVarDict.update({var:val for var,val in data[name].get('newCellDict',{}).values()})
 

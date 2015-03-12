@@ -152,8 +152,41 @@ def whichsvn():
         if is_exe(exe_file):
             return os.path.abspath(exe_file)
 
+def svnVersion():
+    '''Get the version number of the current subversion executable
+
+    :returns: a string with a version number such as "1.6.6" or None if
+      subversion is not found.
+
+    '''
+    import subprocess
+    svn = whichsvn()
+    if not svn: return
+
+    cmd = [svn,'--version','--quiet']
+    s = subprocess.Popen(cmd,
+                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = s.communicate()
+    if err:
+        print 'subversion error!\nout=',out
+        print 'err=',err
+        return None
+    return out.strip()
+
+def svnVersionNumber():
+    '''Get the version number of the current subversion executable
+
+    :returns: a fractional version number such as 1.6 or None if
+      subversion is not found.
+
+    '''
+    ver = svnVersion()
+    if not ver: return 
+    M,m = svnVersion().split('.')[:2]
+    return int(M)+int(m)/10.
+
 def svnGetLog(fpath=os.path.split(__file__)[0],version=None):
-    '''Get the revision log information for a specific version of the 
+    '''Get the revision log information for a specific version of the specified package
 
     :param str fpath: path to repository dictionary, defaults to directory where
        the current file is located.
@@ -212,19 +245,14 @@ def svnGetRev(fpath=os.path.split(__file__)[0],local=True):
         cmd = [svn,'info',fpath,'--xml']
     else:
         cmd = [svn,'info',fpath,'--xml','-rHEAD']
-    s = subprocess.Popen(cmd+['--non-interactive', '--trust-server-cert'],
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    if svnVersionNumber() >= 1.6:
+        cmd += ['--non-interactive', '--trust-server-cert']
+    s = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
-        print 'svn failed, retry w/o --trust...\nout=',out
+        print 'svn failed\n',out
         print 'err=',err
-        s = subprocess.Popen(cmd,
-                            stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        out,err = s.communicate()
-        if err:
-            print 'out=',out
-            print 'err=',err
-            return None
+        return None
     x = ET.fromstring(out)
     for i in x.iter('entry'):
         rev = i.attrib.get('revision')
@@ -277,21 +305,34 @@ def svnUpdateDir(fpath=os.path.split(__file__)[0],version=None):
     cmd = [svn,'update',fpath,verstr,
            '--non-interactive',
            '--accept','theirs-conflict','--force']
-    s = subprocess.Popen(cmd+['--trust-server-cert'], 
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    if svnVersionNumber() >= 1.6:
+        cmd += ['--trust-server-cert']
+    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
-    print out
     if err:
-        s = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        out,err = s.communicate()
-        if err:
-            print(60*"=")
-            print ("****** An error was noted, see below *********")
-            print(60*"=")
-            print err
-            sys.exit()
+        print(60*"=")
+        print ("****** An error was noted, see below *********")
+        print(60*"=")
+        print err
+        sys.exit()
 
+def svnUpgrade(fpath=os.path.split(__file__)[0]):
+    '''This reformats subversion files, which may be needed if an upgrade of subversion is
+    done. 
+
+    :param str fpath: path to repository dictionary, defaults to directory where
+       the current file is located
+    '''
+    import subprocess
+    svn = whichsvn()
+    if not svn: return
+    cmd = [svn,'upgrade',fpath,'--non-interactive']
+    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = s.communicate()
+    if err:
+        print("svn upgrade did not happen (this is probably OK). Messages:")
+        print err
+            
 def svnUpdateProcess(version=None,projectfile=None):
     '''perform an update of GSAS-II in a separate python process'''
     import subprocess
@@ -308,7 +349,7 @@ def svnUpdateProcess(version=None,projectfile=None):
     subprocess.Popen([sys.executable,__file__,projectfile,version])
     sys.exit()
 
-def svnSwitchDir(rpath,URL,loadpath=None):
+def svnSwitchDir(rpath,filename,baseURL,loadpath=None):
     '''This performs a switch command to move files between subversion trees.
 
     This is currently used for moving tutorial web pages and demo files
@@ -323,27 +364,29 @@ def svnSwitchDir(rpath,URL,loadpath=None):
     import subprocess
     svn = whichsvn()
     if not svn: return
-    if loadpath:
-        fpath = os.path.join(loadpath,rpath)
+    URL = baseURL[:]
+    if baseURL[-1] != '/':
+        URL = baseURL + '/' + filename
     else:
-        fpath = os.path.join(path2GSAS2,rpath)
-    cmd = [svn,'switch','--ignore-ancestry',URL,fpath,
-           '--non-interactive',
+        URL = baseURL + filename
+    if loadpath:
+        fpath = os.path.join(loadpath,rpath,filename)
+    else:
+        fpath = os.path.join(path2GSAS2,rpath,filename)
+    cmd = [svn,'switch',URL,fpath,
+           '--non-interactive','--trust-server-cert',
            '--accept','theirs-conflict','--force']
+    if svnVersionNumber() > 1.6: cmd += ['--ignore-ancestry']
     print("Loading files from "+URL)
-    s = subprocess.Popen(cmd+['--trust-server-cert'], 
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
-        s = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        out,err = s.communicate()
-        if err:
-            print(60*"=")
-            print ("****** An error was noted, see below *********")
-            print(60*"=")
-            print err
-            return False
+        print(60*"=")
+        print ("****** An error was noted, see below *********")
+        print(60*"=")
+        print 'out=',out
+        print 'err=',err
+        return False
     return True
 
 def svnInstallDir(URL,loadpath):
@@ -359,23 +402,17 @@ def svnInstallDir(URL,loadpath):
     if os.path.exists(loadpath):
         raise Exception("Error: Attempting to create existing directory "+loadpath)
     cmd = [svn,'co',URL,loadpath,'--non-interactive']
+    if svnVersionNumber() >= 1.6: cmd += ['--trust-server-cert']
     print("Loading files from "+URL)
-    s = subprocess.Popen(cmd+['--trust-server-cert'], 
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:
-        print out
-        s = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        out,err = s.communicate()
-        if err:
-            print(60*"=")
-            print ("****** An error was noted, see below *********")
-            print(60*"=")
-            print err
-            return False
+        print(60*"=")
+        print ("****** An error was noted, see below *********")
+        print(60*"=")
+        print err
+        return False
     return True
-
             
 def IPyBreak_base():
     '''A routine that invokes an IPython session at the calling location

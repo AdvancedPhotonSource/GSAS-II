@@ -1424,6 +1424,17 @@ def GetCSuinel(siteSym):
     
 def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
     
+    def orderParms(CSI):
+        parms = [0,]
+        for csi in CSI:
+            for i in [0,1,2]:
+                if csi[i] not in parms:
+                    parms.append(csi[i])
+        for csi in CSI:
+            for i in [0,1,2]:
+                csi[i] = parms.index(csi[i])
+        return CSI
+    
     def fracCrenel(tau,Toff,Twid):
         Tau = (tau-Toff)%1.
         A = np.where(Tau<Twid,1.,0.)
@@ -1586,6 +1597,11 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                         CSI['Spos'][1][i] = [0.,0.,0.]
                         CSI['Spos'][0][i+3] = [0,0,0]
                         CSI['Spos'][1][i+3] = [0.,0.,0.]
+            elif np.allclose(dX[0,0,:],dXT[0,1,:]*sdet):
+                if 'xy' in siteSym or '+-0' in siteSym:
+                    CSI['Spos'][0][3:5] = [[12,0,0],[12,0,0]]
+                    CSI['Spos'][1][3:5] = [[1.,0,0],[-sdet,0,0]]
+                    xsc[3:5] = 0
             else:
                 for i in range(3):
                     if np.allclose(dX[i,i,:],dXT[i,i,:]*sdet):
@@ -1660,27 +1676,38 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                     usc[i+6] = 1
                 else:
                     usc[i+6] = 0
-            if '4/m' in siteSym and np.any(dUT[0,1,:]):
-                CSI['Sadp'][0][6:8] = [[12,0,0],[12,0,0]]
-                if ssop[1][3]:
-                    CSI['Sadp'][1][6:8] = [[1.,0.,0.],[-1.,0.,0.]]
-                    usc[9] = 1
-                else:
-                    CSI['Sadp'][1][6:8] = [[1.,0.,0.],[1.,0.,0.]]
-                    usc[9] = 0
-            elif '4' in siteSym and np.any(dUT[0,1,:]):
-                CSI['Sadp'][0][6:8] = [[12,0,0],[12,0,0]]
-                CSI['Sadp'][0][:2] = [[11,0,0],[11,0,0]]
-                if ssop[1][3]:
-                    CSI['Sadp'][1][:2] = [[1.,0.,0.],[-1.,0.,0.]]
-                    CSI['Sadp'][1][6:8] = [[1.,0.,0.],[-1.,0.,0.]]
-                    usc[3] = 1
-                    usc[9] = 1
-                else:
-                    CSI['Sadp'][1][:2] = [[1.,0.,0.],[1.,0.,0.]]
-                    CSI['Sadp'][1][6:8] = [[1.,0.,0.],[1.,0.,0.]]
-                    usc[3] = 0                
-                    usc[9] = 0
+            if np.any(dUT[0,1,:]):
+                if '4/m' in siteSym:
+                    CSI['Sadp'][0][6:8] = [[12,0,0],[12,0,0]]
+                    if ssop[1][3]:
+                        CSI['Sadp'][1][6:8] = [[1.,0.,0.],[-1.,0.,0.]]
+                        usc[9] = 1
+                    else:
+                        CSI['Sadp'][1][6:8] = [[1.,0.,0.],[1.,0.,0.]]
+                        usc[9] = 0
+                elif '4' in siteSym:
+                    CSI['Sadp'][0][6:8] = [[12,0,0],[12,0,0]]
+                    CSI['Sadp'][0][:2] = [[11,0,0],[11,0,0]]
+                    if ssop[1][3]:
+                        CSI['Sadp'][1][:2] = [[1.,0.,0.],[-1.,0.,0.]]
+                        CSI['Sadp'][1][6:8] = [[1.,0.,0.],[-1.,0.,0.]]
+                        usc[3] = 1
+                        usc[9] = 1
+                    else:
+                        CSI['Sadp'][1][:2] = [[1.,0.,0.],[1.,0.,0.]]
+                        CSI['Sadp'][1][6:8] = [[1.,0.,0.],[1.,0.,0.]]
+                        usc[3] = 0                
+                        usc[9] = 0
+                elif 'xy' in siteSym or '+-0' in siteSym:
+                    if np.allclose(dU[0,0,:],dUT[0,1,:]*sdet):
+                        print np.allclose(dU[0,0,:],dUT[0,1,:]*sdet),sdet
+                        CSI['Sadp'][0][4:6] = [[12,0,0],[12,0,0]]
+                        CSI['Sadp'][0][6:8] = [[11,0,0],[11,0,0]]
+                        CSI['Sadp'][1][4:6] = [[1.,0.,0.],[sdet,0.,0.]]
+                        CSI['Sadp'][1][6:8] = [[1.,0.,0.],[sdet,0.,0.]]
+                        usc[4:6] = 0
+                        usc[6:8] = 0
+                    
             print SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,usc
         USC &= usc
     if not np.any(dtau%.5):
@@ -1705,7 +1732,9 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                 CSI['Sfrac'][1][i] = 1.0
             else:
                 CSI['Sfrac'][0][i] = 0
-                CSI['Sfrac'][1][i] = 0.            
+                CSI['Sfrac'][1][i] = 0.
+    CSI['Spos'][0] = orderParms(CSI['Spos'][0])
+    CSI['Sadp'][0] = orderParms(CSI['Sadp'][0])            
     if debug:
         return CSI,[tau,tauT],[dF,dFTP],[dX,dXTP],[dU,dUTP]
     else:

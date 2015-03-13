@@ -66,8 +66,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(17)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_PWDANALYSIS, wxID_PWDCOPY, wxID_PLOTCTRLCOPY, 
-    wxID_DATADELETE, wxID_SHOWALL,
-] = [wx.NewId() for item in range(7)]
+    wxID_DATADELETE,
+] = [wx.NewId() for item in range(6)]
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
@@ -1960,8 +1960,6 @@ class DataFrame(wx.Frame):
             help='Select new powder histograms to be used for this phase')
         self.DataEdit.Append(id=wxID_HKLFADD, kind=wx.ITEM_NORMAL,text='Add single crystal histograms',
             help='Select new single crystal histograms to be used for this phase')
-        self.DataEdit.Append(id=wxID_SHOWALL, kind=wx.ITEM_NORMAL,text='Show/Hide all',
-            help='Show/Hide all data entries')            
         self.DataEdit.Append(id=wxID_DATADELETE, kind=wx.ITEM_NORMAL,text='Remove histograms',
             help='Remove histograms from use for this phase')
         self.PostfillDataMenu()

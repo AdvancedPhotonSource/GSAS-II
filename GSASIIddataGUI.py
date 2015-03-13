@@ -858,7 +858,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
     def OnSelSpin(event):
         hist = keyList[selSpin.GetValue()]
         G2plt.PlotSizeStrainPO(G2frame,data)
-        UpdateDData(G2frame,DData,data,hist)                 
+        wx.CallLater(100,UpdateDData,G2frame,DData,data,hist)
         
     if DData.GetSizer():
         DData.GetSizer().Clear(True)
@@ -886,8 +886,9 @@ def UpdateDData(G2frame,DData,data,hist=''):
         UseList[hist]['Use'] = True
     if 'Babinet' not in UseList[hist]:
         UseList[hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
+    mainSizer.Add((5,5),0)
+    mainSizer.Add(wx.StaticText(DData,label=' Histogram: '+hist),0,WACV)
     showSizer = wx.BoxSizer(wx.HORIZONTAL)
-    showSizer.Add(wx.StaticText(DData,label=hist),0,WACV)
     useData = wx.CheckBox(DData,-1,label='Use?')
     Indx[useData.GetId()] = hist
     showSizer.Add(useData,0,WACV)

@@ -2093,6 +2093,7 @@ class OpenTutorial(wx.Dialog):
                 return
         self.dataLoc.SetLabel(tutorialPath)
         self.EndModal(wx.ID_OK)
+        wx.BeginBusyCursor()
         if self.BrowseMode == 0:
             # xfer data & web page locally, then open web page
             self.LoadTutorial(tutdir,tutorialPath,G2BaseURL)
@@ -2113,7 +2114,9 @@ class OpenTutorial(wx.Dialog):
             URL = os.path.join(tutorialPath,'help',tutdir,htmlname)
             ShowWebPage(URL,self.frame)
         else:
+            wx.EndBusyCursor()
             raise Exception("How did this happen!")
+        wx.EndBusyCursor()
     def ValidateTutorialDir(self,fullpath=tutorialPath,baseURL=G2BaseURL):
         '''Load help to new directory or make sure existing directory looks correctly set up
         throws an exception if there is a problem.
@@ -2121,30 +2124,40 @@ class OpenTutorial(wx.Dialog):
         if os.path.exists(fullpath):
             if os.path.exists(os.path.join(fullpath,"help")):
                 if not GSASIIpath.svnGetRev(os.path.join(fullpath,"help")):
-                    raise Exception("Problem with "+fullpath+" dir help exists but is not in SVN")
-            else:
-                raise Exception("Problem: dir "+fullpath+" exists does not contain help")
+                    print("Problem with "+fullpath+" dir help exists but is not in SVN")
+                    raise Exception
             if os.path.exists(os.path.join(fullpath,"Exercises")):
                 if not GSASIIpath.svnGetRev(os.path.join(fullpath,"Exercises")):
-                    raise Exception("Problem with "+fullpath+" dir Exercises exists but is not in SVN")
-            else:
-                raise Exception("Problem: dir "+fullpath+" exists does not contain Exercises")
-        else:
-            if not GSASIIpath.svnInstallDir(baseURL+"/MT",fullpath):
-                raise Exception("Problem transferring empty directory from web")
+                    print("Problem with "+fullpath+" dir Exercises exists but is not in SVN")
+                    raise Exception
+            if (os.path.exists(os.path.join(fullpath,"help")) and
+                    os.path.exists(os.path.join(fullpath,"Exercises"))):
+                return True # both good
+            elif (os.path.exists(os.path.join(fullpath,"help")) or
+                    os.path.exists(os.path.join(fullpath,"Exercises"))):
+                print("Problem: dir "+fullpath+" exists has either help or Exercises, not both")
+                raise Exception
+        wx.BeginBusyCursor()
+        if not GSASIIpath.svnInstallDir(baseURL+"/MT",fullpath):
+            wx.EndBusyCursor()
+            print("Problem transferring empty directory from web")
+            raise Exception
+        wx.EndBusyCursor()
         return True
 
     def LoadTutorial(self,tutorialname,fullpath=tutorialPath,baseURL=G2BaseURL):
         'Load a Tutorial to the selected location'
         if GSASIIpath.svnSwitchDir("help",tutorialname,baseURL+"/Tutorials",fullpath):
             return True
-        raise Exception("Problem transferring Tutorial from web")
+        print("Problem transferring Tutorial from web")
+        raise Exception
         
     def LoadExercise(self,tutorialname,fullpath=tutorialPath,baseURL=G2BaseURL):
         'Load Exercise file(s) for a Tutorial to the selected location'
         if GSASIIpath.svnSwitchDir("Exercises",tutorialname,baseURL+"/Exercises",fullpath):
             return True
-        raise Exception("Problem transferring Exercise from web")
+        print ("Problem transferring Exercise from web")
+        raise Exception
         
     def SelectDownloadLoc(self,event):
         '''Select a download location,
@@ -2166,12 +2179,12 @@ class OpenTutorial(wx.Dialog):
             try:
                 os.makedirs(pth)
             except OSError:
-                G2MessageBox(self.frame,
-                '''The selected directory is not valid.
-                
-                It appears you do not have write access to this location.
-                ''')
+                msg = 'The selected directory is not valid.\n\t'
+                msg += pth
+                msg += '\n\nAn attempt to create the directory failed'
+                G2MessageBox(self.frame,msg)
                 return
+        self.ValidateTutorialDir(pth,G2BaseURL)
         try: 
             self.ValidateTutorialDir(pth,G2BaseURL)
             tutorialPath = pth

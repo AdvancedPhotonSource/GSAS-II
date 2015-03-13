@@ -399,8 +399,6 @@ def svnInstallDir(URL,loadpath):
     import subprocess
     svn = whichsvn()
     if not svn: return
-    if os.path.exists(loadpath):
-        raise Exception("Error: Attempting to create existing directory "+loadpath)
     cmd = [svn,'co',URL,loadpath,'--non-interactive']
     if svnVersionNumber() >= 1.6: cmd += ['--trust-server-cert']
     print("Loading files from "+URL)

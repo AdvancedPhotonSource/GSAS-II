@@ -857,6 +857,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
        
     def OnSelSpin(event):
         hist = keyList[selSpin.GetValue()]
+        selSpin.Destroy() # remove button to discourage pressing too fast
         G2plt.PlotSizeStrainPO(G2frame,data)
         wx.CallLater(100,UpdateDData,G2frame,DData,data,hist)
         
@@ -869,7 +870,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
     selSpin = wx.SpinButton(DData,size=(20,100),style=wx.SP_VERTICAL|wx.SP_WRAP)
     selSpin.SetValue(keyList.index(hist))
     selSpin.SetRange(0,len(keyList)-1)
-    selSpin.Bind(wx.EVT_SPIN,OnSelSpin)
     selSizer.Add(selSpin)
     select = wx.ListBox(DData,choices=keyList,style=wx.LB_SINGLE,size=(-1,100))
     select.SetSelection(keyList.index(hist))
@@ -996,3 +996,4 @@ def UpdateDData(G2frame,DData,data,hist=''):
 
     mainSizer.Add((5,5),0)
     G2phsGUI.SetPhaseWindow(G2frame.dataFrame,DData,mainSizer)
+    selSpin.Bind(wx.EVT_SPIN,OnSelSpin)

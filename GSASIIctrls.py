@@ -1287,12 +1287,14 @@ class PickTwoDialog(wx.Dialog):
 
 def GetItemOrder(parent,keylist,vallookup,posdict):
     '''Creates a panel where items can be ordered into columns
+    
     :param list keylist: is a list of keys for column assignments
     :param dict vallookup: is a dict keyed by names in keylist where each item is a dict. 
        Each inner dict contains variable names as keys and their associated values 
     :param dict posdict: is a dict keyed by names in keylist where each item is a dict. 
        Each inner dict contains column numbers as keys and their associated
        variable name as a value. This is used for both input and output.
+       
     '''
     dlg = wx.Dialog(parent,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
     sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1316,12 +1318,14 @@ def GetItemOrder(parent,keylist,vallookup,posdict):
 ################################################################################
 class OrderBox(wxscroll.ScrolledPanel):
     '''Creates a panel with scrollbars where items can be ordered into columns
+    
     :param list keylist: is a list of keys for column assignments
     :param dict vallookup: is a dict keyed by names in keylist where each item is a dict. 
       Each inner dict contains variable names as keys and their associated values 
     :param dict posdict: is a dict keyed by names in keylist where each item is a dict. 
       Each inner dict contains column numbers as keys and their associated
       variable name as a value. This is used for both input and output.
+      
     '''
     def __init__(self,parent,keylist,vallookup,posdict,*arg,**kw):
         self.keylist = keylist

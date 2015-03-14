@@ -41,6 +41,7 @@ def SpcGroup(SGSymbol):
 
     :param SGSymbol: space group symbol (string) with spaces between axial fields
     :returns: (SGError,SGData)
+    
        * SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
        * SGData - is a dict (see :ref:`Space Group object<SGData_table>`) with entries:
        
@@ -54,12 +55,12 @@ def SpcGroup(SGSymbol):
              * 'SGOps': symmetry operations as [M,T] so that M*x+T = x'
              * 'SGSys': one of 'triclinic', 'monoclinic', 'orthorhombic',
                'tetragonal', 'rhombohedral', 'trigonal', 'hexagonal', 'cubic'
-             * 'SGPolax': one of '', 'x', 'y', 'x y', 'z', 'x z', 'y z',
+             * 'SGPolax': one of ' ', 'x', 'y', 'x y', 'z', 'x z', 'y z',
                'xyz', '111' for arbitrary axes
-             * 'SGPtGrp': one of 32 point group symbols (with some permutations)
-                - filled by SGPtGroup - is external (KE) part of supersymmetry point group
+             * 'SGPtGrp': one of 32 point group symbols (with some permutations), which
+                is filled by SGPtGroup, is external (KE) part of supersymmetry point group
              * 'SSGKl': default internal (Kl) part of supersymmetry point group; modified 
-             in supersymmetry stuff depending on chosen modulation vector for Mono & Ortho
+                in supersymmetry stuff depending on chosen modulation vector for Mono & Ortho
 
     """
     LaueSym = ('-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m')
@@ -174,7 +175,7 @@ def SGPtGroup(SGData):
     been evaluated by SpcGroup. Only short symbols are allowed
     
     :param SGData: from :func SpcGroup
-    returns SSGPtGrp & SSGKl (only defaults for Mono & Ortho)
+    :returns: SSGPtGrp & SSGKl (only defaults for Mono & Ortho)
     '''
     Flds = SGData['SpGrp'].split()
     if len(Flds) < 2:
@@ -424,6 +425,7 @@ def SSpcGroup(SGData,SSymbol):
     :param SGData: space group data structure as defined in SpcGroup above.
     :param SSymbol: superspace group symbol extension (string) defining modulation direction & generator info.
     :returns: (SSGError,SSGData)
+    
        * SGError = 0 for no errors; >0 for errors (see SGErrors below for details)
        * SSGData - is a dict (see :ref:`Superspace Group object<SSGData_table>`) with entries:
        

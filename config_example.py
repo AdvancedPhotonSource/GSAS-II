@@ -39,8 +39,10 @@ Help_mode = None
 Tutorial_location = None
 '''Change this to place tutorials by in a different spot. If None, this defaults to
 the location where GSAS-II is loaded GSASIIpath.path2GSAS2. For installations where
-G2 is installed by an administrator, it is a good idea to use something like this:
+G2 is installed by an administrator, it is a good idea to use something like this::
+
     import os.path
     Tutorial_location = os.path.join(os.path.expanduser('~'),'G2tutorials')
+
 This will allow users to download tutorial files into their own file space.
 '''

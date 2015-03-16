@@ -367,29 +367,13 @@ class GSASII(wx.Frame):
             choices += "|zip archive (.zip)|*.zip"
             if not reader.strictExtension:
                 choices += "|any file (*.*)|*.*"
-        # get the file(s)
+        # get the file(s) (probably should remove wx.CHANGE_DIR here)
         if multiple:
             mode = style=wx.OPEN | wx.CHANGE_DIR | wx.MULTIPLE
         else:
             mode = style=wx.OPEN | wx.CHANGE_DIR
-        dlg = wx.FileDialog(self, message="Choose "+label+" input file",
-            defaultFile="",wildcard=choices, style=mode)
-        if self.Tutorials:
-            dlg.SetDirectory(os.path.join(GSASIIpath.path2GSAS2,'Exercises'))
-            self.Tutorials = False
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                if multiple:
-                    filelist = dlg.GetPaths()
-                    if len(filelist) == 0: return []
-                else:
-                    filename = dlg.GetPath()
-                    filelist = [filename,]
-                os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
-            else: # cancel was pressed
-                return []
-        finally:
-            dlg.Destroy()
+        filelist = self.GetImportFile(message="Choose "+label+" input file",
+                    defaultFile="",wildcard=choices, style=mode)
         rd_list = []
         filelist1 = []
         for filename in filelist:
@@ -538,6 +522,39 @@ class GSASII(wx.Frame):
                               text='guess format from file')
         self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
 
+    def GetImportFile(self, message, defaultDir="", defaultFile="", style=wx.OPEN,
+                      *args, **kwargs):
+        '''Defines a customized dialog that gets gets files from the appropriate
+        Import directory (unless overridden with defaultDir). The default
+        import directory is found in self.ImportDir, which will be set to
+        the location of the (first) file entered in this dialog.
+           
+        :returns: a list of files or an empty list
+        '''
+        dlg = wx.FileDialog(self, message, defaultDir, defaultFile, *args,
+                            style=style, **kwargs)
+        if not defaultDir and self.ImportDir:
+            dlg.SetDirectory(self.ImportDir)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                if style & wx.MULTIPLE:
+                    filelist = dlg.GetPaths()
+                    if len(filelist) == 0: return []
+                else:
+                    filelist = [dlg.GetPath(),]
+                # not sure if we want to do this (why use wx.CHANGE_DIR?)
+                if style & wx.CHANGE_DIR: # to get Mac/Linux to change directory like windows!
+                    os.chdir(dlg.GetDirectory())
+                if not defaultDir and self.ImportDir: # if we are using a default and
+                    # user moved, save the new location
+                    self.ImportDir = os.path.split(filelist[0])[0]
+                    #print 'default moved to',self.ImportDir               
+            else: # cancel was pressed
+                return []
+        finally:
+            dlg.Destroy()
+        return filelist
+            
     def OnImportPhase(self,event):
         '''Called in response to an Import/Phase/... menu item
         to read phase information.
@@ -2133,7 +2150,12 @@ class GSASII(wx.Frame):
         self.MaskKey = ''           #trigger for making image masks
         self.StrainKey = ''         #ditto for new strain d-zeros
         self.EnablePlot = True
-        self.Tutorials = False      #used for changing default directory
+        if GSASIIpath.GetConfigValue('Starting_directory'):
+            try: 
+                os.chdir(GSASIIpath.GetConfigValue('Starting_directory'))
+            except:
+                print('Ignoring Config Starting_directory value: '+
+                      GSASIIpath.GetConfigValue('Starting_directory'))
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
             self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
@@ -2146,6 +2168,10 @@ class GSASII(wx.Frame):
                 self.EnableSeqRefineMenu()
             except:
                 print 'Error opening file',arg[1]
+              
+        self.ImportDir = os.path.normpath(os.getcwd()) # specifies a default path to be used for imports
+        if GSASIIpath.GetConfigValue('Import_directory'):
+            self.ImportDir = GSASIIpath.GetConfigValue('Import_directory')
 
     def OnSize(self,event):
         'Called when the main window is resized. Not sure why'

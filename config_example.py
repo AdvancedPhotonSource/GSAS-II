@@ -27,10 +27,10 @@ If debug is false calls to :func:`GSASIIpath.IPyBreak` and
 :func:`GSASIIpath.pdbBreak` are ignored.
 '''
 
-Enable_logging = None
+Enable_logging = False
 'Set to True to enable use of command logging'
 
-logging_debug = None
+logging_debug = False
 'Set to True to enable debug for logging'
 
 Help_mode = None
@@ -45,4 +45,12 @@ G2 is installed by an administrator, it is a good idea to use something like thi
     Tutorial_location = os.path.join(os.path.expanduser('~'),'G2tutorials')
 
 This will allow users to download tutorial files into their own file space.
+'''
+
+Starting_directory=None
+'''Specifies a default location for starting GSAS-II
+'''
+
+Import_directory=None
+'''Specifies a default location for starting GSAS-II
 '''

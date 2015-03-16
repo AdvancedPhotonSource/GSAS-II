@@ -1485,12 +1485,13 @@ class MyHelp(wx.Menu):
             print 'Error: help lookup failed!',event.GetEventObject()
             print 'id=',event.GetId()
         elif helpType == 'OldTutorials': # this will go away
-            self.frame.Tutorials = True
+            #self.frame.Tutorials = True
             ShowHelp(helpType,self.frame)
         elif helpType == 'Tutorials': 
             dlg = OpenTutorial(self.frame)
-            if dlg.ShowModal() == wx.ID_OK:
-                self.frame.Tutorials = True
+            dlg.ShowModal()
+            #if dlg.ShowModal() == wx.ID_OK:
+                #self.frame.Tutorials = True
             dlg.Destroy()
             return
         else:
@@ -2150,15 +2151,18 @@ class OpenTutorial(wx.Dialog):
             self.LoadExercise(exedir,tutorialPath,G2BaseURL)
             URL = os.path.join(tutorialPath,'help',tutdir,htmlname)
             ShowWebPage(URL,self.frame)
+            self.frame.ImportDir = os.path.join(tutorialPath,'Exercises',exedir)
         elif self.BrowseMode == 1:
             # xfer data locally, open web page remotely
             self.LoadExercise(exedir,tutorialPath,G2BaseURL)
             URL = os.path.join(G2BaseURL,'Tutorials',tutdir,htmlname)
             ShowWebPage(URL,self.frame)
+            self.frame.ImportDir = os.path.join(tutorialPath,'Exercises',exedir)
         elif self.BrowseMode == 2:
             # open web page remotely, don't worry about data
             URL = os.path.join(G2BaseURL,'Tutorials',tutdir,htmlname)
             ShowWebPage(URL,self.frame)
+            self.frame.ImportDir = os.path.join(tutorialPath,'Exercises',exedir)
         elif self.BrowseMode == 3:
             # open web page that has already been transferred
             URL = os.path.join(tutorialPath,'help',tutdir,htmlname)

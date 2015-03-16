@@ -1667,8 +1667,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                     CSI['Sadp'][1][i] = [0.,0.,0.]
                     CSI['Sadp'][0][i+6] = [0,0,0]
                     CSI['Sadp'][1][i+6] = [0.,0.,0.]
-        else:
-                        
+        else:                        
             for i in range(6):
                 if np.allclose(dU[i,i,:],dUT[i,i,:]*sdet):
                     usc[i] = 1

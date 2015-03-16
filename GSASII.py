@@ -2096,10 +2096,7 @@ class GSASII(wx.Frame):
         self.exportDir = None  # the last directory used for exports, if any.
         self.undofile = ''
         self.TreeItemDelete = False
-#        self.Offset = [0.0,0.0]
-#        self.delOffset = .02
-#        self.refOffset = -1.0
-#        self.refDelt = .01
+        self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False}
         self.Weight = False
         self.IfPlot = False
         self.DDShowAll = False

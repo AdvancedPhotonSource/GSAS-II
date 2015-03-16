@@ -942,10 +942,11 @@ class GSASII(wx.Frame):
         # pull out requested bank # bank from the data, and change the bank to 1
         IparmS = {}
         for key in Iparm:
-            if key[4:6] == "  ":
-                IparmS[key] = Iparm[key]
-            elif int(key[4:6].strip()) == bank:
-                IparmS[key[:4]+' 1'+key[6:]] = Iparm[key]
+            if 'INS' in key[:3]:    #skip around rubbish lines in some old iparm files
+                if key[4:6] == "  ":
+                    IparmS[key] = Iparm[key]
+                elif int(key[4:6].strip()) == bank:
+                    IparmS[key[:4]+' 1'+key[6:]] = Iparm[key]
         rd.instbank = bank
         return IparmS
                         

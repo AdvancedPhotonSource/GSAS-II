@@ -331,6 +331,10 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         # got a selection, now read it
         Bank = Banks[selblk]
         try:
+            bnkNo = int(Bank.split()[1])
+        except ValueError:
+            bnkNo = 1
+        try:
             if 'FXYE' in Bank:
                 self.errors = 'Error reading FXYE data in Bank\n  '+Banks[selblk]
                 self.powderdata = GetFXYEdata(filepointer,Pos[selblk],Banks[selblk])
@@ -361,8 +365,8 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             self.comments = comments[selblk]
         self.powderentry[0] = filename
         self.powderentry[1] = Pos # position offset (never used, I hope)
-        self.powderentry[2] = selblk+1 # bank number
-        self.idstring = ospath.basename(filename) + ' Bank '+str(selblk+1)
+        self.powderentry[2] = bnkNo #selblk+1 # bank number
+        self.idstring = ospath.basename(filename) + ' Bank '+str(bnkNo) #selblk+1)
         self.numbanks=len(Banks)
         # scan comments for temperature & radius
         Temperature = 300.

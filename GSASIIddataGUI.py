@@ -864,7 +864,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
     if DData.GetSizer():
         DData.GetSizer().Clear(True)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(DData,-1,'Histogram data for '+PhaseName+':'),0,WACV)
+    mainSizer.Add(wx.StaticText(DData,-1,' Histogram data for '+PhaseName+':'),0,WACV)
     topSizer = wx.FlexGridSizer(1,2,5,5)
     selSizer = wx.BoxSizer(wx.HORIZONTAL)    
     selSpin = wx.SpinButton(DData,size=(20,100),style=wx.SP_VERTICAL|wx.SP_WRAP)

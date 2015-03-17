@@ -2491,7 +2491,7 @@ def PlotPeakWidths(G2frame):
 ##### PlotSizeStrainPO
 ################################################################################
             
-def PlotSizeStrainPO(G2frame,data,Start=False):
+def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     '''Plot 3D mustrain/size/preferred orientation figure. In this instance data is for a phase
     '''
     
@@ -2514,13 +2514,8 @@ def PlotSizeStrainPO(G2frame,data,Start=False):
         G2frame.G2plotNB.Delete(ptype)
     if plotType in ['None']:
         return        
-
-    for item in useList:
-        if useList[item]['Show']:
-            break
-    else:
-        return            #nothing to show!!
-    
+    if hist == '':
+        hist = useList.keys()[0]
     numPlots = len(useList)
 
     if plotType in ['Mustrain','Size']:
@@ -2535,117 +2530,115 @@ def PlotSizeStrainPO(G2frame,data,Start=False):
     if not Page.IsShown():
         Page.Show()
     
-    for item in useList:
-        if useList[item]['Show']:
-            PHI = np.linspace(0.,360.,30,True)
-            PSI = np.linspace(0.,180.,30,True)
-            X = np.outer(npsind(PHI),npsind(PSI))
-            Y = np.outer(npcosd(PHI),npsind(PSI))
-            Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
-            try:        #temp patch instead of 'mustrain' for old files with 'microstrain'
-                coeff = useList[item][plotDict[plotType]]
-            except KeyError:
-                break
-            if plotType in ['Mustrain','Size']:
-                if coeff[0] == 'isotropic':
-                    X *= coeff[1][0]
-                    Y *= coeff[1][0]
-                    Z *= coeff[1][0]                                
-                elif coeff[0] == 'uniaxial':
-                    
-                    def uniaxCalc(xyz,iso,aniso,axes):
-                        Z = np.array(axes)
-                        cp = abs(np.dot(xyz,Z))
-                        sp = np.sqrt(1.-cp**2)
-                        R = iso*aniso/np.sqrt((iso*cp)**2+(aniso*sp)**2)
-                        return R*xyz
-                        
-                    iso,aniso = coeff[1][:2]
-                    axes = np.inner(A,np.array(coeff[3]))
-                    axes /= nl.norm(axes)
-                    Shkl = np.array(coeff[1])
-                    XYZ = np.dstack((X,Y,Z))
-                    XYZ = np.nan_to_num(np.apply_along_axis(uniaxCalc,2,XYZ,iso,aniso,axes))
-                    X,Y,Z = np.dsplit(XYZ,3)
-                    X = X[:,:,0]
-                    Y = Y[:,:,0]
-                    Z = Z[:,:,0]
+    PHI = np.linspace(0.,360.,30,True)
+    PSI = np.linspace(0.,180.,30,True)
+    X = np.outer(npsind(PHI),npsind(PSI))
+    Y = np.outer(npcosd(PHI),npsind(PSI))
+    Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
+    try:        #temp patch instead of 'mustrain' for old files with 'microstrain'
+        coeff = useList[hist][plotDict[plotType]]
+    except KeyError:
+        return
+    if plotType in ['Mustrain','Size']:
+        if coeff[0] == 'isotropic':
+            X *= coeff[1][0]
+            Y *= coeff[1][0]
+            Z *= coeff[1][0]                                
+        elif coeff[0] == 'uniaxial':
+            
+            def uniaxCalc(xyz,iso,aniso,axes):
+                Z = np.array(axes)
+                cp = abs(np.dot(xyz,Z))
+                sp = np.sqrt(1.-cp**2)
+                R = iso*aniso/np.sqrt((iso*cp)**2+(aniso*sp)**2)
+                return R*xyz
                 
-                elif coeff[0] == 'ellipsoidal':
-                    
-                    def ellipseCalc(xyz,E,R):
-                        XYZ = xyz*E.T
-                        return np.inner(XYZ.T,R)
-                        
-                    S6 = coeff[4]
-                    Sij = G2lat.U6toUij(S6)
-                    E,R = nl.eigh(Sij)
-                    XYZ = np.dstack((X,Y,Z))
-                    XYZ = np.nan_to_num(np.apply_along_axis(ellipseCalc,2,XYZ,E,R))
-                    X,Y,Z = np.dsplit(XYZ,3)
-                    X = X[:,:,0]
-                    Y = Y[:,:,0]
-                    Z = Z[:,:,0]
-                    
-                elif coeff[0] == 'generalized':
-                    
-                    def genMustrain(xyz,SGData,A,Shkl):
-                        uvw = np.inner(A.T,xyz)
-                        Strm = np.array(G2spc.MustrainCoeff(uvw,SGData))
-                        Sum = np.sum(np.multiply(Shkl,Strm))
-                        Sum = np.where(Sum > 0.01,Sum,0.01)
-                        Sum = np.sqrt(Sum)
-                        return Sum*xyz
-                        
-                    Shkl = np.array(coeff[4])
-                    if np.any(Shkl):
-                        XYZ = np.dstack((X,Y,Z))
-                        XYZ = np.nan_to_num(np.apply_along_axis(genMustrain,2,XYZ,SGData,A,Shkl))
-                        X,Y,Z = np.dsplit(XYZ,3)
-                        X = X[:,:,0]
-                        Y = Y[:,:,0]
-                        Z = Z[:,:,0]
-                            
-                if np.any(X) and np.any(Y) and np.any(Z):
-                    errFlags = np.seterr(all='ignore')
-                    Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
-                    np.seterr(all='ignore')
-                    xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
-                    XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
-                    Plot.set_xlim3d(XYZlim)
-                    Plot.set_ylim3d(XYZlim)
-                    Plot.set_zlim3d(XYZlim)
-                    Plot.set_aspect('equal')
-                if plotType == 'Size':
-                    Plot.set_title('Crystallite size for '+phase+'\n'+coeff[0]+' model')
-                    Plot.set_xlabel(r'X, $\mu$m')
-                    Plot.set_ylabel(r'Y, $\mu$m')
-                    Plot.set_zlabel(r'Z, $\mu$m')
-                else:    
-                    Plot.set_title(r'$\mu$strain for '+phase+'\n'+coeff[0]+' model')
-                    Plot.set_xlabel(r'X, $\mu$strain')
-                    Plot.set_ylabel(r'Y, $\mu$strain')
-                    Plot.set_zlabel(r'Z, $\mu$strain')
-            else:
-                h,k,l = generalData['POhkl']
-                if coeff[0] == 'MD':
-                    print 'March-Dollase preferred orientation plot'
+            iso,aniso = coeff[1][:2]
+            axes = np.inner(A,np.array(coeff[3]))
+            axes /= nl.norm(axes)
+            Shkl = np.array(coeff[1])
+            XYZ = np.dstack((X,Y,Z))
+            XYZ = np.nan_to_num(np.apply_along_axis(uniaxCalc,2,XYZ,iso,aniso,axes))
+            X,Y,Z = np.dsplit(XYZ,3)
+            X = X[:,:,0]
+            Y = Y[:,:,0]
+            Z = Z[:,:,0]
+        
+        elif coeff[0] == 'ellipsoidal':
+            
+            def ellipseCalc(xyz,E,R):
+                XYZ = xyz*E.T
+                return np.inner(XYZ.T,R)
                 
-                else:
-                    PH = np.array(generalData['POhkl'])
-                    phi,beta = G2lat.CrsAng(PH,cell[:6],SGData)
-                    SHCoef = {}
-                    for item in coeff[5]:
-                        L,N = eval(item.strip('C'))
-                        SHCoef['C%d,0,%d'%(L,N)] = coeff[5][item]                        
-                    ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
-                    X = np.linspace(0,90.0,26)
-                    Y = G2lat.polfcal(ODFln,'0',X,0.0)
-                    Plot.plot(X,Y,color='k',label=str(PH))
-                    Plot.legend(loc='best')
-                    Plot.set_title('Axial distribution for HKL='+str(PH)+' in '+phase)
-                    Plot.set_xlabel(r'$\psi$',fontsize=16)
-                    Plot.set_ylabel('MRD',fontsize=14)
+            S6 = coeff[4]
+            Sij = G2lat.U6toUij(S6)
+            E,R = nl.eigh(Sij)
+            XYZ = np.dstack((X,Y,Z))
+            XYZ = np.nan_to_num(np.apply_along_axis(ellipseCalc,2,XYZ,E,R))
+            X,Y,Z = np.dsplit(XYZ,3)
+            X = X[:,:,0]
+            Y = Y[:,:,0]
+            Z = Z[:,:,0]
+            
+        elif coeff[0] == 'generalized':
+            
+            def genMustrain(xyz,SGData,A,Shkl):
+                uvw = np.inner(A.T,xyz)
+                Strm = np.array(G2spc.MustrainCoeff(uvw,SGData))
+                Sum = np.sum(np.multiply(Shkl,Strm))
+                Sum = np.where(Sum > 0.01,Sum,0.01)
+                Sum = np.sqrt(Sum)
+                return Sum*xyz
+                
+            Shkl = np.array(coeff[4])
+            if np.any(Shkl):
+                XYZ = np.dstack((X,Y,Z))
+                XYZ = np.nan_to_num(np.apply_along_axis(genMustrain,2,XYZ,SGData,A,Shkl))
+                X,Y,Z = np.dsplit(XYZ,3)
+                X = X[:,:,0]
+                Y = Y[:,:,0]
+                Z = Z[:,:,0]
+                    
+        if np.any(X) and np.any(Y) and np.any(Z):
+            errFlags = np.seterr(all='ignore')
+            Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
+            np.seterr(all='ignore')
+            xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
+            XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
+            Plot.set_xlim3d(XYZlim)
+            Plot.set_ylim3d(XYZlim)
+            Plot.set_zlim3d(XYZlim)
+            Plot.set_aspect('equal')
+        if plotType == 'Size':
+            Plot.set_title('Crystallite size for '+phase+'\n'+coeff[0]+' model')
+            Plot.set_xlabel(r'X, $\mu$m')
+            Plot.set_ylabel(r'Y, $\mu$m')
+            Plot.set_zlabel(r'Z, $\mu$m')
+        else:    
+            Plot.set_title(r'$\mu$strain for '+phase+'\n'+coeff[0]+' model')
+            Plot.set_xlabel(r'X, $\mu$strain')
+            Plot.set_ylabel(r'Y, $\mu$strain')
+            Plot.set_zlabel(r'Z, $\mu$strain')
+    else:
+        h,k,l = generalData['POhkl']
+        if coeff[0] == 'MD':
+            print 'March-Dollase preferred orientation plot'
+        
+        else:
+            PH = np.array(generalData['POhkl'])
+            phi,beta = G2lat.CrsAng(PH,cell[:6],SGData)
+            SHCoef = {}
+            for item in coeff[5]:
+                L,N = eval(item.strip('C'))
+                SHCoef['C%d,0,%d'%(L,N)] = coeff[5][item]                        
+            ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+            X = np.linspace(0,90.0,26)
+            Y = G2lat.polfcal(ODFln,'0',X,0.0)
+            Plot.plot(X,Y,color='k',label=str(PH))
+            Plot.legend(loc='best')
+            Plot.set_title('Axial distribution for HKL='+str(PH)+' in '+phase)
+            Plot.set_xlabel(r'$\psi$',fontsize=16)
+            Plot.set_ylabel('MRD',fontsize=14)
     Page.canvas.draw()
     
 ################################################################################

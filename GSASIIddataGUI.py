@@ -79,8 +79,8 @@ def UpdateDData(G2frame,DData,data,hist=''):
         def OnPlotSel(event):
             Obj = event.GetEventObject()
             generalData['Data plot type'] = Obj.GetStringSelection()
+            G2plt.PlotSizeStrainPO(G2frame,data,hist)
             wx.CallLater(100,UpdateDData,G2frame,DData,data)
-            G2plt.PlotSizeStrainPO(G2frame,data)
             
         def OnPOhkl(event):
             Obj = event.GetEventObject()
@@ -94,7 +94,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             generalData['POhkl'] = hkl
             h,k,l = hkl
             Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
-            G2plt.PlotSizeStrainPO(G2frame,data)
+            G2plt.PlotSizeStrainPO(G2frame,data,hist)
         
         plotSizer = wx.BoxSizer(wx.VERTICAL)
         choice = ['None','Mustrain','Size','Preferred orientation']
@@ -267,7 +267,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         Obj = event.GetEventObject()
         hist = Indx[Obj.GetId()]
         UseList[hist]['Size'][0] = Obj.GetValue()
-        G2plt.PlotSizeStrainPO(G2frame,data)
+        G2plt.PlotSizeStrainPO(G2frame,data,hist)
         wx.CallLater(100,UpdateDData,G2frame,DData,data)
         
     def OnSizeRef(event):
@@ -299,7 +299,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             except ValueError:
                 pass
             Obj.SetValue("%.5f"%(UseList[hist]['Size'][1][pid]))          #reset in case of error
-        G2plt.PlotSizeStrainPO(G2frame,data)
+        G2plt.PlotSizeStrainPO(G2frame,data,hist)
         
     def OnSizeAxis(event):            
         Obj = event.GetEventObject()
@@ -328,7 +328,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             for i in range(3):
                 UseList[item]['Size'][4][i] = 1.0
                 UseList[item]['Size'][4][i+3] = 0.0
-        G2plt.PlotSizeStrainPO(G2frame,data)
+        G2plt.PlotSizeStrainPO(G2frame,data,item)
         wx.CallLater(100,UpdateDData,G2frame,DData,data)
             
     def OnStrainType(event):
@@ -336,7 +336,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         hist = Indx[Obj.GetId()]
         UseList[hist]['Mustrain'][0] = Obj.GetValue()
         wx.CallLater(100,UpdateDData,G2frame,DData,data)
-        G2plt.PlotSizeStrainPO(G2frame,data)
+        G2plt.PlotSizeStrainPO(G2frame,data,hist)
         
     def OnStrainRef(event):
         Obj = event.GetEventObject()
@@ -366,7 +366,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             Obj.SetValue("%.3f"%(UseList[hist]['Mustrain'][4][pid]))          #reset in case of error
         else:
             Obj.SetValue("%.1f"%(UseList[hist]['Mustrain'][1][pid]))          #reset in case of error
-        G2plt.PlotSizeStrainPO(G2frame,data)
+        G2plt.PlotSizeStrainPO(G2frame,data,hist)
         
     def OnStrainAxis(event):
         Obj = event.GetEventObject()
@@ -381,7 +381,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         UseList[hist]['Mustrain'][3] = hkl
         h,k,l = hkl
         Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
-        G2plt.PlotSizeStrainPO(G2frame,data)
+        G2plt.PlotSizeStrainPO(G2frame,data,hist)
         
     def OnResetStrain(event):
         Obj = event.GetEventObject()
@@ -399,7 +399,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             nTerm = len(UseList[item]['Mustrain'][4])
             for i in range(nTerm):
                 UseList[item]['Mustrain'][4][i] = vals[i]
-        G2plt.PlotSizeStrainPO(G2frame,data)
+        G2plt.PlotSizeStrainPO(G2frame,data,item)
         wx.CallLater(100,UpdateDData,G2frame,DData,data)
             
     def OnHstrainRef(event):
@@ -852,13 +852,13 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def OnSelect(event):
         hist = keyList[select.GetSelection()]
-        G2plt.PlotSizeStrainPO(G2frame,data)
+        G2plt.PlotSizeStrainPO(G2frame,data,hist)
         wx.CallLater(100,UpdateDData,G2frame,DData,data,hist)
        
     def OnSelSpin(event):
         hist = keyList[selSpin.GetValue()]
         selSpin.Destroy() # remove button to discourage pressing too fast
-        G2plt.PlotSizeStrainPO(G2frame,data)
+        G2plt.PlotSizeStrainPO(G2frame,data,hist)
         wx.CallLater(100,UpdateDData,G2frame,DData,data,hist)
         
     if DData.GetSizer():

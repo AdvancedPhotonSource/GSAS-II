@@ -377,7 +377,7 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None):
            '--non-interactive','--trust-server-cert',
            '--accept','theirs-conflict','--force']
     if svnVersionNumber() > 1.6: cmd += ['--ignore-ancestry']
-    print("Loading files from "+URL)
+    print("Loading files from "+URL+'\n  to '+fpath)
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     out,err = s.communicate()
     if err:

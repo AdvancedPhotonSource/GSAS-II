@@ -2032,8 +2032,8 @@ class GSASII(wx.Frame):
             menubar.Append(menu=self.MacroMenu, title='Macro')
             self._init_Macro()
         HelpMenu=G2G.MyHelp(self,helpType='Data tree',
-            morehelpitems=[('&Old Tutorials','OldTutorials'), # this will eventually go away
-                           ('&Download Tutorial','Tutorials'), 
+            morehelpitems=[#('&Old Tutorials','OldTutorials'), # this will eventually go away
+                           ('&Tutorials','Tutorials'), 
                            ])
         menubar.Append(menu=HelpMenu,title='&Help')
 

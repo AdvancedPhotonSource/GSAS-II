@@ -2087,6 +2087,16 @@ class OpenTutorial(wx.Dialog):
         self.dataLoc = wx.StaticText(pnl, wx.ID_ANY,tutorialPath)
         sizer1.Add(self.dataLoc,0,WACV)
         sizer.Add(sizer1)
+        label = wx.StaticText(
+            pnl,  wx.ID_ANY,
+            'Tutorials and Exercise files will be downloaded to:'
+            )
+        sizer.Add(label, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.TutorialLabel = wx.StaticText(pnl,wx.ID_ANY,'')
+        sizer.Add(self.TutorialLabel, 0, wx.ALIGN_LEFT|wx.EXPAND, 5)
+        self.ExerciseLabel = wx.StaticText(pnl,wx.ID_ANY,'')
+        self.ShowTutorialPath()
+        sizer.Add(self.ExerciseLabel, 0, wx.ALIGN_LEFT|wx.EXPAND, 5)
         self.listbox = wx.ListBox(pnl, wx.ID_ANY, size=(450, 100), style=wx.LB_SINGLE)
         self.listbox.Bind(wx.EVT_LISTBOX, self.OnTutorialSelected)
         self.OnModeSelect(None)
@@ -2142,7 +2152,7 @@ class OpenTutorial(wx.Dialog):
              must be created by this routine. 
             ''')
                 return
-        self.dataLoc.SetLabel(tutorialPath)
+        #self.dataLoc.SetLabel(tutorialPath)
         self.EndModal(wx.ID_OK)
         wx.BeginBusyCursor()
         if self.BrowseMode == 0:
@@ -2171,6 +2181,14 @@ class OpenTutorial(wx.Dialog):
             wx.EndBusyCursor()
             raise Exception("How did this happen!")
         wx.EndBusyCursor()
+    def ShowTutorialPath(self):
+        'Show the help and exercise directory names'
+        self.TutorialLabel.SetLabel('\t'+
+                                    os.path.join(tutorialPath,"help") +
+                                    ' (tutorials)')
+        self.ExerciseLabel.SetLabel('\t'+
+                                    os.path.join(tutorialPath,"Exercises") +
+                                    ' (exercises)')
     def ValidateTutorialDir(self,fullpath=tutorialPath,baseURL=G2BaseURL):
         '''Load help to new directory or make sure existing directory looks correctly set up
         throws an exception if there is a problem.
@@ -2238,8 +2256,7 @@ class OpenTutorial(wx.Dialog):
                 msg += '\n\nAn attempt to create the directory failed'
                 G2MessageBox(self.frame,msg)
                 return
-        self.ValidateTutorialDir(pth,G2BaseURL)
-        try: 
+        try:
             self.ValidateTutorialDir(pth,G2BaseURL)
             tutorialPath = pth
         except:
@@ -2252,6 +2269,7 @@ class OpenTutorial(wx.Dialog):
              must be created by this routine. 
             ''')
         self.dataLoc.SetLabel(tutorialPath)
+        self.ShowTutorialPath()
     
 if __name__ == '__main__':
     app = wx.PySimpleApp()

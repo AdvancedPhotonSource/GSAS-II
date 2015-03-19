@@ -1235,37 +1235,37 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 lineNo = -1
             if  lineNo in [0,1] or lineNo in exclLines:
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits')
-                data = G2frame.PatternTree.GetItemPyData(LimitId)
+                limits = G2frame.PatternTree.GetItemPyData(LimitId)
                 id = lineNo/2+1
                 id2 = lineNo%2
                 if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
-                    data[id][id2] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
+                    limits[id][id2] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
                 elif G2frame.plotStyle['dPlot'] and 'PWDR' in plottype:
-                    data[id][id2] = G2lat.Dsp2pos(Parms,xpos)
+                    limits[id][id2] = G2lat.Dsp2pos(Parms,xpos)
                 else:
-                    data[id][id2] = xpos
-                if id > 1 and data[id][0] > data[id][1]:
-                        data[id].reverse()
-                data[1][0] = min(max(data[0][0],data[1][0]),data[1][1])
-                data[1][1] = max(min(data[0][1],data[1][1]),data[1][0])
-                G2frame.PatternTree.SetItemPyData(LimitId,data)
+                    limits[id][id2] = xpos
+                if id > 1 and limits[id][0] > limits[id][1]:
+                        limits[id].reverse()
+                limits[1][0] = min(max(limits[0][0],limits[1][0]),limits[1][1])
+                limits[1][1] = max(min(limits[0][1],limits[1][1]),limits[1][0])
+                G2frame.PatternTree.SetItemPyData(LimitId,limits)
                 if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Limits':
                     G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
             elif lineNo > 1:
                 PeakId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List')
-                data = G2frame.PatternTree.GetItemPyData(PeakId)
+                peaks = G2frame.PatternTree.GetItemPyData(PeakId)
                 if event.button == 3:
-                    del data['peaks'][lineNo-2]
+                    del peaks['peaks'][lineNo-2]
                 else:
                     if G2frame.plotStyle['qPlot']:
-                        data['peaks'][lineNo-2][0] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
+                        peaks['peaks'][lineNo-2][0] = G2lat.Dsp2pos(Parms,2.*np.pi/xpos)
                     elif G2frame.plotStyle['dPlot']:
-                        data['peaks'][lineNo-2][0] = G2lat.Dsp2pos(Parms,xpos)
+                        peaks['peaks'][lineNo-2][0] = G2lat.Dsp2pos(Parms,xpos)
                     else:
-                        data['peaks'][lineNo-2][0] = xpos
-                    data['sigDict'] = {}        #no longer valid
-                G2frame.PatternTree.SetItemPyData(PeakId,data)
-                G2pdG.UpdatePeakGrid(G2frame,data)
+                        peaks['peaks'][lineNo-2][0] = xpos
+                    peaks['sigDict'] = {}        #no longer valid
+                G2frame.PatternTree.SetItemPyData(PeakId,peaks)
+                G2pdG.UpdatePeakGrid(G2frame,peaks)
         elif G2frame.PatternTree.GetItemText(PickId) in ['Models',] and xpos:
             lines = []
             for line in G2frame.Lines: 
@@ -1478,13 +1478,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if Pattern[1] is None: continue # skip over uncomputed simulations
         xye = ma.array(ma.getdata(Pattern[1]))
         Zero = Parms.get('Zero',[0.,0.])[1]
-        if PickId:
-            ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)
-            LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
-            limits = np.array(G2frame.PatternTree.GetItemPyData(LimitId))
-            excls = limits[2:]
-            for excl in excls:
-                xye[0] = ma.masked_inside(xye[0],excl[0],excl[1])
+        ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)
+        LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Limits')
+        limits = G2frame.PatternTree.GetItemPyData(LimitId)
+        excls = limits[2:]
+        for excl in excls:
+            xye[0] = ma.masked_inside(xye[0],excl[0],excl[1])
         if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
             X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye[0])

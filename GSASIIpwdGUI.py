@@ -94,7 +94,7 @@ def SetupSampleLabels(histName,dataType,histType):
     :param str dataType: 
     '''
     parms = []
-    parms.append(['Scale','Histogram scale factor: ',[10,4]])
+    parms.append(['Scale','Histogram scale factor: ',[10,7]])
     if 'C' in histType:
         parms.append(['Gonio. radius','Goniometer radius (mm): ',[10,3]])
     if 'PWDR' in histName:

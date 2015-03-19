@@ -2199,7 +2199,7 @@ class GSASII(wx.Frame):
 
     def OnPatternTreeItemExpanded(self, event):
         'Called when a tree item is expanded'
-        event.Skip()
+        self.OnPatternTreeSelChanged(event)
         
     def OnPatternTreeItemDelete(self, event):
         'Called when a tree item is deleted -- not sure what this does'

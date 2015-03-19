@@ -1095,7 +1095,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
         parmDict['Back'] = Back[0]
         partData = Model['Particle']
         for i,level in enumerate(partData['Levels']):
-            cid = str(i)+':'
+            cid = str(i)+';'
             controls = level['Controls']
             Type = controls['DistType']
             levelTypes.append(Type)
@@ -1142,7 +1142,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
                     %(i,Type,controls['StrFact'],controls['Contrast'])                
             else:
                 print ' Component %d: Type: %s: '%(i,Type,)
-            cid = str(i)+':'
+            cid = str(i)+';'
             if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm','Monodisperse']:
                 for item in FFparmOrder:
                     if cid+item in varyList:
@@ -1166,7 +1166,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
     def getSASD(Q,levelTypes,parmDict):
         Ic = np.zeros_like(Q)
         for i,Type in enumerate(levelTypes):
-            cid = str(i)+':'
+            cid = str(i)+';'
             if Type in ['LogNormal','Gaussian','LSW','Schulz-Zimm']:
                 FFfxn = parmDict[cid+'FormFact']
                 Volfxn = parmDict[cid+'FFVolume']
@@ -1182,7 +1182,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
                 distDict = {}
                 for item in [cid+'Volume',cid+'Mean',cid+'StdDev',cid+'MinSize',]:
                     if item in parmDict:
-                        distDict[item.split(':')[1]] = parmDict[item]
+                        distDict[item.split(';')[1]] = parmDict[item]
                 contrast = parmDict[cid+'Contrast']
                 rBins,dBins,dist = MakeDiamDist(Type,parmDict[cid+'NumPoints'],parmDict[cid+'Cutoff'],distDict)
                 Gmat = G_matrix(Q,rBins,contrast,FFfxn,Volfxn,FFargs).T

@@ -1250,7 +1250,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 limits[1][1] = max(min(limits[0][1],limits[1][1]),limits[1][0])
                 G2frame.PatternTree.SetItemPyData(LimitId,limits)
                 if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Limits':
-                    G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
+                    G2pdG.UpdateLimitsGrid(G2frame,limits,plottype)
             elif lineNo > 1:
                 PeakId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List')
                 peaks = G2frame.PatternTree.GetItemPyData(PeakId)

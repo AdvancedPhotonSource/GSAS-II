@@ -2210,7 +2210,6 @@ class GSASII(wx.Frame):
         event.Skip()
         
     def OnPatternTreeBeginRDrag(self,event):
-        # testing this - doesn't work! Binds commented out above
         event.Allow()
         self.BeginDragId = event.GetItem()
         self.ParentId = self.PatternTree.GetItemParent(self.BeginDragId)
@@ -2223,7 +2222,6 @@ class GSASII(wx.Frame):
             item, cookie = self.PatternTree.GetNextChild(self.BeginDragId, cookie)                            
         
     def OnPatternTreeEndDrag(self,event):
-        # testing this - doesn't work! Binds commented out above
         event.Allow()
         self.EndDragId = event.GetItem()
         try:

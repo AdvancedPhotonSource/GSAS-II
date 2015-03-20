@@ -1593,6 +1593,9 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                     CSI['Spos'][1][3:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
                     if 'm' in siteSym and len(SdIndx) == 1:
                         CSI['Spos'][1][3:] = [1./dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
+                elif '(xy)' in siteSym:
+                    CSI['Spos'][0] = [[1,0,0],[1,0,0],[2,0,0], [1,0,0],[1,0,0],[2,0,0]]
+                    CSI['Spos'][1][3:] = [[1./dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]]
                 for i in range(3):
                     if not XSC[i]:
                         CSI['Spos'][0][i] = [0,0,0]
@@ -1655,7 +1658,15 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
             [1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0],[6,0,0]],
             [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.],
             [1./dT,0.,0.],[1./dT,0.,0.],[1./dT,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]]
-            if '(x)' in siteSym:
+            if 'mm2(x)' in siteSym:
+                CSI['Sadp'][1][9:] = [0.,0.,0.],[-dT,0.,0.],[0.,0.,0.]
+                USC = [1,1,1,0,1,0,1,1,1,0,1,0]
+            elif '(xy)' in siteSym:
+                CSI['Sadp'][0] = [[1,0,0],[1,0,0],[2,0,0],[3,0,0],[4,0,0],[4,0,0],
+                    [1,0,0],[1,0,0],[2,0,0],[3,0,0],[4,0,0],[4,0,0]]
+                CSI['Sadp'][1][9:] = [[1./dT,0.,0.],[-dT,0.,0.],[-dT,0.,0.]]
+                USC = [1,1,1,1,1,1,1,1,1,1,1,1]                              
+            elif '(x)' in siteSym:
                 CSI['Sadp'][1][9:] = [-dT,0.,0.],[-dT,0.,0.],[1./dT,0.,0.]
             elif '(y)' in siteSym:
                 CSI['Sadp'][1][9:] = [-dT,0.,0.],[1./dT,0.,0.],[-dT,0.,0.]
@@ -1669,7 +1680,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                     CSI['Sadp'][1][i+6] = [0.,0.,0.]
         else:                        
             for i in range(6):
-                if np.allclose(dU[i,i,:],dUT[i,i,:]*sdet):
+                if np.allclose(dU[i,i,:],-dUT[i,i,:]):
                     usc[i] = 1
                 else:
                     usc[i] = 0
@@ -1692,11 +1703,15 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                     if ssop[1][3]:
                         CSI['Sadp'][1][:2] = [[1.,0.,0.],[-1.,0.,0.]]
                         CSI['Sadp'][1][6:8] = [[1.,0.,0.],[-1.,0.,0.]]
+                        usc[2] = 0
+                        usc[8] = 0
                         usc[3] = 1
                         usc[9] = 1
                     else:
                         CSI['Sadp'][1][:2] = [[1.,0.,0.],[1.,0.,0.]]
                         CSI['Sadp'][1][6:8] = [[1.,0.,0.],[1.,0.,0.]]
+                        usc[2] = 1
+                        usc[8] = 1
                         usc[3] = 0                
                         usc[9] = 0
                 elif 'xy' in siteSym or '+-0' in siteSym:

@@ -981,7 +981,7 @@ def UpdateBackground(G2frame,data):
     G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2gd.wxID_BACKCOPY)
     G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2gd.wxID_BACKFLAGCOPY)
     BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background')
-    Choices = ['chebyschev','cosine','lin interpolate','inv interpolate','log interpolate']
+    Choices = ['chebyschev','cosine','Q^2 power series','Q^-2 powder series','lin interpolate','inv interpolate','log interpolate']
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(BackSizer())
     mainSizer.Add((0,5),0)
@@ -1463,8 +1463,8 @@ def UpdateInstrumentGrid(G2frame,data):
                     nDig = (10,3)
                     fmt = '%10.3f'
                     if 'beta' in item:
-                        fmt = '%12.4g'
-                        nDig = (12,4)
+                        fmt = '%12.6g'
+                        nDig = (12,6)
                     Fmt = ' %s: ('+fmt+')'
                     instSizer.Add(
                             wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,nDig[1],insDef[item])),

@@ -1323,7 +1323,7 @@ def GetPwdrExt(refl,im,pfx,phfx,hfx,calcControls,parmDict):
     
 def GetPwdrExtDerv(refl,im,pfx,phfx,hfx,calcControls,parmDict):
     'Needs a doc string'
-    delt = 0.001
+    delt = 0.01
     parmDict[phfx+'Extinction'] += delt
     plus = GetPwdrExt(refl,im,pfx,phfx,hfx,calcControls,parmDict)
     parmDict[phfx+'Extinction'] -= 2.*delt

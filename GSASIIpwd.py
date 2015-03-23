@@ -520,6 +520,11 @@ def getFCJVoigt(pos,intens,sig,gam,shl,xdata):
 
 def getBackground(pfx,parmDict,bakType,dataType,xdata):
     'needs a doc string'
+    if 'T' in dataType:
+        q = 2.*np.pi*parmDict[pfx+'difC']/xdata
+    elif 'C' in dataType:
+        wave = parmDict.get(pfx+'Lam',parmDict.get(pfx+'Lam1',1.0))
+        q = 2.*np.pi*npsind(xdata/2.)/wave
     yb = np.zeros_like(xdata)
     nBak = 0
     cw = np.diff(xdata)
@@ -541,7 +546,18 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
             elif bakType == 'cosine':
                 ybi = parmDict[key]*npcosd(xdata*iBak)
             yb += ybi
-            sumBk[0] = np.sum(ybi)
+        sumBk[0] = np.sum(yb)
+    elif bakType in ['Q^2 power series','Q^-2 powder series']:
+        QT = 1.
+        yb += np.ones_like(yb)*parmDict[pfx+'Back;0']
+        for iBak in range(nBak-1):
+            key = pfx+'Back;'+str(iBak+1)
+            if '-2' in bakType:
+                QT *= (iBak+1)*q**-2
+            else:
+                QT *= q**2/(iBak+1)
+            yb += QT*parmDict[key]
+        sumBk[0] = np.sum(yb)
     elif bakType in ['lin interpolate','inv interpolate','log interpolate',]:
         if nBak == 1:
             yb = np.ones_like(xdata)*parmDict[pfx+'Back;0']
@@ -573,7 +589,6 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
             wave = parmDict[pfx+'Lam']
         except KeyError:
             wave = parmDict[pfx+'Lam1']
-        q = 4.0*np.pi*npsind(xdata/2.0)/wave
         SQ = (q/(4.*np.pi))**2
         FF = G2elem.GetFormFactorCoeff('Si')[0]
         ff = np.array(G2elem.ScatFac(FF,SQ)[0])**2
@@ -627,6 +642,11 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
     
 def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
     'needs a doc string'
+    if 'T' in dataType:
+        q = 2.*np.pi*parmDict[hfx+'difC']/xdata
+    elif 'C' in dataType:
+        wave = parmDict.get(hfx+'Lam',parmDict.get(hfx+'Lam1',1.0))
+        q = 2.*np.pi*npsind(xdata/2.)/wave
     nBak = 0
     while True:
         key = hfx+'Back;'+str(nBak)
@@ -647,6 +667,15 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
                 dydb[iBak] = (2.*(xdata-xdata[0])/dt-1.)**iBak
             elif bakType == 'cosine':
                 dydb[iBak] = npcosd(xdata*iBak)
+    elif bakType in ['Q^2 power series','Q^-2 powder series']:
+        QT = 1.
+        dydb[0] = np.ones_like(xdata)
+        for iBak in range(nBak-1):
+            if '-2' in bakType:
+                QT *= (iBak+1)*q**-2
+            else:
+                QT *= q**2/(iBak+1)
+            dydb[iBak+1] = QT
     elif bakType in ['lin interpolate','inv interpolate','log interpolate',]:
         if nBak == 1:
             dydb[0] = np.ones_like(xdata)
@@ -1607,11 +1636,11 @@ def calcIncident(Iparm,xdata):
         
         x = xdata/1000.                 #expressions are in ms
         if Itype == 'Exponential':
-            for i in range(1,10,2):
+            for i in [1,3,5,7,9]:
                 Eterm = np.exp(-Icoef[i+1]*x**((i+1)/2))
                 YI += Icoef[i]*Eterm
                 DYI[i] *= Eterm
-                DYI[i+1] *= -Icoef[i]*x**((i+1)/2)            
+                DYI[i+1] *= -Icoef[i]*Eterm*x**((i+1)/2)            
         elif 'Maxwell'in Itype:
             Eterm = np.exp(-Icoef[2]/x**2)
             DYI[1] = Eterm/x**5
@@ -1622,7 +1651,7 @@ def calcIncident(Iparm,xdata):
                     Eterm = np.exp(-Icoef[i+1]*x**((i+1)/2))
                     YI += Icoef[i]*Eterm
                     DYI[i] *= Eterm
-                    DYI[i+1] *= -Icoef[i]*x**((i+1)/2)
+                    DYI[i+1] *= -Icoef[i]*Eterm*x**((i+1)/2)
             else:   #Chebyschev
                 T = (2./x)-1.
                 Ccof = np.ones((12,xdata.shape[0]))

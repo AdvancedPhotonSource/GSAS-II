@@ -1315,7 +1315,7 @@ def GetPwdrExt(refl,im,pfx,phfx,hfx,calcControls,parmDict):
     exl = 1.0
     if 0 < xfac <= 1.:
         xn = np.array([xfac**(i+1) for i in range(6)])
-        exl = np.sum(xn*coef)
+        exl += np.sum(xn*coef)
     elif xfac > 1.:
         xfac2 = 1./np.sqrt(xfac)
         exl = pi2*(1.-0.125/xfac)*xfac2
@@ -1323,13 +1323,40 @@ def GetPwdrExt(refl,im,pfx,phfx,hfx,calcControls,parmDict):
     
 def GetPwdrExtDerv(refl,im,pfx,phfx,hfx,calcControls,parmDict):
     'Needs a doc string'
-    delt = 0.01
-    parmDict[phfx+'Extinction'] += delt
-    plus = GetPwdrExt(refl,im,pfx,phfx,hfx,calcControls,parmDict)
-    parmDict[phfx+'Extinction'] -= 2.*delt
-    minus = GetPwdrExt(refl,im,pfx,phfx,hfx,calcControls,parmDict)
-    parmDict[phfx+'Extinction'] += delt
-    return (plus-minus)/(2.*delt)    
+    coef = np.array([-0.5,0.25,-0.10416667,0.036458333,-0.0109375,2.8497409E-3])
+    pi2 = np.sqrt(2./np.pi)
+    if 'T' in calcControls[hfx+'histType']:
+        sth2 = sind(parmDict[hfx+'2-theta']/2.)**2
+        wave = refl[14+im]
+    else:   #'C'W
+        sth2 = sind(refl[5+im]/2.)**2
+        wave = parmDict.get(hfx+'Lam',parmDict.get(hfx+'Lam1',1.0))
+    c2th = 1.-2.0*sth2
+    flv2 = refl[9+im]*(wave/parmDict[pfx+'Vol'])**2
+    if 'X' in calcControls[hfx+'histType']:
+        flv2 *= 0.079411*(1.0+c2th**2)/2.0
+    xfac = flv2*parmDict[phfx+'Extinction']
+    dbde = -500.*flv2
+    if xfac > -1.:
+        dbde = -flv2/(1.+xfac)**3
+    dlde = 0.
+    if 0 < xfac <= 1.:
+        xn = np.array([i*flv2*xfac**i for i in [1,2,3,4,5,6]])
+        dlde = np.sum(xn*coef)
+    elif xfac > 1.:
+        xfac2 = 1./np.sqrt(xfac)
+        dlde = flv2*pi2*xfac2*(-1./xfac+0.375/xfac**2)
+        
+    return dbde*sth2+dlde*(1.-sth2)
+
+
+#    delt = 0.01
+#    parmDict[phfx+'Extinction'] += delt
+#    plus = GetPwdrExt(refl,im,pfx,phfx,hfx,calcControls,parmDict)
+#    parmDict[phfx+'Extinction'] -= 2.*delt
+#    minus = GetPwdrExt(refl,im,pfx,phfx,hfx,calcControls,parmDict)
+#    parmDict[phfx+'Extinction'] += delt
+#    return (plus-minus)/(2.*delt)    
     
 def GetIntensityCorr(refl,im,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     'Needs a doc string'    #need powder extinction!
@@ -1715,7 +1742,6 @@ def GetHStrainShiftDerv(refl,im,SGData,phfx,hfx,calcControls,parmDict):
             dDijDict[phfx+'D13'] = h*l
         elif uniq == 'c':
             dDijDict[phfx+'D12'] = h*k
-            names.append()
     else:
         dDijDict = {phfx+'D11':h**2,phfx+'D22':k**2,phfx+'D33':l**2,
             phfx+'D12':h*k,phfx+'D13':h*l,phfx+'D23':k*l}

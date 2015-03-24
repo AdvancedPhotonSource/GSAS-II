@@ -243,13 +243,24 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
             self.Write('"'+str(phasenam)+'",'+str(i))
         self.Write('')
         # note addition of a phase # flag at end (i)
-        WriteList(self,("h","k","l","2-theta","F_obs","F_calc","phase","mult","phase #"))
-        fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
         for i,phasenam in enumerate(sorted(histblk['Reflection Lists'])):
-            for (
-                h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr
-                ) in histblk['Reflection Lists'][phasenam]['RefList']:
-                self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,i))
+            phasDict = histblk['Reflection Lists'][phasenam]
+            if phasDict['Super']:
+                WriteList(self,("h","k","l","m","2-theta","F_obs","F_calc","phase","mult","phase #"))
+                fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
+                refList = phasDict['RefList']
+                for (
+                    h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,x,x,x
+                    ) in refList:
+                    self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,i))                
+            else:
+                WriteList(self,("h","k","l","2-theta","F_obs","F_calc","phase","mult","phase #"))
+                fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
+                refList = phasDict['RefList']
+                for (
+                    h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,x,x,x
+                    ) in refList:
+                    self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,i))
         self.CloseFile()
         print(str(hist)+'reflections written to file '+str(self.fullpath))
 

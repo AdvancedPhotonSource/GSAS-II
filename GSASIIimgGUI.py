@@ -92,6 +92,8 @@ def UpdateImageControls(G2frame,data,masks):
     '''
     import ImageCalibrants as calFile
 #patch
+    if 'Flat Bkg' not in data:
+        data['Flat Bkg'] = 0.0
     if 'GonioAngles' not in data:
         data['GonioAngles'] = [0.,0.,0.]
     if 'DetDepth' not in data:
@@ -156,6 +158,7 @@ def UpdateImageControls(G2frame,data,masks):
                     BdarkImage = G2IO.GetImageData(G2frame,imagefile,True)
                     backImage += BdarkImage*BdarkScale                
                 sumImg += backImage*backScale
+            sumImg -= data['Flat Bkg']
             G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,dlg)
 #            G2plt.PlotIntegration(G2frame,newPlot=True)
             Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
@@ -296,7 +299,7 @@ def UpdateImageControls(G2frame,data,masks):
                 keys = ['type','wavelength','calibrant','distance','center',
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
                     'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
-                    'calibskip','pixLimit','cutoff','calibdmin','chisq',
+                    'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
                     'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
                 for key in keys:
                     if key not in data:     #uncalibrated!
@@ -309,7 +312,7 @@ def UpdateImageControls(G2frame,data,masks):
     def OnLoadControls(event):
         cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type',
             'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
-            'calibskip','pixLimit','cutoff','calibdmin','chisq',
+            'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
             'PolaVal','SampleAbs','dark image','background image']
         dlg = wx.FileDialog(G2frame, 'Choose image controls file', '.', '', 
             'image control files (*.imctrl)|*.imctrl',wx.OPEN|wx.CHANGE_DIR)
@@ -789,6 +792,15 @@ def UpdateImageControls(G2frame,data,masks):
         def OnDarkImage(event):
             data['dark image'][0] = darkImage.GetValue()
             G2plt.PlotExposedImage(G2frame,event=event)
+            
+        def OnFlatBkg(event):
+            try:
+                value = float(flatbkg.GetValue())
+                data['Flat Bkg'] = value
+            except ValueError:
+                pass
+            flatbkg.SetValue("%.0f"%(data['Flat Bkg']))    
+            G2plt.PlotExposedImage(G2frame,event=event)
 
         def OnBackMult(event):
             try:
@@ -807,7 +819,7 @@ def UpdateImageControls(G2frame,data,masks):
             darkMult.SetValue("%.3f" % (data['dark image'][1]))          #reset in case of error 
             G2plt.PlotExposedImage(G2frame,event=event)
         
-        backSizer = wx.FlexGridSizer(0,4,5,5)
+        backSizer = wx.FlexGridSizer(0,6,5,5)
 
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Dark image'),0,WACV)
         Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
@@ -821,6 +833,12 @@ def UpdateImageControls(G2frame,data,masks):
         darkMult.Bind(wx.EVT_TEXT_ENTER,OnDarkMult)
         darkMult.Bind(wx.EVT_KILL_FOCUS,OnDarkMult)
         backSizer.Add(darkMult,0,WACV)
+        backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Flat Bkg: '),0,WACV)
+        flatbkg = wx.TextCtrl(parent=G2frame.dataDisplay,value=("%.0f" % (data['Flat Bkg'])),
+            style=wx.TE_PROCESS_ENTER)
+        flatbkg.Bind(wx.EVT_TEXT_ENTER,OnFlatBkg)
+        flatbkg.Bind(wx.EVT_KILL_FOCUS,OnFlatBkg)
+        backSizer.Add(flatbkg,0,WACV)
 
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background image'),0,WACV)
         Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])

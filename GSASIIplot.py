@@ -3345,6 +3345,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     def OnImMotion(event):
         Page.canvas.SetToolTipString('')
         sizexy = Data['size']
+        FlatBkg = Data.get('Flat Bkg',0.)
         if event.xdata and event.ydata and len(G2frame.ImageZ):                 #avoid out of frame errors
             Page.canvas.SetToolTipString('%8.2f %8.2fmm'%(event.xdata,event.ydata))
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
@@ -3371,7 +3372,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 ypix = ypos*scaley
                 Int = 0
                 if (0 <= xpix <= sizexy[0]) and (0 <= ypix <= sizexy[1]):
-                    Int = G2frame.ImageZ[ypix][xpix]
+                    Int = G2frame.ImageZ[ypix][xpix]-int(FlatBkg)
                 tth,azm,D,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
                 fields = ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)]
@@ -3446,6 +3447,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         if PickName not in ['Image Controls','Masks','Stress/Strain']:
             return
         pixelSize = Data['pixelSize']
+        FlatBkg = Data.get('Flat Bkg',0.)
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
 #        pixLimit = Data['pixLimit']    #can be too tight
@@ -3459,7 +3461,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if event.button == 1:
                     Xpix = Xpos*scalex
                     Ypix = Ypos*scaley
-                    xpos,ypos,I,J = G2img.ImageLocalMax(G2frame.ImageZ,pixLimit,Xpix,Ypix)
+                    xpos,ypos,I,J = G2img.ImageLocalMax(G2frame.ImageZ-FlatBkg,pixLimit,Xpix,Ypix)
                     if I and J:
                         xpos += .5                              #shift to pixel center
                         ypos += .5
@@ -3524,7 +3526,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             dsp = G2img.GetDsp(Xpos,Ypos,Data)
             StrSta['d-zero'].append({'Dset':dsp,'Dcalc':0.0,'pixLimit':10,'cutoff':0.5,
                 'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0]})
-            R,r = G2img.MakeStrStaRing(StrSta['d-zero'][-1],G2frame.ImageZ,Data)
+            R,r = G2img.MakeStrStaRing(StrSta['d-zero'][-1],G2frame.ImageZ-FlatBkg,Data)
             if not len(R):
                 del StrSta['d-zero'][-1]
                 G2frame.ErrorDialog('Strain peak selection','WARNING - No points found for this ring selection')
@@ -3707,6 +3709,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     Plot.set_ylabel('Image y-axis, mm',fontsize=12)
     #do threshold mask - "real" mask - others are just bondaries
     Zlim = Masks['Thresholds'][1]
+    FlatBkg = Data.get('Flat Bkg',0.0)
     wx.BeginBusyCursor()
     try:
             
@@ -3714,7 +3717,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Imin,Imax = Data['range'][1]
             MA = ma.masked_greater(ma.masked_less(G2frame.ImageZ,Zlim[0]),Zlim[1])
             MaskA = ma.getmaskarray(MA)
-            A = G2img.ImageCompress(MA,imScale)
+            A = G2img.ImageCompress(MA,imScale)-FlatBkg
             AM = G2img.ImageCompress(MaskA,imScale)
             if G2frame.logPlot:
                 A = np.where(A>Imin,np.where(A<Imax,A,0),0)

@@ -372,11 +372,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             [['mmm'],8,zip([" a = "," b = "," c = "," Vol = "],["%.5f","%.5f","%.5f","%.3f"],
                 [True,True,True,False],[0,1,2,0])],
             [['2/m'+'a'],10,zip([" a = "," b = "," c = "," alpha = "," Vol = "],
-                ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,5,0])],
+                ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,3,0])],
             [['2/m'+'b'],10,zip([" a = "," b = "," c = "," beta = "," Vol = "],
                 ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,4,0])],
             [['2/m'+'c'],10,zip([" a = "," b = "," c = "," gamma = "," Vol = "],
-                ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,3,0])],
+                ["%.5f","%.5f","%.5f","%.3f","%.3f"],[True,True,True,True,False],[0,1,2,5,0])],
             [['-1'],8,zip([" a = "," b = "," c = "," Vol = "," alpha = "," beta = "," gamma = "],
                 ["%.5f","%.5f","%.5f","%.3f","%.3f","%.3f","%.3f"],
                 [True,True,True,False,True,True,True],[0,1,2,0,3,4,5])]]
@@ -442,7 +442,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         cell[5] = value
                         Obj.SetValue("%.3f"%(cell[5]))
                 elif laue in ['2/m'+'c']:
-                    cell[5] = cell[6] = 90.
+                    cell[4] = cell[5] = 90.
                     if ObjId != 3:
                         cell[ObjId+1] = value
                         Obj.SetValue("%.5f"%(cell[ObjId+1]))

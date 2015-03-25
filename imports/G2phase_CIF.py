@@ -55,6 +55,9 @@ class CIFPhaseReader(G2IO.ImportPhase):
         cellitems = (
             '_cell_length_a','_cell_length_b','_cell_length_c',
             '_cell_angle_alpha','_cell_angle_beta','_cell_angle_gamma',)
+        cellwaveitems = (
+            '_cell_wave_vector_seq_id',
+            '_cell_wave_vector_x','_cell_wave_vector_y','_cell_wave_vector_z')
         reqitems = (
              '_atom_site_fract_x',
              '_atom_site_fract_y',
@@ -128,9 +131,16 @@ class CIFPhaseReader(G2IO.ImportPhase):
                 blknm = str_blklist[selblk]
                 blk = cf[str_blklist[selblk]]
                 E = True
+                Super = False
                 SpGrp = blk.get("_symmetry_space_group_name_H-M",'')
                 if not SpGrp:
                     SpGrp = blk.get("_space_group_name_H-M_alt",'')
+                if not SpGrp:
+                    sspgrp = blk.get("_space_group_ssg_name",'').split('(')
+                    SpGrp = sspgrp[0]
+                    SuperSg = '('+sspgrp[1].replace('\\','')
+                    Super = True
+                    SuperVec = [[0,0,.1],False,4]
                 # try normalizing the space group, to see if we can pick the space group out of a table
                 SpGrpNorm = G2spc.StandardizeSpcName(SpGrp)
                 if SpGrpNorm:
@@ -236,6 +246,12 @@ class CIFPhaseReader(G2IO.ImportPhase):
                 else: # no name found, use block name for lack of a better choice
                     name = blknm
                 self.Phase['General']['Name'] = name.strip()[:20]
+                self.Phase['General']['Super'] = Super
+                if Super:
+                    self.Phase['General']['Type'] = 'modulated'
+                    self.Phase['General']['SuperVec'] = SuperVec
+                    self.Phase['General']['SuperSg'] = SuperSg
+                    self.Phase['General']['SSGData'] = G2spc.SSpcGroup(SGData,SuperSg)[1]
                 if not self.isodistort_warnings:
                     if blk.get('_iso_displacivemode_label') or blk.get('_iso_occupancymode_label'):
                         self.errors = "Error while processing ISODISTORT constraints"

@@ -187,18 +187,31 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
-        hklfmt = "{:.0f},{:.0f},{:.0f}"
-        hfmt = "{:>8s} {:>8s} {:>12s} {:>12s} {:>7s} {:>6s}"
-        fmt = "{:>8s} {:8.3f} {:12.3f} {:12.3f} {:7.2f} {:6.0f}"
         for phasenam in histblk['Reflection Lists']:
+            phasDict = histblk['Reflection Lists'][phasenam]
+            tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
             self.Write('\nPhase '+str(phasenam))
             self.Write(80*'=')
-            self.Write(hfmt.format("h,k,l","2-theta","F_obs","F_calc","phase","mult"))
-            self.Write(80*'=')
-            for (
-                h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr
-                ) in histblk['Reflection Lists'][phasenam]['RefList']:
-                self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult))
+            if phasDict.get('Super',False):
+                hklfmt = "{:.0f},{:.0f},{:.0f},{:.0f}"
+                hfmt = "{:>8s} {:>8s} {:>12s} {:>12s} {:>7s} {:>6s}"
+                fmt = "{:>8s} {:8.3f} {:12.3f} {:12.3f} {:7.2f} {:6.0f}"
+                self.Write(hfmt.format("h,k,l,m",tname,"F_obs","F_calc","phase","mult"))
+                self.Write(80*'=')
+                refList = phasDict['RefList']
+                for refItem in refList:
+                    h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase = refItem[:12]
+                    self.Write(fmt.format(hklfmt.format(h,k,l,m),pos,Fobs,Fcalc,phase,mult))
+            else:
+                hklfmt = "{:.0f},{:.0f},{:.0f}"
+                hfmt = "{:>8s} {:>8s} {:>12s} {:>12s} {:>7s} {:>6s}"
+                fmt = "{:>8s} {:8.3f} {:12.3f} {:12.3f} {:7.2f} {:6.0f}"
+                self.Write(hfmt.format("h,k,l",tname,"F_obs","F_calc","phase","mult"))
+                self.Write(80*'=')
+                refList = phasDict['RefList']
+                for refItem in refList:
+                    h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase = refItem[:11]
+                    self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult))
         self.CloseFile()
         print(str(hist)+'reflections written to file '+str(self.fullpath))                        
 

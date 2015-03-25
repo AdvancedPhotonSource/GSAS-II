@@ -506,7 +506,7 @@ def UpdateImageControls(G2frame,data,masks):
         if 'PWDR' in data['type']:
             Names.append('dep') 
         Parms = {'dist':['Distance','%.3f',data['distance']],'det-X':['Beam center X','%.3f',data['center'][0]],
-            'det-Y':['Beam center X','%.3f',data['center'][1]],'tilt':['Tilt angle','%.3f',data['tilt']],
+            'det-Y':['Beam center Y','%.3f',data['center'][1]],'tilt':['Tilt angle','%.3f',data['tilt']],
             'phi':['Tilt rotation','%.2f',data['rotation']],'dep':['Penetration','%.2f',data['DetDepth']],
             'wave':['Wavelength','%.6f',data['wavelength']]}
         Indx = {}

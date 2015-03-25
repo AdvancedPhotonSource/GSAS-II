@@ -385,7 +385,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
         Type = 'nuclear'
         Atoms = []
         Atypes = []
-        SuperVec = [[[0,0,.1],False,4],[[0,0,.1],False,4],[[0,0,.1],False,4]]
+        SuperVec = [[0,0,.1],False,4]
         S = file.readline()
         line = 1
         SGData = None

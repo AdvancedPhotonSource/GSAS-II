@@ -1572,7 +1572,7 @@ class ImportBaseclass(object):
 
     def ShowBusy(self):
         wx.BeginBusyCursor()
-        wx.Yield() # make it happen now!
+#        wx.Yield() # make it happen now!
 
     def DoneBusy(self):
         wx.EndBusyCursor()

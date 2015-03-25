@@ -619,11 +619,11 @@ def cellVary(pfx,SGData):
         return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3',pfx+'A4',pfx+'A5']
     elif SGData['SGLaue'] in ['2/m',]:
         if SGData['SGUniq'] == 'a':
-            return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3']
+            return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A5']
         elif SGData['SGUniq'] == 'b':
             return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A4']
         else:
-            return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A5']
+            return [pfx+'A0',pfx+'A1',pfx+'A2',pfx+'A3']
     elif SGData['SGLaue'] in ['mmm',]:
         return [pfx+'A0',pfx+'A1',pfx+'A2']
     elif SGData['SGLaue'] in ['4/m','4/mmm']:
@@ -1258,13 +1258,13 @@ def cellFill(pfx,SGData,parmDict,sigDict):
     elif SGData['SGLaue'] in ['2/m',]:
         if SGData['SGUniq'] == 'a':
             A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
-                parmDict[pfx+'A3'],0,0]
+                0,0,parmDict[pfx+'A5']]
         elif SGData['SGUniq'] == 'b':
             A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
                 0,parmDict[pfx+'A4'],0]
         else:
             A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],
-                0,0,parmDict[pfx+'A5']]
+                parmDict[pfx+'A3'],0,0]
     elif SGData['SGLaue'] in ['mmm',]:
         A = [parmDict[pfx+'A0'],parmDict[pfx+'A1'],parmDict[pfx+'A2'],0,0,0]
     elif SGData['SGLaue'] in ['4/m','4/mmm']:
@@ -1285,13 +1285,13 @@ def cellFill(pfx,SGData,parmDict,sigDict):
         elif SGData['SGLaue'] in ['2/m',]:
             if SGData['SGUniq'] == 'a':
                 sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
-                    sigDict[pfx+'A3'],0,0]
+                    0,0,sigDict[pfx+'A5']]
             elif SGData['SGUniq'] == 'b':
                 sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
                     0,sigDict[pfx+'A4'],0]
             else:
                 sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],
-                    0,0,sigDict[pfx+'A5']]
+                    sigDict[pfx+'A3'],0,0]
         elif SGData['SGLaue'] in ['mmm',]:
             sigA = [sigDict[pfx+'A0'],sigDict[pfx+'A1'],sigDict[pfx+'A2'],0,0,0]
         elif SGData['SGLaue'] in ['4/m','4/mmm']:
@@ -1450,7 +1450,7 @@ def getCellEsd(pfx,SGData,A,covData):
     sigMat = np.inner(dadg,np.inner(vcov,dadg.T))
     var = np.diag(sigMat)
     CS = np.where(var>0.,np.sqrt(var),0.)
-    return [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]  #exchange sig(alp) & sig(gam) to get in right order
+    return [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]
     
 def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=None):
     'needs a doc string'

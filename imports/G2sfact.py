@@ -71,7 +71,6 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
                 sigFo = float(sigFo)
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 self.RefDict['RefList'].append([h,k,l,0,0,Fo**2,2.*Fo*sigFo,0,Fo**2,0,0,0])
-                #self.RefDict['FF'].append({}) # now done in OnImportSfact
             self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.RefDict['Type'] = 'SXC'

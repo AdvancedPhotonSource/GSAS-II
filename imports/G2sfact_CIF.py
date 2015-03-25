@@ -316,7 +316,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                 except:
                     continue # skip over incompletely parsed reflections
                 self.RefDict['RefList'].append(ref)
-                self.RefDict['FF'].append({})
+#                self.RefDict['FF'].append({})
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.errors = 'Error during reading of dataset parameters'
             if blk.get('_diffrn_radiation_probe'):

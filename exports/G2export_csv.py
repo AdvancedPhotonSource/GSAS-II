@@ -245,19 +245,20 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
         # note addition of a phase # flag at end (i)
         for i,phasenam in enumerate(sorted(histblk['Reflection Lists'])):
             phasDict = histblk['Reflection Lists'][phasenam]
-            if phasDict['Super']:
-                WriteList(self,("h","k","l","m","2-theta","F_obs","F_calc","phase","mult","phase #"))
+            tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
+            if phasDict.get('Super',False):
+                WriteList(self,("h","k","l","m",tname,"F_obs","F_calc","phase","mult","phase #"))
                 fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
-                    h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:12]
+                    h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:13]
                     self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,i))                
             else:
-                WriteList(self,("h","k","l","2-theta","F_obs","F_calc","phase","mult","phase #"))
+                WriteList(self,("h","k","l",tname,"F_obs","F_calc","phase","mult","phase #"))
                 fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
-                    h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:11]
+                    h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:12]
                     self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,i))
         self.CloseFile()
         print(str(hist)+'reflections written to file '+str(self.fullpath))
@@ -288,12 +289,23 @@ class ExportSingleCSV(G2IO.ExportBaseclass):
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
-        WriteList(self,("h","k","l","d-space","F_obs","sig(Fobs)","F_calc","phase","mult"))
-        fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.2f},{:.4f},{:.2f},{:.2f},{:.0f}"
-        for (
-            h,k,l,mult,dsp,Fobs,sigFobs,Fcalc,FobsT,FcalcT,phase,Icorr
-            ) in histblk['Data']['RefList']:
-            self.Write(fmt.format(h,k,l,dsp,Fobs,sigFobs,Fcalc,phase,mult))
+        for i,phasenam in enumerate(sorted(histblk['Reflection Lists'])):
+            phasDict = histblk['Reflection Lists'][phasenam]
+            tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
+            if phasDict.get('Super',False):
+                WriteList(self,("h","k","l","m",tname,"F_obs","F_calc","phase","mult","phase #"))
+                fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
+                refList = phasDict['RefList']
+                for refItem in refList:
+                    h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:13]
+                    self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,i))                
+            else:
+                WriteList(self,("h","k","l",tname,"F_obs","F_calc","phase","mult","phase #"))
+                fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
+                refList = phasDict['RefList']
+                for refItem in refList:
+                    h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:12]
+                    self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,i))
         self.CloseFile()
         print(str(hist)+' written to file '+str(self.fullname))                        
 

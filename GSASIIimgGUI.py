@@ -158,8 +158,7 @@ def UpdateImageControls(G2frame,data,masks):
                     BdarkImage = G2IO.GetImageData(G2frame,imagefile,True)
                     backImage += BdarkImage*BdarkScale                
                 sumImg += backImage*backScale
-            sumImg -= data['Flat Bkg']
-            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,dlg)
+            G2frame.Integrate = G2img.ImageIntegrate(sumImg-data['Flat Bkg'],data,masks,blkSize,dlg)
 #            G2plt.PlotIntegration(G2frame,newPlot=True)
             Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
             G2frame.PatternId = Id
@@ -215,6 +214,7 @@ def UpdateImageControls(G2frame,data,masks):
                                     id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
                                     Npix,imagefile = G2frame.PatternTree.GetItemPyData(id)
                                     backImage = G2IO.GetImageData(G2frame,imagefile,True)*backScale
+                                FlatBkg = Data.get('Flat Bkg',0.0)
                                 try:
                                     Masks = G2frame.PatternTree.GetItemPyData(
                                         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
@@ -225,9 +225,9 @@ def UpdateImageControls(G2frame,data,masks):
                                         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'),Masks)
                                 CleanupMasks(Masks)
                                 if len(backImage):                                
-                                    G2frame.Integrate = G2img.ImageIntegrate(image+backImage,Data,Masks,blkSize,dlgp)
+                                    G2frame.Integrate = G2img.ImageIntegrate(image+backImage-FlatBkg,Data,Masks,blkSize,dlgp)
                                 else:
-                                    G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
+                                    G2frame.Integrate = G2img.ImageIntegrate(image-FlatBkg,Data,Masks,blkSize,dlgp)
                                 pId = G2IO.SaveIntegration(G2frame,Id,Data)
                             finally:
                                 dlgp.Destroy()

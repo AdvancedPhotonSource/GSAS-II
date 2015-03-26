@@ -3715,7 +3715,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             
         if newImage:                    
             Imin,Imax = Data['range'][1]
-            MA = ma.masked_greater(ma.masked_less(G2frame.ImageZ,Zlim[0]),Zlim[1])
+            MA = ma.masked_greater(ma.masked_less(G2frame.ImageZ,Zlim[0]+FlatBkg),Zlim[1]+FlatBkg)
             MaskA = ma.getmaskarray(MA)
             A = G2img.ImageCompress(MA,imScale)-FlatBkg
             AM = G2img.ImageCompress(MaskA,imScale)

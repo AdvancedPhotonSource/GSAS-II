@@ -2417,10 +2417,10 @@ def UpdateUnitCellsGrid(G2frame, data):
         ibrav = bravaisSymb.index(controls[5])
         spc = controls[13]
         SGData = G2spc.SpcGroup(spc)[1]
-#        if 'C' in Inst['Type'][0]:
-#            dmin = G2lat.Pos2dsp(Inst,limits[1])
-#        else:   #TOF - use other limit!
-#            dmin = G2lat.Pos2dsp(Inst,limits[0])
+        if 'C' in Inst['Type'][0]:
+            dmin = G2lat.Pos2dsp(Inst,limits[1])
+        else:   #TOF - use other limit!
+            dmin = G2lat.Pos2dsp(Inst,limits[0])
         if ssopt.get('Use',False):
             dmin = peaks[0][-1][8]
             SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
@@ -2430,11 +2430,16 @@ def UpdateUnitCellsGrid(G2frame, data):
             peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
             M20,X20 = G2indx.calc_M20SS(peaks[0],G2frame.HKL)
         else:
-            dmin = peaks[0][-1][7]
-            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
-            peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
-            M20,X20 = G2indx.calc_M20(peaks[0],G2frame.HKL)
-        print ' new M20,X20: %.2f %d fraction found: %.3f'%(M20,X20,float(len(peaks[0]))/len(G2frame.HKL))
+            if len(peaks[0]):
+                dmin = peaks[0][-1][7]
+                G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+                peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #keep esds from peak fit
+                M20,X20 = G2indx.calc_M20(peaks[0],G2frame.HKL)
+            else:
+                M20 = X20 = 0.
+                G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+        if len(G2frame.HKL):
+            print ' new M20,X20: %.2f %d fraction found: %.3f'%(M20,X20,float(len(peaks[0]))/len(G2frame.HKL))
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'),peaks)
         if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)

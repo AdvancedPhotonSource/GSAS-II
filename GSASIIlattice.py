@@ -46,6 +46,9 @@ cosd = lambda x: np.cos(x*np.pi/180.)
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 rdsq2d = lambda x,p: round(1.0/np.sqrt(x),p)
 rpd = np.pi/180.
+RSQ2PI = 1./np.sqrt(2.*np.pi)
+SQ2 = np.sqrt(2.)
+RSQPI = 1./np.sqrt(np.pi)
 
 def sec2HMS(sec):
     """Convert time in sec to H:M:S string
@@ -1038,7 +1041,7 @@ def SamAng(Tth,Gangls,Sangl,IFCoup):
     psi = acosd(BC)
     
     BD = 1.0-BC**2
-    if BD > 0.:
+    if BD > 1.e-6:
         C = rpd/math.sqrt(BD)
     else:
         C = 0.
@@ -1060,7 +1063,7 @@ def SamAng(Tth,Gangls,Sangl,IFCoup):
     dBBdC = -BC1*SSomeg*SSchi+BC2*SSomeg*SCchi
     dBBdF = BC1*SComeg-BC3*SSomeg*SCchi
     
-    if BD > 0.:
+    if BD > 1.e-6:
         dGMdA = [(BA*dBBdO-BB*dBAdO)/BD,(BA*dBBdC-BB*dBAdC)/BD,(BA*dBBdF-BB*dBAdF)/BD]
     else:
         dGMdA = [0.0,0.0,0.0]
@@ -1109,8 +1112,6 @@ Lnorm = lambda L: 4.*np.pi/(2.0*L+1.)
 def GetKcl(L,N,SGLaue,phi,beta):
     'needs doc string'
     import pytexture as ptx
-    RSQ2PI = 0.3989422804014
-    SQ2 = 1.414213562373
     if SGLaue in ['m3','m3m']:
         Kcl = 0.0
         for j in range(0,L+1,4):
@@ -1137,14 +1138,12 @@ def GetKcl(L,N,SGLaue,phi,beta):
 def GetKsl(L,M,SamSym,psi,gam):
     'needs doc string'
     import pytexture as ptx
-    RSQPI = 0.5641895835478
-    SQ2 = 1.414213562373
     psrs,dpdps = ptx.pyplmpsi(L,M,1,psi)
-    psrs *= RSQPI
-    dpdps *= RSQPI
-    if M == 0:
-        psrs /= SQ2
-        dpdps /= SQ2
+    psrs *= RSQ2PI
+    dpdps *= RSQ2PI
+    if M:
+        psrs *= SQ2
+        dpdps *= SQ2
     if SamSym in ['mmm',]:
         dum = cosd(M*gam)
         Ksl = psrs*dum
@@ -1163,8 +1162,6 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
         cylindrical symmetry only (M=0) and no sample angle derivatives returned
     """
     import pytexture as ptx
-    RSQ2PI = 0.3989422804014
-    SQ2 = 1.414213562373
     Ksl,x = ptx.pyplmpsi(L,0,1,psi)
     Ksl *= RSQ2PI
     if SGLaue in ['m3','m3m']:
@@ -1193,8 +1190,6 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
 def Glnh(Start,SHCoef,psi,gam,SamSym):
     'needs doc string'
     import pytexture as ptx
-    RSQPI = 0.5641895835478
-    SQ2 = 1.414213562373
 
     if Start:
         ptx.pyqlmninit()
@@ -1218,10 +1213,6 @@ def Flnh(Start,SHCoef,phi,beta,SGData):
     'needs doc string'
     import pytexture as ptx
     
-    FORPI = 12.5663706143592
-    RSQPI = 0.5641895835478
-    SQ2 = 1.414213562373
-
     if Start:
         ptx.pyqlmninit()
         Start = False
@@ -1259,20 +1250,18 @@ def polfcal(ODFln,SamSym,psi,gam):
     match psi. Updated for numpy 1.8.0
     '''
     import pytexture as ptx
-    RSQPI = 0.5641895835478
-    SQ2 = 1.414213562373
     PolVal = np.ones_like(psi)
     for term in ODFln:
         if abs(ODFln[term][1]) > 1.e-3:
             l,m,n = eval(term.strip('C'))
             psrs,dum = ptx.pyplmpsi(l,m,len(psi),psi)
             if SamSym in ['-1','2/m']:
-                if m != 0:
+                if m:
                     Ksl = RSQPI*psrs*(cosd(m*gam)+sind(m*gam))
                 else:
                     Ksl = RSQPI*psrs/SQ2
             else:
-                if m != 0:
+                if m:
                     Ksl = RSQPI*psrs*cosd(m*gam)
                 else:
                     Ksl = RSQPI*psrs/SQ2
@@ -1283,10 +1272,6 @@ def invpolfcal(ODFln,SGData,phi,beta):
     'needs doc string'
     import pytexture as ptx
     
-    FORPI = 12.5663706143592
-    RSQPI = 0.5641895835478
-    SQ2 = 1.414213562373
-
     invPolVal = np.ones_like(beta)
     for term in ODFln:
         if abs(ODFln[term][1]) > 1.e-3:

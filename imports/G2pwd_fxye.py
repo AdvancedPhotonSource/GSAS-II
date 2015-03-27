@@ -383,12 +383,12 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                     pass
             elif 'Omega' in S.split('=')[0] or 'Theta' in S.split('=')[0]:  #HIPD weirdness
                 try:
-                    self.Sample['Omega'] = float(S.split('=')[1])
+                    self.Sample['Omega'] = 90.-float(S.split('=')[1])
                 except:
                     pass
             elif 'Chi' in S.split('=')[0]:
                 try:
-                    self.Sample['Chi'] = float(S.split('=')[1])
+                    self.Sample['Chi'] = -float(S.split('=')[1])
                 except:
                     pass                    
             elif 'Phi' in S.split('=')[0]:

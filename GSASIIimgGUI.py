@@ -1568,7 +1568,7 @@ def UpdateStressStrain(G2frame,data):
                 G2frame.ErrorDialog('Nothing to fit','There must some "IMG" patterns')
                 return
             sel = []
-            dlg = G2gd.G2MultiChoiceDialog(G2frame,'Stress/Strain fitting','Select images to fit:',choices)
+            dlg = G2G.G2MultiChoiceDialog(G2frame,'Stress/Strain fitting','Select images to fit:',choices)
             dlg.SetSelections(sel)
             names = []
             if dlg.ShowModal() == wx.ID_OK:

@@ -708,7 +708,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Map['MapType'] = mapType.GetValue()
                 
             def OnRefList(event):
-                dlg = G2gd.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
+                dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
                     'Use data',refsList,filterBox=False)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
@@ -779,7 +779,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if 'k-Max' not in Flip: Flip['k-Max'] = 20.
             
             def OnRefList(event):
-                dlg = G2gd.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
+                dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
                     'Use data',refsList,filterBox=False)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
@@ -2225,7 +2225,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def MapSizer():
 
             def OnRefList(event):
-                dlg = G2gd.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
+                dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
                     'Use data',refsList,filterBox=False)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:

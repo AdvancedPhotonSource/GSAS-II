@@ -572,7 +572,7 @@ class ExpressionDialog(wx.Dialog):
         fmt = u"{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in parmList]
 
-        dlg = G2gd.G2SingleChoiceDialog(
+        dlg = G2G.G2SingleChoiceDialog(
             self,'Select GSAS-II variable for '+str(var)+':',
             'Select variable',
             varListlbl,monoFont=True)

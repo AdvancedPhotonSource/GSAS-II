@@ -444,7 +444,7 @@ def UpdateConstraints(G2frame,data):
                 l2 = max(l2,len(i2))
             fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
             atchoice = [fmt.format(*i) for i in choices]
-            dlg = G2gd.G2MultiChoiceDialog(
+            dlg = G2G.G2MultiChoiceDialog(
                 G2frame.dataFrame,legend,
                 'Constrain '+str(FrstVarb)+' with...',atchoice,
                 toggle=False,size=(625,400),monoFont=True)
@@ -649,7 +649,7 @@ def UpdateConstraints(G2frame,data):
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in varList]
         #varListlbl = ["("+i+") "+G2obj.fmtVarDescr(i) for i in varList]
         legend = "Select variables to hold (Will not be varied, even if vary flag is set)"
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame,
             legend,title1,varListlbl,toggle=False,size=(625,400),monoFont=True)
         dlg.CenterOnParent()
@@ -714,7 +714,7 @@ def UpdateConstraints(G2frame,data):
             l2 = max(l2,len(loc))
         fmt = "{:"+str(l1)+"s} {:"+str(l2)+"s} {:s}"
         varListlbl = [fmt.format(i,*G2obj.VarDescr(i)) for i in varList]        
-        dlg = G2gd.G2SingleChoiceDialog(G2frame.dataFrame,'Select 1st variable:',
+        dlg = G2G.G2SingleChoiceDialog(G2frame.dataFrame,'Select 1st variable:',
                                       title1,varListlbl,
                                       monoFont=True,size=(625,400))
         dlg.CenterOnParent()

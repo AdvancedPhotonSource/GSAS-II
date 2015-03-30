@@ -1393,7 +1393,7 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
     elif multipleselect:
         # select one or more from a from list
         choices = [i.filename for i in zinfo]
-        dlg = G2gd.G2MultiChoiceDialog(parent,'Select file(s) to extract from zip file '+str(filename),
+        dlg = G2G.G2MultiChoiceDialog(parent,'Select file(s) to extract from zip file '+str(filename),
             'Choose file(s)',choices)
         if dlg.ShowModal() == wx.ID_OK:
             zlist = dlg.GetSelections()

@@ -2854,7 +2854,7 @@ class GSASII(wx.Frame):
 #            if ifIMG: TextList.insert(1,'All IMG')
 #            if ifHKLF: TextList.insert(1,'All HKLF')
 #            if ifPDF: TextList.insert(1,'All PDF')                
-            dlg = G2gd.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
+            dlg = G2G.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()

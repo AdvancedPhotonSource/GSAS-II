@@ -33,6 +33,7 @@ import GSASIIIO as G2IO
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIphsGUI as G2phsGUI
+import GSASIIctrls as G2G
 import numpy as np
 
 WACV = wx.ALIGN_CENTER_VERTICAL
@@ -165,7 +166,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
         keyList = sorted(UseList.keys())
         if UseList:
-            dlg = G2gd.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
                 'Copy parameters to which histograms?', 
                 keyList)
             try:
@@ -210,7 +211,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
                     copyDict[name][bab] = sourceDict[name][bab][1]                       
         keyList = sorted(UseList.keys())
         if UseList:
-            dlg = G2gd.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
                 'Copy parameters to which histograms?', 
                 keyList)
             try:

@@ -1364,7 +1364,7 @@ def GetIntensityCorr(refl,im,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
     if 'X' in parmDict[hfx+'Type']:
         Icorr *= G2pwd.Polarization(parmDict[hfx+'Polariz.'],refl[5+im],parmDict[hfx+'Azimuth'])[0]
     POcorr = 1.0
-    if pfx+'SHorder' in parmDict:                 #generalized spherical harmonics texture
+    if pfx+'SHorder' in parmDict:                 #generalized spherical harmonics texture - takes precidence
         POcorr = SHTXcal(refl,im,g,pfx,hfx,SGData,calcControls,parmDict)
     elif calcControls[phfx+'poType'] == 'MD':         #March-Dollase
         POcorr = GetPrefOri(uniq,G,g,phfx,hfx,SGData,calcControls,parmDict)

@@ -1007,8 +1007,188 @@ class ScrolledMultiEditor(wx.Dialog):
             self.OKbtn.Disable()
 
 ################################################################################
-#### 
+#### Multichoice Dialog with set all, toggle & filter options
 ################################################################################
+class G2MultiChoiceDialog(wx.Dialog):
+    '''A dialog similar to MultiChoiceDialog except that buttons are
+    added to set all choices and to toggle all choices.
+
+    :param wx.Frame ParentFrame: reference to parent frame
+    :param str title: heading above list of choices
+    :param str header: Title to place on window frame 
+    :param list ChoiceList: a list of choices where one will be selected
+    :param bool toggle: If True (default) the toggle and select all buttons
+      are displayed
+    :param bool monoFont: If False (default), use a variable-spaced font;
+      if True use a equally-spaced font.
+    :param bool filterBox: If True (default) an input widget is placed on
+      the window and only entries matching the entered text are shown.
+    :param kw: optional keyword parameters for the wx.Dialog may
+      be included such as size [which defaults to `(320,310)`] and
+      style (which defaults to `wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL`);
+      note that `wx.OK` and `wx.CANCEL` controls
+      the presence of the eponymous buttons in the dialog.
+    :returns: the name of the created dialog  
+    '''
+    def __init__(self,parent, title, header, ChoiceList, toggle=True,
+                 monoFont=False, filterBox=True, **kw):
+        # process keyword parameters, notably style
+        options = {'size':(320,310), # default Frame keywords
+                   'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
+                   }
+        options.update(kw)
+        self.ChoiceList = ChoiceList # list of choices (list of str values)
+        self.Selections = len(self.ChoiceList) * [False,] # selection status for each choice (list of bools)
+        self.filterlist = range(len(self.ChoiceList)) # list of the choice numbers that have been filtered (list of int indices)
+        if options['style'] & wx.OK:
+            useOK = True
+            options['style'] ^= wx.OK
+        else:
+            useOK = False
+        if options['style'] & wx.CANCEL:
+            useCANCEL = True
+            options['style'] ^= wx.CANCEL
+        else:
+            useCANCEL = False        
+        # create the dialog frame
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,header,**options)
+        # fill the dialog
+        Sizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(
+            wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
+            1,wx.ALL|wx.EXPAND|WACV,1)
+        if filterBox:
+            self.timer = wx.Timer()
+            self.timer.Bind(wx.EVT_TIMER,self.Filter)
+            topSizer.Add(wx.StaticText(self,wx.ID_ANY,'Name \nFilter: '),0,wx.ALL|WACV,1)
+            self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
+            self.filterBox.Bind(wx.EVT_CHAR,self.onChar)
+            self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
+            topSizer.Add(self.filterBox,0,wx.ALL|WACV,0)
+        Sizer.Add(topSizer,0,wx.ALL|wx.EXPAND,8)
+        self.trigger = False
+        self.clb = wx.CheckListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
+        self.clb.Bind(wx.EVT_CHECKLISTBOX,self.OnCheck)
+        if monoFont:
+            font1 = wx.Font(self.clb.GetFont().GetPointSize(),
+                            wx.MODERN, wx.NORMAL, wx.NORMAL, False)
+            self.clb.SetFont(font1)
+        Sizer.Add(self.clb,1,wx.LEFT|wx.RIGHT|wx.EXPAND,10)
+        Sizer.Add((-1,10))
+        # set/toggle buttons
+        if toggle:
+            bSizer = wx.BoxSizer(wx.VERTICAL)
+            setBut = wx.Button(self,wx.ID_ANY,'Set All')
+            setBut.Bind(wx.EVT_BUTTON,self._SetAll)
+            bSizer.Add(setBut,0,wx.ALIGN_CENTER)
+            bSizer.Add((-1,5))
+            togBut = wx.Button(self,wx.ID_ANY,'Toggle All')
+            togBut.Bind(wx.EVT_BUTTON,self._ToggleAll)
+            bSizer.Add(togBut,0,wx.ALIGN_CENTER)
+            Sizer.Add(bSizer,0,wx.LEFT,12)
+        # OK/Cancel buttons
+        btnsizer = wx.StdDialogButtonSizer()
+        if useOK:
+            self.OKbtn = wx.Button(self, wx.ID_OK)
+            self.OKbtn.SetDefault()
+            btnsizer.AddButton(self.OKbtn)
+        if useCANCEL:
+            btn = wx.Button(self, wx.ID_CANCEL)
+            btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        Sizer.Add((-1,5))
+        Sizer.Add(btnsizer,0,wx.ALIGN_RIGHT,50)
+        Sizer.Add((-1,20))
+        # OK done, let's get outa here
+        self.SetSizer(Sizer)
+        self.CenterOnParent()
+        
+    def GetSelections(self):
+        'Returns a list of the indices for the selected choices'
+        # update self.Selections with settings for displayed items
+        for i in range(len(self.filterlist)):
+            self.Selections[self.filterlist[i]] = self.clb.IsChecked(i)
+        # return all selections, shown or hidden
+        return [i for i in range(len(self.Selections)) if self.Selections[i]]
+        
+    def SetSelections(self,selList):
+        '''Sets the selection indices in selList as selected. Resets any previous
+        selections for compatibility with wx.MultiChoiceDialog. Note that
+        the state for only the filtered items is shown.
+
+        :param list selList: indices of items to be selected. These indices
+          are referenced to the order in self.ChoiceList
+        '''
+        self.Selections = len(self.ChoiceList) * [False,] # reset selections
+        for sel in selList:
+            self.Selections[sel] = True
+        self._ShowSelections()
+
+    def _ShowSelections(self):
+        'Show the selection state for displayed items'
+        self.clb.SetChecked(
+            [i for i in range(len(self.filterlist)) if self.Selections[self.filterlist[i]]]
+            ) # Note anything previously checked will be cleared.
+            
+    def _SetAll(self,event):
+        'Set all viewed choices on'
+        self.clb.SetChecked(range(len(self.filterlist)))
+        
+    def _ToggleAll(self,event):
+        'flip the state of all viewed choices'
+        for i in range(len(self.filterlist)):
+            self.clb.Check(i,not self.clb.IsChecked(i))
+            
+    def onChar(self,event):
+        'for keyboard events. self.trigger is used in self.OnCheck below'
+        self.OKbtn.Enable(False)
+        if event.GetKeyCode() == wx.WXK_SHIFT:
+            self.trigger = True
+        if self.timer.IsRunning():
+            self.timer.Stop()
+        self.timer.Start(1000,oneShot=True)
+        event.Skip()
+        
+    def OnCheck(self,event):
+        '''for CheckListBox events; if Shift key down this sets all unset 
+            entries below the selected one'''
+        if self.trigger:
+            id = event.GetSelection()
+            name = self.clb.GetString(id)            
+            iB = id-1
+            if iB < 0:
+                return
+            while not self.clb.IsChecked(iB):
+                self.clb.Check(iB)
+                iB -= 1
+                if iB < 0:
+                    break
+        self.trigger = not self.trigger
+        
+    def Filter(self,event):
+        if self.timer.IsRunning():
+            self.timer.Stop()
+        self.GetSelections() # record current selections
+        txt = self.filterBox.GetValue()
+        self.clb.Clear()
+        
+        self.Update()
+        self.filterlist = []
+        if txt:
+            txt = txt.lower()
+            ChoiceList = []
+            for i,item in enumerate(self.ChoiceList):
+                if item.lower().find(txt) != -1:
+                    ChoiceList.append(item)
+                    self.filterlist.append(i)
+        else:
+            self.filterlist = range(len(self.ChoiceList))
+            ChoiceList = self.ChoiceList
+        self.clb.AppendItems(ChoiceList)
+        self._ShowSelections()
+        self.OKbtn.Enable(True)
+
 def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
     '''Select a variable from a list, then edit it and select histograms
     to copy it to.
@@ -1182,6 +1362,122 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
         if dlg.ShowModal() != wx.ID_OK:
             array.update(saveArray)
         dlg.Destroy()
+
+################################################################################
+#### Single choice Dialog with set all, toggle & filter options
+################################################################################
+class G2SingleChoiceDialog(wx.Dialog):
+    '''A dialog similar to wx.SingleChoiceDialog except that a filter can be
+    added.
+
+    :param wx.Frame ParentFrame: reference to parent frame
+    :param str title: heading above list of choices
+    :param str header: Title to place on window frame 
+    :param list ChoiceList: a list of choices where one will be selected
+    :param bool monoFont: If False (default), use a variable-spaced font;
+      if True use a equally-spaced font.
+    :param bool filterBox: If True (default) an input widget is placed on
+      the window and only entries matching the entered text are shown.
+    :param kw: optional keyword parameters for the wx.Dialog may
+      be included such as size [which defaults to `(320,310)`] and
+      style (which defaults to ``wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.CENTRE | wx.OK | wx.CANCEL``);
+      note that ``wx.OK`` and ``wx.CANCEL`` controls
+      the presence of the eponymous buttons in the dialog.
+    :returns: the name of the created dialog
+    '''
+    def __init__(self,parent, title, header, ChoiceList, 
+                 monoFont=False, filterBox=True, **kw):
+        # process keyword parameters, notably style
+        options = {'size':(320,310), # default Frame keywords
+                   'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
+                   }
+        options.update(kw)
+        self.ChoiceList = ChoiceList
+        self.filterlist = range(len(self.ChoiceList))
+        if options['style'] & wx.OK:
+            useOK = True
+            options['style'] ^= wx.OK
+        else:
+            useOK = False
+        if options['style'] & wx.CANCEL:
+            useCANCEL = True
+            options['style'] ^= wx.CANCEL
+        else:
+            useCANCEL = False        
+        # create the dialog frame
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,header,**options)
+        # fill the dialog
+        Sizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        topSizer.Add(
+            wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
+            1,wx.ALL|wx.EXPAND|WACV,1)
+        if filterBox:
+            self.timer = wx.Timer()
+            self.timer.Bind(wx.EVT_TIMER,self.Filter)
+            topSizer.Add(wx.StaticText(self,wx.ID_ANY,'Filter: '),0,wx.ALL,1)
+            self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),
+                                         style=wx.TE_PROCESS_ENTER)
+            self.filterBox.Bind(wx.EVT_CHAR,self.onChar)
+            self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
+        topSizer.Add(self.filterBox,0,wx.ALL,0)
+        Sizer.Add(topSizer,0,wx.ALL|wx.EXPAND,8)
+        self.clb = wx.ListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
+        self.clb.Bind(wx.EVT_LEFT_DCLICK,self.onDoubleClick)
+        if monoFont:
+            font1 = wx.Font(self.clb.GetFont().GetPointSize(),
+                            wx.MODERN, wx.NORMAL, wx.NORMAL, False)
+            self.clb.SetFont(font1)
+        Sizer.Add(self.clb,1,wx.LEFT|wx.RIGHT|wx.EXPAND,10)
+        Sizer.Add((-1,10))
+        # OK/Cancel buttons
+        btnsizer = wx.StdDialogButtonSizer()
+        if useOK:
+            self.OKbtn = wx.Button(self, wx.ID_OK)
+            self.OKbtn.SetDefault()
+            btnsizer.AddButton(self.OKbtn)
+        if useCANCEL:
+            btn = wx.Button(self, wx.ID_CANCEL)
+            btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        Sizer.Add((-1,5))
+        Sizer.Add(btnsizer,0,wx.ALIGN_RIGHT,50)
+        Sizer.Add((-1,20))
+        # OK done, let's get outa here
+        self.SetSizer(Sizer)
+    def GetSelection(self):
+        'Returns the index of the selected choice'
+        i = self.clb.GetSelection()
+        if i < 0 or i >= len(self.filterlist):
+            return wx.NOT_FOUND
+        return self.filterlist[i]
+    def onChar(self,event):
+        self.OKbtn.Enable(False)
+        if self.timer.IsRunning():
+            self.timer.Stop()
+        self.timer.Start(1000,oneShot=True)
+        event.Skip()
+    def Filter(self,event):
+        if self.timer.IsRunning():
+            self.timer.Stop()
+        txt = self.filterBox.GetValue()
+        self.clb.Clear()
+        self.Update()
+        self.filterlist = []
+        if txt:
+            txt = txt.lower()
+            ChoiceList = []
+            for i,item in enumerate(self.ChoiceList):
+                if item.lower().find(txt) != -1:
+                    ChoiceList.append(item)
+                    self.filterlist.append(i)
+        else:
+            self.filterlist = range(len(self.ChoiceList))
+            ChoiceList = self.ChoiceList
+        self.clb.AppendItems(ChoiceList)
+        self.OKbtn.Enable(True)
+    def onDoubleClick(self,event):
+        self.EndModal(wx.ID_OK)
 
 ################################################################################
 #### Custom checkbox that saves values into dict/list as used

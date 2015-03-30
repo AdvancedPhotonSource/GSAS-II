@@ -222,7 +222,7 @@ def CopyPlotCtrls(G2frame):
             'refDelt':0.01,'qPlot':False,'dPlot':False,'sqrtPlot':False})
         G2frame.PatternTree.SetItemPyData(G2frame.PatternId,sourceData)
         
-    dlg = G2gd.G2MultiChoiceDialog(
+    dlg = G2G.G2MultiChoiceDialog(
         G2frame.dataFrame, 
         'Copy plot controls from\n'+str(hst[5:])+' to...',
         'Copy plot controls', histList)
@@ -254,7 +254,7 @@ def CopySelectedHistItems(G2frame):
         G2frame.ErrorDialog('No match','No other histograms match '+hst,G2frame.dataFrame)
         return
     choices = ['Limits','Background','Instrument Parameters','Sample Parameters']
-    dlg = G2gd.G2MultiChoiceDialog(
+    dlg = G2G.G2MultiChoiceDialog(
         G2frame.dataFrame, 
         'Copy which histogram sections from\n'+str(hst[5:]),
         'Select copy sections', choices, filterBox=False)
@@ -264,7 +264,7 @@ def CopySelectedHistItems(G2frame):
         choiceList = [choices[i] for i in dlg.GetSelections()]
     if not choiceList: return
     
-    dlg = G2gd.G2MultiChoiceDialog(
+    dlg = G2G.G2MultiChoiceDialog(
         G2frame.dataFrame, 
         'Copy parameters from\n'+str(hst[5:])+' to...',
         'Copy parameters', histList)
@@ -376,7 +376,7 @@ def UpdatePeakGrid(G2frame, data):
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
         copyList = []
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy peak list from\n'+str(hst[5:])+' to...',
             'Copy peaks', histList)
@@ -435,7 +435,7 @@ def UpdatePeakGrid(G2frame, data):
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
         sel = []
-        dlg = G2gd.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential peak fits',
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential peak fits',
              'Select dataset to include',histList)
         dlg.SetSelections(sel)
         names = []
@@ -743,7 +743,7 @@ def UpdateBackground(G2frame,data):
         if not histList:
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy bkg ref. flags from\n'+str(hst[5:])+' to...',
             'Copy bkg flags', histList)
@@ -773,7 +773,7 @@ def UpdateBackground(G2frame,data):
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
         copyList = []
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy bkg params from\n'+str(hst[5:])+' to...',
             'Copy parameters', histList)
@@ -1035,7 +1035,7 @@ def UpdateLimitsGrid(G2frame, data,plottype):
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
         copyList = []
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy limits from\n'+str(hst[5:])+' to...',
             'Copy limits', histList)
@@ -1218,7 +1218,7 @@ def UpdateInstrumentGrid(G2frame,data):
         flags = dict(zip(keys,[data[key][2] for key in keys]))
         instType = data['Type'][0]
         copyList = []
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy inst ref. flags from\n'+hst[5:],
             'Copy refinement flags', histList)
@@ -1246,7 +1246,7 @@ def UpdateInstrumentGrid(G2frame,data):
             return
         copyList = []
         instType = data['Type'][0]
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy inst params from\n'+hst,
             'Copy parameters', histList)
@@ -1752,7 +1752,7 @@ def UpdateSampleGrid(G2frame,data):
         if not histList:
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame,
             'Copy sample params from\n'+str(hst[5:])+' to...',
             'Copy sample parameters', histList)
@@ -1795,7 +1795,7 @@ def UpdateSampleGrid(G2frame,data):
         # sort both lists together, ordered by keyText
         keyText, keyList = zip(*sorted(zip(keyText,keyList))) # sort lists 
         selectedKeys = []
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame,
             'Select which sample parameters\nto copy',
             'Select sample parameters', keyText)
@@ -1808,7 +1808,7 @@ def UpdateSampleGrid(G2frame,data):
         copyDict = {}
         for parm in selectedKeys:
             copyDict[parm] = data[parm]
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame,
             'Copy sample params from\n'+str(hst[5:])+' to...',
             'Copy sample parameters', histList)
@@ -1834,7 +1834,7 @@ def UpdateSampleGrid(G2frame,data):
         if not histList:
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy sample ref. flags from\n'+str(hst[5:])+' to...',
             'Copy sample flags', histList)
@@ -3141,7 +3141,7 @@ def UpdateSubstanceGrid(G2frame,data):
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
         copyList = []
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy substances from\n'+hst[5:]+' to...',
             'Copy substances', histList)
@@ -3430,7 +3430,7 @@ def UpdateModelsGrid(G2frame,data):
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
         copyList = []
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy models from\n'+hst[5:]+' to...',
             'Copy models', histList)
@@ -3458,7 +3458,7 @@ def UpdateModelsGrid(G2frame,data):
         if not histList:
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
-        dlg = G2gd.G2MultiChoiceDialog(
+        dlg = G2G.G2MultiChoiceDialog(
             G2frame.dataFrame, 
             'Copy sample ref. flags from\n'+str(hst[5:])+' to...',
             'Copy sample flags', histList)
@@ -3492,7 +3492,7 @@ def UpdateModelsGrid(G2frame,data):
     def OnFitModelAll(event):
         choices = G2gd.GetPatternTreeDataNames(G2frame,['SASD',])
         sel = []
-        dlg = G2gd.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential SASD refinement',
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential SASD refinement',
              'Select dataset to include',choices)
         dlg.SetSelections(sel)
         names = []

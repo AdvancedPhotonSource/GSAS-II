@@ -2826,7 +2826,8 @@ class GSASII(wx.Frame):
         '''Delete one or more histograms from data tree. Called by the
         Data/DeleteData menu
         '''
-        TextList = ['All Data']
+#        TextList = ['All Data']
+        TextList = []
         DelList = []
         DelItemList = []
         nItems = {'PWDR':0,'SASD':0,'IMG':0,'HKLF':0,'PDF':0}
@@ -2848,28 +2849,28 @@ class GSASII(wx.Frame):
                     if 'PDF' in name: ifPDF = True; nItems['PDF'] += 1
                     TextList.append(name)
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-            if ifPWDR: TextList.insert(1,'All PWDR')
-            if ifSASD: TextList.insert(1,'All SASD')
-            if ifIMG: TextList.insert(1,'All IMG')
-            if ifHKLF: TextList.insert(1,'All HKLF')
-            if ifPDF: TextList.insert(1,'All PDF')                
+#            if ifPWDR: TextList.insert(1,'All PWDR')
+#            if ifSASD: TextList.insert(1,'All SASD')
+#            if ifIMG: TextList.insert(1,'All IMG')
+#            if ifHKLF: TextList.insert(1,'All HKLF')
+#            if ifPDF: TextList.insert(1,'All PDF')                
             dlg = G2gd.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()
                     for i in result: DelList.append(TextList[i])
-                    if 'All Data' in DelList:
-                        DelList = [item for item in TextList if item[:3] != 'All']
-                    elif 'All PWDR' in DelList:
-                        DelList = [item for item in TextList if item[:4] == 'PWDR']
-                    elif 'All SASD' in DelList:
-                        DelList = [item for item in TextList if item[:4] == 'SASD']
-                    elif 'All IMG' in DelList:
-                        DelList = [item for item in TextList if item[:3] == 'IMG']
-                    elif 'All HKLF' in DelList:
-                        DelList = [item for item in TextList if item[:4] == 'HKLF']
-                    elif 'All PDF' in DelList:
-                        DelList = [item for item in TextList if item[:3] == 'PDF']
+#                    if 'All Data' in DelList:
+#                        DelList = [item for item in TextList if item[:3] != 'All']
+#                    elif 'All PWDR' in DelList:
+#                        DelList = [item for item in TextList if item[:4] == 'PWDR']
+#                    elif 'All SASD' in DelList:
+#                        DelList = [item for item in TextList if item[:4] == 'SASD']
+#                    elif 'All IMG' in DelList:
+#                        DelList = [item for item in TextList if item[:3] == 'IMG']
+#                    elif 'All HKLF' in DelList:
+#                        DelList = [item for item in TextList if item[:4] == 'HKLF']
+#                    elif 'All PDF' in DelList:
+#                        DelList = [item for item in TextList if item[:3] == 'PDF']
                     item, cookie = self.PatternTree.GetFirstChild(self.root)
                     while item:
                         itemName = self.PatternTree.GetItemText(item)

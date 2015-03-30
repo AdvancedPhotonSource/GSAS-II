@@ -906,14 +906,22 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None):
             line += ' SH '+name+':'+'%12.4f'%(textureData['Sample '+name][1])+' Refine? '+str(textureData['Sample '+name][0])
         print >>pFile,line
         print >>pFile,'\n Texture coefficients:'
-        ptlbls = ' names :'
-        ptstr =  ' values:'
         SHcoeff = textureData['SH Coeff'][1]
-        for item in SHcoeff:
-            ptlbls += '%12s'%(item)
-            ptstr += '%12.4f'%(SHcoeff[item]) 
-        print >>pFile,ptlbls
-        print >>pFile,ptstr
+        SHkeys = SHcoeff.keys()
+        nCoeff = len(SHcoeff)
+        nBlock = nCoeff/10+1
+        iBeg = 0
+        iFin = min(iBeg+10,nCoeff)
+        for block in range(nBlock):
+            ptlbls = ' names :'
+            ptstr =  ' values:'
+            for item in SHkeys[iBeg:iFin]:
+                ptlbls += '%12s'%(item)
+                ptstr += '%12.4f'%(SHcoeff[item]) 
+            print >>pFile,ptlbls
+            print >>pFile,ptstr
+            iBeg += 10
+            iFin = min(iBeg+10,nCoeff)
         
     def MakeRBParms(rbKey,phaseVary,phaseDict):
         rbid = str(rbids.index(RB['RBId']))
@@ -1696,20 +1704,28 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         print >>pFile,ptstr
         print >>pFile,sigstr
         print >>pFile,'\n Texture coefficients:'
-        namstr = '  names :'
-        ptstr =  '  values:'
-        sigstr = '  esds  :'
         SHcoeff = textureData['SH Coeff'][1]
-        for name in SHcoeff:
-            namstr += '%12s'%(name)
-            ptstr += '%12.3f'%(SHcoeff[name])
-            if name in SHtextureSig:
-                sigstr += '%12.3f'%(SHtextureSig[name])
-            else:
-                sigstr += 12*' '
-        print >>pFile,namstr
-        print >>pFile,ptstr
-        print >>pFile,sigstr
+        SHkeys = SHcoeff.keys()
+        nCoeff = len(SHcoeff)
+        nBlock = nCoeff/10+1
+        iBeg = 0
+        iFin = min(iBeg+10,nCoeff)
+        for block in range(nBlock):
+            namstr = '  names :'
+            ptstr =  '  values:'
+            sigstr = '  esds  :'
+            for name in SHkeys[iBeg:iFin]:
+                namstr += '%12s'%(name)
+                ptstr += '%12.3f'%(SHcoeff[name])
+                if name in SHtextureSig:
+                    sigstr += '%12.3f'%(SHtextureSig[name])
+                else:
+                    sigstr += 12*' '
+            print >>pFile,namstr
+            print >>pFile,ptstr
+            print >>pFile,sigstr
+            iBeg += 10
+            iFin = min(iBeg+10,nCoeff)
             
     print >>pFile,'\n Phases:'
     for phase in Phases:

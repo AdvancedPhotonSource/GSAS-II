@@ -201,7 +201,8 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             
         def GetTimeMap(File,Pos,TimeMap):
             File.seek(Pos)
-            cons = TimeMap.split()
+            cons = TimeMap[8:].split()
+            mapNo = int(cons[0])
             Nch = int(cons[1])
             Nrec = int(cons[2])
             clockWd = float(cons[4])/1000.          #in mus
@@ -282,7 +283,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                         comments.append([title,])
                         Banks.append(S)
                         Pos.append(filepointer.tell())
-                    if S[:8] == 'TIME_MAP':
+                    if S[:8] == 'TIME_MAP':     #assumes one time map; HIPPO has multiple time maps
                         if len(Banks) == 0:
                             self.errors = 'Error reading time map before any bank lines'
                         else:

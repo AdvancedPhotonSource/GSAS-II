@@ -2840,7 +2840,7 @@ class GSASII(wx.Frame):
             while item:
                 name = self.PatternTree.GetItemText(item)
                 if name not in ['Notebook','Controls','Covariance','Constraints',
-                    'Restraints','Phases','Rigid bodies']:
+                    'Restraints','Phases','Rigid bodies','Sequential results']:
                     if 'PWDR' in name: ifPWDR = True; nItems['PWDR'] += 1
                     if 'SASD' in name: ifSASD = True; nItems['SASD'] += 1
                     if 'IMG' in name: ifIMG = True; nItems['IMG'] += 1
@@ -2853,7 +2853,7 @@ class GSASII(wx.Frame):
             if ifIMG: TextList.insert(1,'All IMG')
             if ifHKLF: TextList.insert(1,'All HKLF')
             if ifPDF: TextList.insert(1,'All PDF')                
-            dlg = wx.MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
+            dlg = G2gd.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()

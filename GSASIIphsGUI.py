@@ -555,7 +555,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
         def DenSizer():
             
-            mass = G2mth.getMass(generalData)
+            generalData['Mass'] = G2mth.getMass(generalData)
             density,mattCoeff = G2mth.getDensity(generalData)
             denSizer = wx.BoxSizer(wx.HORIZONTAL)
             denSizer.Add(wx.StaticText(General,-1,' Density: '),0,WACV)
@@ -563,7 +563,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             denTxt.SetBackgroundColour(VERY_LIGHT_GREY)
             denSizer.Add(denTxt,0,WACV)
             mattTxt = None        
-            if generalData['Type'] == 'macromolecular' and mass > 0.0:
+            if generalData['Type'] == 'macromolecular' and generalData['Mass'] > 0.0:
                 denSizer.Add(wx.StaticText(General,-1,' Matthews coeff.: '),
                     0,WACV)
                 mattTxt = wx.TextCtrl(General,-1,'%.3f'%(mattCoeff),style=wx.TE_READONLY)
@@ -3711,7 +3711,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(ODFSizer,0,WACV)
             mainSizer.Add((0,5),0)
         mainSizer.Add((0,5),0)
-        mainSizer.Add(wx.StaticText(Texture,-1,'Sample orientation angles: '),0,WACV)
+        mainSizer.Add(wx.StaticText(Texture,-1,'Sample orientation angle zeros: '),0,WACV)
         mainSizer.Add((0,5),0)
         angSizer = wx.BoxSizer(wx.HORIZONTAL)
         angIndx = {}

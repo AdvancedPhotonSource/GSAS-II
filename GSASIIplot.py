@@ -2908,6 +2908,7 @@ def PlotCovariance(G2frame,Data):
     covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
     title = ' for\n'+Data['title']
     newAtomDict = Data.get('newAtomDict',{})
+    G2frame.G2plotNB.Delete('Covariance')
     
 
     def OnPlotKeyPress(event):
@@ -2925,7 +2926,6 @@ def PlotCovariance(G2frame,Data):
         PlotCovariance(G2frame,Data)
 
     def OnMotion(event):
-        #there is a problem here - reports wrong values
         if event.button:
             ytics = imgAx.get_yticks()
             ytics = np.where(ytics<len(varyList),ytics,-1)

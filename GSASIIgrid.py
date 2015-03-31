@@ -134,9 +134,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(10)]
 
 [ wxID_RENAMESEQSEL,wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_SAVESEQCSV,wxID_PLOTSEQSEL,
-  wxID_ORGSEQSEL,wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,wxCOPYPARFIT,
+  wxID_ORGSEQSEL,wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,wxCOPYPARFIT,wxID_AVESEQSEL,
   wxADDPARFIT,wxDELPARFIT,wxEDITPARFIT,wxDOPARFIT,
-] = [wx.NewId() for item in range(14)]
+] = [wx.NewId() for item in range(15)]
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
@@ -1284,6 +1284,8 @@ class DataFrame(wx.Frame):
             help='Save selected sequential refinement results as a CSV spreadsheet file')
         self.SequentialFile.Append(id=wxID_PLOTSEQSEL, kind=wx.ITEM_NORMAL,text='Plot selected',
             help='Plot selected sequential refinement results')
+        self.SequentialFile.Append(id=wxID_AVESEQSEL, kind=wx.ITEM_NORMAL,text='Compute average',
+            help='Compute average for selected parameter')            
         self.SequentialFile.Append(id=wxID_ORGSEQSEL, kind=wx.ITEM_NORMAL,text='Reorganize',
             help='Reorganize variables where variables change')
         self.SequentialPvars = wx.Menu(title='')
@@ -2553,6 +2555,20 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 'No columns or rows selected in table. Click on row or column labels to select fields for plotting.'
                 )
                 
+    def OnAveSelSeq(event):
+        'average the selected columns from menu command'
+        cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
+        if cols:
+            for col in cols:
+                ave = np.mean(GetColumnInfo(col)[1])
+                sig = np.std(GetColumnInfo(col)[1])
+                print ' Average for '+G2frame.SeqTable.GetColLabelValue(col)+': '+'%.6g'%(ave)+' +/- '+'%.6g'%(sig)
+        else:
+            G2frame.ErrorDialog(
+                'Select columns',
+                'No columns selected in table. Click on column labels to select fields for averaging.'
+                )
+                
     def OnRenameSelSeq(event):
         cols = sorted(G2frame.dataDisplay.GetSelectedCols()) # ignore selection order
         colNames = [G2frame.SeqTable.GetColLabelValue(c) for c in cols]
@@ -3196,6 +3212,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSelSeqCSV, id=wxID_SAVESEQSELCSV)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveSeqCSV, id=wxID_SAVESEQCSV)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotSelSeq, id=wxID_PLOTSEQSEL)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAveSelSeq, id=wxID_AVESEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnReOrgSelSeq, id=wxID_ORGSEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewPseudoVar, id=wxADDSEQVAR)
     G2frame.dataFrame.Bind(wx.EVT_MENU, DelPseudoVar, id=wxDELSEQVAR)

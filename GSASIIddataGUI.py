@@ -203,7 +203,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
                     SHterms = sourceDict[name][5]
                     SHflags = {}
                     for item in SHterms:
-                        SHflags[item] = SHterms[item][1]
+                        SHflags[item] = SHterms[item]
                     copyDict[name].append(SHflags)
             elif name == 'Babinet':
                 copyDict[name] = {}
@@ -237,8 +237,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
                                 if sourceDict[name][0] == 'SH':
                                     SHflags = copy.deepcopy(copyDict[name][2])
                                     SHterms = copy.deepcopy(sourceDict[name][5])
-                                    for item in SHflags:
-                                        SHterms[item][1] = copy.deepcopy(SHflags[item])
                             elif name == 'Babinet':
                                 for bab in babNames:
                                     UseList[item][name][bab][1] = copy.deepcopy(copyDict[name][bab])                                              

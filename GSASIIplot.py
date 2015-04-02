@@ -1392,6 +1392,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Pattern = G2frame.PatternTree.GetItemPyData(item)
                 if len(Pattern) < 3:                    # put name on end if needed
                     Pattern.append(G2frame.PatternTree.GetItemText(item))
+                if 'Offset' not in Pattern[0]:     #plot offset data
+                    Pattern[0].update({'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,})
                 PlotList.append(Pattern)
                 ParmList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
                     item,'Instrument Parameters'))[0])
@@ -1478,12 +1480,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if Pattern[1] is None: continue # skip over uncomputed simulations
         xye = ma.array(ma.getdata(Pattern[1]))
         Zero = Parms.get('Zero',[0.,0.])[1]
-        ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)
-        LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Limits')
-        limits = G2frame.PatternTree.GetItemPyData(LimitId)
-        excls = limits[2:]
-        for excl in excls:
-            xye[0] = ma.masked_inside(xye[0],excl[0],excl[1])
+        if PickId:
+            ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)
+            LimitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Limits')
+            limits = G2frame.PatternTree.GetItemPyData(LimitId)
+            excls = limits[2:]
+            for excl in excls:
+                xye[0] = ma.masked_inside(xye[0],excl[0],excl[1])
         if G2frame.plotStyle['qPlot'] and 'PWDR' in plottype:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, Pattern[2])
             X = 2.*np.pi/G2lat.Pos2dsp(Parms,xye[0])
@@ -1629,22 +1632,23 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         DifLine = Plot.plot(X,D,colors[(N+3)%6],picker=1.)                 #Io-Ic
                     Plot.axhline(0.,color=wx.BLACK)
                 Page.canvas.SetToolTipString('')
-                if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
-                    tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
-                    Page.canvas.SetToolTipString(tip)
-                    data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
-                    for item in data['peaks']:
-                        if G2frame.plotStyle['qPlot']:
-                            Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,item[0]),color=colors[N%6],picker=2.))
-                        elif G2frame.plotStyle['dPlot']:
-                            Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,item[0]),color=colors[N%6],picker=2.))
-                        else:
-                            Lines.append(Plot.axvline(item[0],color=colors[N%6],picker=2.))
-                if G2frame.PatternTree.GetItemText(PickId) == 'Limits':
-                    tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
-                    Page.canvas.SetToolTipString(tip)
-                    data = G2frame.LimitsTable.GetData()
-                    
+                if PickId:
+                    if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
+                        tip = 'On data point: Pick peak - L or R MB. On line: L-move, R-delete'
+                        Page.canvas.SetToolTipString(tip)
+                        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))
+                        for item in data['peaks']:
+                            if G2frame.plotStyle['qPlot']:
+                                Lines.append(Plot.axvline(2.*np.pi/G2lat.Pos2dsp(Parms,item[0]),color=colors[N%6],picker=2.))
+                            elif G2frame.plotStyle['dPlot']:
+                                Lines.append(Plot.axvline(G2lat.Pos2dsp(Parms,item[0]),color=colors[N%6],picker=2.))
+                            else:
+                                Lines.append(Plot.axvline(item[0],color=colors[N%6],picker=2.))
+                    if G2frame.PatternTree.GetItemText(PickId) == 'Limits':
+                        tip = 'On data point: Lower limit - L MB; Upper limit - R MB. On limit: MB down to move'
+                        Page.canvas.SetToolTipString(tip)
+                        data = G2frame.LimitsTable.GetData()
+                        
             else:   #not picked
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:

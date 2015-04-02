@@ -303,7 +303,7 @@ def ApplyRBModelDervs(dFdvDict,parmDict,rigidbodyDict,Phase):
 ##### Penalty & restraint functions 
 ################################################################################
 
-def penaltyFxn(HistoPhases,parmDict,varyList):
+def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
     'Needs a doc string'
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     pNames = []
@@ -326,7 +326,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
         phaseRest = restraintDict[phase]
         names = [['Bond','Bonds'],['Angle','Angles'],['Plane','Planes'],
             ['Chiral','Volumes'],['Torsion','Torsions'],['Rama','Ramas'],
-            ['ChemComp','Sites'],['Texture','HKLs']]
+            ['ChemComp','Sites'],['Texture','HKLs'],]
         for name,rest in names:
             pWsum[name] = 0.
             itemRest = phaseRest[name]
@@ -388,7 +388,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                             pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name,i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
                             pVals.append(Z1[ind[0]][ind[1]])
                             pWt.append(wt/esd1**2)
-                            pWsum[name] += wt*((obs-calc)/esd)**2
+                            pWsum[name] += wt*(-Z1[ind[0]][ind[1]]/esd)**2
                         if ifesd2:
                             Z2 = 1.-Z
                             for ind in np.ndindex(grid,grid):
@@ -396,7 +396,34 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
                                 pVals.append(Z1[ind[0]][ind[1]])
                                 pWt.append(wt/esd2**2)
                                 pWsum[name] += wt*((obs-calc)/esd)**2
-         
+        
+        name = 'SH-Pref.Ori.'
+        pWsum[name] = 0.0
+        for hist in Phases[phase]['Histograms']:
+            if hist in Histograms:
+                hId = Histograms[hist]['hId']
+                phfx = '%d:%d:'%(pId,hId)
+                if calcControls[phfx+'poType'] == 'SH':
+                    toler = calcControls[phfx+'SHtoler']
+                    wt = 1./toler**2
+                    HKLs = calcControls[phfx+'SHhkl']
+                    SHcofNames = Phases[phase]['Histograms'][hist]['Pref.Ori.'][5].keys()
+                    SHcof = dict(zip(SHcofNames,[parmDict[phfx+cof] for cof in SHcofNames]))
+                    for i,PH in enumerate(HKLs):
+                        phi,beta = G2lat.CrsAng(PH,cell,SGData)
+                        SH3Coef = {}
+                        for item in SHcof:
+                            L,N = eval(item.strip('C'))
+                            SH3Coef['C%d,0,%d'%(L,N)] = SHcof[item]                        
+                        ODFln = G2lat.Flnh(False,SH3Coef,phi,beta,SGData)
+                        X = np.linspace(0,90.0,26)
+                        Y = -ma.masked_greater(G2lat.polfcal(ODFln,'0',X,0.0),0.0)
+                        IndY = ma.nonzero(Y)
+                        for ind in IndY[0]:
+                            pNames.append('%d:%d:%s:%d:%.2f'%(pId,hId,name,i,X[ind]))
+                            pVals.append(Y[ind])
+                            pWt.append(wt)
+                            pWsum[name] += wt*(-Y[ind])**2
     pWsum['PWLref'] = 0.
     for item in varyList:
         if 'PWLref' in item and parmDict[item] < 0.:
@@ -410,7 +437,7 @@ def penaltyFxn(HistoPhases,parmDict,varyList):
     pWt = np.array(pWt)         #should this be np.sqrt?
     return pNames,pVals,pWt,pWsum
     
-def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
+def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
     'Needs a doc string'
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
     pDerv = np.zeros((len(varyList),len(pVal)))
@@ -442,6 +469,8 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
                 name = pnames[1]
                 if 'PWL' in pName:
                     pDerv[varyList.index(pName)][ip] += 1.
+                    continue
+                elif 'SH-' in pName:
                     continue
                 id = int(pnames[2]) 
                 itemRest = phaseRest[name]
@@ -503,6 +532,23 @@ def penaltyDeriv(pNames,pVal,HistoPhases,parmDict,varyList):
                         pDerv[ind][ip] += drv
                     except ValueError:
                         pass
+        
+#        for ip,pName in enumerate(pNames):
+#            pnames = pNames.split(':')
+#            if 'SH-' in pName and pId == int(pnames[0]):
+#                name = pnames[2]
+#                L,N = eval(name.strip('C'))
+#                hId = int(pnames[1])
+#                phfx = '%d:%d:'%(pId,hId)
+#                hklId = int(pnames[3])
+#                gam = float(pnames[4])
+#                HKLs = calcControls[phfx+'SHhkl']
+#                phi,beta = G2lat.CrsAng(HKLs[hklId],cell,SGData)
+#                SHcofNames = Phases[phase]['Histograms'][hist]['Pref.Ori.'][5].keys()
+#                SHcof = dict(zip(SHcofNames,[parmDict[phfx+cof] for cof in SHcofNames]))
+#            
+#            raise Exception
+
     return pDerv
 
 ################################################################################
@@ -1938,7 +1984,6 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
                 Uniq = np.inner(refl[:3],SGMT)
                 refl[5+im] = GetReflPos(refl,im,wave,A,pfx,hfx,calcControls,parmDict)         #corrected reflection position
                 Lorenz = 1./(2.*sind(refl[5+im]/2.)**2*cosd(refl[5+im]/2.))           #Lorentz correction
-#                refl[5+im] += GetHStrainShift(refl,im,SGData,phfx,hfx,calcControls,parmDict)               #apply hydrostatic strain shift
                 refl[6+im:8+im] = GetReflSigGamCW(refl,im,wave,G,GB,phfx,calcControls,parmDict)    #peak sig & gam
                 refl[11+im:15+im] = GetIntensityCorr(refl,im,Uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict)
                 refl[11+im] *= Vst*Lorenz
@@ -2458,9 +2503,9 @@ def dervRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
         else:
             dMdv = np.sqrt(wtFactor)*dMdvh
             
-    pNames,pVals,pWt,pWsum = penaltyFxn(HistoPhases,parmDict,varylist)
+    pNames,pVals,pWt,pWsum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if np.any(pVals):
-        dpdv = penaltyDeriv(pNames,pVals,HistoPhases,parmDict,varylist)
+        dpdv = penaltyDeriv(pNames,pVals,HistoPhases,calcControls,parmDict,varylist)
         dMdv = np.concatenate((dMdv.T,(np.sqrt(pWt)*dpdv).T)).T
         
     return dMdv
@@ -2533,9 +2578,9 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
                 Hess = wtFactor*np.inner(dMdvh,dMdvh)
         else:
             continue        #skip non-histogram entries
-    pNames,pVals,pWt,pWsum = penaltyFxn(HistoPhases,parmDict,varylist)
+    pNames,pVals,pWt,pWsum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if np.any(pVals):
-        dpdv = penaltyDeriv(pNames,pVals,HistoPhases,parmDict,varylist)
+        dpdv = penaltyDeriv(pNames,pVals,HistoPhases,calcControls,parmDict,varylist)
         Vec += np.sum(dpdv*pWt*pVals,axis=1)
         Hess += np.inner(dpdv*pWt,dpdv)
     return Vec,Hess
@@ -2685,11 +2730,11 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             parmDict['saved values'] = values
             dlg.Destroy()
             raise Exception         #Abort!!
-    pDict,pVals,pWt,pWsum = penaltyFxn(HistoPhases,parmDict,varylist)
+    pDict,pVals,pWt,pWsum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if len(pVals):
         pSum = np.sum(pWt*pVals**2)
         for name in pWsum:
-            if pWsum:
+            if pWsum[name]:
                 print '  Penalty function for %8s = %12.5g'%(name,pWsum[name])
         print 'Total penalty function: %12.5g on %d terms'%(pSum,len(pVals))
         Nobs += len(pVals)

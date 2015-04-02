@@ -2070,7 +2070,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 else:                           #'SH' spherical harmonics
                     controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
                     controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
-                    controlDict[pfx+'SHhkl'] = [eval(a.replace(' ',',')) for a in hapData['Pref.Ori.'][6]]
+                    controlDict[pfx+'SHhkl'] = []
+                    if hapData['Pref.Ori.'][6][0] != '':
+                        controlDict[pfx+'SHhkl'] = [eval(a.replace(' ',',')) for a in hapData['Pref.Ori.'][6]]
                     controlDict[pfx+'SHtoler'] = hapData['Pref.Ori.'][7]
                     for item in hapData['Pref.Ori.'][5]:
                         hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]

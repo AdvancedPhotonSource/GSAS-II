@@ -861,6 +861,26 @@ def GenHLaue(dmin,SGData,A):
                         if 0 < rdsq <= dminsq:
                             HKL.append([h,k,l,1/math.sqrt(rdsq)])
     return sortHKLd(HKL,True,True)
+    
+def GenPfHKLs(nMax,SGData,A):    
+    """Generate the unique pole figure reflections for a lattice and Bravais type. 
+    Min d-spacing=1.0A & no more than nMax returned
+    
+    :param nMax: maximum number of hkls returned
+    :param SGData: space group dictionary with at least
+    
+        * 'SGLaue': Laue group symbol: one of '-1','2/m','mmm','4/m','6/m','4/mmm','6/mmm', '3m1', '31m', '3', '3R', '3mR', 'm3', 'm3m'
+        * 'SGLatt': lattice centering: one of 'P','A','B','C','I','F'
+        * 'SGUniq': code for unique monoclinic axis one of 'a','b','c' (only if 'SGLaue' is '2/m') otherwise an empty string
+        
+    :param A: reciprocal metric tensor elements as [G11,G22,G33,2*G12,2*G13,2*G23]
+    :return: HKL = list of 'h k l' strings sorted with largest d first; no duplicate zones
+            
+    """
+    HKL = np.array(GenHLaue(1.0,SGData,A)).T[:3].T     #strip d-spacings
+    N = min(nMax,len(HKL))
+    return ['%d %d %d'%(h[0],h[1],h[2]) for h in HKL[:N]]        
+        
 
 def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
     'needs a doc string'

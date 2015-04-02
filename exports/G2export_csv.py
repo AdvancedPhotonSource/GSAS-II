@@ -23,6 +23,7 @@ import GSASIIIO as G2IO
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIImath as G2mth
+import GSASIIpwd as G2pwd
 
 def WriteList(obj,headerItems):
     '''Write a CSV header
@@ -247,19 +248,21 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
             phasDict = histblk['Reflection Lists'][phasenam]
             tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
             if phasDict.get('Super',False):
-                WriteList(self,("h","k","l","m",tname,"F_obs","F_calc","phase","mult","phase #"))
-                fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
+                WriteList(self,("h","k","l","m",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","phase #"))
+                fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:13]
-                    self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,i))                
+                    FWHM = G2pwd.getgamFW(gam,sig)
+                    self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))                
             else:
-                WriteList(self,("h","k","l",tname,"F_obs","F_calc","phase","mult","phase #"))
-                fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:d}"
+                WriteList(self,("h","k","l",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","phase #"))
+                fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:12]
-                    self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,i))
+                    FWHM = G2pwd.getgamFW(gam,sig)
+                    self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))
         self.CloseFile()
         print(str(hist)+'reflections written to file '+str(self.fullpath))
 

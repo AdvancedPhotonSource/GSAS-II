@@ -472,7 +472,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             if cofName in  cofNames:
                 newPOCoef[cofName] = POCoeff[cofName]
         return newPOCoef
-    
+        
     def OnExtRef(event):
         Obj = event.GetEventObject()
         UseList[Indx[Obj.GetId()]]['Extinction'][1] = Obj.GetValue()
@@ -739,6 +739,18 @@ def UpdateDData(G2frame,DData,data,hist=''):
         return poSizer
         
     def SHDataSizer(POData):
+        
+        def OnODFValue(event):
+            Obj = event.GetEventObject()
+            odf = ODFIndx[Obj.GetId()]
+            try:
+                value = float(Obj.GetValue())
+                POData[5][odf] = value
+            except ValueError:
+                pass
+            Obj.SetValue('%8.3f'%(POData[5][odf]))
+            G2plt.PlotSizeStrainPO(G2frame,data,hist)
+    
         textJ = G2lat.textureIndex(POData[5])
         mainSizer.Add(wx.StaticText(DData,-1,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ)),0,WACV)
         mainSizer.Add((0,5),0)
@@ -750,10 +762,48 @@ def UpdateDData(G2frame,DData,data,hist=''):
             ODFSizer.Add(wx.StaticText(DData,-1,odf),0,WACV)
             ODFval = wx.TextCtrl(DData,wx.ID_ANY,'%8.3f'%(POData[5][odf]),style=wx.TE_PROCESS_ENTER)
             ODFIndx[ODFval.GetId()] = odf
-#             ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
-#             ODFval.Bind(wx.EVT_KILL_FOCUS,OnODFValue)
+            ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
+            ODFval.Bind(wx.EVT_KILL_FOCUS,OnODFValue)
             ODFSizer.Add(ODFval,0,WACV)
         return ODFSizer
+        
+    def SHPenalty(POData):
+        
+        def OnHKLList(event):
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select penalty hkls',
+                'Penalty hkls',hkls,filterBox=False)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    POData[6] = [hkls[i] for i in dlg.GetSelections()]
+                else:
+                    return
+            finally:
+                dlg.Destroy()
+            wx.CallLater(100,UpdateDData,G2frame,DData,data)
+            
+        def OnshToler(event):
+            try:
+                value = float(shToler.GetValue())
+                POData[7] = value
+            except ValueError:
+                pass
+            shToler.SetValue('%.2f'%(POData[7]))
+        
+        A = G2lat.cell2A(generalData['Cell'][1:7])
+        hkls = G2lat.GenPfHKLs(10,SGData,A)    
+        shPenalty = wx.BoxSizer(wx.HORIZONTAL)
+        shPenalty.Add(wx.StaticText(DData,-1,' Negative MRD penalty list: '),0,WACV)
+        shPenalty.Add(wx.ComboBox(DData,value=POData[6][0],choices=POData[6],
+            style=wx.CB_DROPDOWN),0,WACV)
+        hklList = wx.Button(DData,label='Select penalty hkls')
+        hklList.Bind(wx.EVT_BUTTON,OnHKLList)
+        shPenalty.Add(hklList,0,WACV)
+        shPenalty.Add(wx.StaticText(DData,-1,' Zero MRD tolerance: '),0,WACV)
+        shToler = wx.TextCtrl(DData,-1,'%.2f'%(POData[7]),style=wx.TE_PROCESS_ENTER)
+        shToler.Bind(wx.EVT_TEXT_ENTER,OnshToler)
+        shToler.Bind(wx.EVT_KILL_FOCUS,OnshToler)
+        shPenalty.Add(shToler,0,WACV)
+        return shPenalty    
         
     def ExtSizer():            
         extSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -974,12 +1024,18 @@ def UpdateDData(G2frame,DData,data,hist=''):
             #texture  'Pref. Ori.':['MD',1.0,False,[0,0,1],0,[]] last two for 'SH' are SHorder & coeff
             poSizer = wx.BoxSizer(wx.VERTICAL)
             POData = UseList[hist]['Pref.Ori.']
+# patch - add penalty items
+            if len(POData) < 7:
+                POData.append([''])
+                POData.append(0.1)
+# end patch
             poSizer.Add(PoTopSizer(POData))
             if POData[0] == 'MD':
                 poSizer.Add(MDDataSizer(POData))
             else:           #'SH'
                 if POData[4]:       #SH order > 0
                     poSizer.Add(SHDataSizer(POData))
+                    poSizer.Add(SHPenalty(POData))
                     
             mainSizer.Add(poSizer)
             mainSizer.Add((0,5),0)                

@@ -112,10 +112,10 @@ class CIFhklReader(G2IO.ImportStructFactor):
                 gotFo2 = False
                 im = 0
                 for i in range(2):
+                    if hklitems[i][3] in blkkeys:   #Super lattice reflections h,k,l,m
+                        im = 1
                     if hklitems[i][0] in blkkeys and hklitems[i][1] in blkkeys and hklitems[i][2] in blkkeys:
                         dnIndex = i
-                        if hklitems[i][3] in blkkeys:   #Super lattice reflections h,k,l,m
-                            im = 1
                         break
                 else:
                     break # no reflections
@@ -215,28 +215,28 @@ class CIFhklReader(G2IO.ImportStructFactor):
             for dn in F2datanames:
                 if dn in itemkeys:
                     F2dn = dn
-                    for dn in F2calcnames:
-                        if dn in itemkeys:
-                            F2cdn = dn
+                    for dm in F2calcnames:
+                        if dm in itemkeys:
+                            F2cdn = dm
                             FcalcPresent = True
                             break
-                    for dn in F2signames:
-                        if dn in itemkeys:
-                            F2sdn = dn
+                    for dm in F2signames:
+                        if dm in itemkeys:
+                            F2sdn = dm
                             break
                     break
             else:
                 for dn in Fdatanames:
                     if dn in itemkeys:
                         Fdn = dn
-                        for dn in Fcalcnames:
-                            if dn in itemkeys:
-                                Fcdn = dn
+                        for dm in Fcalcnames:
+                            if dm in itemkeys:
+                                Fcdn = dm
                                 FcalcPresent = True
                                 break
-                        for dn in Fsignames:
-                            if dn in itemkeys:
-                                Fsdn = dn
+                        for dm in Fsignames:
+                            if dm in itemkeys:
+                                Fsdn = dm
                                 break
                         break
                 else:
@@ -257,7 +257,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                 sigF2 = 0.0
                 HKL = []
                 try:
-                    for i in hklitems[dnIndex]: # '_refln[._]index_[hkl]'
+                    for i in hklitems[dnIndex][:3+im]: # '_refln[._]index_[hkl]'
                         num = itemkeys.get(i)
                         try:
                             HKL.append(int(item[num]))

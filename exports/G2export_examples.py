@@ -27,6 +27,7 @@ import GSASIIpy3 as G2py3
 #import GSASIIgrid as G2gd
 #import GSASIIstrIO as G2stIO
 import GSASIImath as G2mth
+import GSASIIpwd as G2pwd
 #import GSASIIlattice as G2lat
 #import GSASIIspc as G2spc
 #import GSASIIphsGUI as G2pg
@@ -191,27 +192,30 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
             phasDict = histblk['Reflection Lists'][phasenam]
             tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
             self.Write('\nPhase '+str(phasenam))
-            self.Write(80*'=')
             if phasDict.get('Super',False):
+                self.Write(87*'=')
                 hklfmt = "{:.0f},{:.0f},{:.0f},{:.0f}"
-                hfmt = "{:>8s} {:>8s} {:>12s} {:>12s} {:>7s} {:>6s}"
-                fmt = "{:>8s} {:8.3f} {:12.3f} {:12.3f} {:7.2f} {:6.0f}"
-                self.Write(hfmt.format("h,k,l,m",tname,"F_obs","F_calc","phase","mult"))
-                self.Write(80*'=')
+                hfmt = "{:>10s} {:>8s} {:>12s} {:>12s} {:>7s} {:>6s} {:>8s} {:>8s} {:>8s}"
+                fmt = "{:>10s} {:8.3f} {:12.3f} {:12.3f} {:7.2f} {:6.0f} {:8.3f} {:8.3f} {:8.3f}"
+                self.Write(hfmt.format("h,k,l,m",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM"))
+                self.Write(87*'=')
                 refList = phasDict['RefList']
                 for refItem in refList:
                     h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase = refItem[:12]
-                    self.Write(fmt.format(hklfmt.format(h,k,l,m),pos,Fobs,Fcalc,phase,mult))
+                    FWHM = G2pwd.getgamFW(gam,sig)
+                    self.Write(fmt.format(hklfmt.format(h,k,l,m),pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM))
             else:
+                self.Write(85*'=')
                 hklfmt = "{:.0f},{:.0f},{:.0f}"
-                hfmt = "{:>8s} {:>8s} {:>12s} {:>12s} {:>7s} {:>6s}"
-                fmt = "{:>8s} {:8.3f} {:12.3f} {:12.3f} {:7.2f} {:6.0f}"
-                self.Write(hfmt.format("h,k,l",tname,"F_obs","F_calc","phase","mult"))
-                self.Write(80*'=')
+                hfmt = "{:>8s} {:>8s} {:>12s} {:>12s} {:>7s} {:>6s} {:>8s} {:>8s} {:>8s}"
+                fmt = "{:>8s} {:8.3f} {:12.3f} {:12.3f} {:7.2f} {:6.0f} {:8.3f} {:8.3f} {:8.3f}"
+                self.Write(hfmt.format("h,k,l",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM"))
+                self.Write(85*'=')
                 refList = phasDict['RefList']
                 for refItem in refList:
                     h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase = refItem[:11]
-                    self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult))
+                    FWHM = G2pwd.getgamFW(gam,sig)
+                    self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM))
         self.CloseFile()
         print(str(hist)+'reflections written to file '+str(self.fullpath))                        
 

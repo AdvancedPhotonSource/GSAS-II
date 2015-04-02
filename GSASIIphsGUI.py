@@ -5771,11 +5771,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             print 'Bad charge flip map - no peak search done'
                             
     def OnTextureRefine(event):
-        print 'refine texture?'
+        print 'refine texture maybe from C[i,j] in seq. result? not yet'
         event.Skip()        
             
     def OnTextureClear(event):
-        print 'clear texture?'
+        print 'clear texture? - does nothing'
         event.Skip()
 
     def FillSelectPageMenu(TabSelectionIdDict, menuBar):

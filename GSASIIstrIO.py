@@ -2070,6 +2070,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 else:                           #'SH' spherical harmonics
                     controlDict[pfx+'SHord'] = hapData['Pref.Ori.'][4]
                     controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
+                    controlDict[pfx+'SHhkl'] = [eval(a.replace(' ',',')) for a in hapData['Pref.Ori.'][6]]
+                    controlDict[pfx+'SHtoler'] = hapData['Pref.Ori.'][7]
                     for item in hapData['Pref.Ori.'][5]:
                         hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
                         if hapData['Pref.Ori.'][2]:
@@ -2118,6 +2120,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                             ' Axis: %d %d %d'%(Ax[0],Ax[1],Ax[2])
                     else: #'SH' for spherical harmonics
                         PrintSHPO(hapData['Pref.Ori.'])
+                        print >>pFile,' Penalty hkl list: '+str(controlDict[pfx+'SHhkl'])+' tolerance: %.2f'%(controlDict[pfx+'SHtoler'])
                     PrintSize(hapData['Size'])
                     PrintMuStrain(hapData['Mustrain'],SGData)
                     PrintHStrain(hapData['HStrain'],SGData)

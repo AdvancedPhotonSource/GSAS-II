@@ -105,7 +105,7 @@ def SetDefaultDData(dType,histoName,NShkl=0,NDij=0):
             'Eg':[1.e-10,False],'Es':[1.e-10,False],'Ep':[1.e-10,False]}]}
     elif 'P' in dType:
         return {'Histogram':histoName,'Show':False,'Scale':[1.0,False],
-            'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
+            'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},[],0.1],
             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
                 [1.,1.,1.,0.,0.,0.],6*[False,]],
             'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],

@@ -119,17 +119,17 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
         def OnScaleRef(event):
             Obj = event.GetEventObject()
-            UseList[Indx[Obj.GetId()]]['Scale'][1] = Obj.GetValue()
+            UseList[hist]['Scale'][1] = Obj.GetValue()
             
         def OnScaleVal(event):
             Obj = event.GetEventObject()
             try:
                 scale = float(Obj.GetValue())
                 if scale > 0:
-                    UseList[Indx[Obj.GetId()]]['Scale'][0] = scale
+                    UseList[hist]['Scale'][0] = scale
             except ValueError:
                 pass
-            Obj.SetValue("%.4f"%(UseList[Indx[Obj.GetId()]]['Scale'][0]))          #reset in case of error
+            Obj.SetValue("%.4f"%(UseList[hist]['Scale'][0]))          #reset in case of error
                         
         scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
         if 'PWDR' in hist:
@@ -137,12 +137,10 @@ def UpdateDData(G2frame,DData,data,hist=''):
         elif 'HKLF' in hist:
             scaleRef = wx.CheckBox(DData,-1,label=' Scale factor: ')                
         scaleRef.SetValue(UseList[hist]['Scale'][1])
-        Indx[scaleRef.GetId()] = hist
         scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
         scaleSizer.Add(scaleRef,0,WACV)
         scaleVal = wx.TextCtrl(DData,wx.ID_ANY,
             '%.4f'%(UseList[hist]['Scale'][0]),style=wx.TE_PROCESS_ENTER)
-        Indx[scaleVal.GetId()] = hist
         scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
         scaleVal.Bind(wx.EVT_KILL_FOCUS,OnScaleVal)
         scaleSizer.Add(scaleVal,0,WACV)
@@ -150,100 +148,8 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def OnUseData(event):
         Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
         UseList[hist]['Use'] = Obj.GetValue()
         
-    def OnCopyData(event):
-        Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
-        sourceDict = UseList[hist]
-        if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet']
-        else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
-        copyDict = {}
-        for name in copyNames: 
-            copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
-        keyList = sorted(UseList.keys())
-        if UseList:
-            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
-                'Copy parameters to which histograms?', 
-                keyList)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    for sel in dlg.GetSelections():
-                        UseList[keyList[sel]].update(copy.deepcopy(copyDict))
-                    wx.CallLater(100,UpdateDData,G2frame,DData,data)
-            finally:
-                dlg.Destroy()
-                
-    def OnCopyFlags(event):
-        Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
-        sourceDict = UseList[hist]
-        copyDict = {}
-        if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet']
-        else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
-        babNames = ['BabA','BabU']
-        for name in copyNames:
-            if name in ['Scale','Extinction','HStrain']:
-                if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
-                    copyDict[name] = {name:[sourceDict[name][:2]]}
-                    for item in ['Eg','Es','Ep']:
-                        copyDict[name][item] = sourceDict[name][2][item][1]
-                else:
-                    copyDict[name] = sourceDict[name][1]
-            elif name in ['Size','Mustrain']:
-                copyDict[name] = [sourceDict[name][0],sourceDict[name][2],sourceDict[name][4]]
-            elif name == 'Pref.Ori.':
-                copyDict[name] = [sourceDict[name][0],sourceDict[name][2]]
-                if sourceDict[name][0] == 'SH':
-                    SHterms = sourceDict[name][5]
-                    SHflags = {}
-                    for item in SHterms:
-                        SHflags[item] = SHterms[item]
-                    copyDict[name].append(SHflags)
-            elif name == 'Babinet':
-                copyDict[name] = {}
-                for bab in babNames:
-                    copyDict[name][bab] = sourceDict[name][bab][1]                       
-        keyList = sorted(UseList.keys())
-        if UseList:
-            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
-                'Copy parameters to which histograms?', 
-                keyList)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    for sel in dlg.GetSelections():
-                        item = keyList[sel]
-                        UseList[item]
-                        for name in copyNames:
-                            if name in ['Scale','Extinction','HStrain']:
-                                if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
-                                    UseList[item][name][:2] = copy.deepcopy(sourceDict[name][:2])
-                                    for itm in ['Eg','Es','Ep']:
-                                        UseList[item][name][2][itm][1] = copy.deepcopy(copyDict[name][itm])
-                                else:
-                                    UseList[item][name][1] = copy.deepcopy(copyDict[name])
-                            elif name in ['Size','Mustrain']:
-                                UseList[item][name][0] = copy.deepcopy(copyDict[name][0])
-                                UseList[item][name][2] = copy.deepcopy(copyDict[name][1])
-                                UseList[item][name][4] = copy.deepcopy(copyDict[name][2])
-                            elif name == 'Pref.Ori.':
-                                UseList[item][name][0] = copy.deepcopy(copyDict[name][0])
-                                UseList[item][name][2] = copy.deepcopy(copyDict[name][1])
-                                if sourceDict[name][0] == 'SH':
-                                    SHflags = copy.deepcopy(copyDict[name][2])
-                                    SHterms = copy.deepcopy(sourceDict[name][5])
-                            elif name == 'Babinet':
-                                for bab in babNames:
-                                    UseList[item][name][bab][1] = copy.deepcopy(copyDict[name][bab])                                              
-                    wx.CallLater(100,UpdateDData,G2frame,DData,data)
-            finally:
-                dlg.Destroy()
-                
     def OnLGmixRef(event):
         Obj = event.GetEventObject()
         hist,name = Indx[Obj.GetId()]
@@ -264,7 +170,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
 
     def OnSizeType(event):
         Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
         UseList[hist]['Size'][0] = Obj.GetValue()
         G2plt.PlotSizeStrainPO(G2frame,data,hist)
         wx.CallLater(100,UpdateDData,G2frame,DData,data)
@@ -302,7 +207,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def OnSizeAxis(event):            
         Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
         Saxis = Obj.GetValue().split()
         try:
             hkl = [int(Saxis[i]) for i in range(3)]
@@ -332,7 +236,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
             
     def OnStrainType(event):
         Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
         UseList[hist]['Mustrain'][0] = Obj.GetValue()
         wx.CallLater(100,UpdateDData,G2frame,DData,data)
         G2plt.PlotSizeStrainPO(G2frame,data,hist)
@@ -369,7 +272,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def OnStrainAxis(event):
         Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
         Saxis = Obj.GetValue().split()
         try:
             hkl = [int(Saxis[i]) for i in range(3)]
@@ -419,7 +321,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
 
     def OnPOVal(event):
         Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
         try:
             mdVal = float(Obj.GetValue())
             if mdVal > 0:
@@ -430,7 +331,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def OnPOAxis(event):
         Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
         Saxis = Obj.GetValue().split()
         try:
             hkl = [int(Saxis[i]) for i in range(3)]
@@ -444,7 +344,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def OnPOOrder(event):
         Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
         Order = int(Obj.GetValue())
         UseList[hist]['Pref.Ori.'][4] = Order
         UseList[hist]['Pref.Ori.'][5] = SetPOCoef(Order,hist)
@@ -452,7 +351,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
 
     def OnPOType(event):
         Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
         if 'March' in Obj.GetValue():
             UseList[hist]['Pref.Ori.'][0] = 'MD'
         else:
@@ -461,7 +359,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
 
     def OnPORef(event):
         Obj = event.GetEventObject()
-        hist = Indx[Obj.GetId()]
         UseList[hist]['Pref.Ori.'][2] = Obj.GetValue()
             
     def SetPOCoef(Order,hist):
@@ -475,17 +372,17 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def OnExtRef(event):
         Obj = event.GetEventObject()
-        UseList[Indx[Obj.GetId()]]['Extinction'][1] = Obj.GetValue()
+        UseList[hist]['Extinction'][1] = Obj.GetValue()
         
     def OnExtVal(event):
         Obj = event.GetEventObject()
         try:
             ext = float(Obj.GetValue())
             if ext >= 0:
-                UseList[Indx[Obj.GetId()]]['Extinction'][0] = ext
+                UseList[hist]['Extinction'][0] = ext
         except ValueError:
             pass
-        Obj.SetValue("%.2f"%(UseList[Indx[Obj.GetId()]]['Extinction'][0]))
+        Obj.SetValue("%.2f"%(UseList[hist]['Extinction'][0]))
 
     def OnBabRef(event):
         Obj = event.GetEventObject()
@@ -508,20 +405,20 @@ def UpdateDData(G2frame,DData,data,hist=''):
         try:
             tbar = float(Obj.GetValue())
             if tbar > 0:
-                UseList[Indx[Obj.GetId()]]['Extinction'][2]['Tbar'] = tbar
+                UseList[hist]['Extinction'][2]['Tbar'] = tbar
         except ValueError:
             pass
-        Obj.SetValue("%.3f"%(UseList[Indx[Obj.GetId()]]['Extinction'][2]['Tbar']))
+        Obj.SetValue("%.3f"%(UseList[hist]['Extinction'][2]['Tbar']))
 
     def OnCos2TM(event):
         Obj = event.GetEventObject()
         try:
             val = float(Obj.GetValue())
             if 0. < val <= 1.:
-                UseList[Indx[Obj.GetId()]]['Extinction'][2]['Cos2TM'] = val
+                UseList[hist]['Extinction'][2]['Cos2TM'] = val
         except ValueError:
             pass
-        Obj.SetValue("%.3f"%(UseList[Indx[Obj.GetId()]]['Extinction'][2]['Cos2TM']))
+        Obj.SetValue("%.3f"%(UseList[hist]['Extinction'][2]['Cos2TM']))
         
     def OnEval(event):
         Obj = event.GetEventObject()
@@ -556,7 +453,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
         sizeType = wx.ComboBox(DData,wx.ID_ANY,value=UseList[hist][parm][0],choices=choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         sizeType.Bind(wx.EVT_COMBOBOX, OnType)
-        Indx[sizeType.GetId()] = hist
         topSizer.Add(sizeType)
         topSizer.Add((5,0),0)
         return topSizer
@@ -609,7 +505,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
         uniSizer.Add(wx.StaticText(DData,-1,' Unique axis, H K L: '),0,WACV)
         h,k,l = UseList[hist][parm][3]
         Axis = wx.TextCtrl(DData,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
-        Indx[Axis.GetId()] = hist
         Axis.Bind(wx.EVT_TEXT_ENTER,OnAxis)
         Axis.Bind(wx.EVT_KILL_FOCUS,OnAxis)
         uniSizer.Add(Axis,0,WACV)
@@ -699,19 +594,16 @@ def UpdateDData(G2frame,DData,data,hist=''):
         poSizer.Add(wx.StaticText(DData,-1,' Preferred orientation model '),0,WACV)
         POType = wx.ComboBox(DData,wx.ID_ANY,value=POtype,choices=choice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        Indx[POType.GetId()] = hist
         POType.Bind(wx.EVT_COMBOBOX, OnPOType)
         poSizer.Add(POType)
         if POData[0] == 'SH':
             poSizer.Add(wx.StaticText(DData,-1,' Harmonic order: '),0,WACV)
             poOrder = wx.ComboBox(DData,wx.ID_ANY,value=str(POData[4]),choices=[str(2*i) for i in range(18)],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Indx[poOrder.GetId()] = hist
             poOrder.Bind(wx.EVT_COMBOBOX,OnPOOrder)
             poSizer.Add(poOrder,0,WACV)
             poRef = wx.CheckBox(DData,-1,label=' Refine? ')
             poRef.SetValue(POData[2])
-            Indx[poRef.GetId()] = hist
             poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
             poSizer.Add(poRef,0,WACV)
         return poSizer
@@ -720,19 +612,16 @@ def UpdateDData(G2frame,DData,data,hist=''):
         poSizer = wx.BoxSizer(wx.HORIZONTAL)
         poRef = wx.CheckBox(DData,-1,label=' March-Dollase ratio: ')
         poRef.SetValue(POData[2])
-        Indx[poRef.GetId()] = hist
         poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
         poSizer.Add(poRef,0,WACV)
         poVal = wx.TextCtrl(DData,wx.ID_ANY,
             '%.3f'%(POData[1]),style=wx.TE_PROCESS_ENTER)
-        Indx[poVal.GetId()] = hist
         poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
         poVal.Bind(wx.EVT_KILL_FOCUS,OnPOVal)
         poSizer.Add(poVal,0,WACV)
         poSizer.Add(wx.StaticText(DData,-1,' Unique axis, H K L: '),0,WACV)
         h,k,l =POData[3]
         poAxis = wx.TextCtrl(DData,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
-        Indx[poAxis.GetId()] = hist
         poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOAxis)
         poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)
         poSizer.Add(poAxis,0,WACV)
@@ -809,12 +698,10 @@ def UpdateDData(G2frame,DData,data,hist=''):
         extSizer = wx.BoxSizer(wx.HORIZONTAL)
         extRef = wx.CheckBox(DData,-1,label=' Extinction: ')
         extRef.SetValue(UseList[hist]['Extinction'][1])
-        Indx[extRef.GetId()] = hist
         extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
         extSizer.Add(extRef,0,WACV)
         extVal = wx.TextCtrl(DData,wx.ID_ANY,
             '%.2f'%(UseList[hist]['Extinction'][0]),style=wx.TE_PROCESS_ENTER)
-        Indx[extVal.GetId()] = hist
         extVal.Bind(wx.EVT_TEXT_ENTER,OnExtVal)
         extVal.Bind(wx.EVT_KILL_FOCUS,OnExtVal)
         extSizer.Add(extVal,0,WACV)
@@ -845,14 +732,12 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 valSizer.Add(wx.StaticText(DData,-1,' Tbar(mm):'),0,WACV)
                 tbarVal = wx.TextCtrl(DData,wx.ID_ANY,
                     '%.3f'%(UseList[hist]['Extinction'][2]['Tbar']),style=wx.TE_PROCESS_ENTER)
-                Indx[tbarVal.GetId()] = hist
                 tbarVal.Bind(wx.EVT_TEXT_ENTER,OnTbarVal)
                 tbarVal.Bind(wx.EVT_KILL_FOCUS,OnTbarVal)
                 valSizer.Add(tbarVal,0,WACV)
                 valSizer.Add(wx.StaticText(DData,-1,' cos(2ThM):'),0,WACV)
                 cos2tm = wx.TextCtrl(DData,wx.ID_ANY,
                     '%.3f'%(UseList[hist]['Extinction'][2]['Cos2TM']),style=wx.TE_PROCESS_ENTER)
-                Indx[cos2tm.GetId()] = hist
                 cos2tm.Bind(wx.EVT_TEXT_ENTER,OnCos2TM)
                 cos2tm.Bind(wx.EVT_KILL_FOCUS,OnCos2TM)
                 valSizer.Add(cos2tm,0,WACV)
@@ -914,6 +799,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         DData.GetSizer().Clear(True)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(DData,-1,' Histogram data for '+PhaseName+':'),0,WACV)
+    DData.G2hist = hist         #so can be used in G2phsGUI for Copy, etc.
     if hist != '':
         topSizer = wx.FlexGridSizer(1,2,5,5)
         selSizer = wx.BoxSizer(wx.HORIZONTAL)    
@@ -938,21 +824,11 @@ def UpdateDData(G2frame,DData,data,hist=''):
         if 'Babinet' not in UseList[hist]:
             UseList[hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
         mainSizer.Add((5,5),0)
-        mainSizer.Add(wx.StaticText(DData,label=' Histogram: '+hist),0,WACV)
         showSizer = wx.BoxSizer(wx.HORIZONTAL)
-        useData = wx.CheckBox(DData,-1,label='Use?')
-        Indx[useData.GetId()] = hist
+        useData = wx.CheckBox(DData,-1,label='Use Histogram: '+hist+' ?')
         showSizer.Add(useData,0,WACV)
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(UseList[hist]['Use'])
-        copyData = wx.Button(DData,-1,label=' Copy?')
-        Indx[copyData.GetId()] = hist
-        copyData.Bind(wx.EVT_BUTTON,OnCopyData)
-        showSizer.Add(copyData,WACV)
-        copyFlags = wx.Button(DData,-1,label=' Copy flags?')
-        Indx[copyFlags.GetId()] = hist
-        copyFlags.Bind(wx.EVT_BUTTON,OnCopyFlags)
-        showSizer.Add(copyFlags,WACV)
         mainSizer.Add((5,5),0)
         mainSizer.Add(showSizer,0,WACV)
         mainSizer.Add((0,5),0)

@@ -1341,7 +1341,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     # PATCH?: for now at least, Source is not saved anywhere before here
                     if 'Source' not in data: data['Source'] = ['CuKa','?']
                     choice = ['TiKa','CrKa','FeKa','CoKa','CuKa','MoKa','AgKa']
-                    lamPick = wx.ComboBox(G2frame.dataDisplay,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    lamPick = wx.ComboBox(G2frame.dataDisplay,value=data['Source'][0],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
                     lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
                     waveSizer.Add(lamPick,0)
                     subSizer.Add(waveSizer,0)
@@ -2964,6 +2964,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             if len(data) > 1:
                 G2frame.dataFrame.SelectPhase.Enable(True)
             try:            #patch for old reflection lists
+                if not len(data[phaseName]):
+                    return None
                 refList = np.array(data[phaseName]['RefList'])
                 I100 = refList.T[8+Super]*refList.T[11+Super]
             except TypeError:

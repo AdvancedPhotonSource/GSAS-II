@@ -3801,6 +3801,102 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
         #G2frame.PatternTree.SetItemPyData(Id,[refDict,reflData]) #removed by BHT -- not needed!
         
+    def OnDataCopy(event):
+        UseList = data['Histograms']
+        hist = DData.G2hist
+        sourceDict = UseList[hist]
+        if 'HKLF' in sourceDict['Histogram']:
+            copyNames = ['Scale','Extinction','Babinet']
+        else:  #PWDR  
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
+        copyDict = {}
+        for name in copyNames: 
+            copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
+        keyList = sorted(UseList.keys())
+        if UseList:
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
+                'Copy parameters to which histograms?', 
+                keyList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    for sel in dlg.GetSelections():
+                        UseList[keyList[sel]].update(copy.deepcopy(copyDict))
+            finally:
+                dlg.Destroy()
+        
+    def OnDataCopyFlags(event):
+        UseList = data['Histograms']
+        hist = DData.G2hist
+        sourceDict = UseList[hist]
+        copyDict = {}
+        if 'HKLF' in sourceDict['Histogram']:
+            copyNames = ['Scale','Extinction','Babinet']
+        else:  #PWDR  
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
+        babNames = ['BabA','BabU']
+        for name in copyNames:
+            if name in ['Scale','Extinction','HStrain']:
+                if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
+                    copyDict[name] = {name:[sourceDict[name][:2]]}
+                    for item in ['Eg','Es','Ep']:
+                        copyDict[name][item] = sourceDict[name][2][item][1]
+                else:
+                    copyDict[name] = sourceDict[name][1]
+            elif name in ['Size','Mustrain']:
+                copyDict[name] = [sourceDict[name][0],sourceDict[name][2],sourceDict[name][4]]
+            elif name == 'Pref.Ori.':
+                copyDict[name] = [sourceDict[name][0],sourceDict[name][2]]
+                if sourceDict[name][0] == 'SH':
+                    SHterms = sourceDict[name][5]
+                    SHflags = {}
+                    for item in SHterms:
+                        SHflags[item] = SHterms[item]
+                    copyDict[name].append(SHflags)
+            elif name == 'Babinet':
+                copyDict[name] = {}
+                for bab in babNames:
+                    copyDict[name][bab] = sourceDict[name][bab][1]                       
+        keyList = sorted(UseList.keys())
+        if UseList:
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
+                'Copy parameters to which histograms?', 
+                keyList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    for sel in dlg.GetSelections():
+                        item = keyList[sel]
+                        UseList[item]
+                        for name in copyNames:
+                            if name in ['Scale','Extinction','HStrain']:
+                                if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
+                                    UseList[item][name][:2] = copy.deepcopy(sourceDict[name][:2])
+                                    for itm in ['Eg','Es','Ep']:
+                                        UseList[item][name][2][itm][1] = copy.deepcopy(copyDict[name][itm])
+                                else:
+                                    UseList[item][name][1] = copy.deepcopy(copyDict[name])
+                            elif name in ['Size','Mustrain']:
+                                UseList[item][name][0] = copy.deepcopy(copyDict[name][0])
+                                UseList[item][name][2] = copy.deepcopy(copyDict[name][1])
+                                UseList[item][name][4] = copy.deepcopy(copyDict[name][2])
+                            elif name == 'Pref.Ori.':
+                                UseList[item][name][0] = copy.deepcopy(copyDict[name][0])
+                                UseList[item][name][2] = copy.deepcopy(copyDict[name][1])
+                                if sourceDict[name][0] == 'SH':
+                                   SHflags = copy.deepcopy(copyDict[name][2])
+                                   SHterms = copy.deepcopy(sourceDict[name][5])
+                                   UseList[item][name][6] = copy.deepcopy(sourceDict[name][6])
+                                   UseList[item][name][7] = copy.deepcopy(sourceDict[name][7])
+                            elif name == 'Babinet':
+                                for bab in babNames:
+                                    UseList[item][name][bab][1] = copy.deepcopy(copyDict[name][bab])                                              
+            finally:
+                dlg.Destroy()
+                
+        
+    def OnSelDataCopy(event):
+        print 'selected data copy'
+        event.Skip()
+        
     def OnPwdrAdd(event):
         generalData = data['General']
         SGData = generalData['SGData']
@@ -3827,7 +3923,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for histoName in newList:
                         Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
                         UseList[histoName] = {'Histogram':histoName,'Show':False,
-                            'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{}],
+                            'Scale':[1.0,False],'Pref.Ori.':['MD',1.0,False,[0,0,1],0,{},[],0.1],
                             'Size':['isotropic',[1.,1.,1.],[False,False,False],[0,0,1],
                                 [1.,1.,1.,0.,0.,0.],6*[False,]],
                             'Mustrain':['isotropic',[1000.0,1000.0,1.0],[False,False,False],[0,0,1],
@@ -5873,6 +5969,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2gd.wxID_MULTIMCSA)
         # Data
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataCopy, id=G2gd.wxID_DATACOPY)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataCopyFlags, id=G2gd.wxID_DATACOPYFLAGS)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSelDataCopy, id=G2gd.wxID_DATASELCOPY)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPwdrAdd, id=G2gd.wxID_PWDRADD)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnHklfAdd, id=G2gd.wxID_HKLFADD)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataDelete, id=G2gd.wxID_DATADELETE)

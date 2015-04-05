@@ -388,14 +388,14 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                             pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name,i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
                             pVals.append(Z1[ind[0]][ind[1]])
                             pWt.append(wt/esd1**2)
-                            pWsum[name] += wt*(-Z1[ind[0]][ind[1]]/esd)**2
+                            pWsum[name] += wt*(-Z1[ind[0]][ind[1]]/esd1)**2
                         if ifesd2:
                             Z2 = 1.-Z
                             for ind in np.ndindex(grid,grid):
                                 pNames.append('%d:%s:%d:%.2f:%.2f'%(pId,name+'-unit',i,R[ind[0],ind[1]],P[ind[0],ind[1]]))
                                 pVals.append(Z1[ind[0]][ind[1]])
                                 pWt.append(wt/esd2**2)
-                                pWsum[name] += wt*((obs-calc)/esd)**2
+                                pWsum[name] += wt*(Z2/esd2)**2
         
         name = 'SH-Pref.Ori.'
         pWsum[name] = 0.0
@@ -533,11 +533,31 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     except ValueError:
                         pass
         
+#        lasthkl = np.array([0,0,0])
 #        for ip,pName in enumerate(pNames):
+#            deriv = []
+#            dNames = []
+#            if np.any(lasthkl-hkl):
+#                PH = np.array(hkl)
+#                phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
+#                ODFln = G2lat.Flnh(False,SHCoef,phi,beta,SGData)
+#                lasthkl = copy.copy(hkl)                        
+
+#                        gam = float(pnames[3])
+#                        psi = float(pnames[4])
+#                        for SHname in ODFln:
+#                            l,m,n = eval(SHname[1:])
+#                            Ksl = G2lat.GetKsl(l,m,sam,psi,gam)[0]
+#                            dNames += [str(pId)+'::'+SHname]
+#                            deriv.append(-ODFln[SHname][0]*Ksl/SHCoef[SHname])
+#                for dName,drv in zip(dNames,deriv):
+#                    try:
+#                        ind = varyList.index(dName)
+#                        pDerv[ind][ip] += drv
+#                    except ValueError:
+#                        pass
 #            pnames = pNames.split(':')
 #            if 'SH-' in pName and pId == int(pnames[0]):
-#                name = pnames[2]
-#                L,N = eval(name.strip('C'))
 #                hId = int(pnames[1])
 #                phfx = '%d:%d:'%(pId,hId)
 #                hklId = int(pnames[3])
@@ -546,7 +566,9 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
 #                phi,beta = G2lat.CrsAng(HKLs[hklId],cell,SGData)
 #                SHcofNames = Phases[phase]['Histograms'][hist]['Pref.Ori.'][5].keys()
 #                SHcof = dict(zip(SHcofNames,[parmDict[phfx+cof] for cof in SHcofNames]))
-#            
+#     
+#                L,N = eval(name.strip('C'))
+       
 #            raise Exception
 
     return pDerv
@@ -1085,15 +1107,15 @@ def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):
             AV = 7.9406e5/parmDict[pfx+'Vol']**2
             PL = np.sqrt(1.0-cos2T**2)/parmDict[hfx+'Lam']
             P12 = (calcControls[phfx+'Cos2TM']+cos2T**4)/(calcControls[phfx+'Cos2TM']+cos2T**2)
-            PLZ = AV*P12*ref[7+im]*parmDict[hfx+'Lam']**2
+            PLZ = AV*P12*ref[9+im]*parmDict[hfx+'Lam']**2
         elif 'SNT' in parmDict[hfx+'Type']:
             AV = 1.e7/parmDict[pfx+'Vol']**2
             PL = SQ
-            PLZ = AV*ref[7+im]*ref[12+im]**2
+            PLZ = AV*ref[9+im]*ref[12+im]**2
         elif 'SNC' in parmDict[hfx+'Type']:
             AV = 1.e7/parmDict[pfx+'Vol']**2
             PL = np.sqrt(1.0-cos2T**2)/parmDict[hfx+'Lam']
-            PLZ = AV*ref[9]*parmDict[hfx+'Lam']**2      #Fcsq as per GSAS, why not FcTsq (ref[9])?
+            PLZ = AV*ref[9+im]*parmDict[hfx+'Lam']**2
             
         if 'Primary' in calcControls[phfx+'EType']:
             PLZ *= 1.5

@@ -989,12 +989,14 @@ class GSASII(wx.Frame):
             or in array Iparm.
             Create and return the contents of the instrument parameter tree entry.
             '''
+            Irads = {0:' ',1:'CrKa',2:'FeKa',3:'CuKa',4:'MoKa',5:'AgKa',6:'TiKa',7:'CoKa'}
             DataType = Iparm['INS   HTYPE '].strip()[:3]  # take 1st 3 chars
             # override inst values with values read from data file
             if rd.instdict.get('type'):
                 DataType = rd.instdict.get('type')
             data = [DataType,]
             instname = Iparm.get('INS  1INAME ')
+            irad = int(Iparm.get('INS  1 IRAD ','0'))
             if instname:
                 rd.Sample['InstrName'] = instname.strip()
             if 'C' in DataType:
@@ -1039,7 +1041,9 @@ class GSASII(wx.Frame):
                     else:
                         data.extend([0.0,0.0,0.002,azm])                                      #OK defaults if fxn #3 not 1st in iprm file
                 codes.extend([0,0,0,0,0,0,0])
-                return [G2IO.makeInstDict(names,data,codes),{}]
+                Iparm1 = G2IO.makeInstDict(names,data,codes)
+                Iparm1['Source'] = [Irads[irad],Irads[irad]]
+                return [Iparm1,{}]
             elif 'T' in DataType:
                 names = ['Type','fltPath','2-theta','difC','difA', 'difB','Zero','alpha','beta-0','beta-1',
                     'beta-q','sig-0','sig-1','sig-2','sig-q', 'X','Y','Azimuth',]

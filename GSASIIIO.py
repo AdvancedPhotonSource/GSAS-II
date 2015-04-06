@@ -1040,7 +1040,10 @@ def SaveIntegration(G2frame,PickId,data):
         Azms = [45.0,]                              #a poor man's average?
     else:
         for i,azm in enumerate(azms[:-1]):
-            Azms.append(G2img.meanAzm(azm,azms[i+1]))
+            if azm > 360. and azms[i+1] > 360.:
+                Azms.append(G2img.meanAzm(azm%360.,azms[i+1]%360.))
+            else:    
+                Azms.append(G2img.meanAzm(azm,azms[i+1]))
     for i,azm in enumerate(azms[:-1]):
         Aname = name+" Azm= %.2f"%(Azms[i])
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
@@ -1057,6 +1060,7 @@ def SaveIntegration(G2frame,PickId,data):
         Sample['Omega'] = data['GonioAngles'][0]
         Sample['Chi'] = data['GonioAngles'][1]
         Sample['Phi'] = data['GonioAngles'][2]
+        Sample['Azimuth'] = Azms[i]     #put here too
         if 'PWDR' in Aname:
             parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]    #set polarization for synchrotron radiation!
         elif 'SASD' in Aname:

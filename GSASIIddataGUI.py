@@ -664,6 +664,8 @@ def UpdateDData(G2frame,DData,data,hist=''):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     POData[6] = [hkls[i] for i in dlg.GetSelections()]
+                    if not POData[6]:
+                        POData[6] = ['']
                 else:
                     return
             finally:
@@ -795,6 +797,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         G2plt.PlotSizeStrainPO(G2frame,data,hist)
         wx.CallLater(100,UpdateDData,G2frame,DData,data,hist)
         
+    DData.DestroyChildren()
     if DData.GetSizer():
         DData.GetSizer().Clear(True)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -897,7 +900,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
             mainSizer.Add(wx.StaticText(DData,-1,' Hydrostatic/elastic strain:'))
             mainSizer.Add(HstrainSizer())
                 
-            #texture  'Pref. Ori.':['MD',1.0,False,[0,0,1],0,[]] last two for 'SH' are SHorder & coeff
             poSizer = wx.BoxSizer(wx.VERTICAL)
             POData = UseList[hist]['Pref.Ori.']
 # patch - add penalty items

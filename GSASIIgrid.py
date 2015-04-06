@@ -1822,9 +1822,8 @@ class DataFrame(wx.Frame):
         self.TextureMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.TextureEdit = wx.Menu(title='')
         self.TextureMenu.Append(menu=self.TextureEdit, title='Texture')
-#        self.TextureEdit.Append(id=wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
-#            help='Refine the texture coefficients from sequential Pawley results')
-# N.B. Binding is now commented out
+        self.TextureEdit.Append(id=wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
+            help='Refine the texture coefficients from sequential results')
         self.TextureEdit.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
             help='Clear the texture coefficients' )
         self.PostfillDataMenu()
@@ -2500,7 +2499,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             sampleParmDict = {'Sample load':[],}
         else:
             sampleParmDict = {'Temperature':[],'Pressure':[],'Time':[],
-                              'FreePrm1':[],'FreePrm2':[],'FreePrm3':[],}
+                'FreePrm1':[],'FreePrm2':[],'FreePrm3':[],'Omega':[],
+                'Chi':[],'Phi':[],'Azimuth':[],}
         Controls = G2frame.PatternTree.GetItemPyData(
             GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
         sampleParm = {}

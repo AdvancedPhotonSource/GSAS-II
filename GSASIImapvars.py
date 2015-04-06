@@ -379,6 +379,10 @@ def CheckConstraints(varyList,constrDict,fixedList):
                 errmsg += str(mv) + " => " + s + '\n'
 
     # check for errors:
+    if debug:
+        print 'indepVarList',indepVarList
+        print 'depVarList',depVarList
+        print 'multdepVarList',multdepVarList
     inboth = set(indepVarList).intersection(set(depVarList))
     if len(inboth) > 0:
         errmsg += "\nThe following parameters(s) are used as both dependent and independent variables in Equivalence relations:\n"

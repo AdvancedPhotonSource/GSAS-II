@@ -239,6 +239,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         'Drawing':{}
         """        
         # UpdateGeneral execution starts here
+        General.DestroyChildren()
         phaseTypes = ['nuclear','modulated','magnetic','macromolecular']
         SetupGeneral()
         generalData = data['General']
@@ -3610,6 +3611,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2plt.PlotTexture(G2frame,data)
 
         # UpdateTexture executable starts here
+        Texture.DestroyChildren()
         G2frame.dataFrame.SetStatusText('')
         generalData = data['General']        
         SGData = generalData['SGData']
@@ -5867,12 +5869,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             print 'Bad charge flip map - no peak search done'
                             
     def OnTextureRefine(event):
-        print 'refine texture maybe from C[i,j] in seq. result? not yet'
-        event.Skip()        
+        print 'refine texture from C[i,j] in seq. result'
             
     def OnTextureClear(event):
         print 'clear texture? - does nothing'
-        event.Skip()
 
     def FillSelectPageMenu(TabSelectionIdDict, menuBar):
         '''Fill "Select tab" menu with menu items for each tab and assign
@@ -6047,7 +6047,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnClearResults, id=G2gd.wxID_MCSACLEARRESULTS)
         # Texture
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.TextureMenu)
-        #G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
         # Pawley reflections
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.PawleyMenu)

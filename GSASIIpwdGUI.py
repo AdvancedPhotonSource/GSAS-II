@@ -80,7 +80,7 @@ def SetDefaultSample():
         'Temperature':300.,'Pressure':0.1,'Time':0.0,
         'FreePrm1':0.,'FreePrm2':0.,'FreePrm3':0.,
         'Gonio. radius':200.0,
-        'Omega':0.0,'Chi':0.0,'Phi':0.0,
+        'Omega':0.0,'Chi':0.0,'Phi':0.0,'Azimuth':0.0,
 #SASD items
         'Materials':[{'Name':'vacuum','VolFrac':1.0,},{'Name':'vacuum','VolFrac':0.0,}],
         'Thick':1.0,'Contrast':[0.0,0.0],       #contrast & anomalous contrast
@@ -116,6 +116,7 @@ def SetupSampleLabels(histName,dataType,histType):
     parms.append(['Omega','Goniometer omega:',[10,3]])
     parms.append(['Chi','Goniometer chi:',[10,3]])
     parms.append(['Phi','Goniometer phi:',[10,3]])
+    parms.append(['Azimuth','Detector azimuth',[10,3]])
     parms.append(['Time','Clock time (s)',[12,3]])
     parms.append(['Temperature','Sample temperature (K): ',[10,3]])
     parms.append(['Pressure','Sample pressure (MPa): ',[10,3]])

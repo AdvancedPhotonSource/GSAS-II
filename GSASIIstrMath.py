@@ -407,8 +407,8 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                     toler = calcControls[phfx+'SHtoler']
                     wt = 1./toler**2
                     HKLs = calcControls[phfx+'SHhkl']
-                    SHcofNames = Phases[phase]['Histograms'][hist]['Pref.Ori.'][5].keys()
-                    SHcof = dict(zip(SHcofNames,[parmDict[phfx+cof] for cof in SHcofNames]))
+                    SHnames = calcControls[phfx+'SHnames']
+                    SHcof = dict(zip(SHnames,[parmDict[phfx+cof] for cof in SHnames]))
                     for i,PH in enumerate(HKLs):
                         phi,beta = G2lat.CrsAng(PH,cell,SGData)
                         SH3Coef = {}
@@ -423,7 +423,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                             pNames.append('%d:%d:%s:%d:%.2f'%(pId,hId,name,i,X[ind]))
                             pVals.append(Y[ind])
                             pWt.append(wt)
-                            pWsum[name] += wt*(-Y[ind])**2
+                            pWsum[name] += wt*(Y[ind])**2
     pWsum['PWLref'] = 0.
     for item in varyList:
         if 'PWLref' in item and parmDict[item] < 0.:
@@ -533,44 +533,42 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     except ValueError:
                         pass
         
-#        lasthkl = np.array([0,0,0])
-#        for ip,pName in enumerate(pNames):
-#            deriv = []
-#            dNames = []
-#            if np.any(lasthkl-hkl):
-#                PH = np.array(hkl)
-#                phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
-#                ODFln = G2lat.Flnh(False,SHCoef,phi,beta,SGData)
-#                lasthkl = copy.copy(hkl)                        
-
-#                        gam = float(pnames[3])
-#                        psi = float(pnames[4])
-#                        for SHname in ODFln:
-#                            l,m,n = eval(SHname[1:])
-#                            Ksl = G2lat.GetKsl(l,m,sam,psi,gam)[0]
-#                            dNames += [str(pId)+'::'+SHname]
-#                            deriv.append(-ODFln[SHname][0]*Ksl/SHCoef[SHname])
-#                for dName,drv in zip(dNames,deriv):
-#                    try:
-#                        ind = varyList.index(dName)
-#                        pDerv[ind][ip] += drv
-#                    except ValueError:
-#                        pass
-#            pnames = pNames.split(':')
-#            if 'SH-' in pName and pId == int(pnames[0]):
-#                hId = int(pnames[1])
-#                phfx = '%d:%d:'%(pId,hId)
-#                hklId = int(pnames[3])
-#                gam = float(pnames[4])
-#                HKLs = calcControls[phfx+'SHhkl']
-#                phi,beta = G2lat.CrsAng(HKLs[hklId],cell,SGData)
-#                SHcofNames = Phases[phase]['Histograms'][hist]['Pref.Ori.'][5].keys()
-#                SHcof = dict(zip(SHcofNames,[parmDict[phfx+cof] for cof in SHcofNames]))
-#     
-#                L,N = eval(name.strip('C'))
-       
-#            raise Exception
-
+        lasthkl = np.array([0,0,0])
+        for ip,pName in enumerate(pNames):
+            deriv = []
+            dNames = []
+            pnames = pName.split(':')
+            if 'SH-' in pName and pId == int(pnames[0]):
+                hId = int(pnames[1])
+                phfx = '%d:%d:'%(pId,hId)
+                psi = float(pnames[4])
+                HKLs = calcControls[phfx+'SHhkl']
+                SHnames = calcControls[phfx+'SHnames']
+                SHcof = dict(zip(SHnames,[parmDict[phfx+cof] for cof in SHnames]))
+                hkl = np.array(HKLs[int(pnames[3])])     
+                if np.any(lasthkl-hkl):
+                    PH = np.array(hkl)
+                    phi,beta = G2lat.CrsAng(np.array(hkl),cell,SGData)
+                    SH3Coef = {}
+                    for item in SHcof:
+                        L,N = eval(item.strip('C'))
+                        SH3Coef['C%d,0,%d'%(L,N)] = SHcof[item]                        
+                    ODFln = G2lat.Flnh(False,SH3Coef,phi,beta,SGData)
+                    lasthkl = copy.copy(hkl)                        
+                for SHname in SHnames:
+                    l,n = eval(SHname[1:])
+                    SH3name = 'C%d,0,%d'%(l,n)
+                    Ksl = G2lat.GetKsl(l,0,'0',psi,0.0)[0]
+                    dNames += [phfx+SHname]
+                    deriv.append(ODFln[SH3name][0]*Ksl/SHcof[SHname])
+            for dName,drv in zip(dNames,deriv):
+                try:
+                    ind = varyList.index(dName)
+                    pDerv[ind][ip] += drv
+                except ValueError:
+                    pass
+                    
+#    raise Exception
     return pDerv
 
 ################################################################################
@@ -1272,7 +1270,7 @@ def SHPOcal(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         IFCoup = False
     phi,beta = G2lat.CrsAng(H,cell,SGData)
     psi,gam,x,x = G2lat.SamAng(tth/2.,Gangls,Sangl,IFCoup) #ignore 2 sets of angle derivs.
-    SHnames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',calcControls[phfx+'SHord'],False)
+    SHnames = calcControls[phfx+'SHnames']
     for item in SHnames:
         L,N = eval(item.strip('C'))
         Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta)
@@ -1299,7 +1297,7 @@ def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         IFCoup = False
     phi,beta = G2lat.CrsAng(H,cell,SGData)
     psi,gam,x,x = G2lat.SamAng(tth/2.,Gangls,Sangl,IFCoup) #ignore 2 sets of angle derivs.
-    SHnames = G2lat.GenSHCoeff(SGData['SGLaue'],'0',calcControls[phfx+'SHord'],False)
+    SHnames = calcControls[phfx+'SHnames']
     for item in SHnames:
         L,N = eval(item.strip('C'))
         Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta) 

@@ -2639,7 +2639,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Y = G2lat.polfcal(ODFln,'0',X,0.0)
             Plot.plot(X,Y,color='k',label=str(PH))
             Plot.legend(loc='best')
-            Plot.set_title('Axial distribution for HKL='+str(PH)+' in '+phase)
+            Plot.set_title('Axial distribution for HKL='+str(PH)+' in '+phase+'\n'+hist)
             Plot.set_xlabel(r'$\psi$',fontsize=16)
             Plot.set_ylabel('MRD',fontsize=14)
     Page.canvas.draw()

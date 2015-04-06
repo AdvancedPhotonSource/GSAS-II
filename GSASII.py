@@ -3083,16 +3083,18 @@ class GSASII(wx.Frame):
                                 peaks = self.PatternTree.GetItemPyData(item2)['peaks']
                                 file.write("%s \n" % (name+' Peak List'))
                                 if len(peaks[0]) == 8:
-                                    file.write('%10s %12s %10s %10s\n'%('pos','int','sig','gam'))
+                                    file.write('%10s %12s %10s %10s %10s\n'%('pos','int','sig','gam','FWHM'))
                                 else:
-                                    file.write('%10s %12s %10s %10s %10s %10s\n'%('pos','int','alp','bet','sig','gam'))                                    
+                                    file.write('%10s %12s %10s %10s %10s %10s %10s\n'%('pos','int','alp','bet','sig','gam','FWHM'))                                    
                                 for peak in peaks:
                                     if len(peak) == 8:  #CW
-                                        file.write("%10.5f %12.2f %10.3f %10.3f \n" % \
-                                            (peak[0],peak[2],peak[4],peak[6]))
+                                        FWHM = G2pwd.getgamFW(peak[6],peak[4])
+                                        file.write("%10.5f %12.2f %10.3f %10.3f %10.3f \n" % \
+                                            (peak[0],peak[2],peak[4],peak[6],FWHM))
                                     else:               #TOF - more cols
-                                        file.write("%10.5f %12.2f %10.3f %10.3f %10.3f %10.3f\n" % \
-                                            (peak[0],peak[2],peak[4],peak[6],peak[8],peak[10]))
+                                        FWHM = G2pwd.getgamFW(peak[10],peak[8])
+                                        file.write("%10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
+                                            (peak[0],peak[2],peak[4],peak[6],peak[8],peak[10],FWHM))
                             item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            
                 file.close()

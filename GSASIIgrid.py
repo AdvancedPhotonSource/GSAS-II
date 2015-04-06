@@ -2248,7 +2248,7 @@ def UpdateControls(G2frame,data):
         data['min dM/M'] = 0.0001
         data['shift factor'] = 1.
         data['max cyc'] = 3        
-        data['F**2'] = True
+        data['F**2'] = False
         data['minF/sig'] = 0
     if 'shift factor' not in data:
         data['shift factor'] = 1.
@@ -2278,13 +2278,15 @@ def UpdateControls(G2frame,data):
         def OnSelectData(event):
             choices = GetPatternTreeDataNames(G2frame,['PWDR',])
             sel = []
-            if 'Seq Data' in data:
-                for item in data['Seq Data']:
-                    sel.append(choices.index(item))
-                sel = [choices.index(item) for item in data['Seq Data']]
+            try:
+                if 'Seq Data' in data:
+                    for item in data['Seq Data']:
+                        sel.append(choices.index(item))
+                    sel = [choices.index(item) for item in data['Seq Data']]
+            except ValueError:  #data changed somehow - start fresh
+                sel = []
             dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Sequential refinement',
-                                      'Select dataset to include',
-                                      choices)
+                'Select dataset to include',choices)
             dlg.SetSelections(sel)
             names = []
             if dlg.ShowModal() == wx.ID_OK:

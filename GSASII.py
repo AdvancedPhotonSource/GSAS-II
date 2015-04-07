@@ -2198,8 +2198,8 @@ class GSASII(wx.Frame):
                 self.oldFocus.SetFocus()
         
     def OnPatternTreeItemCollapsed(self, event):
-        'Called when a tree item is collapsed'
-        event.Skip()
+        'Called when a tree item is collapsed - all children will be collapsed'
+        self.PatternTree.CollapseAllChildren(event.GetItem())
 
     def OnPatternTreeItemExpanded(self, event):
         'Called when a tree item is expanded'
@@ -2247,14 +2247,30 @@ class GSASII(wx.Frame):
         
     def OnPatternTreeKeyDown(self,event):
         'Allows stepping through the tree with the up/down arrow keys'
+        keyevt = event.GetKeyEvent()
         key = event.GetKeyCode()
-        item = self.PickId
+        item = self.PatternTree.GetSelection()
         if type(item) is int: return # is this the toplevel in tree?
+        name = self.PatternTree.GetItemText(item)
+        parent = self.PatternTree.GetItemParent(item)
         if key == wx.WXK_UP:
             self.oldFocus = wx.Window.FindFocus()
+#            if keyevt.GetModifiers() == wx.MOD_SHIFT:
+#                if type(parent) is int: return # is this the toplevel in tree?
+#                prev = self.PatternTree.GetPrevSibling(parent)
+#                self.PatternTree.Expand(prev)
+#                id = G2gd.GetPatternTreeItemId(self,prev,name)
+#                G2gd.MovePatternTreeToGrid(self,id)
+#            else:    
             self.PatternTree.GetPrevSibling(item)
         elif key == wx.WXK_DOWN:
-            self.oldFocus = wx.Window.FindFocus()
+#            if keyevt.GetModifiers() == wx.MOD_SHIFT:
+#                if type(parent) is int: return # is this the toplevel in tree?
+#                next = self.PatternTree.GetNextSibling(parent)
+#                self.PatternTree.Expand(next)
+#                id = G2gd.GetPatternTreeItemId(self,next,name)
+#                G2gd.MovePatternTreeToGrid(self,id)
+#            else:    
             self.PatternTree.GetNextSibling(item)
                 
     def OnReadPowderPeaks(self,event):
@@ -3519,11 +3535,12 @@ class GSASII(wx.Frame):
             dlg.Destroy()
             wx.Yield()
         oldId =  self.PatternTree.GetSelection()        #retain current selection
-        oldName = self.PatternTree.GetItemText(oldId)
-        parentId = self.PatternTree.GetItemParent(oldId)
         parentName = ''
-        if parentId:
-            parentName = self.PatternTree.GetItemText(parentId)     #find the current data tree name
+        if type(oldId) is int:  #nothing had been selected!
+            oldName = self.PatternTree.GetItemText(oldId)
+            parentId = self.PatternTree.GetItemParent(oldId)
+            if parentId:
+                parentName = self.PatternTree.GetItemText(parentId)     #find the current data tree name
         dlg2 = wx.MessageDialog(self,'Load new result?','Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
         try:
             if dlg2.ShowModal() == wx.ID_OK:

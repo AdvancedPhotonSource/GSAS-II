@@ -1587,7 +1587,20 @@ def ValEsd(value,esd=0,nTZ=False):
     if valoff != 0:
         out += ("e{:d}").format(valoff) # add an exponent, when needed
     return out
+################################################################################
+##### Texture fitting stuff
+################################################################################
 
+def FitTexture(General,SamAngs,refData):
+    print 'fit texture for '+General["Name"]
+    SGData = General['SGData']
+    Texture = General['SH Texture']
+    if not Texture['Order']:
+        return 'No spherical harmonics coefficients'
+        
+        
+    return None
+    
 ################################################################################
 ##### Fourier & charge flip stuff
 ################################################################################

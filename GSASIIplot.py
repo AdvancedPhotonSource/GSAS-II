@@ -2726,6 +2726,8 @@ def PlotTexture(G2frame,data,Start=False):
     PH = np.array(SHData['PFhkl'])
     phi,beta = G2lat.CrsAng(PH,cell,SGData)
     ODFln = G2lat.Flnh(Start,SHCoef,phi,beta,SGData)
+    if not np.any(ODFln):
+        return
     PX = np.array(SHData['PFxyz'])
     gam = atan2d(PX[0],PX[1])
     xy = math.sqrt(PX[0]**2+PX[1]**2)
@@ -2753,12 +2755,12 @@ def PlotTexture(G2frame,data,Start=False):
             Z = np.zeros_like(R)
             Z = G2lat.invpolfcal(IODFln,SGData,R,P)
             Z = np.reshape(Z,(npts,npts))
-            CS = Plot.contour(Y,X,Z,aspect='equal')
-            Plot.clabel(CS,fontsize=9,inline=1)
             try:
-                Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
+                CS = Plot.contour(Y,X,Z,aspect='equal')
+                Plot.clabel(CS,fontsize=9,inline=1)
             except ValueError:
                 pass
+            Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
             Page.figure.colorbar(Img)
             Plot.set_title('Inverse pole figure for XYZ='+str(SHData['PFxyz']))
             Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')

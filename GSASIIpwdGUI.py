@@ -3005,6 +3005,19 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         '''Posts a table of reflections for a phase, creating the table
         if needed using MakeReflectionTable
         '''
+        def setBackgroundColors(im):
+            for r in range(G2frame.refTable[phaseName].GetNumberRows()):
+                Fosq = float(G2frame.refTable[phaseName].GetCellValue(r,5+im))
+                Fcsq = float(G2frame.refTable[phaseName].GetCellValue(r,7+im))
+                sig = float(G2frame.refTable[phaseName].GetCellValue(r,6+im))
+                rat = abs(Fosq-Fcsq)/sig
+                if  rat > 10.:
+                    G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.RED)
+                elif rat > 3.0:
+                    G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.Colour(255,255,0))
+                else:
+                    G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.WHITE)
+                                                  
         G2frame.RefList = phaseName
         G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
         # has this table already been displayed?
@@ -3014,6 +3027,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             G2frame.refTable[phaseName].EnableEditing(False)
             G2frame.refTable[phaseName].SetMargins(0,0)
             G2frame.refTable[phaseName].AutoSizeColumns(False)
+            setBackgroundColors(0)
         # raise the tab (needed for 1st use and from OnSelectPhase)
         for PageNum in range(G2frame.dataDisplay.GetPageCount()):
             if phaseName == G2frame.dataDisplay.GetPageText(PageNum):

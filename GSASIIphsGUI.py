@@ -3896,8 +3896,60 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 
         
     def OnSelDataCopy(event):
-        print 'selected data copy'
-        event.Skip()
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        if not histList:
+            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
+            return
+#        # Assemble a list of item labels
+#        TextTable = {key:label for key,label,dig in
+#                     SetupSampleLabels(hst,data.get('Type'),Inst['Type'][0])
+#                     }
+#        # get flexible labels
+#        TextTable.update({
+#            key:Controls[key] for key in Controls if key.startswith('FreePrm')
+#            })
+#        # add a few extra
+#        TextTable.update({
+#            'Type':'Diffractometer type',
+#            'InstrName':'Instrument Name',
+#            })
+#        # Assemble a list of dict entries that would be labeled in the Sample
+#        # params data window (drop ranId and items not used).
+#        keyList = [i for i in data.keys() if i in TextTable]
+#        keyText = [TextTable[i] for i in keyList]
+#        # sort both lists together, ordered by keyText
+#        keyText, keyList = zip(*sorted(zip(keyText,keyList))) # sort lists 
+#        selectedKeys = []
+#        dlg = G2G.G2MultiChoiceDialog(
+#            G2frame.dataFrame,
+#            'Select which sample parameters\nto copy',
+#            'Select sample parameters', keyText)
+#        try:
+#            if dlg.ShowModal() == wx.ID_OK:
+#                selectedKeys = [keyList[i] for i in dlg.GetSelections()]
+#        finally:
+#            dlg.Destroy()
+#        if not selectedKeys: return # nothing to copy
+#        copyDict = {}
+#        for parm in selectedKeys:
+#            copyDict[parm] = data[parm]
+#        dlg = G2G.G2MultiChoiceDialog(
+#            G2frame.dataFrame,
+#            'Copy sample params from\n'+str(hst[5:])+' to...',
+#            'Copy sample parameters', histList)
+#        try:
+#            if dlg.ShowModal() == wx.ID_OK:
+#                result = dlg.GetSelections()
+#                for i in result: 
+#                    item = histList[i]
+#                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+#                    sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+#                    sampleData.update(copy.deepcopy(copyDict))
+#        finally:
+#            dlg.Destroy()            
+        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
+
         
     def OnPwdrAdd(event):
         generalData = data['General']
@@ -5869,7 +5921,29 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             print 'Bad charge flip map - no peak search done'
                             
     def OnTextureRefine(event):
-        print 'refine texture from C[i,j] in seq. result'
+        General = data['General']
+        phaseName = General['Name']
+        Histograms = data['Histograms']
+        histNames = []
+        refData = {}
+        SamAngs = {}
+        for name in Histograms.keys():
+            if 'PWDR' in name:
+                im = 0
+                it = 0
+                histNames.append(name)
+                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
+                SamAngs[name] = copy.copy([Sample[item] for item in['Omega','Chi','Phi','Azimuth']])
+                RefDict = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Reflection Lists'))[phaseName]
+                Refs = RefDict['RefList'].T  #np.array!
+                if 'T' in RefDict['Type']: it = 3  #TOF offset for alp, bet, wave
+                if RefDict['Super']: im = 1     #(3+1) offset for m
+                refData[name] = np.column_stack((Refs[0],Refs[1],Refs[2],Refs[8+im],Refs[12+im+it]))
+        Error = G2mth.FitTexture(General,SamAngs,refData)
+        if Error:
+            wx.MessageBox(Error,caption='Fit Texture Error',style=wx.ICON_EXCLAMATION)
+        G2ddG.UpdateDData(G2frame,DData,data)
             
     def OnTextureClear(event):
         print 'clear texture? - does nothing'

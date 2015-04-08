@@ -2521,8 +2521,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                         PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
                     
                 elif 'HKLF' in histogram:
-                    print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
-                        %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'])
+                    print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections (%d user rejected)'   \
+                        %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'],Histogram['Residuals'][pfx+'Nrej'])
                     print >>pFile,' HKLF histogram weight factor = ','%.3f'%(Histogram['wtFactor'])
                     if pfx+'Scale' in ScalExtSig:
                         print >>pFile,' Scale factor : %10.4f, sig %10.4f'%(hapData['Scale'][0],ScalExtSig[pfx+'Scale'])

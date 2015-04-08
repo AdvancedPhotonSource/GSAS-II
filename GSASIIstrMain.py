@@ -91,7 +91,9 @@ def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,v
         Rvals['Nobs'] = Histograms['Nobs']
         Rvals['Rwp'] = np.sqrt(Rvals['chisq']/Histograms['sumwYo'])*100.      #to %
         Rvals['GOF'] = np.sqrt(Rvals['chisq']/(Histograms['Nobs']-len(varyList)))
-        print >>printFile,' Number of function calls:',result[2]['nfev'],' Number of observations: ',Histograms['Nobs'],' Number of parameters: ',len(varyList)
+        print >>printFile,' Number of function calls:',result[2]['nfev'],   \
+            ' Number of observations: ',Histograms['Nobs'],' User rejected: ',Histograms['Nrej'],   \
+            ' Number of parameters: ',len(varyList)
         print >>printFile,' Refinement time = %8.3fs, %8.3fs/cycle, for %d cycles'%(runtime,runtime/ncyc,ncyc)
         print >>printFile,' wR = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],Rvals['chisq'],Rvals['GOF']**2)
         IfOK = True

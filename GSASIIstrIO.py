@@ -2072,9 +2072,13 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     controlDict[pfx+'SHncof'] = len(hapData['Pref.Ori.'][5])
                     controlDict[pfx+'SHnames'] = G2lat.GenSHCoeff(SGData['SGLaue'],'0',controlDict[pfx+'SHord'],False)
                     controlDict[pfx+'SHhkl'] = []
-                    if hapData['Pref.Ori.'][6][0] != '':
-                        controlDict[pfx+'SHhkl'] = [eval(a.replace(' ',',')) for a in hapData['Pref.Ori.'][6]]
-                    controlDict[pfx+'SHtoler'] = hapData['Pref.Ori.'][7]
+                    try: #patch for old Pref.Ori. items
+                        controlDict[pfx+'SHtoler'] = 0.1
+                        if hapData['Pref.Ori.'][6][0] != '':
+                            controlDict[pfx+'SHhkl'] = [eval(a.replace(' ',',')) for a in hapData['Pref.Ori.'][6]]
+                        controlDict[pfx+'SHtoler'] = hapData['Pref.Ori.'][7]
+                    except IndexError:
+                        pass
                     for item in hapData['Pref.Ori.'][5]:
                         hapDict[pfx+item] = hapData['Pref.Ori.'][5][item]
                         if hapData['Pref.Ori.'][2]:

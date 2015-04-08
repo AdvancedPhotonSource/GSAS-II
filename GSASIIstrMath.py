@@ -2703,7 +2703,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         w = 1.0/ref[6+im]
                         ref[7+im] = parmDict[phfx+'Scale']*ref[9+im]*ref[11+im]  #correct Fc^2 for extinction
                         ref[8+im] = ref[5+im]/(parmDict[phfx+'Scale']*ref[11+im])
-                        if w*ref[5+im] >= calcControls['minF/sig']:
+                        if w*ref[5+im] >= calcControls['minF/sig'] and ref[3+im] > 0:  #min cutoff & user rejection
                             Fo = np.sqrt(ref[5+im])
                             sumFo += Fo
                             sumFo2 += ref[5+im]
@@ -2721,7 +2721,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         Fo = np.sqrt(ref[5+im])
                         Fc = np.sqrt(ref[7+im])
                         w = 2.0*Fo/ref[6+im]
-                        if w*Fo >= calcControls['minF/sig']:
+                        if w*Fo >= calcControls['minF/sig'] and ref[3+im] > 0:  #min cutoff & user rejection
                             sumFo += Fo
                             sumFo2 += ref[5+im]
                             sumdF += abs(Fo-Fc)

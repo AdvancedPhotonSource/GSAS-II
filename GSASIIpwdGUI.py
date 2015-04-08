@@ -2944,6 +2944,17 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
+    def OnRejectHKL(event):
+        phaseName = G2frame.RefList
+        pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
+        phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
+        General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+        im = General.get('Super',0)
+        rowList = G2frame.refTable[phaseName].GetSelectedRows()
+        for row in rowList:
+            data[1]['RefList'][row][3+im] *= -1 #toggles mul & -mul
+        ShowReflTable(phaseName)
+        
     def MakeReflectionTable(phaseName):
         '''Returns a wx.grid table (G2gd.Table) containing a list of all reflections
         for a phase.        
@@ -3005,21 +3016,38 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         '''Posts a table of reflections for a phase, creating the table
         if needed using MakeReflectionTable
         '''
-        def setBackgroundColors(im):
+        def setBackgroundColors(im,it):
             for r in range(G2frame.refTable[phaseName].GetNumberRows()):
-                Fosq = float(G2frame.refTable[phaseName].GetCellValue(r,5+im))
-                Fcsq = float(G2frame.refTable[phaseName].GetCellValue(r,7+im))
-                sig = float(G2frame.refTable[phaseName].GetCellValue(r,6+im))
-                rat = abs(Fosq-Fcsq)/sig
-                if  rat > 10.:
-                    G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.RED)
-                elif rat > 3.0:
-                    G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.Colour(255,255,0))
-                else:
-                    G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.WHITE)
+                if HKLF:
+                    if float(G2frame.refTable[phaseName].GetCellValue(r,3+im)) < 0.:
+                        G2frame.refTable[phaseName].SetCellBackgroundColour(r,3+im,wx.RED)
+                    Fosq = float(G2frame.refTable[phaseName].GetCellValue(r,5+im))
+                    Fcsq = float(G2frame.refTable[phaseName].GetCellValue(r,7+im))
+                    sig = float(G2frame.refTable[phaseName].GetCellValue(r,6+im))
+                    rat = abs(Fosq-Fcsq)/sig
+                    if  rat > 10.:
+                        G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.RED)
+                    elif rat > 3.0:
+                        G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.Colour(255,255,0))
+#                    else:
+#                        G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.WHITE)
+                else:   #PWDR
+                    if float(G2frame.refTable[phaseName].GetCellValue(r,12+im+it)) < 0.:
+                        G2frame.refTable[phaseName].SetCellBackgroundColour(r,12+im+it,wx.RED)
                                                   
         G2frame.RefList = phaseName
         G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
+        if HKLF:
+            Status.SetStatusText('abs(Fo-Fc)/sig > 10 in red; > 3 in yellow; mul < 0 (user rejected) in red')
+        else:
+            Status.SetStatusText('Prfo < 0. in red')
+        it = 0
+        if HKLF:
+            im = data[1]['Super']
+        else:
+            if 'T' in data[phaseName]['Type']:
+                it = 3
+            im = data[phaseName].get('Super',0)
         # has this table already been displayed?
         if G2frame.refTable[phaseName].GetTable() is None:
             PeakTable = MakeReflectionTable(phaseName)
@@ -3027,7 +3055,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             G2frame.refTable[phaseName].EnableEditing(False)
             G2frame.refTable[phaseName].SetMargins(0,0)
             G2frame.refTable[phaseName].AutoSizeColumns(False)
-            setBackgroundColors(0)
+            setBackgroundColors(im,it)
         # raise the tab (needed for 1st use and from OnSelectPhase)
         for PageNum in range(G2frame.dataDisplay.GetPageCount()):
             if phaseName == G2frame.dataDisplay.GetPageText(PageNum):
@@ -3078,6 +3106,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             Status = G2frame.dataFrame.CreateStatusBar()    
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
+        G2frame.Bind(wx.EVT_MENU,OnRejectHKL, id=G2gd.wxID_REJECTHKL)
         G2frame.dataFrame.SelectPhase.Enable(False)
     else:
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
@@ -3086,6 +3115,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.Bind(wx.EVT_MENU, OnSelectPhase, id=G2gd.wxID_SELECTPHASE)
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
+        G2frame.dataFrame.RejectHKL.Enable(False)
         G2frame.dataFrame.SelectPhase.Enable(False)
             
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())

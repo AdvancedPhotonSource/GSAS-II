@@ -143,8 +143,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_MODELUNDO,wxID_MODELFITALL,wxID_MODELCOPYFLAGS,
 ] = [wx.NewId() for item in range(12)]
 
-[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,
-] = [wx.NewId() for item in range(3)]
+[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,wxID_REJECTHKL,
+] = [wx.NewId() for item in range(4)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
@@ -1342,6 +1342,7 @@ class DataFrame(wx.Frame):
             help='Error analysis on single crystal data')
         self.ErrorAnal.Append(id=wxID_PWD3DHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot 3D HKLs',
             help='Plot HKLs from single crystal data in 3D')
+            
         self.ErrorAnal.Append(id=wxID_PWDCOPY,kind=wx.ITEM_NORMAL,text='Copy params',
             help='Copy of HKLF parameters')
         self.PostfillDataMenu()
@@ -1483,6 +1484,8 @@ class DataFrame(wx.Frame):
             help='Plot HKLs from powder pattern')
         self.ReflEdit.Append(id=wxID_PWD3DHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot 3D HKLs',
             help='Plot HKLs from powder pattern in 3D')
+        self.RejectHKL = self.ReflEdit.Append(id=wxID_REJECTHKL,kind=wx.ITEM_NORMAL,text='Reject selected HKL',
+            help='Reject selected HKL; make mul < 0')
         self.PostfillDataMenu()
         
         # SASD / Instrument Parameters

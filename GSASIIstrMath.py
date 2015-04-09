@@ -2702,7 +2702,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                 for i,ref in enumerate(refDict['RefList']):
                     if ref[6+im] > 0:
                         ref[11+im] = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist)[0]
-                        w = 1.0/ref[6+im]
+                        w = 1.0/ref[6+im]   # 1/sig(F^2)
                         ref[7+im] = parmDict[phfx+'Scale']*ref[9+im]*ref[11+im]  #correct Fc^2 for extinction
                         ref[8+im] = ref[5+im]/(parmDict[phfx+'Scale']*ref[11+im])
                         if w*ref[5+im] >= calcControls['minF/sig'] and ref[3+im] > 0:  #min cutoff & user rejection
@@ -2713,7 +2713,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                             sumdF2 += abs(ref[5+im]-ref[7+im])
                             nobs += 1
                             df[i] = -w*(ref[5+im]-ref[7+im])
-                            sumwYo += (w*ref[5+im])**2
+                            sumwYo += (w*ref[5+im])**2      #w*Fo^2
                         else:
                             nrej += 1
             else:
@@ -2724,7 +2724,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         ref[8+im] = ref[5+im]/(parmDict[phfx+'Scale']*ref[11+im])
                         Fo = np.sqrt(ref[5+im])
                         Fc = np.sqrt(ref[7+im])
-                        w = 2.0*Fo/ref[6+im]
+                        w = 2.0*(Fo/ref[6+im])**2    # 1/sig(F)?
                         if w*Fo >= calcControls['minF/sig'] and ref[3+im] > 0:  #min cutoff & user rejection
                             sumFo += Fo
                             sumFo2 += ref[5+im]
@@ -2738,7 +2738,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Histogram['Residuals']['Nobs'] = nobs
             Histogram['Residuals']['sumwYo'] = sumwYo
             SumwYo += sumwYo
-            Histogram['Residuals']['wR'] = min(100.,np.sqrt(np.sum(df**2)/Histogram['Residuals']['sumwYo'])*100.)
+            Histogram['Residuals']['wR'] = min(100.,np.sqrt(np.sum(df**2)/sumwYo)*100.)
             Histogram['Residuals'][phfx+'Rf'] = 100.*sumdF/sumFo
             Histogram['Residuals'][phfx+'Rf^2'] = 100.*sumdF2/sumFo2
             Histogram['Residuals'][phfx+'Nref'] = nobs

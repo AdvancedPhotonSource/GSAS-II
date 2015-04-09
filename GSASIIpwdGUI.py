@@ -2962,6 +2962,18 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.refTable[phaseName].ClearSelection()
         ShowReflTable(phaseName)
         
+    def OnClearReject(event):
+        phaseName = G2frame.RefList
+        pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
+        phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
+        General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+        im = General.get('Super',0)
+        for row in range(G2frame.refTable[phaseName].GetNumberRows()):
+            if data[1]['RefList'][row][3+im] < 0:
+                data[1]['RefList'][row][3+im] *= -1 #toggles mul & -mul
+                G2frame.refTable[phaseName].SetCellBackgroundColour(row,3+im,wx.WHITE)
+        UpdateReflectionGrid(G2frame,data,True,Name)
+                   
     def MakeReflectionTable(phaseName):
         '''Returns a wx.grid table (G2gd.Table) containing a list of all reflections
         for a phase.        
@@ -3114,6 +3126,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
         G2frame.Bind(wx.EVT_MENU,OnRejectHKL, id=G2gd.wxID_REJECTHKL)
+        G2frame.Bind(wx.EVT_MENU,OnClearReject, id=G2gd.wxID_CLEARREJECT)
         G2frame.dataFrame.SelectPhase.Enable(False)
     else:
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ReflMenu)
@@ -3123,6 +3136,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.Bind(wx.EVT_MENU, OnPlotHKL, id=G2gd.wxID_PWDHKLPLOT)
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
         G2frame.dataFrame.RejectHKL.Enable(False)
+        G2frame.dataFrame.ClearReject.Enable(False)
         G2frame.dataFrame.SelectPhase.Enable(False)
             
     G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())

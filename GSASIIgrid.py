@@ -143,8 +143,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_MODELUNDO,wxID_MODELFITALL,wxID_MODELCOPYFLAGS,
 ] = [wx.NewId() for item in range(12)]
 
-[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,wxID_REJECTHKL,
-] = [wx.NewId() for item in range(4)]
+[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,wxID_REJECTHKL,wxID_CLEARREJECT,
+] = [wx.NewId() for item in range(5)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
@@ -1484,8 +1484,10 @@ class DataFrame(wx.Frame):
             help='Plot HKLs from powder pattern')
         self.ReflEdit.Append(id=wxID_PWD3DHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot 3D HKLs',
             help='Plot HKLs from powder pattern in 3D')
-        self.RejectHKL = self.ReflEdit.Append(id=wxID_REJECTHKL,kind=wx.ITEM_NORMAL,text='Reject selected HKL',
-            help='Reject selected HKL; make mul < 0')
+        self.RejectHKL = self.ReflEdit.Append(id=wxID_REJECTHKL,kind=wx.ITEM_NORMAL,text='Reject HKL toggle',
+            help='Reject selected HKL toggle; make mul *= -1')
+        self.ClearReject = self.ReflEdit.Append(id=wxID_CLEARREJECT,kind=wx.ITEM_NORMAL,text='Clear rejects',
+            help='Clear all rejected HKLs')
         self.PostfillDataMenu()
         
         # SASD / Instrument Parameters
@@ -2258,7 +2260,7 @@ def UpdateControls(G2frame,data):
     if 'max cyc' not in data:
         data['max cyc'] = 3
     if 'F**2' not in data:
-        data['F**2'] = True
+        data['F**2'] = False
         data['minF/sig'] = 0
     if 'Author' not in data:
         data['Author'] = 'no name'
@@ -2279,7 +2281,7 @@ def UpdateControls(G2frame,data):
     def SeqSizer():
         
         def OnSelectData(event):
-            choices = GetPatternTreeDataNames(G2frame,['PWDR',])
+            choices = GetPatternTreeDataNames(G2frame,['PWDR','HKLF',])
             sel = []
             try:
                 if 'Seq Data' in data:
@@ -2314,7 +2316,7 @@ def UpdateControls(G2frame,data):
         dataSizer.Add(selSeqData,0,WACV)
         SeqData = data.get('Seq Data',[])
         if not SeqData:
-            lbl = ' (no powder data selected)'
+            lbl = ' (no data selected)'
         else:
             lbl = ' ('+str(len(SeqData))+' dataset(s) selected)'
 

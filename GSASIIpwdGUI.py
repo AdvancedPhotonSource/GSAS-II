@@ -1925,6 +1925,8 @@ def UpdateSampleGrid(G2frame,data):
         data['Gonio. radius'] = 200.0
     if not 'Omega' in data:
         data.update({'Omega':0.0,'Chi':0.0,'Phi':0.0})
+    if 'Azimuth' not in data:
+        data['Azimuth'] = 0.0
     if type(data['Temperature']) is int:
         data['Temperature'] = float(data['Temperature'])
     if 'Time' not in data:

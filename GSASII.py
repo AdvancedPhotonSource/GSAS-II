@@ -2166,10 +2166,7 @@ class GSASII(wx.Frame):
             self.dirname = os.path.dirname(arg[1])
             if self.dirname: os.chdir(self.dirname)
             try:
-                G2IO.ProjFileOpen(self)
-                self.PatternTree.Expand(self.root)
-                for item in self.Refine: item.Enable(True)
-                self.EnableSeqRefineMenu()
+                self.StartProject()         #open the file if possible
             except:
                 print 'Error opening file',arg[1]
               
@@ -2245,8 +2242,9 @@ class GSASII(wx.Frame):
             self.PatternTree.Delete(self.BeginDragId)
             G2gd.MovePatternTreeToGrid(self,NewId)
         
-    def OnPatternTreeKeyDown(self,event):
+    def OnPatternTreeKeyDown(self,event): #doesn't exactly work right with Shift key down
         'Allows stepping through the tree with the up/down arrow keys'
+        self.oldFocus = wx.Window.FindFocus()
         keyevt = event.GetKeyEvent()
         key = event.GetKeyCode()
         item = self.PatternTree.GetSelection()
@@ -2254,24 +2252,29 @@ class GSASII(wx.Frame):
         name = self.PatternTree.GetItemText(item)
         parent = self.PatternTree.GetItemParent(item)
         if key == wx.WXK_UP:
-            self.oldFocus = wx.Window.FindFocus()
-#            if keyevt.GetModifiers() == wx.MOD_SHIFT:
-#                if type(parent) is int: return # is this the toplevel in tree?
-#                prev = self.PatternTree.GetPrevSibling(parent)
-#                self.PatternTree.Expand(prev)
-#                id = G2gd.GetPatternTreeItemId(self,prev,name)
-#                G2gd.MovePatternTreeToGrid(self,id)
-#            else:    
-            self.PatternTree.GetPrevSibling(item)
+            if keyevt.GetModifiers() == wx.MOD_SHIFT:
+                if type(parent) is int: return # is this the toplevel in tree?
+                prev = self.PatternTree.GetPrevSibling(parent)
+                self.PatternTree.Collapse(parent)
+                self.PatternTree.Expand(prev)
+                id = G2gd.GetPatternTreeItemId(self,prev,name)
+                self.PatternTree.SelectItem(id)
+                self.oldFocus = wx.Window.FindFocus()
+            else:    
+                self.PatternTree.GetPrevSibling(item)
+                self.PatternTree.SelectItem(item)
         elif key == wx.WXK_DOWN:
-#            if keyevt.GetModifiers() == wx.MOD_SHIFT:
-#                if type(parent) is int: return # is this the toplevel in tree?
-#                next = self.PatternTree.GetNextSibling(parent)
-#                self.PatternTree.Expand(next)
-#                id = G2gd.GetPatternTreeItemId(self,next,name)
-#                G2gd.MovePatternTreeToGrid(self,id)
-#            else:    
-            self.PatternTree.GetNextSibling(item)
+            if keyevt.GetModifiers() == wx.MOD_SHIFT:
+                if type(parent) is int: return # is this the toplevel in tree?
+                next = self.PatternTree.GetNextSibling(parent)
+                self.PatternTree.Collapse(parent)
+                self.PatternTree.Expand(next)
+                id = G2gd.GetPatternTreeItemId(self,next,name)
+                self.PatternTree.SelectItem(id)
+                self.oldFocus = wx.Window.FindFocus()
+            else:    
+                self.PatternTree.GetNextSibling(item)
+                self.PatternTree.SelectItem(item)
                 
     def OnReadPowderPeaks(self,event):
         'Bound to menu Data/Read Powder Peaks -- still needed?'
@@ -2846,7 +2849,6 @@ class GSASII(wx.Frame):
         '''Delete one or more histograms from data tree. Called by the
         Data/DeleteData menu
         '''
-#        TextList = ['All Data']
         TextList = []
         DelList = []
         DelItemList = []
@@ -2869,28 +2871,11 @@ class GSASII(wx.Frame):
                     if 'PDF' in name: ifPDF = True; nItems['PDF'] += 1
                     TextList.append(name)
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-#            if ifPWDR: TextList.insert(1,'All PWDR')
-#            if ifSASD: TextList.insert(1,'All SASD')
-#            if ifIMG: TextList.insert(1,'All IMG')
-#            if ifHKLF: TextList.insert(1,'All HKLF')
-#            if ifPDF: TextList.insert(1,'All PDF')                
             dlg = G2G.G2MultiChoiceDialog(self, 'Which data to delete?', 'Delete data', TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()
                     for i in result: DelList.append(TextList[i])
-#                    if 'All Data' in DelList:
-#                        DelList = [item for item in TextList if item[:3] != 'All']
-#                    elif 'All PWDR' in DelList:
-#                        DelList = [item for item in TextList if item[:4] == 'PWDR']
-#                    elif 'All SASD' in DelList:
-#                        DelList = [item for item in TextList if item[:4] == 'SASD']
-#                    elif 'All IMG' in DelList:
-#                        DelList = [item for item in TextList if item[:3] == 'IMG']
-#                    elif 'All HKLF' in DelList:
-#                        DelList = [item for item in TextList if item[:4] == 'HKLF']
-#                    elif 'All PDF' in DelList:
-#                        DelList = [item for item in TextList if item[:3] == 'PDF']
                     item, cookie = self.PatternTree.GetFirstChild(self.root)
                     while item:
                         itemName = self.PatternTree.GetItemText(item)
@@ -2920,11 +2905,10 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
 
     def OnFileOpen(self, event, filename=None):
-        '''Reads in a GSAS-II .gpx project file in response to the
+        '''Gets a GSAS-II .gpx project file in response to the
         File/Open Project menu button
         '''
         result = wx.ID_OK
-        Id = 0
         self.EnablePlot = False
         if self.PatternTree.GetChildrenCount(self.root,False):
             if self.dataFrame:
@@ -2961,6 +2945,17 @@ class GSASII(wx.Frame):
             self.GSASprojectfile = os.path.splitext(filename)[0]+'.gpx'
             self.dirname = os.path.split(filename)[0]
 
+        try:
+            self.StartProject()         #open the file if possible
+        except:
+            print 'Error opening file ',filename
+        
+    def StartProject(self):
+        '''Opens a GSAS-II project file & selects the 1st available data set to 
+        display (PWDR, HKLF or SASD)
+        '''
+        
+        Id = 0
         G2IO.ProjFileOpen(self)
         self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
         self.PatternTree.Expand(self.root)
@@ -3045,40 +3040,6 @@ class GSASII(wx.Frame):
             self.dataFrame.Clear() 
             self.dataFrame.Destroy()
         self.Close()
-        
-    # def OnExportPatterns(self,event):
-    #     names = ['All']
-    #     exports = []
-    #     item, cookie = self.PatternTree.GetFirstChild(self.root)
-    #     while item:
-    #         name = self.PatternTree.GetItemText(item)
-    #         if 'PWDR' in name:
-    #             names.append(name)
-    #         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-    #     if names:
-    #         dlg = wx.MultiChoiceDialog(self,'Select','Powder patterns to export',names)
-    #         if dlg.ShowModal() == wx.ID_OK:
-    #             sel = dlg.GetSelections()
-    #             if sel[0] == 0:
-    #                 exports = names[1:]
-    #             else:
-    #                 for x in sel:
-    #                     exports.append(names[x])
-    #         dlg.Destroy()
-    #     if exports:
-    #         dlg = wx.FileDialog(self, 'Choose output powder file name', '.', '', 
-    #             'GSAS fxye file (*.fxye)|*.fxye|xye file (*.xye)|*.xye',
-    #             wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
-    #         try:
-    #             if dlg.ShowModal() == wx.ID_OK:
-    #                 powderfile = dlg.GetPath()
-    #                 powderfile = G2IO.FileDlgFixExt(dlg,powderfile)
-    #                 if 'fxye' in powderfile:
-    #                     G2IO.powderFxyeSave(self,exports,powderfile)
-    #                 else:       #just xye
-    #                     G2IO.powderXyeSave(self,exports,powderfile)
-    #         finally:
-    #             dlg.Destroy()
         
     def OnExportPeakList(self,event):
         dlg = wx.FileDialog(self, 'Choose output peak list file name', '.', '', 

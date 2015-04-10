@@ -904,7 +904,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             POData = UseList[hist]['Pref.Ori.']
 # patch - add penalty items
             if len(POData) < 7:
-                POData.append([''])
+                POData.append(['',])
                 POData.append(0.1)
 # end patch
             poSizer.Add(PoTopSizer(POData))

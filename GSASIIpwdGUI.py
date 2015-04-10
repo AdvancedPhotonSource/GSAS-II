@@ -3062,7 +3062,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             Status.SetStatusText('Prfo < 0. in red')
         it = 0
         if HKLF:
-            im = data[1]['Super']
+            im = data[1].get('Super',0)
         else:
             if 'T' in data[phaseName]['Type']:
                 it = 3

@@ -2423,7 +2423,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
             if ref[6+im] > 0:
                 dervDict = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist+dependentVars)[1] 
                 w = 1.0/ref[6+im]
-                if w*ref[5+im] >= calcControls['minF/sig']:
+                if w*ref[5+im] >= calcControls['minF/sig'] and ref[3+im] > 0:
                     wdf[iref] = w*(ref[5+im]-ref[7+im])
                     for j,var in enumerate(varylist):
                         if var in dFdvDict:
@@ -2452,7 +2452,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                 Fo = np.sqrt(ref[5+im])
                 Fc = np.sqrt(ref[7+im])
                 w = 1.0/ref[6+im]
-                if 2.0*Fo*w*Fo >= calcControls['minF/sig']:
+                if 2.0*Fo*w*Fo >= calcControls['minF/sig'] and ref[3+im] > 0:
                     wdf[iref] = 2.0*Fo*w*(Fo-Fc)
                     for j,var in enumerate(varylist):
                         if var in dFdvDict:

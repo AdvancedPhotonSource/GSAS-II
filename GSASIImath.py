@@ -1774,10 +1774,10 @@ def FourierMap(data,reflDict):
             for i,hkl in enumerate(Uniq):        #uses uniq
                 hkl = np.asarray(hkl,dtype='i')
                 dp = 360.*Phi[i]                #and phi
-                a = cosd(ph+dp)
-                b = sind(ph+dp)
-                phasep = complex(a,b)
-                phasem = complex(a,-b)
+                a = cosd(ph)
+                b = sind(ph)
+                phasep = complex(a,b)+dp
+                phasem = complex(a,-b)-dp
                 if 'Fobs' in mapData['MapType']:
                     F = np.where(Fosq>0.,np.sqrt(Fosq),0.)
                     h,k,l = hkl+Hmax

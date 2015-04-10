@@ -646,6 +646,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             H = refl[:3]
             if 'HKLF' in Name:
                 Fosq,sig,Fcsq = refl[5+Super:8+Super]
+                if refl[3+Super] < 0:
+                    Fosq,sig,Fcsq = [0,1,0]
             else:
                 Fosq,sig,Fcsq = refl[8+Super],1.0,refl[9+Super]
             if Super:
@@ -695,6 +697,20 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             R = np.ones_like(R)*0.05     
         return HKL,zip(list(R),C)
 
+    def GetTruePosition(xy):
+        View = glGetIntegerv(GL_VIEWPORT)
+        Proj = glGetDoublev(GL_PROJECTION_MATRIX)
+        Model = glGetDoublev(GL_MODELVIEW_MATRIX)
+        Zmax = 1.
+        for i,ref in enumerate(hklRef):
+            h,k,l = ref[1:4]
+            X,Y,Z = gluProject(h,k,l,Model,Proj,View)
+            XY = [int(X),int(Y)]
+            print xy,XY
+            if np.allclose(xy,XY,atol=10):
+                Zmax = Z
+                return [h,k,l]
+                        
     def SetTranslation(newxy):
 #first get translation vector in screen coords.       
         oldxy = drawingData['oldxy']
@@ -778,6 +794,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 SetRotationZ(newxy)
                 Q = drawingData['Quaternion']
             Draw('move')
+#        else:
+#            hkl = GetTruePosition(newxy)
         
     def OnMouseWheel(event):
         if event.ShiftDown():

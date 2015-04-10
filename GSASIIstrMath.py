@@ -864,17 +864,19 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0).T
         Tcorr = Tiso*Tuij*Mdata*Fdata/len(SGMT)
         fa = np.array([((FF+FP).T-Bab).T*cosp*Tcorr,-FPP*sinp*Tcorr])
-        fa = np.reshape(fa,(2,len(refl),len(SGT),len(Mdata)))
-        fas = np.sum(np.sum(fa,axis=2),axis=2)        #real
-        fbs = np.zeros_like(fas)
-        if not SGData['SGInv']:
-            fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,FPP*cosp*Tcorr])
-            fb = np.reshape(fb,(2,len(refl),len(SGT),len(Mdata)))
-            fbs = np.sum(np.sum(fb,axis=2),axis=2)
-        fasq = fas**2
-        fbsq = fbs**2        #imaginary
-        refl.T[9] = np.sum(fasq,axis=0)+np.sum(fbsq,axis=0)
-        refl.T[10] = atan2d(fbs[0],fas[0])
+        fa = np.reshape(fa,(2,len(refl),len(SGT),len(Mdata)))   #real A,-b
+        fas = np.sum(np.sum(fa,axis=2),axis=2)        #real sum over atoms & unique hkl
+        fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,FPP*cosp*Tcorr])
+        fb = np.reshape(fb,(2,len(refl),len(SGT),len(Mdata)))   #imag -B,+a
+        fbs = np.sum(np.sum(fb,axis=2),axis=2)  #imag sum over atoms & uniq hkl
+        if SGData['SGInv']: #centrosymmetric; B=0
+            fbs[0] *= 0.
+        if 'P' in calcControls[hfx+'histType']:
+            refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
+        else:
+            refl.T[9] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
+        refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"?
+#        refl.T[10] = atan2d(np.sum(fbs,axis=0),np.sum(fas,axis=0)) #include f' & f"
         iBeg += blkSize
     
 def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
@@ -2452,7 +2454,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                 Fo = np.sqrt(ref[5+im])
                 Fc = np.sqrt(ref[7+im])
                 w = 1.0/ref[6+im]
-                if 2.0*Fo*w*Fo >= calcControls['minF/sig'] and ref[3+im] > 0:
+                if ref[5+im]/ref[6+im] >= calcControls['minF/sig'] and ref[3+im] > 0:
                     wdf[iref] = 2.0*Fo*w*(Fo-Fc)
                     for j,var in enumerate(varylist):
                         if var in dFdvDict:
@@ -2725,7 +2727,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         Fo = np.sqrt(ref[5+im])
                         Fc = np.sqrt(ref[7+im])
                         w = 2.0*(Fo/ref[6+im])**2    # 1/sig(F)?
-                        if w*Fo >= calcControls['minF/sig'] and ref[3+im] > 0:  #min cutoff & user rejection
+                        if ref[5+im]/ref[6+im] >= calcControls['minF/sig'] and ref[3+im] > 0:  #min cutoff & user rejection
                             sumFo += Fo
                             sumFo2 += ref[5+im]
                             sumdF += abs(Fo-Fc)

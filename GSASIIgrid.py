@@ -143,8 +143,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_MODELUNDO,wxID_MODELFITALL,wxID_MODELCOPYFLAGS,
 ] = [wx.NewId() for item in range(12)]
 
-[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,wxID_REJECTHKL,wxID_CLEARREJECT,
-] = [wx.NewId() for item in range(5)]
+[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,
+] = [wx.NewId() for item in range(3)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
@@ -1484,10 +1484,6 @@ class DataFrame(wx.Frame):
             help='Plot HKLs from powder pattern')
         self.ReflEdit.Append(id=wxID_PWD3DHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot 3D HKLs',
             help='Plot HKLs from powder pattern in 3D')
-        self.RejectHKL = self.ReflEdit.Append(id=wxID_REJECTHKL,kind=wx.ITEM_NORMAL,text='Reject HKL toggle',
-            help='Reject selected HKL toggle; make mul *= -1')
-        self.ClearReject = self.ReflEdit.Append(id=wxID_CLEARREJECT,kind=wx.ITEM_NORMAL,text='Clear rejects',
-            help='Clear all rejected HKLs')
         self.PostfillDataMenu()
         
         # SASD / Instrument Parameters
@@ -2254,14 +2250,12 @@ def UpdateControls(G2frame,data):
         data['shift factor'] = 1.
         data['max cyc'] = 3        
         data['F**2'] = False
-        data['minF/sig'] = 0
     if 'shift factor' not in data:
         data['shift factor'] = 1.
     if 'max cyc' not in data:
         data['max cyc'] = 3
     if 'F**2' not in data:
         data['F**2'] = False
-        data['minF/sig'] = 0
     if 'Author' not in data:
         data['Author'] = 'no name'
     if 'FreePrm1' not in data:
@@ -2273,7 +2267,9 @@ def UpdateControls(G2frame,data):
     if 'Copy2Next' not in data:
         data['Copy2Next'] = False
     if 'Reverse Seq' not in data:
-        data['Reverse Seq'] = False   
+        data['Reverse Seq'] = False
+    if 'UsrReject' not in data:
+        data['UsrReject'] = {'minF/sig':0,'MinExt':0.01,'MaxDF/F':20.,'MaxD':500.,'MinD':0.05}
      
     
     #end patch
@@ -2365,13 +2361,15 @@ def UpdateControls(G2frame,data):
         def OnFsqRef(event):
             data['F**2'] = fsqRef.GetValue()
         
-        def OnMinSig(event):
+        def OnUsrRej(event):
+            Obj = event.GetEventObject()
+            item,limits = Indx[Obj]
             try:
-                value = min(max(float(minSig.GetValue()),0.),5.)
+                value = min(max(float(Obj.GetValue()),limits[0]),limits[1])
             except ValueError:
-                value = 1.0
-            data['minF/sig'] = value
-            minSig.SetValue('%.2f'%(value))
+                value = data['UsrReject'][item]
+            data['UsrReject'][item] = value
+            Obj.SetValue('%.2f'%(value))
 
         LSSizer = wx.FlexGridSizer(cols=4,vgap=5,hgap=5)
         LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Refinement derivatives: '),0,WACV)
@@ -2387,6 +2385,7 @@ def UpdateControls(G2frame,data):
         Cnvrg.Bind(wx.EVT_TEXT_ENTER,OnConvergence)
         Cnvrg.Bind(wx.EVT_KILL_FOCUS,OnConvergence)
         LSSizer.Add(Cnvrg,0,WACV)
+        Indx = {}
         if 'Hessian' in data['deriv type']:
             LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Max cycles: '),0,WACV)
             Choice = ['0','1','2','3','5','10','15','20']
@@ -2402,17 +2401,23 @@ def UpdateControls(G2frame,data):
             Factr.Bind(wx.EVT_KILL_FOCUS,OnFactor)
             LSSizer.Add(Factr,0,WACV)
         if G2frame.Sngl:
-            LSSizer.Add((1,0),)
-            LSSizer.Add((1,0),)
+            userReject = data['UsrReject']
+            usrRej = {'minF/sig':[' Min obs/sig (0-5): ',[0,5], ],'MinExt':[' Min extinct. (0-.9): ',[0,.9],],
+                'MaxDF/F':[' Max delt-F/sig (3-20): ',[3.,20.],],'MaxD':[' Max d-spacing (3-500): ',[3,500],],
+                'MinD':[' Min d-spacing (0.1-1.0): ',[0.1,1.0],]}
+
             fsqRef = wx.CheckBox(G2frame.dataDisplay,-1,label='Refine HKLF as F^2? ')
             fsqRef.SetValue(data['F**2'])
             fsqRef.Bind(wx.EVT_CHECKBOX,OnFsqRef)
             LSSizer.Add(fsqRef,0,WACV)
-            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label='Min obs/sig (0-5): '),0,WACV)
-            minSig = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(data['minF/sig']),style=wx.TE_PROCESS_ENTER)
-            minSig.Bind(wx.EVT_TEXT_ENTER,OnMinSig)
-            minSig.Bind(wx.EVT_KILL_FOCUS,OnMinSig)
-            LSSizer.Add(minSig,0,WACV)
+            LSSizer.Add((1,0),)
+            for item in usrRej:
+                LSSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,label=usrRej[item][0]),0,WACV)
+                usrrej = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.2f'%(userReject[item]),style=wx.TE_PROCESS_ENTER)
+                Indx[usrrej] = [item,usrRej[item][1]]
+                usrrej.Bind(wx.EVT_TEXT_ENTER,OnUsrRej)
+                usrrej.Bind(wx.EVT_KILL_FOCUS,OnUsrRej)
+                LSSizer.Add(usrrej,0,WACV)
         return LSSizer
         
     def AuthSizer():

@@ -2387,6 +2387,19 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     G2mv.Dict2Deriv(varylist,depDerivDict,dMdv)
     return dMdv
     
+def UserRejectHKL(ref,im,userReject):
+    if ref[5+im]/ref[6+im] < userReject['minF/sig']:
+        return False
+    elif userReject['MaxD'] < ref[4+im] > userReject['MinD']:
+        return False
+    elif ref[11+im] < userReject['MinExt']:
+        return False
+    elif abs(ref[5+im]-ref[7+im])/ref[6+im] > userReject['MaxDF/F']:
+        return False
+    return True
+    
+    
+    
 def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     '''Loop over reflections in a HKLF histogram and compute derivatives of the fitting
     model (M) with respect to all parameters.  Independent and dependant dM/dp arrays 
@@ -2405,7 +2418,6 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
         SSGData = Phase['General']['SSGData']
         SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
         im = 1  #offset in SS reflection list
-        #??
     A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
     G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
     refDict = Histogram['Data']
@@ -2425,7 +2437,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
             if ref[6+im] > 0:
                 dervDict = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist+dependentVars)[1] 
                 w = 1.0/ref[6+im]
-                if w*ref[5+im] >= calcControls['minF/sig'] and ref[3+im] > 0:
+                if ref[3+im] > 0:
                     wdf[iref] = w*(ref[5+im]-ref[7+im])
                     for j,var in enumerate(varylist):
                         if var in dFdvDict:
@@ -2454,7 +2466,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                 Fo = np.sqrt(ref[5+im])
                 Fc = np.sqrt(ref[7+im])
                 w = 1.0/ref[6+im]
-                if ref[5+im]/ref[6+im] >= calcControls['minF/sig'] and ref[3+im] > 0:
+                if ref[3+im] > 0:
                     wdf[iref] = 2.0*Fo*w*(Fo-Fc)
                     for j,var in enumerate(varylist):
                         if var in dFdvDict:
@@ -2682,7 +2694,6 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                 SSGData = Phase['General']['SSGData']
                 SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
                 im = 1  #offset in SS reflection list
-                #??
             A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
             G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
             refDict = Histogram['Data']
@@ -2707,7 +2718,8 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         w = 1.0/ref[6+im]   # 1/sig(F^2)
                         ref[7+im] = parmDict[phfx+'Scale']*ref[9+im]*ref[11+im]  #correct Fc^2 for extinction
                         ref[8+im] = ref[5+im]/(parmDict[phfx+'Scale']*ref[11+im])
-                        if w*ref[5+im] >= calcControls['minF/sig'] and ref[3+im] > 0:  #min cutoff & user rejection
+                        if UserRejectHKL(ref,im,calcControls['UsrReject']):
+                            ref[3+im] = abs(ref[3+im])      #mark as allowed
                             Fo = np.sqrt(ref[5+im])
                             sumFo += Fo
                             sumFo2 += ref[5+im]
@@ -2717,6 +2729,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                             df[i] = -w*(ref[5+im]-ref[7+im])
                             sumwYo += (w*ref[5+im])**2      #w*Fo^2
                         else:
+                            ref[3+im] = -abs(ref[3+im])      #mark as rejected
                             nrej += 1
             else:
                 for i,ref in enumerate(refDict['RefList']):
@@ -2727,7 +2740,8 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         Fo = np.sqrt(ref[5+im])
                         Fc = np.sqrt(ref[7+im])
                         w = 2.0*(Fo/ref[6+im])**2    # 1/sig(F)?
-                        if ref[5+im]/ref[6+im] >= calcControls['minF/sig'] and ref[3+im] > 0:  #min cutoff & user rejection
+                        if UserRejectHKL(ref,im,calcControls['UsrReject']):
+                            ref[3+im] = abs(ref[3+im])      #mark as allowed
                             sumFo += Fo
                             sumFo2 += ref[5+im]
                             sumdF += abs(Fo-Fc)
@@ -2736,6 +2750,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                             df[i] = -w*(Fo-Fc)
                             sumwYo += (w*Fo)**2
                         else:
+                            ref[3+im] = -abs(ref[3+im])      #mark as rejected
                             nrej += 1
             Histogram['Residuals']['Nobs'] = nobs
             Histogram['Residuals']['sumwYo'] = sumwYo

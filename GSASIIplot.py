@@ -702,14 +702,14 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         Proj = glGetDoublev(GL_PROJECTION_MATRIX)
         Model = glGetDoublev(GL_MODELVIEW_MATRIX)
         Zmax = 1.
+        xy = [int(xy[0]),int(View[3]-xy[1])]
         for i,ref in enumerate(hklRef):
-            h,k,l = ref[1:4]
+            h,k,l = ref[:3]
             X,Y,Z = gluProject(h,k,l,Model,Proj,View)
             XY = [int(X),int(Y)]
-            print xy,XY
-            if np.allclose(xy,XY,atol=10):
+            if np.allclose(xy,XY,atol=10) and Z < Zmax:
                 Zmax = Z
-                return [h,k,l]
+                return [int(h),int(k),int(l)]
                         
     def SetTranslation(newxy):
 #first get translation vector in screen coords.       
@@ -794,8 +794,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 SetRotationZ(newxy)
                 Q = drawingData['Quaternion']
             Draw('move')
-#        else:
-#            hkl = GetTruePosition(newxy)
+        else:
+            hkl = GetTruePosition(newxy)
+            if hkl:
+                h,k,l = hkl
+                Page.canvas.SetToolTipString('%d %d %d'%(h,k,l))
+                G2frame.G2plotNB.status.SetStatusText('hkl = %d %d %d'%(h,k,l),1)
         
     def OnMouseWheel(event):
         if event.ShiftDown():

@@ -2403,7 +2403,7 @@ def UpdateControls(G2frame,data):
         if G2frame.Sngl:
             userReject = data['UsrReject']
             usrRej = {'minF/sig':[' Min obs/sig (0-5): ',[0,5], ],'MinExt':[' Min extinct. (0-.9): ',[0,.9],],
-                'MaxDF/F':[' Max delt-F/sig (3-20): ',[3.,20.],],'MaxD':[' Max d-spacing (3-500): ',[3,500],],
+                'MaxDF/F':[' Max delt-F/sig (3-1000): ',[3.,1000.],],'MaxD':[' Max d-spacing (3-500): ',[3,500],],
                 'MinD':[' Min d-spacing (0.1-1.0): ',[0.1,1.0],]}
 
             fsqRef = wx.CheckBox(G2frame.dataDisplay,-1,label='Refine HKLF as F^2? ')
@@ -3605,7 +3605,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2frame.dataFrame.Bind(wx.EVT_MENU, onCopyPlotCtrls, id=wxID_PLOTCTRLCOPY)
     elif kind in ['HKLF',]:
         SetDataMenuBar(G2frame,G2frame.dataFrame.HKLFMenu)
-#        G2frame.dataFrame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=wxID_PWDANALYSIS)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=wxID_PWDANALYSIS)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=wxID_PWD3DHKLPLOT)
 #        G2frame.dataFrame.Bind(wx.EVT_MENU, onCopySelectedItems, id=wxID_PWDCOPY)
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)

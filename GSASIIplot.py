@@ -1785,11 +1785,14 @@ def PlotDeltSig(G2frame,kind):
         xmax = np.searchsorted(xye[0],limits[1])
         DS = xye[5][xmin:xmax]*np.sqrt(wtFactor*xye[2][xmin:xmax])
     elif kind == 'HKLF':
-        refl = Pattern[1]
+        refl = Pattern[1]['RefList']
+        im = 0
+        if Pattern[1]['Super']:
+            im = 1
         DS = []
         for ref in refl:
-            if ref[6] > 0.:
-                DS.append((ref[5]-ref[7])/ref[6])
+            if ref[6+im] > 0.:
+                DS.append((ref[5+im]-ref[7+im])/ref[6+im])
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     DS.sort()

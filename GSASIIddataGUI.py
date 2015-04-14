@@ -665,7 +665,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 if dlg.ShowModal() == wx.ID_OK:
                     POData[6] = [hkls[i] for i in dlg.GetSelections()]
                     if not POData[6]:
-                        POData[6] = ['']
+                        POData[6] = ['',]
                 else:
                     return
             finally:
@@ -906,6 +906,8 @@ def UpdateDData(G2frame,DData,data,hist=''):
             if len(POData) < 7:
                 POData.append(['',])
                 POData.append(0.1)
+            if not POData[6]:
+                POData[6] = ['',]
 # end patch
             poSizer.Add(PoTopSizer(POData))
             if POData[0] == 'MD':

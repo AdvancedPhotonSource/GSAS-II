@@ -1240,7 +1240,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if str(DifLine[0]) == str(G2frame.itemPicked):
             data = G2frame.PatternTree.GetItemPyData(PickId)
             ypos = event.ydata
-            data[0]['delOffset'] = -ypos/Ymax
             G2frame.itemPicked = None
             G2frame.PatternTree.SetItemPyData(PickId,data)
             PlotPatterns(G2frame,plotType=plottype)

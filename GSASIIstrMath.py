@@ -1231,7 +1231,6 @@ def SHTXcalDerv(refl,im,g,pfx,hfx,SGData,calcControls,parmDict):
         tth = parmDict[hfx+'2-theta']
     else:
         tth = refl[5+im]
-    FORPI = 4.0*np.pi
     IFCoup = 'Bragg' in calcControls[hfx+'instType']
     odfCor = 1.0
     dFdODF = {}
@@ -1285,7 +1284,6 @@ def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         tth = parmDict[hfx+'2-theta']
     else:
         tth = refl[5+im]
-    FORPI = 12.5663706143592
     odfCor = 1.0
     dFdODF = {}
     H = refl[:3]

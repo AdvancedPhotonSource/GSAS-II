@@ -3515,7 +3515,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ####  Texture routines
 ################################################################################
         
-    def UpdateTexture():        
+    def UpdateTexture():
+                
         def SetSHCoef():
             cofNames = G2lat.GenSHCoeff(SGData['SGLaue'],SamSym[textureData['Model']],textureData['Order'])
             newSHCoef = dict(zip(cofNames,np.zeros(len(cofNames))))
@@ -5926,24 +5927,30 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Histograms = data['Histograms']
         histNames = []
         refData = {}
-        SamAngs = {}
+        Gangls = {}
         for name in Histograms.keys():
             if 'PWDR' in name:
                 im = 0
                 it = 0
                 histNames.append(name)
                 Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))
                 Sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
-                SamAngs[name] = copy.copy([Sample[item] for item in['Omega','Chi','Phi','Azimuth']])
+                Gangls[name] = copy.copy([Sample[item] for item in['Phi','Chi','Omega','Azimuth']])
                 RefDict = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Reflection Lists'))[phaseName]
                 Refs = RefDict['RefList'].T  #np.array!
-                if 'T' in RefDict['Type']: it = 3  #TOF offset for alp, bet, wave
                 if RefDict['Super']: im = 1     #(3+1) offset for m
-                refData[name] = np.column_stack((Refs[0],Refs[1],Refs[2],Refs[8+im],Refs[12+im+it]))
-        Error = G2mth.FitTexture(General,SamAngs,refData)
+                if 'T' in RefDict['Type']: 
+                    it = 3  #TOF offset for alp, bet, wave
+                    tth = np.ones_like(Refs[0])*Inst[0]['2-theta'][0]
+                    refData[name] = np.column_stack((Refs[0],Refs[1],Refs[2],tth,Refs[8+im],Refs[12+im+it],np.zeros_like(Refs[0])))
+                else:   # xray - typical caked 2D image data
+                    refData[name] = np.column_stack((Refs[0],Refs[1],Refs[2],Refs[5+im],Refs[8+im],Refs[12+im+it],np.zeros_like(Refs[0])))
+        Error = G2mth.FitTexture(General,Gangls,refData)
         if Error:
             wx.MessageBox(Error,caption='Fit Texture Error',style=wx.ICON_EXCLAMATION)
-        G2ddG.UpdateDData(G2frame,DData,data)
+        UpdateTexture()
+        G2plt.PlotTexture(G2frame,data,Start=False)            
             
     def OnTextureClear(event):
         print 'clear texture? - does nothing'

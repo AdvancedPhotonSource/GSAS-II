@@ -1267,7 +1267,7 @@ def SHPOcal(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         Gangls = [0.,90.,0.,parmDict[hfx+'Azimuth']]
         IFCoup = True
     else:
-        Gangls = [0.,0.,0.,parmDict[hfx+'Azimuth']]
+        Gangls = [parmDict[hfx+'Phi'],parmDict[hfx+'Chi'],parmDict[hfx+'Omega'],parmDict[hfx+'Azimuth']]
         IFCoup = False
     phi,beta = G2lat.CrsAng(H,cell,SGData)
     psi,gam,x,x = G2lat.SamAng(tth/2.,Gangls,Sangl,IFCoup) #ignore 2 sets of angle derivs.
@@ -1293,7 +1293,7 @@ def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         Gangls = [0.,90.,0.,parmDict[hfx+'Azimuth']]
         IFCoup = True
     else:
-        Gangls = [0.,0.,0.,parmDict[hfx+'Azimuth']]
+        Gangls = [parmDict[hfx+'Phi'],parmDict[hfx+'Chi'],parmDict[hfx+'Omega'],parmDict[hfx+'Azimuth']]
         IFCoup = False
     phi,beta = G2lat.CrsAng(H,cell,SGData)
     psi,gam,x,x = G2lat.SamAng(tth/2.,Gangls,Sangl,IFCoup) #ignore 2 sets of angle derivs.

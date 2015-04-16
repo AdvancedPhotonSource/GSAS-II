@@ -3066,8 +3066,8 @@ class GSASII(wx.Frame):
                                 for peak in peaks:
                                     if len(peak) == 8:  #CW
                                         FWHM = G2pwd.getgamFW(peak[6],peak[4])
-                                        file.write("%10.5f %12.2f %10.3f %10.3f %10.3f \n" % \
-                                            (peak[0],peak[2],peak[4],peak[6],FWHM))
+                                        file.write("%10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
+                                            (peak[0],peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
                                     else:               #TOF - more cols
                                         FWHM = G2pwd.getgamFW(peak[10],peak[8])
                                         file.write("%10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \

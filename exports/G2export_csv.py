@@ -249,20 +249,34 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
             tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
             if phasDict.get('Super',False):
                 WriteList(self,("h","k","l","m",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","phase #"))
-                fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:d}"
+                if 'T' in phasDict['Type']:
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:d}"
+                else:
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:13]
                     FWHM = G2pwd.getgamFW(gam,sig)
-                    self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))                
+                    if 'T' in phasDict['Type']:
+                        self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))
+                    else:        #convert to deg        
+                        self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,    \
+                            np.sqrt(max(sig,0.0001))/100.,gam/100.,FWHM/100.,i))
             else:
                 WriteList(self,("h","k","l",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","phase #"))
-                fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:d}"
+                if 'T' in phasDict['Type']:
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:d}"
+                else:
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
                     h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:12]
                     FWHM = G2pwd.getgamFW(gam,sig)
-                    self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))
+                    if 'T' in phasDict['Type']:
+                        self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))
+                    else:        #convert to deg        
+                        self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,  \
+                            np.sqrt(max(sig,0.0001))/100.,gam/100.,FWHM/100.,i))
         self.CloseFile()
         print(str(hist)+'reflections written to file '+str(self.fullpath))
 

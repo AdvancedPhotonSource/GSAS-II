@@ -799,6 +799,8 @@ def UpdateDData(G2frame,DData,data,hist=''):
     DData.DestroyChildren()
     if DData.GetSizer():
         DData.GetSizer().Clear(True)
+    if not UseList:
+        return 
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(DData,-1,' Histogram data for '+PhaseName+':'),0,WACV)
     DData.G2hist = hist         #so can be used in G2phsGUI for Copy, etc.
@@ -819,7 +821,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         if PWDR:
             topSizer.Add(PlotSizer())
         mainSizer.Add(topSizer)       
-            
+        
         histData = UseList[hist]
         if 'Use' not in UseList[hist]:      #patch
             UseList[hist]['Use'] = True

@@ -58,6 +58,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
 
     '''
     G2frame.dataFrame.SetStatusText('')
+    keyList = G2frame.GetHistogramNames(['PWDR','HKLF'])
     UseList = data['Histograms']
     if UseList:
         G2frame.dataFrame.DataMenu.Enable(G2gd.wxID_DATADELETE,True)
@@ -68,8 +69,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
     generalData = data['General']
     PhaseName = generalData['Name']       
     SGData = generalData['SGData']
-    keyList = UseList.keys()
-    keyList.sort()
     if not hist and len(keyList):
         hist = keyList[0]
     PWDR = any(['PWDR' in item for item in keyList])

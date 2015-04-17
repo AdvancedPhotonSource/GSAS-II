@@ -1588,11 +1588,14 @@ def ValEsd(value,esd=0,nTZ=False):
     if valoff != 0:
         out += ("e{:d}").format(valoff) # add an exponent, when needed
     return out
+    
 ################################################################################
 ##### Texture fitting stuff
 ################################################################################
 
-def FitTexture(General,Gangls,refData):
+def FitTexture(General,Gangls,refData,keyList):
+    import pytexture as ptx
+    ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
     def printSpHarm(textureData,SHtextureSig):
         print '\n Spherical harmonics texture: Order:' + str(textureData['Order'])
@@ -1669,6 +1672,29 @@ def FitTexture(General,Gangls,refData):
             Mat = np.concatenate((Mat,np.array(mat)))
         return Mat
         
+    def errSpHarm2(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList):
+        parmDict.update(zip(varyList,values))
+        Mat = np.empty(0)
+        Sangls = [parmDict['Sample '+'omega'],parmDict['Sample '+'chi'],parmDict['Sample '+'phi']]
+        for hist in Gangls.keys():
+            Refs = refData[hist]
+#            wt = np.sqrt(ref[4])
+            wt = 1.
+            Refs[:,6] = 1.
+            H = Refs[:,:3]
+            phi,beta = G2lat.CrsAng(H,cell,SGData)
+            psi,gam,x,x = G2lat.SamAng(Refs[:,3]/2.,Gangls[hist],Sangls,False) #assume not Bragg-Brentano!
+            for item in parmDict:
+                if 'C' in item:
+                    L,M,N = eval(item.strip('C'))
+                    Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
+                    Ksl,x,x = G2lat.GetKsl(L,M,shModel,psi,gam)
+                    Lnorm = G2lat.Lnorm(L)
+                    Refs[:,6] += parmDict[item]*Lnorm*Kcl*Ksl
+            mat = wt*(Refs[:,5]-Refs[:,6])
+            Mat = np.concatenate((Mat,mat))
+        return Mat
+        
     def dervSpHarm(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList):
         Mat = np.empty(0)
         Sangls = [parmDict['Sample omega'],parmDict['Sample chi'],parmDict['Sample phi']]
@@ -1716,7 +1742,7 @@ def FitTexture(General,Gangls,refData):
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
-        result = so.leastsq(errSpHarm,values,Dfun=dervSpHarm,full_output=True,
+        result = so.leastsq(errSpHarm2,values,Dfun=dervSpHarm,full_output=True,
             args=(SGData,cell,Gangls,Texture['Model'],refData,parmDict,varyList))
         ncyc = int(result[2]['nfev']/2)
         if ncyc:
@@ -1738,7 +1764,7 @@ def FitTexture(General,Gangls,refData):
         else:
             break
     
-    for hist in refData:
+    for hist in keyList:
         print ' Texture corrections for '+hist
         for ref in refData[hist]:
             print ' %d %d %d %.3f %.3f'%(int(ref[0]),int(ref[1]),int(ref[2]),ref[5],ref[6])

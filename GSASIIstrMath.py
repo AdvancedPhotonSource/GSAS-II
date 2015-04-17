@@ -1274,6 +1274,10 @@ def SHPOcal(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
     SHnames = calcControls[phfx+'SHnames']
     for item in SHnames:
         L,N = eval(item.strip('C'))
+#        Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
+#        Ksl,x,x = G2lat.GetKsl(L,0,'0',psi,gam)
+#        Lnorm = G2lat.Lnorm(L)
+#        odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
         Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta)
         odfCor += parmDict[phfx+item]*Lnorm*Kcsl
     return np.squeeze(odfCor)
@@ -1300,6 +1304,11 @@ def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
     SHnames = calcControls[phfx+'SHnames']
     for item in SHnames:
         L,N = eval(item.strip('C'))
+#        Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
+#        Ksl,x,x = G2lat.GetKsl(L,0,'0',psi,gam)
+#        Lnorm = G2lat.Lnorm(L)
+#        odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
+#        dFdODF[phfx+item] = Kcl*Ksl*Lnorm
         Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta) 
         odfCor += parmDict[phfx+item]*Lnorm*Kcsl
         dFdODF[phfx+item] = Kcsl*Lnorm

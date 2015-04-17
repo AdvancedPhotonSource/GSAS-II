@@ -969,7 +969,10 @@ def CrsAng(H,cell,SGData):
     G,g = cell2Gmat(cell)
     Laue = SGData['SGLaue']
     Naxis = SGData['SGUniq']
-    DH = np.inner(H,np.inner(G,H))
+    if len(H.shape) == 1:
+        DH = np.inner(H,np.inner(G,H))
+    else:
+        DH = np.array([np.inner(h,np.inner(G,h)) for h in H])
     if Laue == '2/m':
         if Naxis == 'a':
             DR = np.inner(H1,np.inner(G,H1))
@@ -983,38 +986,36 @@ def CrsAng(H,cell,SGData):
     elif Laue in ['R3','R3m']:
         DR = np.inner(H4,np.inner(G,H4))
         DHR = np.inner(H,np.inner(G,H4))
-        
     else:
         DR = np.inner(H3,np.inner(G,H3))
         DHR = np.inner(H,np.inner(G,H3))
     DHR /= np.sqrt(DR*DH)
     phi = np.where(DHR <= 1.0,acosd(DHR),0.0)
     if Laue == '-1':
-        BA = H[1]*a/(b-H[0]*cosd(ga))
-        BB = H[0]*sind(ga)**2
+        BA = H.T[1]*a/(b-H.T[0]*cosd(ga))
+        BB = H.T[0]*sind(ga)**2
     elif Laue == '2/m':
         if Naxis == 'a':
-            BA = H[2]*b/(c-H[1]*cosd(al))
-            BB = H[1]*sind(al)**2
+            BA = H.T[2]*b/(c-H.T[1]*cosd(al))
+            BB = H.T[1]*sind(al)**2
         elif Naxis == 'b':
-            BA = H[0]*c/(a-H[2]*cosd(be))
-            BB = H[2]*sind(be)**2
+            BA = H.T[0]*c/(a-H.T[2]*cosd(be))
+            BB = H.T[2]*sind(be)**2
         else:
-            BA = H[1]*a/(b-H[0]*cosd(ga))
-            BB = H[0]*sind(ga)**2
+            BA = H.T[1]*a/(b-H.T[0]*cosd(ga))
+            BB = H.T[0]*sind(ga)**2
     elif Laue in ['mmm','4/m','4/mmm']:
-        BA = H[1]*a
-        BB = H[0]*b
-    
+        BA = H.T[1]*a
+        BB = H.T[0]*b
     elif Laue in ['3R','3mR']:
-        BA = H[0]+H[1]-2.0*H[2]
-        BB = SQ3*(H[0]-H[1])
+        BA = H.T[0]+H.T[1]-2.0*H.T[2]
+        BB = SQ3*(H.T[0]-H.T[1])
     elif Laue in ['m3','m3m']:
-        BA = H[1]
-        BB = H[0]
+        BA = H.T[1]
+        BB = H.T[0]
     else:
-        BA = H[0]+2.0*H[1]
-        BB = SQ3*H[0]
+        BA = H.T[0]+2.0*H.T[1]
+        BB = SQ3*H.T[0]
     beta = atan2d(BA,BB)
     return phi,beta
     
@@ -1061,10 +1062,7 @@ def SamAng(Tth,Gangls,Sangl,IFCoup):
     psi = acosd(BC)
     
     BD = 1.0-BC**2
-    if BD > 1.e-6:
-        C = rpd/math.sqrt(BD)
-    else:
-        C = 0.
+    C = np.where(BD>1.e-6,rpd/np.sqrt(BD),0.)
     dPSdA = [-C*(-BC1*SSomeg*SCchi-BC2*SSomeg*SSchi-BC3*SComeg),
         -C*(-BC1*SComeg*SSchi+BC2*SComeg*SCchi),
         -C*(-BC1*SSomeg-BC3*SComeg*SCchi)]
@@ -1083,11 +1081,8 @@ def SamAng(Tth,Gangls,Sangl,IFCoup):
     dBBdC = -BC1*SSomeg*SSchi+BC2*SSomeg*SCchi
     dBBdF = BC1*SComeg-BC3*SSomeg*SCchi
     
-    if BD > 1.e-6:
-        dGMdA = [(BA*dBBdO-BB*dBAdO)/BD,(BA*dBBdC-BB*dBAdC)/BD,(BA*dBBdF-BB*dBAdF)/BD]
-    else:
-        dGMdA = [0.0,0.0,0.0]
-
+    dGMdA = np.where(BD > 1.e-6,[(BA*dBBdO-BB*dBAdO)/BD,(BA*dBBdC-BB*dBAdC)/BD, \
+        (BA*dBBdF-BB*dBAdF)/BD],[np.zeros_like(BD),np.zeros_like(BD),np.zeros_like(BD)])
         
     return psi,gam,dPSdA,dGMdA
 
@@ -1133,13 +1128,22 @@ def GetKcl(L,N,SGLaue,phi,beta):
     'needs doc string'
     import pytexture as ptx
     if SGLaue in ['m3','m3m']:
-        Kcl = 0.0
+        if phi.shape:
+            Kcl = np.zeros_like(phi)
+        else:
+            Kcl = 0.
         for j in range(0,L+1,4):
             im = j/4+1
-            pcrs,dum = ptx.pyplmpsi(L,j,1,phi)
+            if phi.shape:
+                pcrs = np.array([ptx.pyplmpsi(L,j,1,p)[0] for p in phi]).flatten()
+            else:
+                pcrs,dum = ptx.pyplmpsi(L,j,1,phi)
             Kcl += BOH['L='+str(L)][N-1][im-1]*pcrs*cosd(j*beta)        
     else:
-        pcrs,dum = ptx.pyplmpsi(L,N,1,phi)
+        if phi.shape:
+            pcrs = np.array([ptx.pyplmpsi(L,N,1,p)[0] for p in phi]).flatten()
+        else:
+            pcrs,dum = ptx.pyplmpsi(L,N,1,phi)
         pcrs *= RSQ2PI
         if N:
             pcrs *= SQ2
@@ -1158,7 +1162,11 @@ def GetKcl(L,N,SGLaue,phi,beta):
 def GetKsl(L,M,SamSym,psi,gam):
     'needs doc string'
     import pytexture as ptx
-    psrs,dpdps = ptx.pyplmpsi(L,M,1,psi)
+    if psi.shape:
+        psrs = np.array([ptx.pyplmpsi(L,M,1,p) for p in psi])
+        psrs,dpdps = np.reshape(psrs.flatten(),(-1,2)).T
+    else:
+        psrs,dpdps = ptx.pyplmpsi(L,M,1,psi)
     psrs *= RSQ2PI
     dpdps *= RSQ2PI
     if M:

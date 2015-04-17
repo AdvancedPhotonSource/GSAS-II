@@ -41,7 +41,7 @@ acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
     
 ateln2 = 8.0*math.log(2.0)
-DEBUG = False
+DEBUG = True
 
 def RefineCore(Controls,Histograms,Phases,restraintDict,rigidbodyDict,parmDict,varyList,
     calcControls,pawleyLookup,ifPrint,printFile,dlg):
@@ -245,11 +245,11 @@ def SeqRefine(GPXfile,dlg):
     if not Phases:
         print ' *** ERROR - you have no phases to refine! ***'
         print ' *** Refine aborted ***'
-        raise Exception
+        return False,'No phases'
     if not Histograms:
         print ' *** ERROR - you have no data to refine with! ***'
         print ' *** Refine aborted ***'
-        raise Exception
+        return False,'No data'
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
@@ -258,6 +258,11 @@ def SeqRefine(GPXfile,dlg):
         if '::A0' in item:
             print '**** WARNING - lattice parameters should not be refined in a sequential refinement ****'
             print '****           instead use the Dij parameters for each powder histogram            ****'
+            return False,'Lattice parameter refinement error - see console message'
+        if '::C(' in item:
+            print '**** WARNING - phase texture parameters should not be refined in a sequential refinement ****'
+            print '****           instead use the C(L,N) parameters for each powder histogram               ****'
+            return False,'Phase texture refinement error - see console message'
     if 'Seq Data' in Controls:
         histNames = Controls['Seq Data']
     else:
@@ -318,7 +323,7 @@ def SeqRefine(GPXfile,dlg):
             #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
             #print 'Errors',errmsg
             #if warnmsg: print 'Warnings',warnmsg
-            raise Exception(' *** Refine aborted ***')
+            return False,' Constraint error'
         #print G2mv.VarRemapShow(varyList)
         if not ihst:
             # first histogram to refine against
@@ -367,7 +372,7 @@ def SeqRefine(GPXfile,dlg):
             else:
                 line += 'none'
             print line
-            raise Exception
+            return False,line
         
         ifPrint = False
         print >>printFile,'\n Refinement results for histogram: v'+histogram
@@ -418,6 +423,7 @@ def SeqRefine(GPXfile,dlg):
     printFile.close()
     print ' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'
     print ' ***** Sequential refinement successful *****'
+    return True,'Success'
 
 def RetDistAngle(DisAglCtls,DisAglData):
     '''Compute and return distances and angles

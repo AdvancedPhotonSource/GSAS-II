@@ -3564,25 +3564,28 @@ class GSASII(wx.Frame):
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
         dlg.CenterOnParent()
         try:
-            G2stMn.SeqRefine(self.GSASprojectfile,dlg)
+            OK,Msg = G2stMn.SeqRefine(self.GSASprojectfile,dlg)
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
             wx.Yield()
-        dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                Id = 0
-                self.PatternTree.DeleteChildren(self.root)
-                if self.HKL: self.HKL = []
-                if self.G2plotNB.plotList:
-                    self.G2plotNB.clear()
-                G2IO.ProjFileOpen(self)
-                Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
-                self.PatternTree.SelectItem(Id)
-
-        finally:
-            dlg.Destroy()
+        if OK:
+            dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    Id = 0
+                    self.PatternTree.DeleteChildren(self.root)
+                    if self.HKL: self.HKL = []
+                    if self.G2plotNB.plotList:
+                        self.G2plotNB.clear()
+                    G2IO.ProjFileOpen(self)
+                    Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
+                    self.PatternTree.SelectItem(Id)
+    
+            finally:
+                dlg.Destroy()
+        else:
+            self.ErrorDialog('Sequential refinement error',Msg)
         
     def ErrorDialog(self,title,message,parent=None, wtype=wx.OK):
         'Display an error message'

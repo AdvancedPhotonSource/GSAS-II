@@ -3807,6 +3807,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def OnDataCopy(event):
         UseList = data['Histograms']
         hist = DData.G2hist
+        keyList = G2frame.GetHistogramNames(hist[:4])
         sourceDict = UseList[hist]
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet']
@@ -3815,11 +3816,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         copyDict = {}
         for name in copyNames: 
             copyDict[name] = copy.deepcopy(sourceDict[name])        #force copy
-        keyList = sorted(UseList.keys())
         if UseList:
             dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
-                'Copy parameters to which histograms?', 
-                keyList)
+                'Copy parameters to which histograms?',keyList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     for sel in dlg.GetSelections():
@@ -3859,7 +3858,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 copyDict[name] = {}
                 for bab in babNames:
                     copyDict[name][bab] = sourceDict[name][bab][1]                       
-        keyList = sorted(UseList.keys())
+        keyList = G2frame.GetHistogramNames(hist[:4])
         if UseList:
             dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
                 'Copy parameters to which histograms?', 
@@ -3894,62 +3893,37 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     UseList[item][name][bab][1] = copy.deepcopy(copyDict[name][bab])                                              
             finally:
                 dlg.Destroy()
-                
         
     def OnSelDataCopy(event):
-        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-        histList = GetHistsLikeSelected(G2frame)
-        if not histList:
-            G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
-            return
-#        # Assemble a list of item labels
-#        TextTable = {key:label for key,label,dig in
-#                     SetupSampleLabels(hst,data.get('Type'),Inst['Type'][0])
-#                     }
-#        # get flexible labels
-#        TextTable.update({
-#            key:Controls[key] for key in Controls if key.startswith('FreePrm')
-#            })
-#        # add a few extra
-#        TextTable.update({
-#            'Type':'Diffractometer type',
-#            'InstrName':'Instrument Name',
-#            })
-#        # Assemble a list of dict entries that would be labeled in the Sample
-#        # params data window (drop ranId and items not used).
-#        keyList = [i for i in data.keys() if i in TextTable]
-#        keyText = [TextTable[i] for i in keyList]
-#        # sort both lists together, ordered by keyText
-#        keyText, keyList = zip(*sorted(zip(keyText,keyList))) # sort lists 
-#        selectedKeys = []
-#        dlg = G2G.G2MultiChoiceDialog(
-#            G2frame.dataFrame,
-#            'Select which sample parameters\nto copy',
-#            'Select sample parameters', keyText)
-#        try:
-#            if dlg.ShowModal() == wx.ID_OK:
-#                selectedKeys = [keyList[i] for i in dlg.GetSelections()]
-#        finally:
-#            dlg.Destroy()
-#        if not selectedKeys: return # nothing to copy
-#        copyDict = {}
-#        for parm in selectedKeys:
-#            copyDict[parm] = data[parm]
-#        dlg = G2G.G2MultiChoiceDialog(
-#            G2frame.dataFrame,
-#            'Copy sample params from\n'+str(hst[5:])+' to...',
-#            'Copy sample parameters', histList)
-#        try:
-#            if dlg.ShowModal() == wx.ID_OK:
-#                result = dlg.GetSelections()
-#                for i in result: 
-#                    item = histList[i]
-#                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-#                    sampleData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Sample Parameters'))
-#                    sampleData.update(copy.deepcopy(copyDict))
-#        finally:
-#            dlg.Destroy()            
-        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
+        UseList = data['Histograms']
+        hist = DData.G2hist
+        keyList = G2frame.GetHistogramNames(hist[:4])
+        sourceDict = UseList[hist]
+        copyDict = {}
+        if 'HKLF' in sourceDict['Histogram']:
+            copyNames = ['Scale','Extinction','Babinet']
+        else:  #PWDR  
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
+        dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Select which parameters to copy',
+            'Select phase data parameters', copyNames)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                selectedItems = [copyNames[i] for i in dlg.GetSelections()]
+        finally:
+            dlg.Destroy()
+        if not selectedItems: return # nothing to copy
+        copyDict = {}
+        for parm in selectedItems:
+            copyDict[parm] = copy.deepcopy(sourceDict[parm])
+        if UseList:
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Copy parameters', 
+                    'Copy parameters to which histograms?',keyList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    for sel in dlg.GetSelections():
+                        UseList[keyList[sel]].update(copy.deepcopy(copyDict))
+            finally:
+                dlg.Destroy()            
 
         
     def OnPwdrAdd(event):
@@ -5925,10 +5899,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         General = data['General']
         phaseName = General['Name']
         Histograms = data['Histograms']
+        keyList = G2frame.GetHistogramNames('PWDR')
         histNames = []
         refData = {}
         Gangls = {}
-        for name in Histograms.keys():
+        for name in keyList:
             if 'PWDR' in name:
                 im = 0
                 it = 0
@@ -5946,7 +5921,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     refData[name] = np.column_stack((Refs[0],Refs[1],Refs[2],tth,Refs[8+im],Refs[12+im+it],np.zeros_like(Refs[0])))
                 else:   # xray - typical caked 2D image data
                     refData[name] = np.column_stack((Refs[0],Refs[1],Refs[2],Refs[5+im],Refs[8+im],Refs[12+im+it],np.zeros_like(Refs[0])))
-        Error = G2mth.FitTexture(General,Gangls,refData)
+        Error = G2mth.FitTexture(General,Gangls,refData,keyList)
         if Error:
             wx.MessageBox(Error,caption='Fit Texture Error',style=wx.ICON_EXCLAMATION)
         UpdateTexture()

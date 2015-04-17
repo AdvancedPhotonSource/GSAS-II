@@ -3906,6 +3906,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
         dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Select which parameters to copy',
             'Select phase data parameters', copyNames)
+        selectedItems = []
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 selectedItems = [copyNames[i] for i in dlg.GetSelections()]

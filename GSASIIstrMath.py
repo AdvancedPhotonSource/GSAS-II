@@ -406,7 +406,7 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                 if calcControls[phfx+'poType'] == 'SH':
                     toler = calcControls[phfx+'SHtoler']
                     wt = 1./toler**2
-                    HKLs = calcControls[phfx+'SHhkl']
+                    HKLs = np.array(calcControls[phfx+'SHhkl'])
                     SHnames = calcControls[phfx+'SHnames']
                     SHcof = dict(zip(SHnames,[parmDict[phfx+cof] for cof in SHnames]))
                     for i,PH in enumerate(HKLs):

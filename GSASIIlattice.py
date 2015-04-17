@@ -1162,11 +1162,11 @@ def GetKcl(L,N,SGLaue,phi,beta):
 def GetKsl(L,M,SamSym,psi,gam):
     'needs doc string'
     import pytexture as ptx
-    if psi.shape:
+    if 'float' in str(type(psi)):
+        psrs,dpdps = ptx.pyplmpsi(L,M,1,psi)
+    else:
         psrs = np.array([ptx.pyplmpsi(L,M,1,p) for p in psi])
         psrs,dpdps = np.reshape(psrs.flatten(),(-1,2)).T
-    else:
-        psrs,dpdps = ptx.pyplmpsi(L,M,1,psi)
     psrs *= RSQ2PI
     dpdps *= RSQ2PI
     if M:

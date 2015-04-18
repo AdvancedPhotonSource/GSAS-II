@@ -1892,8 +1892,9 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                                 Wd,fmin,fmax = G2pwd.getWidthsCW(pos2,refl[6+im],refl[7+im],shl)
                                 iBeg2 = max(xB,np.searchsorted(x,pos2-fmin))
                                 iFin2 = min(np.searchsorted(x,pos2+fmax),xF)
-                                yp[iBeg2:iFin2] += refl[11+im]*refl[9+im]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg2:iFin2]))        #and here
-                                sumInt += refl[11+im]*refl[9+im]*kRatio
+                                if iFin2 > iBeg2: 
+                                    yp[iBeg2:iFin2] += refl[11+im]*refl[9+im]*kRatio*G2pwd.getFCJVoigt3(pos2,refl[6+im],refl[7+im],shl,ma.getdata(x[iBeg2:iFin2]))        #and here
+                                    sumInt += refl[11+im]*refl[9+im]*kRatio
                             refl[8+im] = np.sum(np.where(ratio[iBeg:iFin2]>0.,yp[iBeg:iFin2]*ratio[iBeg:iFin2]/(refl[11+im]*(1.+kRatio)),0.0))
                                 
                     elif 'T' in calcControls[hfx+'histType']:
@@ -2272,68 +2273,68 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                 item = names[name]
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += item[0]*dervDict[item[1]]
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         dMdv[varylist.index(name)][iBeg2:iFin2] += item[0]*dervDict2[item[1]]
                 elif name in dependentVars:
                     depDerivDict[name][iBeg:iFin] += item[0]*dervDict[item[1]]
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         depDerivDict[name][iBeg2:iFin2] += item[0]*dervDict2[item[1]]
             for iPO in dIdPO:
                 if iPO in varylist:
                     dMdv[varylist.index(iPO)][iBeg:iFin] += dIdPO[iPO]*dervDict['int']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         dMdv[varylist.index(iPO)][iBeg2:iFin2] += dIdPO[iPO]*dervDict2['int']
                 elif iPO in dependentVars:
                     depDerivDict[iPO][iBeg:iFin] += dIdPO[iPO]*dervDict['int']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         depDerivDict[iPO][iBeg2:iFin2] += dIdPO[iPO]*dervDict2['int']
             for i,name in enumerate(['omega','chi','phi']):
                 aname = pfx+'SH '+name
                 if aname in varylist:
                     dMdv[varylist.index(aname)][iBeg:iFin] += dFdSA[i]*dervDict['int']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         dMdv[varylist.index(aname)][iBeg2:iFin2] += dFdSA[i]*dervDict2['int']
                 elif aname in dependentVars:
                     depDerivDict[aname][iBeg:iFin] += dFdSA[i]*dervDict['int']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         depDerivDict[aname][iBeg2:iFin2] += dFdSA[i]*dervDict2['int']
             for iSH in dFdODF:
                 if iSH in varylist:
                     dMdv[varylist.index(iSH)][iBeg:iFin] += dFdODF[iSH]*dervDict['int']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         dMdv[varylist.index(iSH)][iBeg2:iFin2] += dFdODF[iSH]*dervDict2['int']
                 elif iSH in dependentVars:
                     depDerivDict[iSH][iBeg:iFin] += dFdODF[iSH]*dervDict['int']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         depDerivDict[iSH][iBeg2:iFin2] += dFdODF[iSH]*dervDict2['int']
             cellDervNames = cellVaryDerv(pfx,SGData,dpdA)
             for name,dpdA in cellDervNames:
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += dpdA*dervDict['pos']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         dMdv[varylist.index(name)][iBeg2:iFin2] += dpdA*dervDict2['pos']
                 elif name in dependentVars:
                     depDerivDict[name][iBeg:iFin] += dpdA*dervDict['pos']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         depDerivDict[name][iBeg2:iFin2] += dpdA*dervDict2['pos']
             dDijDict = GetHStrainShiftDerv(refl,im,SGData,phfx,hfx,calcControls,parmDict)
             for name in dDijDict:
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += dDijDict[name]*dervDict['pos']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         dMdv[varylist.index(name)][iBeg2:iFin2] += dDijDict[name]*dervDict2['pos']
                 elif name in dependentVars:
                     depDerivDict[name][iBeg:iFin] += dDijDict[name]*dervDict['pos']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         depDerivDict[name][iBeg2:iFin2] += dDijDict[name]*dervDict2['pos']
             for i,name in enumerate([pfx+'mV0',pfx+'mV1',pfx+'mV2']):
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += dpdV[i]*dervDict['pos']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         dMdv[varylist.index(name)][iBeg2:iFin2] += dpdV[i]*dervDict2['pos']
                 elif name in dependentVars:
                     depDerivDict[name][iBeg:iFin] += dpdV[i]*dervDict['pos']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         depDerivDict[name][iBeg2:iFin2] += dpdV[i]*dervDict2['pos']
             if 'C' in calcControls[hfx+'histType']:
                 sigDict,gamDict = GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
@@ -2342,35 +2343,35 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             for name in gamDict:
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += gamDict[name]*dervDict['gam']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         dMdv[varylist.index(name)][iBeg2:iFin2] += gamDict[name]*dervDict2['gam']
                 elif name in dependentVars:
                     depDerivDict[name][iBeg:iFin] += gamDict[name]*dervDict['gam']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         depDerivDict[name][iBeg2:iFin2] += gamDict[name]*dervDict2['gam']
             for name in sigDict:
                 if name in varylist:
                     dMdv[varylist.index(name)][iBeg:iFin] += sigDict[name]*dervDict['sig']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         dMdv[varylist.index(name)][iBeg2:iFin2] += sigDict[name]*dervDict2['sig']
                 elif name in dependentVars:
                     depDerivDict[name][iBeg:iFin] += sigDict[name]*dervDict['sig']
-                    if Ka2:
+                    if Ka2 and iFin2-iBeg2:
                         depDerivDict[name][iBeg2:iFin2] += sigDict[name]*dervDict2['sig']
             for name in ['BabA','BabU']:
                 if refl[9+im]:
                     if phfx+name in varylist:
                         dMdv[varylist.index(phfx+name)][iBeg:iFin] += dFdvDict[pfx+name][iref]*dervDict['int']/refl[9+im]
-                        if Ka2:
+                        if Ka2 and iFin2-iBeg2:
                             dMdv[varylist.index(phfx+name)][iBeg2:iFin2] += dFdvDict[pfx+name][iref]*dervDict2['int']/refl[9+im]
                     elif phfx+name in dependentVars:                    
                         depDerivDict[phfx+name][iBeg:iFin] += dFdvDict[pfx+name][iref]*dervDict['int']/refl[9+im]
-                        if Ka2:
+                        if Ka2 and iFin2-iBeg2:
                             depDerivDict[phfx+name][iBeg2:iFin2] += dFdvDict[pfx+name][iref]*dervDict2['int']/refl[9+im]                  
             if not Phase['General'].get('doPawley'):
                 #do atom derivatives -  for RB,F,X & U so far              
                 corr = dervDict['int']/refl[9+im]
-                if Ka2:
+                if Ka2 and iFin2-iBeg2:
                     corr2 = dervDict2['int']/refl[9+im]
                 for name in varylist+dependentVars:
                     if '::RBV;' in name:
@@ -2383,11 +2384,11 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                             continue
                     if name in varylist:
                         dMdv[varylist.index(name)][iBeg:iFin] += dFdvDict[name][iref]*corr
-                        if Ka2:
+                        if Ka2 and iFin2-iBeg2:
                             dMdv[varylist.index(name)][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
                     elif name in dependentVars:
                         depDerivDict[name][iBeg:iFin] += dFdvDict[name][iref]*corr
-                        if Ka2:
+                        if Ka2 and iFin2-iBeg2:
                             depDerivDict[name][iBeg2:iFin2] += dFdvDict[name][iref]*corr2
     #        print 'profile derv time: %.3fs'%(time.time()-time0)
     # now process derivatives in constraints

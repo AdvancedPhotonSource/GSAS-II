@@ -3010,7 +3010,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         def setBackgroundColors(im,it):
             for r in range(G2frame.refTable[phaseName].GetNumberRows()):
                 if HKLF:
-                    if float(G2frame.refTable[phaseName].GetCellValue(r,3+im)) < 0.:
+                    if float(G2frame.refTable[phaseName].GetCellValue(r,3+im)) <= 0.:
                         G2frame.refTable[phaseName].SetCellBackgroundColour(r,3+im,wx.RED)
                     Fosq = float(G2frame.refTable[phaseName].GetCellValue(r,5+im))
                     Fcsq = float(G2frame.refTable[phaseName].GetCellValue(r,7+im))
@@ -3029,7 +3029,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.RefList = phaseName
         G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
         if HKLF:
-            Status.SetStatusText('abs(Fo-Fc)/sig > 10 in red; > 3 in yellow; mul < 0 (user rejected) in red')
+            Status.SetStatusText('abs(DF)/sig > 10 red; > 3 yellow; mul < 0 (user rejected) red; mul=0 (sp. gp. absent) red')
         else:
             Status.SetStatusText('Prfo < 0. in red')
         it = 0

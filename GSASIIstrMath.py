@@ -2725,7 +2725,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         w = 1.0/ref[6+im]   # 1/sig(F^2)
                         ref[7+im] = parmDict[phfx+'Scale']*ref[9+im]*ref[11+im]  #correct Fc^2 for extinction
                         ref[8+im] = ref[5+im]/(parmDict[phfx+'Scale']*ref[11+im])
-                        if UserRejectHKL(ref,im,calcControls['UsrReject']):
+                        if UserRejectHKL(ref,im,calcControls['UsrReject']) and ref[3+im]:    #skip sp.gp. absences (mul=0)
                             ref[3+im] = abs(ref[3+im])      #mark as allowed
                             Fo = np.sqrt(ref[5+im])
                             sumFo += Fo
@@ -2747,7 +2747,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         Fo = np.sqrt(ref[5+im])
                         Fc = np.sqrt(ref[7+im])
                         w = 2.0*(Fo/ref[6+im])**2    # 1/sig(F)?
-                        if UserRejectHKL(ref,im,calcControls['UsrReject']):
+                        if UserRejectHKL(ref,im,calcControls['UsrReject']) and ref[3+im]:    #skip sp.gp. absences (mul=0)
                             ref[3+im] = abs(ref[3+im])      #mark as allowed
                             sumFo += Fo
                             sumFo2 += ref[5+im]

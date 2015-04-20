@@ -2683,6 +2683,7 @@ def PlotTexture(G2frame,data,Start=False):
     PatternId = G2frame.PatternId
     generalData = data['General']
     SGData = generalData['SGData']
+    pName = generalData['Name']
     textureData = generalData['SH Texture']
     G2frame.G2plotNB.Delete('Texture')
     if not textureData['Order']:
@@ -2763,7 +2764,8 @@ def PlotTexture(G2frame,data,Start=False):
         Y = G2lat.polfcal(ODFln,SamSym[textureData['Model']],X,0.0)
         Plot.plot(X,Y,color='k',label=str(SHData['PFhkl']))
         Plot.legend(loc='best')
-        Plot.set_title('Axial distribution for HKL='+str(SHData['PFhkl']))
+        h,k,l = SHData['PFhkl']
+        Plot.set_title('%d %d %d Axial distribution for %s'%(h,k,l,pName))
         Plot.set_xlabel(r'$\psi$',fontsize=16)
         Plot.set_ylabel('MRD',fontsize=14)
         
@@ -2786,7 +2788,8 @@ def PlotTexture(G2frame,data,Start=False):
                 pass
             Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
             Page.figure.colorbar(Img)
-            Plot.set_title('Inverse pole figure for XYZ='+str(SHData['PFxyz']))
+            x,y,z = SHData['PFxyz']
+            Plot.set_title('%d %d %d Inverse pole figure for %s'%(int(x),int(y),int(z),pName))
             Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
                         
         else:
@@ -2806,7 +2809,8 @@ def PlotTexture(G2frame,data,Start=False):
                 pass
             Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
             Page.figure.colorbar(Img)
-            Plot.set_title('Pole figure for HKL='+str(SHData['PFhkl']))
+            h,k,l = SHData['PFhkl']
+            Plot.set_title('%d %d %d Pole figure for %s'%(h,k,l,pName))
             Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
     Page.canvas.draw()
 

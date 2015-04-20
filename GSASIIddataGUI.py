@@ -822,7 +822,13 @@ def UpdateDData(G2frame,DData,data,hist=''):
             topSizer.Add(PlotSizer())
         mainSizer.Add(topSizer)       
         
-        histData = UseList[hist]
+        try:
+            histData = UseList[hist]
+        except KeyError:
+            G2frame.ErrorDialog('Missing data error',
+                    hist+' not in GSAS-II data tree')
+            return
+            
         if 'Use' not in UseList[hist]:      #patch
             UseList[hist]['Use'] = True
         if 'Babinet' not in UseList[hist]:

@@ -1653,33 +1653,7 @@ def FitTexture(General,Gangls,refData,keyList):
         Mat = np.empty(0)
         Sangls = [parmDict['Sample '+'omega'],parmDict['Sample '+'chi'],parmDict['Sample '+'phi']]
         for hist in Gangls.keys():
-            mat = []
-            for ref in refData[hist]:
-#                wt = np.sqrt(ref[4])
-                wt = 1.
-                ref[6] = 1.
-                H = ref[:3]
-                phi,beta = G2lat.CrsAng(H,cell,SGData)
-                psi,gam,x,x = G2lat.SamAng(ref[3]/2.,Gangls[hist],Sangls,False) #assume not Bragg-Brentano!
-                for item in parmDict:
-                    if 'C' in item:
-                        L,M,N = eval(item.strip('C'))
-                        Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
-                        Ksl,x,x = G2lat.GetKsl(L,M,shModel,psi,gam)
-                        Lnorm = G2lat.Lnorm(L)
-                        ref[6] += parmDict[item]*Lnorm*Kcl*Ksl
-                mat.append(wt*(ref[5]-ref[6]))
-            Mat = np.concatenate((Mat,np.array(mat)))
-        return Mat
-        
-    def errSpHarm2(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList):
-        parmDict.update(zip(varyList,values))
-        Mat = np.empty(0)
-        Sangls = [parmDict['Sample '+'omega'],parmDict['Sample '+'chi'],parmDict['Sample '+'phi']]
-        for hist in Gangls.keys():
             Refs = refData[hist]
-#            wt = np.sqrt(ref[4])
-            wt = 1.
             Refs[:,6] = 1.
             H = Refs[:,:3]
             phi,beta = G2lat.CrsAng(H,cell,SGData)
@@ -1691,38 +1665,38 @@ def FitTexture(General,Gangls,refData,keyList):
                     Ksl,x,x = G2lat.GetKsl(L,M,shModel,psi,gam)
                     Lnorm = G2lat.Lnorm(L)
                     Refs[:,6] += parmDict[item]*Lnorm*Kcl*Ksl
-            mat = wt*(Refs[:,5]-Refs[:,6])
+            mat = Refs[:,5]-Refs[:,6]
             Mat = np.concatenate((Mat,mat))
+        print ' Chi**2: %.3f'%(np.sum(np.abs(Mat)))
         return Mat
         
     def dervSpHarm(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList):
         Mat = np.empty(0)
         Sangls = [parmDict['Sample omega'],parmDict['Sample chi'],parmDict['Sample phi']]
         for hist in Gangls.keys():
-            mat = np.zeros((len(refData[hist]),len(varyList)))
-            for i,ref in enumerate(refData[hist]):
-#                wt = np.sqrt(ref[4])
-                wt = 1.
-                H = ref[:3]
-                phi,beta = G2lat.CrsAng(H,cell,SGData)
-                psi,gam,dPdA,dGdA = G2lat.SamAng(ref[3]/2.,Gangls[hist],Sangls,False) #assume not Bragg-Brentano!
-                for j,item in enumerate(varyList):
-                    if 'C' in item:
-                        L,M,N = eval(item.strip('C'))
-                        Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
-                        Ksl,dKdp,dKdg = G2lat.GetKsl(L,M,shModel,psi,gam)
-                        Lnorm = G2lat.Lnorm(L)
-                        mat[i,j] = -wt*Lnorm*Kcl*Ksl
-                        for k,itema in enumerate(['Sample omega','Sample chi','Sample phi']):
-                            try:
-                                l = varyList.index(itema)
-                                mat[i,l] += parmDict[item]*Lnorm*Kcl*(dKdp*dPdA[k]+dKdg*dGdA[k])
-                            except ValueError:
-                                pass
+            mat = np.zeros((len(varyList),len(refData[hist])))
+            Refs = refData[hist]
+            H = Refs[:,:3]
+            phi,beta = G2lat.CrsAng(H,cell,SGData)
+            psi,gam,dPdA,dGdA = G2lat.SamAng(Refs[:,3]/2.,Gangls[hist],Sangls,False) #assume not Bragg-Brentano!
+            for j,item in enumerate(varyList):
+                if 'C' in item:
+                    L,M,N = eval(item.strip('C'))
+                    Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
+                    Ksl,dKdp,dKdg = G2lat.GetKsl(L,M,shModel,psi,gam)
+                    Lnorm = G2lat.Lnorm(L)
+                    mat[j] = -Lnorm*Kcl*Ksl
+                    for k,itema in enumerate(['Sample omega','Sample chi','Sample phi']):
+                        try:
+                            l = varyList.index(itema)
+                            mat[l] += parmDict[item]*Lnorm*Kcl*(dKdp*dPdA[k]+dKdg*dGdA[k])
+                        except ValueError:
+                            pass
             if len(Mat):
-                Mat = np.concatenate((Mat,mat))
+                Mat = np.concatenate((Mat,mat.T))
             else:
-                Mat = mat
+                Mat = mat.T
+        print 'deriv'
         return Mat
 
     print ' Fit texture for '+General['Name']
@@ -1742,7 +1716,7 @@ def FitTexture(General,Gangls,refData,keyList):
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
-        result = so.leastsq(errSpHarm2,values,Dfun=dervSpHarm,full_output=True,
+        result = so.leastsq(errSpHarm,values,Dfun=dervSpHarm,full_output=True,
             args=(SGData,cell,Gangls,Texture['Model'],refData,parmDict,varyList))
         ncyc = int(result[2]['nfev']/2)
         if ncyc:
@@ -1764,10 +1738,10 @@ def FitTexture(General,Gangls,refData,keyList):
         else:
             break
     
-    for hist in keyList:
-        print ' Texture corrections for '+hist
-        for ref in refData[hist]:
-            print ' %d %d %d %.3f %.3f'%(int(ref[0]),int(ref[1]),int(ref[2]),ref[5],ref[6])
+#    for hist in keyList:
+#        print ' Texture corrections for '+hist
+#        for ref in refData[hist]:
+#            print ' %d %d %d %.3f %.3f'%(int(ref[0]),int(ref[1]),int(ref[2]),ref[5],ref[6])
     if ncyc:
         for parm in parmDict:
             if 'C' in parm:

@@ -1144,11 +1144,11 @@ def VarDescr(varname):
         if l[2] == "Scale": # fix up ambigous name
             l[5] = "Phase fraction"
         if l[0] == '*':
-            lbl = 'all'
+            lbl = 'Seq. ref.'
         else:
             lbl = ShortPhaseNames.get(l[0],'? #'+str(l[0]))
         if l[1] == '*':
-            hlbl = 'all'
+            hlbl = 'Seq. ref.'
         else:
             hlbl = ShortHistNames.get(l[1],'? #'+str(l[1]))
         if hlbl[:4] == 'HKLF':

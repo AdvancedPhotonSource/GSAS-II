@@ -712,7 +712,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         extSizer = wx.BoxSizer(wx.VERTICAL)
         typeSizer = wx.BoxSizer(wx.HORIZONTAL)            
         typeSizer.Add(wx.StaticText(DData,-1,' Extinction type: '),0,WACV)
-        Choices = ['None','Primary','Secondary Type I','Secondary Type II','Secondary Type I & II']
+        Choices = ['None','Primary','Secondary Type I','Secondary Type II',]    # remove 'Secondary Type I & II'
         typeTxt = wx.ComboBox(DData,-1,choices=Choices,value=UseList[hist]['Extinction'][1],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         Indx[typeTxt.GetId()] = [hist,1]

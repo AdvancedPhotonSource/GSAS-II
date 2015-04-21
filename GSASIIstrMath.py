@@ -2640,6 +2640,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     SumwYo = 0
     Nobs = 0
     Nrej = 0
+    Next = 0
     ApplyRBModels(parmDict,Phases,rigidbodyDict)
     histoList = Histograms.keys()
     histoList.sort()
@@ -2719,6 +2720,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             sumdF2 = 0
             nobs = 0
             nrej = 0
+            next = 0
             if calcControls['F**2']:
                 for i,ref in enumerate(refDict['RefList']):
                     if ref[6+im] > 0:
@@ -2737,8 +2739,11 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                             df[i] = -w*(ref[5+im]-ref[7+im])
                             sumwYo += (w*ref[5+im])**2      #w*Fo^2
                         else:
-                            ref[3+im] = -abs(ref[3+im])      #mark as rejected
-                            nrej += 1
+                            if ref[3+im]:
+                                ref[3+im] = -abs(ref[3+im])      #mark as rejected
+                                nrej += 1
+                            else:   #sp.gp.extinct
+                                next += 1
             else:
                 for i,ref in enumerate(refDict['RefList']):
                     if ref[5+im] > 0.:
@@ -2758,8 +2763,11 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                             df[i] = -w*(Fo-Fc)
                             sumwYo += (w*Fo)**2
                         else:
-                            ref[3+im] = -abs(ref[3+im])      #mark as rejected
-                            nrej += 1
+                            if ref[3+im]:
+                                ref[3+im] = -abs(ref[3+im])      #mark as rejected
+                                nrej += 1
+                            else:   #sp.gp.extinct
+                                next += 1
             Histogram['Residuals']['Nobs'] = nobs
             Histogram['Residuals']['sumwYo'] = sumwYo
             SumwYo += sumwYo
@@ -2768,8 +2776,10 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Histogram['Residuals'][phfx+'Rf^2'] = 100.*sumdF2/sumFo2
             Histogram['Residuals'][phfx+'Nref'] = nobs
             Histogram['Residuals'][phfx+'Nrej'] = nrej
+            Histogram['Residuals'][phfx+'Next'] = next
             Nobs += nobs
             Nrej += nrej
+            Next += next
             if dlg:
                 dlg.Update(Histogram['Residuals']['wR'],newmsg='For histogram %d Rw=%8.3f%s'%(hId,Histogram['Residuals']['wR'],'%'))[0]
             M = np.concatenate((M,wtFactor*df))
@@ -2777,6 +2787,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     Histograms['sumwYo'] = SumwYo
     Histograms['Nobs'] = Nobs
     Histograms['Nrej'] = Nrej
+    Histograms['Next'] = Next
     Rw = min(100.,np.sqrt(np.sum(M**2)/SumwYo)*100.)
     if dlg:
         GoOn = dlg.Update(Rw,newmsg='%s%8.3f%s'%('All data Rw =',Rw,'%'))[0]

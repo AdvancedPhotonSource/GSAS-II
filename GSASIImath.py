@@ -1593,7 +1593,7 @@ def ValEsd(value,esd=0,nTZ=False):
 ##### Texture fitting stuff
 ################################################################################
 
-def FitTexture(General,Gangls,refData,keyList):
+def FitTexture(General,Gangls,refData,keyList,pgbar):
     import pytexture as ptx
     ptx.pyqlmninit()            #initialize fortran arrays for spherical harmonics
     
@@ -1648,12 +1648,14 @@ def FitTexture(General,Gangls,refData,keyList):
         values corresponding to keys in varylist'''
         parmdict.update(zip(varylist,values))
         
-    def errSpHarm(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList):
+    def errSpHarm(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList,pgbar):
         parmDict.update(zip(varyList,values))
         Mat = np.empty(0)
+        sumObs = 0
         Sangls = [parmDict['Sample '+'omega'],parmDict['Sample '+'chi'],parmDict['Sample '+'phi']]
         for hist in Gangls.keys():
             Refs = refData[hist]
+            sumObs += np.sum(Refs[:,5])
             Refs[:,6] = 1.
             H = Refs[:,:3]
             phi,beta = G2lat.CrsAng(H,cell,SGData)
@@ -1667,10 +1669,13 @@ def FitTexture(General,Gangls,refData,keyList):
                     Refs[:,6] += parmDict[item]*Lnorm*Kcl*Ksl
             mat = Refs[:,5]-Refs[:,6]
             Mat = np.concatenate((Mat,mat))
-        print ' Chi**2: %.3f'%(np.sum(np.abs(Mat)))
+        sumD = np.sum(np.abs(Mat))
+        R = min(100.,100.*sumD/sumObs)
+        pgbar.Update(R,newmsg='Residual = %5.2f'%(R))
+        print ' Residual: %.3f%%'%(R)
         return Mat
         
-    def dervSpHarm(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList):
+    def dervSpHarm(values,SGData,cell,Gangls,shModel,refData,parmDict,varyList,pgbar):
         Mat = np.empty(0)
         Sangls = [parmDict['Sample omega'],parmDict['Sample chi'],parmDict['Sample phi']]
         for hist in Gangls.keys():
@@ -1689,7 +1694,7 @@ def FitTexture(General,Gangls,refData,keyList):
                     for k,itema in enumerate(['Sample omega','Sample chi','Sample phi']):
                         try:
                             l = varyList.index(itema)
-                            mat[l] += parmDict[item]*Lnorm*Kcl*(dKdp*dPdA[k]+dKdg*dGdA[k])
+                            mat[l] -= parmDict[item]*Lnorm*Kcl*(dKdp*dPdA[k]+dKdg*dGdA[k])
                         except ValueError:
                             pass
             if len(Mat):
@@ -1717,7 +1722,7 @@ def FitTexture(General,Gangls,refData,keyList):
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
         result = so.leastsq(errSpHarm,values,Dfun=dervSpHarm,full_output=True,
-            args=(SGData,cell,Gangls,Texture['Model'],refData,parmDict,varyList))
+            args=(SGData,cell,Gangls,Texture['Model'],refData,parmDict,varyList,pgbar))
         ncyc = int(result[2]['nfev']/2)
         if ncyc:
             runtime = time.time()-begin    
@@ -1726,7 +1731,6 @@ def FitTexture(General,Gangls,refData,keyList):
             GOF = chisq/(len(result[2]['fvec'])-len(varyList))       #reduced chi^2
             print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',len(result[2]['fvec']),' Number of parameters: ',len(varyList)
             print 'refinement time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
-            print 'chi**2 = %12.6g, reduced chi**2 = %6.2f'%(chisq,GOF)
             try:
                 sig = np.sqrt(np.diag(result[1])*GOF)
                 if np.any(np.isnan(sig)):

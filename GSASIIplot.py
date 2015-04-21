@@ -2539,7 +2539,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     plotDict = {'Mustrain':'Mustrain','Size':'Size','Preferred orientation':'Pref.Ori.'}
     for ptype in plotDict:
         G2frame.G2plotNB.Delete(ptype)
-    if plotType in ['None']:
+    if plotType in ['None'] or not useList:
         return        
     if hist == '':
         hist = useList.keys()[0]

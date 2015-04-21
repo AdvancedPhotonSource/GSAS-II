@@ -710,7 +710,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 
             def OnRefList(event):
                 dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
-                    'Use data',refsList,filterBox=False)
+                    'Use data',refsList)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
                         Map['RefList'] = [refsList[i] for i in dlg.GetSelections()]
@@ -781,7 +781,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
             def OnRefList(event):
                 dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
-                    'Use data',refsList,filterBox=False)
+                    'Use data',refsList)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
                         Flip['RefList'] = [refsList[i] for i in dlg.GetSelections()]
@@ -2227,7 +2227,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
             def OnRefList(event):
                 dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
-                    'Use data',refsList,filterBox=False)
+                    'Use data',refsList)
                 try:
                     if dlg.ShowModal() == wx.ID_OK:
                         Map['RefList'] = [refsList[i] for i in dlg.GetSelections()]
@@ -3751,7 +3751,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if name not in keyList and 'HKLF' in name:
                 TextList.append(name)
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                        
-        dlg = wx.MultiChoiceDialog(G2frame, 'Which new data to use?', 'Use data', TextList, wx.CHOICEDLG_STYLE)
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
+                    'Use data',TextList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelections()
@@ -3935,7 +3936,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         NShkl = len(G2spc.MustrainNames(SGData))
         NDij = len(G2spc.HStrainNames(SGData))
         keyList = UseList.keys()
-        TextList = ['All PWDR']
+        TextList = []
         if G2frame.PatternTree.GetCount():
             item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while item:
@@ -3943,7 +3944,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if name not in keyList and 'PWDR' in name:
                     TextList.append(name)
                 item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            dlg = wx.MultiChoiceDialog(G2frame, 'Which new data to use?', 'Use data', TextList, wx.CHOICEDLG_STYLE)
+            dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
+                    'Use data',TextList)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     result = dlg.GetSelections()
@@ -5922,7 +5924,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     refData[name] = np.column_stack((Refs[0],Refs[1],Refs[2],tth,Refs[8+im],Refs[12+im+it],np.zeros_like(Refs[0])))
                 else:   # xray - typical caked 2D image data
                     refData[name] = np.column_stack((Refs[0],Refs[1],Refs[2],Refs[5+im],Refs[8+im],Refs[12+im+it],np.zeros_like(Refs[0])))
-        Error = G2mth.FitTexture(General,Gangls,refData,keyList)
+        pgbar = wx.ProgressDialog('Texture fit','Residual = %5.2f'%(101.0),101.0, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        Error = G2mth.FitTexture(General,Gangls,refData,keyList,pgbar)
+        pgbar.Destroy()
         if Error:
             wx.MessageBox(Error,caption='Fit Texture Error',style=wx.ICON_EXCLAMATION)
         UpdateTexture()
@@ -5976,7 +5981,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Data':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataMenu)
             G2ddG.UpdateDData(G2frame,DData,data)
-            G2plt.PlotSizeStrainPO(G2frame,data,hist='',Start=True)            
+            wx.CallAfter(G2plt.PlotSizeStrainPO,G2frame,data,hist='',Start=True)            
         elif text == 'Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
             FillAtomsGrid(Atoms)
@@ -6006,12 +6011,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Texture':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.TextureMenu)
             UpdateTexture()                        
-            G2plt.PlotTexture(G2frame,data,Start=True)            
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data,Start=True)            
         elif text == 'Pawley reflections':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.PawleyMenu)
             FillPawleyReflectionsGrid()
         else:
             G2gd.SetDataMenuBar(G2frame)
+            
     def FillMenus():
         '''Create the Select tab menus and bind to all menu items
         '''

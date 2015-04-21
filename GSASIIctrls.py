@@ -1145,6 +1145,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         self.OKbtn.Enable(False)
         if event.GetKeyCode() == wx.WXK_SHIFT:
             self.trigger = True
+            print 'debug: Shift pressed'
         if self.timer.IsRunning():
             self.timer.Stop()
         self.timer.Start(1000,oneShot=True)
@@ -1164,7 +1165,7 @@ class G2MultiChoiceDialog(wx.Dialog):
                 iB -= 1
                 if iB < 0:
                     break
-        self.trigger = not self.trigger
+            self.trigger = False
         
     def Filter(self,event):
         if self.timer.IsRunning():
@@ -1364,7 +1365,7 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
         dlg.Destroy()
 
 ################################################################################
-#### Single choice Dialog with set all, toggle & filter options
+#### Single choice Dialog with filter options
 ################################################################################
 class G2SingleChoiceDialog(wx.Dialog):
     '''A dialog similar to wx.SingleChoiceDialog except that a filter can be
@@ -1780,8 +1781,6 @@ class MyHelp(wx.Menu):
         if helpType is None:
             print 'Error: help lookup failed!',event.GetEventObject()
             print 'id=',event.GetId()
-        #elif helpType == 'OldTutorials': # this will go away
-            #ShowHelp(helpType,self.frame)
         elif helpType == 'Tutorials': 
             dlg = OpenTutorial(self.frame)
             dlg.ShowModal()
@@ -2364,12 +2363,6 @@ class OpenTutorial(wx.Dialog):
         sizer1.Add(hlp,0,wx.ALIGN_RIGHT|wx.ALL)
         sizer.Add(sizer1,0,wx.EXPAND|wx.ALL,0)
         sizer.Add((10,10))
-        #======================================================================
-        # # This is needed only until we get all the tutorials items moved
-        # btn = wx.Button(pnl, wx.ID_ANY, "Open older tutorials") 
-        # btn.Bind(wx.EVT_BUTTON, self.OpenOld)
-        # sizer.Add(btn,0,wx.ALIGN_CENTRE|wx.ALL)
-        #======================================================================
         self.BrowseMode = 1
         choices = [
             'make local copy of tutorial and data, then open',
@@ -2594,14 +2587,14 @@ if __name__ == '__main__':
     GSASIIpath.InvokeDebugOpts()
     frm = wx.Frame(None) # create a frame
     frm.Show(True)
-    dlg = OpenTutorial(frm)
-    if dlg.ShowModal() == wx.ID_OK:
-        print "OK"
-    else:
-        print "Cancel"
-    dlg.Destroy()
-    import sys
-    sys.exit()
+    #dlg = OpenTutorial(frm)
+    #if dlg.ShowModal() == wx.ID_OK:
+    #    print "OK"
+    #else:
+    #    print "Cancel"
+    #dlg.Destroy()
+    #import sys
+    #sys.exit()
     #======================================================================
     # test ScrolledMultiEditor
     #======================================================================
@@ -2654,15 +2647,15 @@ if __name__ == '__main__':
     #print 'before',Data3,'\n',Data2
     #print dictlst,"\n",elemlst
     #print Checkdictlst,"\n",Checkelemlst
-    dlg = ScrolledMultiEditor(
-        frm,dictlst,elemlst,prelbl,
-        checkdictlst=Checkdictlst,checkelemlst=Checkelemlst,
-        checklabel="Refine?",
-        header="test",CopyButton=True)
-    if dlg.ShowModal() == wx.ID_OK:
-        print "OK"
-    else:
-        print "Cancel"
+    # dlg = ScrolledMultiEditor(
+    #     frm,dictlst,elemlst,prelbl,
+    #     checkdictlst=Checkdictlst,checkelemlst=Checkelemlst,
+    #     checklabel="Refine?",
+    #     header="test",CopyButton=True)
+    # if dlg.ShowModal() == wx.ID_OK:
+    #     print "OK"
+    # else:
+    #     print "Cancel"
     #print 'after',Data3,'\n',Data2
 
     # Data2 = list(range(100))
@@ -2688,18 +2681,18 @@ if __name__ == '__main__':
     #======================================================================
     # test G2MultiChoiceDialog
     #======================================================================
-    # choices = []
-    # for i in range(21):
-    #     choices.append("option_"+str(i))
-    # dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
-    #                           'Select dataset to include',
-    #                           choices)
-    # sel = range(2,11,2)
-    # dlg.SetSelections(sel)
-    # dlg.SetSelections((1,5))
-    # if dlg.ShowModal() == wx.ID_OK:
-    #     for sel in dlg.GetSelections():
-    #         print sel,choices[sel]
+    choices = []
+    for i in range(21):
+        choices.append("option_"+str(i))
+    dlg = G2MultiChoiceDialog(frm, 'Sequential refinement',
+                              'Select dataset to include',
+                              choices)
+    sel = range(2,11,2)
+    dlg.SetSelections(sel)
+    dlg.SetSelections((1,5))
+    if dlg.ShowModal() == wx.ID_OK:
+        for sel in dlg.GetSelections():
+            print sel,choices[sel]
     
     #======================================================================
     # test wx.MultiChoiceDialog
@@ -2714,14 +2707,14 @@ if __name__ == '__main__':
     #     for sel in dlg.GetSelections():
     #         print sel,choices[sel]
 
-    pnl = wx.Panel(frm)
-    siz = wx.BoxSizer(wx.VERTICAL)
+    # pnl = wx.Panel(frm)
+    # siz = wx.BoxSizer(wx.VERTICAL)
 
-    td = {'Goni':200.,'a':1.,'calc':1./3.,'string':'s'}
-    for key in sorted(td):
-        txt = ValidatedTxtCtrl(pnl,td,key)
-        siz.Add(txt)
-    pnl.SetSizer(siz)
-    siz.Fit(frm)
-    app.MainLoop()
-    print td
+    # td = {'Goni':200.,'a':1.,'calc':1./3.,'string':'s'}
+    # for key in sorted(td):
+    #     txt = ValidatedTxtCtrl(pnl,td,key)
+    #     siz.Add(txt)
+    # pnl.SetSizer(siz)
+    # siz.Fit(frm)
+    # app.MainLoop()
+    # print td

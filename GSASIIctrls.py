@@ -1063,11 +1063,12 @@ class G2MultiChoiceDialog(wx.Dialog):
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
             topSizer.Add(wx.StaticText(self,wx.ID_ANY,'Name \nFilter: '),0,wx.ALL|WACV,1)
             self.filterBox = wx.TextCtrl(self, wx.ID_ANY, size=(80,-1),style=wx.TE_PROCESS_ENTER)
-            self.filterBox.Bind(wx.EVT_CHAR,self.onChar)
+            self.filterBox.Bind(wx.EVT_TEXT,self.onChar)
             self.filterBox.Bind(wx.EVT_TEXT_ENTER,self.Filter)
             topSizer.Add(self.filterBox,0,wx.ALL|WACV,0)
         Sizer.Add(topSizer,0,wx.ALL|wx.EXPAND,8)
-        self.trigger = False
+        self.settingRange = False
+        self.rangeFirst = None
         self.clb = wx.CheckListBox(self, wx.ID_ANY, (30,30), wx.DefaultSize, ChoiceList)
         self.clb.Bind(wx.EVT_CHECKLISTBOX,self.OnCheck)
         if monoFont:
@@ -1078,15 +1079,19 @@ class G2MultiChoiceDialog(wx.Dialog):
         Sizer.Add((-1,10))
         # set/toggle buttons
         if toggle:
-            bSizer = wx.BoxSizer(wx.VERTICAL)
+            tSizer = wx.FlexGridSizer(cols=2,hgap=5,vgap=5)
             setBut = wx.Button(self,wx.ID_ANY,'Set All')
             setBut.Bind(wx.EVT_BUTTON,self._SetAll)
-            bSizer.Add(setBut,0,wx.ALIGN_CENTER)
-            bSizer.Add((-1,5))
+            tSizer.Add(setBut)
             togBut = wx.Button(self,wx.ID_ANY,'Toggle All')
             togBut.Bind(wx.EVT_BUTTON,self._ToggleAll)
-            bSizer.Add(togBut,0,wx.ALIGN_CENTER)
-            Sizer.Add(bSizer,0,wx.LEFT,12)
+            tSizer.Add(togBut)
+            self.rangeBut = wx.ToggleButton(self,wx.ID_ANY,'Set Range')
+            self.rangeBut.Bind(wx.EVT_TOGGLEBUTTON,self.SetRange)
+            tSizer.Add(self.rangeBut)            
+            self.rangeCapt = wx.StaticText(self,wx.ID_ANY,'')
+            tSizer.Add(self.rangeCapt)
+            Sizer.Add(tSizer,0,wx.LEFT,12)
         # OK/Cancel buttons
         btnsizer = wx.StdDialogButtonSizer()
         if useOK:
@@ -1103,6 +1108,17 @@ class G2MultiChoiceDialog(wx.Dialog):
         # OK done, let's get outa here
         self.SetSizer(Sizer)
         self.CenterOnParent()
+
+    def SetRange(self,event):
+        '''Respond to a press of the Set Range button. Set the range flag and
+        the caption next to the button
+        '''
+        self.settingRange = self.rangeBut.GetValue()
+        if self.settingRange:
+            self.rangeCapt.SetLabel('Select range start')
+        else:
+            self.rangeCapt.SetLabel('')            
+        self.rangeFirst = None
         
     def GetSelections(self):
         'Returns a list of the indices for the selected choices'
@@ -1141,33 +1157,39 @@ class G2MultiChoiceDialog(wx.Dialog):
             self.clb.Check(i,not self.clb.IsChecked(i))
             
     def onChar(self,event):
-        'for keyboard events. self.trigger is used in self.OnCheck below'
+        'Respond to keyboard events in the Filter box'
         self.OKbtn.Enable(False)
-        if event.GetKeyCode() == wx.WXK_SHIFT:
-            self.trigger = True
-            print 'debug: Shift pressed'
         if self.timer.IsRunning():
             self.timer.Stop()
         self.timer.Start(1000,oneShot=True)
         event.Skip()
         
     def OnCheck(self,event):
-        '''for CheckListBox events; if Shift key down this sets all unset 
-            entries below the selected one'''
-        if self.trigger:
-            id = event.GetSelection()
-            name = self.clb.GetString(id)            
-            iB = id-1
-            if iB < 0:
-                return
-            while not self.clb.IsChecked(iB):
-                self.clb.Check(iB)
-                iB -= 1
-                if iB < 0:
-                    break
-            self.trigger = False
+        '''for CheckListBox events; if Set Range is in use, this sets/clears all
+        entries in range between start and end according to the value in start.
+        Repeated clicks on the start change the checkbox state, but do not trigger
+        the range copy. 
+        The caption next to the button is updated on the first button press.
+        '''
+        if self.settingRange:
+            id = event.GetInt()
+            if self.rangeFirst is None:
+                name = self.clb.GetString(id)
+                self.rangeCapt.SetLabel(name+' to...')
+                self.rangeFirst = id
+            elif self.rangeFirst == id:
+                pass
+            else:
+                for i in range(min(self.rangeFirst,id), max(self.rangeFirst,id)+1):
+                    self.clb.Check(i,self.clb.IsChecked(self.rangeFirst))
+                self.rangeBut.SetValue(False)
+                self.rangeCapt.SetLabel('')
+            return
         
     def Filter(self,event):
+        '''Read text from filter control and select entries that match. Called by
+        Timer after a delay with no input or if Enter is pressed.
+        '''
         if self.timer.IsRunning():
             self.timer.Stop()
         self.GetSelections() # record current selections

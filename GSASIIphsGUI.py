@@ -3531,14 +3531,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             textureData['Order'] = int(Obj.GetValue())
             textureData['SH Coeff'][1] = SetSHCoef()
             wx.CallLater(100,UpdateTexture)
-            G2plt.PlotTexture(G2frame,data)
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data)
                         
         def OnShModel(event):
             Obj = event.GetEventObject()
             textureData['Model'] = Obj.GetValue()
             textureData['SH Coeff'][1] = SetSHCoef()
             wx.CallLater(100,UpdateTexture)
-            G2plt.PlotTexture(G2frame,data)
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
         def OnSHRefine(event):
             Obj = event.GetEventObject()
@@ -3552,12 +3552,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def OnProjSel(event):
             Obj = event.GetEventObject()
             G2frame.Projection = Obj.GetValue()
-            G2plt.PlotTexture(G2frame,data)
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
         def OnColorSel(event):
             Obj = event.GetEventObject()
             G2frame.ContourColor = Obj.GetValue()
-            G2plt.PlotTexture(G2frame,data)
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
         def OnAngRef(event):
             Obj = event.GetEventObject()
@@ -3580,18 +3580,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 value = textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]]
             Obj.SetValue('%8.3f'%(value))
             textureData['SH Coeff'][1][ODFIndx[Obj.GetId()]] = value
-            G2plt.PlotTexture(G2frame,data)
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
         def OnPfType(event):
             Obj = event.GetEventObject()
             textureData['PlotType'] = Obj.GetValue()
-            wx.CallLater(100,UpdateTexture)
-            G2plt.PlotTexture(G2frame,data)
+            UpdateTexture()
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
         def OnPFValue(event):
             Obj = event.GetEventObject()
             Saxis = Obj.GetValue().split()
-            if textureData['PlotType'] in ['Pole figure','Axial pole distribution']:                
+            if textureData['PlotType'] in ['Pole figure','Axial pole distribution','3D pole distribution']:                
                 try:
                     hkl = [int(Saxis[i]) for i in range(3)]
                 except (ValueError,IndexError):
@@ -3609,7 +3609,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     xyz = textureData['PFxyz']
                 Obj.SetValue('%3.1f %3.1f %3.1f'%(xyz[0],xyz[1],xyz[2]))
                 textureData['PFxyz'] = xyz
-            G2plt.PlotTexture(G2frame,data)
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data)
 
         # UpdateTexture executable starts here
         Texture.DestroyChildren()
@@ -3665,18 +3665,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add((0,5),0)
         PTSizer = wx.FlexGridSizer(0,4,5,5)
         PTSizer.Add(wx.StaticText(Texture,-1,' Texture plot type: '),0,WACV)
-        choices = ['Axial pole distribution','Pole figure','Inverse pole figure']            
+        choices = ['Axial pole distribution','Pole figure','Inverse pole figure','3D pole distribution']            
         pfType = wx.ComboBox(Texture,-1,value=str(textureData['PlotType']),choices=choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         pfType.Bind(wx.EVT_COMBOBOX,OnPfType)
         PTSizer.Add(pfType,0,WACV)
-        if 'Axial' not in textureData['PlotType']:
+        if 'Axial' not in textureData['PlotType'] and '3D' not in textureData['PlotType']:
             PTSizer.Add(wx.StaticText(Texture,-1,' Projection type: '),0,WACV)
-            projSel = wx.ComboBox(Texture,-1,value=G2frame.Projection,choices=['equal area','stereographic','3D display'],
+            projSel = wx.ComboBox(Texture,-1,value=G2frame.Projection,choices=['equal area','stereographic'],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             projSel.Bind(wx.EVT_COMBOBOX,OnProjSel)
             PTSizer.Add(projSel,0,WACV)
-        if textureData['PlotType'] in ['Pole figure','Axial pole distribution']:
+        if textureData['PlotType'] in ['Pole figure','Axial pole distribution','3D pole distribution']:
             PTSizer.Add(wx.StaticText(Texture,-1,' Pole figure HKL: '),0,WACV)
             PH = textureData['PFhkl']
             pfVal = wx.TextCtrl(Texture,-1,'%d %d %d'%(PH[0],PH[1],PH[2]),style=wx.TE_PROCESS_ENTER)
@@ -3687,7 +3687,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         pfVal.Bind(wx.EVT_TEXT_ENTER,OnPFValue)
         pfVal.Bind(wx.EVT_KILL_FOCUS,OnPFValue)
         PTSizer.Add(pfVal,0,WACV)
-        if 'Axial' not in textureData['PlotType']:
+        if 'Axial' not in textureData['PlotType'] and '3D' not in textureData['PlotType']:
             PTSizer.Add(wx.StaticText(Texture,-1,' Color scheme'),0,WACV)
             choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
             choice.sort()

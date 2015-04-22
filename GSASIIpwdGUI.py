@@ -1823,7 +1823,7 @@ def UpdateSampleGrid(G2frame,data):
                     sampleData.update(copy.deepcopy(copyDict))
         finally:
             dlg.Destroy()            
-        G2plt.PlotPatterns(G2frame,plotType='SASD',newPlot=False)
+        G2plt.PlotPatterns(G2frame,plotType=hst[:4],newPlot=False)
 
     def OnSampleFlagCopy(event):
         histType,copyNames = SetCopyNames(histName,data['Type'])

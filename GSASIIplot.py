@@ -2671,10 +2671,9 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
 ################################################################################
 ##### PlotTexture
 ################################################################################
-            
+
 def PlotTexture(G2frame,data,Start=False):
-    '''Pole figure, inverse pole figure, 3D pole distribution and 3D inverse pole distribution
-    plotting.
+    '''Pole figure, inverse pole figure plotting.
     dict generalData contains all phase info needed which is in data
     '''
 
@@ -2740,7 +2739,10 @@ def PlotTexture(G2frame,data,Start=False):
         if not Page.IsShown():
             Page.Show()
     except ValueError:
-        Plot = G2frame.G2plotNB.addMpl('Texture').gca()
+        if '3D' in SHData['PlotType']:
+            Plot = mp3d.Axes3D(G2frame.G2plotNB.add3D('Texture'))
+        else:
+            Plot = G2frame.G2plotNB.addMpl('Texture').gca()               
         plotNum = G2frame.G2plotNB.plotList.index('Texture')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
@@ -2789,9 +2791,36 @@ def PlotTexture(G2frame,data,Start=False):
             Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
             Page.figure.colorbar(Img)
             x,y,z = SHData['PFxyz']
+            Plot.axis('off')
             Plot.set_title('%d %d %d Inverse pole figure for %s'%(int(x),int(y),int(z),pName))
             Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
-                        
+            
+        elif '3D' in SHData['PlotType']:
+            PSI,GAM = np.mgrid[0:31,0:31]
+            PSI = PSI.flatten()*6.
+            GAM = GAM.flatten()*12.
+            P = G2lat.polfcal(ODFln,SamSym[textureData['Model']],PSI,GAM).reshape((31,31))            
+            GAM = np.linspace(0.,360.,31,True)
+            PSI = np.linspace(0.,180.,31,True)
+            X = np.outer(npsind(GAM),npsind(PSI))*P.T
+            Y = np.outer(npcosd(GAM),npsind(PSI))*P.T
+            Z = np.outer(np.ones(np.size(GAM)),npcosd(PSI))*P.T
+            h,k,l = SHData['PFhkl']
+            
+            if np.any(X) and np.any(Y) and np.any(Z):
+                errFlags = np.seterr(all='ignore')
+                Plot.plot_surface(X,Y,Z,rstride=1,cstride=1,color='g',linewidth=1)
+                np.seterr(all='ignore')
+                xyzlim = np.array([Plot.get_xlim3d(),Plot.get_ylim3d(),Plot.get_zlim3d()]).T
+                XYZlim = [min(xyzlim[0]),max(xyzlim[1])]
+                Plot.set_xlim3d(XYZlim)
+                Plot.set_ylim3d(XYZlim)
+                Plot.set_zlim3d(XYZlim)
+                Plot.set_aspect('equal')                        
+                Plot.set_title('%d %d %d Pole distribution for %s'%(h,k,l,pName))
+                Plot.set_xlabel(r'X, MRD')
+                Plot.set_ylabel(r'Y, MRD')
+                Plot.set_zlabel(r'Z, MRD')
         else:
             X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
@@ -2810,6 +2839,7 @@ def PlotTexture(G2frame,data,Start=False):
             Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
             Page.figure.colorbar(Img)
             h,k,l = SHData['PFhkl']
+            Plot.axis('off')
             Plot.set_title('%d %d %d Pole figure for %s'%(h,k,l,pName))
             Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
     Page.canvas.draw()

@@ -2260,7 +2260,7 @@ class GSASII(wx.Frame):
         name = self.PatternTree.GetItemText(item)
         parent = self.PatternTree.GetItemParent(item)
         if key == wx.WXK_UP:
-            if keyevt.GetModifiers() == wx.MOD_SHIFT:
+            if keyevt.GetModifiers() == wx.MOD_SHIFT and parent != self.root:
                 if type(parent) is int: return # is this the toplevel in tree?
                 prev = self.PatternTree.GetPrevSibling(parent)
                 self.PatternTree.Collapse(parent)
@@ -2272,8 +2272,7 @@ class GSASII(wx.Frame):
                 self.PatternTree.GetPrevSibling(item)
                 self.PatternTree.SelectItem(item)
         elif key == wx.WXK_DOWN:
-            if keyevt.GetModifiers() == wx.MOD_SHIFT:
-                if type(parent) is int: return # is this the toplevel in tree?
+            if keyevt.GetModifiers() == wx.MOD_SHIFT and parent != self.root:
                 next = self.PatternTree.GetNextSibling(parent)
                 self.PatternTree.Collapse(parent)
                 self.PatternTree.Expand(next)

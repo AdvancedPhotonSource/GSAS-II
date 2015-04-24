@@ -2822,6 +2822,8 @@ def PlotTexture(G2frame,data,Start=False):
                 Plot.set_ylabel(r'Y, MRD')
                 Plot.set_zlabel(r'Z, MRD')
         else:
+            PFproj = textureData.get('PFproj','XY')
+            PRrev = textureData.get('PFrev',False)
             X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
             R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
             if 'equal' in G2frame.Projection:
@@ -3250,11 +3252,15 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
                 Title,xLabel,yLabel = dlg.GetValues()
             dlg.Destroy()
             Draw()
+        elif event.key == 'l':
+            G2frame.seqLines = not G2frame.seqLines
+            wx.CallAfter(Draw)
             
     def Draw():
         global Title,xLabel,yLabel
         Page.SetFocus()
-        G2frame.G2plotNB.status.SetStatusText('press s to select X axis, t to change titles',1)
+        G2frame.G2plotNB.status.SetStatusText(  \
+            'press L to toggle lines, S to select X axis, T to change titles (reselect column to show?)',1)
         Plot.clear()
         if G2frame.seqXaxis is not None:    
             xName,X,Xsig = Page.seqTableGet(G2frame.seqXaxis)
@@ -3276,7 +3282,10 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
                 if G2frame.seqReverse and not G2frame.seqXaxis:
                     Ynew = Ynew[::-1]
                     Ysnew = Ysnew[::-1]
-                Plot.errorbar(Xnew,Ynew,yerr=Ysnew,label=name)
+                if G2frame.seqLines:
+                    Plot.errorbar(Xnew,Ynew,yerr=Ysnew,label=name)
+                else:
+                    Plot.errorbar(Xnew,Ynew,yerr=Ysnew,label=name,linestyle='None',marker='x')
             else:
                 if G2frame.seqReverse and not G2frame.seqXaxis:
                     Ynew = Ynew[::-1]
@@ -3288,7 +3297,6 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             Plot.plot(X,Page.fitvals,label='Fit')
             
         Plot.legend(loc='best')
-        print Title,xLabel,yLabel
         if Title:
             Plot.set_title(Title)
         else:
@@ -3301,7 +3309,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             Plot.set_ylabel(yLabel)
         else:
             Plot.set_ylabel('Parameter values')
-        Page.canvas.draw()            
+        Page.canvas.draw()
             
     G2frame.seqXselect = SelectX
     try:
@@ -3326,7 +3334,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
-    Page.Choice = ['s - select x-axis','t - change titles',]
+    Page.Choice = ['l - toggle lines','s - select x-axis','t - change titles',]
     Page.keyPress = OnKeyPress
     Page.seqYaxisList = ColumnList
     Page.seqTableGet = TableGet

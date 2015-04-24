@@ -3559,6 +3559,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.ContourColor = Obj.GetValue()
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
+        def OnPlaneSel(event):
+            Obj = event.GetEventObject()
+            textureData['PFproj'] = Obj.GetValue()
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data)
+            
+        def OnRevPF(event):
+            Obj = event.GetEventObject()
+            textureData['PFrev'] = Obj.GetValue()
+            wx.CallAfter(G2plt.PlotTexture,G2frame,data)
+            
         def OnAngRef(event):
             Obj = event.GetEventObject()
             textureData[angIndx[Obj.GetId()]][0] = Obj.GetValue()
@@ -3694,7 +3704,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             colorSel = wx.ComboBox(Texture,-1,value=G2frame.ContourColor,choices=choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             colorSel.Bind(wx.EVT_COMBOBOX,OnColorSel)
-            PTSizer.Add(colorSel,0,WACV)        
+            PTSizer.Add(colorSel,0,WACV)
         mainSizer.Add(PTSizer,0,WACV)
         mainSizer.Add((0,5),0)
         if textureData['SHShow']:

@@ -1655,6 +1655,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
         Sangls = [parmDict['Sample '+'omega'],parmDict['Sample '+'chi'],parmDict['Sample '+'phi']]
         for hist in Gangls.keys():
             Refs = refData[hist]
+            wt = 1.0    #   np.sqrt(np.abs(Refs[:,5]))?
             sumObs += np.sum(Refs[:,5])
             Refs[:,6] = 1.
             H = Refs[:,:3]
@@ -1667,7 +1668,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
                     Ksl,x,x = G2lat.GetKsl(L,M,shModel,psi,gam)
                     Lnorm = G2lat.Lnorm(L)
                     Refs[:,6] += parmDict[item]*Lnorm*Kcl*Ksl
-            mat = Refs[:,5]-Refs[:,6]
+            mat = wt*(Refs[:,5]-Refs[:,6])
             Mat = np.concatenate((Mat,mat))
         sumD = np.sum(np.abs(Mat))
         R = min(100.,100.*sumD/sumObs)
@@ -1682,6 +1683,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
             mat = np.zeros((len(varyList),len(refData[hist])))
             Refs = refData[hist]
             H = Refs[:,:3]
+            wt = 1.0    #   np.sqrt(np.abs(Refs[:,5]))?
             phi,beta = G2lat.CrsAng(H,cell,SGData)
             psi,gam,dPdA,dGdA = G2lat.SamAng(Refs[:,3]/2.,Gangls[hist],Sangls,False) #assume not Bragg-Brentano!
             for j,item in enumerate(varyList):
@@ -1690,11 +1692,11 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
                     Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
                     Ksl,dKdp,dKdg = G2lat.GetKsl(L,M,shModel,psi,gam)
                     Lnorm = G2lat.Lnorm(L)
-                    mat[j] = -Lnorm*Kcl*Ksl
+                    mat[j] = -wt*Lnorm*Kcl*Ksl
                     for k,itema in enumerate(['Sample omega','Sample chi','Sample phi']):
                         try:
                             l = varyList.index(itema)
-                            mat[l] -= parmDict[item]*Lnorm*Kcl*(dKdp*dPdA[k]+dKdg*dGdA[k])
+                            mat[l] -= parmDict[item]*wt*Lnorm*Kcl*(dKdp*dPdA[k]+dKdg*dGdA[k])
                         except ValueError:
                             pass
             if len(Mat):

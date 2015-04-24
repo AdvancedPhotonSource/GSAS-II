@@ -2147,6 +2147,7 @@ class GSASII(wx.Frame):
         self.SinglePlot = True
         self.SubBack = False
         self.seqReverse = False
+        self.seqLines = True #draw lines between points
         self.plotView = 0
         self.Image = 0
         self.oldImagefile = ''

@@ -2040,7 +2040,7 @@ class GSASII(wx.Frame):
             menubar.Append(menu=self.MacroMenu, title='Macro')
             self._init_Macro()
         HelpMenu=G2G.MyHelp(self,helpType='Data tree',
-            morehelpitems=[#('&Old Tutorials','OldTutorials'), # this will eventually go away
+            morehelpitems=[
                            ('&Tutorials','Tutorials'), 
                            ])
         menubar.Append(menu=HelpMenu,title='&Help')
@@ -2171,8 +2171,10 @@ class GSASII(wx.Frame):
             if self.dirname: os.chdir(self.dirname)
             try:
                 self.StartProject()         #open the file if possible
-            except:
-                print 'Error opening file',arg[1]
+            except Exception:
+                print 'Error opening or reading file',arg[1]
+                import traceback
+                print traceback.format_exc()
               
         self.ImportDir = os.path.normpath(os.getcwd()) # specifies a default path to be used for imports
         if GSASIIpath.GetConfigValue('Import_directory'):
@@ -2952,7 +2954,9 @@ class GSASII(wx.Frame):
         try:
             self.StartProject()         #open the file if possible
         except:
-            print 'Error opening file ',filename
+            print '\nError opening file ',filename
+            import traceback
+            print traceback.format_exc()
         
     def StartProject(self):
         '''Opens a GSAS-II project file & selects the 1st available data set to 
@@ -2979,7 +2983,7 @@ class GSASII(wx.Frame):
             self.EnablePlot = True
             self.PatternTree.SelectItem(Id)
         self.CheckNotebook()
-        os.chdir(self.dirname)           # to get Mac/Linux to change directory!
+        if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
 
     def OnFileClose(self, event):
         '''Clears the data tree in response to the
@@ -3468,19 +3472,17 @@ class GSASII(wx.Frame):
 
         self.OnFileSave(event)
         # check that constraints are OK here
-        errmsg, warnmsg = G2stIO.CheckConstraints(self.GSASprojectfile)
+        errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
         if errmsg:
-            print('Error in constraints:\n'+errmsg+
-                  '\nRefinement not possible')
             self.ErrorDialog('Constraint Error',
-                             'Error in constraints:\n'+errmsg+
-                             '\nRefinement not possible')
+                             'Error in constraints. Refinement not possible.'+
+                             '\nSee console error message for details.')
             return
         if warnmsg:
             print('Conflict between refinment flag settings and constraints:\n'+
                   warnmsg+'\nRefinement not possible')
             self.ErrorDialog('Refinement Flag Error',
-                             'Conflict between refinment flag settings and constraints:\n'+
+                             'Conflict between refinement flag settings and constraints:\n'+
                              warnmsg+
                              '\nRefinement not possible')
             return
@@ -3545,10 +3547,8 @@ class GSASII(wx.Frame):
         Controls['ShowCell'] = True
         self.OnFileSave(event)
         # check that constraints are OK here
-        errmsg, warnmsg = G2stIO.CheckConstraints(self.GSASprojectfile)
+        errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
         if errmsg:
-            print('Error in constraints:\n'+errmsg+
-                  '\nRefinement not possible')
             self.ErrorDialog('Constraint Error',
                              'Error in constraints:\n'+errmsg+
                              '\nRefinement not possible')

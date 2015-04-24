@@ -352,6 +352,8 @@ def CheckConstraints(varyList,constrDict,fixedList):
                     notvaried += mv
                 if mv not in indepVarList: indepVarList.append(mv)
                 for v,m in zip(varlist,invmultarr):
+                    if v in indepVarList:
+                        errmsg += '\nVariable '+v+' is used to set values in a constraint before its value is set in another constraint\n'
                     if m == 0: zeromult = True
                     if v in varyList:
                         varied += 1
@@ -379,20 +381,8 @@ def CheckConstraints(varyList,constrDict,fixedList):
                 errmsg += str(mv) + " => " + s + '\n'
 
     # check for errors:
-    if debug:
-        print 'indepVarList',indepVarList
-        print 'depVarList',depVarList
-        print 'multdepVarList',multdepVarList
-    inboth = set(indepVarList).intersection(set(depVarList))
-    if len(inboth) > 0:
-        errmsg += "\nThe following parameters(s) are used as both dependent and independent variables in Equivalence relations:\n"
-        s = ''
-        for var in sorted(inboth):
-            if s != "": s+= ", "
-            s += str(var)
-        errmsg += '\t'+ s + '\n'
     if len(multdepVarList) > 0:
-        errmsg += "\nThe following parameters(s) are used in multiple Equivalence relations as dependent variables:\n"
+        errmsg += "\nThe following parameters(s) are used in conflicting Equivalence relations as dependent variables:\n"
         s = ''
         for var in sorted(set(multdepVarList)):
             if s != "": s+= ", "
@@ -581,7 +571,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
                     if mv not in indepVarList: indepVarList.append(mv)
                 for v,m in zip(varlist,invmultarr):
                     if parmDict is not None and v not in parmDict:
-                        print "Dropping equivalence for variable "+str(v)+". Not defined in this refinement"
+                        print "Dropping equivalence for dep. variable "+str(v)+". Not defined in this refinement"
                         continue
                     if m == 0: zeromult = True
                     if v in varyList:
@@ -608,25 +598,10 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
                     if s != "": s+= " & "
                     s += str(v)            
                 msg += str(mv) + " => " + s + '\n'
-
-    if debug: print 'indepVarList',indepVarList
-    if debug: print 'depVarList',depVarList
-    # check for errors:
-    inboth = set(indepVarList).intersection(set(depVarList))
-    if len(inboth) > 0:
-        msg += "\nThe following parameters(s) are used as both dependent and independent variables in Equivalence relations:\n"
-        s = ''
-        for var in sorted(inboth):
-            if s != "": s+= ", "
-            s += str(var)
-        msg += '\t'+ s + '\n'
-    if len(multdepVarList) > 0:
-        msg += "\nThe following parameters(s) are used in multiple Equivalence relations as dependent variables:\n"
-        s = ''
-        for var in sorted(set(multdepVarList)):
-            if s != "": s+= ", "
-            s += str(var)            
-        msg += '\t'+ s + '\n'
+    # save the lists of dep. and indep. vars (after dropping unused)
+    global dependentVars,independentVars
+    dependentVars = depVarList
+    independentVars = indepVarList
     equivVarList = list(set(indepVarList).union(set(depVarList)))
 
     # scan through parameters in each relationship. Are all varied? If only some are
@@ -816,10 +791,6 @@ def GetDependentVars():
     :returns: a list of variable names
 
     '''
-    dependentVars = []
-    global dependentParmList
-    for lst in dependentParmList:
-        for itm in lst: dependentVars.append(itm)
     return dependentVars
 
 def GetIndependentVars():
@@ -829,12 +800,6 @@ def GetIndependentVars():
     :returns: a list of variable names
 
     '''
-    independentVars = []
-    global indParmList,fixedDict
-    for lst in indParmList:
-        for name in lst:
-            if name in fixedDict: continue
-            independentVars.append(name)
     return independentVars
 
 def PrintIndependentVars(parmDict,varyList,sigDict,PrintAll=False,pFile=None):
@@ -921,7 +886,7 @@ def _FormatConstraint(RelDict,RelVal):
         s1 += s2
     return s1
 
-def VarRemapShow(varyList):
+def VarRemapShow(varyList,inputOnly=False):
     '''List out the saved relationships. This should be done after the constraints have been
     defined using :func:`StoreEquivalence`, :func:`GroupConstraints` and :func:`GenerateConstraints`.
 
@@ -958,6 +923,7 @@ def VarRemapShow(varyList):
                 s += '(%s * %s)' % (m,v)
             if mv in varyList: s += ' VARY'
             s += '\n'
+    if inputOnly: return s
     s += 'Inverse variable mapping relations:\n'
     for varlist,mapvars,invmultarr in zip(dependentParmList,indParmList,invarrayList):
         for i,mv in enumerate(varlist):
@@ -1012,9 +978,9 @@ def Map2Dict(parmDict,varyList):
     This should be done once, after the constraints have been
     defined using :func:`StoreEquivalence`,
     :func:`GroupConstraints` and :func:`GenerateConstraints` and
-    before any variable refinement is done
-    to complete the parameter dictionary by defining independent
-    parameters and satisfying the constraint equations. 
+    before any variable refinement is done. This completes the parameter
+    dictionary by defining independent parameters and it satisfies the
+    constraint equations in the initial parameters
 
     :param dict parmDict: a dict containing parameter values keyed by the
       parameter names.

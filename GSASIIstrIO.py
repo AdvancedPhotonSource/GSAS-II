@@ -64,7 +64,7 @@ def GetControls(GPXfile):
 def GetConstraints(GPXfile):
     '''Read the constraints from the GPX file and interpret them
 
-    called in :func:`CheckConstraints`, :func:`GSASIIstrMain.Refine`
+    called in :func:`ReadCheckConstraints`, :func:`GSASIIstrMain.Refine`
     and :func:`GSASIIstrMain.SeqRefine`. 
     '''
     fl = open(GPXfile,'rb')
@@ -175,7 +175,7 @@ def ProcessConstraints(constList):
             ignored += 1
     return constDict,fixedList,ignored
 
-def CheckConstraints(GPXfile):
+def ReadCheckConstraints(GPXfile):
     '''Load constraints and related info and return any error or warning messages'''
     # init constraints
     G2mv.InitVars()    
@@ -185,16 +185,21 @@ def CheckConstraints(GPXfile):
         return 'Error: No Phases!',''
     if not Histograms:
         return 'Error: no diffraction data',''
+    constrDict,fixedList = GetConstraints(GPXfile) # load user constraints before internally generated ones
     rigidbodyDict = GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,maxSSwave = GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,maxSSwave = GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
     varyList = rbVary+phaseVary+hapVary+histVary
-    constrDict,fixedList = GetConstraints(GPXfile)
-    return G2mv.CheckConstraints(varyList,constrDict,fixedList)
-    
+    errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)
+    if errmsg:
+        # print some diagnostic info on the constraints
+        print('Error in constraints:\n'+errmsg+
+              '\nRefinement not possible due to conflict in constraints, see below:\n')
+        print G2mv.VarRemapShow(varyList,True)
+    return errmsg, warnmsg
 def GetRestraints(GPXfile):
     '''Read the restraints from the GPX file.
     Throws an exception if not found in the .GPX file

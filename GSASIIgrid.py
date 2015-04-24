@@ -204,8 +204,6 @@ class SGMessageBox(wx.Dialog):
         '''
         self.ShowModal()
         return
-        
-        
 
 class G2LoggedButton(wx.Button):
     '''A version of wx.Button that creates logging events. Bindings are saved
@@ -3717,8 +3715,11 @@ def GetPatternTreeItemId(G2frame, parentId, itemText):
 def MovePatternTreeToGrid(G2frame,item):
     '''Called from GSASII.OnPatternTreeSelChanged when a item is selected on the tree 
     '''
-    
-#    print G2frame.PatternTree.GetItemText(item)
+    pickName = G2frame.PatternTree.GetItemText(item)
+    if G2frame.PickId:
+        oldPick = G2frame.PatternTree.GetItemText(G2frame.PickId)
+        if oldPick == pickName:
+            return
     
     oldPage = None # will be set later if already on a Phase item
     if G2frame.dataFrame:

@@ -2208,6 +2208,7 @@ class GSASII(wx.Frame):
     def OnPatternTreeItemExpanded(self, event):
         'Called when a tree item is expanded'
         self.OnPatternTreeSelChanged(event)
+        event.Skip()
         
     def OnPatternTreeItemDelete(self, event):
         'Called when a tree item is deleted -- not sure what this does'
@@ -2264,9 +2265,9 @@ class GSASII(wx.Frame):
                 prev = self.PatternTree.GetPrevSibling(parent)
                 self.PatternTree.Collapse(parent)
                 self.PatternTree.Expand(prev)
-                id = G2gd.GetPatternTreeItemId(self,prev,name)
-                self.PatternTree.SelectItem(id)
+                NewId = G2gd.GetPatternTreeItemId(self,prev,name)
                 self.oldFocus = wx.Window.FindFocus()
+                wx.CallAfter(self.PatternTree.SelectItem,NewId)
             else:    
                 self.PatternTree.GetPrevSibling(item)
                 self.PatternTree.SelectItem(item)
@@ -2276,9 +2277,9 @@ class GSASII(wx.Frame):
                 next = self.PatternTree.GetNextSibling(parent)
                 self.PatternTree.Collapse(parent)
                 self.PatternTree.Expand(next)
-                id = G2gd.GetPatternTreeItemId(self,next,name)
-                self.PatternTree.SelectItem(id)
+                NewId = G2gd.GetPatternTreeItemId(self,next,name)
                 self.oldFocus = wx.Window.FindFocus()
+                wx.CallAfter(self.PatternTree.SelectItem,NewId)
             else:    
                 self.PatternTree.GetNextSibling(item)
                 self.PatternTree.SelectItem(item)

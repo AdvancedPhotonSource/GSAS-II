@@ -3559,16 +3559,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.ContourColor = Obj.GetValue()
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
-        def OnPlaneSel(event):
-            Obj = event.GetEventObject()
-            textureData['PFproj'] = Obj.GetValue()
-            wx.CallAfter(G2plt.PlotTexture,G2frame,data)
-            
-        def OnRevPF(event):
-            Obj = event.GetEventObject()
-            textureData['PFrev'] = Obj.GetValue()
-            wx.CallAfter(G2plt.PlotTexture,G2frame,data)
-            
         def OnAngRef(event):
             Obj = event.GetEventObject()
             textureData[angIndx[Obj.GetId()]][0] = Obj.GetValue()

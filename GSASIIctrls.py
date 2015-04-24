@@ -74,6 +74,7 @@ class G2TreeCtrl(wx.TreeCtrl):
         self.G2frame = parent.GetParent()
         self.root = self.AddRoot('Loaded Data: ')
         self.SelectionChanged = None
+        self.textlist = None
         log.LogInfo['Tree'] = self
 
     def _getTreeItemsList(self,item):
@@ -99,6 +100,9 @@ class G2TreeCtrl(wx.TreeCtrl):
                 if textlist[0] == "Phases" and len(textlist) > 1:
                     textlist[1] = self.GetRelativePhaseNum(textlist[1])
                 log.MakeTreeLog(textlist)
+            if textlist == self.textlist:
+                return      #same as last time - don't get it again
+            self.textlist = textlist
             self.SelectionChanged(event)
 
     def Bind(self,eventtype,handler,*args,**kwargs):

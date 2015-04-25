@@ -3585,7 +3585,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def OnPfType(event):
             Obj = event.GetEventObject()
             textureData['PlotType'] = Obj.GetValue()
-            UpdateTexture()
+            wx.CallLater(100,UpdateTexture)
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
         def OnPFValue(event):

@@ -2263,22 +2263,28 @@ class GSASII(wx.Frame):
             if keyevt.GetModifiers() == wx.MOD_SHIFT and parent != self.root:
                 if type(parent) is int: return # is this the toplevel in tree?
                 prev = self.PatternTree.GetPrevSibling(parent)
-                self.PatternTree.Collapse(parent)
-                self.PatternTree.Expand(prev)
                 NewId = G2gd.GetPatternTreeItemId(self,prev,name)
-                self.oldFocus = wx.Window.FindFocus()
-                wx.CallAfter(self.PatternTree.SelectItem,NewId)
+                if NewId:
+                    self.PatternTree.Collapse(parent)
+                    self.PatternTree.Expand(prev)
+                    self.oldFocus = wx.Window.FindFocus()
+                    wx.CallAfter(self.PatternTree.SelectItem,NewId)
+                else:
+                    wx.CallAfter(self.PatternTree.SelectItem,item)
             else:    
                 self.PatternTree.GetPrevSibling(item)
                 self.PatternTree.SelectItem(item)
         elif key == wx.WXK_DOWN:
             if keyevt.GetModifiers() == wx.MOD_SHIFT and parent != self.root:
                 next = self.PatternTree.GetNextSibling(parent)
-                self.PatternTree.Collapse(parent)
-                self.PatternTree.Expand(next)
                 NewId = G2gd.GetPatternTreeItemId(self,next,name)
-                self.oldFocus = wx.Window.FindFocus()
-                wx.CallAfter(self.PatternTree.SelectItem,NewId)
+                if NewId:
+                    self.PatternTree.Collapse(parent)
+                    self.PatternTree.Expand(next)
+                    self.oldFocus = wx.Window.FindFocus()
+                    wx.CallAfter(self.PatternTree.SelectItem,NewId)
+                else:
+                    wx.CallAfter(self.PatternTree.SelectItem,item)
             else:    
                 self.PatternTree.GetNextSibling(item)
                 self.PatternTree.SelectItem(item)

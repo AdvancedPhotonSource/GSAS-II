@@ -397,7 +397,12 @@ def penaltyFxn(HistoPhases,calcControls,parmDict,varyList):
                                 pWt.append(wt/esd2**2)
                                 pWsum[name] += wt*(Z2/esd2)**2
         
+    for phase in Phases:
         name = 'SH-Pref.Ori.'
+        pId = Phases[phase]['pId']
+        General = Phases[phase]['General']
+        SGData = General['SGData']
+        cell = General['Cell'][1:7]
         pWsum[name] = 0.0
         for hist in Phases[phase]['Histograms']:
             if hist in Histograms:

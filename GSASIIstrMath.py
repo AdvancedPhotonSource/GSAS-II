@@ -38,6 +38,11 @@ ateln2 = 8.0*math.log(2.0)
 twopi = 2.0*np.pi
 twopisq = 2.0*np.pi**2
 
+class UserAbort(BaseException):
+    def __init__(self,line):
+        self.line = line
+        
+
 ################################################################################
 ##### Rigid Body Models
 ################################################################################
@@ -572,8 +577,6 @@ def penaltyDeriv(pNames,pVal,HistoPhases,calcControls,parmDict,varyList):
                     pDerv[ind][ip] += drv
                 except ValueError:
                     pass
-                    
-#    raise Exception
     return pDerv
 
 ################################################################################
@@ -1279,12 +1282,12 @@ def SHPOcal(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
     SHnames = calcControls[phfx+'SHnames']
     for item in SHnames:
         L,N = eval(item.strip('C'))
-#        Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
-#        Ksl,x,x = G2lat.GetKsl(L,0,'0',psi,gam)
-#        Lnorm = G2lat.Lnorm(L)
-#        odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
-        Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta)
-        odfCor += parmDict[phfx+item]*Lnorm*Kcsl
+        Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
+        Ksl,x,x = G2lat.GetKsl(L,0,'0',psi,gam)
+        Lnorm = G2lat.Lnorm(L)
+        odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
+#        Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta)
+#        odfCor += parmDict[phfx+item]*Lnorm*Kcsl
     return np.squeeze(odfCor)
     
 def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
@@ -1309,14 +1312,14 @@ def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
     SHnames = calcControls[phfx+'SHnames']
     for item in SHnames:
         L,N = eval(item.strip('C'))
-#        Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
-#        Ksl,x,x = G2lat.GetKsl(L,0,'0',psi,gam)
-#        Lnorm = G2lat.Lnorm(L)
-#        odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
-#        dFdODF[phfx+item] = Kcl*Ksl*Lnorm
-        Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta) 
-        odfCor += parmDict[phfx+item]*Lnorm*Kcsl
-        dFdODF[phfx+item] = Kcsl*Lnorm
+        Kcl = G2lat.GetKcl(L,N,SGData['SGLaue'],phi,beta)
+        Ksl,x,x = G2lat.GetKsl(L,0,'0',psi,gam)
+        Lnorm = G2lat.Lnorm(L)
+        odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
+        dFdODF[phfx+item] = Kcl*Ksl*Lnorm
+#        Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta) 
+#        odfCor += parmDict[phfx+item]*Lnorm*Kcsl
+#        dFdODF[phfx+item] = Kcsl*Lnorm
     return odfCor,dFdODF
     
 def GetPrefOri(uniq,G,g,phfx,hfx,SGData,calcControls,parmDict):
@@ -2411,8 +2414,6 @@ def UserRejectHKL(ref,im,userReject):
         return False
     return True
     
-    
-    
 def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     '''Loop over reflections in a HKLF histogram and compute derivatives of the fitting
     model (M) with respect to all parameters.  Independent and dependant dM/dp arrays 
@@ -2799,7 +2800,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
         if not GoOn:
             parmDict['saved values'] = values
             dlg.Destroy()
-            raise Exception         #Abort!!
+            raise UserAbort('User abort')         #Abort!!
     pDict,pVals,pWt,pWsum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if len(pVals):
         pSum = np.sum(pWt*pVals**2)

@@ -3503,7 +3503,7 @@ class GSASII(wx.Frame):
         dlg.CenterOnParent()
         Rw = 100.00
         try:
-            Rw = G2stMn.Refine(self.GSASprojectfile,dlg)
+            OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg)
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
@@ -3515,32 +3515,36 @@ class GSASII(wx.Frame):
             parentId = self.PatternTree.GetItemParent(oldId)
             if parentId:
                 parentName = self.PatternTree.GetItemText(parentId)     #find the current data tree name
-        dlg2 = wx.MessageDialog(self,'Load new result?','Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
-        try:
-            if dlg2.ShowModal() == wx.ID_OK:
-                Id = 0
-                self.PatternTree.DeleteChildren(self.root)
-                if self.HKL: self.HKL = []
-                if self.G2plotNB.plotList:
-                    self.G2plotNB.clear()
-                G2IO.ProjFileOpen(self)
-                item, cookie = self.PatternTree.GetFirstChild(self.root)
-                while item and not Id:
-                    name = self.PatternTree.GetItemText(item)
-                    if name[:4] in ['PWDR','HKLF']:
-                        Id = item
-                    item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
-                if Id:
-                    self.PatternTree.SelectItem(Id)
-                if parentName:
-                    parentId = G2gd.GetPatternTreeItemId(self, self.root, parentName)
-                    if parentId:
-                        itemId = G2gd.GetPatternTreeItemId(self, parentId, oldName)
-                    else:
-                        itemId = G2gd.GetPatternTreeItemId(self, self.root, oldName)
-                    self.PatternTree.SelectItem(itemId)
-        finally:
-            dlg2.Destroy()
+        if OK:
+            Rw = Msg
+            dlg2 = wx.MessageDialog(self,'Load new result?','Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
+            try:
+                if dlg2.ShowModal() == wx.ID_OK:
+                    Id = 0
+                    self.PatternTree.DeleteChildren(self.root)
+                    if self.HKL: self.HKL = []
+                    if self.G2plotNB.plotList:
+                        self.G2plotNB.clear()
+                    G2IO.ProjFileOpen(self)
+                    item, cookie = self.PatternTree.GetFirstChild(self.root)
+                    while item and not Id:
+                        name = self.PatternTree.GetItemText(item)
+                        if name[:4] in ['PWDR','HKLF']:
+                            Id = item
+                        item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
+                    if Id:
+                        self.PatternTree.SelectItem(Id)
+                    if parentName:
+                        parentId = G2gd.GetPatternTreeItemId(self, self.root, parentName)
+                        if parentId:
+                            itemId = G2gd.GetPatternTreeItemId(self, parentId, oldName)
+                        else:
+                            itemId = G2gd.GetPatternTreeItemId(self, self.root, oldName)
+                        self.PatternTree.SelectItem(itemId)
+            finally:
+                dlg2.Destroy()
+        else:
+            self.ErrorDialog('Refinement error',Msg)
 
     def OnSeqRefine(self,event):
         '''Perform a sequential refinement.

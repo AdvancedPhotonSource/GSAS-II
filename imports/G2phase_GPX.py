@@ -16,6 +16,7 @@ current project.
 '''
 import sys
 import cPickle
+import random as ran
 import GSASIIIO as G2IO
 import GSASIIstrIO as G2stIO
 import GSASIIpath
@@ -66,6 +67,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
             self.Phase = G2stIO.GetAllPhaseData(filename,phasenames[selblk])
             self.Phase['Histograms'] = {}       #remove any histograms
             self.Phase['Pawley ref'] = []       # & any Pawley refl.
+            self.Phase['ranId'] = ran.randint(0,sys.maxint)
             return True
         except Exception as detail:
             self.errors = 'Error reading selected phase'

@@ -2127,6 +2127,7 @@ class GSASII(wx.Frame):
         self.DDShowAll = False
         self.PatternId = 0
         self.PickId = 0
+        self.PickIdText = None
         self.PeakTable = []
         self.LimitsTable = []
         self.ifX20 = True   #use M20 /= (1+X20) in powder indexing, etc.
@@ -2400,6 +2401,7 @@ class GSASII(wx.Frame):
                             {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'Sample load':0.0})
                         self.PatternTree.SetItemPyData(Id,[Npix,imagefile])
                         self.PickId = Id
+                        self.PickIdText = self.PatternTree.GetItemText(self.PickId)
                         self.Image = Id
                 os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!                
                 self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))             #show last one
@@ -2903,6 +2905,7 @@ class GSASII(wx.Frame):
                     for item in DelItemList:
                         self.PatternTree.Delete(item)
                     self.PickId = 0
+                    self.PickIdText = None
                     self.PatternId = 0
                     if nItems['PWDR']:
                         wx.CallAfter(G2plt.PlotPatterns,self,True)

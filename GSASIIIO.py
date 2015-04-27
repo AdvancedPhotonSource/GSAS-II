@@ -171,7 +171,7 @@ def CheckImageFile(G2frame,imagefile):
                 print 'found image file '+os.path.join(pth,fil)
                 return os.path.join(pth,fil)
             pth,enddir = os.path.split(pth)
-        GSASIIpath.IPyBreak()
+        #GSASIIpath.IPyBreak()
 
     if not os.path.exists(imagefile):
         dlg = wx.FileDialog(G2frame, 'Previous image file not found; open here', '.', '',\

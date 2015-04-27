@@ -3716,10 +3716,8 @@ def MovePatternTreeToGrid(G2frame,item):
     '''Called from GSASII.OnPatternTreeSelChanged when a item is selected on the tree 
     '''
     pickName = G2frame.PatternTree.GetItemText(item)
-    if G2frame.PickId:
-        oldPick = G2frame.PatternTree.GetItemText(G2frame.PickId)
-        if oldPick == pickName:
-            return
+    if G2frame.PickIdText == pickName:
+        return
     
     oldPage = None # will be set later if already on a Phase item
     if G2frame.dataFrame:
@@ -3752,6 +3750,7 @@ def MovePatternTreeToGrid(G2frame,item):
         
     G2frame.dataFrame.Raise()            
     G2frame.PickId = 0
+    G2frame.PickIdText = None
     parentID = G2frame.root
     #for i in G2frame.ExportPattern: i.Enable(False)
     defWid = [250,150]
@@ -4014,6 +4013,9 @@ def MovePatternTreeToGrid(G2frame,item):
         name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
         G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True,Name=name)
+
+    if G2frame.PickId: 
+        G2frame.PickIdText = G2frame.PatternTree.GetItemText(G2frame.PickId)
     G2frame.dataFrame.Raise()
 
 def SetDataMenuBar(G2frame,menu=None):

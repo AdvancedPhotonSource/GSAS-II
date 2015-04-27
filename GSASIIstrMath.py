@@ -26,6 +26,7 @@ import GSASIIspc as G2spc
 import GSASIIpwd as G2pwd
 import GSASIImapvars as G2mv
 import GSASIImath as G2mth
+import GSASIIobj as G2obj
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -2800,7 +2801,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
         if not GoOn:
             parmDict['saved values'] = values
             dlg.Destroy()
-            raise UserAbort('User abort')         #Abort!!
+            raise G2obj.G2Exception('User abort')         #Abort!!
     pDict,pVals,pWt,pWsum = penaltyFxn(HistoPhases,calcControls,parmDict,varylist)
     if len(pVals):
         pSum = np.sum(pWt*pVals**2)

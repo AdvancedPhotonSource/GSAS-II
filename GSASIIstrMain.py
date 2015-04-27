@@ -210,9 +210,9 @@ def Refine(GPXfile,dlg):
         printFile.close()
         print ' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'
         print ' ***** Refinement successful *****'
-    except G2stMth.UserAbort:
+    except G2obj.G2Exception,Msg:
         printFile.close()
-        return False,'Refinement aborted by user'
+        return False,Msg.msg
     
 #for testing purposes!!!
     if DEBUG:
@@ -424,10 +424,10 @@ def SeqRefine(GPXfile,dlg):
                         items[1] = str(nexthId)
                         newparm = ':'.join(items)
                         NewparmDict[newparm] = parmDict[parm]
-        except G2stMth.UserAbort:
+        except G2obj.G2Exception,Msg:
             printFile.close()
             print ' ***** Refinement aborted *****'
-            return False,' Refinement aborted by user'
+            return False,Msg.msg
     G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
     printFile.close()
     print ' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'

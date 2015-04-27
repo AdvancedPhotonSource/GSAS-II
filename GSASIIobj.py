@@ -2006,6 +2006,12 @@ class ExpressionCalcObj(object):
         if not np.isscalar(val):
             val = np.sum(val)
         return val
+        
+class G2Exception(Exception):
+    def __init__(self,msg):
+        self.msg = msg
+    def __str__(self):
+        return repr(self.msg)
 
 
 if __name__ == "__main__":

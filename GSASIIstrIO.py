@@ -1317,7 +1317,8 @@ def cellFill(pfx,SGData,parmDict,sigDict):
             sigA = [sigDict[pfx+'A0'],0,0,0,0,0]
     except KeyError:
         sigA = [0,0,0,0,0,0]
-
+    if np.any(np.diag(G2lat.A2Gmat(A,False))) < 0.:
+        raise G2obj.G2Exception('Negative g-tensor')
     return A,sigA
         
 def PrintRestraints(cell,SGData,AtPtrs,Atoms,AtLookup,textureData,phaseRest,pFile):

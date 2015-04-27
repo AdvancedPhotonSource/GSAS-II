@@ -560,7 +560,7 @@ class NumberValidator(wx.PyValidator):
         elif self.typ == float:
             # allow for above and sind, cosd, sqrt, tand, pi, and abbreviations
             # also addition, subtraction, division, multiplication, exponentiation
-            self.validchars = '0123456789.-+eE/cosindcqrtap()*'
+            self.validchars = '0123456789.,-+eE/cosindcqrtap()*'
         else:
             self.validchars = None
             return

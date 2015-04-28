@@ -143,8 +143,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_MODELUNDO,wxID_MODELFITALL,wxID_MODELCOPYFLAGS,
 ] = [wx.NewId() for item in range(12)]
 
-[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,
-] = [wx.NewId() for item in range(3)]
+[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,wxID_3DALLHKLPLOT,
+] = [wx.NewId() for item in range(4)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
@@ -1340,7 +1340,8 @@ class DataFrame(wx.Frame):
             help='Error analysis on single crystal data')
         self.ErrorAnal.Append(id=wxID_PWD3DHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot 3D HKLs',
             help='Plot HKLs from single crystal data in 3D')
-            
+        self.ErrorAnal.Append(id=wxID_3DALLHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot all 3D HKLs',
+            help='Plot HKLs from all single crystal data in 3D')
         self.ErrorAnal.Append(id=wxID_PWDCOPY,kind=wx.ITEM_NORMAL,text='Copy params',
             help='Copy of HKLF parameters')
         self.PostfillDataMenu()
@@ -3558,6 +3559,37 @@ def UpdatePWHKPlot(G2frame,kind,item):
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
+    def OnPlotAll3DHKL(event):
+        choices = GetPatternTreeDataNames(G2frame,['HKLF',])
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to plot',
+            'Use data',choices)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                refNames = [choices[i] for i in dlg.GetSelections()]
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        refList = np.zeros(0)
+        for name in refNames:
+            Id = GetPatternTreeItemId(G2frame,G2frame.root, name)
+            reflData = G2frame.PatternTree.GetItemPyData(Id)[1]
+            if len(refList):
+                refList = np.concatenate((refList,reflData['RefList']))
+            else:
+                refList = reflData['RefList']
+            
+        FoMax = np.max(refList.T[8+Super])
+        Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
+        Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
+        Vpoint = [int(np.mean(refList.T[0])),int(np.mean(refList.T[1])),int(np.mean(refList.T[2]))]
+        controls = {'Type' : 'Fosq','Iscale' : False,'HKLmax' : Hmax,'HKLmin' : Hmin,
+            'FoMax' : FoMax,'Scale' : 1.0,'Drawing':{'viewPoint':[Vpoint,[]],'default':Vpoint[:],
+            'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,
+            'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
+        G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
+        
+        
     def OnErrorAnalysis(event):
         G2plt.PlotDeltSig(G2frame,kind)
         
@@ -3605,6 +3637,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         SetDataMenuBar(G2frame,G2frame.dataFrame.HKLFMenu)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=wxID_PWDANALYSIS)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=wxID_PWD3DHKLPLOT)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=wxID_3DALLHKLPLOT)
 #        G2frame.dataFrame.Bind(wx.EVT_MENU, onCopySelectedItems, id=wxID_PWDCOPY)
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
     

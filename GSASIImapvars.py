@@ -599,9 +599,9 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
                     s += str(v)            
                 msg += str(mv) + " => " + s + '\n'
     # save the lists of dep. and indep. vars (after dropping unused)
-    global dependentVars,independentVars
-    dependentVars = depVarList
+    global independentVars
     independentVars = indepVarList
+    #print 'independentVars=',independentVars
     equivVarList = list(set(indepVarList).union(set(depVarList)))
 
     # scan through parameters in each relationship. Are all varied? If only some are
@@ -745,6 +745,14 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
         if fixedval:
             fixedDict[fixedval] = float(fixedval)
 
+    # make list of dependent variables
+    global dependentVars
+    depVarList = []
+    for varlist,mapvars,invmultarr in zip(       # process equivalences
+        dependentParmList,indParmList,invarrayList):
+        for i,mv in enumerate(varlist):
+            if mv not in depVarList: depVarList.append(mv)
+    dependentVars = depVarList
     if debug: # on debug, show what is parsed & generated, semi-readable
         print 50*'-'
         print VarRemapShow(varyList)

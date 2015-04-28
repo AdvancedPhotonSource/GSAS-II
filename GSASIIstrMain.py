@@ -177,6 +177,7 @@ def Refine(GPXfile,dlg):
     try:
         groups,parmlist = G2mv.GroupConstraints(constrDict)
         G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict)
+        #print G2mv.VarRemapShow(varyList)
     except:
         print ' *** ERROR - your constraints are internally inconsistent ***'
         #errmsg, warnmsg = G2mv.CheckConstraints(varyList,constrDict,fixedList)

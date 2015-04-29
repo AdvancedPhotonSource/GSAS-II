@@ -546,9 +546,7 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
     # process equivalences: make a list of dependent and independent vars
     #    and check for repeated uses (repetition of a parameter as an
     #    independent var is OK [A=B; A=C], but chaining: [A=B; B=C] is not good)
-    indepVarList = []
-    depVarList = []
-    multdepVarList = []
+    dropVarList = []
     translateTable = {} # lookup table for wildcard referenced variables
     for varlist,mapvars,multarr,invmultarr in zip(       # process equivalences
         dependentParmList,indParmList,arrayList,invarrayList):
@@ -565,24 +563,20 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
                     notvaried += mv
                 if parmDict is not None and mv not in parmDict:
                     print "Dropping equivalence for variable "+str(mv)+". Not defined in this refinement"
+                    if mv not in dropVarList: dropVarList.append(mv)
                     #msg += "\nCannot equivalence to variable "+str(mv)+". Not defined in this refinement"
                     #continue
-                else: 
-                    if mv not in indepVarList: indepVarList.append(mv)
-                for v,m in zip(varlist,invmultarr):
-                    if parmDict is not None and v not in parmDict:
-                        print "Dropping equivalence for dep. variable "+str(v)+". Not defined in this refinement"
-                        continue
-                    if m == 0: zeromult = True
-                    if v in varyList:
-                        varied += 1
-                    else:
-                        if notvaried: notvaried += ', '
-                        notvaried += v
-                    if v in depVarList:
-                        multdepVarList.append(v)
-                    else:
-                        depVarList.append(v)
+            for v,m in zip(varlist,invmultarr):
+                if parmDict is not None and v not in parmDict:
+                    print "Dropping equivalence for dep. variable "+str(v)+". Not defined in this refinement"
+                    if v not in dropVarList: dropVarList.append(v)
+                    continue
+                if m == 0: zeromult = True
+                if v in varyList:
+                    varied += 1
+                else:
+                    if notvaried: notvaried += ', '
+                    notvaried += v
             if varied > 0 and varied != len(varlist)+1:
                 msg += "\nNot all variables refined in equivalence:\n\t"
                 s = ""
@@ -598,11 +592,6 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
                     if s != "": s+= " & "
                     s += str(v)            
                 msg += str(mv) + " => " + s + '\n'
-    # save the lists of dep. and indep. vars (after dropping unused)
-    global independentVars
-    independentVars = indepVarList
-    #print 'independentVars=',independentVars
-    equivVarList = list(set(indepVarList).union(set(depVarList)))
 
     # scan through parameters in each relationship. Are all varied? If only some are
     # varied, create an error message. 
@@ -745,14 +734,18 @@ def GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict=N
         if fixedval:
             fixedDict[fixedval] = float(fixedval)
 
-    # make list of dependent variables
+    # make list of dependent and independent variables (after dropping unused)
     global dependentVars
-    depVarList = []
-    for varlist,mapvars,invmultarr in zip(       # process equivalences
-        dependentParmList,indParmList,invarrayList):
-        for i,mv in enumerate(varlist):
-            if mv not in depVarList: depVarList.append(mv)
-    dependentVars = depVarList
+    global independentVars
+    dependentVars = []
+    independentVars = []
+    for varlist,mapvars in zip(dependentParmList,indParmList):  # process all constraints
+        for mv in mapvars:
+            if mv in dropVarList: continue
+            if mv not in independentVars: independentVars.append(mv)
+        for mv in varlist:
+            if mv in dropVarList: continue
+            if mv not in dependentVars: dependentVars.append(mv)
     if debug: # on debug, show what is parsed & generated, semi-readable
         print 50*'-'
         print VarRemapShow(varyList)

@@ -3505,19 +3505,18 @@ class GSASII(wx.Frame):
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
         dlg.CenterOnParent()
         Rw = 100.00
+        oldId =  self.PatternTree.GetSelection()        #retain current selection
+        parentName = ''
+        oldName = self.PatternTree.GetItemText(oldId)
+        parentId = self.PatternTree.GetItemParent(oldId)
+        if parentId:
+            parentName = self.PatternTree.GetItemText(parentId)     #find the current data tree name
         try:
             OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg)
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
             wx.Yield()
-        oldId =  self.PatternTree.GetSelection()        #retain current selection
-        parentName = ''
-        if type(oldId) is int:  #nothing had been selected!
-            oldName = self.PatternTree.GetItemText(oldId)
-            parentId = self.PatternTree.GetItemParent(oldId)
-            if parentId:
-                parentName = self.PatternTree.GetItemText(parentId)     #find the current data tree name
         if OK:
             Rw = Msg
             dlg2 = wx.MessageDialog(self,'Load new result?','Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)

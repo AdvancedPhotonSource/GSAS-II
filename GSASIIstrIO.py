@@ -1904,7 +1904,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                 if aname in sigDict:
                     SHtextureSig[name] = sigDict[aname]
             PrintSHtextureAndSig(textureData,SHtextureSig)
-        if phase in RestraintDict:
+        if phase in RestraintDict and not Phase['General'].get('doPawley'):
             PrintRestraints(cell[1:7],SGData,General['AtomPtrs'],Atoms,AtLookup,
                 textureData,RestraintDict[phase],pFile)
                     
@@ -2651,7 +2651,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
             for j,term in enumerate(DebyePeaks['peaksList']):
                 line = ' peak'+'%2d'%(j)+':'
                 for i in range(4):
-                    line += '%10.3f %5s'%(term[2*i],bool(term[2*i+1]))                    
+                    line += '%12.3f %5s'%(term[2*i],bool(term[2*i+1]))                    
                 print >>pFile,line
         
     def PrintInstParms(Inst):
@@ -2866,22 +2866,27 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
                 print >>pFile,ptstr
                 print >>pFile,sigstr
         if DebyePeaks['nPeaks']:
-            ifAny = False
-            ptfmt = "%14.3f"
-            names =  ' names :'
-            ptstr =  ' values:'
-            sigstr = ' esds  :'
-            for item in sigDict:
-                if 'BkPk' in item:
-                    ifAny = True
-                    names += '%14s'%(item)
-                    ptstr += ptfmt%(parmDict[item])
-                    sigstr += ptfmt%(sigDict[item])
-            if ifAny:
-                print >>pFile,'\n Single peak coefficients'
-                print >>pFile,names
+            print >>pFile,'\n Single peak coefficients:'
+            parms =    ['BkPkpos','BkPkint','BkPksig','BkPkgam']
+            line = ' peak no. '
+            for parm in parms:
+                line += '%14s%12s'%(parm.center(14),'esd'.center(12))
+            print >>pFile,line
+            for ip in range(DebyePeaks['nPeaks']):
+                ptstr = ' %4d '%(ip)
+                for parm in parms:
+                    fmt = '%14.3f'
+                    efmt = '%12.3f'
+                    if parm == 'BkPkpos':
+                        fmt = '%14.4f'
+                        efmt = '%12.4f'
+                    name = pfx+parm+';%d'%(ip)
+                    ptstr += fmt%(parmDict[name])
+                    if name in sigDict:
+                        ptstr += efmt%(sigDict[name])
+                    else:
+                        ptstr += 12*' '
                 print >>pFile,ptstr
-                print >>pFile,sigstr
         sumBk = np.array(Histogram['sumBk'])
         print >>pFile,' Background sums: empirical %.3g, Debye %.3g, peaks %.3g, Total %.3g'    \
             %(sumBk[0],sumBk[1],sumBk[2],np.sum(sumBk))

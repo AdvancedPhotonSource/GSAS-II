@@ -2291,7 +2291,7 @@ class GSASII(wx.Frame):
                 self.PatternTree.SelectItem(item)
                 
     def OnReadPowderPeaks(self,event):
-        'Bound to menu Data/Read Powder Peaks -- still needed?'
+        'Bound to menu Data/Read Powder Peaks'
         Cuka = 1.54052
         self.CheckNotebook()
         dlg = wx.FileDialog(self, 'Choose file with peak list', '.', '', 
@@ -3536,6 +3536,7 @@ class GSASII(wx.Frame):
                             Id = item
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
                     if Id:
+                        self.PickIdText = None  #force reload of PickId contents
                         self.PatternTree.SelectItem(Id)
                     if parentName:
                         parentId = G2gd.GetPatternTreeItemId(self, self.root, parentName)
@@ -3592,6 +3593,7 @@ class GSASII(wx.Frame):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     Id = 0
+                    self.PickIdText = None  #force reload of PickId contents
                     self.PatternTree.DeleteChildren(self.root)
                     if self.HKL: self.HKL = []
                     if self.G2plotNB.plotList:

@@ -107,7 +107,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY, wxID_SAMPLECOPY, wxID_SAMPLECOPYSOME, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
     wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,wxID_SAMPLE1VAL,wxID_ALLSAMPLELOAD,
-] = [wx.NewId() for item in range(12)]
+    wxID_PEAKSMOVE,
+] = [wx.NewId() for item in range(13)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
     wxID_INSTSAVE, wxID_INST1VAL, wxID_INSTCALIB,
@@ -1366,6 +1367,9 @@ class DataFrame(wx.Frame):
             help='Copy background parameters to other histograms')
         self.BackEdit.Append(id=wxID_BACKFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
             help='Copy background refinement flags to other histograms')
+        self.BackEdit.Append(id=wxID_PEAKSMOVE, kind=wx.ITEM_NORMAL,text='Move peaks',
+            help='Move background peaks to Peak List')
+            
         self.PostfillDataMenu()
             
         # PDR / Instrument Parameters
@@ -3748,6 +3752,11 @@ def GetPatternTreeItemId(G2frame, parentId, itemText):
 def MovePatternTreeToGrid(G2frame,item):
     '''Called from GSASII.OnPatternTreeSelChanged when a item is selected on the tree 
     '''
+#    if G2frame.PickId:
+#        print G2frame.PatternTree.GetItemText(G2frame.PickId)
+#        parent = G2frame.PatternTree.GetItemParent(G2frame.PickId)
+#        if parent:
+#            print G2frame.PatternTree.GetItemText(parent)
     pickName = G2frame.PatternTree.GetItemText(item)
     if G2frame.PickIdText == pickName:
         return
@@ -3791,7 +3800,6 @@ def MovePatternTreeToGrid(G2frame,item):
         parentID = G2frame.PatternTree.GetItemParent(item)
     if G2frame.PatternTree.GetItemParent(item) == G2frame.root:
         G2frame.PatternId = item
-#        G2frame.PickId = item
         if G2frame.PatternTree.GetItemText(item) == 'Notebook':
             SetDataMenuBar(G2frame,G2frame.dataFrame.DataNotebookMenu)
             G2frame.PatternId = 0
@@ -3869,42 +3877,35 @@ def MovePatternTreeToGrid(G2frame,item):
             wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
                 value='Select one phase to see its parameters')            
     elif 'I(Q)' in G2frame.PatternTree.GetItemText(item):
-#        G2frame.PickId = item
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
         G2pdG.UpdatePDFGrid(G2frame,data)
         G2plt.PlotISFG(G2frame,type='I(Q)',newPlot=True)
     elif 'S(Q)' in G2frame.PatternTree.GetItemText(item):
-#        G2frame.PickId = item
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
         G2pdG.UpdatePDFGrid(G2frame,data)
         G2plt.PlotISFG(G2frame,type='S(Q)',newPlot=True)
     elif 'F(Q)' in G2frame.PatternTree.GetItemText(item):
-#        G2frame.PickId = item
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
         G2pdG.UpdatePDFGrid(G2frame,data)
         G2plt.PlotISFG(G2frame,type='F(Q)',newPlot=True)
     elif 'G(R)' in G2frame.PatternTree.GetItemText(item):
-#        G2frame.PickId = item
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,G2frame.PatternId,'PDF Controls'))
         G2pdG.UpdatePDFGrid(G2frame,data)
         G2plt.PlotISFG(G2frame,type='G(R)',newPlot=True)            
     elif G2frame.PatternTree.GetItemText(parentID) == 'Phases':
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         G2phG.UpdatePhaseData(G2frame,item,data,oldPage)
     elif G2frame.PatternTree.GetItemText(item) == 'Comments':
         SetDataMenuBar(G2frame,G2frame.dataFrame.DataCommentsMenu)
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         UpdateComments(G2frame,data)
     elif G2frame.PatternTree.GetItemText(item) == 'Image Controls':
         G2frame.dataFrame.SetTitle('Image Controls')
-#        G2frame.PickId = item
         G2frame.Image = G2frame.PatternTree.GetItemParent(item)
         masks = G2frame.PatternTree.GetItemPyData(
             GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
@@ -3913,14 +3914,12 @@ def MovePatternTreeToGrid(G2frame,item):
         G2plt.PlotImage(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Masks':
         G2frame.dataFrame.SetTitle('Masks')
-#        G2frame.PickId = item
         G2frame.Image = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(item)
         G2imG.UpdateMasks(G2frame,data)
         G2plt.PlotImage(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Stress/Strain':
         G2frame.dataFrame.SetTitle('Stress/Strain')
-#        G2frame.PickId = item
         G2frame.Image = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(item)
         G2plt.PlotImage(G2frame)
@@ -3929,7 +3928,6 @@ def MovePatternTreeToGrid(G2frame,item):
     elif G2frame.PatternTree.GetItemText(item) == 'PDF Controls':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         for i in G2frame.ExportPDF: i.Enable(True)
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdatePDFGrid(G2frame,data)
         G2plt.PlotISFG(G2frame,type='I(Q)')
@@ -3939,7 +3937,6 @@ def MovePatternTreeToGrid(G2frame,item):
     elif G2frame.PatternTree.GetItemText(item) == 'Peak List':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         for i in G2frame.ExportPeakList: i.Enable(True)
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
 #patch
         if 'list' in str(type(data)):
@@ -3950,27 +3947,23 @@ def MovePatternTreeToGrid(G2frame,item):
         G2plt.PlotPatterns(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Background':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdateBackground(G2frame,data)
         G2plt.PlotPatterns(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Limits':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         datatype = G2frame.PatternTree.GetItemText(G2frame.PatternId)[:4]
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdateLimitsGrid(G2frame,data,datatype)
         G2plt.PlotPatterns(G2frame,plotType=datatype)
     elif G2frame.PatternTree.GetItemText(item) == 'Instrument Parameters':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)[0]
         G2pdG.UpdateInstrumentGrid(G2frame,data)
         if 'P' in data['Type'][0]:          #powder data only
             G2plt.PlotPeakWidths(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Models':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdateModelsGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame,plotType='SASD')
@@ -3978,12 +3971,10 @@ def MovePatternTreeToGrid(G2frame,item):
             G2plt.PlotSASDSizeDist(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Substances':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         G2pdG.UpdateSubstanceGrid(G2frame,data)
     elif G2frame.PatternTree.GetItemText(item) == 'Sample Parameters':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         datatype = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[2][:4]
 
@@ -3999,7 +3990,6 @@ def MovePatternTreeToGrid(G2frame,item):
     elif G2frame.PatternTree.GetItemText(item) == 'Index Peak List':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         for i in G2frame.ExportPeakList: i.Enable(True)
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
 #patch
         if len(data) != 2:
@@ -4013,7 +4003,6 @@ def MovePatternTreeToGrid(G2frame,item):
             G2plt.PlotPatterns(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Unit Cells List':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         if not data:
             data.append([0,0.0,4,25.0,0,'P1',1,1,1,90,90,90]) #zero error flag, zero value, max Nc/No, start volume
@@ -4034,7 +4023,6 @@ def MovePatternTreeToGrid(G2frame,item):
             G2plt.PlotPatterns(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Reflection Lists':   #powder reflections
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
-#        G2frame.PickId = item
         data = G2frame.PatternTree.GetItemPyData(item)
         G2frame.RefList = ''
         if len(data):
@@ -4042,13 +4030,12 @@ def MovePatternTreeToGrid(G2frame,item):
         G2pdG.UpdateReflectionGrid(G2frame,data)
         G2plt.PlotPatterns(G2frame)
     elif G2frame.PatternTree.GetItemText(item) == 'Reflection List':    #HKLF reflections
-#        G2frame.PickId = item
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
         G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True,Name=name)
 
-    if G2frame.PickId: 
+    if G2frame.PickId:
         G2frame.PickIdText = G2frame.PatternTree.GetItemText(G2frame.PickId)
     G2frame.dataFrame.Raise()
 

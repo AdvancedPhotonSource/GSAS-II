@@ -624,7 +624,7 @@ def UpdatePeakGrid(G2frame, data):
                         wg.GRIDTABLE_NOTIFY_ROWS_DELETED,0,nDel)
                     G2frame.dataDisplay.ProcessTableMessage(msg)
                 data = G2frame.PeakTable.GetData()
-                G2frame.PatternTree.SetItemPyData(G2frame.PickId,data[:-nDel])
+                G2frame.PatternTree.SetItemPyData(G2frame.PickId,data['peaks'][:-nDel])
                 G2frame.dataDisplay.ForceRefresh()
                 setBackgroundColors()
                         
@@ -788,6 +788,15 @@ def UpdateBackground(G2frame,data):
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
             G2frame.PatternTree.SetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),copy.copy(data))
+                
+    def OnPeaksMove(event):
+        if not data[1]['nPeaks']:
+            G2frame.ErrorDialog('Error','No peaks to move')
+            return
+        Peaks = {'peaks':[],'sigDict':{}}
+        for peak in data[1]['peaksList']:
+            Peaks['peaks'].append([peak[0],0,peak[2],0,peak[4],0,peak[6],0])
+        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'),Peaks)
         
     def BackSizer():
         
@@ -949,7 +958,7 @@ def UpdateBackground(G2frame,data):
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Peaks in background: '),0,WACV)
         topSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' No. peaks: '),0,WACV)
-        peaks = wx.ComboBox(G2frame.dataDisplay,-1,value=str(data[1]['nPeaks']),choices=[str(i) for i in range(12)],
+        peaks = wx.ComboBox(G2frame.dataDisplay,-1,value=str(data[1]['nPeaks']),choices=[str(i) for i in range(30)],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         peaks.Bind(wx.EVT_COMBOBOX,OnPeaks)
         topSizer.Add(peaks,0,WACV)
@@ -981,6 +990,7 @@ def UpdateBackground(G2frame,data):
         Status = G2frame.dataFrame.CreateStatusBar()
     G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2gd.wxID_BACKCOPY)
     G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2gd.wxID_BACKFLAGCOPY)
+    G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2gd.wxID_PEAKSMOVE)
     BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background')
     Choices = ['chebyschev','cosine','Q^2 power series','Q^-2 powder series','lin interpolate','inv interpolate','log interpolate']
     mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -1424,7 +1434,7 @@ def UpdateInstrumentGrid(G2frame,data):
                     itemVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=nDig,typeHint=float,OnLeave=AfterChange)
                     instSizer.Add(itemVal,0,WACV)
                     instSizer.Add(RefineBox(item),0,WACV)
-            else:                                   #time of flight (neutrons)
+            elif 'T' in insVal['Type']:                                   #time of flight (neutrons)
                 subSizer = wx.BoxSizer(wx.HORIZONTAL)
                 subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Fligth path: '),0,WACV)
                 txt = '%8.3f'%(insVal['fltPath'])
@@ -1477,6 +1487,31 @@ def UpdateInstrumentGrid(G2frame,data):
                     dspLst.append(nDig)
                     refFlgElem.append([item,2])
                     instSizer.Add(RefineBox(item),0,WACV)
+            elif 'PKS' in insVal['Type']:   #peak positions only
+                key = 'Lam'
+                instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef[key])),
+                    0,WACV)
+                waveVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,key,nDig=(10,6),typeHint=float,OnLeave=AfterChange)
+                labelLst.append(u'Lam (\xc5)')
+                elemKeysLst.append([key,1])
+                dspLst.append([10,6])
+                instSizer.Add(waveVal,0,WACV)
+                refFlgElem.append([key,2])                   
+#                    instSizer.Add(RefineBox(key),0,WACV)
+                for item in ['Zero',]:
+                    if item in insDef:
+                        labelLst.append(item)
+                        elemKeysLst.append([item,1])
+                        dspLst.append([10,4])
+                        instSizer.Add(
+                            wx.StaticText(G2frame.dataDisplay,-1,lblWdef(item,4,insDef[item])),
+                            0,WACV)
+                        itemVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,item,nDig=(10,4),typeHint=float,OnLeave=AfterChange)
+                        instSizer.Add(itemVal,0,WACV)
+                        refFlgElem.append([item,2])
+#                        instSizer.Add(RefineBox(item),0,WACV)
+                
+                
         elif 'S' in insVal['Type']:                       #single crystal data
             if 'C' in insVal['Type']:               #constant wavelength
                 instSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,u' Lam (\xc5): (%10.6f)'%(insDef['Lam'])),
@@ -2223,7 +2258,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
         'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','P -1']
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    if 'C' in Inst['Type'][0]:
+    if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
         wave = G2mth.getWave(Inst)
     else:
         difC = Inst['difC'][1]

@@ -632,7 +632,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         poSizer.Add(poAxis,0,WACV)
         return poSizer
         
-    def SHDataSizer(POData,sizer):
+    def SHDataSizer(POData):
         
         def OnODFValue(event):
             Obj = event.GetEventObject()
@@ -645,9 +645,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
             Obj.SetValue('%8.3f'%(POData[5][odf]))
             G2plt.PlotSizeStrainPO(G2frame,data,DData.G2hist)
     
-        textJ = G2lat.textureIndex(POData[5])
-        sizer.Add(wx.StaticText(DData,-1,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
-            ,0,WACV|wx.BOTTOM,5)
         ODFSizer = wx.FlexGridSizer(0,8,2,2)
         ODFIndx = {}
         ODFkeys = POData[5].keys()
@@ -915,7 +912,10 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 poSizer.Add(MDDataSizer(POData))
             else:           #'SH'
                 if POData[4]:       #SH order > 0
-                    poSizer.Add(SHDataSizer(POData),sizer)
+                    textJ = G2lat.textureIndex(POData[5])
+                    poSizer.Add(wx.StaticText(DData,-1,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
+                        ,0,WACV|wx.BOTTOM,5)
+                    poSizer.Add(SHDataSizer(POData))
                     poSizer.Add(SHPenalty(POData))
                     
             bottomSizer.Add(poSizer)

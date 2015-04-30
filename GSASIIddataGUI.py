@@ -81,8 +81,8 @@ def UpdateDData(G2frame,DData,data,hist=''):
             Obj = event.GetEventObject()
             generalData['Data plot type'] = Obj.GetStringSelection()
             G2plt.PlotSizeStrainPO(G2frame,data,DData.G2hist)
-            #wx.CallLater(100,UpdateDData,G2frame,DData,data)
-            wx.CallLater(100,RepaintHistogramInfo)
+            wx.CallLater(100,UpdateDData,G2frame,DData,data)
+#            wx.CallLater(100,RepaintHistogramInfo)
             
         def OnPOhkl(event):
             Obj = event.GetEventObject()
@@ -914,11 +914,11 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 if POData[4]:       #SH order > 0
                     textJ = G2lat.textureIndex(POData[5])
                     poSizer.Add(wx.StaticText(DData,-1,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
-                        ,0,WACV|wx.BOTTOM,5)
-                    poSizer.Add(SHDataSizer(POData))
-                    poSizer.Add(SHPenalty(POData))
+                        ,0,WACV|wx.TOP|wx.BOTTOM,5)
+                    poSizer.Add(SHDataSizer(POData),0,WACV|wx.TOP|wx.BOTTOM,5)
+                    poSizer.Add(SHPenalty(POData),0,WACV|wx.TOP|wx.BOTTOM,5)
                     
-            bottomSizer.Add(poSizer)
+            bottomSizer.Add(poSizer,0,WACV|wx.TOP|wx.BOTTOM,5)
             bottomSizer.Add(ExtSizer(),0,WACV|wx.TOP|wx.BOTTOM,5)
             bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
         elif DData.G2hist[:4] == 'HKLF':
@@ -937,12 +937,12 @@ def UpdateDData(G2frame,DData,data,hist=''):
     if DData.G2hist != '':
         topSizer = wx.FlexGridSizer(1,2,5,5)
         selSizer = wx.BoxSizer(wx.HORIZONTAL)    
-        selSpin = wx.SpinButton(DData,size=(20,100),style=wx.SP_VERTICAL|wx.SP_WRAP)
+        selSpin = wx.SpinButton(DData,size=(20,120),style=wx.SP_VERTICAL|wx.SP_WRAP)
         selSpin.SetValue(keyList.index(DData.G2hist))
         selSpin.SetRange(0,len(keyList)-1)
         selSpin.Bind(wx.EVT_SPIN,OnSelSpin)
         selSizer.Add(selSpin)
-        select = wx.ListBox(DData,choices=keyList,style=wx.LB_SINGLE,size=(-1,100))
+        select = wx.ListBox(DData,choices=keyList,style=wx.LB_SINGLE,size=(-1,120))
         select.SetSelection(keyList.index(DData.G2hist))
         select.SetFirstItem(keyList.index(DData.G2hist))
         select.Bind(wx.EVT_LISTBOX,OnSelect)

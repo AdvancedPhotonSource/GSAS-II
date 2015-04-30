@@ -2157,6 +2157,7 @@ class GSASII(wx.Frame):
         self.MaskKey = ''           #trigger for making image masks
         self.StrainKey = ''         #ditto for new strain d-zeros
         self.EnablePlot = True
+        self.hist = ''              # selected histogram in Phase/Data tab
         if GSASIIpath.GetConfigValue('Starting_directory'):
             try: 
                 os.chdir(GSASIIpath.GetConfigValue('Starting_directory'))

@@ -29,7 +29,8 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             formatName = 'GSAS powder data',
             longFormatName = 'GSAS powder data files (.fxye, .raw, .gsas...)'
             )
-        self.clockWd = None
+        self.clockWd = {}
+        self.TimeMap = {}
 
     # Validate the contents -- look for a bank line
     def ContentsValidator(self, filepointer):
@@ -102,7 +103,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         def GetESDdata(File,Pos,Bank):
             File.seek(Pos)
             cons = Bank.split()
-            if self.clockWd:
+            if 'TIME_MAP' == cons[4]:
                 start = 0
                 step = 1
             else:
@@ -114,7 +115,11 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             S = File.readline()
             j = 0
             while S and S[:4] != 'BANK' and S[0] != '#':
+                if 'TIME_MAP' in S:
+                    break
                 for i in range(0,80,16):
+                    if S[i:i+8] == 8*' ':
+                        break
                     xi = start+step*j
                     yi = sfloat(S[i:i+8])
                     ei = sfloat(S[i+8:i+16])
@@ -129,7 +134,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                 S = File.readline()
             N = len(x)
             if self.clockWd:
-                x = Tmap2TOF(self.TimeMap,clockWd)
+                x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
         
         def GetSTDdata(File,Pos,Bank):
@@ -149,6 +154,8 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             j = 0
             while S and S[:4] != 'BANK' and S[0] != '#':
                 for i in range(0,80,8):
+                    if S[i:i+10] == 10*' ':
+                        break
                     xi = start+step*j
                     ni = max(sint(S[i:i+2]),1)
                     yi = max(sfloat(S[i+2:i+8]),0.0)
@@ -169,7 +176,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                 S = File.readline()
             N = len(x)
             if self.clockWd:
-                x = Tmap2TOF(self.TimeMap,self.clockWd)[:-2]
+                x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
            
         def GetALTdata(File,Pos,Bank):
@@ -182,6 +189,8 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             j = 0
             while S and S[:4] != 'BANK' and S[0] != '#':
                 for i in range(0,80,20):
+                    if S[i:i+8] == 9*' ':
+                        break
                     xi = sfloat(S[i:i+9])/3200.
                     yi = sfloat(S[i+9:i+16])/1000.
                     ei = sfloat(S[i+16:i+21])/1000.
@@ -196,13 +205,14 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                 S = File.readline()
             N = len(x)
             if self.clockWd:
-                x = Tmap2TOF(self.TimeMap,clockWd)
+                x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
             
         def GetTimeMap(File,Pos,TimeMap):
             File.seek(Pos)
             cons = TimeMap[8:].split()
-            mapNo = int(cons[0])
+            mapNo = cons[0]
+            if mapNo == '10': mapNo = '1'   #HIPD cluge!
             Nch = int(cons[1])
             Nrec = int(cons[2])
             clockWd = float(cons[4])/1000.          #in mus
@@ -220,7 +230,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             TMap[-1] = [Nch+1,TMax,0]
             TMap = TMap.T
             TMap[0] -= 1
-            return TMap.T,clockWd
+            return TMap.T,clockWd,mapNo
             
         def Tmap2TOF(TMap,clockWd):
             TOF = []
@@ -288,7 +298,10 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                             self.errors = 'Error reading time map before any bank lines'
                         else:
                             self.errors = 'Error reading time map after bank:\n  '+str(Banks[-1])
-                        self.TimeMap,self.clockWd = GetTimeMap(filepointer,filepointer.tell(),S)
+                        timemap,clockwd,mapNo = GetTimeMap(filepointer,filepointer.tell(),S)
+                        self.TimeMap[mapNo] = timemap
+                        self.clockWd[mapNo] = clockwd 
+                        
             except Exception as detail:
                 self.errors += '\n  '+str(detail)
                 print self.formatName+' scan error:'+str(detail) # for testing

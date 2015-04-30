@@ -1500,7 +1500,9 @@ def UpdateRigidBodies(G2frame,data):
                 refChoice[rbId][i].append(rbRef[i])
                 refChoice[rbId][i].sort()     
             
-        VectorRB.DestroyChildren()
+        #VectorRB.DestroyChildren() # bad, deletes scrollbars on Mac!
+        if VectorRB.GetSizer():
+            VectorRB.GetSizer().Clear(True)
         VectorRBDisplay = wx.Panel(VectorRB)
         VectorRBSizer = wx.BoxSizer(wx.VERTICAL)
         for rbId in data['RBIds']['Vector']:
@@ -1778,7 +1780,9 @@ def UpdateRigidBodies(G2frame,data):
                 refChoice[rbId][i].append(rbRef[i])
                 refChoice[rbId][i].sort()     
             
-        ResidueRB.DestroyChildren()
+        #ResidueRB.DestroyChildren() # bad, deletes scrollbars on Mac!
+        if ResidueRB.GetSizer():
+            ResidueRB.GetSizer().Clear(True)
         ResidueRBDisplay = wx.Panel(ResidueRB)
         ResidueRBSizer = wx.BoxSizer(wx.VERTICAL)
         for rbId in data['RBIds']['Residue']:

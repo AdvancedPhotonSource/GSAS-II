@@ -239,7 +239,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         'Drawing':{}
         """        
         # UpdateGeneral execution starts here
-        General.DestroyChildren()
+        #General.DestroyChildren() # bad, deletes scrollbars on Mac!
+        if General.GetSizer():
+            General.GetSizer().Clear(True)
         phaseTypes = ['nuclear','modulated','magnetic','macromolecular']
         SetupGeneral()
         generalData = data['General']
@@ -3612,7 +3614,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
 
         # UpdateTexture executable starts here
-        Texture.DestroyChildren()
+        #Texture.DestroyChildren() # bad, deletes scrollbars on Mac!
+        if Texture.GetSizer():
+            Texture.GetSizer().Clear(True)
         G2frame.dataFrame.SetStatusText('')
         generalData = data['General']        
         SGData = generalData['SGData']
@@ -4272,7 +4276,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
         # FillRigidBodyGrid executable code starts here
         if refresh:
-            RigidBodies.DestroyChildren()
+            #RigidBodies.DestroyChildren() # bad, deletes scrollbars on Mac!
+            if RigidBodies.GetSizer():
+                RigidBodies.GetSizer().Clear(True)
         general = data['General']
         cx,ct,cs,cia = general['AtomPtrs']
         AtLookUp = G2mth.FillAtomLookUp(data['Atoms'],cia+8)
@@ -4526,7 +4532,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if len(data['testRBObj']):
                 G2plt.PlotStructure(G2frame,data)
                     
-            RigidBodies.DestroyChildren()
+            #RigidBodies.DestroyChildren() # bad, deletes scrollbars on Mac!
+            if RigidBodies.GetSizer():
+                RigidBodies.GetSizer().Clear(True)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             mainSizer.Add((5,5),0)
             if data['testRBObj']:
@@ -5137,7 +5145,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return resultsSizer
         
         # UpdateMCSA executable code starts here
-        G2frame.MCSA.DestroyChildren()
+        #G2frame.MCSA.DestroyChildren() # bad, deletes scrollbars on Mac!
+        if G2frame.MCSA.GetSizer():
+            G2frame.MCSA.GetSizer().Clear(True)
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         general = data['General']

@@ -71,6 +71,8 @@ def UpdateDData(G2frame,DData,data,hist=''):
     SGData = generalData['SGData']
     if not hist and len(keyList):
         DData.G2hist = keyList[0]
+    elif hist:
+        DData.G2hist = hist
 
     PWDR = any(['PWDR' in item for item in keyList])
     Indx = {}
@@ -81,8 +83,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             Obj = event.GetEventObject()
             generalData['Data plot type'] = Obj.GetStringSelection()
             G2plt.PlotSizeStrainPO(G2frame,data,DData.G2hist)
-            wx.CallLater(100,UpdateDData,G2frame,DData,data)
-#            wx.CallLater(100,RepaintHistogramInfo)
+            wx.CallLater(100,UpdateDData,G2frame,DData,data,DData.G2hist)
             
         def OnPOhkl(event):
             Obj = event.GetEventObject()
@@ -100,16 +101,16 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
         plotSizer = wx.BoxSizer(wx.VERTICAL)
         choice = ['None','Mustrain','Size','Preferred orientation']
-        plotSel = wx.RadioBox(DData,-1,'Select plot type:',choices=choice,
+        plotSel = wx.RadioBox(DData,wx.ID_ANY,'Select plot type:',choices=choice,
             majorDimension=1,style=wx.RA_SPECIFY_COLS)
         plotSel.SetStringSelection(generalData['Data plot type'])
         plotSel.Bind(wx.EVT_RADIOBOX,OnPlotSel)    
         plotSizer.Add(plotSel)
         if generalData['Data plot type'] == 'Preferred orientation':
             POhklSizer = wx.BoxSizer(wx.HORIZONTAL)
-            POhklSizer.Add(wx.StaticText(DData,-1,' Plot preferred orientation for H K L: '),0,WACV)
+            POhklSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Plot preferred orientation for H K L: '),0,WACV)
             h,k,l = generalData['POhkl']
-            poAxis = wx.TextCtrl(DData,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+            poAxis = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
             poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOhkl)
             poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOhkl)
             POhklSizer.Add(poAxis,0,WACV)
@@ -134,9 +135,9 @@ def UpdateDData(G2frame,DData,data,hist=''):
                         
         scaleSizer = wx.BoxSizer(wx.HORIZONTAL)
         if 'PWDR' in DData.G2hist:
-            scaleRef = wx.CheckBox(DData,-1,label=' Phase fraction: ')
+            scaleRef = wx.CheckBox(DData,wx.ID_ANY,label=' Phase fraction: ')
         elif 'HKLF' in DData.G2hist:
-            scaleRef = wx.CheckBox(DData,-1,label=' Scale factor: ')                
+            scaleRef = wx.CheckBox(DData,wx.ID_ANY,label=' Scale factor: ')                
         scaleRef.SetValue(UseList[DData.G2hist]['Scale'][1])
         scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
         scaleSizer.Add(scaleRef,0,WACV)
@@ -173,7 +174,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
         Obj = event.GetEventObject()
         UseList[DData.G2hist]['Size'][0] = Obj.GetValue()
         G2plt.PlotSizeStrainPO(G2frame,data,DData.G2hist)
-        #wx.CallLater(100,UpdateDData,G2frame,DData,data)
         wx.CallLater(100,RepaintHistogramInfo)
         
     def OnSizeRef(event):
@@ -234,13 +234,11 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 UseList[item]['Size'][4][i] = 1.0
                 UseList[item]['Size'][4][i+3] = 0.0
         G2plt.PlotSizeStrainPO(G2frame,data,item)
-        #wx.CallLater(100,UpdateDData,G2frame,DData,data)
         wx.CallLater(100,RepaintHistogramInfo)
             
     def OnStrainType(event):
         Obj = event.GetEventObject()
         UseList[DData.G2hist]['Mustrain'][0] = Obj.GetValue()
-        #wx.CallLater(100,UpdateDData,G2frame,DData,data)
         G2plt.PlotSizeStrainPO(G2frame,data,DData.G2hist)
         wx.CallLater(100,RepaintHistogramInfo)
         
@@ -305,7 +303,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
             for i in range(nTerm):
                 UseList[item]['Mustrain'][4][i] = vals[i]
         G2plt.PlotSizeStrainPO(G2frame,data,item)
-        #wx.CallLater(100,UpdateDData,G2frame,DData,data)
         wx.CallLater(100,RepaintHistogramInfo)
             
     def OnHstrainRef(event):
@@ -352,7 +349,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
         Order = int(Obj.GetValue())
         UseList[DData.G2hist]['Pref.Ori.'][4] = Order
         UseList[DData.G2hist]['Pref.Ori.'][5] = SetPOCoef(Order,DData.G2hist)
-        #wx.CallLater(100,UpdateDData,G2frame,DData,data)
         wx.CallLater(100,RepaintHistogramInfo)
 
     def OnPOType(event):
@@ -361,7 +357,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
             UseList[DData.G2hist]['Pref.Ori.'][0] = 'MD'
         else:
             UseList[DData.G2hist]['Pref.Ori.'][0] = 'SH'
-        #wx.CallLater(100,UpdateDData,G2frame,DData,data)
         wx.CallLater(100,RepaintHistogramInfo)
 
     def OnPORef(event):
@@ -447,7 +442,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
         Obj = event.GetEventObject()
         item = Indx[Obj.GetId()]
         UseList[item[0]]['Extinction'][item[1]] = Obj.GetValue()
-        #wx.CallLater(100,UpdateDData,G2frame,DData,data)
         wx.CallLater(100,RepaintHistogramInfo)
             
     def checkAxis(axis):
@@ -457,7 +451,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def TopSizer(name,choices,parm,OnType):
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(wx.StaticText(DData,-1,name),0,WACV)
+        topSizer.Add(wx.StaticText(DData,wx.ID_ANY,name),0,WACV)
         sizeType = wx.ComboBox(DData,wx.ID_ANY,value=UseList[DData.G2hist][parm][0],choices=choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         sizeType.Bind(wx.EVT_COMBOBOX, OnType)
@@ -466,7 +460,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def LGmixSizer(name,OnVal,OnRef):
         lgmixSizer = wx.BoxSizer(wx.HORIZONTAL)
-        lgmixRef = wx.CheckBox(DData,-1,label='LGmix')
+        lgmixRef = wx.CheckBox(DData,wx.ID_ANY,label='LGmix')
         lgmixRef.thisown = False
         lgmixRef.SetValue(UseList[DData.G2hist][name][2][2])
         Indx[lgmixRef.GetId()] = [DData.G2hist,name]
@@ -482,7 +476,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
                     
     def ResetSizer(name,OnReset):
         resetSizer = wx.BoxSizer(wx.HORIZONTAL)
-        reset = wx.CheckBox(DData,-1,label='Reset?')
+        reset = wx.CheckBox(DData,wx.ID_ANY,label='Reset?')
         reset.thisown = False
         reset.SetValue(False)
         Indx[reset.GetId()] = [DData.G2hist,name]
@@ -492,7 +486,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def IsoSizer(name,parm,fmt,OnVal,OnRef):
         isoSizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizeRef = wx.CheckBox(DData,-1,label=name)
+        sizeRef = wx.CheckBox(DData,wx.ID_ANY,label=name)
         sizeRef.thisown = False
         sizeRef.SetValue(UseList[DData.G2hist][parm][2][0])
         Indx[sizeRef.GetId()] = [DData.G2hist,0]
@@ -508,9 +502,9 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def UniSizer(parm,OnAxis):
         uniSizer = wx.BoxSizer(wx.HORIZONTAL)
-        uniSizer.Add(wx.StaticText(DData,-1,' Unique axis, H K L: '),0,WACV)
+        uniSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Unique axis, H K L: '),0,WACV)
         h,k,l = UseList[DData.G2hist][parm][3]
-        Axis = wx.TextCtrl(DData,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+        Axis = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
         Axis.Bind(wx.EVT_TEXT_ENTER,OnAxis)
         Axis.Bind(wx.EVT_KILL_FOCUS,OnAxis)
         uniSizer.Add(Axis,0,WACV)
@@ -521,7 +515,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         parms = zip([' Equatorial '+parmName,' Axial '+parmName],
             UseList[DData.G2hist][parm][1],UseList[DData.G2hist][parm][2],range(2))
         for Pa,val,ref,id in parms:
-            sizeRef = wx.CheckBox(DData,-1,label=Pa)
+            sizeRef = wx.CheckBox(DData,wx.ID_ANY,label=Pa)
             sizeRef.thisown = False
             sizeRef.SetValue(ref)
             Indx[sizeRef.GetId()] = [DData.G2hist,id]
@@ -539,7 +533,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             UseList[DData.G2hist]['Size'][5],range(6))
         dataSizer = wx.FlexGridSizer(0,6,5,5)
         for Pa,val,ref,id in parms:
-            sizeRef = wx.CheckBox(DData,-1,label=Pa)
+            sizeRef = wx.CheckBox(DData,wx.ID_ANY,label=Pa)
             sizeRef.thisown = False
             sizeRef.SetValue(ref)
             Indx[sizeRef.GetId()] = [DData.G2hist,id]
@@ -561,7 +555,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         parms = zip(Snames,UseList[DData.G2hist]['Mustrain'][4],UseList[DData.G2hist]['Mustrain'][5],range(numb))
         dataSizer = wx.FlexGridSizer(0,6,5,5)
         for Pa,val,ref,id in parms:
-            strainRef = wx.CheckBox(DData,-1,label=Pa)
+            strainRef = wx.CheckBox(DData,wx.ID_ANY,label=Pa)
             strainRef.thisown = False
             strainRef.SetValue(ref)
             Indx[strainRef.GetId()] = [DData.G2hist,id]
@@ -579,7 +573,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         Hsnames = G2spc.HStrainNames(SGData)
         parms = zip(Hsnames,UseList[DData.G2hist]['HStrain'][0],UseList[DData.G2hist]['HStrain'][1],range(len(Hsnames)))
         for Pa,val,ref,id in parms:
-            hstrainRef = wx.CheckBox(DData,-1,label=Pa)
+            hstrainRef = wx.CheckBox(DData,wx.ID_ANY,label=Pa)
             hstrainRef.thisown = False
             hstrainRef.SetValue(ref)
             Indx[hstrainRef.GetId()] = [DData.G2hist,id]
@@ -596,18 +590,18 @@ def UpdateDData(G2frame,DData,data,hist=''):
         poSizer = wx.FlexGridSizer(0,6,5,5)
         choice = ['March-Dollase','Spherical harmonics']
         POtype = choice[['MD','SH'].index(POData[0])]
-        poSizer.Add(wx.StaticText(DData,-1,' Preferred orientation model '),0,WACV)
+        poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Preferred orientation model '),0,WACV)
         POType = wx.ComboBox(DData,wx.ID_ANY,value=POtype,choices=choice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         POType.Bind(wx.EVT_COMBOBOX, OnPOType)
         poSizer.Add(POType)
         if POData[0] == 'SH':
-            poSizer.Add(wx.StaticText(DData,-1,' Harmonic order: '),0,WACV)
+            poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Harmonic order: '),0,WACV)
             poOrder = wx.ComboBox(DData,wx.ID_ANY,value=str(POData[4]),choices=[str(2*i) for i in range(18)],
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             poOrder.Bind(wx.EVT_COMBOBOX,OnPOOrder)
             poSizer.Add(poOrder,0,WACV)
-            poRef = wx.CheckBox(DData,-1,label=' Refine? ')
+            poRef = wx.CheckBox(DData,wx.ID_ANY,label=' Refine? ')
             poRef.SetValue(POData[2])
             poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
             poSizer.Add(poRef,0,WACV)
@@ -615,7 +609,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
        
     def MDDataSizer(POData):
         poSizer = wx.BoxSizer(wx.HORIZONTAL)
-        poRef = wx.CheckBox(DData,-1,label=' March-Dollase ratio: ')
+        poRef = wx.CheckBox(DData,wx.ID_ANY,label=' March-Dollase ratio: ')
         poRef.SetValue(POData[2])
         poRef.Bind(wx.EVT_CHECKBOX,OnPORef)
         poSizer.Add(poRef,0,WACV)
@@ -624,9 +618,9 @@ def UpdateDData(G2frame,DData,data,hist=''):
         poVal.Bind(wx.EVT_TEXT_ENTER,OnPOVal)
         poVal.Bind(wx.EVT_KILL_FOCUS,OnPOVal)
         poSizer.Add(poVal,0,WACV)
-        poSizer.Add(wx.StaticText(DData,-1,' Unique axis, H K L: '),0,WACV)
+        poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Unique axis, H K L: '),0,WACV)
         h,k,l =POData[3]
-        poAxis = wx.TextCtrl(DData,-1,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
+        poAxis = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(h,k,l),style=wx.TE_PROCESS_ENTER)
         poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOAxis)
         poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOAxis)
         poSizer.Add(poAxis,0,WACV)
@@ -650,7 +644,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         ODFkeys = POData[5].keys()
         ODFkeys.sort()
         for odf in ODFkeys:
-            ODFSizer.Add(wx.StaticText(DData,-1,odf),0,WACV)
+            ODFSizer.Add(wx.StaticText(DData,wx.ID_ANY,odf),0,WACV)
             ODFval = wx.TextCtrl(DData,wx.ID_ANY,'%8.3f'%(POData[5][odf]),style=wx.TE_PROCESS_ENTER)
             ODFIndx[ODFval.GetId()] = odf
             ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
@@ -672,7 +666,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
                     return
             finally:
                 dlg.Destroy()
-            #wx.CallLater(100,UpdateDData,G2frame,DData,data)
             wx.CallLater(100,RepaintHistogramInfo)
             
         def OnshToler(event):
@@ -686,14 +679,14 @@ def UpdateDData(G2frame,DData,data,hist=''):
         A = G2lat.cell2A(generalData['Cell'][1:7])
         hkls = G2lat.GenPfHKLs(10,SGData,A)    
         shPenalty = wx.BoxSizer(wx.HORIZONTAL)
-        shPenalty.Add(wx.StaticText(DData,-1,' Negative MRD penalty list: '),0,WACV)
+        shPenalty.Add(wx.StaticText(DData,wx.ID_ANY,' Negative MRD penalty list: '),0,WACV)
         shPenalty.Add(wx.ComboBox(DData,value=POData[6][0],choices=POData[6],
             style=wx.CB_DROPDOWN),0,WACV)
         hklList = wx.Button(DData,label='Select penalty hkls')
         hklList.Bind(wx.EVT_BUTTON,OnHKLList)
         shPenalty.Add(hklList,0,WACV)
-        shPenalty.Add(wx.StaticText(DData,-1,' Zero MRD tolerance: '),0,WACV)
-        shToler = wx.TextCtrl(DData,-1,'%.2f'%(POData[7]),style=wx.TE_PROCESS_ENTER)
+        shPenalty.Add(wx.StaticText(DData,wx.ID_ANY,' Zero MRD tolerance: '),0,WACV)
+        shToler = wx.TextCtrl(DData,wx.ID_ANY,'%.2f'%(POData[7]),style=wx.TE_PROCESS_ENTER)
         shToler.Bind(wx.EVT_TEXT_ENTER,OnshToler)
         shToler.Bind(wx.EVT_KILL_FOCUS,OnshToler)
         shPenalty.Add(shToler,0,WACV)
@@ -701,7 +694,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def ExtSizer():            
         extSizer = wx.BoxSizer(wx.HORIZONTAL)
-        extRef = wx.CheckBox(DData,-1,label=' Extinction: ')
+        extRef = wx.CheckBox(DData,wx.ID_ANY,label=' Extinction: ')
         extRef.SetValue(UseList[DData.G2hist]['Extinction'][1])
         extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
         extSizer.Add(extRef,0,WACV)
@@ -715,16 +708,16 @@ def UpdateDData(G2frame,DData,data,hist=''):
     def SCExtSizer():
         extSizer = wx.BoxSizer(wx.VERTICAL)
         typeSizer = wx.BoxSizer(wx.HORIZONTAL)            
-        typeSizer.Add(wx.StaticText(DData,-1,' Extinction type: '),0,WACV)
+        typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Extinction type: '),0,WACV)
         Choices = ['None','Primary','Secondary Type I','Secondary Type II',]    # remove 'Secondary Type I & II'
-        typeTxt = wx.ComboBox(DData,-1,choices=Choices,value=UseList[DData.G2hist]['Extinction'][1],
+        typeTxt = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[DData.G2hist]['Extinction'][1],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         Indx[typeTxt.GetId()] = [DData.G2hist,1]
         typeTxt.Bind(wx.EVT_COMBOBOX,OnSCExtType)
         typeSizer.Add(typeTxt)
-        typeSizer.Add(wx.StaticText(DData,-1,' Approx: '),0,WACV)
+        typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Approx: '),0,WACV)
         Choices=['Lorentzian','Gaussian']
-        approxTxT = wx.ComboBox(DData,-1,choices=Choices,value=UseList[DData.G2hist]['Extinction'][0],
+        approxTxT = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[DData.G2hist]['Extinction'][0],
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         Indx[approxTxT.GetId()] = [DData.G2hist,0]
         approxTxT.Bind(wx.EVT_COMBOBOX,OnSCExtType)
@@ -735,13 +728,13 @@ def UpdateDData(G2frame,DData,data,hist=''):
             extSizer.Add(typeSizer,0,WACV|wx.BOTTOM,5)        
             if 'Tbar' in UseList[DData.G2hist]['Extinction'][2]:       #skipped for TOF   
                 valSizer =wx.BoxSizer(wx.HORIZONTAL)
-                valSizer.Add(wx.StaticText(DData,-1,' Tbar(mm):'),0,WACV)
+                valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Tbar(mm):'),0,WACV)
                 tbarVal = wx.TextCtrl(DData,wx.ID_ANY,
                     '%.3f'%(UseList[DData.G2hist]['Extinction'][2]['Tbar']),style=wx.TE_PROCESS_ENTER)
                 tbarVal.Bind(wx.EVT_TEXT_ENTER,OnTbarVal)
                 tbarVal.Bind(wx.EVT_KILL_FOCUS,OnTbarVal)
                 valSizer.Add(tbarVal,0,WACV)
-                valSizer.Add(wx.StaticText(DData,-1,' cos(2ThM):'),0,WACV)
+                valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' cos(2ThM):'),0,WACV)
                 cos2tm = wx.TextCtrl(DData,wx.ID_ANY,
                     '%.3f'%(UseList[DData.G2hist]['Extinction'][2]['Cos2TM']),style=wx.TE_PROCESS_ENTER)
                 cos2tm.Bind(wx.EVT_TEXT_ENTER,OnCos2TM)
@@ -758,7 +751,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             else:
                 Ekey = ['Eg','Es']
             for ekey in Ekey:
-                Eref = wx.CheckBox(DData,-1,label=ekey+' : ')
+                Eref = wx.CheckBox(DData,wx.ID_ANY,label=ekey+' : ')
                 Eref.SetValue(UseList[DData.G2hist]['Extinction'][2][ekey][1])
                 Indx[Eref.GetId()] = [DData.G2hist,ekey]
                 Eref.Bind(wx.EVT_CHECKBOX, OnEref)
@@ -776,7 +769,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
     def BabSizer():
         babSizer = wx.BoxSizer(wx.HORIZONTAL)
         for bab in ['A','U']:
-            babRef = wx.CheckBox(DData,-1,label=' Babinet '+bab+': ')
+            babRef = wx.CheckBox(DData,wx.ID_ANY,label=' Babinet '+bab+': ')
             babRef.SetValue(UseList[DData.G2hist]['Babinet']['Bab'+bab][1])
             Indx[babRef.GetId()] = [DData.G2hist,bab]
             babRef.Bind(wx.EVT_CHECKBOX, OnBabRef)
@@ -808,14 +801,10 @@ def UpdateDData(G2frame,DData,data,hist=''):
         Indx.clear()
         G2frame.bottomSizer = ShowHistogramInfo()
         mainSizer.Add(G2frame.bottomSizer)
-        #scrollbars initially set in G2phsGUI.SetPhaseWindow(G2frame.dataFrame,DData,mainSizer)
-        #phasePage.SetSize(Size)
-        #phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
-        #mainFrame.setSizePosLeft(Size)
         mainSizer.Layout()
-        #G2frame.dataFrame.Layout()
-        #G2frame.dataFrame.SendSizeEvent()
         G2frame.dataFrame.Refresh()
+        DData.SetVirtualSize(mainSizer.GetMinSize())
+        G2frame.dataFrame.SendSizeEvent()
         
     def ShowHistogramInfo():
         try:
@@ -830,7 +819,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             UseList[DData.G2hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
         bottomSizer = wx.BoxSizer(wx.VERTICAL)
         showSizer = wx.BoxSizer(wx.HORIZONTAL)
-        useData = wx.CheckBox(DData,-1,label='Use Histogram: '+DData.G2hist+' ?')
+        useData = wx.CheckBox(DData,wx.ID_ANY,label='Use Histogram: '+DData.G2hist+' ?')
         showSizer.Add(useData,0,WACV|wx.TOP|wx.BOTTOM,5)
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(UseList[DData.G2hist]['Use'])
@@ -895,7 +884,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 bottomSizer.Add(genSizer)
                 bottomSizer.Add(GenStrainDataSizer(),0,WACV|wx.BOTTOM,5)
             
-            bottomSizer.Add(wx.StaticText(DData,-1,' Hydrostatic/elastic strain:'))
+            bottomSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Hydrostatic/elastic strain:'))
             bottomSizer.Add(HstrainSizer())
                 
             poSizer = wx.BoxSizer(wx.VERTICAL)
@@ -913,7 +902,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             else:           #'SH'
                 if POData[4]:       #SH order > 0
                     textJ = G2lat.textureIndex(POData[5])
-                    poSizer.Add(wx.StaticText(DData,-1,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
+                    poSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Spherical harmonic coefficients: '+'Texture index: %.3f'%(textJ))
                         ,0,WACV|wx.TOP|wx.BOTTOM,5)
                     poSizer.Add(SHDataSizer(POData),0,WACV|wx.TOP|wx.BOTTOM,5)
                     poSizer.Add(SHPenalty(POData),0,WACV|wx.TOP|wx.BOTTOM,5)
@@ -927,13 +916,11 @@ def UpdateDData(G2frame,DData,data,hist=''):
     
         return bottomSizer
                 
-    DData.DestroyChildren()
+    #DData.DestroyChildren() # bad, deletes scrollbars on Mac!
     if DData.GetSizer():
         DData.GetSizer().Clear(True)
-    if not UseList:
-        return 
     mainSizer = wx.BoxSizer(wx.VERTICAL)
-    mainSizer.Add(wx.StaticText(DData,-1,' Histogram data for '+PhaseName+':'),0,WACV)
+    mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,WACV)
     if DData.G2hist != '':
         topSizer = wx.FlexGridSizer(1,2,5,5)
         selSizer = wx.BoxSizer(wx.HORIZONTAL)    
@@ -953,4 +940,8 @@ def UpdateDData(G2frame,DData,data,hist=''):
         mainSizer.Add(topSizer)       
         G2frame.bottomSizer = ShowHistogramInfo()
         mainSizer.Add(G2frame.bottomSizer)
+    elif not UseList:
+        mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (This phase has no associated data, use appropriate Edit/Add... menu item)'),
+                      0,WACV|wx.TOP,10)
+        
     G2phsGUI.SetPhaseWindow(G2frame.dataFrame,DData,mainSizer)

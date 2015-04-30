@@ -3413,7 +3413,7 @@ def UpdateSubstanceGrid(G2frame,data):
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
     wave = G2mth.getWave(Inst)
     if G2frame.dataDisplay:
-        G2frame.dataFrame.DestroyChildren()
+        G2frame.dataFrame.DestroyChildren()  # is this a ScrolledWindow? If so, bad!
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.SubstanceMenu)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
@@ -4089,7 +4089,7 @@ def UpdateModelsGrid(G2frame,data):
         BackSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,BackId, 'Sample Parameters'))
         Profile[5] = BackSample['Scale'][0]*G2frame.PatternTree.GetItemPyData(BackId)[1][1]
     if G2frame.dataDisplay:
-        G2frame.dataFrame.DestroyChildren()
+        G2frame.dataFrame.DestroyChildren()   # is this a ScrolledWindow? If so, bad!
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.ModelMenu)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()

@@ -5980,6 +5980,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             UpdateGeneral()
         elif text == 'Data':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataMenu)
+            DData.G2hist = '' 
             G2ddG.UpdateDData(G2frame,DData,data)
             wx.CallAfter(G2plt.PlotSizeStrainPO,G2frame,data,hist='',Start=True)            
         elif text == 'Atoms':

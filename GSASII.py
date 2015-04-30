@@ -79,9 +79,6 @@ import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
 import GSASIIlog as log
 
-#wx inspector - use as needed
-wxInspector = False
-
 __version__ = '0.2.0'
 
 # PATCH: for Mavericks (OS X 10.9.x), wx produces an annoying warning about LucidaGrandeUI.
@@ -3669,7 +3666,7 @@ def main():
     #application = GSASIImain() # don't redirect output, someday we
     # may want to do this if we can 
     application = GSASIImain(0)
-    if wxInspector:
+    if GSASIIpath.GetConfigValue('wxInspector'):
         import wx.lib.inspection as wxeye
         wxeye.InspectionTool().Show()
 

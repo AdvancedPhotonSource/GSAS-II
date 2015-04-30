@@ -59,3 +59,7 @@ Starting_directory=None
 Import_directory=None
 '''Specifies a default location for starting GSAS-II
 '''
+
+wxInspector = None
+'''If set to True, the wxInspector widget is displayed
+'''

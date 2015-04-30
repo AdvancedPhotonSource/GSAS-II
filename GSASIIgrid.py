@@ -3752,11 +3752,6 @@ def GetPatternTreeItemId(G2frame, parentId, itemText):
 def MovePatternTreeToGrid(G2frame,item):
     '''Called from GSASII.OnPatternTreeSelChanged when a item is selected on the tree 
     '''
-#    if G2frame.PickId:
-#        print G2frame.PatternTree.GetItemText(G2frame.PickId)
-#        parent = G2frame.PatternTree.GetItemParent(G2frame.PickId)
-#        if parent:
-#            print G2frame.PatternTree.GetItemText(parent)
     pickName = G2frame.PatternTree.GetItemText(item)
     if G2frame.PickIdText == pickName:
         return
@@ -4036,7 +4031,7 @@ def MovePatternTreeToGrid(G2frame,item):
         G2pdG.UpdateReflectionGrid(G2frame,data,HKLF=True,Name=name)
 
     if G2frame.PickId:
-        G2frame.PickIdText = G2frame.PatternTree.GetItemText(G2frame.PickId)
+        G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)
     G2frame.dataFrame.Raise()
 
 def SetDataMenuBar(G2frame,menu=None):

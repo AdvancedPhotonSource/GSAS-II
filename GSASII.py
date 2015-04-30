@@ -2181,6 +2181,9 @@ class GSASII(wx.Frame):
         self.ImportDir = os.path.normpath(os.getcwd()) # specifies a default path to be used for imports
         if GSASIIpath.GetConfigValue('Import_directory'):
             self.ImportDir = GSASIIpath.GetConfigValue('Import_directory')
+            
+    def GetTreeItemsList(self,item):
+        return self.PatternTree._getTreeItemsList(item)
 
     def OnSize(self,event):
         'Called when the main window is resized. Not sure why'
@@ -2401,7 +2404,7 @@ class GSASII(wx.Frame):
                             {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'Sample load':0.0})
                         self.PatternTree.SetItemPyData(Id,[Npix,imagefile])
                         self.PickId = Id
-                        self.PickIdText = self.PatternTree.GetItemText(self.PickId)
+                        self.PickIdText = self.GetTreeItemsList(self.PickId)
                         self.Image = Id
                 os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!                
                 self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))             #show last one
@@ -3496,7 +3499,6 @@ class GSASII(wx.Frame):
                              warnmsg+
                              '\nRefinement not possible')
             return
-        #works - but it'd be better if it could restore plots
         dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
             parent=self)
@@ -3506,11 +3508,14 @@ class GSASII(wx.Frame):
         dlg.CenterOnParent()
         Rw = 100.00
         oldId =  self.PatternTree.GetSelection()        #retain current selection
+        oldPath = self.GetTreeItemsList(oldId)
         parentName = ''
         oldName = self.PatternTree.GetItemText(oldId)
         parentId = self.PatternTree.GetItemParent(oldId)
         if parentId:
             parentName = self.PatternTree.GetItemText(parentId)     #find the current data tree name
+            if 'Phases' in parentName:
+                tabId = self.dataDisplay.GetSelection()
         try:
             OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg)
         finally:
@@ -3544,6 +3549,8 @@ class GSASII(wx.Frame):
                         else:
                             itemId = G2gd.GetPatternTreeItemId(self, self.root, oldName)
                         self.PatternTree.SelectItem(itemId)
+                    if 'Phases' in parentName:
+                        self.dataDisplay.SetSelection(tabId)
             finally:
                 dlg2.Destroy()
         else:

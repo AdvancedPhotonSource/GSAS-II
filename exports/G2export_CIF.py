@@ -46,6 +46,7 @@ import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
 import GSASIIphsGUI as G2pg
 import GSASIIstrMain as G2stMn
+import GSASIIctrls as G2G
 
 DEBUG = False    #True to skip printing of reflection/powder profile lists
 
@@ -1276,7 +1277,7 @@ class ExportCIF(G2IO.ExportBaseclass):
         def EditAuthor(event=None):
             'dialog to edit the CIF author info'
             'Edit the CIF author name'
-            dlg = G2gd.SingleStringDialog(self.G2frame,
+            dlg = G2G.SingleStringDialog(self.G2frame,
                                           'Get CIF Author',
                                           'Provide CIF Author name (Last, First)',
                                           value=self.author)
@@ -1349,7 +1350,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             vbox.Add(but,0,wx.ALIGN_CENTER,3)
             cpnl = wxscroll.ScrolledPanel(self.cifdefs,size=(300,300))
             cbox = wx.BoxSizer(wx.VERTICAL)
-            G2gd.HorizontalLine(cbox,cpnl)          
+            G2G.HorizontalLine(cbox,cpnl)          
             cbox.Add(
                 CIFtemplateSelect(self.cifdefs,
                                   cpnl,'publ',self.OverallParms['Controls'],
@@ -1358,7 +1359,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                                   ),
                 0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
             for phasenam in sorted(self.Phases.keys()):
-                G2gd.HorizontalLine(cbox,cpnl)          
+                G2G.HorizontalLine(cbox,cpnl)          
                 title = 'Phase '+phasenam
                 phasedict = self.Phases[phasenam] # pointer to current phase info            
                 cbox.Add(
@@ -1381,7 +1382,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                     cbox.Add(but,0,wx.ALIGN_LEFT,0)
                 cbox.Add((-1,2))
             for i in sorted(self.powderDict.keys()):
-                G2gd.HorizontalLine(cbox,cpnl)          
+                G2G.HorizontalLine(cbox,cpnl)          
                 hist = self.powderDict[i]
                 histblk = self.Histograms[hist]
                 title = 'Powder dataset '+hist[5:]
@@ -1393,7 +1394,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                                       histblk["Sample Parameters"]['InstrName']),
                     0,wx.EXPAND|wx.ALIGN_LEFT|wx.ALL)
             for i in sorted(self.xtalDict.keys()):
-                G2gd.HorizontalLine(cbox,cpnl)          
+                G2G.HorizontalLine(cbox,cpnl)          
                 hist = self.xtalDict[i]
                 histblk = self.Histograms[hist]
                 title = 'Single Xtal dataset '+hist[5:]
@@ -1523,7 +1524,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             but.Bind(wx.EVT_TOGGLEBUTTON,keepTrue)
             hbox.Add(but)
             but.SetValue(True)
-            G2gd.HorizontalLine(vbox,dlg)          
+            G2G.HorizontalLine(vbox,dlg)          
             
             cpnl = wxscroll.ScrolledPanel(dlg,size=(400,300))
             cbox = wx.BoxSizer(wx.VERTICAL)
@@ -1570,7 +1571,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                                  flag=wx.ALIGN_CENTER
                                  )
                 cbox.Add(dbox)
-                G2gd.HorizontalLine(cbox,cpnl)          
+                G2G.HorizontalLine(cbox,cpnl)          
             cpnl.SetSizer(cbox)
             cpnl.SetAutoLayout(1)
             cpnl.SetupScrolling()
@@ -2214,9 +2215,9 @@ class EditCIFtemplate(wx.Dialog):
         vbox = wx.BoxSizer(wx.VERTICAL)
         cpnl = EditCIFpanel(self,cifblk,loopstructure,CIFdic,OKbuttons,size=(300,300))
         vbox.Add(cpnl, 1, wx.ALIGN_LEFT|wx.ALL|wx.EXPAND, 0)
-        G2gd.HorizontalLine(vbox,self)
+        G2G.HorizontalLine(vbox,self)
         vbox.Add(self.helptxt, 0, wx.EXPAND|wx.ALL, 5)
-        G2gd.HorizontalLine(vbox,self)
+        G2G.HorizontalLine(vbox,self)
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         btn = wx.Button(self, wx.ID_CANCEL)
         btnsizer.Add(btn,0,wx.ALIGN_CENTER|wx.ALL)
@@ -2438,7 +2439,7 @@ class EditCIFpanel(wxscroll.ScrolledPanel):
                 choices = ['undefined']
                 for i in self.cifdic[dataname].get('_enumeration_detail',values):
                     choices.append(G2IO.trim(i))
-                ent = G2gd.EnumSelector(self, dct, item, choices, values, size=(200, -1))
+                ent = G2G.EnumSelector(self, dct, item, choices, values, size=(200, -1))
                 return ent
             if self.cifdic[dataname].get('_type') == 'numb':
                 mn = None

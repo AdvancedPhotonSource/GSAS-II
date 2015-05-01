@@ -3247,7 +3247,7 @@ def PlotSelectedSequence(G2frame,ColumnList,TableGet,SelectX,fitnum=None,fitvals
             G2frame.seqXaxis = G2frame.seqXselect()
             Draw()
         elif event.key == 't':
-            dlg = G2gd.MultiStringDialog(G2frame,'Set titles & labels',[' Title ',' x-Label ',' y-Label '],
+            dlg = G2G.MultiStringDialog(G2frame,'Set titles & labels',[' Title ',' x-Label ',' y-Label '],
                 [Title,xLabel,yLabel])
             if dlg.Show():
                 Title,xLabel,yLabel = dlg.GetValues()

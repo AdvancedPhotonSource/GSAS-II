@@ -28,6 +28,7 @@ import GSASIIspc as G2spc
 import GSASIIgrid as G2gd
 import GSASIIplot as G2plt
 import GSASIIdata as G2data
+import GSASIIctrls as G2G
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
@@ -223,7 +224,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 break
         if len(Lists['origin']) and len(Lists['target']):
             bond = 1.54
-            dlg = G2gd.SingleFloatDialog(G2frame,'Distance','Enter restraint distance for bond',bond,[0.01,4.],'%.4f')
+            dlg = G2G.SingleFloatDialog(G2frame,'Distance','Enter restraint distance for bond',bond,[0.01,4.],'%.4f')
             if dlg.ShowModal() == wx.ID_OK:
                 bond = dlg.GetValue()
             dlg.Destroy()
@@ -333,7 +334,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             targAtoms = [[Ids[x+iBeg],Types[x+iBeg],Coords[x+iBeg]] for x in range(len(Names[iBeg:]))]
         if len(Lists['B-atom']):
             value = 109.54
-            dlg = G2gd.SingleFloatDialog(G2frame,'Angle','Enter restraint angle ',value,[30.,180.],'%.2f')
+            dlg = G2G.SingleFloatDialog(G2frame,'Angle','Enter restraint angle ',value,[30.,180.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 value = dlg.GetValue()
             dlg.Destroy()
@@ -721,7 +722,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             dlg.Destroy()
             if len(ids) > 2:
                 value = 1.0
-                dlg = G2gd.SingleFloatDialog(G2frame,'Angle','Enter unit cell sum ',value,[-1.e6,1.e6],'%.2f')
+                dlg = G2G.SingleFloatDialog(G2frame,'Angle','Enter unit cell sum ',value,[-1.e6,1.e6],'%.2f')
                 if dlg.ShowModal() == wx.ID_OK:
                     value = dlg.GetValue()                
                     comp = [ids,factors,value,0.01]
@@ -835,7 +836,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Bonds.ClearSelection()
             val = bondList[rows[0]][2]
-            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new value for bond',val,[0.,5.],'%.4f')
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new value for bond',val,[0.,5.],'%.4f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -849,7 +850,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Bonds.ClearSelection()
             val = bondList[rows[0]][3]
-            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for bond',val,[0.,1.],'%.4f')
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new esd for bond',val,[0.,1.],'%.4f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -917,8 +918,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del bondList[ibad]
-            bondTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Bonds = G2gd.GSGrid(BondRestr)
+            bondTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            Bonds = G2G.GSGrid(BondRestr)
             Bonds.SetTable(bondTable, True)
             Bonds.AutoSizeColumns(False)
             for r in range(len(bondList)):
@@ -965,7 +966,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Angles.ClearSelection()
             val = angleList[rows[0]][2]
-            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new value for angle',val,[0.,360.],'%.2f')
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new value for angle',val,[0.,360.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -979,7 +980,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Angles.ClearSelection()
             val = angleList[rows[0]][3]
-            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for angle',val,[0.,5.],'%.2f')
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new esd for angle',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1046,8 +1047,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del angleList[ibad]
-            angleTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Angles = G2gd.GSGrid(AngleRestr)
+            angleTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            Angles = G2G.GSGrid(AngleRestr)
             Angles.SetTable(angleTable, True)
             Angles.AutoSizeColumns(False)
             for r in range(len(angleList)):
@@ -1099,7 +1100,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Planes.ClearSelection()
             val = planeList[rows[0]][3]
-            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for plane',val,[0.,5.],'%.2f')
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new esd for plane',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1171,8 +1172,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del planeList[ibad]
-            planeTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Planes = G2gd.GSGrid(PlaneRestr)
+            planeTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            Planes = G2G.GSGrid(PlaneRestr)
             Planes.SetTable(planeTable, True)
             Planes.AutoSizeColumns(False)
             Planes.AutoSizeRows(False)
@@ -1230,7 +1231,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Volumes.ClearSelection()
             val = volumeList[rows[0]][2]
-            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new value for chiral volume',val,[0.,360.],'%.2f')
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new value for chiral volume',val,[0.,360.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1244,7 +1245,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Volumes.ClearSelection()
             val = volumeList[rows[0]][3]
-            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for chiral volume',val,[0.,5.],'%.2f')
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new esd for chiral volume',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1301,8 +1302,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del volumeList[ibad]
-            volumeTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Volumes = G2gd.GSGrid(ChiralRestr)
+            volumeTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            Volumes = G2G.GSGrid(ChiralRestr)
             Volumes.SetTable(volumeTable, True)
             Volumes.AutoSizeColumns(False)
             for r in range(len(volumeList)):
@@ -1359,7 +1360,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Torsions.ClearSelection()
             val = torsionList[rows[0]][4]
-            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for torsion restraints',val,[0.,5.],'%.2f')
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new esd for torsion restraints',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1402,8 +1403,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del torsionList[ibad]
-            torsionTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            TorsionRestr.Torsions = G2gd.GSGrid(TorsionRestr)
+            torsionTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            TorsionRestr.Torsions = G2G.GSGrid(TorsionRestr)
             TorsionRestr.Torsions.SetTable(torsionTable, True)
             TorsionRestr.Torsions.AutoSizeColumns(False)
             for r in range(len(torsionList)):
@@ -1428,8 +1429,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             for item in coeffDict:
                 rowLabels.append(item)
                 table.append(coeffDict[item])
-            coeffTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Coeff = G2gd.GSGrid(TorsionRestr)
+            coeffTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            Coeff = G2G.GSGrid(TorsionRestr)
             Coeff.SetTable(coeffTable, True)
             Coeff.AutoSizeColumns(False)
             for r in range(len(coeffDict)):
@@ -1478,7 +1479,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 return
             Ramas.ClearSelection()
             val = ramaList[rows[0]][4]
-            dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new esd for energy',val,[0.,5.],'%.2f')
+            dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new esd for energy',val,[0.,5.],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
                 for r in rows:
@@ -1522,8 +1523,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del ramaList[ibad]
-            ramaTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            RamaRestr.Ramas = G2gd.GSGrid(RamaRestr)
+            ramaTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            RamaRestr.Ramas = G2G.GSGrid(RamaRestr)
             RamaRestr.Ramas.SetTable(ramaTable, True)
             RamaRestr.Ramas.AutoSizeColumns(False)
             for r in range(len(ramaList)):
@@ -1551,8 +1552,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 for i,term in enumerate(coeffDict[item]):
                     rowLabels.append(item+' term:'+str(i))
                     table.append(term)
-            coeffTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Coeff = G2gd.GSGrid(RamaRestr)
+            coeffTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            Coeff = G2G.GSGrid(RamaRestr)
             Coeff.SetTable(coeffTable, True)
             Coeff.AutoSizeColumns(False)
             for r in range(Coeff.GetNumberRows()):
@@ -1609,7 +1610,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             if not rows:
                 return
             ChemComps.ClearSelection()
-            dlg = G2gd.SingleFloatDialog(G2frame,'New value',
+            dlg = G2G.SingleFloatDialog(G2frame,'New value',
                 'Enter new value for restraint multiplier',1.0,[-1.e6,1.e6],'%.2f')
             if dlg.ShowModal() == wx.ID_OK:
                 parm = dlg.GetValue()
@@ -1658,8 +1659,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bad.reverse()
                 for ibad in bad:
                     del chemcompList[ibad]
-            chemcompTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            ChemComps = G2gd.GSGrid(ChemCompRestr)
+            chemcompTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            ChemComps = G2G.GSGrid(ChemCompRestr)
             ChemComps.SetTable(chemcompTable, True)
             ChemComps.AutoSizeColumns(False)
             for r in range(chemcompTable.GetNumberRows()):
@@ -1751,8 +1752,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             for i,[hkl,grid,esd1,ifesd2,esd2] in enumerate(textureList):
                 table.append(['%d %d %d'%(hkl[0],hkl[1],hkl[2]),grid,esd1,ifesd2,esd2])
                 rowLabels.append(str(i))
-            textureTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            Textures = G2gd.GSGrid(TextureRestr)
+            textureTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            Textures = G2G.GSGrid(TextureRestr)
             Textures.SetTable(textureTable, True)
             Textures.AutoSizeColumns(False)
             for r in range(len(textureList)):
@@ -1865,7 +1866,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         G2frame.dataFrame.RestraintEdit.Enable(G2gd.wxID_AARESTRAINTADD,True)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddAARestraint, id=G2gd.wxID_AARESTRAINTADD)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotAARestraint, id=G2gd.wxID_AARESTRAINTPLOT)
-    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
+    G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     
     # clear menu and menu pointers
     tabIndex.clear()

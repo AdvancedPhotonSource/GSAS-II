@@ -643,7 +643,7 @@ class GSASII(wx.Frame):
 
         notOK = True
         while notOK:
-            result = G2gd.ItemSelector(TextList,self,header,header='Add histogram(s)',multiple=True)
+            result = G2G.ItemSelector(TextList,self,header,header='Add histogram(s)',multiple=True)
             if not result: return
             # check that selected single crystal histograms are not already in use!
             used = [TextList[i] for i in result if TextList[i] in usedHKLFhists]
@@ -803,7 +803,7 @@ class GSASII(wx.Frame):
         header = 'Select phase(s) to add the new\nsingle crystal dataset(s) to:'
         for Name in newHistList:
             header += '\n  '+str(Name)
-        result = G2gd.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
+        result = G2G.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
         if not result: return
         # connect new phases to histograms
         sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
@@ -1403,7 +1403,7 @@ class GSASII(wx.Frame):
         for Name in newHistList:
             header += '\n  '+str(Name)
 
-        result = G2gd.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
+        result = G2G.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
         if not result: return
         # connect new phases to histograms
         sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')
@@ -1568,7 +1568,7 @@ class GSASII(wx.Frame):
         phaseNameList = usedHistograms.keys() # phase names in use
         if not phaseNameList: return # no phases yet, nothing to do
         header = 'Select phase(s) to add the new\npowder simulation (dummy) dataset to:'
-        result = G2gd.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
+        result = G2G.ItemSelector(phaseNameList,self,header,header='Add to phase(s)',multiple=True)
         if not result: return
         # connect new phases to histograms
         sub = G2gd.GetPatternTreeItemId(self,self.root,'Phases')

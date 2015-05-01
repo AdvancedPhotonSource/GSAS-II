@@ -1049,28 +1049,28 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(denSizer[0])
             mainSizer.Add((5,5),0)            
             mainSizer.Add(ElemSizer())
-        G2gd.HorizontalLine(mainSizer,General)
+        G2G.HorizontalLine(mainSizer,General)
         
         if generalData['Type'] in ['modulated','magnetic',]:
             G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_SINGLEMCSA,False)
             G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_MULTIMCSA,False)
             G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_4DCHARGEFLIP,True)
             mainSizer.Add(ModulatedSizer(generalData['Type']))
-            G2gd.HorizontalLine(mainSizer,General)
+            G2G.HorizontalLine(mainSizer,General)
         else:
             G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_SINGLEMCSA,True)
             G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_MULTIMCSA,True)
             G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_4DCHARGEFLIP,False)
 
         mainSizer.Add(PawleySizer())
-        G2gd.HorizontalLine(mainSizer,General)
+        G2G.HorizontalLine(mainSizer,General)
         
         mainSizer.Add(MapSizer())
-        G2gd.HorizontalLine(mainSizer,General)
+        G2G.HorizontalLine(mainSizer,General)
         
         mainSizer.Add(FlipSizer())
         if generalData['Type'] in ['nuclear','macromolecular']:
-            G2gd.HorizontalLine(mainSizer,General)
+            G2G.HorizontalLine(mainSizer,General)
             mainSizer.Add(MCSASizer())
         G2frame.dataFrame.SetStatusText('')
         SetPhaseWindow(G2frame.dataFrame,General,mainSizer)
@@ -1374,7 +1374,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for i,atom in enumerate(atomData):
                 table.append(atom)
                 rowLabels.append(str(i))
-            atomTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             Atoms.SetTable(atomTable, True)
             Atoms.frm = -1            
             colType = colLabels.index('Type')
@@ -1386,11 +1386,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             colUiso = colLabels.index('Uiso')
             attr = wx.grid.GridCellAttr()
             attr.IncRef()               #fix from Jim Hester
-            attr.SetEditor(G2gd.GridFractionEditor(Atoms))
+            attr.SetEditor(G2G.GridFractionEditor(Atoms))
             for c in range(colX,colX+3):
                 attr = wx.grid.GridCellAttr()
                 attr.IncRef()               #fix from Jim Hester
-                attr.SetEditor(G2gd.GridFractionEditor(Atoms))
+                attr.SetEditor(G2G.GridFractionEditor(Atoms))
                 Atoms.SetColAttr(c, attr)
             for i in range(colU11-1,colU11+6):
                 Atoms.SetColSize(i,50)            
@@ -1728,7 +1728,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if  parm in ['Uiso']:
                     limits = [0.,0.25]
                     val = 0.01
-                dlg = G2gd.SingleFloatDialog(G2frame,'New value','Enter new value for '+parm,val,limits)
+                dlg = G2G.SingleFloatDialog(G2frame,'New value','Enter new value for '+parm,val,limits)
                 if dlg.ShowModal() == wx.ID_OK:
                     parm = dlg.GetValue()
                     for r in indx:                        
@@ -1740,7 +1740,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             elif parm in ['x','y','z']:
                 limits = [-1.,1.]
                 val = 0.
-                dlg = G2gd.SingleFloatDialog(G2frame,'Atom shift','Enter shift for '+parm,val,limits)
+                dlg = G2G.SingleFloatDialog(G2frame,'Atom shift','Enter shift for '+parm,val,limits)
                 if dlg.ShowModal() == wx.ID_OK:
                     parm = dlg.GetValue()
                     for r in indx:                        
@@ -2291,7 +2291,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 xyz = atom[cx:cx+3]
                 uij = atom[cia+2:cia+8]
                 for SS in ['SS1',]:  #future SS2 & SS3 - I doubt it!
-                    G2gd.HorizontalLine(mainSizer,waveData)
+                    G2G.HorizontalLine(mainSizer,waveData)
                     mainSizer.Add(AtomSizer(SS,atom))
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         if atom[cia] != 'A' and Stype == 'Sadp':    #Uiso can't have modulations!
@@ -2640,7 +2640,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             table.append(atom[:colLabels.index('I/A')+1])
             rowLabels.append(str(i))
 
-        atomTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         drawAtoms.SetTable(atomTable, True)
         drawAtoms.SetMargins(0,0)
         drawAtoms.AutoSizeColumns(True)
@@ -5129,8 +5129,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for item in result[-1]: colLabels.append(item)   #from last result from for loop above
             Types = [wg.GRID_VALUE_BOOL,wg.GRID_VALUE_BOOL,wg.GRID_VALUE_FLOAT+':10,4',
                 wg.GRID_VALUE_FLOAT+':10,4',]+maxVary*[wg.GRID_VALUE_FLOAT+':10,5',]
-            resultsTable = G2gd.Table(resultVals,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            resultsGrid = G2gd.GSGrid(G2frame.MCSA)
+            resultsTable = G2G.Table(resultVals,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            resultsGrid = G2G.GSGrid(G2frame.MCSA)
             resultsGrid.SetTable(resultsTable, True)
             resultsGrid.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, OnCellChange)
             resultsGrid.AutoSizeColumns(True)
@@ -5179,7 +5179,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Rsizer = rbSizer(model)
                     mainSizer.Add(Rsizer)
                     Xsize = max(Rsizer.GetMinSize()[0],Xsize)
-                G2gd.HorizontalLine(mainSizer,G2frame.MCSA)
+                G2G.HorizontalLine(mainSizer,G2frame.MCSA)
                 
         if not data['MCSA']['Results']:
             mainSizer.Add((5,5),0)
@@ -5418,7 +5418,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Types = 4*[wg.GRID_VALUE_LONG,]+[wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]+ \
                     2*[wg.GRID_VALUE_FLOAT+':10,2',]
                 pos = [5,6]
-            PawleyTable = G2gd.Table(PawleyPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            PawleyTable = G2G.Table(PawleyPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             G2frame.PawleyRefl.SetTable(PawleyTable, True)
             G2frame.PawleyRefl.Bind(wx.EVT_KEY_DOWN, KeyEditPawleyGrid)                 
             for r in range(G2frame.PawleyRefl.GetNumberRows()):
@@ -5613,7 +5613,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for i in range(len(mapPeaks)): rowLabels.append(str(i))
             colLabels = ['mag','x','y','z','dzero','dcent']
             Types = 6*[wg.GRID_VALUE_FLOAT+':10,4',]
-            G2frame.MapPeaksTable = G2gd.Table(mapPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            G2frame.MapPeaksTable = G2G.Table(mapPeaks,rowLabels=rowLabels,colLabels=colLabels,types=Types)
             MapPeaks.SetTable(G2frame.MapPeaksTable, True)
             MapPeaks.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
             for r in range(MapPeaks.GetNumberRows()):
@@ -6146,7 +6146,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2gd.SetDataMenuBar(G2frame)
     G2frame.dataFrame.SetLabel('Phase Data for '+PhaseName)
     G2frame.dataFrame.CreateStatusBar()
-    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
+    G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     G2frame.dataDisplay.gridList = [] # list of all grids in notebook
     Pages = []    
     wx.Frame.Unbind(G2frame.dataFrame,wx.EVT_SIZE) # ignore size events during this routine
@@ -6157,7 +6157,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     DData = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(DData,'Data')
     Pages.append('Data')
-    Atoms = G2gd.GSGrid(G2frame.dataDisplay)
+    Atoms = G2G.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.gridList.append(Atoms)
     G2frame.dataDisplay.AddPage(Atoms,'Atoms')
     Pages.append('Atoms')
@@ -6168,14 +6168,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     drawOptions = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')
     Pages.append('Draw Options')
-    drawAtoms = G2gd.GSGrid(G2frame.dataDisplay)
+    drawAtoms = G2G.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.gridList.append(drawAtoms)
     G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
     Pages.append('Draw Atoms')
     RigidBodies = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(RigidBodies,'RB Models')
     Pages.append('RB Models')
-    MapPeaks = G2gd.GSGrid(G2frame.dataDisplay)
+    MapPeaks = G2G.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.gridList.append(MapPeaks)    
     G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
     Pages.append('Map peaks')
@@ -6186,7 +6186,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     Texture = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(Texture,'Texture')
     Pages.append('Texture')
-    G2frame.PawleyRefl = G2gd.GSGrid(G2frame.dataDisplay)
+    G2frame.PawleyRefl = G2G.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.gridList.append(G2frame.PawleyRefl)
     G2frame.dataDisplay.AddPage(G2frame.PawleyRefl,'Pawley reflections')
     Pages.append('Pawley reflections')

@@ -703,9 +703,9 @@ def UpdatePeakGrid(G2frame, data):
     for key in T: X.append(D[key])
     data['peaks'] = X
     G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
-    G2frame.PeakTable = G2gd.Table(data['peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    G2frame.PeakTable = G2G.Table(data['peaks'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Peak List')
-    G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)
+    G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)
     G2frame.dataDisplay.SetTable(G2frame.PeakTable, True)
     setBackgroundColors()                         
     G2frame.dataDisplay.Bind(wg.EVT_GRID_CELL_CHANGE, RefreshPeakGrid)
@@ -913,8 +913,8 @@ def UpdateBackground(G2frame,data):
             Types = [wg.GRID_VALUE_FLOAT+':10,2',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
-            debyeTable = G2gd.Table(data[1]['debyeTerms'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            debyeGrid = G2gd.GSGrid(parent=G2frame.dataDisplay)
+            debyeTable = G2G.Table(data[1]['debyeTerms'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            debyeGrid = G2G.GSGrid(parent=G2frame.dataDisplay)
             debyeGrid.SetTable(debyeTable, True)
             debyeGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             debyeGrid.AutoSizeColumns(False)
@@ -973,8 +973,8 @@ def UpdateBackground(G2frame,data):
             wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':10,3',wg.GRID_VALUE_BOOL,
             wg.GRID_VALUE_FLOAT+':10,5',wg.GRID_VALUE_BOOL]
-            peaksTable = G2gd.Table(data[1]['peaksList'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            peaksGrid = G2gd.GSGrid(parent=G2frame.dataDisplay)
+            peaksTable = G2G.Table(data[1]['peaksList'],rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            peaksGrid = G2G.GSGrid(parent=G2frame.dataDisplay)
             peaksGrid.SetTable(peaksTable, True)
             peaksGrid.Bind(wx.EVT_KEY_DOWN, KeyEditPeakGrid)
             peaksGrid.AutoSizeColumns(False)
@@ -1070,14 +1070,14 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     for i in range(len(data)-2):
         rowLabels.append('exclude')
     Types = 2*[wg.GRID_VALUE_FLOAT+':12,5',]
-    G2frame.LimitsTable = G2gd.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    G2frame.LimitsTable = G2G.Table(data,rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Limits')
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LimitMenu)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
     G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
     G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2gd.wxID_ADDEXCLREGION)    
-    G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)
+    G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)
     G2frame.dataDisplay.SetTable(G2frame.LimitsTable, True)    
     G2frame.dataDisplay.SetCellStyle(0,0,VERY_LIGHT_GREY,True)
     G2frame.dataDisplay.SetCellStyle(0,1,VERY_LIGHT_GREY,True)
@@ -1716,7 +1716,7 @@ def UpdateSampleGrid(G2frame,data):
         for name in ['FreePrm1','FreePrm2','FreePrm3']:
             freeNames[Controls[name]] = name
             Names.append(Controls[name])
-        dlg = G2gd.G2ColumnIDDialog( G2frame,' Choose multihistogram metadata columns:',
+        dlg = G2G.G2ColumnIDDialog( G2frame,' Choose multihistogram metadata columns:',
             'Select columns',Comments,Names,np.array(newItems).T)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -2022,7 +2022,7 @@ def UpdateSampleGrid(G2frame,data):
             choices = ['Debye-Scherrer',]
         else:
             choices = ['Debye-Scherrer','Bragg-Brentano',]
-        histoType = G2gd.G2ChoiceButton(G2frame.dataDisplay,choices,
+        histoType = G2G.G2ChoiceButton(G2frame.dataDisplay,choices,
                     strLoc=data,strKey='Type',
                     onChoice=OnHistoChange)
         nameSizer.Add(histoType)
@@ -2215,9 +2215,9 @@ def UpdateIndexPeaksGrid(G2frame, data):
         Types = [wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_FLOAT+':10,1',]+2*[wg.GRID_VALUE_BOOL,]+ \
             4*[wg.GRID_VALUE_LONG,]+2*[wg.GRID_VALUE_FLOAT+':10,5',]
     G2frame.PatternTree.SetItemPyData(IndexId,data)
-    G2frame.IndexPeaksTable = G2gd.Table(data[0],rowLabels=rowLabels,colLabels=colLabels,types=Types)
+    G2frame.IndexPeaksTable = G2G.Table(data[0],rowLabels=rowLabels,colLabels=colLabels,types=Types)
     G2frame.dataFrame.SetLabel('Index Peak List')
-    G2frame.dataDisplay = G2gd.GSGrid(parent=G2frame.dataFrame)                
+    G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)                
     G2frame.dataDisplay.SetTable(G2frame.IndexPeaksTable, True)
     XY = []
     Sigs = []
@@ -2905,8 +2905,8 @@ def UpdateUnitCellsGrid(G2frame, data):
                 for hkl in G2frame.HKL:
                     hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
             table.append(row)
-        UnitCellsTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        gridDisplay = G2gd.GSGrid(G2frame.dataDisplay)
+        UnitCellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        gridDisplay = G2G.GSGrid(G2frame.dataDisplay)
         gridDisplay.SetTable(UnitCellsTable, True)
         G2frame.dataFrame.CopyCell.Enable(True)
         gridDisplay.Bind(wg.EVT_GRID_CELL_LEFT_CLICK,RefreshUnitCellsGrid)
@@ -2982,7 +2982,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
     def MakeReflectionTable(phaseName):
-        '''Returns a wx.grid table (G2gd.Table) containing a list of all reflections
+        '''Returns a wx.grid table (G2G.Table) containing a list of all reflections
         for a phase.        
         '''
         if phaseName:
@@ -3036,7 +3036,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 Types += 7*[wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')
-        return G2gd.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        return G2G.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
 
     def ShowReflTable(phaseName):
         '''Posts a table of reflections for a phase, creating the table
@@ -3142,10 +3142,10 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=G2gd.wxID_PWD3DHKLPLOT)
         G2frame.dataFrame.SelectPhase.Enable(False)
             
-    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
+    G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
     G2frame.refTable = {}
     for tabnum,phase in enumerate(phases):
-        G2frame.refTable[phase] = G2gd.GSGrid(parent=G2frame.dataDisplay)
+        G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(G2frame.refTable[phase],phase)
     if phaseName not in G2frame.refTable:
         print phaseName
@@ -3364,7 +3364,7 @@ def UpdateSubstanceGrid(G2frame,data):
         substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Substance list: wavelength: %.5fA'%(wave)),
             0,WACV)
         for name in data['Substances']:
-            G2gd.HorizontalLine(substSizer,G2frame.dataDisplay)    
+            G2G.HorizontalLine(substSizer,G2frame.dataDisplay)    
             substSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Data for '+name+':'),
                 0,WACV)
             if name == 'vacuum':
@@ -4029,7 +4029,7 @@ def UpdateModelsGrid(G2frame,data):
         topSizer.Add(volVar,0,WACV)
         partSizer.Add(topSizer,0,)
         for ilev,level in enumerate(data['Particle']['Levels']):
-            G2gd.HorizontalLine(partSizer,G2frame.dataDisplay)
+            G2G.HorizontalLine(partSizer,G2frame.dataDisplay)
             topLevel = wx.BoxSizer(wx.HORIZONTAL)
             topLevel.Add(wx.StaticText(G2frame.dataDisplay,label=' Model component %d: '%(ilev)),0,WACV)
             delBtn = wx.Button(G2frame.dataDisplay,label=' Delete?')
@@ -4116,7 +4116,7 @@ def UpdateModelsGrid(G2frame,data):
     esdScale.Bind(wx.EVT_KILL_FOCUS,OnEsdScale)
     topSizer.Add(esdScale,0,WACV)
     mainSizer.Add(topSizer)
-    G2gd.HorizontalLine(mainSizer,G2frame.dataDisplay)
+    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)
     if 'Size' in data['Current']:
         if 'MaxEnt' in data['Size']['Method']:
             Status.SetStatusText('Size distribution by Maximum entropy')
@@ -4125,7 +4125,7 @@ def UpdateModelsGrid(G2frame,data):
         mainSizer.Add(SizeSizer())        
     elif 'Particle' in data['Current']:
         mainSizer.Add(PartSizer(),1,wx.ALIGN_LEFT|wx.EXPAND)
-    G2gd.HorizontalLine(mainSizer,G2frame.dataDisplay)    
+    G2G.HorizontalLine(mainSizer,G2frame.dataDisplay)    
     backSizer = wx.BoxSizer(wx.HORIZONTAL)
     backSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Background:'),0,WACV)
     backVal = wx.TextCtrl(G2frame.dataDisplay,value='%.3g'%(data['Back'][0]),style=wx.TE_PROCESS_ENTER)

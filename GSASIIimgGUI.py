@@ -1277,7 +1277,7 @@ def UpdateMasks(G2frame,data):
                 spotDiameter = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Spots[i],key=2,
                                            max=100.,OnLeave=Replot,nDig=[8,2])
                 littleSizer.Add(spotDiameter,0,WACV)
-                spotDelete = G2gd.G2LoggedButton(G2frame.dataDisplay,label='delete?',
+                spotDelete = G2G.G2LoggedButton(G2frame.dataDisplay,label='delete?',
                                             locationcode='Delete+Points+'+str(i),
                                             handler=onDeleteMask)
                 littleSizer.Add(spotDelete,0,WACV)
@@ -1300,7 +1300,7 @@ def UpdateMasks(G2frame,data):
                 ringThick = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Rings[i],key=1,
                                            min=0.001,max=1.,OnLeave=Replot,nDig=[8,3])
                 littleSizer.Add(ringThick,0,WACV)
-                ringDelete = G2gd.G2LoggedButton(G2frame.dataDisplay,label='delete?',
+                ringDelete = G2G.G2LoggedButton(G2frame.dataDisplay,label='delete?',
                                             locationcode='Delete+Rings+'+str(i),
                                             handler=onDeleteMask)
                 littleSizer.Add(ringDelete,0,WACV)
@@ -1330,7 +1330,7 @@ def UpdateMasks(G2frame,data):
                 arcThick = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Arcs[i],key=2,
                                            min=0.001,max=20.,OnLeave=Replot,nDig=[8,3])
                 littleSizer.Add(arcThick,0,WACV)
-                arcDelete = G2gd.G2LoggedButton(G2frame.dataDisplay,label='delete?',
+                arcDelete = G2G.G2LoggedButton(G2frame.dataDisplay,label='delete?',
                                             locationcode='Delete+Arcs+'+str(i),
                                             handler=onDeleteMask)
                 littleSizer.Add(arcDelete,0,WACV)
@@ -1348,7 +1348,7 @@ def UpdateMasks(G2frame,data):
                     polyList.append("%.2f, %.2f"%(x,y))
                 polyText = wx.ComboBox(G2frame.dataDisplay,value=polyList[0],choices=polyList,style=wx.CB_READONLY)
                 littleSizer.Add(polyText,0,WACV)
-                polyDelete = G2gd.G2LoggedButton(G2frame.dataDisplay,label='delete?',
+                polyDelete = G2G.G2LoggedButton(G2frame.dataDisplay,label='delete?',
                                             locationcode='Delete+Polygons+'+str(i),
                                             handler=onDeleteMask)
                 littleSizer.Add(polyDelete,0,WACV)
@@ -1364,7 +1364,7 @@ def UpdateMasks(G2frame,data):
             frameList.append("%.2f, %.2f"%(x,y))
         frameText = wx.ComboBox(G2frame.dataDisplay,value=frameList[0],choices=frameList,style=wx.CB_READONLY)
         littleSizer.Add(frameText,0,WACV)
-        frameDelete = G2gd.G2LoggedButton(G2frame.dataDisplay,label='delete?',
+        frameDelete = G2G.G2LoggedButton(G2frame.dataDisplay,label='delete?',
                                             locationcode='Delete+Frame',
                                             handler=onDeleteFrame)
         littleSizer.Add(frameDelete,0,WACV)
@@ -1514,7 +1514,7 @@ def UpdateStressStrain(G2frame,data):
         dataDict = dict(zip(itemNames,newItems))
         ifany = False
         Names = [' ','Sample phi','Sample z','Sample load']
-        dlg = G2gd.G2ColumnIDDialog( G2frame,' Choose multihistogram metadata columns:',
+        dlg = G2G.G2ColumnIDDialog( G2frame,' Choose multihistogram metadata columns:',
             'Select columns',Comments,Names,np.array(newItems).T)
         try:
             if dlg.ShowModal() == wx.ID_OK:

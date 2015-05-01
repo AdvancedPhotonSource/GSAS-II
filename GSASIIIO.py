@@ -1924,14 +1924,14 @@ class ExportBaseclass(object):
                 self.phasenam = self.Phases.keys()
             elif self.multiple: 
                 choices = sorted(self.Phases.keys())
-                phasenum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
+                phasenum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
                 if phasenum is None: return True
                 self.phasenam = [choices[i] for i in phasenum]
                 if not self.phasenam: return True
                 numselected = len(self.phasenam)
             else:
                 choices = sorted(self.Phases.keys())
-                phasenum = G2gd.ItemSelector(choices,self.G2frame)
+                phasenum = G2G.ItemSelector(choices,self.G2frame)
                 if phasenum is None: return True
                 self.phasenam = [choices[phasenum]]
                 numselected = len(self.phasenam)
@@ -1945,13 +1945,13 @@ class ExportBaseclass(object):
                 self.histnam = self.xtalDict.values()
             elif self.multiple:
                 choices = sorted(self.xtalDict.values())
-                hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
+                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
                 if not hnum: return True
                 self.histnam = [choices[i] for i in hnum]
                 numselected = len(self.histnam)
             else:
                 choices = sorted(self.xtalDict.values())
-                hnum = G2gd.ItemSelector(choices,self.G2frame)
+                hnum = G2G.ItemSelector(choices,self.G2frame)
                 if hnum is None: return True
                 self.histnam = [choices[hnum]]
                 numselected = len(self.histnam)
@@ -1965,13 +1965,13 @@ class ExportBaseclass(object):
                 self.histnam = self.powderDict.values()
             elif self.multiple:
                 choices = sorted(self.powderDict.values())
-                hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=True)
+                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=True)
                 if not hnum: return True
                 self.histnam = [choices[i] for i in hnum]
                 numselected = len(self.histnam)
             else:
                 choices = sorted(self.powderDict.values())
-                hnum = G2gd.ItemSelector(choices,self.G2frame)
+                hnum = G2G.ItemSelector(choices,self.G2frame)
                 if hnum is None: return True
                 self.histnam = [choices[hnum]]
                 numselected = len(self.histnam)
@@ -1985,7 +1985,7 @@ class ExportBaseclass(object):
                 self.histnam = self.Histograms.keys()
             else:
                 choices = sorted(self.Histograms.keys())
-                hnum = G2gd.ItemSelector(choices,self.G2frame,multiple=self.multiple)
+                hnum = G2G.ItemSelector(choices,self.G2frame,multiple=self.multiple)
                 if self.multiple:
                     if not hnum: return True
                     self.histnam = [choices[i] for i in hnum]
@@ -2018,7 +2018,7 @@ class ExportBaseclass(object):
             elif len(mapPhases) == 1:
                 self.phasenam = mapPhases
             else: 
-                phasenum = G2gd.ItemSelector(choices,self.G2frame,multiple=self.multiple)
+                phasenum = G2G.ItemSelector(choices,self.G2frame,multiple=self.multiple)
                 if self.multiple:
                     if not phasenum: return True
                     self.phasenam = [mapPhases[i] for i in phasenum]

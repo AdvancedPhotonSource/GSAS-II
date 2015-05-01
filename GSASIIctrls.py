@@ -17,9 +17,9 @@ A library of GUI controls for reuse throughout GSAS-II
 
 '''
 import wx
-# import wx.grid as wg
+import wx.grid as wg
 # import wx.wizard as wz
-# import wx.aui
+import wx.aui
 import wx.lib.scrolledpanel as wxscroll
 import time
 import copy
@@ -765,7 +765,190 @@ class ASCIIValidator(wx.PyValidator):
         return  # Returning without calling event.Skip, which eats the keystroke
 
 ################################################################################
-#### Edit a large number of values
+def HorizontalLine(sizer,parent):
+    '''Draws a horizontal line as wide as the window.
+    This shows up on the Mac as a very thin line, no matter what I do
+    '''
+    line = wx.StaticLine(parent,-1, size=(-1,3), style=wx.LI_HORIZONTAL)
+    sizer.Add(line, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 10)
+
+################################################################################
+class G2LoggedButton(wx.Button):
+    '''A version of wx.Button that creates logging events. Bindings are saved
+    in the object, and are looked up rather than directly set with a bind.
+    An index to these buttons is saved as log.ButtonBindingLookup
+    :param wx.Panel parent: parent widget
+    :param int id: Id for button
+    :param str label: label for button
+    :param str locationcode: a label used internally to uniquely indentify the button
+    :param function handler: a routine to call when the button is pressed
+    '''
+    def __init__(self,parent,id=wx.ID_ANY,label='',locationcode='',
+                 handler=None,*args,**kwargs):
+        super(self.__class__,self).__init__(parent,id,label,*args,**kwargs)
+        self.label = label
+        self.handler = handler
+        self.locationcode = locationcode
+        key = locationcode + '+' + label # hash code to find button
+        self.Bind(wx.EVT_BUTTON,self.onPress)
+        log.ButtonBindingLookup[key] = self
+    def onPress(self,event):
+        'create log event and call handler'
+        log.MakeButtonLog(self.locationcode,self.label)
+        self.handler(event)
+        
+################################################################################
+class EnumSelector(wx.ComboBox):
+    '''A customized :class:`wxpython.ComboBox` that selects items from a list
+    of choices, but sets a dict (list) entry to the corresponding
+    entry from the input list of values.
+
+    :param wx.Panel parent: the parent to the :class:`~wxpython.ComboBox` (usually a
+      frame or panel)
+    :param dict dct: a dict (or list) to contain the value set
+      for the :class:`~wxpython.ComboBox`.
+    :param item: the dict key (or list index) where ``dct[item]`` will 
+      be set to the value selected in the :class:`~wxpython.ComboBox`. Also, dct[item]
+      contains the starting value shown in the widget. If the value
+      does not match an entry in :data:`values`, the first value
+      in :data:`choices` is used as the default, but ``dct[item]`` is
+      not changed.    
+    :param list choices: a list of choices to be displayed to the
+      user such as
+      ::
+      
+      ["default","option 1","option 2",]
+
+      Note that these options will correspond to the entries in 
+      :data:`values` (if specified) item by item. 
+    :param list values: a list of values that correspond to
+      the options in :data:`choices`, such as
+      ::
+      
+      [0,1,2]
+      
+      The default for :data:`values` is to use the same list as
+      specified for :data:`choices`.
+    :param (other): additional keyword arguments accepted by
+      :class:`~wxpython.ComboBox` can be specified.
+    '''
+    def __init__(self,parent,dct,item,choices,values=None,**kw):
+        if values is None:
+            values = choices
+        if dct[item] in values:
+            i = values.index(dct[item])
+        else:
+            i = 0
+        startval = choices[i]
+        wx.ComboBox.__init__(self,parent,wx.ID_ANY,startval,
+                             choices = choices,
+                             style=wx.CB_DROPDOWN|wx.CB_READONLY,
+                             **kw)
+        self.choices = choices
+        self.values = values
+        self.dct = dct
+        self.item = item
+        self.Bind(wx.EVT_COMBOBOX, self.onSelection)
+    def onSelection(self,event):
+        # respond to a selection by setting the enum value in the CIF dictionary
+        if self.GetValue() in self.choices: # should always be true!
+            self.dct[self.item] = self.values[self.choices.index(self.GetValue())]
+        else:
+            self.dct[self.item] = self.values[0] # unknown
+
+################################################################################
+class G2ChoiceButton(wx.Choice):
+    '''A customized version of a wx.Choice that automatically initializes
+    the control to match a supplied value and saves the choice directly
+    into an array or list. Optionally a function can be called each time a
+    choice is selected. The widget can be used with an array item that is set to 
+    to the choice by number (``indLoc[indKey]``) or by string value
+    (``strLoc[strKey]``) or both. The initial value is taken from ``indLoc[indKey]``
+    if not None or ``strLoc[strKey]`` if not None. 
+
+    :param wx.Panel parent: name of panel or frame that will be
+      the parent to the widget. Can be None.
+    :param list choiceList: a list or tuple of choices to offer the user.
+    :param dict/list indLoc: a dict or list with the initial value to be
+      placed in the Choice button. If this is None, this is ignored. 
+    :param int/str indKey: the dict key or the list index for the value to be
+      edited by the Choice button. If indLoc is not None then this
+      must be specified and the ``indLoc[indKey]`` will be set. If the value
+      for ``indLoc[indKey]`` is not None, it should be an integer in
+      range(len(choiceList)). The Choice button will be initialized to the
+      choice corresponding to the value in this element if not None.
+    :param dict/list strLoc: a dict or list with the string value corresponding to
+      indLoc/indKey. Default (None) means that this is not used. 
+    :param int/str strKey: the dict key or the list index for the string value 
+      The ``strLoc[strKey]`` element must exist or strLoc must be None (default).
+    :param function onChoice: name of a function to call when the choice is made.
+    '''
+    def __init__(self,parent,choiceList,indLoc=None,indKey=None,strLoc=None,strKey=None,
+                 onChoice=None,**kwargs):
+        wx.Choice.__init__(self,parent,choices=choiceList,id=wx.ID_ANY,**kwargs)
+        self.choiceList = choiceList
+        self.indLoc = indLoc
+        self.indKey = indKey
+        self.strLoc = strLoc
+        self.strKey = strKey
+        self.onChoice = None
+        self.SetSelection(wx.NOT_FOUND)
+        if self.indLoc is not None and self.indLoc.get(self.indKey) is not None:
+            self.SetSelection(self.indLoc[self.indKey])
+            if self.strLoc is not None:
+                self.strLoc[self.strKey] = self.GetStringSelection()
+                log.LogVarChange(self.strLoc,self.strKey)
+        elif self.strLoc is not None and self.strLoc.get(self.strKey) is not None:
+            try:
+                self.SetSelection(choiceList.index(self.strLoc[self.strKey]))
+                if self.indLoc is not None:
+                    self.indLoc[self.indKey] = self.GetSelection()
+                    log.LogVarChange(self.indLoc,self.indKey)
+            except ValueError:
+                pass
+        self.Bind(wx.EVT_CHOICE, self._OnChoice)
+        #if self.strLoc is not None: # make sure strLoc gets initialized
+        #    self._OnChoice(None) # note that onChoice will not be called
+        self.onChoice = onChoice
+    def _OnChoice(self,event):
+        if self.indLoc is not None:
+            self.indLoc[self.indKey] = self.GetSelection()
+            log.LogVarChange(self.indLoc,self.indKey)
+        if self.strLoc is not None:
+            self.strLoc[self.strKey] = self.GetStringSelection()
+            log.LogVarChange(self.strLoc,self.strKey)
+        if self.onChoice:
+            self.onChoice()
+
+############################################################### Custom checkbox that saves values into dict/list as used
+class G2CheckBox(wx.CheckBox):
+    '''A customized version of a CheckBox that automatically initializes
+    the control to a supplied list or dict entry and updates that
+    entry as the widget is used.
+
+    :param wx.Panel parent: name of panel or frame that will be
+      the parent to the widget. Can be None.
+    :param str label: text to put on check button
+    :param dict/list loc: the dict or list with the initial value to be
+      placed in the CheckBox. 
+    :param int/str key: the dict key or the list index for the value to be
+      edited by the CheckBox. The ``loc[key]`` element must exist.
+      The CheckBox will be initialized from this value.
+      If the value is anything other that True (or 1), it will be taken as
+      False. 
+    '''
+    def __init__(self,parent,label,loc,key):
+        wx.CheckBox.__init__(self,parent,id=wx.ID_ANY,label=label)
+        self.loc = loc
+        self.key = key
+        self.SetValue(self.loc[self.key]==True)
+        self.Bind(wx.EVT_CHECKBOX, self._OnCheckBox)
+    def _OnCheckBox(self,event):
+        self.loc[self.key] = self.GetValue()
+        log.LogVarChange(self.loc,self.key)
+            
+################################################################################
+#### Commonly used dialogs
 ################################################################################
 def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
                  title='Edit items',header='',size=(300,250),
@@ -787,6 +970,7 @@ def CallScrolledMultiEditor(parent,dictlst,elemlst,prelbl=[],postlbl=[],
         dlg.Destroy()
         return False
 
+################################################################################
 class ScrolledMultiEditor(wx.Dialog):
     '''Define a window for editing a potentially large number of dict- or
     list-contained values with validation for each item. Edited values are
@@ -1010,9 +1194,7 @@ class ScrolledMultiEditor(wx.Dialog):
         else:
             self.OKbtn.Disable()
 
-################################################################################
-#### Multichoice Dialog with set all, toggle & filter options
-################################################################################
+###############################################  Multichoice Dialog with set all, toggle & filter options
 class G2MultiChoiceDialog(wx.Dialog):
     '''A dialog similar to MultiChoiceDialog except that buttons are
     added to set all choices and to toggle all choices.
@@ -1390,9 +1572,7 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
             array.update(saveArray)
         dlg.Destroy()
 
-################################################################################
-#### Single choice Dialog with filter options
-################################################################################
+################################################################        Single choice Dialog with filter options
 class G2SingleChoiceDialog(wx.Dialog):
     '''A dialog similar to wx.SingleChoiceDialog except that a filter can be
     added.
@@ -1507,36 +1687,13 @@ class G2SingleChoiceDialog(wx.Dialog):
         self.EndModal(wx.ID_OK)
 
 ################################################################################
-#### Custom checkbox that saves values into dict/list as used
-################################################################################
-class G2CheckBox(wx.CheckBox):
-    '''A customized version of a CheckBox that automatically initializes
-    the control to a supplied list or dict entry and updates that
-    entry as the widget is used.
-
-    :param wx.Panel parent: name of panel or frame that will be
-      the parent to the widget. Can be None.
-    :param str label: text to put on check button
-    :param dict/list loc: the dict or list with the initial value to be
-      placed in the CheckBox. 
-    :param int/str key: the dict key or the list index for the value to be
-      edited by the CheckBox. The ``loc[key]`` element must exist.
-      The CheckBox will be initialized from this value.
-      If the value is anything other that True (or 1), it will be taken as
-      False. 
+def G2MessageBox(parent,msg,title='Error'):
+    '''Simple code to display a error or warning message
     '''
-    def __init__(self,parent,label,loc,key):
-        wx.CheckBox.__init__(self,parent,id=wx.ID_ANY,label=label)
-        self.loc = loc
-        self.key = key
-        self.SetValue(self.loc[self.key]==True)
-        self.Bind(wx.EVT_CHECKBOX, self._OnCheckBox)
-    def _OnCheckBox(self,event):
-        self.loc[self.key] = self.GetValue()
-        log.LogVarChange(self.loc,self.key)
-
-################################################################################
-####
+    dlg = wx.MessageDialog(parent,StripIndents(msg), title, wx.OK)
+    dlg.ShowModal()
+    dlg.Destroy()
+    
 ################################################################################
 class PickTwoDialog(wx.Dialog):
     '''This does not seem to be in use
@@ -1605,9 +1762,356 @@ class PickTwoDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
 
 ################################################################################
-#### Column-order selection
-################################################################################
+class SingleFloatDialog(wx.Dialog):
+    'Dialog to obtain a single float value from user'
+    def __init__(self,parent,title,prompt,value,limits=[0.,1.],format='%.5g'):
+        wx.Dialog.__init__(self,parent,-1,title, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.limits = limits
+        self.value = value
+        self.prompt = prompt
+        self.format = format
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnValItem(event):
+            try:
+                val = float(valItem.GetValue())
+                if val < self.limits[0] or val > self.limits[1]:
+                    raise ValueError
+            except ValueError:
+                val = self.value
+            self.value = val
+            valItem.SetValue(self.format%(self.value))
+            
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        valItem = wx.TextCtrl(self.panel,-1,value=self.format%(self.value),style=wx.TE_PROCESS_ENTER)
+        mainSizer.Add(valItem,0,wx.ALIGN_CENTER)
+        valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+        valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add(CancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
 
+    def GetValue(self):
+        return self.value
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+        
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+
+################################################################################
+class SingleStringDialog(wx.Dialog):
+    '''Dialog to obtain a single string value from user
+    
+    :param wx.Frame parent: name of parent frame
+    :param str title: title string for dialog
+    :param str prompt: string to tell use what they are inputting
+    :param str value: default input value, if any
+    '''
+    def __init__(self,parent,title,prompt,value='',size=(200,-1)):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
+                           pos=wx.DefaultPosition,
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        self.value = value
+        self.prompt = prompt
+        self.CenterOnParent()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,-1,self.prompt),0,wx.ALIGN_CENTER)
+        self.valItem = wx.TextCtrl(self.panel,-1,value=self.value,size=size)
+        mainSizer.Add(self.valItem,0,wx.ALIGN_CENTER)
+        btnsizer = wx.StdDialogButtonSizer()
+        OKbtn = wx.Button(self.panel, wx.ID_OK)
+        OKbtn.SetDefault()
+        btnsizer.AddButton(OKbtn)
+        btn = wx.Button(self.panel, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+
+    def Show(self):
+        '''Use this method after creating the dialog to post it
+        :returns: True if the user pressed OK; False if the User pressed Cancel
+        '''
+        if self.ShowModal() == wx.ID_OK:
+            self.value = self.valItem.GetValue()
+            return True
+        else:
+            return False
+
+    def GetValue(self):
+        '''Use this method to get the value entered by the user
+        :returns: string entered by user
+        '''
+        return self.value
+
+################################################################################
+class MultiStringDialog(wx.Dialog):
+    '''Dialog to obtain a multi string values from user
+    
+    :param wx.Frame parent: name of parent frame
+    :param str title: title string for dialog
+    :param str prompts: strings to tell use what they are inputting
+    :param str values: default input values, if any
+    '''
+    def __init__(self,parent,title,prompts,values=[]):      #,size=(200,-1)?
+        
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title, 
+                           pos=wx.DefaultPosition,
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        self.values = values
+        self.prompts = prompts
+        self.CenterOnParent()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        promptSizer = wx.FlexGridSizer(0,2,5,5)
+        self.Indx = {}
+        for prompt,value in zip(prompts,values):
+            promptSizer.Add(wx.StaticText(self.panel,-1,prompt),0,WACV)
+            valItem = wx.TextCtrl(self.panel,-1,value=value,style=wx.TE_PROCESS_ENTER)
+            self.Indx[valItem.GetId()] = prompt
+            valItem.Bind(wx.EVT_TEXT,self.newValue)
+            promptSizer.Add(valItem,0,WACV)
+        mainSizer.Add(promptSizer,0)
+        btnsizer = wx.StdDialogButtonSizer()
+        OKbtn = wx.Button(self.panel, wx.ID_OK)
+        OKbtn.SetDefault()
+        btnsizer.AddButton(OKbtn)
+        btn = wx.Button(self.panel, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def newValue(self,event):
+        Obj = event.GetEventObject()
+        item = self.Indx[Obj.GetId()]
+        id = self.prompts.index(item)
+        self.values[id] = Obj.GetValue()
+
+    def Show(self):
+        '''Use this method after creating the dialog to post it
+        :returns: True if the user pressed OK; False if the User pressed Cancel
+        '''
+        if self.ShowModal() == wx.ID_OK:
+            return True
+        else:
+            return False
+
+    def GetValues(self):
+        '''Use this method to get the value entered by the user
+        :returns: string entered by user
+        '''
+        return self.values
+
+################################################################################
+class G2ColumnIDDialog(wx.Dialog):
+    '''A dialog for matching column data to desired items; some columns may be ignored.
+    
+    :param wx.Frame ParentFrame: reference to parent frame
+    :param str title: heading above list of choices
+    :param str header: Title to place on window frame 
+    :param list ChoiceList: a list of possible choices for the columns
+    :param list ColumnData: lists of column data to be matched with ChoiceList
+    :param bool monoFont: If False (default), use a variable-spaced font;
+      if True use a equally-spaced font.
+    :param kw: optional keyword parameters for the wx.Dialog may
+      be included such as size [which defaults to `(320,310)`] and
+      style (which defaults to ``wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.CENTRE | wx.OK | wx.CANCEL``);
+      note that ``wx.OK`` and ``wx.CANCEL`` controls
+      the presence of the eponymous buttons in the dialog.
+    :returns: the name of the created dialog
+    
+    '''
+
+    def __init__(self,parent, title, header,Comments,ChoiceList, ColumnData,
+                 monoFont=False, **kw):
+
+        def OnOk(sevent):
+            OK = True
+            selCols = []
+            for col in self.sel:
+                item = col.GetValue()
+                if item != ' ' and item in selCols:
+                    OK = False
+                    break
+                else:
+                    selCols.append(item)
+            parent = self.GetParent()
+            if not OK:
+                parent.ErrorDialog('Duplicate',item+' selected more than once')
+                return
+            parent.Raise()
+            self.EndModal(wx.ID_OK)
+            
+        def OnModify(event):
+            Obj = event.GetEventObject()
+            icol,colData = Indx[Obj.GetId()]
+            modify = Obj.GetValue()
+            if not modify:
+                return
+            print 'Modify column',icol,' by', modify
+            for i,item in enumerate(self.ColumnData[icol]):
+                self.ColumnData[icol][i] = str(eval(item+modify))
+            colData.SetValue('\n'.join(self.ColumnData[icol]))
+            Obj.SetValue('')
+            
+        # process keyword parameters, notably style
+        options = {'size':(600,310), # default Frame keywords
+                   'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
+                   }
+        options.update(kw)
+        self.Comments = ''.join(Comments)
+        self.ChoiceList = ChoiceList
+        self.ColumnData = ColumnData
+        nCol = len(ColumnData)
+        if options['style'] & wx.OK:
+            useOK = True
+            options['style'] ^= wx.OK
+        else:
+            useOK = False
+        if options['style'] & wx.CANCEL:
+            useCANCEL = True
+            options['style'] ^= wx.CANCEL
+        else:
+            useCANCEL = False        
+        # create the dialog frame
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,header,**options)
+        panel = wxscroll.ScrolledPanel(self)
+        # fill the dialog
+        Sizer = wx.BoxSizer(wx.VERTICAL)
+        Sizer.Add((-1,5))
+        Sizer.Add(wx.StaticText(panel,label=title),0,WACV)
+        if self.Comments:
+            Sizer.Add(wx.StaticText(panel,label=' Header lines:'),0,WACV)
+            Sizer.Add(wx.TextCtrl(panel,value=self.Comments,size=(200,-1),
+                style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP),0,wx.ALL|wx.EXPAND|WACV,8)
+        columnsSizer = wx.FlexGridSizer(0,nCol,5,10)
+        self.sel = []
+        self.mod = []
+        Indx = {}
+        for icol,col in enumerate(self.ColumnData):
+            colSizer = wx.BoxSizer(wx.VERTICAL)
+            colSizer.Add(wx.StaticText(panel,label=' Column #%d Select:'%(icol)),0,WACV)
+            self.sel.append(wx.ComboBox(panel,value=' ',choices=self.ChoiceList,style=wx.CB_READONLY|wx.CB_DROPDOWN))
+            colSizer.Add(self.sel[-1])
+            colData = wx.TextCtrl(panel,value='\n'.join(self.ColumnData[icol]),size=(120,-1),
+                style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP)
+            colSizer.Add(colData,0,WACV)
+            colSizer.Add(wx.StaticText(panel,label=' Modify by:'),0,WACV)
+            mod = wx.TextCtrl(panel,size=(120,-1),value='',style=wx.TE_PROCESS_ENTER)
+            mod.Bind(wx.EVT_TEXT_ENTER,OnModify)
+            mod.Bind(wx.EVT_KILL_FOCUS,OnModify)
+            Indx[mod.GetId()] = [icol,colData]
+            colSizer.Add(mod,0,WACV)
+            columnsSizer.Add(colSizer)
+        Sizer.Add(columnsSizer)
+        Sizer.Add(wx.StaticText(panel,label=' For modify by, enter arithmetic string eg. "-12345.67". "+","-","*","/","**" all allowed'),0,WACV) 
+        Sizer.Add((-1,10))
+        # OK/Cancel buttons
+        btnsizer = wx.StdDialogButtonSizer()
+        if useOK:
+            self.OKbtn = wx.Button(panel, wx.ID_OK)
+            self.OKbtn.SetDefault()
+            btnsizer.AddButton(self.OKbtn)
+            self.OKbtn.Bind(wx.EVT_BUTTON, OnOk)
+        if useCANCEL:
+            btn = wx.Button(panel, wx.ID_CANCEL)
+            btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        Sizer.Add((-1,5))
+        Sizer.Add(btnsizer,0,wx.ALIGN_LEFT,20)
+        Sizer.Add((-1,5))
+        # OK done, let's get outa here
+        panel.SetSizer(Sizer)
+        panel.SetAutoLayout(1)
+        panel.SetupScrolling()
+        Size = [450,375]
+        panel.SetSize(Size)
+        Size[0] += 25; Size[1]+= 25
+        self.SetSize(Size)
+        
+    def GetSelection(self):
+        'Returns the selected sample parm for each column'
+        selCols = []
+        for item in self.sel:
+            selCols.append(item.GetValue())
+        return selCols,self.ColumnData
+    
+################################################################################
+def ItemSelector(ChoiceList, ParentFrame=None,
+                 title='Select an item',
+                 size=None, header='Item Selector',
+                 useCancel=True,multiple=False):
+    ''' Provide a wx dialog to select a single item or multiple items from list of choices
+
+    :param list ChoiceList: a list of choices where one will be selected
+    :param wx.Frame ParentFrame: Name of parent frame (default None)
+    :param str title: heading above list of choices (default 'Select an item')
+    :param wx.Size size: Size for dialog to be created (default None -- size as needed)
+    :param str header: Title to place on window frame (default 'Item Selector')
+    :param bool useCancel: If True (default) both the OK and Cancel buttons are offered
+    :param bool multiple: If True then multiple items can be selected (default False)
+    
+    :returns: the selection index or None or a selection list if multiple is true
+    '''
+    if multiple:
+        if useCancel:
+            dlg = G2G.G2MultiChoiceDialog(
+                ParentFrame,title, header, ChoiceList)
+        else:
+            dlg = G2G.G2MultiChoiceDialog(
+                ParentFrame,title, header, ChoiceList,
+                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+    else:
+        if useCancel:
+            dlg = wx.SingleChoiceDialog(
+                ParentFrame,title, header, ChoiceList)
+        else:
+            dlg = wx.SingleChoiceDialog(
+                ParentFrame,title, header,ChoiceList,
+                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
+    if size: dlg.SetSize(size)
+    if dlg.ShowModal() == wx.ID_OK:
+        if multiple:
+            dlg.Destroy()
+            return dlg.GetSelections()
+        else:
+            dlg.Destroy()
+            return dlg.GetSelection()
+    else:
+        dlg.Destroy()
+        return None
+    dlg.Destroy()
+
+######################################################### Column-order selection dialog
 def GetItemOrder(parent,keylist,vallookup,posdict):
     '''Creates a panel where items can be ordered into columns
     
@@ -1747,6 +2251,383 @@ class OrderBox(wxscroll.ScrolledPanel):
         self.GBsizer.Layout()
         self.FitInside()
 
+################################################################################
+#####  Customized Grid Support
+################################################################################           
+class GSGrid(wg.Grid):
+    '''Basic wx.Grid implementation
+    '''
+    def __init__(self, parent, name=''):
+        wg.Grid.__init__(self,parent,-1,name=name)                    
+        #self.SetSize(parent.GetClientSize())
+        # above removed to speed drawing of initial grid
+        # does not appear to be needed
+            
+    def Clear(self):
+        wg.Grid.ClearGrid(self)
+        
+    def SetCellReadOnly(self,r,c,readonly=True):
+        self.SetReadOnly(r,c,isReadOnly=readonly)
+        
+    def SetCellStyle(self,r,c,color="white",readonly=True):
+        self.SetCellBackgroundColour(r,c,color)
+        self.SetReadOnly(r,c,isReadOnly=readonly)
+        
+    def GetSelection(self):
+        #this is to satisfy structure drawing stuff in G2plt when focus changes
+        return None
+
+    def InstallGridToolTip(self, rowcolhintcallback,
+                           colLblCallback=None,rowLblCallback=None):
+        '''code to display a tooltip for each item on a grid
+        from http://wiki.wxpython.org/wxGrid%20ToolTips (buggy!), expanded to
+        column and row labels using hints from
+        https://groups.google.com/forum/#!topic/wxPython-users/bm8OARRVDCs
+
+        :param function rowcolhintcallback: a routine that returns a text
+          string depending on the selected row and column, to be used in
+          explaining grid entries.
+        :param function colLblCallback: a routine that returns a text
+          string depending on the selected column, to be used in
+          explaining grid columns (if None, the default), column labels
+          do not get a tooltip.
+        :param function rowLblCallback: a routine that returns a text
+          string depending on the selected row, to be used in
+          explaining grid rows (if None, the default), row labels
+          do not get a tooltip.
+        '''
+        prev_rowcol = [None,None,None]
+        def OnMouseMotion(event):
+            # event.GetRow() and event.GetCol() would be nice to have here,
+            # but as this is a mouse event, not a grid event, they are not
+            # available and we need to compute them by hand.
+            x, y = self.CalcUnscrolledPosition(event.GetPosition())
+            row = self.YToRow(y)
+            col = self.XToCol(x)
+            hinttext = ''
+            win = event.GetEventObject()
+            if [row,col,win] == prev_rowcol: # no change from last position
+                event.Skip()
+                return
+            if win == self.GetGridWindow() and row >= 0 and col >= 0:
+                hinttext = rowcolhintcallback(row, col)
+            elif win == self.GetGridColLabelWindow() and col >= 0:
+                if colLblCallback: hinttext = colLblCallback(col)
+            elif win == self.GetGridRowLabelWindow() and row >= 0:
+                if rowLblCallback: hinttext = rowLblCallback(row)
+            else: # this should be the upper left corner, which is empty
+                event.Skip()
+                return
+            if hinttext is None: hinttext = ''
+            win.SetToolTipString(hinttext)
+            prev_rowcol[:] = [row,col,win]
+            event.Skip()
+
+        wx.EVT_MOTION(self.GetGridWindow(), OnMouseMotion)
+        if colLblCallback: wx.EVT_MOTION(self.GetGridColLabelWindow(), OnMouseMotion)
+        if rowLblCallback: wx.EVT_MOTION(self.GetGridRowLabelWindow(), OnMouseMotion)
+                                                    
+################################################################################           
+class Table(wg.PyGridTableBase):
+    '''Basic data table for use with GSgrid
+    '''
+    def __init__(self, data=[], rowLabels=None, colLabels=None, types = None):
+        wg.PyGridTableBase.__init__(self)
+        self.colLabels = colLabels
+        self.rowLabels = rowLabels
+        self.dataTypes = types
+        self.data = data
+        
+    def AppendRows(self, numRows=1):
+        self.data.append([])
+        return True
+        
+    def CanGetValueAs(self, row, col, typeName):
+        if self.dataTypes:
+            colType = self.dataTypes[col].split(':')[0]
+            if typeName == colType:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def CanSetValueAs(self, row, col, typeName):
+        return self.CanGetValueAs(row, col, typeName)
+
+    def DeleteRow(self,pos):
+        data = self.GetData()
+        self.SetData([])
+        new = []
+        for irow,row in enumerate(data):
+            if irow <> pos:
+                new.append(row)
+        self.SetData(new)
+        
+    def GetColLabelValue(self, col):
+        if self.colLabels:
+            return self.colLabels[col]
+            
+    def GetData(self):
+        data = []
+        for row in range(self.GetNumberRows()):
+            data.append(self.GetRowValues(row))
+        return data
+        
+    def GetNumberCols(self):
+        try:
+            return len(self.colLabels)
+        except TypeError:
+            return None
+        
+    def GetNumberRows(self):
+        return len(self.data)
+        
+    def GetRowLabelValue(self, row):
+        if self.rowLabels:
+            return self.rowLabels[row]
+        
+    def GetColValues(self, col):
+        data = []
+        for row in range(self.GetNumberRows()):
+            data.append(self.GetValue(row, col))
+        return data
+        
+    def GetRowValues(self, row):
+        data = []
+        for col in range(self.GetNumberCols()):
+            data.append(self.GetValue(row, col))
+        return data
+        
+    def GetTypeName(self, row, col):
+        try:
+            if self.data[row][col] is None: return None
+            return self.dataTypes[col]
+        except (TypeError,IndexError):
+            return None
+
+    def GetValue(self, row, col):
+        try:
+            if self.data[row][col] is None: return ""
+            return self.data[row][col]
+        except IndexError:
+            return None
+            
+    def InsertRows(self, pos, rows):
+        for row in range(rows):
+            self.data.insert(pos,[])
+            pos += 1
+        
+    def IsEmptyCell(self,row,col):
+        try:
+            return not self.data[row][col]
+        except IndexError:
+            return True
+        
+    def OnKeyPress(self, event):
+        dellist = self.GetSelectedRows()
+        if event.GetKeyCode() == wx.WXK_DELETE and dellist:
+            grid = self.GetView()
+            for i in dellist: grid.DeleteRow(i)
+                
+    def SetColLabelValue(self, col, label):
+        numcols = self.GetNumberCols()
+        if col > numcols-1:
+            self.colLabels.append(label)
+        else:
+            self.colLabels[col]=label
+        
+    def SetData(self,data):
+        for row in range(len(data)):
+            self.SetRowValues(row,data[row])
+                
+    def SetRowLabelValue(self, row, label):
+        self.rowLabels[row]=label
+            
+    def SetRowValues(self,row,data):
+        self.data[row] = data
+            
+    def SetValue(self, row, col, value):
+        def innerSetValue(row, col, value):
+            try:
+                self.data[row][col] = value
+            except TypeError:
+                return
+            except IndexError:
+                print row,col,value
+                # add a new row
+                if row > self.GetNumberRows():
+                    self.data.append([''] * self.GetNumberCols())
+                elif col > self.GetNumberCols():
+                    for row in range(self.GetNumberRows):
+                        self.data[row].append('')
+                print self.data
+                self.data[row][col] = value
+        innerSetValue(row, col, value)
+
+################################################################################
+class GridFractionEditor(wg.PyGridCellEditor):
+    '''A grid cell editor class that allows entry of values as fractions as well
+    as sine and cosine values [as s() and c()]
+    '''
+    def __init__(self,grid):
+        wg.PyGridCellEditor.__init__(self)
+
+    def Create(self, parent, id, evtHandler):
+        self._tc = wx.TextCtrl(parent, id, "")
+        self._tc.SetInsertionPoint(0)
+        self.SetControl(self._tc)
+
+        if evtHandler:
+            self._tc.PushEventHandler(evtHandler)
+
+        self._tc.Bind(wx.EVT_CHAR, self.OnChar)
+
+    def SetSize(self, rect):
+        self._tc.SetDimensions(rect.x, rect.y, rect.width+2, rect.height+2,
+                               wx.SIZE_ALLOW_MINUS_ONE)
+
+    def BeginEdit(self, row, col, grid):
+        self.startValue = grid.GetTable().GetValue(row, col)
+        self._tc.SetValue(str(self.startValue))
+        self._tc.SetInsertionPointEnd()
+        self._tc.SetFocus()
+        self._tc.SetSelection(0, self._tc.GetLastPosition())
+
+    def EndEdit(self, row, col, grid, oldVal=None):
+        changed = False
+
+        self.nextval = self.startValue
+        val = self._tc.GetValue().lower()
+        if val != self.startValue:
+            changed = True
+            neg = False
+            if '-' in val:
+                neg = True
+            if '/' in val and '.' not in val:
+                val += '.'
+            elif 's' in val and not 'sind(' in val:
+                if neg:
+                    val = '-sind('+val.strip('-s')+')'
+                else:
+                    val = 'sind('+val.strip('s')+')'
+            elif 'c' in val and not 'cosd(' in val:
+                if neg:
+                    val = '-cosd('+val.strip('-c')+')'
+                else:
+                    val = 'cosd('+val.strip('c')+')'
+            try:
+                self.nextval = val = float(eval(val))
+            except (SyntaxError,NameError,ZeroDivisionError):
+                val = self.startValue
+                return None
+            
+            if oldVal is None: # this arg appears in 2.9+; before, we should go ahead & change the table
+                grid.GetTable().SetValue(row, col, val) # update the table
+            # otherwise self.ApplyEdit gets called
+
+        self.startValue = ''
+        self._tc.SetValue('')
+        return changed
+    
+    def ApplyEdit(self, row, col, grid):
+        """ Called only in wx >= 2.9
+        Save the value of the control into the grid if EndEdit() returns as True
+        """
+        grid.GetTable().SetValue(row, col, self.nextval) # update the table
+
+    def Reset(self):
+        self._tc.SetValue(self.startValue)
+        self._tc.SetInsertionPointEnd()
+
+    def Clone(self):
+        return GridFractionEditor(grid)
+
+    def StartingKey(self, evt):
+        self.OnChar(evt)
+        if evt.GetSkipped():
+            self._tc.EmulateKeyPress(evt)
+
+    def OnChar(self, evt):
+        key = evt.GetKeyCode()
+        if key == 15:
+            return
+        if key > 255:
+            evt.Skip()
+            return
+        char = chr(key)
+        if char in '.+-/0123456789cosind()':
+            self._tc.WriteText(char)
+        else:
+            evt.Skip()
+            
+################################################################################
+#####  Customized Notebook
+################################################################################           
+class GSNoteBook(wx.aui.AuiNotebook):
+    '''Notebook used in various locations; implemented with wx.aui extension
+    '''
+    def __init__(self, parent, name='',size = None):
+        wx.aui.AuiNotebook.__init__(self, parent, -1,
+                                    style=wx.aui.AUI_NB_TOP |
+                                    wx.aui.AUI_NB_SCROLL_BUTTONS)
+        if size: self.SetSize(size)
+        self.parent = parent
+        self.PageChangeHandler = None
+        
+    def PageChangeEvent(self,event):
+        G2frame = self.parent.G2frame
+        page = event.GetSelection()
+        if self.PageChangeHandler:
+            if log.LogInfo['Logging']:
+                log.MakeTabLog(
+                    G2frame.dataFrame.GetTitle(),
+                    G2frame.dataDisplay.GetPageText(page)
+                    )
+            self.PageChangeHandler(event)
+            
+    def Bind(self,eventtype,handler,*args,**kwargs):
+        '''Override the Bind() function so that page change events can be trapped
+        '''
+        if eventtype == wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED:
+            self.PageChangeHandler = handler
+            wx.aui.AuiNotebook.Bind(self,eventtype,self.PageChangeEvent)
+            return
+        wx.aui.AuiNotebook.Bind(self,eventtype,handler,*args,**kwargs)
+                                                      
+    def Clear(self):        
+        GSNoteBook.DeleteAllPages(self)
+        
+    def FindPage(self,name):
+        numPage = self.GetPageCount()
+        for page in range(numPage):
+            if self.GetPageText(page) == name:
+                return page
+
+    def ChangeSelection(self,page):
+        # in wx.Notebook ChangeSelection is like SetSelection, but it
+        # does not invoke the event related to pressing the tab button
+        # I don't see a way to do that in aui.
+        oldPage = self.GetSelection()
+        self.SetSelection(page)
+        return oldPage
+
+    # def __getattribute__(self,name):
+    #     '''This method provides a way to print out a message every time
+    #     that a method in a class is called -- to see what all the calls
+    #     might be, or where they might be coming from.
+    #     Cute trick for debugging!
+    #     '''
+    #     attr = object.__getattribute__(self, name)
+    #     if hasattr(attr, '__call__'):
+    #         def newfunc(*args, **kwargs):
+    #             print('GSauiNoteBook calling %s' %attr.__name__)
+    #             result = attr(*args, **kwargs)
+    #             return result
+    #         return newfunc
+    #     else:
+    #         return attr
+            
 ################################################################################
 #### Help support routines
 ################################################################################
@@ -2116,13 +2997,6 @@ def StripIndents(msg):
         msg = msg1
         msg1 = msg.replace('\n ','\n')
     return msg.replace('\n\t','\n')
-
-def G2MessageBox(parent,msg,title='Error'):
-    '''Simple code to display a error or warning message
-    '''
-    dlg = wx.MessageDialog(parent,StripIndents(msg), title, wx.OK)
-    dlg.ShowModal()
-    dlg.Destroy()
         
 ################################################################################
 class downdate(wx.Dialog):
@@ -2203,6 +3077,7 @@ class downdate(wx.Dialog):
     def getVersion(self):
         'Get the version number in the dialog'
         return self.spin.GetValue()
+
 ################################################################################
 #### Display Help information
 ################################################################################
@@ -2245,6 +3120,7 @@ def ShowHelp(helpType,frame):
             htmlFirstUse = False
         else:
             webbrowser.open(pfx+helplink, new=0, autoraise=True)
+
 def ShowWebPage(URL,frame):
     '''Called to show a tutorial web page.
     '''
@@ -2276,8 +3152,9 @@ def ShowWebPage(URL,frame):
             htmlFirstUse = False
         else:
             webbrowser.open(pfx+URL, new=0, autoraise=True)
+
 ################################################################################
-#### Tutorials selector
+#### Tutorials support
 ################################################################################
 G2BaseURL = "https://subversion.xray.aps.anl.gov/pyGSAS"
 # N.B. tutorialCatalog is generated by routine catalog.py, which also generates the appropriate

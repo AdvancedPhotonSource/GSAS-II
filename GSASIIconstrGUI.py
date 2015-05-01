@@ -997,7 +997,7 @@ def UpdateConstraints(G2frame,data):
                G2gd.wxID_CONSGLOBAL):
         G2frame.dataFrame.Bind(wx.EVT_MENU, RaisePage,id=id)
 
-    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame)
+    G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame)
     # note that order of pages is hard-coded in RaisePage
     PhaseConstr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(PhaseConstr,'Phase constraints')
@@ -1469,14 +1469,14 @@ def UpdateRigidBodies(G2frame,data):
             for ivec,xyz in enumerate(rbData['rbVect'][imag]):
                 table.append(list(xyz)+[rbData['rbTypes'][ivec],]+list(XYZ[ivec]))
                 rowLabels.append(str(ivec))
-            vecTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            vecGrid = G2gd.GSGrid(VectorRBDisplay)
+            vecTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            vecGrid = G2G.GSGrid(VectorRBDisplay)
             vecGrid.SetTable(vecTable, True)
             vecGrid.Bind(wg.EVT_GRID_CELL_CHANGE, ChangeCell)
             if not imag:
                 vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
             attr = wx.grid.GridCellAttr()
-            attr.SetEditor(G2gd.GridFractionEditor(vecGrid))
+            attr.SetEditor(G2G.GridFractionEditor(vecGrid))
             for c in range(3):
                 vecGrid.SetColAttr(c, attr)
             for row in range(vecTable.GetNumberRows()):
@@ -1637,8 +1637,8 @@ def UpdateRigidBodies(G2frame,data):
             for ivec,xyz in enumerate(rbData['rbXYZ']):
                 table.append([rbData['atNames'][ivec],]+[rbData['rbTypes'][ivec],]+list(xyz))
                 rowLabels.append(str(ivec))
-            vecTable = G2gd.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-            vecGrid = G2gd.GSGrid(ResidueRBDisplay)
+            vecTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+            vecGrid = G2G.GSGrid(ResidueRBDisplay)
             Indx[vecGrid.GetId()] = rbId
             resList.append(vecGrid)
             vecGrid.SetTable(vecTable, True)
@@ -1646,7 +1646,7 @@ def UpdateRigidBodies(G2frame,data):
             vecGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, TypeSelect)
             vecGrid.Bind(wg.EVT_GRID_LABEL_LEFT_CLICK, RowSelect)
             attr = wx.grid.GridCellAttr()
-            attr.SetEditor(G2gd.GridFractionEditor(vecGrid))
+            attr.SetEditor(G2G.GridFractionEditor(vecGrid))
             for c in range(3):
                 vecGrid.SetColAttr(c, attr)
             for row in range(vecTable.GetNumberRows()):
@@ -1825,7 +1825,7 @@ def UpdateRigidBodies(G2frame,data):
         Status = G2frame.dataFrame.CreateStatusBar()
     SetStatusLine('')
 
-    G2frame.dataDisplay = G2gd.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
+    G2frame.dataDisplay = G2G.GSNoteBook(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize())
 
     VectorRB = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(VectorRB,'Vector rigid bodies')

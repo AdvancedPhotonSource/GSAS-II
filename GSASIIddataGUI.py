@@ -788,18 +788,11 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
     def OnSelect(event):
         G2frame.hist = keyList[select.GetSelection()]
-        selSpin.SetValue(keyList.index(G2frame.hist))
+        oldFocus = wx.Window.FindFocus()
         G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
+        oldFocus.SetFocus()
         wx.CallLater(100,RepaintHistogramInfo)
        
-    def OnSelSpin(event):
-        G2frame.hist = keyList[selSpin.GetValue()]
-        selSpin.SetValue(keyList.index(G2frame.hist))
-        select.SetSelection(keyList.index(G2frame.hist))
-        select.SetFirstItem(keyList.index(G2frame.hist))
-        G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
-        wx.CallLater(100,RepaintHistogramInfo)
-        
     def RepaintHistogramInfo():
         G2frame.bottomSizer.DeleteWindows()
         Indx.clear()
@@ -920,25 +913,17 @@ def UpdateDData(G2frame,DData,data,hist=''):
     
         return bottomSizer
                 
-    #DData.DestroyChildren() # bad, deletes scrollbars on Mac!
     if DData.GetSizer():
         DData.GetSizer().Clear(True)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,WACV)
     if G2frame.hist != '':
         topSizer = wx.FlexGridSizer(1,2,5,5)
-        selSizer = wx.BoxSizer(wx.HORIZONTAL)    
-        selSpin = wx.SpinButton(DData,size=(20,120),style=wx.SP_VERTICAL|wx.SP_WRAP)
-        selSpin.SetValue(keyList.index(G2frame.hist))
-        selSpin.SetRange(0,len(keyList)-1)
-        selSpin.Bind(wx.EVT_SPIN,OnSelSpin)
-        selSizer.Add(selSpin)
         select = wx.ListBox(DData,choices=keyList,style=wx.LB_SINGLE,size=(-1,120))
         select.SetSelection(keyList.index(G2frame.hist))
         select.SetFirstItem(keyList.index(G2frame.hist))
         select.Bind(wx.EVT_LISTBOX,OnSelect)
-        selSizer.Add(select,0,WACV)
-        topSizer.Add(selSizer)
+        topSizer.Add(select,0,WACV|wx.LEFT,5)
         if PWDR:
             topSizer.Add(PlotSizer())
         mainSizer.Add(topSizer)       

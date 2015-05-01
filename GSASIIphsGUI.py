@@ -3640,14 +3640,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Texture.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         titleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        titleSizer.Add(wx.StaticText(Texture,-1,'Spherical harmonics texture data for '+PhaseName+':'),0,WACV)
+        titleSizer.Add(wx.StaticText(Texture,-1,' Spherical harmonics texture data for '+PhaseName+':'),0,WACV)
         titleSizer.Add(wx.StaticText(Texture,-1,
             ' Texture Index J = %7.3f'%(G2lat.textureIndex(textureData['SH Coeff'][1]))),
             0,WACV)
         mainSizer.Add(titleSizer,0)
         mainSizer.Add((0,5),0)
         shSizer = wx.FlexGridSizer(0,6,5,5)
-        shSizer.Add(wx.StaticText(Texture,-1,'Texture model: '),0,WACV)
+        shSizer.Add(wx.StaticText(Texture,-1,' Texture model: '),0,WACV)
         shModel = wx.ComboBox(Texture,-1,value=textureData['Model'],choices=shModels,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         shModel.Bind(wx.EVT_COMBOBOX,OnShModel)
@@ -3702,7 +3702,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add(PTSizer,0,WACV)
         mainSizer.Add((0,5),0)
         if textureData['SHShow']:
-            mainSizer.Add(wx.StaticText(Texture,-1,'Spherical harmonic coefficients: '),0,WACV)
+            mainSizer.Add(wx.StaticText(Texture,-1,' Spherical harmonic coefficients: '),0,WACV)
             mainSizer.Add((0,5),0)
             ODFSizer = wx.FlexGridSizer(0,8,2,2)
             ODFIndx = {}
@@ -3718,7 +3718,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(ODFSizer,0,WACV)
             mainSizer.Add((0,5),0)
         mainSizer.Add((0,5),0)
-        mainSizer.Add(wx.StaticText(Texture,-1,'Sample orientation angle zeros: '),0,WACV)
+        mainSizer.Add(wx.StaticText(Texture,-1,' Sample orientation angle zeros: '),0,WACV)
         mainSizer.Add((0,5),0)
         angSizer = wx.BoxSizer(wx.HORIZONTAL)
         angIndx = {}
@@ -3733,9 +3733,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             valIndx[angVal.GetId()] = item
             angVal.Bind(wx.EVT_TEXT_ENTER,OnAngValue)
             angVal.Bind(wx.EVT_KILL_FOCUS,OnAngValue)
-            angSizer.Add(angVal,0,WACV)
-            angSizer.Add((5,0),0)
-        mainSizer.Add(angSizer,0,WACV)
+            angSizer.Add(angVal,0,WACV|wx.LEFT,5)
+        mainSizer.Add(angSizer,0,WACV|wx.LEFT,5)
         SetPhaseWindow(G2frame.dataFrame,Texture,mainSizer)
 
 ################################################################################

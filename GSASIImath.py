@@ -1723,7 +1723,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
     while True:
         begin = time.time()
         values =  np.array(Dict2Values(parmDict, varyList))
-        result = so.leastsq(errSpHarm,values,Dfun=dervSpHarm,full_output=True,
+        result = so.leastsq(errSpHarm,values,Dfun=dervSpHarm,full_output=True,ftol=1.e-6,
             args=(SGData,cell,Gangls,Texture['Model'],refData,parmDict,varyList,pgbar))
         ncyc = int(result[2]['nfev']/2)
         if ncyc:

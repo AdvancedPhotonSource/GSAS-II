@@ -357,6 +357,28 @@ SGPolax     Axes for space group polarity. Will be one of
             '111' is used (P 1, and ?).
 ==========  ====================================================
 
+.. _SSGData_table:
+
+.. index::
+   single: Superspace Group Data description
+   single: Data object descriptions; Superspace Group Data
+
+Space groups are interpreted by :func:`GSASIIspc.SSpcGroup` 
+and the information is placed in a SSGdata object 
+which is a dict with these keys:
+
+.. tabularcolumns:: |l|p{4.5in}|
+
+==========  ====================================================
+  key         explanation
+==========  ====================================================
+SSpGrp      superspace group symbol extension to space group
+            symbol, accidental spaces removed
+SSGCen      4D cell centering vectors [0,0,0,0] at least
+SSGOps      4D symmetry operations as [M,T] so that M*x+T = x'
+==========  ====================================================
+
+
 Atom Records
 ------------
 

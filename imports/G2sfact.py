@@ -87,12 +87,17 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
 class HKLF2_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import F**2, sig(F**2) reflections from a HKLF file'
     def __init__(self):
+        if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
+            formatName = 'HKL F2'
+            longFormatName = 'Simple [hkl, Fo2, sig(Fo2)] Structure factor text file'
+        else:
+            formatName = u'HKL F\u00b2'
+            longFormatName = u'Simple [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
-            formatName = u'HKL F\u00b2',
-            longFormatName = u'Simple [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
-            )
+            formatName=formatName,
+            longFormatName=longFormatName)
 
     def ContentsValidator(self, filepointer):
         'Make sure file contains the expected columns on numbers'
@@ -129,11 +134,15 @@ class HKLF2_ReaderClass(G2IO.ImportStructFactor):
 class M90_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import F**2, sig(F**2) reflections from a JANA M90 file'
     def __init__(self):
+        if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
+            longFormatName = 'JANA [hkl, Fo2, sig(Fo2)] Structure factor text file'
+        else:
+            longFormatName = u'JANA [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.m90','.M90'),
             strictExtension=False,
             formatName = u'JANA M90',
-            longFormatName = u'Simple [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
+            longFormatName = longFormatName
             )
         self.Super = 0
 
@@ -195,12 +204,17 @@ class M90_ReaderClass(G2IO.ImportStructFactor):
 class SHELX5_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import F**2, sig(F**2) reflections from a fixed format SHELX HKLF5 file'
     def __init__(self):
+        if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
+            formatName = 'SHELX HKL F2'
+            longFormatName = 'SHELX HKLF5 [hkl, Fo2, sig(Fo2)] Structure factor text file'
+        else:
+            formatName = u'SHELX HKL F\u00b2'
+            longFormatName = u'SHELX HKLF5 [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'        
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
-            formatName = u'SHELX HKL F\u00b2',
-            longFormatName = u'SHELX HKLF5 [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
-            )
+            formatName=formatName,
+            longFormatName=longFormatName)
         self.Super = 0
 
     def ContentsValidator(self, filepointer):
@@ -261,12 +275,17 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
 class NT_HKLF2_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import neutron TOF F**2, sig(F**2) reflections from a HKLF file'
     def __init__(self):
+        if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
+            formatName = 'Neutron TOF HKL F2'
+            longFormatName = 'Neutron TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
+        else:
+            formatName = u'Neutron TOF HKL F\u00b2'
+            longFormatName = u'Neutron TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
-            formatName = u'Neutron TOF HKL F\u00b2',
-            longFormatName = u'Neutron TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
-            )
+            formatName=formatName,
+            longFormatName=longFormatName)
 
     def ContentsValidator(self, filepointer):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
@@ -328,12 +347,17 @@ class NT_HKLF2_ReaderClass(G2IO.ImportStructFactor):
 class NT_JANA2K_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import neutron TOF F**2, sig(F**2) reflections from a JANA2000 file'
     def __init__(self):
+        if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
+            formatName = 'Neutron TOF JANA2000 F2'
+            longFormatName = 'Neutron TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
+        else:
+            formatName = u'Neutron TOF JANA2000 F\u00b2'
+            longFormatName = u'Neutron TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.int','.INT'),
             strictExtension=False,
-            formatName = u'Neutron TOF JANA2000 F\u00b2',
-            longFormatName = u'Neutron TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
-            )
+            formatName=formatName,
+            longFormatName=longFormatName)
 
     def ContentsValidator(self, filepointer):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'
@@ -393,12 +417,17 @@ class NT_JANA2K_ReaderClass(G2IO.ImportStructFactor):
 class ISIS_SXD_INT_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import neutron TOF F**2, sig(F**2) reflections from a ISIS int file'
     def __init__(self):
+        if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
+            formatName = u'Neutron SXD TOF HKL F2'
+            longFormatName = u'Neutron SXD TOF [hkl, Fo2, sig(Fo2),...] Structure factor text file'
+        else:
+            formatName = u'Neutron SXD TOF HKL F\u00b2'
+            longFormatName = u'Neutron SXD TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.int','.INT'),
             strictExtension=False,
-            formatName = u'Neutron SXD TOF HKL F\u00b2',
-            longFormatName = u'Neutron SXD TOF [hkl, Fo\u00b2, sig(Fo\u00b2),...] Structure factor text file'
-            )
+            formatName=formatName,
+            longFormatName=longFormatName)
 
     def ContentsValidator(self, filepointer):
         'Make sure file contains the expected columns on numbers & count number of data blocks - "Banks"'

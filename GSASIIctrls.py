@@ -2453,15 +2453,15 @@ class Table(wg.PyGridTableBase):
                 self.data[row][col] = value
             except TypeError:
                 return
-            except IndexError:
-                print row,col,value
+            except IndexError: # has this been tested? 
+                #print row,col,value
                 # add a new row
                 if row > self.GetNumberRows():
                     self.data.append([''] * self.GetNumberCols())
                 elif col > self.GetNumberCols():
-                    for row in range(self.GetNumberRows):
+                    for row in range(self.GetNumberRows()): # bug fixed here
                         self.data[row].append('')
-                print self.data
+                #print self.data
                 self.data[row][col] = value
         innerSetValue(row, col, value)
 

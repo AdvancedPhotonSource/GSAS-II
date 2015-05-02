@@ -422,7 +422,7 @@ def SSpcGroup(SGData,SSymbol):
     """
     Determines supersymmetry information from superspace group name; currently only for (3+1) superlattices
 
-    :param SGData: space group data structure as defined in SpcGroup above.
+    :param SGData: space group data structure as defined in SpcGroup above (see :ref:`SGData<SGData_table>`).
     :param SSymbol: superspace group symbol extension (string) defining modulation direction & generator info.
     :returns: (SSGError,SSGData)
     

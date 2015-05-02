@@ -363,7 +363,7 @@ SGPolax     Axes for space group polarity. Will be one of
    single: Superspace Group Data description
    single: Data object descriptions; Superspace Group Data
 
-Space groups are interpreted by :func:`GSASIIspc.SSpcGroup` 
+Superspace groups [3+1] are interpreted by :func:`GSASIIspc.SSpcGroup` 
 and the information is placed in a SSGdata object 
 which is a dict with these keys:
 

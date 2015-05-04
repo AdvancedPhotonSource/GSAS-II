@@ -1966,7 +1966,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
     numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
     Xb = [0.,10.]
     Yb = [0.,-40.*np.pi*numbDen]
-    Ymax = 1.0
+    Ymax = 0.01
     lenX = 0
     for Pattern in PlotList:
         try:
@@ -2546,17 +2546,22 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         hist = useList.keys()[0]
     numPlots = len(useList)
 
-    if plotType in ['Mustrain','Size']:
-        Plot = mp3d.Axes3D(G2frame.G2plotNB.add3D(plotType))
-    else:
-        Plot = G2frame.G2plotNB.addMpl(plotType).gca()        
-    plotNum = G2frame.G2plotNB.plotList.index(plotType)
-    Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index(plotType)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+        if not Page.IsShown():
+            Page.Show()
+    except ValueError:
+        if plotType in ['Mustrain','Size']:
+            Plot = mp3d.Axes3D(G2frame.G2plotNB.add3D(plotType))
+        else:
+            Plot = G2frame.G2plotNB.addMpl(plotType).gca()               
+        plotNum = G2frame.G2plotNB.plotList.index(plotType)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
     Page.Choice = None
-    Page.SetFocus()
     G2frame.G2plotNB.status.SetStatusText('',1)
-    if not Page.IsShown():
-        Page.Show()
     
     PHI = np.linspace(0.,360.,30,True)
     PSI = np.linspace(0.,180.,30,True)

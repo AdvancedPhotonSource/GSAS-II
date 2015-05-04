@@ -224,14 +224,12 @@ def Refine(GPXfile,dlg):
         fl = open('testDeriv.dat','wb')
         cPickle.dump(result[0],fl,1)
         cPickle.dump([Histograms,Phases,restraintDict,rigidbodyDict],fl,1)
-        cPickle.dump([G2mv.dependentParmList,G2mv.arrayList,G2mv.invarrayList,
-            G2mv.indParmList,G2mv.invarrayList],fl,1)
+        cPickle.dump([constrDict,fixedList],fl,1)
         cPickle.dump(parmDict,fl,1)
         cPickle.dump(varyList,fl,1)
         cPickle.dump(calcControls,fl,1)
         cPickle.dump(pawleyLookup,fl,1)
         fl.close()
-
     if dlg:
         return True,Rvals['Rwp']
 

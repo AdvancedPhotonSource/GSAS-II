@@ -3991,6 +3991,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         DelList = keyList[1:]
                     for i in DelList:
                         del UseList[i]
+                    data['Histograms'] = UseList
                     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
             finally:
                 dlg.Destroy()

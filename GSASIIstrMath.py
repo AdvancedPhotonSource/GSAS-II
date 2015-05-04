@@ -1266,7 +1266,7 @@ def SHPOcal(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
     odfCor = 1.0
     H = refl[:3]
     cell = G2lat.Gmat2cell(g)
-    Sangl = [0.,0.,0.]
+    Sangls = [0.,0.,0.]
     if 'Bragg' in calcControls[hfx+'instType']:
         Gangls = [0.,90.,0.,parmDict[hfx+'Azimuth']]
         IFCoup = True
@@ -1274,7 +1274,7 @@ def SHPOcal(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         Gangls = [parmDict[hfx+'Phi'],parmDict[hfx+'Chi'],parmDict[hfx+'Omega'],parmDict[hfx+'Azimuth']]
         IFCoup = False
     phi,beta = G2lat.CrsAng(H,cell,SGData)
-    psi,gam,x,x = G2lat.SamAng(tth/2.,Gangls,Sangl,IFCoup) #ignore 2 sets of angle derivs.
+    psi,gam,x,x = G2lat.SamAng(tth/2.,Gangls,Sangls,IFCoup) #ignore 2 sets of angle derivs.
     SHnames = calcControls[phfx+'SHnames']
     for item in SHnames:
         L,N = eval(item.strip('C'))
@@ -1282,8 +1282,6 @@ def SHPOcal(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         Ksl,x,x = G2lat.GetKsl(L,0,'0',psi,gam)
         Lnorm = G2lat.Lnorm(L)
         odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
-#        Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta)
-#        odfCor += parmDict[phfx+item]*Lnorm*Kcsl
     return np.squeeze(odfCor)
     
 def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
@@ -1296,7 +1294,7 @@ def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
     dFdODF = {}
     H = refl[:3]
     cell = G2lat.Gmat2cell(g)
-    Sangl = [0.,0.,0.]
+    Sangls = [0.,0.,0.]
     if 'Bragg' in calcControls[hfx+'instType']:
         Gangls = [0.,90.,0.,parmDict[hfx+'Azimuth']]
         IFCoup = True
@@ -1304,7 +1302,7 @@ def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         Gangls = [parmDict[hfx+'Phi'],parmDict[hfx+'Chi'],parmDict[hfx+'Omega'],parmDict[hfx+'Azimuth']]
         IFCoup = False
     phi,beta = G2lat.CrsAng(H,cell,SGData)
-    psi,gam,x,x = G2lat.SamAng(tth/2.,Gangls,Sangl,IFCoup) #ignore 2 sets of angle derivs.
+    psi,gam,x,x = G2lat.SamAng(tth/2.,Gangls,Sangls,IFCoup) #ignore 2 sets of angle derivs.
     SHnames = calcControls[phfx+'SHnames']
     for item in SHnames:
         L,N = eval(item.strip('C'))
@@ -1313,9 +1311,6 @@ def SHPOcalDerv(refl,im,g,phfx,hfx,SGData,calcControls,parmDict):
         Lnorm = G2lat.Lnorm(L)
         odfCor += parmDict[phfx+item]*Lnorm*Kcl*Ksl
         dFdODF[phfx+item] = Kcl*Ksl*Lnorm
-#        Kcsl,Lnorm = G2lat.GetKclKsl(L,N,SGData['SGLaue'],psi,phi,beta) 
-#        odfCor += parmDict[phfx+item]*Lnorm*Kcsl
-#        dFdODF[phfx+item] = Kcsl*Lnorm
     return odfCor,dFdODF
     
 def GetPrefOri(uniq,G,g,phfx,hfx,SGData,calcControls,parmDict):

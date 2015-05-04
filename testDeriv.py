@@ -94,8 +94,7 @@ class testDeriv(wx.Frame):
                 file = open(testFile,'rb')
                 self.values = cPickle.load(file)
                 self.HistoPhases = cPickle.load(file)
-                (G2mv.dependentParmList,G2mv.arrayList,G2mv.invarrayList,G2mv.indParmList,
-                    G2mv.invarrayList) = cPickle.load(file)
+                (self.constrDict,self.fixedList) = cPickle.load(file)
                 self.parmDict = cPickle.load(file)
                 self.varylist = cPickle.load(file)
                 self.calcControls = cPickle.load(file)
@@ -103,6 +102,8 @@ class testDeriv(wx.Frame):
                 self.use = [False for i in range(len(self.varylist))]
                 self.delt = [max(abs(self.parmDict[name])*0.001,1e-6) for name in self.varylist]
                 file.close()
+                groups,parmlist = G2mv.GroupConstraints(self.constrDict)
+                G2mv.GenerateConstraints(groups,parmlist,self.varylist,self.constrDict,self.fixedList,self.parmDict)
                 self.UpdateControls(event)
                 print G2mv.VarRemapShow(self.varylist)
         finally:

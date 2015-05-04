@@ -1036,6 +1036,7 @@ def SaveIntegration(G2frame,PickId,data):
     Xminmax = [X[0],X[-1]]
     LRazm = data['LRazimuth']
     Azms = []
+    dazm = 0.
     if data['fullIntegrate'] and data['outAzimuths'] == 1:
         Azms = [45.0,]                              #a poor man's average?
     else:
@@ -1044,8 +1045,9 @@ def SaveIntegration(G2frame,PickId,data):
                 Azms.append(G2img.meanAzm(azm%360.,azms[i+1]%360.))
             else:    
                 Azms.append(G2img.meanAzm(azm,azms[i+1]))
+        dazm = np.min(np.abs(np.diff(azms)))/2.
     for i,azm in enumerate(azms[:-1]):
-        Aname = name+" Azm= %.2f"%(Azms[i])
+        Aname = name+" Azm= %.2f"%((azm+dazm)%360.)
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         nOcc = 0
         while item:
@@ -1060,7 +1062,7 @@ def SaveIntegration(G2frame,PickId,data):
         Sample['Omega'] = data['GonioAngles'][0]
         Sample['Chi'] = data['GonioAngles'][1]
         Sample['Phi'] = data['GonioAngles'][2]
-        Sample['Azimuth'] = Azms[i]     #put here too
+        Sample['Azimuth'] = (azm+dazm)%360.    #put here as bin center 
         if 'PWDR' in Aname:
             parms = ['PXC',data['wavelength'],0.0,0.99,1.0,-0.10,0.4,0.30,1.0,0.0001,Azms[i]]    #set polarization for synchrotron radiation!
         elif 'SASD' in Aname:

@@ -116,8 +116,8 @@ def SetupSampleLabels(histName,dataType,histType):
     parms.append(['Omega','Goniometer omega:',[10,3]])
     parms.append(['Chi','Goniometer chi:',[10,3]])
     parms.append(['Phi','Goniometer phi:',[10,3]])
-    parms.append(['Azimuth','Detector azimuth',[10,3]])
-    parms.append(['Time','Clock time (s)',[12,3]])
+    parms.append(['Azimuth','Detector azimuth:',[10,3]])
+    parms.append(['Time','Clock time (s):',[12,3]])
     parms.append(['Temperature','Sample temperature (K): ',[10,3]])
     parms.append(['Pressure','Sample pressure (MPa): ',[10,3]])
     return parms
@@ -1606,6 +1606,7 @@ def UpdateInstrumentGrid(G2frame,data):
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.InstMenu)
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()            
+            Status.SetStatusText('NB: Azimuth is used for polarization only')
         G2frame.Bind(wx.EVT_MENU,OnCalibrate,id=G2gd.wxID_INSTCALIB)
         G2frame.Bind(wx.EVT_MENU,OnLoad,id=G2gd.wxID_INSTLOAD)
         G2frame.Bind(wx.EVT_MENU,OnSave,id=G2gd.wxID_INSTSAVE)
@@ -1617,7 +1618,7 @@ def UpdateInstrumentGrid(G2frame,data):
     elif 'L' in insVal['Type']:                   #SASD data menu commands
         G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.InstMenu)
         if not G2frame.dataFrame.GetStatusBar():
-            Status = G2frame.dataFrame.CreateStatusBar()            
+            Status = G2frame.dataFrame.CreateStatusBar()
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)
     MakeParameterWindow()
         

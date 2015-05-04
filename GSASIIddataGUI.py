@@ -144,7 +144,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             scaleRef = wx.CheckBox(DData,wx.ID_ANY,label=' Scale factor: ')                
         scaleRef.SetValue(UseList[G2frame.hist]['Scale'][1])
         scaleRef.Bind(wx.EVT_CHECKBOX, OnScaleRef)
-        scaleSizer.Add(scaleRef,0,WACV)
+        scaleSizer.Add(scaleRef,0,WACV|wx.LEFT,5)
         scaleVal = wx.TextCtrl(DData,wx.ID_ANY,
             '%.4f'%(UseList[G2frame.hist]['Scale'][0]),style=wx.TE_PROCESS_ENTER)
         scaleVal.Bind(wx.EVT_TEXT_ENTER,OnScaleVal)
@@ -469,13 +469,13 @@ def UpdateDData(G2frame,DData,data,hist=''):
         lgmixRef.SetValue(UseList[G2frame.hist][name][2][2])
         Indx[lgmixRef.GetId()] = [G2frame.hist,name]
         lgmixRef.Bind(wx.EVT_CHECKBOX, OnRef)
-        lgmixSizer.Add(lgmixRef,0,WACV)
+        lgmixSizer.Add(lgmixRef,0,WACV|wx.LEFT,5)
         lgmixVal = wx.TextCtrl(DData,wx.ID_ANY,
             '%.4f'%(UseList[G2frame.hist][name][1][2]),style=wx.TE_PROCESS_ENTER)
         Indx[lgmixVal.GetId()] = [G2frame.hist,name]
         lgmixVal.Bind(wx.EVT_TEXT_ENTER,OnVal)
         lgmixVal.Bind(wx.EVT_KILL_FOCUS,OnVal)
-        lgmixSizer.Add(lgmixVal,0,WACV)
+        lgmixSizer.Add(lgmixVal,0,WACV|wx.LEFT,5)
         return lgmixSizer
                     
     def ResetSizer(name,OnReset):
@@ -485,7 +485,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         reset.SetValue(False)
         Indx[reset.GetId()] = [G2frame.hist,name]
         reset.Bind(wx.EVT_CHECKBOX,OnReset)
-        resetSizer.Add(reset,0,WACV|wx.TOP,5)
+        resetSizer.Add(reset,0,WACV|wx.TOP|wx.LEFT,5)
         return resetSizer
         
     def IsoSizer(name,parm,fmt,OnVal,OnRef):
@@ -495,7 +495,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         sizeRef.SetValue(UseList[G2frame.hist][parm][2][0])
         Indx[sizeRef.GetId()] = [G2frame.hist,0]
         sizeRef.Bind(wx.EVT_CHECKBOX, OnRef)
-        isoSizer.Add(sizeRef,0,WACV)
+        isoSizer.Add(sizeRef,0,WACV|wx.LEFT,5)
         sizeVal = wx.TextCtrl(DData,wx.ID_ANY,
             fmt%(UseList[G2frame.hist][parm][1][0]),style=wx.TE_PROCESS_ENTER)
         Indx[sizeVal.GetId()] = [G2frame.hist,0]
@@ -582,7 +582,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             hstrainRef.SetValue(ref)
             Indx[hstrainRef.GetId()] = [G2frame.hist,id]
             hstrainRef.Bind(wx.EVT_CHECKBOX, OnHstrainRef)
-            hstrainSizer.Add(hstrainRef,0,WACV)
+            hstrainSizer.Add(hstrainRef,0,WACV|wx.LEFT,5)
             hstrainVal = wx.TextCtrl(DData,wx.ID_ANY,'%.3g'%(val),style=wx.TE_PROCESS_ENTER)
             Indx[hstrainVal.GetId()] = [G2frame.hist,id]
             hstrainVal.Bind(wx.EVT_TEXT_ENTER,OnHstrainVal)
@@ -653,7 +653,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             ODFIndx[ODFval.GetId()] = odf
             ODFval.Bind(wx.EVT_TEXT_ENTER,OnODFValue)
             ODFval.Bind(wx.EVT_KILL_FOCUS,OnODFValue)
-            ODFSizer.Add(ODFval,0,WACV)
+            ODFSizer.Add(ODFval,0,WACV|wx.LEFT,5)
         return ODFSizer
         
     def SHPenalty(POData):
@@ -701,7 +701,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         extRef = wx.CheckBox(DData,wx.ID_ANY,label=' Extinction: ')
         extRef.SetValue(UseList[G2frame.hist]['Extinction'][1])
         extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
-        extSizer.Add(extRef,0,WACV)
+        extSizer.Add(extRef,0,WACV|wx.LEFT,5)
         extVal = wx.TextCtrl(DData,wx.ID_ANY,
             '%.2f'%(UseList[G2frame.hist]['Extinction'][0]),style=wx.TE_PROCESS_ENTER)
         extVal.Bind(wx.EVT_TEXT_ENTER,OnExtVal)
@@ -759,7 +759,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 Eref.SetValue(UseList[G2frame.hist]['Extinction'][2][ekey][1])
                 Indx[Eref.GetId()] = [G2frame.hist,ekey]
                 Eref.Bind(wx.EVT_CHECKBOX, OnEref)
-                val2Sizer.Add(Eref,0,WACV)
+                val2Sizer.Add(Eref,0,WACV|wx.LEFT,5)
                 Eval = wx.TextCtrl(DData,wx.ID_ANY,
                     '%10.3e'%(UseList[G2frame.hist]['Extinction'][2][ekey][0]),style=wx.TE_PROCESS_ENTER)
                 Indx[Eval.GetId()] = [G2frame.hist,ekey]
@@ -777,7 +777,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             babRef.SetValue(UseList[G2frame.hist]['Babinet']['Bab'+bab][1])
             Indx[babRef.GetId()] = [G2frame.hist,bab]
             babRef.Bind(wx.EVT_CHECKBOX, OnBabRef)
-            babSizer.Add(babRef,0,WACV)
+            babSizer.Add(babRef,0,WACV|wx.LEFT,5)
             babVal = wx.TextCtrl(DData,wx.ID_ANY,
                 '%.3f'%(UseList[G2frame.hist]['Babinet']['Bab'+bab][0]),style=wx.TE_PROCESS_ENTER)
             Indx[babVal.GetId()] = [G2frame.hist,bab]
@@ -820,7 +820,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         showSizer.Add(useData,0,WACV|wx.TOP|wx.BOTTOM,5)
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(UseList[G2frame.hist]['Use'])
-        bottomSizer.Add(showSizer,0,WACV|wx.TOP|wx.BOTTOM,5)
+        bottomSizer.Add(showSizer,0,WACV|wx.TOP|wx.BOTTOM|wx.LEFT,5)
         
         bottomSizer.Add(ScaleSizer(),0,WACV|wx.BOTTOM,5)
             

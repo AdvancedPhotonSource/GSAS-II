@@ -134,7 +134,10 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                 S = File.readline()
             N = len(x)
             if self.clockWd:
-                x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
+                if len(self.clockWd) == 1:
+                    x = Tmap2TOF(self.TimeMap['1'],self.clockWd['1'])
+                else:
+                    x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
         
         def GetSTDdata(File,Pos,Bank):
@@ -176,7 +179,10 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                 S = File.readline()
             N = len(x)
             if self.clockWd:
-                x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
+                if len(self.clockWd) == 1:
+                    x = Tmap2TOF(self.TimeMap['1'],self.clockWd['1'])
+                else:
+                    x = Tmap2TOF(self.TimeMap[cons[5]],self.clockWd[cons[5]])
             return [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
            
         def GetALTdata(File,Pos,Bank):
@@ -212,7 +218,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
             File.seek(Pos)
             cons = TimeMap[8:].split()
             mapNo = cons[0]
-            if mapNo == '10': mapNo = '1'   #HIPD cluge!
+            if 'TIME_MAP10' in TimeMap: mapNo = '1'   #HIPD cluge!
             Nch = int(cons[1])
             Nrec = int(cons[2])
             clockWd = float(cons[4])/1000.          #in mus

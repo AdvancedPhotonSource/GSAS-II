@@ -430,13 +430,13 @@ def GetAzm(x,y,data):
 def meanAzm(a,b):
     AZM = lambda a,b: npacosd(0.5*(npsind(2.*b)-npsind(2.*a))/(np.pi*(b-a)/180.))/2.
     azm = AZM(a,b)
-    quad = int((a+b)/180.)
-    if quad == 1:
-        azm = 180.-azm
-    elif quad == 2:
-        azm += 180.
-    elif quad == 3:
-        azm = 360-azm
+#    quad = int((a+b)/180.)
+#    if quad == 1:
+#        azm = 180.-azm
+#    elif quad == 2:
+#        azm += 180.
+#    elif quad == 3:
+#        azm = 360-azm
     return azm      
        
 def ImageCompress(image,scale):

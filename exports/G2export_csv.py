@@ -238,6 +238,9 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
         self.OpenFile()
         hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
         histblk = self.Histograms[hist]
+        self.Write('"Histogram"')
+        self.Write('"'+hist+'"')
+        self.Write('')
         # table of phases
         self.Write('"Phase name","phase #"')
         for i,phasenam in enumerate(sorted(histblk['Reflection Lists'])):
@@ -248,35 +251,39 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
             phasDict = histblk['Reflection Lists'][phasenam]
             tname = {'T':'TOF','C':'2-theta'}[phasDict['Type'][2]]
             if phasDict.get('Super',False):
-                WriteList(self,("h","k","l","m",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","phase #"))
+                WriteList(self,("h","k","l","m",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","Prfo","phase #"))
                 if 'T' in phasDict['Type']:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:.4f},{:d}"
                 else:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
-                    h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:13]
-                    FWHM = G2pwd.getgamFW(gam,sig)
                     if 'T' in phasDict['Type']:
+                        h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,x,x,x,Prfo = refItem[:17]
+                        FWHM = G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))
                     else:        #convert to deg        
+                        h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,Prfo = refItem[:14]
+                        FWHM = G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,    \
                             np.sqrt(max(sig,0.0001))/100.,gam/100.,FWHM/100.,i))
             else:
-                WriteList(self,("h","k","l",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","phase #"))
+                WriteList(self,("h","k","l",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","Prfo","phase #"))
                 if 'T' in phasDict['Type']:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.3f},{:.3f},{:.3f},{:.4f},{:d}"
                 else:
-                    fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:d}"
+                    fmt = "{:.0f},{:.0f},{:.0f},{:.3f},{:.3f},{:.3f},{:.2f},{:.0f},{:.5f},{:.5f},{:.5f},{:.4f},{:d}"
                 refList = phasDict['RefList']
                 for refItem in refList:
-                    h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr = refItem[:12]
-                    FWHM = G2pwd.getgamFW(gam,sig)
                     if 'T' in phasDict['Type']:
-                        self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))
+                        h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,x,x,x,Prfo = refItem[:16]
+                        FWHM = G2pwd.getgamFW(gam,sig)
+                        self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,Prfo,i))
                     else:        #convert to deg        
+                        h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,Prfo = refItem[:13]
+                        FWHM = G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,  \
-                            np.sqrt(max(sig,0.0001))/100.,gam/100.,FWHM/100.,i))
+                            np.sqrt(max(sig,0.0001))/100.,gam/100.,FWHM/100.,Prfo,i))
         self.CloseFile()
         print(str(hist)+'reflections written to file '+str(self.fullpath))
 

@@ -2084,10 +2084,10 @@ def ItemSelector(ChoiceList, ParentFrame=None,
     '''
     if multiple:
         if useCancel:
-            dlg = G2G.G2MultiChoiceDialog(
+            dlg = G2MultiChoiceDialog(
                 ParentFrame,title, header, ChoiceList)
         else:
-            dlg = G2G.G2MultiChoiceDialog(
+            dlg = G2MultiChoiceDialog(
                 ParentFrame,title, header, ChoiceList,
                 style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.OK|wx.CENTRE)
     else:

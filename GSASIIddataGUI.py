@@ -915,10 +915,13 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 
     if DData.GetSizer():
         DData.GetSizer().Clear(True)
+    useList = []
+    for name in keyList:
+        if name in UseList:
+            useList.append(name)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Histogram data for '+PhaseName+':'),0,WACV)
     if G2frame.hist != '':
-        useList = UseList.keys()
         topSizer = wx.FlexGridSizer(1,2,5,5)
         select = wx.ListBox(DData,choices=useList,style=wx.LB_SINGLE,size=(-1,120))
         select.SetSelection(useList.index(G2frame.hist))

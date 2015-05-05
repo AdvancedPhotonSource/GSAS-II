@@ -1744,10 +1744,6 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
         else:
             break
     
-#    for hist in keyList:
-#        print ' Texture corrections for '+hist
-#        for ref in refData[hist]:
-#            print ' %d %d %d %.3f %.3f'%(int(ref[0]),int(ref[1]),int(ref[2]),ref[5],ref[6])
     if ncyc:
         for parm in parmDict:
             if 'C' in parm:

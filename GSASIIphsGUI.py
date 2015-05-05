@@ -215,6 +215,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             F000N += generalData['NoAtoms'][elem]*generalData['Isotopes'][elem][isotope]['SL'][0]
         generalData['F000X'] = F000X
         generalData['F000N'] = F000N
+        generalData['Mass'] = G2mth.getMass(generalData)
        
 
 ################################################################################
@@ -3613,6 +3614,46 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 textureData['PFxyz'] = xyz
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
 
+        def SHPenalty(Penalty):
+            
+            def OnHKLList(event):
+                dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select penalty hkls',
+                    'Penalty hkls',hkls,filterBox=False)
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        Penalty[0] = [hkls[i] for i in dlg.GetSelections()]
+                        if not Penalty[0]:
+                            Penalty[0] = ['',]
+                    else:
+                        return
+                finally:
+                    dlg.Destroy()
+                wx.CallLater(100,UpdateTexture)
+                
+            def OnshToler(event):
+                try:
+                    value = float(shToler.GetValue())
+                    Penalty[1] = value
+                except ValueError:
+                    pass
+                shToler.SetValue('%.2f'%(Penalty[1]))
+            
+            A = G2lat.cell2A(generalData['Cell'][1:7])
+            hkls = G2lat.GenPfHKLs(10,SGData,A)    
+            shPenalty = wx.BoxSizer(wx.HORIZONTAL)
+            shPenalty.Add(wx.StaticText(Texture,wx.ID_ANY,' Negative MRD penalty list: '),0,WACV)
+            shPenalty.Add(wx.ComboBox(Texture,value=Penalty[0][0],choices=Penalty[0],
+                style=wx.CB_DROPDOWN),0,WACV)
+            hklList = wx.Button(Texture,label='Select penalty hkls')
+            hklList.Bind(wx.EVT_BUTTON,OnHKLList)
+            shPenalty.Add(hklList,0,WACV)
+            shPenalty.Add(wx.StaticText(Texture,wx.ID_ANY,' Zero MRD tolerance: '),0,WACV)
+            shToler = wx.TextCtrl(Texture,wx.ID_ANY,'%.2f'%(Penalty[1]),style=wx.TE_PROCESS_ENTER)
+            shToler.Bind(wx.EVT_TEXT_ENTER,OnshToler)
+            shToler.Bind(wx.EVT_KILL_FOCUS,OnshToler)
+            shPenalty.Add(shToler,0,WACV)
+            return shPenalty    
+        
         # UpdateTexture executable starts here
         #Texture.DestroyChildren() # bad, deletes scrollbars on Mac!
         if Texture.GetSizer():
@@ -3633,6 +3674,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             x = textureData['PlotType']
         except KeyError:
             textureData.update({'PFxyz':[0,0,1.],'PlotType':'Pole figure'})
+        if 'Penalty' not in textureData:
+            textureData['Penalty'] = [['',],0.1,False,1.0]
         shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
         SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
         shAngles = ['omega','chi','phi']
@@ -3735,6 +3778,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             angVal.Bind(wx.EVT_KILL_FOCUS,OnAngValue)
             angSizer.Add(angVal,0,WACV|wx.LEFT,5)
         mainSizer.Add(angSizer,0,WACV|wx.LEFT,5)
+#        mainSizer.Add(SHPenalty(textureData['Penalty']),0,WACV|wx.LEFT,5)  for future
         SetPhaseWindow(G2frame.dataFrame,Texture,mainSizer)
 
 ################################################################################
@@ -5940,6 +5984,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         pgbar.Destroy()
         if Error:
             wx.MessageBox(Error,caption='Fit Texture Error',style=wx.ICON_EXCLAMATION)
+        for hist in keyList:
+            print ' Texture corrections for '+hist
+            for ref in refData[hist]:
+                print ' %d %d %d %.3f %.3f'%(int(ref[0]),int(ref[1]),int(ref[2]),ref[5],ref[6])
         UpdateTexture()
         G2plt.PlotTexture(G2frame,data,Start=False)            
             

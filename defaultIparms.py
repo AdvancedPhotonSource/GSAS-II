@@ -9,7 +9,7 @@
 # $Id: GSASII.py 1507 2014-09-26 15:52:52Z vondreele $
 ########### SVN repository information ###################
 '''
-*defaultIparms: Table of atomic data*
+*defaultIparms: Table of instrument parameters*
 --------------------------------------
 
 Define some default instrument parameters:

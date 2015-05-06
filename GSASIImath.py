@@ -1655,7 +1655,8 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
         Sangls = [parmDict['Sample '+'omega'],parmDict['Sample '+'chi'],parmDict['Sample '+'phi']]
         for hist in Gangls.keys():
             Refs = refData[hist]
-            wt = 1.0    #   np.sqrt(np.abs(Refs[:,5]))?
+            Refs[:,5] = np.where(Refs[:,5]>0.,Refs[:,5],0.)
+            wt = 1./np.sqrt(np.max(Refs[:,5],.25))
             sumObs += np.sum(Refs[:,5])
             Refs[:,6] = 1.
             H = Refs[:,:3]
@@ -1683,7 +1684,7 @@ def FitTexture(General,Gangls,refData,keyList,pgbar):
             mat = np.zeros((len(varyList),len(refData[hist])))
             Refs = refData[hist]
             H = Refs[:,:3]
-            wt = 1.0    #   np.sqrt(np.abs(Refs[:,5]))?
+            wt = 1./np.sqrt(np.max(Refs[:,5],.25))
             phi,beta = G2lat.CrsAng(H,cell,SGData)
             psi,gam,dPdA,dGdA = G2lat.SamAng(Refs[:,3]/2.,Gangls[hist],Sangls,False) #assume not Bragg-Brentano!
             for j,item in enumerate(varyList):

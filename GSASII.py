@@ -1325,8 +1325,9 @@ class GSASII(wx.Frame):
                 cw = np.diff(rd.powderdata[0])
                 rd.powderdata[0] = rd.powderdata[0][:-1]+cw/2.
                 if rd.GSAS:     #NB: old GSAS wanted intensities*CW even if normalized!
-                    rd.powderdata[1] = rd.powderdata[1]/cw[:len(rd.powderdata[1])]
-                    rd.powderdata[2] = rd.powderdata[2]*cw[:len(rd.powderdata[1])]**2  #1/var=w at this point
+                    npts = min(len(rd.powderdata[0]),len(rd.powderdata[1]),len(cw))
+                    rd.powderdata[1] = rd.powderdata[1][:npts]/cw[:npts]
+                    rd.powderdata[2] = rd.powderdata[2][:npts]*cw[:npts]**2  #1/var=w at this point
                 else:       #NB: from topas/fullprof type files
                     rd.powderdata[1] = rd.powderdata[1][:-1]
                     rd.powderdata[2] = rd.powderdata[2][:-1]

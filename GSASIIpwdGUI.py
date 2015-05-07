@@ -2443,7 +2443,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 File = open(filename,'w')
                 names = 'M20,X20,Bravais,a,b,c,alpha,beta,gamma,volume\n'
                 File.write(names)
-                fmt = '%d,%d,%s,%.4f,%.4f,%.4f,%.2f,%.2f,%.2f,%.3f\n'
+                fmt = '%.2f,%d,%s,%.4f,%.4f,%.4f,%.2f,%.2f,%.2f,%.3f\n'
                 for cell in cells:
                     File.write(fmt%(cell[0],cell[1],bravaisSymb[cell[2]], cell[3],cell[4],cell[5], cell[6],cell[7],cell[8],cell[9]))
                 File.close()

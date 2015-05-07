@@ -258,7 +258,7 @@ def SeqRefine(GPXfile,dlg):
     rigidbodyDict = G2stIO.GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,pFile=printFile)
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,maxSSwave = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,False,printFile)
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,maxSSwave = G2stIO.GetPhaseData(Phases,restraintDict,rbIds,False,printFile,seqRef=True)
     for item in phaseVary:
         if '::A0' in item:
             print '**** WARNING - lattice parameters should not be refined in a sequential refinement ****'

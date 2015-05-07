@@ -2433,6 +2433,23 @@ def UpdateUnitCellsGrid(G2frame, data):
         SetCellValue(valObj,ObjId/2,value)
         OnHklShow(event)
         
+    def OnExportCells(event):
+        dlg = wx.FileDialog(G2frame, 'Choose Indexing Result csv file', '.', '', 
+            'indexing result file (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                filename = os.path.splitext(filename)[0]+'.csv'
+                File = open(filename,'w')
+                names = 'M20,X20,Bravais,a,b,c,alpha,beta,gamma,volume\n'
+                File.write(names)
+                fmt = '%d,%d,%s,%.4f,%.4f,%.4f,%.2f,%.2f,%.2f,%.3f\n'
+                for cell in cells:
+                    File.write(fmt%(cell[0],cell[1],bravaisSymb[cell[2]], cell[3],cell[4],cell[5], cell[6],cell[7],cell[8],cell[9]))
+                File.close()
+        finally:
+            dlg.Destroy()
+        
     def OnCellChange(event):
         Obj = event.GetEventObject()
         ObjId = cellList.index(Obj.GetId())
@@ -2708,7 +2725,9 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2frame.Bind(wx.EVT_MENU, IndexPeaks, id=G2gd.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2gd.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2gd.wxID_REFINECELL)
-    G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2gd.wxID_MAKENEWPHASE)    
+    G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2gd.wxID_MAKENEWPHASE)
+    G2frame.Bind(wx.EVT_MENU, OnExportCells, id=G2gd.wxID_EXPORTCELLS)
+        
     controls,bravais,cells,dmin,ssopt = data
     if len(controls) < 13:              #add cell volume if missing
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
@@ -2738,9 +2757,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataFrame.RefineCell.Enable(True)    
     G2frame.dataFrame.CopyCell.Enable(False)
     G2frame.dataFrame.MakeNewPhase.Enable(False)        
+    G2frame.dataFrame.ExportCells.Enable(False)
     if cells:
         G2frame.dataFrame.CopyCell.Enable(True)
-        G2frame.dataFrame.MakeNewPhase.Enable(True)        
+        G2frame.dataFrame.MakeNewPhase.Enable(True)
+        G2frame.dataFrame.ExportCells.Enable(True)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Indexing controls: '),0,WACV)
     mainSizer.Add((5,5),0)

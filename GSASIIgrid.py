@@ -113,7 +113,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(8)]
 
 [  wxID_INDXRELOAD, wxID_INDEXPEAKS, wxID_REFINECELL, wxID_COPYCELL, wxID_MAKENEWPHASE,
-] = [wx.NewId() for item in range(5)]
+    wxID_EXPORTCELLS,
+] = [wx.NewId() for item in range(6)]
 
 [ wxID_CONSTRAINTADD,wxID_EQUIVADD,wxID_HOLDADD,wxID_FUNCTADD,
   wxID_CONSPHASE, wxID_CONSHIST, wxID_CONSHAP, wxID_CONSGLOBAL,
@@ -886,6 +887,8 @@ class DataFrame(wx.Frame):
             text='Refine Cell',help='Refine unit cell parameters from indexed peaks')
         self.MakeNewPhase = self.IndexEdit.Append( id=wxID_MAKENEWPHASE, kind=wx.ITEM_NORMAL,
             text='Make new phase',help='Make new phase from selected unit cell')
+        self.ExportCells = self.IndexEdit.Append( id=wxID_EXPORTCELLS, kind=wx.ITEM_NORMAL,
+            text='Export cell list',help='Export cell list to csv file')
         self.PostfillDataMenu()
         self.IndexPeaks.Enable(False)
         self.CopyCell.Enable(False)

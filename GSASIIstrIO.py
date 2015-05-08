@@ -1208,7 +1208,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 if len(SSGtext):    #if superstructure
                     print >>pFile,'\n Modulation vector: mV0 = %.4f'%(Vec[0]),' mV1 = %.4f'%(Vec[1]),   \
                         ' mV2 = %.4f'%(Vec[2]),' max mod. index = %d'%(maxH),' Refine?',vRef
-                if not setRef:
+                if not seqRef:
                     PrintTexture(textureData)
                 if name in RestraintDict:
                     PrintRestraints(cell[1:7],SGData,General['AtomPtrs'],Atoms,AtLookup,

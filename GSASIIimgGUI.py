@@ -217,12 +217,12 @@ def UpdateImageControls(G2frame,data,masks):
                                 FlatBkg = Data.get('Flat Bkg',0.0)
                                 try:
                                     Masks = G2frame.PatternTree.GetItemPyData(
-                                        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
+                                        G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'))
                                 except TypeError:       #missing Masks
                                     Imin,Imax = Data['Range']
                                     Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
                                     G2frame.PatternTree.SetItemPyData(
-                                        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'),Masks)
+                                        G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'),Masks)
                                 CleanupMasks(Masks)
                                 if len(backImage):                                
                                     G2frame.Integrate = G2img.ImageIntegrate(image+backImage-FlatBkg,Data,Masks,blkSize,dlgp)

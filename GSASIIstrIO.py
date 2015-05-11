@@ -2788,7 +2788,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
                 backSig[i] = sigDict[pfx+'Back;'+str(i)]
         if DebyePeaks['nDebye']:
             for i in range(DebyePeaks['nDebye']):
-                names = [pfx+'DebyeA:'+str(i),pfx+'DebyeR:'+str(i),pfx+'DebyeU:'+str(i)]
+                names = [pfx+'DebyeA;'+str(i),pfx+'DebyeR;'+str(i),pfx+'DebyeU;'+str(i)]
                 for j,name in enumerate(names):
                     DebyePeaks['debyeTerms'][i][2*j] = parmDict[name]
                     if name in sigDict:

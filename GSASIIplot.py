@@ -2717,7 +2717,7 @@ def PlotTexture(G2frame,data,Start=False):
                     else:
                         r,p = 2.*npatand(np.sqrt(r)),npatan2d(ypos,xpos)
                     ipf = G2lat.invpolfcal(IODFln,SGData,np.array([r,]),np.array([p,]))
-                    xyz = np.inner(Amat.T,np.array([rp2xyz(r,p)]))
+                    xyz = np.inner(Bmat,np.array([rp2xyz(r,p)]))
                     y,x,z = list(xyz/np.max(np.abs(xyz)))
                     
                     G2frame.G2plotNB.status.SetFields(['',

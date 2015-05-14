@@ -6175,7 +6175,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         # Texture
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.TextureMenu)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureRefine, id=G2gd.wxID_REFINETEXTURE)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
+#        G2frame.dataFrame.Bind(wx.EVT_MENU, OnTextureClear, id=G2gd.wxID_CLEARTEXTURE)
         # Pawley reflections
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.PawleyMenu)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPawleyLoad, id=G2gd.wxID_PAWLEYLOAD)

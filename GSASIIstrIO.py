@@ -249,7 +249,20 @@ def GetFprime(controlDict,Histograms):
                     Orbs = G2el.GetXsectionCoeff(El.split('+')[0].split('-')[0])
                     FP,FPP,Mu = G2el.FPcalc(Orbs, keV)
                     FFtables[El][hfx+'FP'] = FP
-                    FFtables[El][hfx+'FPP'] = FPP                
+                    FFtables[El][hfx+'FPP'] = FPP
+                    
+def PrintFprime(FFtables,pfx,pFile):
+    print >>pFile,'\n Resonant form factors:'
+    Elstr = ' Element:'
+    FPstr = " f'     :"
+    FPPstr = ' f"     :'
+    for El in FFtables:
+        Elstr += ' %8s'%(El)
+        FPstr += ' %8.3f'%(FFtables[El][pfx+'FP'])
+        FPPstr += ' %8.3f'%(FFtables[El][pfx+'FPP'])
+    print >>pFile,Elstr
+    print >>pFile,FPstr
+    print >>pFile,FPPstr
             
 def GetPhaseNames(GPXfile):
     ''' Returns a list of phase names found under 'Phases' in GSASII gpx file
@@ -2242,7 +2255,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 
     return hapVary,hapDict,controlDict
     
-def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=None):
+def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True,pFile=None):
     'needs a doc string'
     
     def PrintSizeAndSig(hapData,sizeSig):
@@ -2502,6 +2515,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                 hId = Histogram['hId']
                 Histogram['Residuals'][str(pId)+'::Name'] = phase
                 pfx = str(pId)+':'+str(hId)+':'
+                hfx = ':%s:'%(hId)
                 if 'PWDR' in histogram:
                     print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections'   \
                         %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'])
@@ -2526,9 +2540,12 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,Print=True,pFile=No
                         PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
                     
                 elif 'HKLF' in histogram:
+                    Inst = Histogram['Instrument Parameters'][0]
                     print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections (%d user rejected, %d sp.gp.extinct)'   \
                         %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'],
                         Histogram['Residuals'][pfx+'Nrej'],Histogram['Residuals'][pfx+'Next'])
+                    if FFtables != None and 'T' not in Inst['Type'][0]:
+                        PrintFprime(FFtables,hfx,pFile)
                     print >>pFile,' HKLF histogram weight factor = ','%.3f'%(Histogram['wtFactor'])
                     if pfx+'Scale' in ScalExtSig:
                         print >>pFile,' Scale factor : %10.4f, sig %10.4f'%(hapData['Scale'][0],ScalExtSig[pfx+'Scale'])
@@ -2774,7 +2791,7 @@ def GetHistogramData(Histograms,Print=True,pFile=None):
                 controlDict[pfx+'keV'] = 12.397639/histDict[pfx+'Lam']                    
     return histVary,histDict,controlDict
     
-def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
+def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None):
     'needs a doc string'
     
     def SetBackgroundParms(pfx,Background,parmDict,sigDict):
@@ -2976,6 +2993,8 @@ def SetHistogramData(parmDict,sigDict,Histograms,Print=True,pFile=None):
                 (Histogram['Residuals']['R'],Histogram['Residuals']['Rb'],Histogram['Residuals']['wRb'],Histogram['Residuals']['wRmin'])
             if Print:
                 print >>pFile,' Instrument type: ',Sample['Type']
+                if FFtables != None and 'T' not in Inst['Type'][0]:
+                    PrintFprime(FFtables,pfx,pFile)
                 PrintSampleParmsSig(Sample,sampSig)
                 PrintInstParmsSig(Inst,instSig)
                 PrintBackgroundSig(Background,backSig)

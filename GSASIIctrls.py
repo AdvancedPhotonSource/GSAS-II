@@ -3199,7 +3199,9 @@ tutorialCatalog = (
        
     ['2DStrain', '2DStrain', 'Strain fitting of 2D data in GSAS-II.htm',
        'Strain fitting of 2D data'],
-       
+    ['2DTexture', '2DTexture', 'Texture analysis of 2D data in GSAS-II.htm',
+       'Texture analysis of 2D data'],
+              
     ['SAimages', 'SAimages', 'Small Angle Image Processing.htm',
        'Image Processing of small angle x-ray data'],
     ['SAfit', 'SAfit', 'Fitting Small Angle Scattering Data.htm',

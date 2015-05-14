@@ -207,8 +207,8 @@ def Refine(GPXfile,dlg):
         G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
         G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
         G2stIO.SetPhaseData(parmDict,sigDict,Phases,rbIds,covData,restraintDict,printFile)
-        G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,pFile=printFile)
-        G2stIO.SetHistogramData(parmDict,sigDict,Histograms,pFile=printFile)
+        G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,calcControls['FFtables'],pFile=printFile)
+        G2stIO.SetHistogramData(parmDict,sigDict,Histograms,calcControls['FFtables'],pFile=printFile)
         G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,rigidbodyDict,covData)
         printFile.close()
         print ' Refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'
@@ -408,8 +408,8 @@ def SeqRefine(GPXfile,dlg):
             SeqResult[histogram] = histRefData
             G2stMth.ApplyRBModels(parmDict,Phases,rigidbodyDict,True)
     #        G2stIO.SetRigidBodyModels(parmDict,sigDict,rigidbodyDict,printFile)
-            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,ifPrint,printFile)
-            G2stIO.SetHistogramData(parmDict,sigDict,Histo,ifPrint,printFile)
+            G2stIO.SetHistogramPhaseData(parmDict,sigDict,Phases,Histo,None,ifPrint,printFile)
+            G2stIO.SetHistogramData(parmDict,sigDict,Histo,None,ifPrint,printFile)
             G2stIO.SetUsedHistogramsAndPhases(GPXfile,Histo,Phases,rigidbodyDict,histRefData,makeBack)
             makeBack = False
             NewparmDict = {}

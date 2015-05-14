@@ -1247,8 +1247,8 @@ class DataFrame(wx.Frame):
         self.TextureMenu.Append(menu=self.TextureEdit, title='Texture')
         self.TextureEdit.Append(id=wxID_REFINETEXTURE, kind=wx.ITEM_NORMAL,text='Refine texture', 
             help='Refine the texture coefficients from sequential results')
-        self.TextureEdit.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
-            help='Clear the texture coefficients' )
+#        self.TextureEdit.Append(id=wxID_CLEARTEXTURE, kind=wx.ITEM_NORMAL,text='Clear texture', 
+#            help='Clear the texture coefficients' )
         self.PostfillDataMenu()
             
         # Phase / Pawley tab

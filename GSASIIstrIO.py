@@ -2544,7 +2544,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     print >>pFile,' Final refinement RF, RF^2 = %.2f%%, %.2f%% on %d reflections (%d user rejected, %d sp.gp.extinct)'   \
                         %(Histogram['Residuals'][pfx+'Rf'],Histogram['Residuals'][pfx+'Rf^2'],Histogram['Residuals'][pfx+'Nref'],
                         Histogram['Residuals'][pfx+'Nrej'],Histogram['Residuals'][pfx+'Next'])
-                    if FFtables != None and 'T' not in Inst['Type'][0]:
+                    if FFtables != None and 'N' not in Inst['Type'][0]:
                         PrintFprime(FFtables,hfx,pFile)
                     print >>pFile,' HKLF histogram weight factor = ','%.3f'%(Histogram['wtFactor'])
                     if pfx+'Scale' in ScalExtSig:
@@ -2993,7 +2993,7 @@ def SetHistogramData(parmDict,sigDict,Histograms,FFtables,Print=True,pFile=None)
                 (Histogram['Residuals']['R'],Histogram['Residuals']['Rb'],Histogram['Residuals']['wRb'],Histogram['Residuals']['wRmin'])
             if Print:
                 print >>pFile,' Instrument type: ',Sample['Type']
-                if FFtables != None and 'T' not in Inst['Type'][0]:
+                if FFtables != None and 'N' not in Inst['Type'][0]:
                     PrintFprime(FFtables,pfx,pFile)
                 PrintSampleParmsSig(Sample,sampSig)
                 PrintInstParmsSig(Inst,instSig)

@@ -21,7 +21,7 @@ Script = '''@echo ==============================================================
 @echo      R.B. Von Dreele, J. Appl. Cryst. 47, 1784-9 (2014)
 @echo ========================================================================
 @
-{:s} {:s} %1
+{:s} {:s} "%~1"
 @REM To keep the window from disappearing with any error messages
 pause
 
@@ -55,7 +55,7 @@ winreg.SetValue(gpxkey, None, winreg.REG_SZ, 'GSAS-II project')
 iconkey = winreg.CreateKey(gpxkey, 'DefaultIcon')
 winreg.SetValue(iconkey, None, winreg.REG_SZ, G2icon)
 openkey = winreg.CreateKey(gpxkey, r'shell\open\command')
-winreg.SetValue(openkey, None, winreg.REG_SZ, G2bat+" %1")
+winreg.SetValue(openkey, None, winreg.REG_SZ, G2bat+' "%1"')
 winreg.CloseKey(iconkey)
 winreg.CloseKey(openkey)
 winreg.CloseKey(gpxkey)

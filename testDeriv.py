@@ -143,7 +143,6 @@ class testDeriv(wx.Frame):
             delVal.Bind(wx.EVT_TEXT_ENTER,OnDelValue)
             delVal.Bind(wx.EVT_KILL_FOCUS,OnDelValue)
             mainSizer.Add(delVal,0)
-#        mainSizer.Layout()
         self.testDerivPanel.SetSizer(mainSizer)    
         Size = mainSizer.Fit(self.testDerivPanel)
         Size[0] = 800
@@ -162,7 +161,9 @@ class testDeriv(wx.Frame):
             fplot.legend(loc='best')
             
         def test2(name,delt):
-            hplot = self.plotNB.add('derivatives test for '+name).gca()
+            
+            Title = 'derivatives test for '+name
+            hplot = self.plotNB.add(Title).gca()
             dMdV = G2stMth.dervRefine(self.values,self.HistoPhases,self.parmDict,
                 self.varylist,self.calcControls,self.pawleyLookup,None)
             hplot.plot(dMdV[self.varylist.index(name)],'b',label='analytic deriv')
@@ -178,7 +179,7 @@ class testDeriv(wx.Frame):
                 Mn = (M1-M0)/(2.*delt)
                 hplot.plot(Mn,'r',label='numeric deriv')
                 hplot.plot(dMdV[self.varylist.index(name)]-Mn,'g',label='diff')
-            hplot.legend(loc='best')
+            hplot.legend(loc='best')            
             
         while self.plotNB.nb.GetPageCount():
             self.plotNB.nb.DeletePage(0)

@@ -31,9 +31,13 @@ class PlotNotebook(wx.Panel):
     'creates a Wx application and a plotting notebook'
     def __init__(self, id = -1):
         self.app = wx.PySimpleApp()
-        self.frame = wx.Frame(None,-1,'Plotter', size=wx.Size(600,600))
+        self.frame = wx.Frame(None,-1,'Plotter', size=wx.Size(600,600),
+            style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
+        self.status = self.frame.CreateStatusBar()
+        self.status.SetStatusText('Use K-box to set plot controls')
         wx.Panel.__init__(self, self.frame, id=id)
-        self.nb = wx.aui.AuiNotebook(self)
+        self.nb = wx.aui.AuiNotebook(self,
+            style=wx.aui.AUI_NB_DEFAULT_STYLE ^ wx.aui.AUI_NB_CLOSE_ON_ACTIVE_TAB)
         sizer = wx.BoxSizer()
         sizer.Add(self.nb, 1, wx.EXPAND)
         self.SetSizer(sizer)
@@ -46,6 +50,14 @@ class PlotNotebook(wx.Panel):
         self.app.MainLoop()
 
     def add(self,name="plot"):
-       page = Plot(self.nb)
-       self.nb.AddPage(page,name)
-       return page.figure
+        
+        def OnMotion(event):
+            xpos = event.xdata
+            if xpos:                                        #avoid out of frame mouse position
+                ypos = event.ydata
+                self.status.SetStatusText('X= %.2f Y= %.2f'%(xpos,ypos))
+                
+        page = Plot(self.nb)
+        page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        self.nb.AddPage(page,name)
+        return page.figure

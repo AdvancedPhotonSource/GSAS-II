@@ -3486,17 +3486,14 @@ class GSASII(wx.Frame):
         # check that constraints are OK here
         errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
         if errmsg:
-            self.ErrorDialog('Constraint Error',
-                             'Error in constraints. Refinement not possible.'+
-                             '\nSee console error message for details.')
+            self.ErrorDialog('Refinement error',errmsg)
             return
         if warnmsg:
             print('Conflict between refinment flag settings and constraints:\n'+
-                  warnmsg+'\nRefinement not possible')
+                warnmsg+'\nRefinement not possible')
             self.ErrorDialog('Refinement Flag Error',
-                             'Conflict between refinement flag settings and constraints:\n'+
-                             warnmsg+
-                             '\nRefinement not possible')
+                'Conflict between refinement flag settings and constraints:\n'+
+                warnmsg+'\nRefinement not possible')
             return
         dlg = wx.ProgressDialog('Residual','All data Rw =',101.0, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT,
@@ -3569,9 +3566,7 @@ class GSASII(wx.Frame):
         # check that constraints are OK here
         errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
         if errmsg:
-            self.ErrorDialog('Constraint Error',
-                             'Error in constraints:\n'+errmsg+
-                             '\nRefinement not possible')
+            self.ErrorDialog('Refinement error',errmsg)
             return
         if warnmsg:
             print('Conflict between refinment flag settings and constraints:\n'+

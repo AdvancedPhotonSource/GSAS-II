@@ -182,7 +182,7 @@ def ReadCheckConstraints(GPXfile):
     # get variables
     Histograms,Phases = GetUsedHistogramsAndPhases(GPXfile)
     if not Phases:
-        return 'Error: No Phases!',''
+        return 'Error: No phases or no histograms in phases!',''
     if not Histograms:
         return 'Error: no diffraction data',''
     constrDict,fixedList = GetConstraints(GPXfile) # load user constraints before internally generated ones

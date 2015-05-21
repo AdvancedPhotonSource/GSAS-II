@@ -2472,12 +2472,11 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
         for iref,ref in enumerate(refDict['RefList']):
             if ref[5+im] > 0.:
                 dervDict,dervCor = SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varylist+dependentVars)[1:]
-                print ref[:3],dervCor,ref[11+im]
                 Fo = np.sqrt(ref[5+im])
                 Fc = np.sqrt(ref[7+im])
                 w = 1.0/ref[6+im]
                 if ref[3+im] > 0:
-                    wdf[iref] = 2.0*Fc*w*(Fo-Fc)
+                    wdf[iref] = 2.0*Fo*w*(Fo-Fc)
                     for j,var in enumerate(varylist):
                         if var in dFdvDict:
                             dMdvh[j][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11+im]
@@ -2487,12 +2486,12 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                     if phfx+'Scale' in varylist:
                         dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9+im]*ref[11+im]
                     elif phfx+'Scale' in dependentVars:
-                        depDerivDict[phfx+'Scale'][iref] = w*ref[9+im]*ref[11+im]                          
+                        depDerivDict[phfx+'Scale'][iref] = w*ref[9+im]*ref[11+im]                        
                     for item in ['Ep','Es','Eg']:
                         if phfx+item in varylist and phfx+item in dervDict:
-                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]*dervCor/ref[11+im] 
+                            dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11+im] 
                         elif phfx+item in dependentVars and phfx+item in dervDict:
-                            depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]*dervCor/ref[11+im]
+                            depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/ref[11+im]
                     for item in ['BabA','BabU']:
                         if phfx+item in varylist:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*ref[11+im]

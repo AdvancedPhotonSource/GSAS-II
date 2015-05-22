@@ -283,7 +283,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
     if ext == '.tif' or ext == '.tiff':
         Comments,Data,Npix,Image = GetTifData(imagefile)
         if Npix == 0:
-            print("GetTifData failed to read "+str(filename)+" Trying PIL")
+            print("GetTifData failed to read "+str(imagefile)+" Trying PIL")
             import scipy.misc
             Image = scipy.misc.imread(imagefile,flatten=True)
             Npix = Image.size

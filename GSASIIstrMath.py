@@ -937,8 +937,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fa = np.array([fot[:,np.newaxis]*cosp,fotp[:,np.newaxis]*cosp])       #non positions
         fb = np.array([fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])
         
-        fas = np.sum(np.sum(fa,axis=1),axis=1)
-        fbs = np.sum(np.sum(fb,axis=1),axis=1)
+        fas = np.sum(np.sum(fa,axis=1),axis=1)      #real sum over atoms & unique hkl
+        fbs = np.sum(np.sum(fb,axis=1),axis=1)      #imag sum over atoms & uniq hkl
         fax = np.array([-fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])   #positions
         fbx = np.array([fot[:,np.newaxis]*cosp,-fot[:,np.newaxis]*cosp])
         #sum below is over Uniq
@@ -947,25 +947,40 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dfadui = np.sum(-SQfactor*fa,axis=2)
         dfadua = np.sum(-Hij*fa[:,:,:,np.newaxis],axis=2)
         dfadba = np.sum(-cosp*(occ*Tcorr)[:,np.newaxis],axis=1)
-        #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for al2O3!    
-        dFdfr[iref] = 2.*(fas[0]*dfadfr[0]+fas[1]*dfadfr[1])*Mdata/len(Uniq)
-        dFdx[iref] = 2.*(fas[0]*dfadx[0]+fas[1]*dfadx[1])
-        dFdui[iref] = 2.*(fas[0]*dfadui[0]+fas[1]*dfadui[1])
-        dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])
-        dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ[:,np.newaxis],axis=2)        #Fdata != 0 ever avoids /0. problem
             dfbdx = np.sum(twopi*Uniq*fbx[:,:,:,np.newaxis],axis=2)           
             dfbdui = np.sum(-SQfactor*fb,axis=2)
             dfbdua = np.sum(-Hij*fb[:,:,:,np.newaxis],axis=2)
             dfbdba = np.sum(-sinp*(occ*Tcorr)[:,np.newaxis],axis=1)
-            dFdfr[iref] += 2.*(fbs[0]*dfbdfr[0]-fbs[1]*dfbdfr[1])*Mdata/len(Uniq)
-            dFdx[iref] += 2.*(fbs[0]*dfbdx[0]+fbs[1]*dfbdx[1])
-            dFdui[iref] += 2.*(fbs[0]*dfbdui[0]-fbs[1]*dfbdui[1])
-            dFdua[iref] += 2.*(fbs[0]*dfbdua[0]+fbs[1]*dfbdua[1])
-            dFdbab[iref] += 2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
+        else:
+            dfbdfr = np.zeros_like(dfadfr)
+            dfbdx = np.zeros_like(dfadx)
+            dfbdui = np.zeros_like(dfadui)
+            dfbdua = np.zeros_like(dfadua)
+            dfbdba = np.zeros_like(dfadba)
+        #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for Al2O3!    
+        if 'P' in calcControls[hfx+'histType']: #checked perfect for centro & noncentro
+            dFdfr[iref] = 2.*(fas[0]*dfadfr[0]+fas[1]*dfadfr[1])*Mdata/len(Uniq)+   \
+                2.*(fbs[0]*dfbdfr[0]-fbs[1]*dfbdfr[1])*Mdata/len(Uniq)
+            dFdx[iref] = 2.*(fas[0]*dfadx[0]+fas[1]*dfadx[1])+  \
+                2.*(fbs[0]*dfbdx[0]+fbs[1]*dfbdx[1])
+            dFdui[iref] = 2.*(fas[0]*dfadui[0]+fas[1]*dfadui[1])+   \
+                2.*(fbs[0]*dfbdui[0]-fbs[1]*dfbdui[1])
+            dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])+   \
+                2.*(fbs[0]*dfbdua[0]+fbs[1]*dfbdua[1])
+        else:
+            SA = fas[0]-fbs[1]
+            SB = fbs[0]+fas[1]
+            dFdfr[iref] = 2.*SA*(dfadfr[0]+dfbdfr[1])*Mdata/len(Uniq)+ \
+                2.*SB*(dfbdfr[0]+dfadfr[1])*Mdata/len(Uniq)
+            dFdx[iref] = 2.*SA*(dfadx[0]+dfbdx[1])+2.*SB*(dfbdx[0]+dfadx[1])
+            dFdui[iref] = 2.*SA*(dfadui[0]+dfbdui[1])+2.*SB*(dfbdui[0]+dfadui[1])
+            dFdua[iref] = 2.*SA*(dfadua[0]+dfbdua[1])+2.*SB*(dfbdua[0]+dfadua[1])
+        dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
+            2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         #loop over atoms - each dict entry is list of derivatives for all the reflections
-    for i in range(len(Mdata)):     
+    for i in range(len(Mdata)):
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
         dFdvDict[pfx+'dAx:'+str(i)] = dFdx.T[0][i]
         dFdvDict[pfx+'dAy:'+str(i)] = dFdx.T[1][i]
@@ -2476,7 +2491,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                 Fc = np.sqrt(ref[7+im])
                 w = 1.0/ref[6+im]
                 if ref[3+im] > 0:
-                    wdf[iref] = 2.0*Fo*w*(Fo-Fc)
+                    wdf[iref] = 2.0*Fc*w*(Fo-Fc)
                     for j,var in enumerate(varylist):
                         if var in dFdvDict:
                             dMdvh[j][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11+im]
@@ -2484,10 +2499,10 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                         if var in dFdvDict:
                             depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11+im]
                     if phfx+'Scale' in varylist:
-                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9+im]*ref[11+im]
+                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9+im]*ref[11+im]  #OK
                     elif phfx+'Scale' in dependentVars:
-                        depDerivDict[phfx+'Scale'][iref] = w*ref[9+im]*ref[11+im]                        
-                    for item in ['Ep','Es','Eg']:
+                        depDerivDict[phfx+'Scale'][iref] = w*ref[9+im]*ref[11+im]   #OK                    
+                    for item in ['Ep','Es','Eg']:   #OK!
                         if phfx+item in varylist and phfx+item in dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11+im] 
                         elif phfx+item in dependentVars and phfx+item in dervDict:
@@ -2753,7 +2768,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                         ref[8+im] = ref[5+im]/(parmDict[phfx+'Scale']*ref[11+im])
                         Fo = np.sqrt(ref[5+im])
                         Fc = np.sqrt(ref[7+im])
-                        w = 2.0*(Fo/ref[6+im])**2    # 1/sig(F)?
+                        w = 2.0*Fo/ref[6+im]    # 1/sig(F)?
                         if UserRejectHKL(ref,im,calcControls['UsrReject']) and ref[3+im]:    #skip sp.gp. absences (mul=0)
                             ref[3+im] = abs(ref[3+im])      #mark as allowed
                             sumFo += Fo

@@ -58,7 +58,7 @@ class testSSymbols(wx.Frame):
                 else:
                     msg = 'Superspace Group Error for'+SSymbol
                     Style = wx.ICON_EXCLAMATION
-                    Text = '\n'.join(text)
+                    Text = '\n'+E
                     wx.MessageBox(Text,caption=msg,style=Style)
         
         def OnSpaceGroup(event):
@@ -98,6 +98,13 @@ class testSSymbols(wx.Frame):
                 Data['SuperSg'] = SSymbol
                 msg = 'Superspace Group Information'
                 G2gd.SGMessageBox(self,msg,text,table).Show()
+                print 'Super spacegroup operators for '+SSGData['SSpGrp']
+                for Op in SSGData['SSGOps']:
+                    print G2spc.SSMT2text(Op).replace(' ','')
+                if SGData['SGInv']:                                 
+                    for Op in SSGData['SSGOps']:
+                        Op = [-Op[0],-Op[1]%1.]
+                        print G2spc.SSMT2text(Op).replace(' ','')                                 
             else:
                 text = [E+'\nSuperspace Group set to previous']
                 superGp.SetValue(Data['SuperSg'])

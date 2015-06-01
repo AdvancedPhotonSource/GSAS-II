@@ -1402,7 +1402,7 @@ def GetPwdrExt(refl,im,pfx,phfx,hfx,calcControls,parmDict):
     xfac = flv2*parmDict[phfx+'Extinction']
     exb = 1.0
     if xfac > -1.:
-        exb = 1./(1.+xfac)
+        exb = 1./np.sqrt(1.+xfac)
     exl = 1.0
     if 0 < xfac <= 1.:
         xn = np.array([xfac**(i+1) for i in range(6)])
@@ -1429,7 +1429,7 @@ def GetPwdrExtDerv(refl,im,pfx,phfx,hfx,calcControls,parmDict):
     xfac = flv2*parmDict[phfx+'Extinction']
     dbde = -500.*flv2
     if xfac > -1.:
-        dbde = -flv2/(1.+xfac)**3
+        dbde = -0.5*flv2/np.sqrt(1.+xfac)**3
     dlde = 0.
     if 0 < xfac <= 1.:
         xn = np.array([i*flv2*xfac**i for i in [1,2,3,4,5,6]])
@@ -1439,15 +1439,6 @@ def GetPwdrExtDerv(refl,im,pfx,phfx,hfx,calcControls,parmDict):
         dlde = flv2*pi2*xfac2*(-1./xfac+0.375/xfac**2)
         
     return dbde*sth2+dlde*(1.-sth2)
-
-
-#    delt = 0.01
-#    parmDict[phfx+'Extinction'] += delt
-#    plus = GetPwdrExt(refl,im,pfx,phfx,hfx,calcControls,parmDict)
-#    parmDict[phfx+'Extinction'] -= 2.*delt
-#    minus = GetPwdrExt(refl,im,pfx,phfx,hfx,calcControls,parmDict)
-#    parmDict[phfx+'Extinction'] += delt
-#    return (plus-minus)/(2.*delt)    
     
 def GetIntensityCorr(refl,im,uniq,G,g,pfx,phfx,hfx,SGData,calcControls,parmDict):
     'Needs a doc string'    #need powder extinction!

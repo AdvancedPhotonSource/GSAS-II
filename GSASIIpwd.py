@@ -1513,12 +1513,15 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
             names = ['pos','int','alp','bet','sig','gam']            
         head = 13*' '
         for name in names:
-            head += name.center(10)+'esd'.center(10)
+            if name in ['alp','bet']:
+                head += name.center(8)+'esd'.center(8)
+            else:
+                head += name.center(10)+'esd'.center(10)
         print head
         if 'C' in dataType:
             ptfmt = {'pos':"%10.5f",'int':"%10.1f",'sig':"%10.3f",'gam':"%10.3f"}
         else:
-            ptfmt = {'pos':"%10.2f",'int':"%10.4f",'alp':"%10.3f",'bet':"%10.5f",'sig':"%10.3f",'gam':"%10.3f"}
+            ptfmt = {'pos':"%10.2f",'int':"%10.4f",'alp':"%8.3f",'bet':"%8.5f",'sig':"%10.3f",'gam':"%10.3f"}
         for i,peak in enumerate(Peaks):
             ptstr =  ':'
             for j in range(len(names)):

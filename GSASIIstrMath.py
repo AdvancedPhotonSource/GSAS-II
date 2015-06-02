@@ -855,6 +855,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             FP = np.repeat(FP.T,len(SGT),axis=0)
             FPP = np.repeat(FPP.T,len(SGT),axis=0)
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT))
+        Flack = 1.-2.*parmDict[phfx+'Flack']
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT),axis=0)
         Uniq = np.reshape(np.inner(H.T,SGMT),(-1,3))
@@ -867,10 +868,10 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         HbH = -np.sum(Uniq.T*np.inner(bij,Uniq),axis=1)
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0).T
         Tcorr = Tiso*Tuij*Mdata*Fdata/len(SGMT)
-        fa = np.array([((FF+FP).T-Bab).T*cosp*Tcorr,-FPP*sinp*Tcorr])
+        fa = np.array([((FF+FP).T-Bab).T*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
         fa = np.reshape(fa,(2,len(refl),len(SGT),len(Mdata)))   #real A,-b
         fas = np.sum(np.sum(fa,axis=2),axis=2)        #real sum over atoms & unique hkl
-        fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,FPP*cosp*Tcorr])
+        fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,Flack*FPP*cosp*Tcorr])
         fb = np.reshape(fb,(2,len(refl),len(SGT),len(Mdata)))   #imag -B,+a
         fbs = np.sum(np.sum(fb,axis=2),axis=2)  #imag sum over atoms & uniq hkl
         if SGData['SGInv']: #centrosymmetric; B=0
@@ -932,8 +933,9 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Hij = np.array([G2lat.UijtoU6(Uij) for Uij in Hij])
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij
+        Flack = (1.-2.*parmDict[phfx+'Flack'])
         fot = (FF+FP-Bab)*occ*Tcorr
-        fotp = FPP*occ*Tcorr
+        fotp = Flack*FPP*occ*Tcorr
         fa = np.array([fot[:,np.newaxis]*cosp,fotp[:,np.newaxis]*cosp])       #non positions
         fb = np.array([fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])
         

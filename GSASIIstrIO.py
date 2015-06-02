@@ -2239,6 +2239,9 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     hapDict[pfx+bab] = hapData['Babinet'][bab][0]
                     if hapData['Babinet'][bab][1]:
                         hapVary.append(pfx+bab)
+                hapDict[pfx+'Flack'] = hapData['Flack'][0]
+                if hapData['Flack'][1]:
+                    hapVary.append(pfx+'Flack')
                 if Print: 
                     print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
                     print >>pFile,135*'-'
@@ -2251,6 +2254,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         print >>pFile,text
                     if hapData['Babinet']['BabA'][0]:
                         PrintBabinet(hapData['Babinet'])
+                    if not SGData['SGInv']:
+                        print >>pFile,' Flack parameter: %10.3f'%(hapData['Flack'][0]),' Refine?',hapData['Flack'][1]
                 Histogram['Reflection Lists'] = phase       
                 
     return hapVary,hapDict,controlDict
@@ -2480,7 +2485,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                         BabSig[pfx+name] = sigDict[pfx+name]                
                 
             elif 'HKLF' in histogram:
-                for item in ['Scale',]:
+                for item in ['Scale','Flack']:
                     if parmDict.get(pfx+item):
                         hapData[item][0] = parmDict[pfx+item]
                         if pfx+item in sigDict:
@@ -2553,6 +2558,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                         PrintExtAndSig(pfx,hapData['Extinction'],ScalExtSig)
                     if len(BabSig):
                         PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
+                    if pfx+'Flack' in ScalExtSig:
+                        print >>pFile,' Flack parameter : %10.3f, sig %10.3f'%(hapData['Flack'][0],ScalExtSig[pfx+'Flack'])
 
 ################################################################################
 ##### Histogram data

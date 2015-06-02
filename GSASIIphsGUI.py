@@ -3799,7 +3799,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 TextList.append(name)
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                        
         dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
-                    'Use data',TextList)
+            'Use data',TextList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 result = dlg.GetSelections()
@@ -3831,9 +3831,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         for i in result:
             histoName = TextList[i]
             UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
-                                  'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
-                                  'Extinction':['Lorentzian','None',
-                                                {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},]}                        
+                'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
+                'Extinction':['Lorentzian','None',
+                {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
+                'Flack':[0.0,False]}                        
             UpdateHKLFdata(histoName)
             data['Histograms'] = UseList
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
@@ -3858,7 +3859,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         keyList = G2frame.GetHistogramNames(hist[:4])
         sourceDict = UseList[hist]
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet']
+            copyNames = ['Scale','Extinction','Babinet','Flack']
         else:  #PWDR  
             copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
         copyDict = {}
@@ -3880,12 +3881,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         sourceDict = UseList[hist]
         copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet']
+            copyNames = ['Scale','Extinction','Babinet','Flack']
         else:  #PWDR  
             copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
         babNames = ['BabA','BabU']
         for name in copyNames:
-            if name in ['Scale','Extinction','HStrain']:
+            if name in ['Scale','Extinction','HStrain','Flack']:
                 if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
                     copyDict[name] = {name:[sourceDict[name][:2]]}
                     for item in ['Eg','Es','Ep']:
@@ -3917,7 +3918,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         item = keyList[sel]
                         UseList[item]
                         for name in copyNames:
-                            if name in ['Scale','Extinction','HStrain']:
+                            if name in ['Scale','Extinction','HStrain','Flack']:
                                 if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
                                     UseList[item][name][:2] = copy.deepcopy(sourceDict[name][:2])
                                     for itm in ['Eg','Es','Ep']:
@@ -3949,7 +3950,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         sourceDict = UseList[hist]
         copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet']
+            copyNames = ['Scale','Extinction','Babinet','Flack']
         else:  #PWDR  
             copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
         dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Select which parameters to copy',
@@ -3973,7 +3974,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         UseList[keyList[sel]].update(copy.deepcopy(copyDict))
             finally:
                 dlg.Destroy()            
-
         
     def OnPwdrAdd(event):
         generalData = data['General']

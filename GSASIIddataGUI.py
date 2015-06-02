@@ -395,6 +395,10 @@ def UpdateDData(G2frame,DData,data,hist=''):
         item,bab = Indx[Obj.GetId()]
         UseList[item]['Babinet']['Bab'+bab][1] = Obj.GetValue()
         
+    def OnFlackRef(event):
+        Obj = event.GetEventObject()
+        UseList[G2frame.hist]['Flack'][1] = Obj.GetValue()
+        
     def OnBabVal(event):
         Obj = event.GetEventObject()
         item,bab = Indx[Obj.GetId()]
@@ -405,6 +409,15 @@ def UpdateDData(G2frame,DData,data,hist=''):
         except ValueError:
             pass
         Obj.SetValue("%.3f"%(UseList[item]['Babinet']['Bab'+bab][0]))
+        
+    def OnFlackVal(event):
+        Obj = event.GetEventObject()
+        try:
+            flack = float(Obj.GetValue())
+            UseList[G2frame.hist]['Flack'][0] = flack
+        except ValueError:
+            pass
+        Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Flack'][0]))
 
     def OnTbarVal(event):
         Obj = event.GetEventObject()
@@ -783,8 +796,21 @@ def UpdateDData(G2frame,DData,data,hist=''):
             Indx[babVal.GetId()] = [G2frame.hist,bab]
             babVal.Bind(wx.EVT_TEXT_ENTER,OnBabVal)
             babVal.Bind(wx.EVT_KILL_FOCUS,OnBabVal)
-            babSizer.Add(babVal,0,WACV|wx.BOTTOM,5)
+            babSizer.Add(babVal,0,WACV)
         return babSizer
+        
+    def FlackSizer():
+        flackSizer = wx.BoxSizer(wx.HORIZONTAL)
+        flackRef = wx.CheckBox(DData,wx.ID_ANY,label=' Flack parameter: ')
+        flackRef.SetValue(UseList[G2frame.hist]['Flack'][1])
+        flackRef.Bind(wx.EVT_CHECKBOX, OnFlackRef)
+        flackSizer.Add(flackRef,0,WACV|wx.LEFT,5)
+        flackVal = wx.TextCtrl(DData,wx.ID_ANY,
+            '%.3f'%(UseList[G2frame.hist]['Flack'][0]),style=wx.TE_PROCESS_ENTER)
+        flackVal.Bind(wx.EVT_TEXT_ENTER,OnFlackVal)
+        flackVal.Bind(wx.EVT_KILL_FOCUS,OnFlackVal)
+        flackSizer.Add(flackVal,0,WACV)
+        return flackSizer
         
     def OnSelect(event):
         G2frame.hist = keyList[select.GetSelection()]
@@ -815,12 +841,10 @@ def UpdateDData(G2frame,DData,data,hist=''):
         if 'Babinet' not in UseList[G2frame.hist]:
             UseList[G2frame.hist]['Babinet'] = {'BabA':[0.0,False],'BabU':[0.0,False]}
         bottomSizer = wx.BoxSizer(wx.VERTICAL)
-        showSizer = wx.BoxSizer(wx.HORIZONTAL)
         useData = wx.CheckBox(DData,wx.ID_ANY,label='Use Histogram: '+G2frame.hist+' ?')
-        showSizer.Add(useData,0,WACV|wx.TOP|wx.BOTTOM,5)
         useData.Bind(wx.EVT_CHECKBOX, OnUseData)
         useData.SetValue(UseList[G2frame.hist]['Use'])
-        bottomSizer.Add(showSizer,0,WACV|wx.TOP|wx.BOTTOM|wx.LEFT,5)
+        bottomSizer.Add(useData,0,WACV|wx.TOP|wx.BOTTOM|wx.LEFT,5)
         
         bottomSizer.Add(ScaleSizer(),0,WACV|wx.BOTTOM,5)
             
@@ -908,9 +932,14 @@ def UpdateDData(G2frame,DData,data,hist=''):
             bottomSizer.Add(ExtSizer(),0,WACV|wx.TOP|wx.BOTTOM,5)
             bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
         elif G2frame.hist[:4] == 'HKLF':
-            bottomSizer.Add(SCExtSizer(),0,WACV|wx.TOP|wx.BOTTOM,5)
+#patch
+            if 'Flack' not in UseList[G2frame.hist]:
+                UseList[G2frame.hist]['Flack'] = [0.0,False]
+#end patch
+            bottomSizer.Add(SCExtSizer(),0,WACV|wx.BOTTOM,5)
             bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
-    
+#            if not SGData['SGInv']:        #not operational yet - no test data
+#                bottomSizer.Add(FlackSizer(),0,WACV|wx.BOTTOM,5)
         return bottomSizer
                 
     if DData.GetSizer():

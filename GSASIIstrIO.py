@@ -2239,8 +2239,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     hapDict[pfx+bab] = hapData['Babinet'][bab][0]
                     if hapData['Babinet'][bab][1]:
                         hapVary.append(pfx+bab)
-                hapDict[pfx+'Flack'] = hapData['Flack'][0]
-                if hapData['Flack'][1]:
+                hapDict[pfx+'Flack'] = hapData.get('Flack',[0.,False])[0]
+                if hapData.get('Flack',[0,False])[1]:
                     hapVary.append(pfx+'Flack')
                 if Print: 
                     print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram

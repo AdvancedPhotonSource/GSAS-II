@@ -815,6 +815,9 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
+    Flack = 1.0
+    if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType']:
+        Flack = 1.-2.*parmDict[phfx+'Flack']
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -855,8 +858,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             FP = np.repeat(FP.T,len(SGT),axis=0)
             FPP = np.repeat(FPP.T,len(SGT),axis=0)
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT))
-        Flack = 1.0
-#        Flack = 1.-2.*parmDict[phfx+'Flack']
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT),axis=0)
         Uniq = np.reshape(np.inner(H.T,SGMT),(-1,3))
@@ -911,6 +912,10 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     dFdui = np.zeros((nRef,mSize))
     dFdua = np.zeros((nRef,mSize,6))
     dFdbab = np.zeros((nRef,2))
+    dFdfl = np.zeros(nRef)
+    Flack = 1.0
+    if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType']:
+        Flack = 1.-2.*parmDict[phfx+'Flack']
     for iref,refl in enumerate(refDict['RefList']):
         if 'T' in calcControls[hfx+'histType']:
             FP,FPP = G2el.BlenResCW(Tdata,BLtables,refl.T[12])
@@ -934,17 +939,15 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Hij = np.array([G2lat.UijtoU6(Uij) for Uij in Hij])
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij
-        Flack = 1.0
-#        Flack = (1.-2.*parmDict[phfx+'Flack'])
         fot = (FF+FP-Bab)*occ*Tcorr
-        fotp = Flack*FPP*occ*Tcorr
-        fa = np.array([fot[:,np.newaxis]*cosp,fotp[:,np.newaxis]*cosp])       #non positions
-        fb = np.array([fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])
+        fotp = FPP*occ*Tcorr
+        fa = np.array([fot[:,np.newaxis]*cosp,-Flack*fotp[:,np.newaxis]*sinp])       #non positions
+        fb = np.array([fot[:,np.newaxis]*sinp,Flack*fotp[:,np.newaxis]*cosp])
         
         fas = np.sum(np.sum(fa,axis=1),axis=1)      #real sum over atoms & unique hkl
         fbs = np.sum(np.sum(fb,axis=1),axis=1)      #imag sum over atoms & uniq hkl
-        fax = np.array([-fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])   #positions
-        fbx = np.array([fot[:,np.newaxis]*cosp,-fot[:,np.newaxis]*cosp])
+        fax = np.array([-fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*cosp])   #positions
+        fbx = np.array([fot[:,np.newaxis]*cosp,-fotp[:,np.newaxis]*sinp])
         #sum below is over Uniq
         dfadfr = np.sum(fa/occ[:,np.newaxis],axis=2)        #Fdata != 0 ever avoids /0. problem
         dfadx = np.sum(twopi*Uniq*fax[:,:,:,np.newaxis],axis=2)
@@ -957,12 +960,16 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dfbdui = np.sum(-SQfactor*fb,axis=2)
             dfbdua = np.sum(-Hij*fb[:,:,:,np.newaxis],axis=2)
             dfbdba = np.sum(-sinp*(occ*Tcorr)[:,np.newaxis],axis=1)
+            dfadfl = np.sum(fotp[:,np.newaxis]*cosp)
+            dfbdfl = np.sum(-fotp[:,np.newaxis]*sinp)
         else:
             dfbdfr = np.zeros_like(dfadfr)
             dfbdx = np.zeros_like(dfadx)
             dfbdui = np.zeros_like(dfadui)
             dfbdua = np.zeros_like(dfadua)
             dfbdba = np.zeros_like(dfadba)
+            dfadfl = 0.0
+            dfbdfl = 0.0
         #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for Al2O3!    
         if 'P' in calcControls[hfx+'histType']: #checked perfect for centro & noncentro
             dFdfr[iref] = 2.*(fas[0]*dfadfr[0]+fas[1]*dfadfr[1])*Mdata/len(Uniq)+   \
@@ -981,8 +988,10 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dFdx[iref] = 2.*SA*(dfadx[0]+dfbdx[1])+2.*SB*(dfbdx[0]+dfadx[1])
             dFdui[iref] = 2.*SA*(dfadui[0]+dfbdui[1])+2.*SB*(dfbdui[0]+dfadui[1])
             dFdua[iref] = 2.*SA*(dfadua[0]+dfbdua[1])+2.*SB*(dfbdua[0]+dfadua[1])
+            dFdfl[iref] = -4.*SA*(dfadfl+dfbdfl)-4.*SB*(dfbdfl+dfadfl)
         dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
             2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
+            
         #loop over atoms - each dict entry is list of derivatives for all the reflections
     for i in range(len(Mdata)):
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
@@ -996,8 +1005,9 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdvDict[pfx+'AU12:'+str(i)] = 0.5*dFdua.T[3][i]
         dFdvDict[pfx+'AU13:'+str(i)] = 0.5*dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = 0.5*dFdua.T[5][i]
-    dFdvDict[pfx+'BabA'] = dFdbab.T[0]
-    dFdvDict[pfx+'BabU'] = dFdbab.T[1]
+    dFdvDict[phfx+'BabA'] = dFdbab.T[0]
+    dFdvDict[phfx+'BabU'] = dFdbab.T[1]
+    dFdvDict[phfx+'Flack'] = dFdfl.T
     return dFdvDict
     
 def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
@@ -1111,8 +1121,8 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dFdvDict[pfx+'AU13:'+str(i)] = .5*dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = .5*dFdua.T[5][i]
         #need dFdvDict[pfx+'Xsin:'+str[i]:str(m)], etc for modulations...
-    dFdvDict[pfx+'BabA'] = dFdbab.T[0]
-    dFdvDict[pfx+'BabU'] = dFdbab.T[1]
+    dFdvDict[phfx+'BabA'] = dFdbab.T[0]
+    dFdvDict[phfx+'BabU'] = dFdbab.T[1]
     return dFdvDict
     
 def SCExtinction(ref,im,phfx,hfx,pfx,calcControls,parmDict,varyList):

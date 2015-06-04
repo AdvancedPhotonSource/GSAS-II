@@ -152,10 +152,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
         scaleSizer.Add(scaleVal,0,WACV)
         return scaleSizer
         
-    def OnUseData(event):
-        Obj = event.GetEventObject()
-        UseList[G2frame.hist]['Use'] = Obj.GetValue()
-        
     def OnLGmixRef(event):
         Obj = event.GetEventObject()
         hist,name = Indx[Obj.GetId()]
@@ -211,35 +207,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
             Obj.SetValue("%.5f"%(UseList[G2frame.hist]['Size'][1][pid]))          #reset in case of error
         G2plt.PlotSizeStrainPO(G2frame,data,hist)
         
-    def OnSizeAxis(event):            
-        Obj = event.GetEventObject()
-        Saxis = Obj.GetValue().split()
-        try:
-            hkl = [int(Saxis[i]) for i in range(3)]
-        except (ValueError,IndexError):
-            hkl = UseList[G2frame.hist]['Size'][3]
-        if not np.any(np.array(hkl)):
-            hkl = UseList[G2frame.hist]['Size'][3]
-        UseList[G2frame.hist]['Size'][3] = hkl
-        h,k,l = hkl
-        Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
-                    
-    def OnResetSize(event):
-        Obj = event.GetEventObject()
-        Obj.SetValue(False)
-        item,name = Indx[Obj.GetId()]
-        if name == 'isotropic':
-            UseList[item]['Size'][1][0] = 1.0
-        elif name == 'uniaxial':
-            UseList[item]['Size'][1][0] = 1.0
-            UseList[item]['Size'][1][1] = 1.0
-        elif name == 'ellipsoidal':
-            for i in range(3):
-                UseList[item]['Size'][4][i] = 1.0
-                UseList[item]['Size'][4][i+3] = 0.0
-        G2plt.PlotSizeStrainPO(G2frame,data,item)
-        wx.CallLater(100,RepaintHistogramInfo)
-            
     def OnStrainType(event):
         Obj = event.GetEventObject()
         UseList[G2frame.hist]['Mustrain'][0] = Obj.GetValue()
@@ -376,91 +343,6 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 newPOCoef[cofName] = POCoeff[cofName]
         return newPOCoef
         
-    def OnExtRef(event):
-        Obj = event.GetEventObject()
-        UseList[G2frame.hist]['Extinction'][1] = Obj.GetValue()
-        
-    def OnExtVal(event):
-        Obj = event.GetEventObject()
-        try:
-            ext = float(Obj.GetValue())
-            if ext >= 0:
-                UseList[G2frame.hist]['Extinction'][0] = ext
-        except ValueError:
-            pass
-        Obj.SetValue("%.2f"%(UseList[G2frame.hist]['Extinction'][0]))
-
-    def OnBabRef(event):
-        Obj = event.GetEventObject()
-        item,bab = Indx[Obj.GetId()]
-        UseList[item]['Babinet']['Bab'+bab][1] = Obj.GetValue()
-        
-    def OnFlackRef(event):
-        Obj = event.GetEventObject()
-        UseList[G2frame.hist]['Flack'][1] = Obj.GetValue()
-        
-    def OnBabVal(event):
-        Obj = event.GetEventObject()
-        item,bab = Indx[Obj.GetId()]
-        try:
-            val = float(Obj.GetValue())
-            if val >= 0:
-                UseList[item]['Babinet']['Bab'+bab][0] = val
-        except ValueError:
-            pass
-        Obj.SetValue("%.3f"%(UseList[item]['Babinet']['Bab'+bab][0]))
-        
-    def OnFlackVal(event):
-        Obj = event.GetEventObject()
-        try:
-            flack = float(Obj.GetValue())
-            UseList[G2frame.hist]['Flack'][0] = flack
-        except ValueError:
-            pass
-        Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Flack'][0]))
-
-    def OnTbarVal(event):
-        Obj = event.GetEventObject()
-        try:
-            tbar = float(Obj.GetValue())
-            if tbar > 0:
-                UseList[G2frame.hist]['Extinction'][2]['Tbar'] = tbar
-        except ValueError:
-            pass
-        Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Extinction'][2]['Tbar']))
-
-    def OnCos2TM(event):
-        Obj = event.GetEventObject()
-        try:
-            val = float(Obj.GetValue())
-            if 0. < val <= 1.:
-                UseList[G2frame.hist]['Extinction'][2]['Cos2TM'] = val
-        except ValueError:
-            pass
-        Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Extinction'][2]['Cos2TM']))
-        
-    def OnEval(event):
-        Obj = event.GetEventObject()
-        item = Indx[Obj.GetId()]
-        try:
-            val = float(Obj.GetValue())
-            if val > 0:
-                UseList[item[0]]['Extinction'][2][item[1]][0] = val
-        except ValueError:
-            pass
-        Obj.SetValue("%10.3e"%(UseList[item[0]]['Extinction'][2][item[1]][0]))
-        
-    def OnEref(event):
-        Obj = event.GetEventObject()
-        item = Indx[Obj.GetId()]
-        UseList[item[0]]['Extinction'][2][item[1]][1] = Obj.GetValue()
-
-    def OnSCExtType(event):
-        Obj = event.GetEventObject()
-        item = Indx[Obj.GetId()]
-        UseList[item[0]]['Extinction'][item[1]] = Obj.GetValue()
-        wx.CallLater(100,RepaintHistogramInfo)
-            
     def checkAxis(axis):
         if not np.any(np.array(axis)):
             return False
@@ -709,81 +591,153 @@ def UpdateDData(G2frame,DData,data,hist=''):
         shPenalty.Add(shToler,0,WACV)
         return shPenalty    
         
-    def ExtSizer():            
-        extSizer = wx.BoxSizer(wx.HORIZONTAL)
-        extRef = wx.CheckBox(DData,wx.ID_ANY,label=' Extinction: ')
-        extRef.SetValue(UseList[G2frame.hist]['Extinction'][1])
-        extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
-        extSizer.Add(extRef,0,WACV|wx.LEFT,5)
-        extVal = wx.TextCtrl(DData,wx.ID_ANY,
-            '%.2f'%(UseList[G2frame.hist]['Extinction'][0]),style=wx.TE_PROCESS_ENTER)
-        extVal.Bind(wx.EVT_TEXT_ENTER,OnExtVal)
-        extVal.Bind(wx.EVT_KILL_FOCUS,OnExtVal)
-        extSizer.Add(extVal,0,WACV)
-        return extSizer
+    def ExtSizer(Type):
+        
+        def OnSCExtType(event):
+            Obj = event.GetEventObject()
+            item = Indx[Obj.GetId()]
+            UseList[item[0]]['Extinction'][item[1]] = Obj.GetValue()
+            wx.CallLater(100,RepaintHistogramInfo)
+                
+        def OnTbarVal(event):
+            Obj = event.GetEventObject()
+            try:
+                tbar = float(Obj.GetValue())
+                if tbar > 0:
+                    UseList[G2frame.hist]['Extinction'][2]['Tbar'] = tbar
+            except ValueError:
+                pass
+            Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Extinction'][2]['Tbar']))
     
-    def SCExtSizer():
-        extSizer = wx.BoxSizer(wx.VERTICAL)
-        typeSizer = wx.BoxSizer(wx.HORIZONTAL)            
-        typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Extinction type: '),0,WACV)
-        Choices = ['None','Primary','Secondary Type I','Secondary Type II',]    # remove 'Secondary Type I & II'
-        typeTxt = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[G2frame.hist]['Extinction'][1],
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        Indx[typeTxt.GetId()] = [G2frame.hist,1]
-        typeTxt.Bind(wx.EVT_COMBOBOX,OnSCExtType)
-        typeSizer.Add(typeTxt)
-        typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Approx: '),0,WACV)
-        Choices=['Lorentzian','Gaussian']
-        approxTxT = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[G2frame.hist]['Extinction'][0],
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        Indx[approxTxT.GetId()] = [G2frame.hist,0]
-        approxTxT.Bind(wx.EVT_COMBOBOX,OnSCExtType)
-        typeSizer.Add(approxTxT)
-        if UseList[G2frame.hist]['Extinction'][1] == 'None':
-            extSizer.Add(typeSizer,0,WACV)
-        else:
-            extSizer.Add(typeSizer,0,WACV|wx.BOTTOM,5)        
-            if 'Tbar' in UseList[G2frame.hist]['Extinction'][2]:       #skipped for TOF   
-                valSizer =wx.BoxSizer(wx.HORIZONTAL)
-                valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Tbar(mm):'),0,WACV)
-                tbarVal = wx.TextCtrl(DData,wx.ID_ANY,
-                    '%.3f'%(UseList[G2frame.hist]['Extinction'][2]['Tbar']),style=wx.TE_PROCESS_ENTER)
-                tbarVal.Bind(wx.EVT_TEXT_ENTER,OnTbarVal)
-                tbarVal.Bind(wx.EVT_KILL_FOCUS,OnTbarVal)
-                valSizer.Add(tbarVal,0,WACV)
-                valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' cos(2ThM):'),0,WACV)
-                cos2tm = wx.TextCtrl(DData,wx.ID_ANY,
-                    '%.3f'%(UseList[G2frame.hist]['Extinction'][2]['Cos2TM']),style=wx.TE_PROCESS_ENTER)
-                cos2tm.Bind(wx.EVT_TEXT_ENTER,OnCos2TM)
-                cos2tm.Bind(wx.EVT_KILL_FOCUS,OnCos2TM)
-                valSizer.Add(cos2tm,0,WACV)
-                extSizer.Add(valSizer,0,WACV)
-            val2Sizer =wx.BoxSizer(wx.HORIZONTAL)
-            if 'Primary' in UseList[G2frame.hist]['Extinction'][1]:
-                Ekey = ['Ep',]
-            elif 'Secondary Type II' == UseList[G2frame.hist]['Extinction'][1]:
-                Ekey = ['Es',]
-            elif 'Secondary Type I' == UseList[G2frame.hist]['Extinction'][1]:
-                Ekey = ['Eg',]
-            else:
-                Ekey = ['Eg','Es']
-            for ekey in Ekey:
-                Eref = wx.CheckBox(DData,wx.ID_ANY,label=ekey+' : ')
-                Eref.SetValue(UseList[G2frame.hist]['Extinction'][2][ekey][1])
-                Indx[Eref.GetId()] = [G2frame.hist,ekey]
-                Eref.Bind(wx.EVT_CHECKBOX, OnEref)
-                val2Sizer.Add(Eref,0,WACV|wx.LEFT,5)
-                Eval = wx.TextCtrl(DData,wx.ID_ANY,
-                    '%10.3e'%(UseList[G2frame.hist]['Extinction'][2][ekey][0]),style=wx.TE_PROCESS_ENTER)
-                Indx[Eval.GetId()] = [G2frame.hist,ekey]
-                Eval.Bind(wx.EVT_TEXT_ENTER,OnEval)
-                Eval.Bind(wx.EVT_KILL_FOCUS,OnEval)
-                val2Sizer.Add(Eval,0,WACV)
+        def OnCos2TM(event):
+            Obj = event.GetEventObject()
+            try:
+                val = float(Obj.GetValue())
+                if 0. < val <= 1.:
+                    UseList[G2frame.hist]['Extinction'][2]['Cos2TM'] = val
+            except ValueError:
+                pass
+            Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Extinction'][2]['Cos2TM']))
+        
+        def OnEval(event):
+            Obj = event.GetEventObject()
+            item = Indx[Obj.GetId()]
+            try:
+                val = float(Obj.GetValue())
+                if val > 0:
+                    UseList[item[0]]['Extinction'][2][item[1]][0] = val
+            except ValueError:
+                pass
+            Obj.SetValue("%10.3e"%(UseList[item[0]]['Extinction'][2][item[1]][0]))
+        
+        def OnEref(event):
+            Obj = event.GetEventObject()
+            item = Indx[Obj.GetId()]
+            UseList[item[0]]['Extinction'][2][item[1]][1] = Obj.GetValue()
+    
+        def OnExtRef(event):
+            Obj = event.GetEventObject()
+            UseList[G2frame.hist]['Extinction'][1] = Obj.GetValue()
+            
+        def OnExtVal(event):
+            Obj = event.GetEventObject()
+            try:
+                ext = float(Obj.GetValue())
+                if ext >= 0:
+                    UseList[G2frame.hist]['Extinction'][0] = ext
+            except ValueError:
+                pass
+            Obj.SetValue("%.2f"%(UseList[G2frame.hist]['Extinction'][0]))
 
-            extSizer.Add(val2Sizer,0,WACV)
+        extSizer = wx.BoxSizer(wx.VERTICAL)
+        if Type == 'HKLF':
+            typeSizer = wx.BoxSizer(wx.HORIZONTAL)            
+            typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Extinction type: '),0,WACV)
+            Choices = ['None','Primary','Secondary Type I','Secondary Type II',]    # remove 'Secondary Type I & II'
+            typeTxt = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[G2frame.hist]['Extinction'][1],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[typeTxt.GetId()] = [G2frame.hist,1]
+            typeTxt.Bind(wx.EVT_COMBOBOX,OnSCExtType)
+            typeSizer.Add(typeTxt)
+            typeSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Approx: '),0,WACV)
+            Choices=['Lorentzian','Gaussian']
+            approxTxT = wx.ComboBox(DData,wx.ID_ANY,choices=Choices,value=UseList[G2frame.hist]['Extinction'][0],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            Indx[approxTxT.GetId()] = [G2frame.hist,0]
+            approxTxT.Bind(wx.EVT_COMBOBOX,OnSCExtType)
+            typeSizer.Add(approxTxT)
+            if UseList[G2frame.hist]['Extinction'][1] == 'None':
+                extSizer.Add(typeSizer,0,WACV)
+            else:
+                extSizer.Add(typeSizer,0,WACV|wx.BOTTOM,5)        
+                if 'Tbar' in UseList[G2frame.hist]['Extinction'][2]:       #skipped for TOF   
+                    valSizer =wx.BoxSizer(wx.HORIZONTAL)
+                    valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' Tbar(mm):'),0,WACV)
+                    tbarVal = wx.TextCtrl(DData,wx.ID_ANY,
+                        '%.3f'%(UseList[G2frame.hist]['Extinction'][2]['Tbar']),style=wx.TE_PROCESS_ENTER)
+                    tbarVal.Bind(wx.EVT_TEXT_ENTER,OnTbarVal)
+                    tbarVal.Bind(wx.EVT_KILL_FOCUS,OnTbarVal)
+                    valSizer.Add(tbarVal,0,WACV)
+                    valSizer.Add(wx.StaticText(DData,wx.ID_ANY,' cos(2ThM):'),0,WACV)
+                    cos2tm = wx.TextCtrl(DData,wx.ID_ANY,
+                        '%.3f'%(UseList[G2frame.hist]['Extinction'][2]['Cos2TM']),style=wx.TE_PROCESS_ENTER)
+                    cos2tm.Bind(wx.EVT_TEXT_ENTER,OnCos2TM)
+                    cos2tm.Bind(wx.EVT_KILL_FOCUS,OnCos2TM)
+                    valSizer.Add(cos2tm,0,WACV)
+                    extSizer.Add(valSizer,0,WACV)
+                val2Sizer =wx.BoxSizer(wx.HORIZONTAL)
+                if 'Primary' in UseList[G2frame.hist]['Extinction'][1]:
+                    Ekey = ['Ep',]
+                elif 'Secondary Type II' == UseList[G2frame.hist]['Extinction'][1]:
+                    Ekey = ['Es',]
+                elif 'Secondary Type I' == UseList[G2frame.hist]['Extinction'][1]:
+                    Ekey = ['Eg',]
+                else:
+                    Ekey = ['Eg','Es']
+                for ekey in Ekey:
+                    Eref = wx.CheckBox(DData,wx.ID_ANY,label=ekey+' : ')
+                    Eref.SetValue(UseList[G2frame.hist]['Extinction'][2][ekey][1])
+                    Indx[Eref.GetId()] = [G2frame.hist,ekey]
+                    Eref.Bind(wx.EVT_CHECKBOX, OnEref)
+                    val2Sizer.Add(Eref,0,WACV|wx.LEFT,5)
+                    Eval = wx.TextCtrl(DData,wx.ID_ANY,
+                        '%10.3e'%(UseList[G2frame.hist]['Extinction'][2][ekey][0]),style=wx.TE_PROCESS_ENTER)
+                    Indx[Eval.GetId()] = [G2frame.hist,ekey]
+                    Eval.Bind(wx.EVT_TEXT_ENTER,OnEval)
+                    Eval.Bind(wx.EVT_KILL_FOCUS,OnEval)
+                    val2Sizer.Add(Eval,0,WACV)
+                extSizer.Add(val2Sizer,0,WACV)
+        else:   #PWDR
+            extRef = wx.CheckBox(DData,wx.ID_ANY,label=' Extinction: ')
+            extRef.SetValue(UseList[G2frame.hist]['Extinction'][1])
+            extRef.Bind(wx.EVT_CHECKBOX, OnExtRef)
+            extSizer.Add(extRef,0,WACV|wx.LEFT,5)
+            extVal = wx.TextCtrl(DData,wx.ID_ANY,
+                '%.2f'%(UseList[G2frame.hist]['Extinction'][0]),style=wx.TE_PROCESS_ENTER)
+            extVal.Bind(wx.EVT_TEXT_ENTER,OnExtVal)
+            extVal.Bind(wx.EVT_KILL_FOCUS,OnExtVal)
+            extSizer.Add(extVal,0,WACV)
+
         return extSizer
         
     def BabSizer():
+        
+        def OnBabVal(event):
+            Obj = event.GetEventObject()
+            item,bab = Indx[Obj.GetId()]
+            try:
+                val = float(Obj.GetValue())
+                if val >= 0:
+                    UseList[item]['Babinet']['Bab'+bab][0] = val
+            except ValueError:
+                pass
+            Obj.SetValue("%.3f"%(UseList[item]['Babinet']['Bab'+bab][0]))
+        
+        def OnBabRef(event):
+            Obj = event.GetEventObject()
+            item,bab = Indx[Obj.GetId()]
+            UseList[item]['Babinet']['Bab'+bab][1] = Obj.GetValue()
+        
         babSizer = wx.BoxSizer(wx.HORIZONTAL)
         for bab in ['A','U']:
             babRef = wx.CheckBox(DData,wx.ID_ANY,label=' Babinet '+bab+': ')
@@ -800,6 +754,20 @@ def UpdateDData(G2frame,DData,data,hist=''):
         return babSizer
         
     def FlackSizer():
+        
+        def OnFlackVal(event):
+            Obj = event.GetEventObject()
+            try:
+                flack = float(Obj.GetValue())
+                UseList[G2frame.hist]['Flack'][0] = flack
+            except ValueError:
+                pass
+            Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Flack'][0]))
+
+        def OnFlackRef(event):
+            Obj = event.GetEventObject()
+            UseList[G2frame.hist]['Flack'][1] = Obj.GetValue()
+                
         flackSizer = wx.BoxSizer(wx.HORIZONTAL)
         flackRef = wx.CheckBox(DData,wx.ID_ANY,label=' Flack parameter: ')
         flackRef.SetValue(UseList[G2frame.hist]['Flack'][1])
@@ -830,6 +798,40 @@ def UpdateDData(G2frame,DData,data,hist=''):
         G2frame.dataFrame.SendSizeEvent()
         
     def ShowHistogramInfo():
+        
+        def OnUseData(event):
+            Obj = event.GetEventObject()
+            UseList[G2frame.hist]['Use'] = Obj.GetValue()
+        
+        def OnResetSize(event):
+            Obj = event.GetEventObject()
+            Obj.SetValue(False)
+            item,name = Indx[Obj.GetId()]
+            if name == 'isotropic':
+                UseList[item]['Size'][1][0] = 1.0
+            elif name == 'uniaxial':
+                UseList[item]['Size'][1][0] = 1.0
+                UseList[item]['Size'][1][1] = 1.0
+            elif name == 'ellipsoidal':
+                for i in range(3):
+                    UseList[item]['Size'][4][i] = 1.0
+                    UseList[item]['Size'][4][i+3] = 0.0
+            G2plt.PlotSizeStrainPO(G2frame,data,item)
+            wx.CallLater(100,RepaintHistogramInfo)
+            
+        def OnSizeAxis(event):            
+            Obj = event.GetEventObject()
+            Saxis = Obj.GetValue().split()
+            try:
+                hkl = [int(Saxis[i]) for i in range(3)]
+            except (ValueError,IndexError):
+                hkl = UseList[G2frame.hist]['Size'][3]
+            if not np.any(np.array(hkl)):
+                hkl = UseList[G2frame.hist]['Size'][3]
+            UseList[G2frame.hist]['Size'][3] = hkl
+            h,k,l = hkl
+            Obj.SetValue('%3d %3d %3d'%(h,k,l)) 
+                        
         try:
             histData = UseList[G2frame.hist]
         except KeyError:
@@ -929,17 +931,17 @@ def UpdateDData(G2frame,DData,data,hist=''):
                     poSizer.Add(SHPenalty(POData),0,WACV|wx.TOP|wx.BOTTOM,5)
                     
             bottomSizer.Add(poSizer,0,WACV|wx.TOP|wx.BOTTOM,5)
-            bottomSizer.Add(ExtSizer(),0,WACV|wx.TOP|wx.BOTTOM,5)
+            bottomSizer.Add(ExtSizer('PWDR'),0,WACV|wx.TOP|wx.BOTTOM,5)
             bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
         elif G2frame.hist[:4] == 'HKLF':
 #patch
             if 'Flack' not in UseList[G2frame.hist]:
                 UseList[G2frame.hist]['Flack'] = [0.0,False]
 #end patch
-            bottomSizer.Add(SCExtSizer(),0,WACV|wx.BOTTOM,5)
+            bottomSizer.Add(ExtSizer('HKLF'),0,WACV|wx.BOTTOM,5)
             bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
-#            if not SGData['SGInv']:        #not operational yet - no test data
-#                bottomSizer.Add(FlackSizer(),0,WACV|wx.BOTTOM,5)
+            if not SGData['SGInv']:        #not operational yet - no test data
+                bottomSizer.Add(FlackSizer(),0,WACV|wx.BOTTOM,5)
         return bottomSizer
                 
     if DData.GetSizer():

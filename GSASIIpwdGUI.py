@@ -853,7 +853,7 @@ def UpdateBackground(G2frame,data):
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background coefficients:'),0,WACV)
         bakSizer = wx.FlexGridSizer(0,5,5,5)
         for i,value in enumerate(data[0][3:]):
-            bakVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.4f'%(value),style=wx.TE_PROCESS_ENTER)
+            bakVal = wx.TextCtrl(G2frame.dataDisplay,wx.ID_ANY,'%10.4g'%(value),style=wx.TE_PROCESS_ENTER)
             bakSizer.Add(bakVal,0,WACV)
             ValObj[bakVal.GetId()] = [i+3]
             bakVal.Bind(wx.EVT_TEXT_ENTER,OnBakVal)
@@ -4187,23 +4187,28 @@ def UpdatePDFGrid(G2frame,data):
     '''
     global inst
     tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
+    tof2q = lambda t,C:2.0*math.pi*C/t
     dataFile = G2frame.PatternTree.GetItemText(G2frame.PatternId)
     powName = 'PWDR'+dataFile[4:]
     powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, powName)
     fullLimits,limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Limits'))[:2]
     inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId, 'Instrument Parameters'))[0]
-    if 'Lam' in inst:
-        keV = 12.397639/inst['Lam'][1]
-    else:
-        keV = 12.397639/inst['Lam1'][0]
-    wave = 12.397639/keV
-    qLimits = [tth2q(fullLimits[0],wave),tth2q(fullLimits[1],wave)]
+    if 'C' in inst['Type'][0]:
+        if 'Lam' in inst:
+            keV = 12.397639/inst['Lam'][1]
+        else:
+            keV = 12.397639/inst['Lam1'][0]
+        wave = 12.397639/keV
+        qLimits = [tth2q(fullLimits[0],wave),tth2q(fullLimits[1],wave)]
+        polariz = inst['Polariz.'][1]
+    else:   #'T'of
+        qLimits = [tof2q(fullLimits[1],inst['difC'][1]),tof2q(fullLimits[0],inst['difC'][1])]
+        polariz = 1.0
     data['QScaleLim'][1] = min(qLimits[1],data['QScaleLim'][1])
     if data['QScaleLim'][0]:
         data['QScaleLim'][0] = max(qLimits[0],data['QScaleLim'][0])
     else:                                #initial setting at 90% of max Q
         data['QScaleLim'][0] = 0.90*data['QScaleLim'][1]
-    polariz = inst['Polariz.'][1]
     azimuth = inst['Azimuth'][1]
     itemDict = {}
     
@@ -4492,13 +4497,19 @@ def UpdatePDFGrid(G2frame,data):
         if PE.ShowModal() == wx.ID_OK:
             El = PE.Elem
             if El not in ElList and El != 'None':
-                ElemSym = El.strip().capitalize()                
-                FpMu = G2elem.FPcalc(G2elem.GetXsectionCoeff(ElemSym), keV)
-                ElData = G2elem.GetFormFactorCoeff(ElemSym)[0]
-                ElData['FormulaNo'] = 0.0
-                ElData.update(G2elem.GetAtomInfo(ElemSym))
-                ElData.update(dict(zip(['fp','fpp','mu'],FpMu)))
-                ElData.update(G2elem.GetFFC5(El))
+                ElemSym = El.strip().capitalize()
+                if 'X' in inst['Type'][0]:                
+                    FpMu = G2elem.FPcalc(G2elem.GetXsectionCoeff(ElemSym), keV)
+                    ElData = G2elem.GetFormFactorCoeff(ElemSym)[0]
+                    ElData['FormulaNo'] = 0.0
+                    ElData.update(G2elem.GetAtomInfo(ElemSym))
+                    ElData.update(dict(zip(['fp','fpp','mu'],FpMu)))
+                    ElData.update(G2elem.GetFFC5(El))
+                else: #'N'eutron
+                    ElData = {}
+                    ElData.update(G2elem.GetAtomInfo(ElemSym))
+                    ElData['FormulaNo'] = 0.0
+                    ElData.update({'mu':0.0,'fp':0.0,'fpp':0.0})
                 data['ElList'][El] = ElData
             data['Form Vol'] = max(10.0,SumElementVolumes())
         PE.Destroy()
@@ -4577,8 +4588,9 @@ def UpdatePDFGrid(G2frame,data):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' PDF data files: '),0,WACV)
     mainSizer.Add((5,5),0)
-    str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
+    if 'C' in inst['Type'][0]:
+        str = ' Sample file: PWDR %s   Wavelength, A: %.5f  Energy, keV: %.3f  Polariz.: %.2f '%(dataFile[3:],wave,keV,polariz)
+        mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=str),0,WACV)
 #    dataSizer = wx.BoxSizer(wx.HORIZONTAL)
 #    dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label='Azimuth'),0,WACV)
 #    azimVal = wx.TextCtrl(G2frame.dataDisplay,value='%.2f'%(inst['Azimuth']))

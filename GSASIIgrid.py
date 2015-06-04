@@ -236,20 +236,17 @@ class SymOpDialog(wx.Dialog):
             choice = ['No','Yes']
             self.force = wx.RadioBox(panel,-1,'Force to unit cell?',choices=choice)
             self.force.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
-            mainSizer.Add(self.force,0,WACV)
-        mainSizer.Add((5,5),0)
-        if SGData['SGInv']:
-            choice = ['No','Yes']
-            self.inv = wx.RadioBox(panel,-1,'Choose inversion?',choices=choice)
-            self.inv.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
-            mainSizer.Add(self.inv,0,WACV)
-        mainSizer.Add((5,5),0)
+            mainSizer.Add(self.force,0,WACV|wx.TOP,5)
+#        if SGData['SGInv']:
+        choice = ['No','Yes']
+        self.inv = wx.RadioBox(panel,-1,'Choose inversion?',choices=choice)
+        self.inv.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
+        mainSizer.Add(self.inv,0,WACV)
         if SGData['SGLatt'] != 'P':
             LattOp = G2spc.Latt2text(SGData['SGLatt']).split(';')
             self.latt = wx.RadioBox(panel,-1,'Choose cell centering?',choices=LattOp)
             self.latt.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
             mainSizer.Add(self.latt,0,WACV)
-        mainSizer.Add((5,5),0)
         if SGData['SGLaue'] in ['-1','2/m','mmm','4/m','4/mmm']:
             Ncol = 2
         else:
@@ -260,12 +257,9 @@ class SymOpDialog(wx.Dialog):
         self.oprs = wx.RadioBox(panel,-1,'Choose space group operator?',choices=OpList,
             majorDimension=Ncol)
         self.oprs.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
-        mainSizer.Add(self.oprs,0,WACV)
-        mainSizer.Add((5,5),0)
+        mainSizer.Add(self.oprs,0,WACV|wx.BOTTOM,5)
         mainSizer.Add(wx.StaticText(panel,-1,"   Choose unit cell?"),0,WACV)
-        mainSizer.Add((5,5),0)
         cellSizer = wx.BoxSizer(wx.HORIZONTAL)
-        cellSizer.Add((5,0),0)
         cellName = ['X','Y','Z']
         self.cell = []
         for i in range(3):
@@ -274,13 +268,12 @@ class SymOpDialog(wx.Dialog):
             self.cell[-1].SetValue(0)
             self.cell[-1].Bind(wx.EVT_SPINCTRL, self.OnOpSelect)
             cellSizer.Add(self.cell[-1],0,WACV)
-        mainSizer.Add(cellSizer,0,)
+        mainSizer.Add(cellSizer,0,WACV|wx.BOTTOM,5)
         if self.New:
             choice = ['No','Yes']
             self.new = wx.RadioBox(panel,-1,'Generate new positions?',choices=choice)
             self.new.Bind(wx.EVT_RADIOBOX, self.OnOpSelect)
             mainSizer.Add(self.new,0,WACV)
-        mainSizer.Add((5,5),0)
 
         OkBtn = wx.Button(panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -299,8 +292,8 @@ class SymOpDialog(wx.Dialog):
         self.Fit()
 
     def OnOpSelect(self,event):
-        if self.SGData['SGInv']:
-            self.OpSelected[0] = self.inv.GetSelection()
+#        if self.SGData['SGInv']:
+        self.OpSelected[0] = self.inv.GetSelection()
         if self.SGData['SGLatt'] != 'P':
             self.OpSelected[1] = self.latt.GetSelection()
         self.OpSelected[2] = self.oprs.GetSelection()

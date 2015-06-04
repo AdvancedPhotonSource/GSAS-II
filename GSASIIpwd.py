@@ -269,7 +269,8 @@ def CalcPDF(data,inst,xydata):
     dt = (Tth[1]-Tth[0])
     MuR = Abs*data['Diam']/20.0
     xydata['IofQ'][1][1] /= Absorb(data['Geometry'],MuR,Tth)
-    xydata['IofQ'][1][1] /= Polarization(inst['Polariz.'][1],Tth,Azm=inst['Azimuth'][1])[0]
+    if 'X' in inst['Type'][0]:
+        xydata['IofQ'][1][1] /= Polarization(inst['Polariz.'][1],Tth,Azm=inst['Azimuth'][1])[0]
     if data['DetType'] == 'Image plate':
         xydata['IofQ'][1][1] *= Oblique(data['ObliqCoeff'],Tth)
     XY = xydata['IofQ'][1]    
@@ -992,7 +993,7 @@ def getPeakProfileDerv(dataType,parmDict,xdata,varyList,bakType):
     names = ['DebyeA','DebyeR','DebyeU']
     for name in varyList:
         if 'Debye' in name:
-            parm,id = name.split(':')
+            parm,id = name.split(';')
             ip = names.index(parm)
             dMdv[varyList.index(name)] = dMddb[3*int(id)+ip]
     names = ['BkPkpos','BkPkint','BkPksig','BkPkgam']
@@ -1203,7 +1204,7 @@ def SetBackgroundParms(Background):
     debyeDict = {}
     debyeList = []
     for i in range(Debye['nDebye']):
-        debyeNames = ['DebyeA:'+str(i),'DebyeR:'+str(i),'DebyeU:'+str(i)]
+        debyeNames = ['DebyeA;'+str(i),'DebyeR;'+str(i),'DebyeU;'+str(i)]
         debyeDict.update(dict(zip(debyeNames,Debye['debyeTerms'][i][::2])))
         debyeList += zip(debyeNames,Debye['debyeTerms'][i][1::2])
     debyeVary = []
@@ -1331,7 +1332,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
                 break
         iDb = 0
         while True:
-            names = ['DebyeA:','DebyeR:','DebyeU:']
+            names = ['DebyeA;','DebyeR;','DebyeU;']
             try:
                 for i,name in enumerate(names):
                     val = parmList[name+str(iDb)]
@@ -1364,22 +1365,17 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
         else:
             print 'Background not refined'
         if Background[1]['nDebye']:
-            parms = ['DebyeA','DebyeR','DebyeU']
+            parms = ['DebyeA;','DebyeR;','DebyeU;']
             print 'Debye diffuse scattering coefficients'
             ptfmt = "%12.5f"
-            names =   'names :'
-            ptstr =  'values:'
-            sigstr = 'esds  :'
-            for item in sigDict:
-                if 'Debye' in item:
-                    names += '%12s'%(item)
-                    sigstr += ptfmt%(sigDict[item])
-                    parm,id = item.split(':')
-                    ip = parms.index(parm)
-                    ptstr += ptfmt%(Background[1]['debyeTerms'][int(id)][2*ip])
-            print names
-            print ptstr
-            print sigstr
+            print ' term       DebyeA       esd        DebyeR       esd        DebyeU        esd'
+            for term in range(Background[1]['nDebye']):
+                line = ' term %d'%(term)
+                for ip,name in enumerate(parms):
+                    line += ptfmt%(Background[1]['debyeTerms'][term][2*ip])
+                    if name+str(term) in sigDict:
+                        line += ptfmt%(sigDict[name+str(term)])
+                print line
         if Background[1]['nPeaks']:
             parms = ['BkPkpos','BkPkint','BkPksig','BkPkgam']
             print 'Peaks in background coefficients'
@@ -1529,11 +1525,12 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
                 parName = name+str(i)
                 ptstr += ptfmt[name] % (parmDict[parName])
                 if parName in varyList:
-#                    ptstr += G2IO.ValEsd(parmDict[parName],sigDict[parName])
                     ptstr += ptfmt[name] % (sigDict[parName])
                 else:
-#                    ptstr += G2IO.ValEsd(parmDict[parName],0.0)
-                    ptstr += 10*' '
+                    if name in ['alp','bet']:
+                        ptstr += 8*' '
+                    else:
+                        ptstr += 10*' '
             print '%s'%(('Peak'+str(i+1)).center(8)),ptstr
                 
     def devPeakProfile(values,xdata,ydata, weights,dataType,parmdict,varylist,bakType,dlg):

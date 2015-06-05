@@ -1105,17 +1105,17 @@ def UpdateInstrumentGrid(G2frame,data):
                 good.append(key)
         return good
         
-    def inst2data(inst,ref,data):
+    def updateData(inst,ref):
+        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+            G2frame.PatternId,'Instrument Parameters'))[0]
         for item in data:
             try:
                 data[item] = [data[item][0],inst[item],ref[item]]
             except KeyError:
-                pass        #skip 'Polariz.' for N-data
-        return data
-        
-    def updateData(inst,ref):
-        return inst2data(inst,ref,G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
-            G2frame.PatternId,'Instrument Parameters'))[0])        
+                try:
+                    data[item] = [data[item][0],inst[item]]
+                except KeyError:
+                    pass        #skip 'Polariz.' for N-data
     
     def RefreshInstrumentGrid(event,doAnyway=False):
         if doAnyway or event.GetRow() == 1:

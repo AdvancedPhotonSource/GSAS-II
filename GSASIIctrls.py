@@ -312,6 +312,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.invalid = False   # indicates if the control has invalid contents
         self.evaluated = False # set to True when the validator recognizes an expression
         val = loc[key]
+        if 'style' in kw: # add a "Process Enter" to style
+            kw['style'] += kw['style'] | wx.TE_PROCESS_ENTER
+        else:
+            kw['style'] = wx.TE_PROCESS_ENTER
         if isinstance(val,int) or typeHint is int:
             self.type = int
             wx.TextCtrl.__init__(
@@ -364,7 +368,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                              ") type: "+str(type(val)))
         # When the mouse is moved away or the widget loses focus,
         # display the last saved value, if an expression
-        #self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self._onLeaveWindow)
         self.Bind(wx.EVT_TEXT_ENTER, self._onLoseFocus)
         self.Bind(wx.EVT_KILL_FOCUS, self._onLoseFocus)
         # patch for wx 2.9 on Mac
@@ -378,7 +382,11 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             log.LogVarChange(self.result,self.key)
         self._setValue(val)
 
-    def _setValue(self,val):
+    def _setValue(self,val,show=True):
+        '''Check the validity of an int or float value and convert to a str.
+        Possibly format it. If show is True, display the formatted value in
+        the Text widget.
+        '''
         self.invalid = False
         if self.type is int:
             try:
@@ -391,7 +399,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                     pass
                 else:
                     self.invalid = True
-            wx.TextCtrl.SetValue(self,str(val))
+            if show: wx.TextCtrl.SetValue(self,str(val))
         elif self.type is float:
             try:
                 val = float(val) # convert strings, if needed
@@ -400,12 +408,12 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                     pass
                 else:
                     self.invalid = True
-            if self.nDig:
+            if self.nDig and show:
                 wx.TextCtrl.SetValue(self,str(G2py3.FormatValue(val,self.nDig)))
-            else:
+            elif show:
                 wx.TextCtrl.SetValue(self,str(G2py3.FormatSigFigs(val)).rstrip('0'))
         else:
-            wx.TextCtrl.SetValue(self,str(val))
+            if show: wx.TextCtrl.SetValue(self,str(val))
             self.ShowStringValidity() # test if valid input
             return
         
@@ -418,7 +426,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         key = event.GetKeyCode()
         if key in [wx.WXK_BACK, wx.WXK_DELETE]:
             if self.Validator: wx.CallAfter(self.Validator.TestValid,self)
-        if key == wx.WXK_RETURN:
+        if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
             self._onLoseFocus(None)
         event.Skip()
                     
@@ -482,9 +490,32 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.result[self.key] = val
         log.LogVarChange(self.result,self.key)
 
+    def _onLeaveWindow(self,event):
+        '''If the mouse leaves the text box, save the result, if valid,
+        but (unlike _onLoseFocus) don't update the textbox contents.
+        '''
+        if self.evaluated and not self.invalid: # deal with computed expressions
+            self.evaluated = False # expression has been recast as value, reset flag
+        if self.invalid: # don't update an invalid expression
+            if event: event.Skip()
+            return
+        self._setValue(self.result[self.key],show=False) # save value quietly
+        if self.OnLeave: self.OnLeave(invalid=self.invalid,
+                                      value=self.result[self.key],
+                                      tc=self,
+                                      **self.OnLeaveArgs)
+        if event: event.Skip()
+            
     def _onLoseFocus(self,event):
-        if self.evaluated:
-            self.EvaluateExpression()
+        '''Enter has been pressed or focus transferred to another control,
+        Evaluate and update the current control contents
+        '''
+        if self.evaluated: # deal with computed expressions
+            if self.invalid: # don't substitute for an invalid expression
+                if event: event.Skip()
+                return 
+            self.evaluated = False # expression has been recast as value, reset flag
+            self._setValue(self.result[self.key])
         elif self.result is not None: # show formatted result, as Bob wants
             self._setValue(self.result[self.key])
         if self.OnLeave: self.OnLeave(invalid=self.invalid,
@@ -493,18 +524,6 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                                       **self.OnLeaveArgs)
         if event: event.Skip()
 
-    def EvaluateExpression(self):
-        '''Show the computed value when an expression is entered to the TextCtrl
-        Make sure that the number fits by truncating decimal places and switching
-        to scientific notation, as needed. 
-        Called on loss of focus, enter, etc..
-        '''
-        if self.invalid: return # don't substitute for an invalid expression
-        if not self.evaluated: return # true when an expression is evaluated
-        if self.result is not None: # retrieve the stored result
-            self._setValue(self.result[self.key])
-        self.evaluated = False # expression has been recast as value, reset flag
-        
 class NumberValidator(wx.PyValidator):
     '''A validator to be used with a TextCtrl to prevent
     entering characters other than digits, signs, and for float
@@ -675,11 +694,12 @@ class NumberValidator(wx.PyValidator):
         '''
         key = event.GetKeyCode()
         tc = self.GetWindow()
-        if key == wx.WXK_RETURN:
+        if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
             if tc.invalid:
                 self.CheckInput(True) 
             else:
                 self.CheckInput(False) 
+            event.Skip()
             return
         if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255: # control characters get processed
             event.Skip()
@@ -749,8 +769,9 @@ class ASCIIValidator(wx.PyValidator):
         '''
         key = event.GetKeyCode()
         tc = self.GetWindow()
-        if key == wx.WXK_RETURN:
+        if key == wx.WXK_RETURN or key == wx.WXK_NUMPAD_ENTER:
             self.TestValid(tc)
+            event.Skip()
             return
         if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255: # control characters get processed
             event.Skip()

@@ -874,7 +874,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fa = np.reshape(fa,(2,len(refl),len(SGT),len(Mdata)))   #real A,-b
         fas = np.sum(np.sum(fa,axis=2),axis=2)        #real sum over atoms & unique hkl
         fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,Flack*FPP*cosp*Tcorr])
-        fb = np.reshape(fb,(2,len(refl),len(SGT),len(Mdata)))   #imag -B,+a
+        fb = np.reshape(fb,(2,len(refl),len(SGT),len(Mdata)))   #imag -B,+a        
         fbs = np.sum(np.sum(fb,axis=2),axis=2)  #imag sum over atoms & uniq hkl
         if SGData['SGInv']: #centrosymmetric; B=0
             fbs[0] *= 0.

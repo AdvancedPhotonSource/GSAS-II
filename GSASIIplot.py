@@ -4456,7 +4456,10 @@ def PlotStructure(G2frame,data,firstCall=False):
                 G2frame.MapPeaksTable.SetData(mapPeaks)
                 panel = G2frame.dataDisplay.GetPage(page).GetChildren()
                 names = [child.GetName() for child in panel]
-                panel[names.index('grid window')].Refresh()
+                try:
+                    panel[names.index('GridWindow')].Refresh()
+                except ValueError:  #different wx versions!
+                    panel[names.index('grid window')].Refresh()
             
     def ClearSelectedAtoms():
         page = getSelection()

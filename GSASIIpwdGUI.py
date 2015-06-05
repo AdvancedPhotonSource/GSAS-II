@@ -1155,7 +1155,6 @@ def UpdateInstrumentGrid(G2frame,data):
                 G2plt.PlotCalib(G2frame,data,XY,Sigs,newPlot=True)
         else:
             G2frame.ErrorDialog('Can not calibrate','Nothing selected for refinement')
-            
 
     def OnLoad(event):
         '''Loads instrument parameters from a G2 .instprm file
@@ -1310,8 +1309,11 @@ def UpdateInstrumentGrid(G2frame,data):
 
     def OnLamPick(event):
         data['Source'][1] = lamType = event.GetEventObject().GetValue()
-        insVal['Lam1'] = waves[lamType][0]
-        insVal['Lam2'] = waves[lamType][1]
+        if 'P' in insVal['Type']:
+            insVal['Lam1'] = waves[lamType][0]
+            insVal['Lam2'] = waves[lamType][1]
+        elif 'S' in insVal['Type'] and 'synch' not in lamType:
+            insVal['Lam'] = meanwaves[lamType]
         updateData(insVal,insRef)
         i,j= wx.__version__.split('.')[0:2]
         if int(i)+int(j)/10. > 2.8:
@@ -1519,6 +1521,15 @@ def UpdateInstrumentGrid(G2frame,data):
                 waveVal = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,insVal,'Lam',nDig=(10,6),typeHint=float,OnLeave=AfterChange)
                 instSizer.Add(waveVal,0,WACV)
                 labelLst.append(u'Lam (\xc5)')
+                waveSizer = wx.BoxSizer(wx.HORIZONTAL)
+                waveSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,'  Source type: '),0,WACV)
+                # PATCH?: for now at least, Source is not saved anywhere before here
+                if 'Source' not in data: data['Source'] = ['CuKa','?']
+                choice = ['synchrotron','TiKa','CrKa','FeKa','CoKa','CuKa','MoKa','AgKa']
+                lamPick = wx.ComboBox(G2frame.dataDisplay,value=data['Source'][1],choices=choice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                lamPick.Bind(wx.EVT_COMBOBOX, OnLamPick)
+                waveSizer.Add(lamPick,0,WACV)
+                instSizer.Add(waveSizer,0,WACV)
                 elemKeysLst.append(['Lam',1])
                 dspLst.append([10,6])
                 refFlgElem.append(None)
@@ -1581,6 +1592,8 @@ def UpdateInstrumentGrid(G2frame,data):
     waves = {'CuKa':[1.54051,1.54433],'TiKa':[2.74841,2.75207],'CrKa':[2.28962,2.29351],
         'FeKa':[1.93597,1.93991],'CoKa':[1.78892,1.79278],'MoKa':[0.70926,0.713543],
         'AgKa':[0.559363,0.563775]}
+    meanwaves = {'CuKa':1.5418,'TiKa':2.7496,'CrKa':2.2909,'FeKa':1.9373,
+        'CoKa':1.7902,'MoKa':0.7107,'AgKa':0.5608}
     Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))[1]        
     try:

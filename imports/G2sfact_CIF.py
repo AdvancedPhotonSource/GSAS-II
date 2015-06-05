@@ -334,7 +334,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
             elif blk.get('_diffrn_radiation.wavelength'):
                 wave = float(blk['_diffrn_radiation.wavelength'])
             else:
-                wave = 1.5418
+                wave = 0.70926
             self.UpdateParameters(Type=Type,Wave=wave) # histogram type
             return True
         except Exception as detail:

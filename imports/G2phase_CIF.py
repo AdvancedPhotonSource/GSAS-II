@@ -173,7 +173,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
                 atomloop = blk.GetLoop('_atom_site_label')
                 atomkeys = [i.lower() for i in atomloop.keys()]
                 if not blk.get('_atom_site_type_symbol'):
-                    self.isodistort_warnings += '\nlack of atom types prevents ISODISTORT processing'
+                    self.isodistort_warnings += '\natom types are missing. \n Check & revise atom types as needed'
                 if blk.get('_atom_site_aniso_label'):
                     anisoloop = blk.GetLoop('_atom_site_aniso_label')
                     anisokeys = [i.lower() for i in anisoloop.keys()]
@@ -212,11 +212,10 @@ class CIFPhaseReader(G2IO.ImportPhase):
                         elif key == '_atom_site_u_iso_or_equiv':
                             atomlist[10] =cif.get_number_with_esd(val)[0]
                     if not atomlist[1] and atomlist[0]:
-                        for i in range(2,0,-1):
-                            typ = atomlist[0].strip()[:i]
-                            if G2elem.CheckElement(typ):
-                                atomlist[1] = typ
-                            if not atomlist[1]: atomlist[1] = 'Xe'
+                        typ = atomlist[0].rstrip('0123456789-+')
+                        if G2elem.CheckElement(typ):
+                            atomlist[1] = typ
+                        if not atomlist[1]: atomlist[1] = 'Xe'
                     ulbl = '_atom_site_aniso_label'
                     if  atomlist[9] == 'A' and atomlist[0] in blk.get(ulbl):
                         for val,key in zip(anisoloop.GetKeyedPacket(ulbl,atomlist[0]),

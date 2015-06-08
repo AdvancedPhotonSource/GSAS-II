@@ -1689,7 +1689,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     if PickId and not G2frame.Contour:
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         if G2frame.PatternTree.GetItemText(PickId) in ['Index Peak List','Unit Cells List']:
-            peaks = np.array((G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))))
+            peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))
             if not len(peaks): return # are there any peaks?
             for peak in peaks[0]:
                 if peak[2]:

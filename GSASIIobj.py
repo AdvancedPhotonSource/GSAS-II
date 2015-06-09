@@ -1300,6 +1300,7 @@ def CompileVarDesc():
         'Es$' : 'Secondary type II extinction',
         'Eg$' : 'Secondary type I extinction',
         'Flack' : 'Flack parameter',
+        'TwinFr' : 'Twin fraction',
         #Histogram vars (:h:<var>)
         'Absorption' : 'Absorption coef.',
         'Displace([XY])' : 'Debye-Scherrer sample displacement \\1',

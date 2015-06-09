@@ -17,10 +17,6 @@ information that is shown in the data display window
 
 '''
 import wx
-import math
-import copy
-import time
-import sys
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
@@ -780,6 +776,93 @@ def UpdateDData(G2frame,DData,data,hist=''):
         flackSizer.Add(flackVal,0,WACV)
         return flackSizer
         
+    def twinSizer():
+        
+        def OnAddTwin(event):
+            twinMat = np.array([[1,0,0],[0,1,0],[0,0,1]])
+            twinVal = [1.0,False]
+            UseList[G2frame.hist]['Twins'].append([twinMat,twinVal])
+            addtwin.SetValue(False)
+            wx.CallLater(100,RepaintHistogramInfo)
+            
+        def OnMat(event):
+            Obj = event.GetEventObject()
+            it,im = Indx[Obj.GetId()]
+            newMat = Obj.GetValue().split()
+            try:
+                uvw = [int(newMat[i]) for i in range(3)]
+            except ValueError:
+                uvw = UseList[G2frame.hist]['Twins'][it][0][im]
+            UseList[G2frame.hist]['Twins'][it][0][im] = uvw
+            Obj.SetValue('%d %d %d'%(uvw[0],uvw[1],uvw[2]))
+            
+        def OnTwinVal(event):
+            Obj = event.GetEventObject()
+            it = Indx[Obj.GetId()]
+            try:
+                val = float(Obj.GetValue())
+                if 0. > val > 1.:\
+                    raise ValueError
+            except ValueError:
+                val = UseList[G2frame.hist]['Twins'][it][1][0]
+            UseList[G2frame.hist]['Twins'][it][1][0] = val
+            Obj.SetValue('%.3f'%(val))
+            
+        def OnTwinRef(event):
+            Obj = event.GetEventObject()
+            it = Indx[Obj.GetId()]
+            UseList[G2frame.hist]['Twins'][it][1][1] = Obj.GetValue()
+                        
+        def OnTwinDel(event):
+            Obj = event.GetEventObject()
+            it = Indx[Obj.GetId()]
+            del UseList[G2frame.hist]['Twins'][it]
+            wx.CallLater(100,RepaintHistogramInfo)           
+            
+        twinsizer = wx.BoxSizer(wx.VERTICAL)
+        topsizer = wx.BoxSizer(wx.HORIZONTAL)          
+        topsizer.Add(wx.StaticText(DData,wx.ID_ANY,' Merohedral/pseudomerohedral twins: '),0,WACV)
+        addtwin = wx.CheckBox(DData,wx.ID_ANY,label=' Add Twin Law')
+        addtwin.Bind(wx.EVT_CHECKBOX, OnAddTwin)
+        topsizer.Add(addtwin,0,WACV)
+        twinsizer.Add(topsizer)
+        Indx = {}
+        for it,Twin in enumerate(UseList[G2frame.hist]['Twins']):
+            twinMat,twinVal = Twin
+            matSizer = wx.BoxSizer(wx.HORIZONTAL)
+            matSizer.Add(wx.StaticText(DData,-1,' Twin Law: '),0,WACV)
+            Style = wx.TE_READONLY
+            if it:
+                Style = wx.TE_PROCESS_ENTER
+            for im,Mat in enumerate(twinMat):
+                mat = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(Mat[0],Mat[1],Mat[2]),
+                    style=Style)
+                if it:
+                    Indx[mat.GetId()] = [it,im]
+                    mat.Bind(wx.EVT_TEXT_ENTER,OnMat)
+                    mat.Bind(wx.EVT_KILL_FOCUS,OnMat)
+                matSizer.Add(mat,0,WACV|wx.LEFT,5)
+            twinsizer.Add(matSizer,0,WACV|wx.LEFT,5)
+            valSizer = wx.BoxSizer(wx.HORIZONTAL)
+            valSizer.Add(wx.StaticText(DData,-1,label=' Twin element fraction:'),0,WACV)
+            twinval = wx.TextCtrl(DData,-1,'%.3f'%(Twin[1][0]),style=wx.TE_PROCESS_ENTER)
+            Indx[twinval.GetId()] = it
+            twinval.Bind(wx.EVT_TEXT_ENTER,OnTwinVal)
+            twinval.Bind(wx.EVT_KILL_FOCUS,OnTwinVal)
+            valSizer.Add(twinval,0,WACV)
+            if it:
+                twinref = wx.CheckBox(DData,wx.ID_ANY,label=' Refine?')
+                Indx[twinref.GetId()] = it
+                twinref.SetValue(Twin[1][1])
+                twinref.Bind(wx.EVT_CHECKBOX, OnTwinRef)
+                valSizer.Add(twinref,0,WACV)
+                twindel = wx.CheckBox(DData,wx.ID_ANY,label=' Delete?')
+                Indx[twindel.GetId()] = it
+                twindel.Bind(wx.EVT_CHECKBOX, OnTwinDel)
+                valSizer.Add(twindel,0,WACV)
+            twinsizer.Add(valSizer,0,WACV|wx.LEFT,5)
+        return twinsizer
+        
     def OnSelect(event):
         G2frame.hist = keyList[select.GetSelection()]
         oldFocus = wx.Window.FindFocus()
@@ -937,11 +1020,14 @@ def UpdateDData(G2frame,DData,data,hist=''):
 #patch
             if 'Flack' not in UseList[G2frame.hist]:
                 UseList[G2frame.hist]['Flack'] = [0.0,False]
+            if 'Twins' not in UseList[G2frame.hist]:
+                UseList[G2frame.hist]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]
 #end patch
             bottomSizer.Add(ExtSizer('HKLF'),0,WACV|wx.BOTTOM,5)
             bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
             if not SGData['SGInv']:        #not operational yet - no test data
                 bottomSizer.Add(FlackSizer(),0,WACV|wx.BOTTOM,5)
+            bottomSizer.Add(twinSizer(),0,WACV|wx.BOTTOM,5)
         return bottomSizer
                 
     if DData.GetSizer():

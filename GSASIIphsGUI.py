@@ -27,7 +27,6 @@ import wx.lib.gridmovers as wgmove
 import wx.wizard as wz
 import wx.lib.scrolledpanel as wxscroll
 import matplotlib as mpl
-import math
 import copy
 import time
 import sys
@@ -2078,16 +2077,30 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         print 'Read phase '+str(PhaseName)+' from file '+str(G2frame.lastimport)
         atomData = data['Atoms']
         atomNames = []
+        All = False
         for atom in atomData:
-            atomNames.append(atom[:ct+1])
+            atomNames.append(''.join(atom[:ct+1]).capitalize())  #eliminate spurious differences
         for atom in rd.Phase['Atoms']:
             try:
-                idx = atomNames.index(atom[:ct+1])
+                idx = atomNames.index(''.join(atom[:ct+1]).capitalize())  #eliminate spurious differences
                 atId = atom[cia+8]
                 atomData[idx][:-1] = atom[:-1]
                 atomData[idx][cia+8] = atId
             except ValueError:
-                print atom[:ct+1], 'not in Atom array; not updated'
+                if All:
+                    atomData.append(atom)
+                else:
+                    dlg = wx.MessageDialog(G2frame,'Some atoms not in List; do you want to append them all',   \
+                        'Unknown atom '+atom[0],wx.YES_NO|wx.ICON_QUESTION)
+                    try:
+                        result = dlg.ShowModal()
+                        if result in [wx.ID_YES,]:
+                            All = True
+                            atomData.append(atom)
+                        else:
+                            print atom[:ct+1], 'not in Atom array; not updated'
+                    finally:
+                        dlg.Destroy()
         wx.CallAfter(FillAtomsGrid,Atoms)
         
 ################################################################################
@@ -2318,7 +2331,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
             
 ################################################################################
-#Structure drawing GUI stuff                
+#### Structure drawing GUI stuff                
 ################################################################################
 
     def SetupDrawingData():
@@ -3834,7 +3847,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
                 'Extinction':['Lorentzian','None',
                 {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
-                'Flack':[0.0,False]}                        
+                'Flack':[0.0,False],'Twins':[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]}                        
             UpdateHKLFdata(histoName)
             data['Histograms'] = UseList
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
@@ -3859,7 +3872,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         keyList = G2frame.GetHistogramNames(hist[:4])
         sourceDict = UseList[hist]
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet','Flack']
+            copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
             copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
         copyDict = {}
@@ -3883,14 +3896,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'HKLF' in sourceDict['Histogram']:
             copyNames = ['Scale','Extinction','Babinet','Flack']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','Twins']
         babNames = ['BabA','BabU']
         for name in copyNames:
-            if name in ['Scale','Extinction','HStrain','Flack']:
+            if name in ['Scale','Extinction','HStrain','Flack','Twins']:
                 if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
                     copyDict[name] = {name:[sourceDict[name][:2]]}
                     for item in ['Eg','Es','Ep']:
                         copyDict[name][item] = sourceDict[name][2][item][1]
+                elif name == 'Twins':
+                    for it,twin in enumerate(sourceDict['Twins']):
+                        copyDict[name][it] = twin[1][1]
                 else:
                     copyDict[name] = sourceDict[name][1]
             elif name in ['Size','Mustrain']:
@@ -3918,11 +3934,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         item = keyList[sel]
                         UseList[item]
                         for name in copyNames:
-                            if name in ['Scale','Extinction','HStrain','Flack']:
+                            if name in ['Scale','Extinction','HStrain','Flack','Twins']:
                                 if name == 'Extinction' and 'HKLF' in sourceDict['Histogram']:
                                     UseList[item][name][:2] = copy.deepcopy(sourceDict[name][:2])
                                     for itm in ['Eg','Es','Ep']:
                                         UseList[item][name][2][itm][1] = copy.deepcopy(copyDict[name][itm])
+                                elif name == 'Twins':
+                                    for it,twin in enumerate(sourceDict['Twins']):
+                                        UseList[item]['Twins'][it][1][1] = copyDict['Twins'][it]
                                 else:
                                     UseList[item][name][1] = copy.deepcopy(copyDict[name])
                             elif name in ['Size','Mustrain']:
@@ -3950,7 +3969,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         sourceDict = UseList[hist]
         copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet','Flack']
+            copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
             copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
         dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame,'Select which parameters to copy',

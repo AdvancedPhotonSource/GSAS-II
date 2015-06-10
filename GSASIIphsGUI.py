@@ -2101,6 +2101,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             print atom[:ct+1], 'not in Atom array; not updated'
                     finally:
                         dlg.Destroy()
+        SetupGeneral()
         wx.CallAfter(FillAtomsGrid,Atoms)
         
 ################################################################################

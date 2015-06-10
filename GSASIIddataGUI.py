@@ -841,6 +841,8 @@ def UpdateDData(G2frame,DData,data,hist=''):
                     Indx[mat.GetId()] = [it,im]
                     mat.Bind(wx.EVT_TEXT_ENTER,OnMat)
                     mat.Bind(wx.EVT_KILL_FOCUS,OnMat)
+                else:
+                    mat.SetBackgroundColour(VERY_LIGHT_GREY)
                 matSizer.Add(mat,0,WACV|wx.LEFT,5)
             twinsizer.Add(matSizer,0,WACV|wx.LEFT,5)
             valSizer = wx.BoxSizer(wx.HORIZONTAL)

@@ -2243,14 +2243,17 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     hapVary.append(pfx+'Flack')
                 Twins = hapData.get('Twins',[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],])
                 sumTwFr = 0.
+                controlDict[pfx+'TwinLaw'] = []                
                 for it,twin in enumerate(Twins):
-                    controlDict[pfx+'TwinLaw;'+str(it)] = twin[0]
+                    controlDict[pfx+'TwinLaw'].append(twin[0])
                     hapDict[pfx+'TwinFr;'+str(it)] = twin[1][0]
-                    sumTwFr += twin[1][0]
+                    if it:
+                        sumTwFr += twin[1][0]
                     if twin[1][1]:
                         hapVary.append(pfx+'TwinFr;'+str(it))
-                for it,twin in enumerate(Twins):    #force sum to unity 
-                    hapDict[pfx+'TwinFr;'+str(it)] /= sumTwFr
+                controlDict[pfx+'TwinLaw'] = np.array(controlDict[pfx+'TwinLaw'])
+                if len(Twins) > 1:    #force sum to unity
+                    hapDict[pfx+'TwinFr;0'] = 1.-sumTwFr
                 if Print: 
                     print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
                     print >>pFile,135*'-'
@@ -2532,14 +2535,18 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                         BabSig[pfx+item] = sigDict[pfx+item]
                 item = 'TwinFr'
                 it = 0
+                sumTwFr = 0.
                 while True:
                     try:
                         hapData['TwinFr'][1][0] = parmDict[pfx+'TwinFr;'+str(it)]
                         if pfx+'TwinFr;'+str(it) in sigDict:
                             TwinFrSig[pfx+'TwinFr;'+str(it)] = sigDict[pfx+'TwinFr;'+str(it)]
+                        if it:
+                            sumTwFr += hapData['TwinFr'][1][0]
                         it += 1
                     except KeyError:
                         break
+#                hapData['TwinFr'][1][0]
 
     if Print:
         for phase in Phases:

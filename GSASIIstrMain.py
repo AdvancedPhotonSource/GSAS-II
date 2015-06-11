@@ -728,7 +728,6 @@ def BestPlane(PlaneData):
     for i,xyz in enumerate(XYZ):
         print ' %6s%10.3f%10.3f%10.3f'%(Atoms[i][1].ljust(6),xyz[0],xyz[1],xyz[2])
     print '\n Best plane RMS X =%8.3f, Y =%8.3f, Z =%8.3f'%(Evec[Order[2]],Evec[Order[1]],Evec[Order[0]])   
-
             
 def main():
     'Needs a doc string'

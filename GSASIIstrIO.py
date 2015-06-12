@@ -2425,16 +2425,16 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
         print >>pFile,ptstr
         print >>pFile,sigstr
         
-    def PrintTwinsAndSig(pfx,hapData,TwinSig):
+    def PrintTwinsAndSig(pfx,twinData,TwinSig):
         print >>pFile,'\n Twin Law fractions : '
         ptlbls = ' names :'
         ptstr =  ' values:'
         sigstr = ' sig   :'
-        for item in hapData:
-            ptlbls += '%12s'%(item)
-            ptstr += '%12.3f'%(hapData[item][0])
-            if pfx+item in TwinSig:
-                sigstr += '%12.3f'%(TwinSig[pfx+item])
+        for it,item in enumerate(twinData):
+            ptlbls += '     twin #%d'%(it)
+            ptstr += '%12.3f'%(item[1][0])
+            if pfx+'TwinFr;'+str(it) in TwinSig:
+                sigstr += '%12.3f'%(TwinSig[pfx+'TwinFr;'+str(it)])
             else:
                 sigstr += 12*' ' 
         print >>pFile,ptlbls
@@ -2533,20 +2533,20 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     hapData['Babinet'][item][0] = parmDict[pfx+item]
                     if pfx+item in sigDict:
                         BabSig[pfx+item] = sigDict[pfx+item]
-                item = 'TwinFr'
-                it = 0
-                sumTwFr = 0.
-                while True:
-                    try:
-                        hapData['TwinFr'][1][0] = parmDict[pfx+'TwinFr;'+str(it)]
-                        if pfx+'TwinFr;'+str(it) in sigDict:
-                            TwinFrSig[pfx+'TwinFr;'+str(it)] = sigDict[pfx+'TwinFr;'+str(it)]
-                        if it:
-                            sumTwFr += hapData['TwinFr'][1][0]
-                        it += 1
-                    except KeyError:
-                        break
-#                hapData['TwinFr'][1][0]
+                if 'Twins' in hapData:
+                    it = 0
+                    sumTwFr = 0.
+                    while True:
+                        try:
+                            hapData['Twins'][it][1][0] = parmDict[pfx+'TwinFr;'+str(it)]
+                            if pfx+'TwinFr;'+str(it) in sigDict:
+                                TwinFrSig[pfx+'TwinFr;'+str(it)] = sigDict[pfx+'TwinFr;'+str(it)]
+                            if it:
+                                sumTwFr += hapData['Twins'][it][1][0]
+                            it += 1
+                        except KeyError:
+                            break
+                    hapData['Twins'][0][1][0] = 1.-sumTwFr
 
     if Print:
         for phase in Phases:
@@ -2608,8 +2608,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                         PrintBabinetAndSig(pfx,hapData['Babinet'],BabSig)
                     if pfx+'Flack' in ScalExtSig:
                         print >>pFile,' Flack parameter : %10.3f, sig %10.3f'%(hapData['Flack'][0],ScalExtSig[pfx+'Flack'])
-                    if pfx+'TwinFr;1' in TwinFrSig:
-                        PrintTwinFrAndSig(pfx,hapData['TwinFr'],TwinFrSig)
+                    if len(TwinFrSig):
+                        PrintTwinsAndSig(pfx,hapData['Twins'],TwinFrSig)
 
 ################################################################################
 ##### Histogram data

@@ -779,8 +779,8 @@ def UpdateDData(G2frame,DData,data,hist=''):
     def twinSizer():
         
         def OnAddTwin(event):
-            twinMat = np.array([[1,0,0],[0,1,0],[0,0,1]])
-            twinVal = [1.0,False]
+            twinMat = np.array([[-1,0,0],[0,-1,0],[0,0,-1]])    #inversion by default
+            twinVal = [0.0,False]
             UseList[G2frame.hist]['Twins'].append([twinMat,twinVal])
             addtwin.SetValue(False)
             wx.CallLater(100,RepaintHistogramInfo)
@@ -801,12 +801,17 @@ def UpdateDData(G2frame,DData,data,hist=''):
             it = Indx[Obj.GetId()]
             try:
                 val = float(Obj.GetValue())
-                if 0. > val > 1.:\
+                if 0. > val > 1.:
                     raise ValueError
             except ValueError:
                 val = UseList[G2frame.hist]['Twins'][it][1][0]
             UseList[G2frame.hist]['Twins'][it][1][0] = val
-            Obj.SetValue('%.3f'%(val))
+            sumTw = 0.
+            for it,twin in enumerate(UseList[G2frame.hist]['Twins']):
+                if it:
+                    sumTw += twin[1][0]
+            UseList[G2frame.hist]['Twins'][0][1][0] = 1.-sumTw
+            wx.CallLater(100,RepaintHistogramInfo)
             
         def OnTwinRef(event):
             Obj = event.GetEventObject()
@@ -817,6 +822,11 @@ def UpdateDData(G2frame,DData,data,hist=''):
             Obj = event.GetEventObject()
             it = Indx[Obj.GetId()]
             del UseList[G2frame.hist]['Twins'][it]
+            sumTw = 0.
+            for it,twin in enumerate(UseList[G2frame.hist]['Twins']):
+                if it:
+                    sumTw += twin[1][0]
+            UseList[G2frame.hist]['Twins'][0][1][0] = 1.-sumTw
             wx.CallLater(100,RepaintHistogramInfo)           
             
         twinsizer = wx.BoxSizer(wx.VERTICAL)

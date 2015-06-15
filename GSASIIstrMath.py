@@ -945,14 +945,14 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         if 'T' in calcControls[hfx+'histType']:
             FP,FPP = G2el.BlenResCW(Tdata,BLtables,refl.T[12])
         H = np.array(refl[:3])
-        H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(blkSize,3,nTwins) or (blkSize,3)
+        H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(3,nTwins) or (3)
         SQ = 1./(2.*refl[4])**2             # or (sin(theta)/lambda)**2
         SQfactor = 8.0*SQ*np.pi**2
         dBabdA = np.exp(-parmDict[phfx+'BabU']*SQfactor)
         Bab = parmDict[phfx+'BabA']*dBabdA
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = refDict['FF']['FF'][iref].T[Tindx].T
-        Uniq = np.inner(H,SGMT)
+        Uniq = np.inner(H,SGMT)             # array(3,nSGOp) or 
         Phi = np.inner(H,SGT)
         phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T).T+Phi.T).T
         sinp = np.sin(phase)
@@ -978,8 +978,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dfadba = np.sum(-cosp*(occ*Tcorr)[:,np.newaxis],axis=1)
         dfadui = np.sum(-SQfactor*fa,axis=-2)
         if len(TwinLaw) > 1:
-            dfadx = np.array([np.sum(twopi*Uniq[it]*np.swapaxes(fax[it],-2,-1)[:,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
-            dfadua = np.array([np.sum(-Hij[it]*np.swapaxes(fa[it],-2,-1)[:,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
+            dfadx = np.array([np.sum(twopi*Uniq[it]*np.swapaxes(fax,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
+            dfadua = np.array([np.sum(-Hij[it]*np.swapaxes(fa,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
         else:
             dfadx = np.sum(twopi*Uniq*np.swapaxes(fax,-2,-1)[:,:,:,np.newaxis],axis=-2)
             dfadua = np.sum(-Hij*np.swapaxes(fa,-2,-1)[:,:,:,np.newaxis],axis=-2)
@@ -990,8 +990,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dfbdfl = np.sum(fotp[:,np.newaxis]*cosp)
             dfbdui = np.sum(-SQfactor*fb,axis=-2)
             if len(TwinLaw) > 1:
-                dfbdx = np.array([np.sum(twopi*Uniq[it]*np.swapaxes(fbx[it],-2,-1)[:,:,:,np.newaxis],axis=2) for it in range(nTwin)])           
-                dfbdua = np.array([np.sum(-Hij[it]*np.swapaxes(fb[it],-2,-1)[:,:,:,np.newaxis],axis=2) for it in range(nTwin)])
+                dfbdx = np.array([np.sum(twopi*Uniq[it]*np.swapaxes(fbx,-2,-1)[:,it,:,:,np.newaxis],axis=2) for it in range(nTwin)])           
+                dfbdua = np.array([np.sum(-Hij[it]*np.swapaxes(fb,-2,-1)[:,it,:,:,np.newaxis],axis=2) for it in range(nTwin)])
             else:
                 dfbdx = np.sum(twopi*Uniq*np.swapaxes(fbx,-2,-1)[:,:,:,np.newaxis],axis=2)           
                 dfbdua = np.sum(-Hij*np.swapaxes(fb,-2,-1)[:,:,:,np.newaxis],axis=2)
@@ -1017,10 +1017,10 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             SA = fas[0]-fbs[1]
             SB = fbs[0]+fas[1]
             if nTwin > 1:
-                dFdfr[iref] = [2.*SA[it]*(dfadfr[it][0]+dfbdfr[it][1])*Mdata/len(Uniq[it])+ \
-                    2.*SB[it]*(dfbdfr[it][0]+dfadfr[it][1])*Mdata/len(Uniq[it]) for it in range(nTwin)]
-                dFdx[iref] = [2.*SA[it]*(dfadx[it][0]+dfbdx[it][1])+2.*SB[it]*(dfbdx[it][0]+dfadx[it][1]) for it in range(nTwin)]
-                dFdui[iref] = [2.*SA[it]*(dfadui[it][0]+dfbdui[it][1])+2.*SB[it]*(dfbdui[it][0]+dfadui[it][1]) for it in range(nTwin)]
+                dFdfr[iref] = [2.*SA[it]*(dfadfr[0][it]+dfbdfr[1][it])*Mdata/len(Uniq[it])+ \
+                    2.*SB[it]*(dfbdfr[0][it]+dfadfr[1][it])*Mdata/len(Uniq[it]) for it in range(nTwin)]
+                dFdx[iref] = [2.*SA[it]*(dfadx[0][it]+dfbdx[1][it])+2.*SB[it]*(dfbdx[0][it]+dfadx[1][it]) for it in range(nTwin)]
+                dFdui[iref] = [2.*SA[it]*(dfadui[0][it]+dfbdui[1][it])+2.*SB[it]*(dfbdui[0][it]+dfadui[1][it]) for it in range(nTwin)]
                 dFdua[iref] = [2.*SA[it]*(dfadua[it][0]+dfbdua[it][1])+2.*SB[it]*(dfbdua[it][0]+dfadua[it][1]) for it in range(nTwin)]
                 dFdfl[iref] = -SA*dfadfl-SB*dfbdfl
                 dFdtw[iref] = 2.*SA+2.*SB

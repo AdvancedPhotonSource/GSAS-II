@@ -788,7 +788,72 @@ def UpdateBackground(G2frame,data):
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
             G2frame.PatternTree.SetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),copy.copy(data))
-                
+
+    def OnBkgFit(event):
+        def SetInstParms(Inst):
+            dataType = Inst['Type'][0]
+            insVary = []
+            insNames = []
+            insVals = []
+            for parm in Inst:
+                insNames.append(parm)
+                insVals.append(Inst[parm][1])
+                if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
+                    'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',] and Inst[parm][2]:
+                        insVary.append(parm)
+            instDict = dict(zip(insNames,insVals))
+            instDict['X'] = max(instDict['X'],0.01)
+            instDict['Y'] = max(instDict['Y'],0.01)
+            if 'SH/L' in instDict:
+                instDict['SH/L'] = max(instDict['SH/L'],0.002)
+            return dataType,instDict,insVary
+    
+        PatternId = G2frame.PatternId        
+        controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+        background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
+        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
+        inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        
+        X = [x for x,y in background[1]['FixedPoints'] if limits[0] <= x <= limits[1]]
+        Y = [y for x,y in background[1]['FixedPoints'] if limits[0] <= x <= limits[1]]
+        W = [1]*len(X)
+        Z = [0]*len(X)
+
+        # load instrument and background params
+        dataType,insDict,insVary = SetInstParms(inst)
+        bakType,bakDict,bakVary = G2pwd.SetBackgroundParms(background)
+        # how many background parameters are refined?
+        if len(bakVary)*1.5 > len(X):
+            msg = ("You are attempting to vary "+str(len(bakVary))+
+                   " background terms with only "+str(len(X))+" background points"+
+                    "\nAdd more points or reduce the number of terms")
+            print msg
+            G2frame.ErrorDialog('Too few points',msg)
+            return
+        
+        wx.BeginBusyCursor()
+        try:
+            G2pwd.DoPeakFit('LSQ',[],background,limits,inst,inst2,
+                            np.array((X,Y,W,Z,Z,Z)),bakVary,False,controls)
+        finally:
+            wx.EndBusyCursor()
+        # compute the background values and plot them
+        pwddata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+        x = pwddata[0]
+        xBeg = np.searchsorted(x,limits[0])
+        xFin = np.searchsorted(x,limits[1])
+        parmDict = {}
+        bakType,bakDict,bakVary = G2pwd.SetBackgroundParms(background)
+        parmDict.update(bakDict)
+        parmDict.update(insDict)
+        pwddata[3] *= 0
+        pwddata[5] *= 0
+        pwddata[4][xBeg:xFin] = G2pwd.getBackground(
+            '',parmDict,bakType,dataType,x[xBeg:xFin])[0]
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        # show the updated background values
+        wx.CallLater(100,UpdateBackground,G2frame,data)
+    
     def OnPeaksMove(event):
         if not data[1]['nPeaks']:
             G2frame.ErrorDialog('Error','No peaks to move')
@@ -991,6 +1056,7 @@ def UpdateBackground(G2frame,data):
     G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2gd.wxID_BACKCOPY)
     G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2gd.wxID_BACKFLAGCOPY)
     G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2gd.wxID_PEAKSMOVE)
+    G2frame.Bind(wx.EVT_MENU,OnBkgFit,id=G2frame.dataFrame.wxID_BackPts['Fit'])
     BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background')
     Choices = ['chebyschev','cosine','Q^2 power series','Q^-2 powder series','lin interpolate','inv interpolate','log interpolate']
     mainSizer = wx.BoxSizer(wx.VERTICAL)

@@ -779,7 +779,22 @@ class DataFrame(wx.Frame):
             help='Copy background refinement flags to other histograms')
         self.BackEdit.Append(id=wxID_PEAKSMOVE, kind=wx.ITEM_NORMAL,text='Move peaks',
             help='Move background peaks to Peak List')
-            
+        self.BackFixed = wx.Menu(title='') # fixed background point menu
+        self.BackMenu.Append(menu=self.BackFixed, title='Fixed Points')
+        self.wxID_BackPts = {}
+        self.wxID_BackPts['Add'] = wx.NewId() # N.B. not using wxID_ global as for other menu items
+        self.BackFixed.Append(id=self.wxID_BackPts['Add'], kind=wx.ITEM_RADIO,text='Add',
+            help='Add fixed background points with mouse clicks')
+        self.wxID_BackPts['Move'] = wx.NewId() 
+        item = self.BackFixed.Append(id=self.wxID_BackPts['Move'], kind=wx.ITEM_RADIO,text='Move',
+            help='Move selected fixed background points with mouse drags')
+        item.Check(True)
+        self.wxID_BackPts['Del'] = wx.NewId()
+        self.BackFixed.Append(id=self.wxID_BackPts['Del'], kind=wx.ITEM_RADIO,text='Delete',
+            help='Delete fixed background points with mouse clicks')
+        self.wxID_BackPts['Fit'] = wx.NewId() 
+        self.BackFixed.Append(id=self.wxID_BackPts['Fit'], kind=wx.ITEM_NORMAL,text='Fit background',
+            help='Fit background function to fixed background points')
         self.PostfillDataMenu()
             
         # PDR / Instrument Parameters

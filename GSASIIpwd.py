@@ -1319,8 +1319,32 @@ def DoCalibInst(IndexPeaks,Inst):
     return True
             
 def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],oneCycle=False,controls=None,dlg=None):
-    'needs a doc string'
-        
+    '''Called to perform a peak fit, refining the selected items in the peak
+    table as well as selected items in the background.
+
+    :param str FitPgm: type of fit to perform. At present "LSQ" is the only
+      option that works
+    :param list Peaks: a list of peaks. Each peak entry is a list with 8 values:
+      four values followed by a refine flag where the values are: position, intensity,
+      sigma (Gaussian width) and gamma (Lorentzian width). From the Histogram/"Peak List"
+      tree entry, dict item "peaks"
+    :param list Background: describes the background. List with two items.
+      Item 0 specifies a background model and coefficients. Item 1 is a dict.
+      From the Histogram/Background tree entry.
+    :param list Limits: min and max x-value to use
+    :param dict Inst: Instrument parameters
+    :param dict Inst2: more Instrument parameters
+    :param numpy.array data: a 5xn array. data[0] is the x-values,
+      data[1] is the y-values, data[2] are weight values, data[3], [4] and [5] are
+      calc, background and difference intensities, respectively. 
+    :param list prevVaryList: Used in sequential refinements to override the
+      variable list. Defaults as an empty list.
+    :param bool oneCycle: True if only one cycle of fitting should be performed
+    :param dict controls: a dict specifying two values, Ftol = controls['min dM/M']
+      and derivType = controls['deriv type']. If None default values are used. 
+    :param wx.Dialog dlg: A dialog box that is updated with progress from the fit.
+      Defaults to None, which means no updates are done. 
+    '''
     def GetBackgroundParms(parmList,Background):
         iBak = 0
         while True:
@@ -1586,15 +1610,18 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
                     args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
                 ncyc = int(result[2]['nfev']/2)
             finally:
-                dlg.Destroy()
+                if dlg: dlg.Destroy()
             runtime = time.time()-begin    
             chisq = np.sum(result[2]['fvec']**2)
             Values2Dict(parmDict, varyList, result[0])
             Rvals['Rwp'] = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
             Rvals['GOF'] = chisq/(xFin-xBeg-len(varyList))       #reduced chi^2
             print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
-            print 'fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
+            if ncyc:
+                print 'fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
             print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
+            sig = [0]*len(varyList)
+            if len(varyList) == 0: break  # if nothing was refined
             try:
                 sig = np.sqrt(np.diag(result[1])*Rvals['GOF'])
                 if np.any(np.isnan(sig)):
@@ -1609,6 +1636,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
                         badVary.append(varyList[ipvt-1])
                         del(varyList[ipvt-1])
                         break
+                else: # nothing removed
+                    break
         elif FitPgm == 'BFGS':
             print 'Other program here'
             return {}
@@ -1618,11 +1647,11 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
     yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],varyList,bakType)
     yd[xBeg:xFin] = y[xBeg:xFin]-yc[xBeg:xFin]
     GetBackgroundParms(parmDict,Background)
-    BackgroundPrint(Background,sigDict)
+    if bakVary: BackgroundPrint(Background,sigDict)
     GetInstParms(parmDict,Inst,varyList,Peaks)
-    InstPrint(Inst,sigDict)
+    if insVary: InstPrint(Inst,sigDict)
     GetPeaksParms(Inst,parmDict,Peaks,varyList)    
-    PeaksPrint(dataType,parmDict,sigDict,varyList)
+    if peakVary: PeaksPrint(dataType,parmDict,sigDict,varyList)
     return sigDict,result,sig,Rvals,varyList,parmDict,fullvaryList,badVary
 
 def calcIncident(Iparm,xdata):

@@ -65,7 +65,7 @@ npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
 GkDelta = unichr(0x0394)
     
 class G2PlotMpl(wx.Panel):    
-    'needs a doc string'
+    'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         wx.Panel.__init__(self,parent,id=id,**kwargs)
         mpl.rcParams['legend.fontsize'] = 10
@@ -81,7 +81,7 @@ class G2PlotMpl(wx.Panel):
         self.SetSizer(sizer)
         
 class G2PlotOgl(wx.Panel):
-    'needs a doc string'
+    'Creates an OpenGL plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         self.figure = wx.Panel.__init__(self,parent,id=id,**kwargs)
         if 'win' in sys.platform:           #Windows (& Mac) already double buffered
@@ -102,7 +102,7 @@ class G2PlotOgl(wx.Panel):
         self.SetSizer(sizer)
         
 class G2Plot3D(wx.Panel):
-    'needs a doc string'
+    'Creates a 3D Matplotlib plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
         wx.Panel.__init__(self,parent,id=id,**kwargs)
         self.figure = mpl.figure.Figure(dpi=dpi,figsize=(6,6))
@@ -117,7 +117,7 @@ class G2Plot3D(wx.Panel):
         self.SetSizer(sizer)
                               
 class G2PlotNoteBook(wx.Panel):
-    'create a tabbed window for plotting'
+    'create a tabbed window for GSAS-II graphics'
     def __init__(self,parent,id=-1):
         wx.Panel.__init__(self,parent,id=id)
         #so one can't delete a plot page!!
@@ -1166,6 +1166,26 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         olderr = np.seterr(invalid='ignore')
                                                    
     def OnPick(event):
+        '''Respond to an item being picked. This usually means that the item
+        will be dragged with the mouse. 
+        '''
+        def OnDragMarker(event):
+            '''Respond to dragging of a plot Marker
+            '''
+            Page.canvas.restore_region(savedplot)
+            G2frame.itemPicked.set_data([event.xdata], [event.ydata])
+            Page.figure.gca().draw_artist(G2frame.itemPicked)
+            Page.canvas.blit(Page.figure.gca().bbox)
+        def OnDragLine(event):
+            '''Respond to dragging of a plot line
+            '''
+            Page.canvas.restore_region(savedplot)
+            coords = G2frame.itemPicked.get_data()
+            coords[0][0] = coords[0][1] = event.xdata
+            coords = G2frame.itemPicked.set_data(coords)
+            Page.figure.gca().draw_artist(G2frame.itemPicked)
+            Page.canvas.blit(Page.figure.gca().bbox)
+
         if G2frame.itemPicked is not None: return
         PatternId = G2frame.PatternId
         try:
@@ -1179,13 +1199,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         ypos = pick.get_ydata()
         ind = event.ind
         xy = list(zip(np.take(xpos,ind),np.take(ypos,ind))[0])
+        # convert from plot units
+        if G2frame.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
+            xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
+        elif G2frame.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
+            xy[0] = G2lat.Dsp2pos(Parms,xy[0])
+        if G2frame.plotStyle['sqrtPlot']:
+            xy[1] = xy[1]**2
         if G2frame.PatternTree.GetItemText(PickId) == 'Peak List':
             if ind.all() != [0] and ObsLine[0].get_label() in str(pick):                                    #picked a data point
                 data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
-                if G2frame.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
-                    xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
-                elif G2frame.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
-                    xy[0] = G2lat.Dsp2pos(Parms,xy[0])
                 XY = G2mth.setPeakparms(Parms,Parms2,xy[0],xy[1])
                 data['peaks'].append(XY)
                 data['sigDict'] = {}    #now invalid
@@ -1216,7 +1239,16 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 G2pdG.UpdateLimitsGrid(G2frame,data,plottype)
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
             else:                                                   #picked a limit line
+                # prepare to animate move of line
                 G2frame.itemPicked = pick
+                pick.set_linestyle(':') # set line as dotted
+                Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+                Plot = Page.figure.gca()
+                Page.canvas.draw() # refresh without dotted line & save bitmap
+                savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragLine)
+                pick.set_linestyle('--') # back to dashed
+                
         elif G2frame.PatternTree.GetItemText(PickId) == 'Models':
             if ind.all() != [0]:                                    #picked a data point
                 LimitId = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
@@ -1229,21 +1261,84 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
             else:                                                   #picked a limit line
                 G2frame.itemPicked = pick
-        elif G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' or \
-            'PWDR' in G2frame.PatternTree.GetItemText(PickId):
+        elif (G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' or
+                'PWDR' in G2frame.PatternTree.GetItemText(PickId)
+                ):
             G2frame.itemPicked = pick
             pick = str(pick)
+        elif G2frame.PatternTree.GetItemText(PickId) == 'Background':
+            # selected a fixed background point. Can move it or delete it. 
+            for mode,id in G2frame.dataFrame.wxID_BackPts.iteritems(): # what menu is selected?
+                if G2frame.dataFrame.BackMenu.FindItemById(id).IsChecked():
+                    break
+            # mode will be 'Add' or 'Move' or 'Del'
+            if pick.get_marker() == 'D':
+                # find the closest point
+                backDict = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background'))[1]
+                d2 = [(x-xy[0])**2+(y-xy[1])**2 for x,y in backDict['FixedPoints']]
+                G2frame.fixPtMarker = d2.index(min(d2))
+                if mode == 'Move':
+                    # animate move of FixedBkg marker
+                    G2frame.itemPicked = pick
+                    pick.set_marker('|') # change the point appearance
+                    Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+                    Plot = Page.figure.gca()
+                    Page.canvas.draw() # refresh with changed point & save bitmap
+                    savedplot = Page.canvas.copy_from_bbox(Page.figure.gca().bbox)
+                    G2frame.cid = Page.canvas.mpl_connect('motion_notify_event', OnDragMarker)
+                    pick.set_marker('D') # put it back
+                elif mode == 'Del':
+                    del backDict['FixedPoints'][G2frame.fixPtMarker]
+                    wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+                return
+    def OnRelease(event): # mouse release from item pick or background pt add/move/del
+        plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        if G2frame.cid is not None:         # if there is a drag connection, delete it
+            Page.canvas.mpl_disconnect(G2frame.cid)
+            G2frame.cid = None
+        PickId = G2frame.PickId                             # points to item in tree
+        if G2frame.PatternTree.GetItemText(PickId) == 'Background' and event.xdata:
+            # Background page, deal with fixed background points
+            if G2frame.SubBack or G2frame.Weight or G2frame.Contour or not G2frame.SinglePlot:
+                return
+            backDict = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background'))[1]
+            if 'FixedPoints' not in backDict: backDict['FixedPoints'] = []
+            try:
+                Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
+            except TypeError:
+                return
+            # unit conversions
+            xy = [event.xdata,event.ydata]
+            if G2frame.plotStyle['qPlot']:                              #qplot - convert back to 2-theta
+                xy[0] = G2lat.Dsp2pos(Parms,2*np.pi/xy[0])
+            elif G2frame.plotStyle['dPlot']:                            #dplot - convert back to 2-theta
+                xy[0] = G2lat.Dsp2pos(Parms,xy[0])
+            if G2frame.plotStyle['sqrtPlot']:
+                xy[1] = xy[1]**2
+            for mode,id in G2frame.dataFrame.wxID_BackPts.iteritems(): # what menu item is selected?
+                if G2frame.dataFrame.BackMenu.FindItemById(id).IsChecked():
+                    break
+            if mode == 'Add':
+                backDict['FixedPoints'].append(xy)
+                Plot = Page.figure.gca()
+                Plot.plot(event.xdata,event.ydata,'rD',clip_on=False,picker=3.)
+                Page.canvas.draw()
+                return
+            elif G2frame.itemPicked is not None: # end of drag in move
+                backDict['FixedPoints'][G2frame.fixPtMarker] = xy
+                G2frame.itemPicked = None
+                wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
+                return
         
-    def OnRelease(event):
         if G2frame.itemPicked is None: return
-        PickId = G2frame.PickId
         if str(DifLine[0]) == str(G2frame.itemPicked):
             data = G2frame.PatternTree.GetItemPyData(PickId)
             ypos = event.ydata
             Pattern[0]['delOffset'] = -ypos/Ymax
             G2frame.itemPicked = None
             G2frame.PatternTree.SetItemPyData(PickId,data)
-            PlotPatterns(G2frame,plotType=plottype)
+            wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
             return
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
         xpos = event.xdata
@@ -1318,6 +1413,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         PlotPatterns(G2frame,plotType=plottype)
         G2frame.itemPicked = None    
 
+    # beginning PlotPatterns execution
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -1386,7 +1482,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Page.Choice = (' key press','b: toggle subtract background file','n: loglog on','e: toggle error bars',
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                         'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
-
+    G2frame.cid = None
     Page.keyPress = OnPlotKeyPress    
     PickId = G2frame.PickId
     PatternId = G2frame.PatternId
@@ -1743,6 +1839,32 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.figure.colorbar(Img)
     else:
         G2frame.Lines = Lines
+    if G2frame.PatternTree.GetItemText(PickId) == 'Background':
+        # plot fixed background points
+        backDict = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background'))[1]
+        try:
+            Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
+        except TypeError:
+            Parms = None
+        for x,y in backDict.get('FixedPoints',[]):
+            # "normal" intensity modes only!
+            if G2frame.SubBack or G2frame.Weight or G2frame.Contour or not G2frame.SinglePlot:
+                break
+            if y < 0 and (G2frame.plotStyle['sqrtPlot'] or G2frame.logPlot):
+                y = Page.figure.gca().get_ylim()[0] # put out of range point at bottom of plot
+            elif G2frame.plotStyle['sqrtPlot']:
+                y = math.sqrt(y)
+            if G2frame.plotStyle['qPlot']:     #Q - convert from 2-theta
+                if Parms:
+                    x = 2*np.pi/G2lat.Pos2dsp(Parms,x)
+                else:
+                    break
+            elif G2frame.plotStyle['dPlot']:   #d - convert from 2-theta
+                if Parms:
+                    x = G2lat.Dsp2pos(Parms,x)
+                else:
+                    break
+            Plot.plot(x,y,'rD',clip_on=False,picker=3.)
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

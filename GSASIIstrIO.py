@@ -200,6 +200,7 @@ def ReadCheckConstraints(GPXfile):
               '\nRefinement not possible due to conflict in constraints, see below:\n')
         print G2mv.VarRemapShow(varyList,True)
     return errmsg, warnmsg
+    
 def GetRestraints(GPXfile):
     '''Read the restraints from the GPX file.
     Throws an exception if not found in the .GPX file
@@ -1939,7 +1940,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
     :returns: (hapVary,hapDict,controlDict)
       * hapVary: list of refined variables
       * hapDict: dict with refined variables and their values
-      * controlDict: dict with computation controls (?)
+      * controlDict: dict with fixed parameters
     '''
     
     def PrintSize(hapData):
@@ -2246,11 +2247,14 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 controlDict[pfx+'TwinLaw'] = []                
                 for it,twin in enumerate(Twins):
                     controlDict[pfx+'TwinLaw'].append(twin[0])
-                    hapDict[pfx+'TwinFr;'+str(it)] = twin[1][0]
                     if it:
-                        sumTwFr += twin[1][0]
-                    if twin[1][1]:
+                        hapDict[pfx+'TwinFr;'+str(it)] = twin[1]
+                        sumTwFr += twin[1]
+                    else:
+                        hapDict[pfx+'TwinFr;'+str(it)] = twin[1][0]
+                    if Twins[0][1][1] and it:
                         hapVary.append(pfx+'TwinFr;'+str(it))
+                #need to make constraint on TwinFr
                 controlDict[pfx+'TwinLaw'] = np.array(controlDict[pfx+'TwinLaw'])
                 if len(Twins) > 1:    #force sum to unity
                     hapDict[pfx+'TwinFr;0'] = 1.-sumTwFr
@@ -2270,7 +2274,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         print >>pFile,' Flack parameter: %10.3f'%(hapData['Flack'][0]),' Refine?',hapData['Flack'][1]
                     if len(Twins) > 1:
                         for it,twin in enumerate(Twins):
-                            print >>pFile,' Twin law: %s'%(str(twin[0]).replace('\n',',')),' Twin fr.: %5.3f Refine? '%(hapDict[pfx+'TwinFr;'+str(it)]),twin[1][1] 
+                            print >>pFile,' Twin law: %s'%(str(twin[0]).replace('\n',',')),' Twin fr.: %5.3f Refine? '%(hapDict[pfx+'TwinFr;'+str(it)]),Twins[0][1][1] 
                         
                 Histogram['Reflection Lists'] = phase       
                 
@@ -2432,7 +2436,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
         sigstr = ' sig   :'
         for it,item in enumerate(twinData):
             ptlbls += '     twin #%d'%(it)
-            ptstr += '%12.3f'%(item[1][0])
+            if it:
+                ptstr += '%12.3f'%(item[1])
+            else:
+                ptstr += '%12.3f'%(item[1][0])
             if pfx+'TwinFr;'+str(it) in TwinSig:
                 sigstr += '%12.3f'%(TwinSig[pfx+'TwinFr;'+str(it)])
             else:
@@ -2534,15 +2541,15 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     if pfx+item in sigDict:
                         BabSig[pfx+item] = sigDict[pfx+item]
                 if 'Twins' in hapData:
-                    it = 0
+                    it = 1
                     sumTwFr = 0.
                     while True:
                         try:
-                            hapData['Twins'][it][1][0] = parmDict[pfx+'TwinFr;'+str(it)]
+                            hapData['Twins'][it][1] = parmDict[pfx+'TwinFr;'+str(it)]
                             if pfx+'TwinFr;'+str(it) in sigDict:
                                 TwinFrSig[pfx+'TwinFr;'+str(it)] = sigDict[pfx+'TwinFr;'+str(it)]
                             if it:
-                                sumTwFr += hapData['Twins'][it][1][0]
+                                sumTwFr += hapData['Twins'][it][1]
                             it += 1
                         except KeyError:
                             break

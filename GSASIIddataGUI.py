@@ -780,7 +780,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         
         def OnAddTwin(event):
             twinMat = np.array([[-1,0,0],[0,-1,0],[0,0,-1]])    #inversion by default
-            twinVal = [0.0,False]
+            twinVal = 0.0
             UseList[G2frame.hist]['Twins'].append([twinMat,twinVal])
             addtwin.SetValue(False)
             wx.CallLater(100,RepaintHistogramInfo)
@@ -804,19 +804,18 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 if 0. > val > 1.:
                     raise ValueError
             except ValueError:
-                val = UseList[G2frame.hist]['Twins'][it][1][0]
-            UseList[G2frame.hist]['Twins'][it][1][0] = val
+                val = UseList[G2frame.hist]['Twins'][it][1]
+            UseList[G2frame.hist]['Twins'][it][1] = val
             sumTw = 0.
             for it,twin in enumerate(UseList[G2frame.hist]['Twins']):
                 if it:
-                    sumTw += twin[1][0]
+                    sumTw += twin[1]
             UseList[G2frame.hist]['Twins'][0][1][0] = 1.-sumTw
             wx.CallLater(100,RepaintHistogramInfo)
             
         def OnTwinRef(event):
             Obj = event.GetEventObject()
-            it = Indx[Obj.GetId()]
-            UseList[G2frame.hist]['Twins'][it][1][1] = Obj.GetValue()
+            UseList[G2frame.hist]['Twins'][0][1][1] = Obj.GetValue()
                         
         def OnTwinDel(event):
             Obj = event.GetEventObject()
@@ -825,8 +824,10 @@ def UpdateDData(G2frame,DData,data,hist=''):
             sumTw = 0.
             for it,twin in enumerate(UseList[G2frame.hist]['Twins']):
                 if it:
-                    sumTw += twin[1][0]
+                    sumTw += twin[1]
             UseList[G2frame.hist]['Twins'][0][1][0] = 1.-sumTw
+            if len(UseList[G2frame.hist]['Twins']) == 1:
+                UseList[G2frame.hist]['Twins'][0][1][1] = False
             wx.CallLater(100,RepaintHistogramInfo)           
             
         twinsizer = wx.BoxSizer(wx.VERTICAL)
@@ -837,42 +838,49 @@ def UpdateDData(G2frame,DData,data,hist=''):
         topsizer.Add(addtwin,0,WACV)
         twinsizer.Add(topsizer)
         Indx = {}
-        for it,Twin in enumerate(UseList[G2frame.hist]['Twins']):
-            twinMat,twinVal = Twin
-            matSizer = wx.BoxSizer(wx.HORIZONTAL)
-            matSizer.Add(wx.StaticText(DData,-1,' Twin Law: '),0,WACV)
-            Style = wx.TE_READONLY
-            if it:
-                Style = wx.TE_PROCESS_ENTER
-            for im,Mat in enumerate(twinMat):
-                mat = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(Mat[0],Mat[1],Mat[2]),
-                    style=Style)
+        nTwin = len(UseList[G2frame.hist]['Twins'])
+        if nTwin > 1:
+            for it,Twin in enumerate(UseList[G2frame.hist]['Twins']):
+                twinMat,twinVal = Twin
+                matSizer = wx.BoxSizer(wx.HORIZONTAL)
+                matSizer.Add(wx.StaticText(DData,-1,' Twin Law: '),0,WACV)
                 if it:
-                    Indx[mat.GetId()] = [it,im]
-                    mat.Bind(wx.EVT_TEXT_ENTER,OnMat)
-                    mat.Bind(wx.EVT_KILL_FOCUS,OnMat)
+                    Style = wx.TE_PROCESS_ENTER
+                    TwVal = Twin[1]
                 else:
-                    mat.SetBackgroundColour(VERY_LIGHT_GREY)
-                matSizer.Add(mat,0,WACV|wx.LEFT,5)
-            twinsizer.Add(matSizer,0,WACV|wx.LEFT,5)
-            valSizer = wx.BoxSizer(wx.HORIZONTAL)
-            valSizer.Add(wx.StaticText(DData,-1,label=' Twin element fraction:'),0,WACV)
-            twinval = wx.TextCtrl(DData,-1,'%.3f'%(Twin[1][0]),style=wx.TE_PROCESS_ENTER)
-            Indx[twinval.GetId()] = it
-            twinval.Bind(wx.EVT_TEXT_ENTER,OnTwinVal)
-            twinval.Bind(wx.EVT_KILL_FOCUS,OnTwinVal)
-            valSizer.Add(twinval,0,WACV)
-            if it:
-                twinref = wx.CheckBox(DData,wx.ID_ANY,label=' Refine?')
-                Indx[twinref.GetId()] = it
-                twinref.SetValue(Twin[1][1])
-                twinref.Bind(wx.EVT_CHECKBOX, OnTwinRef)
-                valSizer.Add(twinref,0,WACV)
-                twindel = wx.CheckBox(DData,wx.ID_ANY,label=' Delete?')
-                Indx[twindel.GetId()] = it
-                twindel.Bind(wx.EVT_CHECKBOX, OnTwinDel)
-                valSizer.Add(twindel,0,WACV)
-            twinsizer.Add(valSizer,0,WACV|wx.LEFT,5)
+                    Style = wx.TE_READONLY
+                    TwVal = Twin[1][0]
+                for im,Mat in enumerate(twinMat):
+                    mat = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(Mat[0],Mat[1],Mat[2]),
+                        style=Style)
+                    if it:
+                        Indx[mat.GetId()] = [it,im]
+                        mat.Bind(wx.EVT_TEXT_ENTER,OnMat)
+                        mat.Bind(wx.EVT_KILL_FOCUS,OnMat)
+                    else:
+                        mat.SetBackgroundColour(VERY_LIGHT_GREY)
+                    matSizer.Add(mat,0,WACV|wx.LEFT,5)
+                twinsizer.Add(matSizer,0,WACV|wx.LEFT,5)
+                valSizer = wx.BoxSizer(wx.HORIZONTAL)
+                valSizer.Add(wx.StaticText(DData,-1,label=' Twin element fraction:'),0,WACV)
+                twinval = wx.TextCtrl(DData,-1,'%.3f'%(TwVal),style=wx.TE_PROCESS_ENTER)
+                Indx[twinval.GetId()] = it
+                twinval.Bind(wx.EVT_TEXT_ENTER,OnTwinVal)
+                twinval.Bind(wx.EVT_KILL_FOCUS,OnTwinVal)
+                if not it:
+                    twinval.SetBackgroundColour(VERY_LIGHT_GREY)
+                valSizer.Add(twinval,0,WACV)
+                if it:
+                    twindel = wx.CheckBox(DData,wx.ID_ANY,label=' Delete?')
+                    Indx[twindel.GetId()] = it
+                    twindel.Bind(wx.EVT_CHECKBOX, OnTwinDel)
+                    valSizer.Add(twindel,0,WACV)
+                else:
+                    twinref = wx.CheckBox(DData,wx.ID_ANY,label=' Refine?')
+                    twinref.SetValue(Twin[1][1])
+                    twinref.Bind(wx.EVT_CHECKBOX, OnTwinRef)
+                    valSizer.Add(twinref,0,WACV)
+                twinsizer.Add(valSizer,0,WACV|wx.LEFT,5)
         return twinsizer
         
     def OnSelect(event):

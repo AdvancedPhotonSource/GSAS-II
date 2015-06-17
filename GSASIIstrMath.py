@@ -821,8 +821,6 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if 'S' in calcControls[hfx+'histType']:
         TwinLaw = calcControls[phfx+'TwinLaw']
         TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
-        if len(TwinLaw) > 1:
-            TwinFr[0] = 1.-np.sum(TwinFr[1:])        
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -916,8 +914,6 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if 'S' in calcControls[hfx+'histType']:
         TwinLaw = calcControls[phfx+'TwinLaw']
         TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
-        if len(TwinLaw) > 1:
-            TwinFr[0] = 1.-np.sum(TwinFr[1:])
     nTwin = len(TwinLaw)        
     nRef = len(refDict['RefList'])
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)

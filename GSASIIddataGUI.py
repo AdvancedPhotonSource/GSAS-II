@@ -1045,7 +1045,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
 #end patch
             bottomSizer.Add(ExtSizer('HKLF'),0,WACV|wx.BOTTOM,5)
             bottomSizer.Add(BabSizer(),0,WACV|wx.BOTTOM,5)
-            if not SGData['SGInv']:        #not operational yet - no test data
+            if not SGData['SGInv'] and len(UseList[G2frame.hist]['Twins']) < 2:
                 bottomSizer.Add(FlackSizer(),0,WACV|wx.BOTTOM,5)
             bottomSizer.Add(twinSizer(),0,WACV|wx.BOTTOM,5)
         return bottomSizer

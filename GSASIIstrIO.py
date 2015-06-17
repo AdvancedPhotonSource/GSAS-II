@@ -2239,25 +2239,26 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     hapDict[pfx+bab] = hapData['Babinet'][bab][0]
                     if hapData['Babinet'][bab][1]:
                         hapVary.append(pfx+bab)
-                hapDict[pfx+'Flack'] = hapData.get('Flack',[0.,False])[0]
-                if hapData.get('Flack',[0,False])[1]:
-                    hapVary.append(pfx+'Flack')
                 Twins = hapData.get('Twins',[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],])
+                if len(Twins) == 1:
+                    hapDict[pfx+'Flack'] = hapData.get('Flack',[0.,False])[0]
+                    if hapData.get('Flack',[0,False])[1]:
+                        hapVary.append(pfx+'Flack')
                 sumTwFr = 0.
                 controlDict[pfx+'TwinLaw'] = []                
                 for it,twin in enumerate(Twins):
                     controlDict[pfx+'TwinLaw'].append(twin[0])
                     if it:
-                        hapDict[pfx+'TwinFr;'+str(it)] = twin[1]
+                        hapDict[pfx+'TwinFr:'+str(it)] = twin[1]
                         sumTwFr += twin[1]
                     else:
-                        hapDict[pfx+'TwinFr;'+str(it)] = twin[1][0]
-                    if Twins[0][1][1] and it:
-                        hapVary.append(pfx+'TwinFr;'+str(it))
+                        hapDict[pfx+'TwinFr:'+str(it)] = twin[1][0]
+                    if Twins[0][1][1]:
+                        hapVary.append(pfx+'TwinFr:'+str(it))
                 #need to make constraint on TwinFr
                 controlDict[pfx+'TwinLaw'] = np.array(controlDict[pfx+'TwinLaw'])
                 if len(Twins) > 1:    #force sum to unity
-                    hapDict[pfx+'TwinFr;0'] = 1.-sumTwFr
+                    hapDict[pfx+'TwinFr:0'] = 1.-sumTwFr
                 if Print: 
                     print >>pFile,'\n Phase: ',phase,' in histogram: ',histogram
                     print >>pFile,135*'-'
@@ -2270,11 +2271,11 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         print >>pFile,text
                     if hapData['Babinet']['BabA'][0]:
                         PrintBabinet(hapData['Babinet'])
-                    if not SGData['SGInv']:
+                    if not SGData['SGInv'] and len(Twins) == 1:
                         print >>pFile,' Flack parameter: %10.3f'%(hapData['Flack'][0]),' Refine?',hapData['Flack'][1]
                     if len(Twins) > 1:
                         for it,twin in enumerate(Twins):
-                            print >>pFile,' Twin law: %s'%(str(twin[0]).replace('\n',',')),' Twin fr.: %5.3f Refine? '%(hapDict[pfx+'TwinFr;'+str(it)]),Twins[0][1][1] 
+                            print >>pFile,' Twin law: %s'%(str(twin[0]).replace('\n',',')),' Twin fr.: %5.3f Refine? '%(hapDict[pfx+'TwinFr:'+str(it)]),Twins[0][1][1] 
                         
                 Histogram['Reflection Lists'] = phase       
                 
@@ -2440,8 +2441,8 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                 ptstr += '%12.3f'%(item[1])
             else:
                 ptstr += '%12.3f'%(item[1][0])
-            if pfx+'TwinFr;'+str(it) in TwinSig:
-                sigstr += '%12.3f'%(TwinSig[pfx+'TwinFr;'+str(it)])
+            if pfx+'TwinFr:'+str(it) in TwinSig:
+                sigstr += '%12.3f'%(TwinSig[pfx+'TwinFr:'+str(it)])
             else:
                 sigstr += 12*' ' 
         print >>pFile,ptlbls
@@ -2545,9 +2546,9 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     sumTwFr = 0.
                     while True:
                         try:
-                            hapData['Twins'][it][1] = parmDict[pfx+'TwinFr;'+str(it)]
-                            if pfx+'TwinFr;'+str(it) in sigDict:
-                                TwinFrSig[pfx+'TwinFr;'+str(it)] = sigDict[pfx+'TwinFr;'+str(it)]
+                            hapData['Twins'][it][1] = parmDict[pfx+'TwinFr:'+str(it)]
+                            if pfx+'TwinFr:'+str(it) in sigDict:
+                                TwinFrSig[pfx+'TwinFr:'+str(it)] = sigDict[pfx+'TwinFr:'+str(it)]
                             if it:
                                 sumTwFr += hapData['Twins'][it][1]
                             it += 1

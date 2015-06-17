@@ -791,23 +791,23 @@ def UpdateBackground(G2frame,data):
                 G2gd.GetPatternTreeItemId(G2frame,Id,'Background'),copy.copy(data))
 
     def OnBkgFit(event):
-        def SetInstParms(Inst):
-            dataType = Inst['Type'][0]
-            insVary = []
-            insNames = []
-            insVals = []
-            for parm in Inst:
-                insNames.append(parm)
-                insVals.append(Inst[parm][1])
-                if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
-                    'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',] and Inst[parm][2]:
-                        insVary.append(parm)
-            instDict = dict(zip(insNames,insVals))
-            instDict['X'] = max(instDict['X'],0.01)
-            instDict['Y'] = max(instDict['Y'],0.01)
-            if 'SH/L' in instDict:
-                instDict['SH/L'] = max(instDict['SH/L'],0.002)
-            return dataType,instDict,insVary
+#        def SetInstParms(Inst):
+#            dataType = Inst['Type'][0]
+#            insVary = []
+#            insNames = []
+#            insVals = []
+#            for parm in Inst:
+#                insNames.append(parm)
+#                insVals.append(Inst[parm][1])
+#                if parm in ['U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
+#                    'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q',] and Inst[parm][2]:
+#                        insVary.append(parm)
+#            instDict = dict(zip(insNames,insVals))
+#            instDict['X'] = max(instDict['X'],0.01)
+#            instDict['Y'] = max(instDict['Y'],0.01)
+#            if 'SH/L' in instDict:
+#                instDict['SH/L'] = max(instDict['SH/L'],0.002)
+#            return dataType,instDict,insVary
     
         PatternId = G2frame.PatternId        
         controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
@@ -835,7 +835,7 @@ def UpdateBackground(G2frame,data):
         Z = [0]*len(xdata)
 
         # load instrument and background params
-        dataType,insDict,insVary = SetInstParms(inst)
+#        dataType,insDict,insVary = SetInstParms(inst)
         bakType,bakDict,bakVary = G2pwd.SetBackgroundParms(background)
         # how many background parameters are refined?
         if len(bakVary)*1.5 > len(X):
@@ -864,6 +864,13 @@ def UpdateBackground(G2frame,data):
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         # show the updated background values
         wx.CallLater(100,UpdateBackground,G2frame,data)
+        
+    def OnBkgClear(event):
+        if 'FixedPoints' not in data[1]:
+            return
+        else:
+            del data[1]['FixedPoints']
+            G2plt.PlotPatterns(G2frame,plotType='PWDR')
     
     def OnPeaksMove(event):
         if not data[1]['nPeaks']:
@@ -1068,6 +1075,7 @@ def UpdateBackground(G2frame,data):
     G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2gd.wxID_BACKFLAGCOPY)
     G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2gd.wxID_PEAKSMOVE)
     G2frame.Bind(wx.EVT_MENU,OnBkgFit,id=G2frame.dataFrame.wxID_BackPts['Fit'])
+    G2frame.Bind(wx.EVT_MENU,OnBkgClear,id=G2frame.dataFrame.wxID_BackPts['Clear'])    
     BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background')
     Choices = ['chebyschev','cosine','Q^2 power series','Q^-2 powder series','lin interpolate','inv interpolate','log interpolate']
     mainSizer = wx.BoxSizer(wx.VERTICAL)

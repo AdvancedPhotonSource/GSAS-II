@@ -223,7 +223,7 @@ class GSASIItoolbar(Toolbar):
         Toolbar.__init__(self,plotCanvas)
         self.plotCanvas = plotCanvas
         POSITION_OF_CONFIGURE_SUBPLOTS_BTN = 6 # remove one button, nos. start at 1!
-        self.DeleteToolByPos(POSITION_OF_CONFIGURE_SUBPLOTS_BTN)
+        self.DeleteToolByPos(POSITION_OF_CONFIGURE_SUBPLOTS_BTN)    #doesn't work in miniconda
         self.parent = self.GetParent()
         key = os.path.join(os.path.split(__file__)[0],'key.ico')
         self.AddSimpleTool(self.ON_MPL_KEY,_load_bitmap(key),'Key press','Select key press')
@@ -1267,7 +1267,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             G2frame.itemPicked = pick
             pick = str(pick)
         elif G2frame.PatternTree.GetItemText(PickId) == 'Background':
-            # selected a fixed background point. Can move it or delete it. 
+            # selected a fixed background point. Can move it or delete it.
             for mode,id in G2frame.dataFrame.wxID_BackPts.iteritems(): # what menu is selected?
                 if G2frame.dataFrame.BackMenu.FindItemById(id).IsChecked():
                     break
@@ -1299,6 +1299,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             G2frame.cid = None
         PickId = G2frame.PickId                             # points to item in tree
         if G2frame.PatternTree.GetItemText(PickId) == 'Background' and event.xdata:
+            if Page.toolbar._active:    # prevent ops. if a toolbar zoom button pressed
+                return 
             # Background page, deal with fixed background points
             if G2frame.SubBack or G2frame.Weight or G2frame.Contour or not G2frame.SinglePlot:
                 return

@@ -101,8 +101,7 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY, wxID_SAMPLECOPY, wxID_SAMPLECOPYSOME, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
     wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,wxID_SAMPLE1VAL,wxID_ALLSAMPLELOAD,
-    wxID_PEAKSMOVE,
-] = [wx.NewId() for item in range(13)]
+] = [wx.NewId() for item in range(12)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
     wxID_INSTSAVE, wxID_INST1VAL, wxID_INSTCALIB,
@@ -792,6 +791,9 @@ class DataFrame(wx.Frame):
         self.wxID_BackPts['Del'] = wx.NewId()
         self.BackFixed.Append(id=self.wxID_BackPts['Del'], kind=wx.ITEM_RADIO,text='Delete',
             help='Delete fixed background points with mouse clicks')
+        self.wxID_BackPts['Clear'] = wx.NewId() 
+        self.BackFixed.Append(id=self.wxID_BackPts['Clear'], kind=wx.ITEM_NORMAL,text='Clear',
+            help='Clear fixed background points')
         self.wxID_BackPts['Fit'] = wx.NewId() 
         self.BackFixed.Append(id=self.wxID_BackPts['Fit'], kind=wx.ITEM_NORMAL,text='Fit background',
             help='Fit background function to fixed background points')

@@ -815,12 +815,12 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     Flack = 1.0
-    if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType']:
+    if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
     TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
     if 'S' in calcControls[hfx+'histType']:
         TwinLaw = calcControls[phfx+'TwinLaw']
-        TwinFr = np.array([parmDict[phfx+'TwinFr;'+str(i)] for i in range(len(TwinLaw))])
+        TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
         if len(TwinLaw) > 1:
             TwinFr[0] = 1.-np.sum(TwinFr[1:])        
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
@@ -915,7 +915,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
     if 'S' in calcControls[hfx+'histType']:
         TwinLaw = calcControls[phfx+'TwinLaw']
-        TwinFr = np.array([parmDict[phfx+'TwinFr;'+str(i)] for i in range(len(TwinLaw))])
+        TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
         if len(TwinLaw) > 1:
             TwinFr[0] = 1.-np.sum(TwinFr[1:])
     nTwin = len(TwinLaw)        
@@ -939,7 +939,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     dFdfl = np.squeeze(np.zeros((nRef,nTwin)))
     dFdtw = np.zeros((nRef,nTwin))
     Flack = 1.0
-    if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType']:
+    if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
     for iref,refl in enumerate(refDict['RefList']):
         if 'T' in calcControls[hfx+'histType']:
@@ -986,13 +986,13 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ,axis=-2)        #Fdata != 0 avoids /0. problem
             dfbdba = np.sum(-sinp*Tcorr[:,np.newaxis],axis=1)
-            dfadfl = np.sum(-FPP*Tcorr*sinp)
-            dfbdfl = np.sum(FPP*Tcorr*cosp)
             dfbdui = np.sum(-SQfactor*fb,axis=-2)
             if len(TwinLaw) > 1:
                 dfbdx = np.array([np.sum(twopi*Uniq[it]*np.swapaxes(fbx,-2,-1)[:,it,:,:,np.newaxis],axis=2) for it in range(nTwin)])           
                 dfbdua = np.array([np.sum(-Hij[it]*np.swapaxes(fb,-2,-1)[:,it,:,:,np.newaxis],axis=2) for it in range(nTwin)])
             else:
+                dfadfl = np.sum(-FPP*Tcorr*sinp)
+                dfbdfl = np.sum(FPP*Tcorr*cosp)
                 dfbdx = np.sum(twopi*Uniq*np.swapaxes(fbx,-2,-1)[:,:,:,np.newaxis],axis=2)           
                 dfbdua = np.sum(-Hij*np.swapaxes(fb,-2,-1)[:,:,:,np.newaxis],axis=2)
         else:
@@ -1022,7 +1022,6 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 dFdx[iref] = [SA[it]*(dfadx[it][0]+dfbdx[it][1])+SB[it]*(dfbdx[it][0]+dfadx[it][1]) for it in range(nTwin)]
                 dFdui[iref] = [SA[it]*(dfadui[0][it]+dfbdui[1][it])+SB[it]*(dfbdui[0][it]+dfadui[1][it]) for it in range(nTwin)]
                 dFdua[iref] = [SA[it]*(dfadua[it][0]+dfbdua[it][1])+SB[it]*(dfbdua[it][0]+dfadua[it][1]) for it in range(nTwin)]
-                dFdfl[iref] = -SA*dfadfl-SB*dfbdfl
                 dFdtw[iref] = 2.*SA+2.*SB
             else:
                 dFdfr[iref] = 2.*SA*(dfadfr[0]+dfbdfr[1])*Mdata/len(Uniq)+ \
@@ -1048,7 +1047,6 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dFdvDict[pfx+'AU12:'+str(i)] = np.sum(0.5*dFdua.T[3][i]*TwinFr[:,np.newaxis],axis=0)/2.
             dFdvDict[pfx+'AU13:'+str(i)] = np.sum(0.5*dFdua.T[4][i]*TwinFr[:,np.newaxis],axis=0)/2.
             dFdvDict[pfx+'AU23:'+str(i)] = np.sum(0.5*dFdua.T[5][i]*TwinFr[:,np.newaxis],axis=0)/2.
-        dFdvDict[phfx+'Flack'] = np.sum(dFdfl*TwinFr,axis=1)    #?
     else:
         for i in range(len(Mdata)):
             dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
@@ -1066,8 +1064,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
     if nTwin > 1:
-        for i in range(nTwin-1):    #skip the base twin element
-            dFdvDict[phfx+'TwinFr;'+str(i+1)] = dFdtw.T[i+1]
+        for i in range(nTwin):
+            dFdvDict[phfx+'TwinFr:'+str(i)] = dFdtw.T[i]
     return dFdvDict
     
 def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):

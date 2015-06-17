@@ -47,11 +47,13 @@ TRANSP = False      #=true to transpose images for testing
 npsind = lambda x: np.sin(x*np.pi/180.)
 
 def sfloat(S):
-    'Convert a string to float. An empty field is treated as zero'
+    'Convert a string to float. An empty field or a unconvertable value is treated as zero'
     if S.strip():
-        return float(S)
-    else:
-        return 0.0
+        try:
+            return float(S)
+        except ValueError:
+            pass
+    return 0.0
 
 def sint(S):
     'Convert a string to int. An empty field is treated as zero'

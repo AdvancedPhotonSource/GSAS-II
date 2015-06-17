@@ -1376,18 +1376,23 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
                 break
                 
     def BackgroundPrint(Background,sigDict):
-        if Background[0][1]:
-            print 'Background coefficients for',Background[0][0],'function'
-            ptfmt = "%12.5f"
-            ptstr =  'values:'
-            sigstr = 'esds  :'
-            for i,back in enumerate(Background[0][3:]):
-                ptstr += ptfmt % (back)
+        print 'Background coefficients for',Background[0][0],'function'
+        ptfmt = "%12.5f"
+        ptstr =  'value: '
+        sigstr = 'esd  : '
+        for i,back in enumerate(Background[0][3:]):
+            ptstr += ptfmt % (back)
+            if Background[0][1]:
                 sigstr += ptfmt % (sigDict['Back;'+str(i)])
+            if len(ptstr) > 75:
+                print ptstr
+                if Background[0][1]: print sigstr
+                ptstr =  'value: '
+                sigstr = 'esd  : '
+        if len(ptstr) > 8:
             print ptstr
-            print sigstr
-        else:
-            print 'Background not refined'
+            if Background[0][1]: print sigstr
+
         if Background[1]['nDebye']:
             parms = ['DebyeA;','DebyeR;','DebyeU;']
             print 'Debye diffuse scattering coefficients'
@@ -1401,22 +1406,24 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
                         line += ptfmt%(sigDict[name+str(term)])
                 print line
         if Background[1]['nPeaks']:
-            parms = ['BkPkpos','BkPkint','BkPksig','BkPkgam']
-            print 'Peaks in background coefficients'
+            print 'Coefficients for Background Peaks'
             ptfmt = "%15.3f"
-            names =   'names :'
-            ptstr =  'values:'
-            sigstr = 'esds  :'
-            for item in sigDict:
-                if 'BkPk' in item:
-                    names += '%15s'%(item)
-                    sigstr += ptfmt%(sigDict[item])
-                    parm,id = item.split(';')
-                    ip = parms.index(parm)
-                    ptstr += ptfmt%(Background[1]['peaksList'][int(id)][2*ip])
-            print names
-            print ptstr
-            print sigstr
+            for j,pl in enumerate(Background[1]['peaksList']):
+                names =  'peak %3d:'%(j+1)
+                ptstr =  'values  :'
+                sigstr = 'esds    :'
+                for i,lbl in enumerate(['BkPkpos','BkPkint','BkPksig','BkPkgam']):
+                    val = pl[2*i]
+                    prm = lbl+";"+str(j)
+                    names += '%15s'%(prm)
+                    ptstr += ptfmt%(val)
+                    if prm in sigDict:
+                        sigstr += ptfmt%(sigDict[prm])
+                    else:
+                        sigstr += " "*15
+                print names
+                print ptstr
+                print sigstr
                             
     def SetInstParms(Inst):
         dataType = Inst['Type'][0]
@@ -1561,7 +1568,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
         parmdict.update(zip(varylist,values))
         return np.sqrt(weights)*getPeakProfileDerv(dataType,parmdict,xdata,varylist,bakType)
             
-    def errPeakProfile(values,xdata,ydata, weights,dataType,parmdict,varylist,bakType,dlg):        
+    def errPeakProfile(values,xdata,ydata,weights,dataType,parmdict,varylist,bakType,dlg):        
         parmdict.update(zip(varylist,values))
         M = np.sqrt(weights)*(getPeakProfile(dataType,parmdict,xdata,varylist,bakType)-ydata)
         Rwp = min(100.,np.sqrt(np.sum(M**2)/np.sum(weights*ydata**2))*100.)
@@ -1607,7 +1614,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
         if FitPgm == 'LSQ':
             try:
                 result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
-                    args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
+                   args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
                 ncyc = int(result[2]['nfev']/2)
             finally:
                 if dlg: dlg.Destroy()

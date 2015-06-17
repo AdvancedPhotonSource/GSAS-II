@@ -27,6 +27,7 @@ import time
 import copy
 import random as ran
 import cPickle
+import scipy.interpolate as si
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIImath as G2mth
@@ -813,11 +814,25 @@ def UpdateBackground(G2frame,data):
         background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
         limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
         inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-        
-        X = [x for x,y in background[1]['FixedPoints'] if limits[0] <= x <= limits[1]]
-        Y = [y for x,y in background[1]['FixedPoints'] if limits[0] <= x <= limits[1]]
-        W = [1]*len(X)
-        Z = [0]*len(X)
+        # sort the points for convenience and then separate them; extend the range if needed
+        background[1]['FixedPoints'] = sorted(background[1]['FixedPoints'],key=lambda pair:pair[0])        
+        X = [x for x,y in background[1]['FixedPoints']]
+        Y = [y for x,y in background[1]['FixedPoints']]
+        if X[0] > limits[0]:
+            X = [limits[0]] + X
+            Y = [Y[0]] + Y
+        if X[-1] < limits[1]:
+            X += [limits[1]]
+            Y += [Y[-1]]
+        # interpolate the fixed points onto the grid of data points within limits
+        pwddata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+        xBeg = np.searchsorted(pwddata[0],limits[0])
+        xFin = np.searchsorted(pwddata[0],limits[1])
+        xdata = pwddata[0][xBeg:xFin]
+        ydata = si.interp1d(X,Y)(xdata)
+        #GSASIIpath.IPyBreak()
+        W = [1]*len(xdata)
+        Z = [0]*len(xdata)
 
         # load instrument and background params
         dataType,insDict,insVary = SetInstParms(inst)
@@ -834,14 +849,10 @@ def UpdateBackground(G2frame,data):
         wx.BeginBusyCursor()
         try:
             G2pwd.DoPeakFit('LSQ',[],background,limits,inst,inst2,
-                            np.array((X,Y,W,Z,Z,Z)),bakVary,False,controls)
+                            np.array((xdata,ydata,W,Z,Z,Z)),bakVary,False,controls)
         finally:
             wx.EndBusyCursor()
         # compute the background values and plot them
-        pwddata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-        x = pwddata[0]
-        xBeg = np.searchsorted(x,limits[0])
-        xFin = np.searchsorted(x,limits[1])
         parmDict = {}
         bakType,bakDict,bakVary = G2pwd.SetBackgroundParms(background)
         parmDict.update(bakDict)
@@ -849,7 +860,7 @@ def UpdateBackground(G2frame,data):
         pwddata[3] *= 0
         pwddata[5] *= 0
         pwddata[4][xBeg:xFin] = G2pwd.getBackground(
-            '',parmDict,bakType,dataType,x[xBeg:xFin])[0]
+            '',parmDict,bakType,dataType,xdata)[0]
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         # show the updated background values
         wx.CallLater(100,UpdateBackground,G2frame,data)

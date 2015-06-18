@@ -1018,7 +1018,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 dFdx[iref] = [SA[it]*(dfadx[it][0]+dfbdx[it][1])+SB[it]*(dfbdx[it][0]+dfadx[it][1]) for it in range(nTwin)]
                 dFdui[iref] = [SA[it]*(dfadui[0][it]+dfbdui[1][it])+SB[it]*(dfbdui[0][it]+dfadui[1][it]) for it in range(nTwin)]
                 dFdua[iref] = [SA[it]*(dfadua[it][0]+dfbdua[it][1])+SB[it]*(dfbdua[it][0]+dfadua[it][1]) for it in range(nTwin)]
-                dFdtw[iref] = 2.*SA+2.*SB
+                dFdtw[iref] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
             else:
                 dFdfr[iref] = 2.*SA*(dfadfr[0]+dfbdfr[1])*Mdata/len(Uniq)+ \
                     2.*SB*(dfbdfr[0]+dfadfr[1])*Mdata/len(Uniq)
@@ -1061,7 +1061,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
     if nTwin > 1:
         for i in range(nTwin):
-            dFdvDict[phfx+'TwinFr:'+str(i)] = dFdtw.T[i]
+            dFdvDict[phfx+'TwinFr:'+str(i)] = dFdtw.T[i]/4.
     return dFdvDict
     
 def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):

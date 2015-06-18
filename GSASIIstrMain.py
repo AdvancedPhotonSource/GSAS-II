@@ -163,6 +163,9 @@ def Refine(GPXfile,dlg):
     calcControls['BLtables'] = BLtables
     calcControls['maxSSwave'] = maxSSwave
     hapVary,hapDict,controlDict = G2stIO.GetHistogramPhaseData(Phases,Histograms,pFile=printFile)
+    TwConstr,TwFixed = G2stIO.makeTwinFrConstr(Phases,Histograms,hapVary)
+    constrDict += TwConstr
+    fixedList += TwFixed
     calcControls.update(controlDict)
     histVary,histDict,controlDict = G2stIO.GetHistogramData(Histograms,pFile=printFile)
     calcControls.update(controlDict)

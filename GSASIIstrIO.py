@@ -201,6 +201,20 @@ def ReadCheckConstraints(GPXfile):
         print G2mv.VarRemapShow(varyList,True)
     return errmsg, warnmsg
     
+def makeTwinFrConstr(Phases,Histograms,hapVary):
+    TwConstr = []
+    TwFixed = []
+    for Phase in Phases:
+        pId = Phases[Phase]['pId']
+        for Histogram in Phases[Phase]['Histograms']:
+            hId = Histograms[Histogram]['hId']
+            phfx = '%d:%d:'%(pId,hId)
+            if phfx+'TwinFr:0' in hapVary:
+                TwFixed.append('1.0')     #constraint value
+                nTwin = len(Phases[Phase]['Histograms'][Histogram]['Twins'])
+                TwConstr.append({phfx+'TwinFr:'+str(i):'1.0' for i in range(nTwin)})
+    return TwConstr,TwFixed   
+    
 def GetRestraints(GPXfile):
     '''Read the restraints from the GPX file.
     Throws an exception if not found in the .GPX file

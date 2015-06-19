@@ -33,6 +33,11 @@ G2script = os.path.join(gsaspath,'GSASII.py')
 G2bat = os.path.join(gsaspath,'RunGSASII.bat')
 G2icon = os.path.join(gsaspath,'gsas2.ico')
 pythonexe = os.path.realpath(sys.executable)
+# Bob reports a problem using pythonw.exe w/Canopy on Windows, so change that if used
+if pythonexe.lower().endswith('pythonw.exe'):
+    print "  using python.exe rather than "+pythonexe
+    pythonexe = os.path.join(os.path.split(pythonexe)[0],'python.exe')
+    print "  now pythonexe="+pythonexe
 # create a GSAS-II script
 fp = open(os.path.join(G2bat),'w')
 fp.write("@REM created by run of bootstrap.py on {:%d %b %Y %H:%M}\n".format(

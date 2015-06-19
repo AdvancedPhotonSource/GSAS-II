@@ -116,8 +116,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(6)]
 
 [ wxID_CONSTRAINTADD,wxID_EQUIVADD,wxID_HOLDADD,wxID_FUNCTADD,
-  wxID_CONSPHASE, wxID_CONSHIST, wxID_CONSHAP, wxID_CONSGLOBAL,
-] = [wx.NewId() for item in range(8)]
+  wxID_CONSPHASE, wxID_CONSHIST, wxID_CONSHAP, wxID_CONSGLOBAL,wxID_EQUIVALANCEATOMS,
+] = [wx.NewId() for item in range(9)]
 
 [ wxID_RESTRAINTADD, wxID_RESTSELPHASE,wxID_RESTDELETE, wxID_RESRCHANGEVAL, 
     wxID_RESTCHANGEESD,wxID_AARESTRAINTADD,wxID_AARESTRAINTPLOT,
@@ -618,6 +618,9 @@ class DataFrame(wx.Frame):
             help='Add constraint on parameter values')
         self.ConstraintEdit.Append(id=wxID_FUNCTADD, kind=wx.ITEM_NORMAL,text='Add New Var',
             help='Add variable composed of existing parameter')
+        self.ConstraintEdit.Append(id=wxID_EQUIVALANCEATOMS, kind=wx.ITEM_NORMAL,text='Add atom equivalence',
+            help='Add equivalences between atom parameter values')
+        self.ConstraintEdit.Enable(wxID_EQUIVALANCEATOMS,False)
         self.PostfillDataMenu()
 
         # item = self.ConstraintEdit.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Update GUI')

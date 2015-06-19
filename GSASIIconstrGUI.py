@@ -675,6 +675,19 @@ def UpdateConstraints(G2frame,data):
             return
         legend = "Select variables to make equivalent (only one of the variables will be varied when all are set to be varied)"
         GetAddVars(page,title1,title2,varList,constrDictEnt,'equivalence')
+        
+    def OnAddAtomEquiv(event):
+        ''' Add equivalences between all parameters on atoms '''
+        page = G2frame.Page
+        vartype,varList,constrDictEnt = PageSelection(page)
+        title1 = "Setup equivalent atom variables"
+        title2 = "Select additional atoms(s) to be equivalent with "
+        if not varList:
+            G2frame.ErrorDialog('No variables','There are no variables of type '+vartype,
+                                parent=G2frame.dataFrame)
+            return
+        legend = "Select atoms to make equivalent (only one of the atom variables will be varied when all are set to be varied)"
+        GetAddAtomVars(page,title1,title2,varList,constrDictEnt,'equivalence')
    
     def OnAddFunction(event):
         '''add a Function (new variable) constraint'''
@@ -728,6 +741,53 @@ def UpdateConstraints(G2frame,data):
                 if CheckAddedConstraint(newcons):
                     data[constrDictEnt] += newcons
         dlg.Destroy()
+        OnPageChanged(None)
+                        
+    def GetAddAtomVars(page,title1,title2,varList,constrDictEnt,constType):
+        '''Get the atom variables to be added for OnAddAtomEquiv. Then create and 
+        check the constraints.
+        '''
+        Atoms = {G2obj.VarDescr(i)[0]:[] for i in varList if 'Atom' in G2obj.VarDescr(i)[0]}
+        for item in varList:
+            atName = G2obj.VarDescr(item)[0]
+            if atName in Atoms:
+                Atoms[atName].append(item)
+        AtNames = Atoms.keys()
+        AtNames.sort()
+        dlg = G2G.G2SingleChoiceDialog(G2frame.dataFrame,'Select 1st atom:',
+                                      title1,AtNames,
+                                      monoFont=True,size=(625,400))
+        dlg.CenterOnParent()
+        FrstAtom = ''
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            FrstAtom = AtNames[sel]
+            AtNames.remove(FrstAtom)
+        dlg.Destroy()
+        if FrstAtom == '':
+            print 'no atom selected'
+            return
+        dlg = G2G.G2MultiChoiceDialog(
+            G2frame.dataFrame,title2+FrstAtom,
+            'Constrain '+str(FrstAtom)+' with...',AtNames,
+            toggle=False,size=(625,400),monoFont=True)
+        if dlg.ShowModal() == wx.ID_OK:
+            Selections = dlg.GetSelections()[:]
+        dlg.Destroy()
+        for name in Atoms[FrstAtom]:
+            newcons = []
+            constr = [[1.0,G2obj.G2VarObj(name)]]
+            pref = name.rsplit(':',1)[0]
+            for sel in Selections:
+                id = Atoms[AtNames[sel]][0].rsplit(':',1)[-1]
+                constr += [[1.0,G2obj.G2VarObj('%s:%s'%(pref,id))]]
+            if 'frac' in pref:
+                newcons = [constr+[1.0,None,'c']]
+            else:
+                newcons = [constr+[None,None,'e']]
+            if len(newcons) > 0:
+                if CheckAddedConstraint(newcons):
+                    data[constrDictEnt] += newcons
         OnPageChanged(None)
                         
     def MakeConstraintsSizer(name,pageDisplay):
@@ -949,6 +1009,7 @@ def UpdateConstraints(G2frame,data):
             page = G2frame.dataDisplay.GetSelection()
         oldPage = G2frame.dataDisplay.ChangeSelection(page)
         text = G2frame.dataDisplay.GetPageText(page)
+        G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_EQUIVALANCEATOMS,False)
         if text == 'Histogram/Phase constraints':
             G2frame.Page = [page,'hap']
             UpdateConstraintPanel(HAPConstr,'HAP')
@@ -957,6 +1018,7 @@ def UpdateConstraints(G2frame,data):
             UpdateConstraintPanel(HistConstr,'Hist')
         elif text == 'Phase constraints':
             G2frame.Page = [page,'phs']
+            G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_EQUIVALANCEATOMS,True)
             UpdateConstraintPanel(PhaseConstr,'Phase')
         elif text == 'Global constraints':
             G2frame.Page = [page,'glb']
@@ -990,6 +1052,7 @@ def UpdateConstraints(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddFunction, id=G2gd.wxID_FUNCTADD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddEquivalence, id=G2gd.wxID_EQUIVADD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddHold, id=G2gd.wxID_HOLDADD)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddAtomEquiv, id=G2gd.wxID_EQUIVALANCEATOMS)
     # tab commands
     for id in (G2gd.wxID_CONSPHASE,
                G2gd.wxID_CONSHAP,

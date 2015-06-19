@@ -478,8 +478,8 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
     return widths,fmin,fmax
     
 def getFWHM(pos,Inst):
-    'needs a doc string'
-    sig = lambda Th,U,V,W: 1.17741*math.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))*math.pi/180.
+    '1.17741*pi/180 = sqrt(8ln2)/(2pi/180)'
+    sig = lambda Th,U,V,W: 1.17741*np.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))*np.pi/180.
     sigTOF = lambda dsp,S0,S1,S2,Sq:  S0+S1*dsp**2+S2*dsp**4+Sq/dsp**2
     gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/180.
     gamTOF = lambda dsp,X,Y: X*dsp+Y*dsp**2

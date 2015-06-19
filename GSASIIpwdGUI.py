@@ -1310,6 +1310,10 @@ def UpdateInstrumentGrid(G2frame,data):
             G2frame.ErrorDialog('No match','No histograms match '+hst,G2frame.dataFrame)
             return
         keys = data.keys()
+        try:
+            keys.remove('Source')
+        except ListError:
+            pass
         flags = dict(zip(keys,[data[key][2] for key in keys]))
         instType = data['Type'][0]
         copyList = []
@@ -1328,7 +1332,8 @@ def UpdateInstrumentGrid(G2frame,data):
             instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
             if len(data) == len(instData) and instType == instData['Type'][0]:   #don't mix data types or lam & lam1/lam2 parms!
                 for item in instData:
-                    instData[item][2] = copy.copy(flags[item])
+                    if item not in ['Source',]:
+                        instData[item][2] = copy.copy(flags[item])
             else:
                 print item+' not copied - instrument parameters not commensurate'
         

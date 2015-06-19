@@ -207,12 +207,15 @@ def makeTwinFrConstr(Phases,Histograms,hapVary):
     for Phase in Phases:
         pId = Phases[Phase]['pId']
         for Histogram in Phases[Phase]['Histograms']:
-            hId = Histograms[Histogram]['hId']
-            phfx = '%d:%d:'%(pId,hId)
-            if phfx+'TwinFr:0' in hapVary:
-                TwFixed.append('1.0')     #constraint value
-                nTwin = len(Phases[Phase]['Histograms'][Histogram]['Twins'])
-                TwConstr.append({phfx+'TwinFr:'+str(i):'1.0' for i in range(nTwin)})
+            try:
+                hId = Histograms[Histogram]['hId']
+                phfx = '%d:%d:'%(pId,hId)
+                if phfx+'TwinFr:0' in hapVary:
+                    TwFixed.append('1.0')     #constraint value
+                    nTwin = len(Phases[Phase]['Histograms'][Histogram]['Twins'])
+                    TwConstr.append({phfx+'TwinFr:'+str(i):'1.0' for i in range(nTwin)})
+            except KeyError:    #unused histograms?
+                pass
     return TwConstr,TwFixed   
     
 def GetRestraints(GPXfile):

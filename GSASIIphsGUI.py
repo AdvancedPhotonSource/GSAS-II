@@ -3895,9 +3895,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         sourceDict = UseList[hist]
         copyDict = {}
         if 'HKLF' in sourceDict['Histogram']:
-            copyNames = ['Scale','Extinction','Babinet','Flack']
+            copyNames = ['Scale','Extinction','Babinet','Flack','Twins']
         else:  #PWDR  
-            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet','Twins']
+            copyNames = ['Scale','Pref.Ori.','Size','Mustrain','HStrain','Extinction','Babinet']
         babNames = ['BabA','BabU']
         for name in copyNames:
             if name in ['Scale','Extinction','HStrain','Flack','Twins']:
@@ -3906,8 +3906,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for item in ['Eg','Es','Ep']:
                         copyDict[name][item] = sourceDict[name][2][item][1]
                 elif name == 'Twins':
-                    for it,twin in enumerate(sourceDict['Twins']):
-                        copyDict[name][it] = twin[1][1]
+                    copyDict[name] = sourceDict[name][0][1][1]
                 else:
                     copyDict[name] = sourceDict[name][1]
             elif name in ['Size','Mustrain']:
@@ -3941,8 +3940,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     for itm in ['Eg','Es','Ep']:
                                         UseList[item][name][2][itm][1] = copy.deepcopy(copyDict[name][itm])
                                 elif name == 'Twins':
-                                    for it,twin in enumerate(sourceDict['Twins']):
-                                        UseList[item]['Twins'][it][1][1] = copyDict['Twins'][it]
+                                    UseList[item]['Twins'][0][1][1] = copyDict['Twins']
                                 else:
                                     UseList[item][name][1] = copy.deepcopy(copyDict[name])
                             elif name in ['Size','Mustrain']:

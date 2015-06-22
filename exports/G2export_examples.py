@@ -208,11 +208,11 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
                 for refItem in refList:
                     if 'T' in phasDict['Type']:
                         h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:17]
-                        FWHM = G2pwd.getgamFW(gam,sig)
+                        FWHM = 2.*G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(hklfmt.format(h,k,l,m),pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,prfo))
                     else:
                         h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,prfo = refItem[:14]
-                        FWHM = G2pwd.getgamFW(gam,sig)
+                        FWHM = 2.*G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(hklfmt.format(h,k,l,m),pos,Fobs,Fcalc,phase,mult, \
                             np.sqrt(max(sig,0.0001))/100.,gam/100.,FWHM/100.,prfo))
             else:
@@ -229,11 +229,11 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
                 for refItem in refList:
                     if 'T' in phasDict['Type']:
                         h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:16]
-                        FWHM = G2pwd.getgamFW(gam,sig)
-                        self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,prfo))
+                        FWHM = 2.*G2pwd.getgamFW(gam,sig)
+                        self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult,np.sqrt(max(sig,0.0001)),gam,FWHM,prfo))
                     else:
                         h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,prfo = refItem[:13]
-                        FWHM = G2pwd.getgamFW(gam,sig)
+                        FWHM = 2.*G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult,   \
                             np.sqrt(max(sig,0.0001))/100.,gam/100.,FWHM/100.,prfo))
         self.CloseFile()

@@ -863,11 +863,12 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 twinsizer.Add(matSizer,0,WACV|wx.LEFT,5)
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
                 valSizer.Add(wx.StaticText(DData,-1,label=' Twin element fraction:'),0,WACV)
-                twinval = wx.TextCtrl(DData,-1,'%.3f'%(TwVal),style=wx.TE_PROCESS_ENTER)
-                Indx[twinval.GetId()] = it
-                twinval.Bind(wx.EVT_TEXT_ENTER,OnTwinVal)
-                twinval.Bind(wx.EVT_KILL_FOCUS,OnTwinVal)
-                if not it:
+                twinval = wx.TextCtrl(DData,-1,'%.3f'%(TwVal),style=Style)
+                if it:
+                    Indx[twinval.GetId()] = it
+                    twinval.Bind(wx.EVT_TEXT_ENTER,OnTwinVal)
+                    twinval.Bind(wx.EVT_KILL_FOCUS,OnTwinVal)
+                else:
                     twinval.SetBackgroundColour(VERY_LIGHT_GREY)
                 valSizer.Add(twinval,0,WACV)
                 if it:

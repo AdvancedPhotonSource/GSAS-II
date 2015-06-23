@@ -832,7 +832,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             
         twinsizer = wx.BoxSizer(wx.VERTICAL)
         topsizer = wx.BoxSizer(wx.HORIZONTAL)          
-        topsizer.Add(wx.StaticText(DData,wx.ID_ANY,' Merohedral/pseudomerohedral twins: '),0,WACV)
+        topsizer.Add(wx.StaticText(DData,wx.ID_ANY,' Merohedral twins: '),0,WACV)
         addtwin = wx.CheckBox(DData,wx.ID_ANY,label=' Add Twin Law')
         addtwin.Bind(wx.EVT_CHECKBOX, OnAddTwin)
         topsizer.Add(addtwin,0,WACV)

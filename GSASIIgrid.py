@@ -2750,6 +2750,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
         data[0]['wtFactor'] = val
         wtval.SetValue('%.3f'%(val))
         
+    def OnCompression(event):
+        data[0] = int(comp.GetValue())
+        
     def onCopyPlotCtrls(event):
         '''Respond to menu item to copy multiple sections from a histogram.
         Need this here to pass on the G2frame object. 
@@ -2766,6 +2769,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
 #patches
     if 'wtFactor' not in data[0]:
         data[0] = {'wtFactor':1.0}
+#    if kind == 'PWDR' and 'Compression' not in data[0]:
+#        data[0]['Compression'] = 1
     #if isinstance(data[1],list) and kind == 'HKLF':
     if 'list' in str(type(data[1])) and kind == 'HKLF':
         RefData = {'RefList':[],'FF':[]}
@@ -2798,6 +2803,14 @@ def UpdatePWHKPlot(G2frame,kind,item):
     wtval.Bind(wx.EVT_TEXT_ENTER,OnWtFactor)
     wtval.Bind(wx.EVT_KILL_FOCUS,OnWtFactor)
     wtSizer.Add(wtval,0,WACV)
+#    if kind == 'PWDR':         #possible future compression feature; NB above patch as well
+#        wtSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Compression factor: '),0,WACV)
+#        choice = ['1','2','3','4','5','6']
+#        comp = wx.ComboBox(parent=G2frame.dataDisplay,choices=choice,
+#            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+#        comp.SetValue(str(data[0]['Compression']))
+#        comp.Bind(wx.EVT_COMBOBOX, OnCompression)
+#        wtSizer.Add(comp,0,WACV)
     mainSizer.Add(wtSizer)
     if data[0].get('Dummy'):
         simSizer = wx.BoxSizer(wx.HORIZONTAL)

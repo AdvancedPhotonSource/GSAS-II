@@ -734,7 +734,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnCutOff(event):
                 try:
                     res = float(cutOff.GetValue())
-                    if 10.0 <= res <= 100.:
+                    if 1.0 <= res <= 100.:
                         Map['cutOff'] = res
                 except ValueError:
                     pass

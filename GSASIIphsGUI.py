@@ -3627,6 +3627,41 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Obj.SetValue('%3.1f %3.1f %3.1f'%(xyz[0],xyz[1],xyz[2]))
                 textureData['PFxyz'] = xyz
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
+            
+        def OnpopLA(event):
+            pfName = PhaseName
+            cell = generalData['Cell'][1:7]
+            PH = np.array(textureData['PFhkl'])
+            phi,beta = G2lat.CrsAng(PH,cell,SGData)
+            SHCoef = textureData['SH Coeff'][1]
+            ODFln = G2lat.Flnh(True,SHCoef,phi,beta,SGData)
+            pfName = PhaseName+'%d%d%d.gpf'%(PH[0],PH[1],PH[2])
+            dlg = wx.FileDialog(G2frame, 'Choose popLA pole figure file name', '.', pfName, 
+                'popLA file (*.gpf)|*.gpf',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    pfFile = dlg.GetPath()
+            finally:
+                dlg.Destroy()
+            print 'popLA save '+pfFile
+            if pfFile:
+                pf = open(pfFile,'w')
+                pf.write(PhaseName+'\n')
+                str = ' %d%d%d   5.0 90.0  5.0360.0 1 1 2 1 3  100    1'%(PH[0],PH[1],PH[2])
+                pf.write(str+'\n')
+                Psi,Gam = np.mgrid[0:19,0:72]
+                Psi = Psi.flatten()*5.
+                Gam = Gam.flatten()*5.
+                Z = np.array(G2lat.polfcal(ODFln,SamSym[textureData['Model']],Psi,Gam)*100.,dtype='int')
+                Z = np.where(Z>0,Z,0)
+                Z = np.where(Z<9999,Z,9999)
+                for i in range(76):
+                    iBeg = i*18
+                    iFin = iBeg+18
+                    np.savetxt(pf,Z[iBeg:iFin],fmt='%4d',newline='')
+                    pf.write('\n')                
+                pf.close()
+                print ' popLA %d %d %d pole figure saved to %s'%(PH[0],PH[1],PH[2],pfFile)
 
         def SHPenalty(Penalty):
             
@@ -3724,7 +3759,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         shSizer.Add(shShow,0,WACV)
         mainSizer.Add(shSizer,0,0)
         mainSizer.Add((0,5),0)
-        PTSizer = wx.FlexGridSizer(0,4,5,5)
+        PTSizer = wx.FlexGridSizer(0,5,5,5)
         PTSizer.Add(wx.StaticText(Texture,-1,' Texture plot type: '),0,WACV)
         choices = ['Axial pole distribution','Pole figure','Inverse pole figure','3D pole distribution']            
         pfType = wx.ComboBox(Texture,-1,value=str(textureData['PlotType']),choices=choices,
@@ -3737,6 +3772,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             projSel.Bind(wx.EVT_COMBOBOX,OnProjSel)
             PTSizer.Add(projSel,0,WACV)
+            PTSizer.Add((0,5),0)
         if textureData['PlotType'] in ['Pole figure','Axial pole distribution','3D pole distribution']:
             PTSizer.Add(wx.StaticText(Texture,-1,' Pole figure HKL: '),0,WACV)
             PH = textureData['PFhkl']
@@ -3756,6 +3792,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             colorSel.Bind(wx.EVT_COMBOBOX,OnColorSel)
             PTSizer.Add(colorSel,0,WACV)
+            popLA = wx.Button(Texture,-1,"Make popLA file")
+            popLA.Bind(wx.EVT_BUTTON, OnpopLA)
+            if 'Inverse' not in textureData['PlotType']:
+                PTSizer.Add(popLA,0,WACV)
         mainSizer.Add(PTSizer,0,WACV)
         mainSizer.Add((0,5),0)
         if textureData['SHShow']:

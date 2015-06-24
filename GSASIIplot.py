@@ -1419,9 +1419,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-        if not newPlot:
-            Plot = Page.figure.gca()          #get previous powder plot & get limits
-            xylim = Plot.get_xlim(),Plot.get_ylim()
+        Plot = Page.figure.gca()          #get previous powder plot & get limits
+        G2frame.xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
     except ValueError:
@@ -1869,12 +1868,13 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Plot.plot(x,y,'rD',clip_on=False,picker=3.)
     if not newPlot:
         Page.toolbar.push_current()
-        Plot.set_xlim(xylim[0])
-        Plot.set_ylim(xylim[1])
+        Plot.set_xlim(G2frame.xylim[0])
+        Plot.set_ylim(G2frame.xylim[1])
 #        xylim = []
         Page.toolbar.push_current()
         Page.toolbar.draw()
     else:
+        G2frame.xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.canvas.draw()
     olderr = np.seterr(invalid='ignore') #ugh - this removes a matplotlib error for mouse clicks in log plots
     # and sqrt(-ve) in np.where usage               

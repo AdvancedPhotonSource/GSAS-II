@@ -2848,7 +2848,12 @@ def UpdatePWHKPlot(G2frame,kind,item):
     G2frame.dataFrame.setSizePosLeft(Size)
     G2frame.PatternTree.SetItemPyData(item,data)
     if kind in ['PWDR','SASD']:
-        G2plt.PlotPatterns(G2frame,plotType=kind,newPlot=True)
+        if 'xylim' in dir(G2frame):
+            NewPlot = False
+        else:
+
+            NewPlot = True
+        G2plt.PlotPatterns(G2frame,plotType=kind,newPlot=NewPlot)
     elif kind == 'HKLF':
         Name = G2frame.PatternTree.GetItemText(item)
         phaseName = G2pdG.IsHistogramInAnyPhase(G2frame,Name)

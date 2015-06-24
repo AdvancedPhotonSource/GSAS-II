@@ -3482,7 +3482,6 @@ class GSASII(wx.Frame):
             else:
                 dlg.Destroy()
                 return
-
         self.OnFileSave(event)
         # check that constraints are OK here
         errmsg, warnmsg = G2stIO.ReadCheckConstraints(self.GSASprojectfile)
@@ -3527,8 +3526,8 @@ class GSASII(wx.Frame):
                     Id = 0
                     self.PatternTree.DeleteChildren(self.root)
                     if self.HKL: self.HKL = []
-                    if self.G2plotNB.plotList:
-                        self.G2plotNB.clear()
+#                    if self.G2plotNB.plotList:
+#                        self.G2plotNB.clear()
                     G2IO.ProjFileOpen(self)
                     item, cookie = self.PatternTree.GetFirstChild(self.root)
                     while item and not Id:

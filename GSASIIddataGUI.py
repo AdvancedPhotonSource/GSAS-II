@@ -843,23 +843,26 @@ def UpdateDData(G2frame,DData,data,hist=''):
             for it,Twin in enumerate(UseList[G2frame.hist]['Twins']):
                 twinMat,twinVal = Twin
                 matSizer = wx.BoxSizer(wx.HORIZONTAL)
-                matSizer.Add(wx.StaticText(DData,-1,' Twin Law: '),0,WACV)
                 if it:
                     Style = wx.TE_PROCESS_ENTER
                     TwVal = Twin[1]
                 else:
                     Style = wx.TE_READONLY
                     TwVal = Twin[1][0]
-                for im,Mat in enumerate(twinMat):
-                    mat = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(Mat[0],Mat[1],Mat[2]),
-                        style=Style)
-                    if it:
-                        Indx[mat.GetId()] = [it,im]
-                        mat.Bind(wx.EVT_TEXT_ENTER,OnMat)
-                        mat.Bind(wx.EVT_KILL_FOCUS,OnMat)
-                    else:
-                        mat.SetBackgroundColour(VERY_LIGHT_GREY)
-                    matSizer.Add(mat,0,WACV|wx.LEFT,5)
+                if len(Twin[0]):
+                    matSizer.Add(wx.StaticText(DData,-1,' Twin Law: '),0,WACV)
+                    for im,Mat in enumerate(twinMat):
+                        mat = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(Mat[0],Mat[1],Mat[2]),
+                            style=Style)
+                        if it:
+                            Indx[mat.GetId()] = [it,im]
+                            mat.Bind(wx.EVT_TEXT_ENTER,OnMat)
+                            mat.Bind(wx.EVT_KILL_FOCUS,OnMat)
+                        else:
+                            mat.SetBackgroundColour(VERY_LIGHT_GREY)
+                        matSizer.Add(mat,0,WACV|wx.LEFT,5)
+                else:
+                    matSizer.Add(wx.StaticText(DData,-1,' Nonmerohedral twin component %d:'%(it)),0,WACV)
                 twinsizer.Add(matSizer,0,WACV|wx.LEFT,5)
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
                 valSizer.Add(wx.StaticText(DData,-1,label=' Twin element fraction:'),0,WACV)
@@ -871,12 +874,12 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 else:
                     twinval.SetBackgroundColour(VERY_LIGHT_GREY)
                 valSizer.Add(twinval,0,WACV)
-                if it:
+                if it and len(Twin[0]):
                     twindel = wx.CheckBox(DData,wx.ID_ANY,label=' Delete?')
                     Indx[twindel.GetId()] = it
                     twindel.Bind(wx.EVT_CHECKBOX, OnTwinDel)
                     valSizer.Add(twindel,0,WACV)
-                else:
+                elif not it:
                     twinref = wx.CheckBox(DData,wx.ID_ANY,label=' Refine?')
                     twinref.SetValue(Twin[1][1])
                     twinref.Bind(wx.EVT_CHECKBOX, OnTwinRef)

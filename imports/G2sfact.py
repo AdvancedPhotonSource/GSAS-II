@@ -109,7 +109,7 @@ class HKLF4_ReaderClass(G2IO.ImportStructFactor):
             for line,S in enumerate(filepointer):
                 self.errors = '  Error reading line '+str(line+1)
                 if S[0] == '#': continue       #ignore comments, if any
-                h,k,l,Fo,sigFo = S.split()[:5]
+                h,k,l,Fo,sigFo = S[:4],S[4:8],S[8:12],S[12:20],S[20:28]
                 h,k,l = [int(h),int(k),int(l)]
                 if not any([h,k,l]):
                     break
@@ -131,6 +131,81 @@ class HKLF4_ReaderClass(G2IO.ImportStructFactor):
             traceback.print_exc(file=sys.stdout)
             return False
             
+class SHELX5_ReaderClass(G2IO.ImportStructFactor):
+    'Routines to import F**2, sig(F**2) twin/incommensurate reflections from a fixed format SHELX HKLF5 file'
+    def __init__(self):
+        if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
+            formatName = 'SHELX HKLF 5 F2 Tw/Incom'
+            longFormatName = 'SHELX HKLF 5 [hklm, Fo2, sig(Fo2), Tind] Twin/incommensurate structure factor text file'
+        else:
+            formatName = u'SHELX HKLF 5 F\u00b2 Tw/Incom'
+            longFormatName = u'SHELX HKLF 5 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.hkl','.HKL'),
+            strictExtension=False,
+            formatName=formatName,
+            longFormatName=longFormatName)
+        self.Super = 0
+
+    def ContentsValidator(self, filepointer):
+        'Discover how many characters are in the SHELX file - could be 32-44 depending on satellites'
+        numCols = 0
+        for i,line in enumerate(filepointer):
+            numCols = max(numCols,len(line.split()))
+            if i > 20:
+                break
+        self.Super = numCols-6     #= 0,1,2,or 3
+        if self.Super > 1:
+            raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
+        return True #ColumnValidator(self, filepointer)
+
+    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        'Read the file'
+        TwDict = {}
+        TwSet = {}
+        TwMax = 0
+        try:
+            for line,S in enumerate(filepointer):
+                self.errors = '  Error reading line '+str(line+1)
+                if self.Super == 0:
+                    h,k,l,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:20],S[20:28],S[28:32]
+                    h,k,l = [int(h),int(k),int(l)]
+                elif self.Super == 1:
+                    h,k,l,m1,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:16],S[16:24],S[24:32],S[32:36]
+                    h,k,l,m1 = [int(h),int(k),int(l),int(m1)]
+                Tw = Tw.strip()
+                if not any([h,k,l]):
+                    break
+                if Tw not in ['','0','1']:
+                    TwId = -int(Tw)-1
+                    TwMax = max(TwMax,TwId)
+                    TwSet[TwId] = [h,k,l]
+                else:
+                    if TwSet:
+                        TwDict[len(self.RefDict['RefList'])] = TwSet
+                        TwSet = {}    
+                    Fo = float(Fo)
+                    sigFo = float(sigFo)
+                    # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
+                    if self.Super == 0:
+                        self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0])
+                    elif self.Super == 1:
+                        self.RefDict['RefList'].append([h,k,l,m1,0,0,Fo,sigFo,0,Fo,0,0,0])
+            self.errors = 'Error after reading reflections (unexpected!)'
+            self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+            self.RefDict['Type'] = 'SXC'
+            self.RefDict['Super'] = self.Super
+            self.RefDict['TwDict'] = TwDict
+            self.RefDict['TwMax'] = TwMax
+            self.UpdateParameters(Type='SXC',Wave=None) # histogram type
+            return True
+        except Exception as detail:
+            self.errors += '\n  '+str(detail)
+            print '\n\n'+self.formatName+' read error: '+str(detail) # for testing
+            import traceback
+            traceback.print_exc(file=sys.stdout)
+            return False
+
 class M90_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import F**2, sig(F**2) reflections from a JANA M90 file'
     def __init__(self):
@@ -203,68 +278,6 @@ class M90_ReaderClass(G2IO.ImportStructFactor):
             traceback.print_exc(file=sys.stdout)
             return False
             
-class SHELX5_ReaderClass(G2IO.ImportStructFactor):
-    'Routines to import F**2, sig(F**2) twin index reflections from a fixed format SHELX HKLF5 file'
-    def __init__(self):
-        if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
-            formatName = 'SHELX HKLF 5 F2'
-            longFormatName = 'SHELX HKLF 5 [hklm, Fo2, sig(Fo2), Tind] Structure factor text file'
-        else:
-            formatName = u'SHELX HKLF 5 F\u00b2'
-            longFormatName = u'SHELX HKLF 5 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Structure factor text file'        
-        super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.hkl','.HKL'),
-            strictExtension=False,
-            formatName=formatName,
-            longFormatName=longFormatName)
-        self.Super = 0
-
-    def ContentsValidator(self, filepointer):
-        'Discover how many characters are in the SHELX file - could be 32-44 depending on satellites'
-        numCols = 0
-        for i,line in enumerate(filepointer):
-            numCols = max(numCols,len(line.split()))
-            if i > 20:
-                break
-        self.Super = numCols-6     #= 0,1,2,or 3
-        if self.Super > 1:
-            raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
-        return True #ColumnValidator(self, filepointer)
-
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        'Read the file'
-        try:
-            for line,S in enumerate(filepointer):
-                self.errors = '  Error reading line '+str(line+1)
-                if self.Super == 0:
-                    h,k,l,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:20],S[20:28],S[28:32]
-                    h,k,l = [int(h),int(k),int(l)]
-                elif self.Super == 1:
-                    h,k,l,m1,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:16],S[16:24],S[24:32],S[32:36]
-                    h,k,l,m1 = [int(h),int(k),int(l),int(m1)]
-                if not any([h,k,l]):
-                    break
-                Fo = float(Fo)
-                sigFo = float(sigFo)
-                # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
-                if self.Super == 0:
-                    self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0])
-                elif self.Super == 1:
-                    self.RefDict['RefList'].append([h,k,l,m1,0,0,Fo,sigFo,0,Fo,0,0,0])
-                #self.RefDict['FF'].append({}) # now done in OnImportSfact
-            self.errors = 'Error after reading reflections (unexpected!)'
-            self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
-            self.RefDict['Type'] = 'SXC'
-            self.RefDict['Super'] = self.Super
-            self.UpdateParameters(Type='SXC',Wave=None) # histogram type
-            return True
-        except Exception as detail:
-            self.errors += '\n  '+str(detail)
-            print '\n\n'+self.formatName+' read error: '+str(detail) # for testing
-            import traceback
-            traceback.print_exc(file=sys.stdout)
-            return False
-
 class NT_HKLF2_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import neutron TOF F**2, sig(F**2) reflections from a HKLF file'
     def __init__(self):

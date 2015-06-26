@@ -818,6 +818,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
     TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
+    TwinDict = refDict.get('TwinDict',{})           
     if 'S' in calcControls[hfx+'histType']:
         TwinLaw = calcControls[phfx+'TwinLaw']
         TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
@@ -846,7 +847,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 dat = G2el.getFFvalues(FFtables,SQ)
                 refDict['FF']['FF'][iref] *= dat.values()
 #reflection processing begins here - big arrays!
-    iBeg = 0            
+    iBeg = 0
     while iBeg < nRef:
         iFin = min(iBeg+blkSize,nRef)
         refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)

@@ -2264,7 +2264,10 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 sumTwFr = 0.
                 controlDict[pfx+'TwinLaw'] = []                
                 for it,twin in enumerate(Twins):
-                    controlDict[pfx+'TwinLaw'].append(twin[0])
+                    if len(twin[0]):
+                        controlDict[pfx+'TwinLaw'].append(twin[0])
+                    else:
+                        controlDict[pfx+'TwinLaw'].append(np.zeros((3,3)))
                     if it:
                         hapDict[pfx+'TwinFr:'+str(it)] = twin[1]
                         sumTwFr += twin[1]
@@ -2292,7 +2295,10 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         print >>pFile,' Flack parameter: %10.3f'%(hapData['Flack'][0]),' Refine?',hapData['Flack'][1]
                     if len(Twins) > 1:
                         for it,twin in enumerate(Twins):
-                            print >>pFile,' Twin law: %s'%(str(twin[0]).replace('\n',',')),' Twin fr.: %5.3f Refine? '%(hapDict[pfx+'TwinFr:'+str(it)]),Twins[0][1][1] 
+                            if len(twin[0]):
+                                print >>pFile,' Twin law: %s'%(str(twin[0]).replace('\n',',')),' Twin fr.: %5.3f Refine? '%(hapDict[pfx+'TwinFr:'+str(it)]),Twins[0][1][1] 
+                            else:
+                                print >>pFile,' Nonmerohedral twin fr.: %5.3f Refine? '%(hapDict[pfx+'TwinFr:'+str(it)]),Twins[0][1][1] 
                         
                 Histogram['Reflection Lists'] = phase       
                 

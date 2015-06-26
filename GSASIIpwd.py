@@ -548,7 +548,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
                 ybi = parmDict[key]*npcosd(xdata*iBak)
             yb += ybi
         sumBk[0] = np.sum(yb)
-    elif bakType in ['Q^2 power series','Q^-2 powder series']:
+    elif bakType in ['Q^2 power series','Q^-2 power series']:
         QT = 1.
         yb += np.ones_like(yb)*parmDict[pfx+'Back;0']
         for iBak in range(nBak-1):
@@ -668,7 +668,7 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
                 dydb[iBak] = (2.*(xdata-xdata[0])/dt-1.)**iBak
             elif bakType == 'cosine':
                 dydb[iBak] = npcosd(xdata*iBak)
-    elif bakType in ['Q^2 power series','Q^-2 powder series']:
+    elif bakType in ['Q^2 power series','Q^-2 power series']:
         QT = 1.
         dydb[0] = np.ones_like(xdata)
         for iBak in range(nBak-1):

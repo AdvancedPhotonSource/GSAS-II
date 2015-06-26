@@ -3188,6 +3188,8 @@ tutorialCatalog = (
        
     ['FitPeaks', 'FitPeaks', 'Fit Peaks.htm',
         'Fitting individual peaks & autoindexing'],
+    ['BkgFit', 'BkgFit', 'FitBkgTut.htm',
+       'Fitting the Starting Background using Fixed Points'],
        
     ['CWNeutron', 'CWNeutron', 'Neutron CW Powder Data.htm',
         'CW Neutron Powder fit for Yttrium-Iron Garnet'],

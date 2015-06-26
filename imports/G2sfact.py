@@ -88,11 +88,11 @@ class HKLF4_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import F**2, sig(F**2) reflections from a HKLF 4 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
-            formatName = 'HKL 4'
-            longFormatName = 'Shelx HKL4 [hkl, Fo2, sig(Fo2)] Structure factor text file'
+            formatName = 'HKLF 4'
+            longFormatName = 'Shelx HKLF 4 [hkl, Fo2, sig(Fo2)] Structure factor text file'
         else:
-            formatName = u'HKL F\u00b2'
-            longFormatName = u'Shelx HKL4 [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
+            formatName = u'Shelx HKLF 4 F\u00b2'
+            longFormatName = u'Shelx HKLF 4 [hkl, Fo\u00b2, sig(Fo\u00b2)] Structure factor text file'
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
@@ -109,7 +109,7 @@ class HKLF4_ReaderClass(G2IO.ImportStructFactor):
             for line,S in enumerate(filepointer):
                 self.errors = '  Error reading line '+str(line+1)
                 if S[0] == '#': continue       #ignore comments, if any
-                h,k,l,Fo,sigFo = S.split()
+                h,k,l,Fo,sigFo = S.split()[:5]
                 h,k,l = [int(h),int(k),int(l)]
                 if not any([h,k,l]):
                     break
@@ -177,6 +177,8 @@ class M90_ReaderClass(G2IO.ImportStructFactor):
                         h,k,l,m1,Fo,sigFo = S.split()[:6]
                         h,k,l,m1 = [int(h),int(k),int(l),int(m1)]
                 except ValueError:  #skipping text at front
+                    if not S:
+                        break
                     text = S.split()
                     if text[0] == 'lambda':
                         wave = float(text[1])
@@ -205,11 +207,11 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import F**2, sig(F**2) twin index reflections from a fixed format SHELX HKLF5 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
-            formatName = 'SHELX HKL5 F2'
-            longFormatName = 'SHELX HKLF5 [hklm, Fo2, sig(Fo2), Tind] Structure factor text file'
+            formatName = 'SHELX HKLF 5 F2'
+            longFormatName = 'SHELX HKLF 5 [hklm, Fo2, sig(Fo2), Tind] Structure factor text file'
         else:
-            formatName = u'SHELX HKL F\u00b2'
-            longFormatName = u'SHELX HKLF5 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Structure factor text file'        
+            formatName = u'SHELX HKLF 5 F\u00b2'
+            longFormatName = u'SHELX HKLF 5 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Structure factor text file'        
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
@@ -235,10 +237,10 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
             for line,S in enumerate(filepointer):
                 self.errors = '  Error reading line '+str(line+1)
                 if self.Super == 0:
-                    h,k,l,Fo,sigFo,Tw = S.split()
+                    h,k,l,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:20],S[20:28],S[28:32]
                     h,k,l = [int(h),int(k),int(l)]
                 elif self.Super == 1:
-                    h,k,l,m1,Fo,sigFo,Tw = S.split()
+                    h,k,l,m1,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:16],S[16:24],S[24:32],S[32:36]
                     h,k,l,m1 = [int(h),int(k),int(l),int(m1)]
                 if not any([h,k,l]):
                     break
@@ -246,9 +248,9 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
                 sigFo = float(sigFo)
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 if self.Super == 0:
-                    self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,Tw])
+                    self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0])
                 elif self.Super == 1:
-                    self.RefDict['RefList'].append([h,k,l,m1,0,0,Fo,sigFo,0,Fo,0,0,0,Tw])
+                    self.RefDict['RefList'].append([h,k,l,m1,0,0,Fo,sigFo,0,Fo,0,0,0])
                 #self.RefDict['FF'].append({}) # now done in OnImportSfact
             self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])

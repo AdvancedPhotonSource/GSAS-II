@@ -3067,11 +3067,15 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         '''Plots a layer of reflections
         '''
         phaseName = G2frame.RefList
-        pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
-        phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
-        General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
-        Super = General.get('Super',0)
-        SuperVec = General.get('SuperVec',[])
+        if phaseName not in ['Unknown',]:
+            pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
+            phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
+            General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+            Super = General.get('Super',0)
+            SuperVec = General.get('SuperVec',[])
+        else:
+            Super = 0
+            SuperVec = []       
         if 'list' in str(type(data)):   #single crystal data is 2 dict in list
             refList = data[1]['RefList']
         else:                           #powder data is a dict of dicts; each same structure as SC 2nd dict
@@ -3087,11 +3091,15 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         '''Plots the reflections in 3D
         '''
         phaseName = G2frame.RefList
-        pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
-        phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
-        General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
-        Super = General.get('Super',0)
-        SuperVec = General.get('SuperVec',[])
+        if phaseName not in ['Unknown',]:
+            pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
+            phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
+            General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
+            Super = General.get('Super',0)
+            SuperVec = General.get('SuperVec',[])
+        else:
+            Super = 0
+            SuperVec = []       
         if 'list' in str(type(data)):   #single crystal data is 2 dict in list
             refList = data[1]['RefList']
         else:                           #powder data is a dict of dicts; each same structure as SC 2nd dict
@@ -3110,7 +3118,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         '''Returns a wx.grid table (G2G.Table) containing a list of all reflections
         for a phase.        
         '''
-        if phaseName:
+        if phaseName not in ['Unknown',]:
             pId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
             phaseId =  G2gd.GetPatternTreeItemId(G2frame,pId,phaseName)
             General = G2frame.PatternTree.GetItemPyData(phaseId)['General']
@@ -3243,6 +3251,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     if HKLF:
         G2frame.RefList = 1
         phaseName = IsHistogramInAnyPhase(G2frame,Name)
+        if not phaseName:
+            phaseName = 'Unknown'
         phases = [phaseName]
     else:
         phaseName = G2frame.RefList
@@ -3272,10 +3282,10 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     for tabnum,phase in enumerate(phases):
         G2frame.refTable[phase] = G2G.GSGrid(parent=G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(G2frame.refTable[phase],phase)
-    if phaseName not in G2frame.refTable:
-        print phaseName
-        print phases
-        raise Exception("how did we get a invalid phase name?")    
+#    if phaseName not in G2frame.refTable:
+#        print phaseName
+#        print phases
+#        raise Exception("how did we get a invalid phase name?")    
     ShowReflTable(phaseName)
     G2frame.refTable[phaseName].Fit()
     size = G2frame.refTable[phaseName].GetSize()

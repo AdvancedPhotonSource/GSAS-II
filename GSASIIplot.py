@@ -605,11 +605,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         Draw('key')
             
     Name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
-    if Title: #NB: save image as e.g. jpeg will fail if False; MyDir is unknown
+    if Title and Title in G2frame.GetPhaseData(): #NB: save image as e.g. jpeg will fail if False; MyDir is unknown
         generalData = G2frame.GetPhaseData()[Title]['General']
         cell = generalData['Cell'][1:7]
         Mydir = generalData['Mydir']
     else:
+        Title = 'Unknown'
         cell = [10,10,10,90,90,90]
         Mydir = G2frame.dirname
     drawingData = Data['Drawing']

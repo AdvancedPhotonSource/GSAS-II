@@ -776,7 +776,7 @@ class GSASII(wx.Frame):
                     Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
                     self.PatternTree.SetItemPyData(Sub,copy.copy(rd.Parameters))
                     self.PatternTree.SetItemPyData(
-                        self.PatternTree.AppendItem(Id,text='Reflection List'),[])  #dummy entry for GUI use
+                        self.PatternTree.AppendItem(Id,text='Reflection List'),{})  #dummy entry for GUI use
                     newHistList.append(HistName)
             else:
                 valuesdict = {'wtFactor':1.0,'Dummy':False,'ranId':ran.randint(0,sys.maxint),}
@@ -789,7 +789,7 @@ class GSASII(wx.Frame):
                 Sub = self.PatternTree.AppendItem(Id,text='Instrument Parameters')
                 self.PatternTree.SetItemPyData(Sub,rd.Parameters)
                 self.PatternTree.SetItemPyData(
-                    self.PatternTree.AppendItem(Id,text='Reflection List'),[])  #dummy entry for GUI use
+                    self.PatternTree.AppendItem(Id,text='Reflection List'),{})  #dummy entry for GUI use
                 newHistList.append(HistName)
                 
             self.PatternTree.SelectItem(Id)
@@ -2828,6 +2828,11 @@ class GSASII(wx.Frame):
                                     if item in refList:
                                         del(refList[item])
                             self.PatternTree.SetItemPyData(Id,refList)
+                        elif 'HKLF' in name:
+                            data = self.PatternTree.GetItemPyData(item)
+                            data[0] = {}
+                            self.PatternTree.SetItemPyData(item,data)
+                            
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             finally:
                 dlg.Destroy()

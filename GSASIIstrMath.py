@@ -852,7 +852,15 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         iFin = min(iBeg+blkSize,nRef)
         refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)
         H = refl.T[:3]                          #array(blkSize,3)
-        H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(blkSize,3,nTwins) or (blkSize,3)
+        H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(blkSize,nTwins,3) or (blkSize,3)
+        TwMask = np.any(H,axis=2)
+        if TwinLaw.shape[0] > 1 and TwinDict:
+            for ir in range(blkSize):
+                iref = ir+iBeg
+                if iref in TwinDict:
+                    for i in TwinDict[iref]:
+                        H[ir][i] = TwinDict[iref][i]
+            TwMask = np.any(H,axis=2)
         SQ = 1./(2.*refl.T[4])**2               #array(blkSize)
         SQfactor = 4.0*SQ*twopisq               #ditto prev.
         if 'T' in calcControls[hfx+'histType']:

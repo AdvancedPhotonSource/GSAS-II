@@ -3154,9 +3154,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
             [wg.GRID_VALUE_FLOAT+':10,3',]
         if HKLF:
-            colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC',]
+            colLabels = ['H','K','L','twin','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC',]
             if 'T' in Inst['Type'][0]:
-                colLabels = ['H','K','L','mul','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','wave','tbar']
+                colLabels = ['H','K','L','twin','d','Fosq','sig','Fcsq','FoTsq','FcTsq','phase','ExtC','wave','tbar']
                 Types += 2*[wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')

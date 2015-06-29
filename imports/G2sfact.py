@@ -116,7 +116,7 @@ class HKLF4_ReaderClass(G2IO.ImportStructFactor):
                 Fo = float(Fo)
                 sigFo = float(sigFo)
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
-                self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0])
+                self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0])
                 #self.RefDict['FF'].append({}) # now done in OnImportSfact
             self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
@@ -149,7 +149,7 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
 
     def ContentsValidator(self, filepointer):
         'Discover how many characters are in the SHELX file - could be 32-44 depending on satellites'
-        numCols = 0
+        numCols = 0     #this needs to be done differently
         for i,line in enumerate(filepointer):
             numCols = max(numCols,len(line.split()))
             if i > 20:
@@ -174,9 +174,11 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
                     h,k,l,m1,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:16],S[16:24],S[24:32],S[32:36]
                     h,k,l,m1 = [int(h),int(k),int(l),int(m1)]
                 Tw = Tw.strip()
+                if Tw in ['','0']:
+                    Tw = '1'
                 if not any([h,k,l]):
                     break
-                if Tw not in ['','0','1']:
+                if '-' in Tw:
                     TwId = -int(Tw)-1
                     TwMax = max(TwMax,TwId)
                     TwSet[TwId] = [h,k,l]
@@ -188,9 +190,9 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
                     sigFo = float(sigFo)
                     # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                     if self.Super == 0:
-                        self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0])
+                        self.RefDict['RefList'].append([h,k,l,int(Tw),0,Fo,sigFo,0,Fo,0,0,0])
                     elif self.Super == 1:
-                        self.RefDict['RefList'].append([h,k,l,m1,0,0,Fo,sigFo,0,Fo,0,0,0])
+                        self.RefDict['RefList'].append([h,k,l,m1,int(Tw),0,Fo,sigFo,0,Fo,0,0,0])
             self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.RefDict['Type'] = 'SXC'

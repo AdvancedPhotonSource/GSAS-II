@@ -818,7 +818,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
     TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
-    TwinDict = refDict.get('TwinDict',{})           
+    TwDict = refDict.get('TwDict',{})           
     if 'S' in calcControls[hfx+'histType']:
         TwinLaw = calcControls[phfx+'TwinLaw']
         TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
@@ -854,12 +854,12 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         H = refl.T[:3]                          #array(blkSize,3)
         H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(blkSize,nTwins,3) or (blkSize,3)
         TwMask = np.any(H,axis=-1)
-        if TwinLaw.shape[0] > 1 and TwinDict:
+        if TwinLaw.shape[0] > 1 and TwDict:
             for ir in range(blkSize):
                 iref = ir+iBeg
-                if iref in TwinDict:
-                    for i in TwinDict[iref]:
-                        H[ir][i] = TwinDict[iref][i]
+                if iref in TwDict:
+                    for i in TwDict[iref]:
+                        H[ir][i] = TwDict[iref][i]
             TwMask = np.any(H,axis=-1)
         SQ = 1./(2.*refl.T[4])**2               #array(blkSize)
         SQfactor = 4.0*SQ*twopisq               #ditto prev.
@@ -899,9 +899,8 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         else:
             if len(TwinLaw) > 1:
                 refl.T[9] = np.sum(fas[:,:,0]**2,axis=0)+np.sum(fbs[:,:,0]**2,axis=0)   #FcT from primary twin element
-                refl.T[7] = np.sum(TwinFr*np.sum(fas,axis=0)**2,axis=-1)+   \
-                    np.sum(TwinFr*np.sum(fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
-#                what goes in refl.T[8]? (FoT)           
+                refl.T[7] = np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fas,axis=0)**2,axis=-1)+   \
+                    np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
                 refl.T[10] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f"
             else:
                 refl.T[9] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
@@ -920,6 +919,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
+    TwDict = refDict.get('TwDict',{})           
     if 'S' in calcControls[hfx+'histType']:
         TwinLaw = calcControls[phfx+'TwinLaw']
         TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
@@ -951,6 +951,12 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             FP,FPP = G2el.BlenResCW(Tdata,BLtables,refl.T[12])
         H = np.array(refl[:3])
         H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(3,nTwins) or (3)
+        TwMask = np.any(H,axis=-1)
+        if TwinLaw.shape[0] > 1 and TwDict:
+            if iref in TwDict:
+                for i in TwDict[iref]:
+                    H[i] = TwDict[iref][i]
+            TwMask = np.any(H,axis=-1)
         SQ = 1./(2.*refl[4])**2             # or (sin(theta)/lambda)**2
         SQfactor = 8.0*SQ*np.pi**2
         dBabdA = np.exp(-parmDict[phfx+'BabU']*SQfactor)
@@ -1022,12 +1028,12 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             SA = fas[0]-fbs[1]
             SB = fbs[0]+fas[1]
             if nTwin > 1:
-                dFdfr[iref] = [SA[it]*(dfadfr[0][it]+dfbdfr[1][it])*Mdata/len(Uniq[it])+ \
+                dFdfr[iref] = TwMask[:,np.newaxis]*[SA[it]*(dfadfr[0][it]+dfbdfr[1][it])*Mdata/len(Uniq[it])+ \
                     SB[it]*(dfbdfr[0][it]+dfadfr[1][it])*Mdata/len(Uniq[it]) for it in range(nTwin)]
-                dFdx[iref] = [SA[it]*(dfadx[it][0]+dfbdx[it][1])+SB[it]*(dfbdx[it][0]+dfadx[it][1]) for it in range(nTwin)]
-                dFdui[iref] = [SA[it]*(dfadui[0][it]+dfbdui[1][it])+SB[it]*(dfbdui[0][it]+dfadui[1][it]) for it in range(nTwin)]
-                dFdua[iref] = [SA[it]*(dfadua[it][0]+dfbdua[it][1])+SB[it]*(dfbdua[it][0]+dfadua[it][1]) for it in range(nTwin)]
-                dFdtw[iref] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
+                dFdx[iref] = TwMask[:,np.newaxis,np.newaxis]*[SA[it]*(dfadx[it][0]+dfbdx[it][1])+SB[it]*(dfbdx[it][0]+dfadx[it][1]) for it in range(nTwin)]
+                dFdui[iref] = TwMask[:,np.newaxis]*[SA[it]*(dfadui[0][it]+dfbdui[1][it])+SB[it]*(dfbdui[0][it]+dfadui[1][it]) for it in range(nTwin)]
+                dFdua[iref] = TwMask[:,np.newaxis,np.newaxis]*[SA[it]*(dfadua[it][0]+dfbdua[it][1])+SB[it]*(dfbdua[it][0]+dfadua[it][1]) for it in range(nTwin)]
+                dFdtw[iref] = TwMask*np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
             else:
                 dFdfr[iref] = 2.*SA*(dfadfr[0]+dfbdfr[1])*Mdata/len(Uniq)+ \
                     2.*SB*(dfbdfr[0]+dfadfr[1])*Mdata/len(Uniq)

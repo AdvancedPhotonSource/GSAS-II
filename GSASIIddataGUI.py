@@ -794,7 +794,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             except ValueError:
                 uvw = UseList[G2frame.hist]['Twins'][it][0][im]
             UseList[G2frame.hist]['Twins'][it][0][im] = uvw
-            Obj.SetValue('%d %d %d'%(uvw[0],uvw[1],uvw[2]))
+            Obj.SetValue('%3d %3d %3d'%(uvw[0],uvw[1],uvw[2]))
             
         def OnTwinVal(event):
             Obj = event.GetEventObject()

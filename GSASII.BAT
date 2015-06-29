@@ -10,14 +10,7 @@
 @echo      R.B. Von Dreele, J. Appl. Cryst. 47, 1784-9 (2014)
 @echo ========================================================================
 @
-@REM Get this script's directory; make sure that the path ends
-@REM    with a single backslash
-@set gsasloc=%~dp0\*
-@set gsasloc=%gsasloc:\\*=\*%
-@set gsasloc=%gsasloc:\*=\%
-@rem one can use a specific reference to a python via, e.g.:
-@set pythonloc=%D:\Python27\python%
-%pythonloc% "%gsasloc%\GSASII.py" %1
+D:\Python27\python.exe d:\GSASII\GSASII.py "%~1"
 @REM To keep the window from disappearing with any error messages
 pause
 

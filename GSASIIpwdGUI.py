@@ -3197,7 +3197,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         G2frame.RefList = phaseName
         G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
         if HKLF:
-            Status.SetStatusText('abs(DF)/sig > 10 red; > 3 yellow; mul < 0 (user rejected) red; mul=0 (sp. gp. absent) red')
+            Status.SetStatusText('abs(DF)/sig > 10 red; > 3 yellow; twin < 0 (user rejected) red; twin=0 (sp. gp. absent) red')
         else:
             Status.SetStatusText('Prfo < 0. in red')
         it = 0

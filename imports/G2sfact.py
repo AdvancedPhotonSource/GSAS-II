@@ -70,7 +70,7 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
                 Fo = float(Fo)
                 sigFo = float(sigFo)
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
-                self.RefDict['RefList'].append([h,k,l,0,0,Fo**2,2.*Fo*sigFo,0,Fo**2,0,0,0])
+                self.RefDict['RefList'].append([h,k,l,1,0,Fo**2,2.*Fo*sigFo,0,Fo**2,0,0,0])
             self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.RefDict['Type'] = 'SXC'
@@ -264,9 +264,9 @@ class M90_ReaderClass(G2IO.ImportStructFactor):
                 sigFo = float(sigFo)
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
                 if self.Super == 0:
-                    self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0])
+                    self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0])
                 elif self.Super == 1:
-                    self.RefDict['RefList'].append([h,k,l,m1,0,0,Fo,sigFo,0,Fo,0,0,0])
+                    self.RefDict['RefList'].append([h,k,l,m1,1,0,Fo,sigFo,0,Fo,0,0,0])
             self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.RefDict['Type'] = 'SXC'
@@ -328,10 +328,10 @@ class NT_HKLF2_ReaderClass(G2IO.ImportStructFactor):
                 wave = float(wave)
                 tbar = float(tbar)
                 if len(self.Banks):
-                    self.Banks[int(bN)-1]['RefDict']['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+                    self.Banks[int(bN)-1]['RefDict']['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
                 else:
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
-                    self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+                    self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
             if len(self.Banks):
                 self.UpdateParameters(Type='SNT',Wave=None) # histogram type
                 for Bank in self.Banks:
@@ -398,10 +398,10 @@ class NT_JANA2K_ReaderClass(G2IO.ImportStructFactor):
                 wave = float(wave)
                 tbar = float(tbar)
                 if len(self.Banks):
-                    self.Banks[int(bN)-1]['RefDict']['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+                    self.Banks[int(bN)-1]['RefDict']['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
                 else:
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
-                    self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+                    self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
             if len(self.Banks):
                 self.UpdateParameters(Type='SNT',Wave=None) # histogram type
                 for Bank in self.Banks:
@@ -470,10 +470,10 @@ class ISIS_SXD_INT_ReaderClass(G2IO.ImportStructFactor):
                 wave = float(wave)
                 tbar = float(tbar)
                 if len(self.Banks):
-                    self.Banks[int(bN)-1]['RefDict']['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+                    self.Banks[int(bN)-1]['RefDict']['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
                 else:
                 # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
-                    self.RefDict['RefList'].append([h,k,l,0,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
+                    self.RefDict['RefList'].append([h,k,l,1,0,Fo,sigFo,0,Fo,0,0,0,wave,tbar])
             if len(self.Banks):
                 self.UpdateParameters(Type='SNT',Wave=None) # histogram type
                 for Bank in self.Banks:

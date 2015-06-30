@@ -598,6 +598,7 @@ def ShowControls(Controls,pFile=None,SeqRef=False):
         print >>pFile,' Maximum number of cycles:',Controls['max cyc']
     else:
         print >>pFile,' Minimum delta-M/M for convergence: ','%.2g'%(Controls['min dM/M'])
+    print >>pFile,' Regularize hydrogens (if any):',Controls.get('HatomFix',False)
     print >>pFile,' Initial shift factor: ','%.3f'%(Controls['shift factor'])
     if SeqRef:
         print >>pFile,' Sequential refinement controls:'
@@ -2264,10 +2265,10 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                 sumTwFr = 0.
                 controlDict[pfx+'TwinLaw'] = []                
                 for it,twin in enumerate(Twins):
-                    if len(twin[0]):
-                        controlDict[pfx+'TwinLaw'].append(twin[0])
-                    else:
+                    if 'bool' in str(type(twin[0])):
                         controlDict[pfx+'TwinLaw'].append(np.zeros((3,3)))
+                    else:
+                        controlDict[pfx+'TwinLaw'].append(twin[0])
                     if it:
                         hapDict[pfx+'TwinFr:'+str(it)] = twin[1]
                         sumTwFr += twin[1]
@@ -2295,10 +2296,10 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         print >>pFile,' Flack parameter: %10.3f'%(hapData['Flack'][0]),' Refine?',hapData['Flack'][1]
                     if len(Twins) > 1:
                         for it,twin in enumerate(Twins):
-                            if len(twin[0]):
-                                print >>pFile,' Twin law: %s'%(str(twin[0]).replace('\n',',')),' Twin fr.: %5.3f Refine? '%(hapDict[pfx+'TwinFr:'+str(it)]),Twins[0][1][1] 
-                            else:
+                            if 'bool' in str(type(twin[0])):
                                 print >>pFile,' Nonmerohedral twin fr.: %5.3f Refine? '%(hapDict[pfx+'TwinFr:'+str(it)]),Twins[0][1][1] 
+                            else:
+                                print >>pFile,' Twin law: %s'%(str(twin[0]).replace('\n',',')),' Twin fr.: %5.3f Refine? '%(hapDict[pfx+'TwinFr:'+str(it)]),Twins[0][1][1] 
                         
                 Histogram['Reflection Lists'] = phase       
                 

@@ -1447,7 +1447,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         # exclList will be 'x' or 'xu' if TLS used in RB
         Items = [G2gd.wxID_ATOMSEDITINSERT,G2gd.wxID_ATOMSEDITDELETE,G2gd.wxID_ATOMSREFINE, 
             G2gd.wxID_ATOMSMODIFY,G2gd.wxID_ATOMSTRANSFORM,G2gd.wxID_MAKEMOLECULE,
-            G2gd.wxID_ATOMVIEWINSERT,G2gd.wxID_ATOMMOVE]
+            G2gd.wxID_ATOMVIEWINSERT,G2gd.wxID_ATOMMOVE,G2gd.wxID_ADDHATOM]
         if atomData:
             for item in Items:    
                 G2frame.dataFrame.AtomsMenu.Enable(item,True)
@@ -1534,6 +1534,27 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             AtomAdd(x,y,z)
             FillAtomsGrid(Atoms)
         event.StopPropagation()
+        
+    def OnHydAtomAdd(event):
+        print "Doesn't do anything yet!"
+        indx = Atoms.GetSelectedRows()
+        if indx:
+            DisAglData['OrigIndx'] = indx
+            if 'DisAglCtls' in generalData:
+                DisAglCtls = generalData['DisAglCtls']
+            dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData)
+            if dlg.ShowModal() == wx.ID_OK:
+                DisAglCtls = dlg.GetData()
+            else:
+                dlg.Destroy()
+                return
+            dlg.Destroy()
+            generalData['DisAglCtls'] = DisAglCtls
+            atomData = data['Atoms']
+            generalData = data['General']
+            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+            for ind in indx:
+                atom = atomData[ind]
         
     def OnAtomMove(event):
         drawData = data['Drawing']
@@ -3884,11 +3905,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         wx.BeginBusyCursor()
         for i in result:
             histoName = TextList[i]
+            Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,histoName)
+            refDict,reflData = G2frame.PatternTree.GetItemPyData(Id)
             UseList[histoName] = {'Histogram':histoName,'Show':False,'Scale':[1.0,True],
                 'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
                 'Extinction':['Lorentzian','None',
                 {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
                 'Flack':[0.0,False],'Twins':[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]}                        
+            for iT in range(reflData.get('TwMax',0)):
+                UseList[histoName]['Twins'].append([False,0.0])
             UpdateHKLFdata(histoName)
             data['Histograms'] = UseList
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
@@ -6166,6 +6191,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewAdd, id=G2gd.wxID_ATOMSVIEWADD)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2gd.wxID_ATOMVIEWINSERT)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnHydAtomAdd, id=G2gd.wxID_ADDHATOM)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomMove, id=G2gd.wxID_ATOMMOVE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)

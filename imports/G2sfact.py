@@ -84,8 +84,8 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
             traceback.print_exc(file=sys.stdout)
             return False
 
-class HKLF4_ReaderClass(G2IO.ImportStructFactor):
-    'Routines to import F**2, sig(F**2) reflections from a HKLF 4 file'
+class SHELX4_ReaderClass(G2IO.ImportStructFactor):
+    'Routines to import F**2, sig(F**2) reflections from a Shelx HKLF 4 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
             formatName = 'HKLF 4'
@@ -148,16 +148,20 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
         self.Super = 0
 
     def ContentsValidator(self, filepointer):
-        'Discover how many characters are in the SHELX file - could be 32-44 depending on satellites'
-        numCols = 0     #this needs to be done differently
+        '''Discover how many columns before F^2 are in the SHELX HKL5 file 
+        - could be 3-6 depending on satellites'''
+        numCols = 0
         for i,line in enumerate(filepointer):
-            numCols = max(numCols,len(line.split()))
+            for j,item in enumerate(line.split()):  #find 1st col with '.'; has F^2
+                if '.' in item:
+                    numCols = max(numCols,j)
+                    break
             if i > 20:
                 break
-        self.Super = numCols-6     #= 0,1,2,or 3
+        self.Super = numCols-3     #= 0,1,2,or 3
         if self.Super > 1:
             raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
-        return True #ColumnValidator(self, filepointer)
+        return True
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read the file'

@@ -66,8 +66,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
     wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_MAKEMOLECULE,
-    wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL, wxID_ISODISP,
-] = [wx.NewId() for item in range(15)]
+    wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL, wxID_ISODISP,wxID_ADDHATOM,
+] = [wx.NewId() for item in range(16)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -115,9 +115,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_EXPORTCELLS,
 ] = [wx.NewId() for item in range(6)]
 
-[ wxID_CONSTRAINTADD,wxID_EQUIVADD,wxID_HOLDADD,wxID_FUNCTADD,
+[ wxID_CONSTRAINTADD,wxID_EQUIVADD,wxID_HOLDADD,wxID_FUNCTADD,wxID_ADDRIDING,
   wxID_CONSPHASE, wxID_CONSHIST, wxID_CONSHAP, wxID_CONSGLOBAL,wxID_EQUIVALANCEATOMS,
-] = [wx.NewId() for item in range(9)]
+] = [wx.NewId() for item in range(10)]
 
 [ wxID_RESTRAINTADD, wxID_RESTSELPHASE,wxID_RESTDELETE, wxID_RESRCHANGEVAL, 
     wxID_RESTCHANGEESD,wxID_AARESTRAINTADD,wxID_AARESTRAINTPLOT,
@@ -621,6 +621,10 @@ class DataFrame(wx.Frame):
         self.ConstraintEdit.Append(id=wxID_EQUIVALANCEATOMS, kind=wx.ITEM_NORMAL,text='Add atom equivalence',
             help='Add equivalences between atom parameter values')
         self.ConstraintEdit.Enable(wxID_EQUIVALANCEATOMS,False)
+        self.ConstraintEdit.Append(id=wxID_ADDRIDING, kind=wx.ITEM_NORMAL,text='Add riding constraints',
+            help='Add riding constraints between atom parameter values')
+        self.ConstraintEdit.Enable(wxID_ADDRIDING,False)
+        wxID_ADDRIDING
         self.PostfillDataMenu()
 
         # item = self.ConstraintEdit.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Update GUI')
@@ -1127,6 +1131,8 @@ class DataFrame(wx.Frame):
             help='Select atom row to insert before; inserted as an H atom')
         self.AtomEdit.Append(id=wxID_ATOMVIEWINSERT, kind=wx.ITEM_NORMAL,text='Insert view point',
             help='Select atom row to insert before; inserted as an H atom')
+        self.AtomEdit.Append(id=wxID_ADDHATOM, kind=wx.ITEM_NORMAL,text='Insert H atoms',
+            help='Insert H atoms in standard positions bonded to selected atoms')
         self.AtomEdit.Append(id=wxID_ATOMMOVE, kind=wx.ITEM_NORMAL,text='Move atom to view point',
             help='Select single atom to move')
         self.AtomEdit.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',
@@ -1418,7 +1424,8 @@ def UpdateControls(G2frame,data):
         data['Reverse Seq'] = False
     if 'UsrReject' not in data:
         data['UsrReject'] = {'minF/sig':0,'MinExt':0.01,'MaxDF/F':20.,'MaxD':500.,'MinD':0.05}
-     
+    if 'HatomFix' not in data:
+        data['HatomFix'] = False
     
     #end patch
 
@@ -1508,6 +1515,9 @@ def UpdateControls(G2frame,data):
             
         def OnFsqRef(event):
             data['F**2'] = fsqRef.GetValue()
+            
+        def OnHatomFix(event):
+            data['HatomFix'] = Hfix.GetValue()
         
         def OnUsrRej(event):
             Obj = event.GetEventObject()
@@ -1566,6 +1576,10 @@ def UpdateControls(G2frame,data):
                 usrrej.Bind(wx.EVT_TEXT_ENTER,OnUsrRej)
                 usrrej.Bind(wx.EVT_KILL_FOCUS,OnUsrRej)
                 LSSizer.Add(usrrej,0,WACV)
+        Hfix = wx.CheckBox(G2frame.dataDisplay,-1,label='Regularize H atoms? ')
+        Hfix.SetValue(data['HatomFix'])
+        Hfix.Bind(wx.EVT_CHECKBOX,OnHatomFix)
+#        LSSizer.Add(Hfix,0,WACV)   #for now
         return LSSizer
         
     def AuthSizer():

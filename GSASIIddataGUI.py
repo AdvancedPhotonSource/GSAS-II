@@ -816,6 +816,11 @@ def UpdateDData(G2frame,DData,data,hist=''):
         def OnTwinRef(event):
             Obj = event.GetEventObject()
             UseList[G2frame.hist]['Twins'][0][1][1] = Obj.GetValue()
+            
+        def OnTwinInv(event):
+            Obj = event.GetEventObject()
+            it = Indx[Obj.GetId()]
+            UseList[G2frame.hist]['Twins'][it][0] = Obj.GetValue()
                         
         def OnTwinDel(event):
             Obj = event.GetEventObject()
@@ -849,7 +854,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 else:
                     Style = wx.TE_READONLY
                     TwVal = Twin[1][0]
-                if len(Twin[0]):
+                if 'bool' not in str(type(Twin[0])):
                     matSizer.Add(wx.StaticText(DData,-1,' Twin Law: '),0,WACV)
                     for im,Mat in enumerate(twinMat):
                         mat = wx.TextCtrl(DData,wx.ID_ANY,'%3d %3d %3d'%(Mat[0],Mat[1],Mat[2]),
@@ -862,7 +867,13 @@ def UpdateDData(G2frame,DData,data,hist=''):
                             mat.SetBackgroundColour(VERY_LIGHT_GREY)
                         matSizer.Add(mat,0,WACV|wx.LEFT,5)
                 else:
-                    matSizer.Add(wx.StaticText(DData,-1,' Nonmerohedral twin component %d:'%(it)),0,WACV)
+                    matSizer.Add(wx.StaticText(DData,-1,' Nonmerohedral twin component %d: '%(it)),0,WACV)
+                    if not SGData['SGInv']:
+                        twinv = wx.CheckBox(DData,wx.ID_ANY,label=' Use enantiomorph?')
+                        twinv.SetValue(Twin[0])
+                        Indx[twinv.GetId()] = it
+                        twinv.Bind(wx.EVT_CHECKBOX, OnTwinInv)
+                        matSizer.Add(twinv,0,WACV)
                 twinsizer.Add(matSizer,0,WACV|wx.LEFT,5)
                 valSizer = wx.BoxSizer(wx.HORIZONTAL)
                 valSizer.Add(wx.StaticText(DData,-1,label=' Twin element fraction:'),0,WACV)
@@ -874,7 +885,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 else:
                     twinval.SetBackgroundColour(VERY_LIGHT_GREY)
                 valSizer.Add(twinval,0,WACV)
-                if it and len(Twin[0]):
+                if it and 'bool' not in str(type(Twin[0])):
                     twindel = wx.CheckBox(DData,wx.ID_ANY,label=' Delete?')
                     Indx[twindel.GetId()] = it
                     twindel.Bind(wx.EVT_CHECKBOX, OnTwinDel)

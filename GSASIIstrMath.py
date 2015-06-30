@@ -2656,6 +2656,7 @@ def HessRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dl
     parmDict.update(zip(varylist,values))
     G2mv.Dict2Map(parmDict,varylist)
     Histograms,Phases,restraintDict,rigidbodyDict = HistoPhases
+    #fixup H atom positions here?
     ApplyRBModels(parmDict,Phases,rigidbodyDict)        #,Update=True??
     nvar = len(varylist)
     Hess = np.empty(0)
@@ -2732,6 +2733,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
     Nrej = 0
     Next = 0
     ApplyRBModels(parmDict,Phases,rigidbodyDict)
+    #fixup Hatom positions here....
     histoList = Histograms.keys()
     histoList.sort()
     for histogram in histoList:

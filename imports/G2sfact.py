@@ -135,11 +135,11 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import F**2, sig(F**2) twin/incommensurate reflections from a fixed format SHELX HKLF5 file'
     def __init__(self):
         if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
-            formatName = 'SHELX HKLF 5 F2 Tw/Incom'
-            longFormatName = 'SHELX HKLF 5 [hklm, Fo2, sig(Fo2), Tind] Twin/incommensurate structure factor text file'
+            formatName = 'Shelx HKLF 5 F2 Tw/Incom'
+            longFormatName = 'Shelx HKLF 5 [hklm, Fo2, sig(Fo2), Tind] Twin/incommensurate structure factor text file'
         else:
-            formatName = u'SHELX HKLF 5 F\u00b2 Tw/Incom'
-            longFormatName = u'SHELX HKLF 5 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
+            formatName = u'Shelx HKLF 5 F\u00b2 Tw/Incom'
+            longFormatName = u'Shelx HKLF 5 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.hkl','.HKL'),
             strictExtension=False,
@@ -167,7 +167,8 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
         'Read the file'
         TwDict = {}
         TwSet = {}
-        TwMax = 0
+        TwMax = [-1,[]]
+        first = True
         try:
             for line,S in enumerate(filepointer):
                 self.errors = '  Error reading line '+str(line+1)
@@ -183,10 +184,19 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
                 if not any([h,k,l]):
                     break
                 if '-' in Tw:
+                    if Tw == '-1':  #fix reversed twin ids
+                        Tw = '-2'
+                        if first:
+                            self.warnings += '\nPrimary twin id changed to 1'
+                            first = False
                     TwId = -int(Tw)-1
-                    TwMax = max(TwMax,TwId)
-                    TwSet[TwId] = [h,k,l]
+                    TwSet[TwId] = np.array([h,k,l])
+                    if TwId not in TwMax[1]:
+                        TwMax[1].append(TwId)
                 else:
+                    if Tw != '1':  #fix reversed twin ids
+                        Tw = '1'
+                    TwId = int(Tw)-1
                     if TwSet:
                         TwDict[len(self.RefDict['RefList'])] = TwSet
                         TwSet = {}    
@@ -197,6 +207,7 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
                         self.RefDict['RefList'].append([h,k,l,int(Tw),0,Fo,sigFo,0,Fo,0,0,0])
                     elif self.Super == 1:
                         self.RefDict['RefList'].append([h,k,l,m1,int(Tw),0,Fo,sigFo,0,Fo,0,0,0])
+                TwMax[0] = max(TwMax[0],TwId)
             self.errors = 'Error after reading reflections (unexpected!)'
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.RefDict['Type'] = 'SXC'

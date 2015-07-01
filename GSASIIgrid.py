@@ -1576,9 +1576,9 @@ def UpdateControls(G2frame,data):
                 usrrej.Bind(wx.EVT_TEXT_ENTER,OnUsrRej)
                 usrrej.Bind(wx.EVT_KILL_FOCUS,OnUsrRej)
                 LSSizer.Add(usrrej,0,WACV)
-        Hfix = wx.CheckBox(G2frame.dataDisplay,-1,label='Regularize H atoms? ')
-        Hfix.SetValue(data['HatomFix'])
-        Hfix.Bind(wx.EVT_CHECKBOX,OnHatomFix)
+#        Hfix = wx.CheckBox(G2frame.dataDisplay,-1,label='Regularize H atoms? ')
+#        Hfix.SetValue(data['HatomFix'])
+#        Hfix.Bind(wx.EVT_CHECKBOX,OnHatomFix)
 #        LSSizer.Add(Hfix,0,WACV)   #for now
         return LSSizer
         

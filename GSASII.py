@@ -832,9 +832,15 @@ class GSASII(wx.Frame):
                 refDict,reflData = self.PatternTree.GetItemPyData(Id)
                 UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
                 G,g = G2lat.cell2Gmat(generalData['Cell'][1:7])
-                UseList[histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]
-                for iT in range(reflData.get('TwMax',0)):
-                    UseList[histoName]['Twins'].append([False,0.0])
+                if 'TwMax' in reflData:     #nonmerohedral twins present
+                    UseList[histoName]['Twins'] = []
+                    for iT in range(reflData['TwMax'][0]+1):
+                        if iT in reflData['TwMax'][1]:
+                            UseList[histoName]['Twins'].append([False,0.0])
+                        else:
+                            UseList[histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]])
+                else:   #no nonmerohedral twins
+                    UseList[histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]
                 for iref,ref in enumerate(reflData['RefList']):
                     hkl = ref[:3]
                     if Super:

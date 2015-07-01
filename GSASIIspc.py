@@ -68,6 +68,7 @@ def SpcGroup(SGSymbol):
     UniqSym = ('','','a','b','c','',)
     SysSym = ('triclinic','monoclinic','orthorhombic','tetragonal','rhombohedral','trigonal','hexagonal','cubic')
     SGData = {}
+    SGSymbol = SGSymbol.replace(':',' ')    #get rid of ':' in R space group symbols from some cif files
     SGInfo = pyspg.sgforpy(SGSymbol)
     SGData['SpGrp'] = SGSymbol.strip().lower().capitalize()
     SGData['SGLaue'] = LaueSym[SGInfo[0]-1]

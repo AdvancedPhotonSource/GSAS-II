@@ -300,7 +300,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
     elif ext == '.img':
         Comments,Data,Npix,Image = GetImgData(imagefile)
         Image[0][0] = 0
-    elif ext == '.mar3450' or ext == '.mar2300':
+    elif ext in ['.mar3450','.mar2300','.mar2560']:
         Comments,Data,Npix,Image = GetMAR345Data(imagefile)
     elif ext in ['.sum','.avg'] or 'ge' in ext:
         Comments,Data,Npix,Image = GetGEsumData(imagefile)

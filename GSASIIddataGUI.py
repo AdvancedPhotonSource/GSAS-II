@@ -782,6 +782,9 @@ def UpdateDData(G2frame,DData,data,hist=''):
             twinMat = np.array([[-1,0,0],[0,-1,0],[0,0,-1]])    #inversion by default
             twinVal = 0.0
             UseList[G2frame.hist]['Twins'].append([twinMat,twinVal])
+            nNonM = UseList[G2frame.hist]['Twins'][0][1][2]
+            for i in range(nNonM):
+                UseList[G2frame.hist]['Twins'].append([False,0.0])
             addtwin.SetValue(False)
             wx.CallLater(100,RepaintHistogramInfo)
             
@@ -825,6 +828,9 @@ def UpdateDData(G2frame,DData,data,hist=''):
         def OnTwinDel(event):
             Obj = event.GetEventObject()
             it = Indx[Obj.GetId()]
+            nNonM = UseList[G2frame.hist]['Twins'][0][1][2]
+            for i in range(nNonM):
+                del UseList[G2frame.hist]['Twins'][1+i+it]
             del UseList[G2frame.hist]['Twins'][it]
             sumTw = 0.
             for it,twin in enumerate(UseList[G2frame.hist]['Twins']):
@@ -835,15 +841,17 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 UseList[G2frame.hist]['Twins'][0][1][1] = False
             wx.CallLater(100,RepaintHistogramInfo)           
             
+        nTwin = len(UseList[G2frame.hist]['Twins'])
         twinsizer = wx.BoxSizer(wx.VERTICAL)
         topsizer = wx.BoxSizer(wx.HORIZONTAL)          
         topsizer.Add(wx.StaticText(DData,wx.ID_ANY,' Merohedral twins: '),0,WACV)
-        addtwin = wx.CheckBox(DData,wx.ID_ANY,label=' Add Twin Law')
-        addtwin.Bind(wx.EVT_CHECKBOX, OnAddTwin)
-        topsizer.Add(addtwin,0,WACV)
+        #temporary - add twin not allowed if nonmerohedral twins present
+        if nTwin == 1 or 'bool' not in str(type(UseList[G2frame.hist]['Twins'][1][0])):
+            addtwin = wx.CheckBox(DData,wx.ID_ANY,label=' Add Twin Law')
+            addtwin.Bind(wx.EVT_CHECKBOX, OnAddTwin)
+            topsizer.Add(addtwin,0,WACV)
         twinsizer.Add(topsizer)
         Indx = {}
-        nTwin = len(UseList[G2frame.hist]['Twins'])
         if nTwin > 1:
             for it,Twin in enumerate(UseList[G2frame.hist]['Twins']):
                 twinMat,twinVal = Twin

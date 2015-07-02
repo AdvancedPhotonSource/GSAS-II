@@ -3911,16 +3911,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]},
                 'Extinction':['Lorentzian','None',
                 {'Tbar':0.1,'Cos2TM':0.955,'Eg':[1.e-7,False],'Es':[1.e-7,False],'Ep':[1.e-7,False]},],
-                'Flack':[0.0,False],'Twins':[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]}                        
+                'Flack':[0.0,False],'Twins':[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]}                        
             if 'TwMax' in reflData:     #nonmerohedral twins present
                 UseList[histoName]['Twins'] = []
-                for iT in range(reflData['TwMax'][0]):
+                for iT in range(reflData['TwMax'][0]+1):
                     if iT in reflData['TwMax'][1]:
                         UseList[histoName]['Twins'].append([False,0.0])
                     else:
-                        UseList[histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]])
+                        UseList[histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,reflData['TwMax'][0]]])
             else:   #no nonmerohedral twins
-                UseList[histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]
+                UseList[histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]
             UpdateHKLFdata(histoName)
             data['Histograms'] = UseList
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)

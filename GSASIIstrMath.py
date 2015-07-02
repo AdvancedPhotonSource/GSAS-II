@@ -855,7 +855,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         H = refl.T[:3]                          #array(blkSize,3)
         H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(blkSize,nTwins,3) or (blkSize,3)
         TwMask = np.any(H,axis=-1)
-        if TwinLaw.shape[0] > 1 and TwDict:
+        if TwinLaw.shape[0] > 1 and TwDict: #need np.inner(TwinLaw[?],TwDict[iref][i])*TwinInv[i]
             for ir in range(blkSize):
                 iref = ir+iBeg
                 if iref in TwDict:
@@ -1036,7 +1036,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 dFdui[iref] = TwMask[:,np.newaxis]*[SA[it]*(dfadui[0][it]+dfbdui[1][it])+SB[it]*(dfbdui[0][it]+dfadui[1][it]) for it in range(nTwin)]
                 dFdua[iref] = TwMask[:,np.newaxis,np.newaxis]*[SA[it]*(dfadua[it][0]+dfbdua[it][1])+SB[it]*(dfbdua[it][0]+dfadua[it][1]) for it in range(nTwin)]
                 dFdtw[iref] = TwMask*np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
-            else:
+            else:   #these are good for no twin single crystals
                 dFdfr[iref] = 2.*SA*(dfadfr[0]+dfbdfr[1])*Mdata/len(Uniq)+ \
                     2.*SB*(dfbdfr[0]+dfadfr[1])*Mdata/len(Uniq)
                 dFdx[iref] = 2.*SA*(dfadx[0]+dfbdx[1])+2.*SB*(dfbdx[0]+dfadx[1])

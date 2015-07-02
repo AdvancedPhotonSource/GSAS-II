@@ -838,9 +838,9 @@ class GSASII(wx.Frame):
                         if iT in reflData['TwMax'][1]:
                             UseList[histoName]['Twins'].append([False,0.0])
                         else:
-                            UseList[histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]])
+                            UseList[histoName]['Twins'].append([np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,reflData['TwMax'][0]]])
                 else:   #no nonmerohedral twins
-                    UseList[histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],]
+                    UseList[histoName]['Twins'] = [[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],]
                 for iref,ref in enumerate(reflData['RefList']):
                     hkl = ref[:3]
                     if Super:

@@ -2257,7 +2257,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     hapDict[pfx+bab] = hapData['Babinet'][bab][0]
                     if hapData['Babinet'][bab][1]:
                         hapVary.append(pfx+bab)
-                Twins = hapData.get('Twins',[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False]],])
+                Twins = hapData.get('Twins',[[np.array([[1,0,0],[0,1,0],[0,0,1]]),[1.0,False,0]],])
                 if len(Twins) == 1:
                     hapDict[pfx+'Flack'] = hapData.get('Flack',[0.,False])[0]
                     if hapData.get('Flack',[0,False])[1]:

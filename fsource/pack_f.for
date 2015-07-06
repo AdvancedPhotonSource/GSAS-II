@@ -1,16 +1,17 @@
-      SUBROUTINE PACK_F(N,CMPR,M,IMG)
+      SUBROUTINE PACK_F(N,CMPR,MX,MY,IMG)
 
 Cf2py intent(in) N
 Cf2py intent(in) CMPR
 Cf2py depend(N) CMPR
-Cf2py intent(in) M
+Cf2py intent(in) MX
+Cf2py intent(in) MY
 Cf2py intent(in,out) IMG
-Cf2py depend(M) IMG
+Cf2py depend(MX,MY) IMG
 
       IMPLICIT NONE
-      INTEGER*4 BITDECODE(0:7),SETBITS(0:16),IN,N,M,BITNUM
+      INTEGER*4 BITDECODE(0:7),SETBITS(0:16),IN,N,MX,MY,BITNUM
       INTEGER*4 PIXEL,SPILLBITS,USEDBITS,VALIDS,WINDOW,TOTAL
-      INTEGER*4 IMG(0:M-1,0:M-1),NEXTINT
+      INTEGER*4 IMG(0:MX-1,0:MY-1),NEXTINT
       INTEGER*4 SPILL,ROW,COL,PIXNUM,MM1
       INTEGER*2 TMP
       CHARACTER*(*) CMPR(0:N-1)
@@ -28,8 +29,8 @@ Cf2py depend(M) IMG
       WINDOW = 0
       ROW = 0
       COL = 0
-      TOTAL = M**2
-      MM1 = M-1
+      TOTAL = MX*MY
+      MM1 = MX-1
       IN = 0
       DO WHILE (PIXEL .LT. TOTAL)
         IF (VALIDS .LT. 6) THEN
@@ -78,9 +79,9 @@ Cf2py depend(M) IMG
      1            NEXTINT = IOR(NEXTINT,NOT(SETBITS(BITNUM)))
               END IF
 
-              ROW = PIXEL/M
-              COL = MOD(PIXEL,M)
-              IF ( PIXEL .GT. M ) THEN
+              ROW = PIXEL/MX
+              COL = MOD(PIXEL,MX)
+              IF ( PIXEL .GT. MX ) THEN
                 IF ( COL .EQ. 0 ) THEN
                   TMP = NEXTINT +
      1              (IMG(MM1,ROW-1)+IMG(COL+1,ROW-1)+

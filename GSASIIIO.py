@@ -529,10 +529,11 @@ def GetMAR345Data(filename,imageOnly=False):
     for line in head:
         if 'FORMAT' in line[0:6]:
             items = line.split()
-            size = int(items[1])
-            Npix = size*size
+            sizex = int(items[1])
+            Npix = int(items[3])
+            sizey = int(Npix/sizex)
     pos = 4096
-    data['size'] = [size,size]
+    data['size'] = [sizex,sizey]
     File.seek(pos)
     line = File.read(8)
     while 'CCP4' not in line:       #get past overflow list for now
@@ -542,8 +543,9 @@ def GetMAR345Data(filename,imageOnly=False):
     File.seek(pos)
     raw = File.read()
     File.close()
-    image = np.zeros(shape=(size,size),dtype=np.int32)
-    image = np.flipud(pf.pack_f(len(raw),raw,size,image).T)  #transpose to get it right way around & flip
+    image = np.zeros(shape=(sizex,sizey),dtype=np.int32)
+    
+    image = np.flipud(pf.pack_f(len(raw),raw,sizex,sizey,image).T)  #transpose to get it right way around & flip
     if imageOnly:
         return image
     else:

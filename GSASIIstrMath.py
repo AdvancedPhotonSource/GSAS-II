@@ -630,82 +630,6 @@ def GetAtomSSFXU(pfx,calcControls,parmDict):
                     keys[key][m][iatm] = parmDict[parm]
     return waveTypes,FSSdata.squeeze(),XSSdata.squeeze(),USSdata.squeeze(),MSSdata.squeeze()    
     
-def StructureFactor(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
-    ''' Not Used: here only for comparison the StructureFactor2 - faster version
-    Compute structure factors for all h,k,l for phase
-    puts the result, F^2, in each ref[8] in refList
-    input:
-    
-    :param dict refDict: where
-        'RefList' list where each ref = h,k,l,m,d,...
-        'FF' dict of form factors - filed in below
-    :param np.array G:      reciprocal metric tensor
-    :param str pfx:    phase id string
-    :param dict SGData: space group info. dictionary output from SpcGroup
-    :param dict calcControls:
-    :param dict ParmDict:
-
-    '''        
-    phfx = pfx.split(':')[0]+hfx
-    ast = np.sqrt(np.diag(G))
-    Mast = twopisq*np.multiply.outer(ast,ast)
-    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
-    SGT = np.array([ops[1] for ops in SGData['SGOps']])
-    FFtables = calcControls['FFtables']
-    BLtables = calcControls['BLtables']
-    Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
-    FF = np.zeros(len(Tdata))
-    if 'NC' in calcControls[hfx+'histType']:
-        FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
-    else:
-        FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
-        FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
-    Uij = np.array(G2lat.U6toUij(Uijdata))
-    bij = Mast*Uij.T
-    if not len(refDict['FF']):
-        if 'N' in calcControls[hfx+'histType']:
-            dat = G2el.getBLvalues(BLtables)        #will need wave here for anom. neutron b's
-        else:
-            dat = G2el.getFFvalues(FFtables,0.)        
-        refDict['FF']['El'] = dat.keys()
-        refDict['FF']['FF'] = np.zeros((len(refDict['RefList']),len(dat)))   
-    for iref,refl in enumerate(refDict['RefList']):
-        if 'NT' in calcControls[hfx+'histType']:
-            FP,FPP = G2el.BlenResCW(Tdata,BLtables,refl[14])
-        fbs = np.array([0,0])
-        H = refl[:3]
-        SQ = 1./(2.*refl[4])**2
-        SQfactor = 4.0*SQ*twopisq
-        Bab = parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor)
-        if not np.any(refDict['FF']['FF'][iref]):                #no form factors - 1st time thru StructureFactor
-            if 'N' in calcControls[hfx+'histType']:
-                dat = G2el.getBLvalues(BLtables)
-                refDict['FF']['FF'][iref] = dat.values()
-            else:       #'X'
-                dat = G2el.getFFvalues(FFtables,SQ)
-                refDict['FF']['FF'][iref] = dat.values()
-        Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
-        FF = refDict['FF']['FF'][iref][Tindx]
-        Uniq = np.inner(H,SGMT)
-        Phi = np.inner(H,SGT)
-        phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
-        sinp = np.sin(phase)
-        cosp = np.cos(phase)
-        biso = -SQfactor*Uisodata
-        Tiso = np.where(biso<1.,np.exp(biso),1.0)
-        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in Uniq])
-        Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
-        Tcorr = Tiso*Tuij*Mdata*Fdata/len(Uniq)
-        fa = np.array([(FF+FP-Bab)*cosp*Tcorr,-FPP*sinp*Tcorr])
-        fas = np.sum(np.sum(fa,axis=1),axis=1)        #real
-        if not SGData['SGInv']:
-            fb = np.array([(FF+FP-Bab)*sinp*Tcorr,FPP*cosp*Tcorr])
-            fbs = np.sum(np.sum(fb,axis=1),axis=1)
-        fasq = fas**2
-        fbsq = fbs**2        #imaginary
-        refl[9] = np.sum(fasq)+np.sum(fbsq)
-        refl[10] = atan2d(fbs[0],fas[0])
-    
 def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ''' 
     Compute super structure factors for all h,k,l,m for phase
@@ -1037,7 +961,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 dFdx[iref] = [2.*TwMask[it]*SA[it]*(dfadx[it][0]+dfbdx[it][1])+2.*TwMask[it]*SB[it]*(dfbdx[it][0]+dfadx[it][1]) for it in range(nTwin)]
                 dFdui[iref] = [2.*TwMask[it]*SA[it]*(dfadui[0][it]+dfbdui[1][it])+2.*TwMask[it]*SB[it]*(dfbdui[0][it]+dfadui[1][it]) for it in range(nTwin)]
                 dFdua[iref] = [2.*TwMask[it]*SA[it]*(dfadua[it][0]+dfbdua[it][1])+2.*TwMask[it]*SB[it]*(dfbdua[it][0]+dfadua[it][1]) for it in range(nTwin)]
-                dFdtw[iref] = 2.*TwMask*np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
+                dFdtw[iref] = TwMask*np.sum(fas,axis=0)**2+TwMask*np.sum(fbs,axis=0)**2
             else:   #these are good for no twin single crystals
                 dFdfr[iref] = 2.*SA*(dfadfr[0]+dfbdfr[1])*Mdata/len(Uniq)+ \
                     2.*SB*(dfbdfr[0]+dfadfr[1])*Mdata/len(Uniq) #array(nRef,nAtom)
@@ -1079,7 +1003,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
     if nTwin > 1:
         for i in range(nTwin):
-            dFdvDict[phfx+'TwinFr:'+str(i)] = dFdtw.T[i]/4.
+            dFdvDict[phfx+'TwinFr:'+str(i)] = dFdtw.T[i]
     return dFdvDict
     
 def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):

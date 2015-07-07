@@ -862,13 +862,22 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
     dFdvDict = {}
-    dFdfr = np.squeeze(np.zeros((nRef,nTwin,mSize)))
-    dFdx = np.squeeze(np.zeros((nRef,nTwin,mSize,3)))
-    dFdui = np.squeeze(np.zeros((nRef,nTwin,mSize)))
-    dFdua = np.squeeze(np.zeros((nRef,nTwin,mSize,6)))
-    dFdbab = np.squeeze(np.zeros((nRef,nTwin,2)))
-    dFdfl = np.squeeze(np.zeros((nRef,nTwin)))
-    dFdtw = np.zeros((nRef,nTwin))
+    if nTwin > 1:
+        dFdfr = np.zeros((nRef,nTwin,mSize))
+        dFdx = np.zeros((nRef,nTwin,mSize,3))
+        dFdui = np.zeros((nRef,nTwin,mSize))
+        dFdua = np.zeros((nRef,nTwin,mSize,6))
+        dFdbab = np.zeros((nRef,nTwin,2))
+        dFdfl = np.zeros((nRef,nTwin))
+        dFdtw = np.zeros((nRef,nTwin))
+    else:
+        dFdfr = np.zeros((nRef,mSize))
+        dFdx = np.zeros((nRef,mSize,3))
+        dFdui = np.zeros((nRef,mSize))
+        dFdua = np.zeros((nRef,mSize,6))
+        dFdbab = np.zeros((nRef,2))
+        dFdfl = np.zeros((nRef))
+        dFdtw = np.zeros((nRef))
     Flack = 1.0
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']

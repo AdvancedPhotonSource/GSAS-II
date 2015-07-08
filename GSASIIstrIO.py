@@ -2264,21 +2264,25 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         hapVary.append(pfx+'Flack')
                 sumTwFr = 0.
                 controlDict[pfx+'TwinLaw'] = []
-                controlDict[pfx+'TwinInv'] = []               
+                controlDict[pfx+'TwinInv'] = []
+                NTL = 0            
                 for it,twin in enumerate(Twins):
                     if 'bool' in str(type(twin[0])):
                         controlDict[pfx+'TwinInv'].append(twin[0])
                         controlDict[pfx+'TwinLaw'].append(np.zeros((3,3)))
                     else:
+                        NTL += 1
                         controlDict[pfx+'TwinInv'].append(False)
                         controlDict[pfx+'TwinLaw'].append(twin[0])
                     if it:
                         hapDict[pfx+'TwinFr:'+str(it)] = twin[1]
                         sumTwFr += twin[1]
                     else:
-                        hapDict[pfx+'TwinFr:'+str(it)] = twin[1][0]
+                        hapDict[pfx+'TwinFr:0'] = twin[1][0]
+                        controlDict[pfx+'TwinNMN'] = twin[1][2]
                     if Twins[0][1][1]:
                         hapVary.append(pfx+'TwinFr:'+str(it))
+                controlDict[pfx+'NTL'] = NTL
                 #need to make constraint on TwinFr
                 controlDict[pfx+'TwinLaw'] = np.array(controlDict[pfx+'TwinLaw'])
                 if len(Twins) > 1:    #force sum to unity

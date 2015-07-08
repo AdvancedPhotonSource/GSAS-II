@@ -744,6 +744,8 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
     TwDict = refDict.get('TwDict',{})           
     if 'S' in calcControls[hfx+'histType']:
+        NTL = calcControls[phfx+'NTL']
+        NM = calcControls[phfx+'TwinNMN']+1
         TwinLaw = calcControls[phfx+'TwinLaw']
         TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
         TwinInv = list(np.where(calcControls[phfx+'TwinInv'],-1,1))
@@ -784,7 +786,8 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 iref = ir+iBeg
                 if iref in TwDict:
                     for i in TwDict[iref]:
-                        H[ir][i] = np.array(TwDict[iref][i])*TwinInv[i]
+                        for n in range(NTL):
+                            H[ir][i+n*NM] = np.inner(TwinLaw[n*NM],np.array(TwDict[iref][i])*TwinInv[i+n*NM])
             TwMask = np.any(H,axis=-1)
         SQ = 1./(2.*refl.T[4])**2               #array(blkSize)
         SQfactor = 4.0*SQ*twopisq               #ditto prev.
@@ -846,6 +849,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
     TwDict = refDict.get('TwDict',{})           
     if 'S' in calcControls[hfx+'histType']:
+        NTL = calcControls[phfx+'NTL']
+        NM = calcControls[phfx+'TwinNMN']+1
         TwinLaw = calcControls[phfx+'TwinLaw']
         TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
         TwinInv = list(np.where(calcControls[phfx+'TwinInv'],-1,1))
@@ -890,7 +895,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         if TwinLaw.shape[0] > 1 and TwDict:
             if iref in TwDict:
                 for i in TwDict[iref]:
-                    H[i] = np.array(TwDict[iref][i])*TwinInv[i]
+                    for n in range(NTL):
+                        H[i+n*NM] = np.inner(TwinLaw[n*NM],np.array(TwDict[iref][i])*TwinInv[i+n*NM])
             TwMask = np.any(H,axis=-1)
         SQ = 1./(2.*refl[4])**2             # or (sin(theta)/lambda)**2
         SQfactor = 8.0*SQ*np.pi**2
@@ -970,7 +976,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 dFdx[iref] = [2.*TwMask[it]*SA[it]*(dfadx[it][0]+dfbdx[it][1])+2.*TwMask[it]*SB[it]*(dfbdx[it][0]+dfadx[it][1]) for it in range(nTwin)]
                 dFdui[iref] = [2.*TwMask[it]*SA[it]*(dfadui[0][it]+dfbdui[1][it])+2.*TwMask[it]*SB[it]*(dfbdui[0][it]+dfadui[1][it]) for it in range(nTwin)]
                 dFdua[iref] = [2.*TwMask[it]*SA[it]*(dfadua[it][0]+dfbdua[it][1])+2.*TwMask[it]*SB[it]*(dfbdua[it][0]+dfadua[it][1]) for it in range(nTwin)]
-                dFdtw[iref] = TwMask*np.sum(fas,axis=0)**2+TwMask*np.sum(fbs,axis=0)**2
+                dFdtw[iref] = np.sum(TwMask*fas,axis=0)**2+np.sum(TwMask*fbs,axis=0)**2
+                
             else:   #these are good for no twin single crystals
                 dFdfr[iref] = 2.*SA*(dfadfr[0]+dfbdfr[1])*Mdata/len(Uniq)+ \
                     2.*SB*(dfbdfr[0]+dfadfr[1])*Mdata/len(Uniq) #array(nRef,nAtom)
@@ -2455,6 +2462,8 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     A = [parmDict[pfx+'A%d'%(i)] for i in range(6)]
     G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
     refDict = Histogram['Data']
+    if parmDict[phfx+'Scale'] < 0.:
+        parmDict[phfx+'Scale'] = .001
     if im:
         dFdvDict = SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
     else:
@@ -2480,9 +2489,9 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                         if var in dFdvDict:
                             depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11+im]
                     if phfx+'Scale' in varylist:
-                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9+im]*ref[11+im]  #OK
+                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']  #OK
                     elif phfx+'Scale' in dependentVars:
-                        depDerivDict[phfx+'Scale'][iref] = w*ref[9+im]*ref[11+im]   #OK
+                        depDerivDict[phfx+'Scale'][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']   #OK
                     for item in ['Ep','Es','Eg']:
                         if phfx+item in varylist and phfx+item in dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11+im]  #OK
@@ -2509,9 +2518,9 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                         if var in dFdvDict:
                             depDerivDict[var][iref] = w*dFdvDict[var][iref]*parmDict[phfx+'Scale']*ref[11+im]
                     if phfx+'Scale' in varylist:
-                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[9+im]*ref[11+im]  #OK
+                        dMdvh[varylist.index(phfx+'Scale')][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']  #OK
                     elif phfx+'Scale' in dependentVars:
-                        depDerivDict[phfx+'Scale'][iref] = w*ref[9+im]*ref[11+im]   #OK                    
+                        depDerivDict[phfx+'Scale'][iref] = w*ref[7+im]*ref[11+im]/parmDict[phfx+'Scale']   #OK                    
                     for item in ['Ep','Es','Eg']:   #OK!
                         if phfx+item in varylist and phfx+item in dervDict:
                             dMdvh[varylist.index(phfx+item)][iref] = w*dervDict[phfx+item]/ref[11+im] 
@@ -2727,6 +2736,8 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             phfx = '%d:%d:'%(Phase['pId'],hId)
             SGData = Phase['General']['SGData']
             im = 0
+            if parmDict[phfx+'Scale'] < 0.:
+                parmDict[phfx+'Scale'] = .001                
             if Phase['General']['Type'] in ['modulated','magnetic']:
                 SSGData = Phase['General']['SSGData']
                 SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])

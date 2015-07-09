@@ -29,6 +29,8 @@ import GSASIIElem as G2elem
 import GSASIIElemGUI as G2elemGUI
 import GSASIIstrIO as G2stIO
 import GSASIImapvars as G2mv
+import GSASIImath as G2mth
+import GSASIIlattice as G2lat
 import GSASIIgrid as G2gd
 import GSASIIctrls as G2G
 import GSASIIplot as G2plt
@@ -701,8 +703,6 @@ def UpdateConstraints(G2frame,data):
             return
         legend = "Select atoms to ride (only one of the atom variables will be varied when all are set to be varied)"
         GetAddAtomVars(page,title1,title2,varList,constrDictEnt,'riding')
-        
-        
    
     def OnAddFunction(event):
         '''add a Function (new variable) constraint'''
@@ -758,9 +758,32 @@ def UpdateConstraints(G2frame,data):
         dlg.Destroy()
         OnPageChanged(None)
                         
+    def FindNeighbors(phase,FrstName,AtNames):
+        General = phase['General']
+        cx,ct,cs,cia = General['AtomPtrs']
+        Atoms = phase['Atoms']
+        atNames = [atom[ct-1] for atom in Atoms]
+        Cell = General['Cell'][1:7]
+        Amat,Bmat = G2lat.cell2AB(Cell)
+        atTypes = General['AtomTypes']
+        Radii = np.array(General['BondRadii'])
+        AtInfo = dict(zip(atTypes,Radii)) #or General['BondRadii']
+        Orig = atNames.index(FrstName.split()[1])
+        OType = Atoms[Orig][ct]
+        XYZ = G2mth.getAtomXYZ(Atoms,cx)        
+        Neigh = []
+        Dx = np.inner(Amat,XYZ-XYZ[Orig]).T
+        dist = np.sqrt(np.sum(Dx**2,axis=1))
+        sumR = AtInfo[OType]+0.5
+        IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))
+        for j in IndB[0]:
+            if j != Orig:
+                Neigh.append(AtNames[j])
+        return Neigh
+        
     def GetAddAtomVars(page,title1,title2,varList,constrDictEnt,constType):
         '''Get the atom variables to be added for OnAddAtomEquiv. Then create and 
-        check the constraints.
+        check the constraints. Riding for H atoms only.
         '''
         Atoms = {G2obj.VarDescr(i)[0]:[] for i in varList if 'Atom' in G2obj.VarDescr(i)[0]}
         for item in varList:
@@ -777,7 +800,12 @@ def UpdateConstraints(G2frame,data):
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelection()
             FrstAtom = AtNames[sel]
-            AtNames.remove(FrstAtom)
+            if 'riding' in constType:
+                phaseName = (FrstAtom.split(' in ')[1]).strip()
+                phase = Phases[phaseName]
+                AtNames = FindNeighbors(phase,FrstAtom,AtNames)
+            else:
+                AtNames.remove(FrstAtom)
         dlg.Destroy()
         if FrstAtom == '':
             print 'no atom selected'
@@ -795,13 +823,27 @@ def UpdateConstraints(G2frame,data):
         dlg.Destroy()
         for name in Atoms[FrstAtom]:
             newcons = []
-            constr = [[1.0,G2obj.G2VarObj(name)]]
+            constr = []
+            if 'riding' in constType:
+                if 'AU11' in name or 'AUiso' in name:
+                    parts = name.split('AU11').split('AUiso')
+                    constr = [[1.0,G2obj.G2VarObj(parts[0]+'AUiso'+parts[1])]]
+                elif 'AU' not in name:
+                    constr = [[1.0,G2obj.G2VarObj(name)]]
+            else:
+                constr = [[1.0,G2obj.G2VarObj(name)]]
             pref = name.rsplit(':',1)[0]
-            if 'riding' in constType and 'U' in pref:
-                continue
             for sel in Selections:
                 id = Atoms[AtNames[sel]][0].rsplit(':',1)[-1]
-                constr += [[1.0,G2obj.G2VarObj('%s:%s'%(pref,id))]]
+                if 'riding' in constType:
+                    if 'AU11' in pref or 'AUiso' in pref:
+                        constr += [[1.2,G2obj.G2VarObj('%s:%s'%(parts[0]+'AUiso',id))]]
+                    elif 'AU' not in pref:
+                        constr += [[1.0,G2obj.G2VarObj('%s:%s'%(pref,id))]]
+                else:
+                    constr += [[1.0,G2obj.G2VarObj('%s:%s'%(pref,id))]]
+            if not constr:
+                continue
             if 'frac' in pref and 'riding' not in constType:
                 newcons = [constr+[1.0,None,'c']]
             else:

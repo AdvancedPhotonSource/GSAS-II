@@ -1539,7 +1539,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         print "Doesn't do anything yet!"
         indx = Atoms.GetSelectedRows()
         if indx:
-            DisAglData['OrigIndx'] = indx
+            generalData = data['General']
             if 'DisAglCtls' in generalData:
                 DisAglCtls = generalData['DisAglCtls']
             dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData)
@@ -1551,7 +1551,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dlg.Destroy()
             generalData['DisAglCtls'] = DisAglCtls
             atomData = data['Atoms']
-            generalData = data['General']
             colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
             for ind in indx:
                 atom = atomData[ind]

@@ -995,7 +995,7 @@ def IndexAllIds(Histograms,Phases):
         pId = str(Phases[ph]['pId'])
         PhaseIdLookup[pId] = (ph,ranId)
         PhaseRanIdLookup[ranId] = pId
-        shortname = ph[:10]
+        shortname = ph  #[:10]
         while shortname in ShortPhaseNames.values():
             shortname = ph[:8] + ' ('+ pId + ')'
         ShortPhaseNames[pId] = shortname

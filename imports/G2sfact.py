@@ -195,6 +195,9 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
                         TwMax[1].append(TwId)
                 else:
                     if Tw != '1':  #fix reversed twin ids
+                        if first:
+                            self.warnings += '\nPrimary twin id changed to 1\nNB: multiple primary twins not working'
+                            first = False
                         Tw = '1'
                     TwId = int(Tw)-1
                     if TwSet:

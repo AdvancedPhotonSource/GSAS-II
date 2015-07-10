@@ -315,6 +315,97 @@ class SymOpDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
+        
+class AddHatomDialog(wx.Dialog):
+    '''H atom addition dialog. After :meth:`ShowModal` returns, the results 
+    are found in dict :attr:`self.data`, which is accessed using :meth:`GetData`.
+    :param wx.Frame parent: reference to parent frame (or None)
+    :param dict Neigh: a dict of atom names with list of atom name, dist pairs for neighboring atoms
+    :param dict phase: a dict containing the phase as defined by
+      :ref:`Phase Tree Item <Phase_table>`    
+    '''
+    def __init__(self,parent,Neigh,phase):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'H atom add', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wxscroll.ScrolledPanel(self)         #just a dummy - gets destroyed in Draw!
+        self.Neigh = Neigh
+        self.phase = phase
+        self.Hatoms = []
+        self.Draw(self.Neigh,self.phase)
+            
+    def Draw(self,Neigh,phase):
+        '''Creates the contents of the dialog. Normally called
+        by :meth:`__init__`.
+        '''
+        def OnHSelect(event):
+            Obj = event.GetEventObject()
+            item,i = Indx[Obj.GetId()]
+            for obj in Indx[item]:
+                obj.SetValue(False)
+            Obj.SetValue(True)
+            self.Neigh[item][2] = i
+            
+        self.panel.Destroy()
+        self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,-1,'H atom add controls for phase %s:'%(phase['General']['Name'])),
+            0,wx.LEFT|wx.TOP,10)
+        mainSizer.Add(wx.StaticText(self.panel,-1," Atom:  Add # H's          Neighbors, dist"),0,wx.TOP|wx.LEFT,5)
+        nHatms = ['0','1','2','3']
+        dataSizer = wx.FlexGridSizer(0,3,0,0)
+        Indx = {}
+        for inei,neigh in enumerate(Neigh):
+            dataSizer.Add(wx.StaticText(self.panel,-1,' %s:  '%(neigh[0])),0,WACV)
+            nH = 1      #for O atom
+            if 'C' in neigh[0] or 'N' in neigh[0]:
+                nH = 4-len(neigh[1])
+            neigh[2] = nH
+            checks = wx.BoxSizer(wx.HORIZONTAL)
+            Ids = []
+            for i in range(nH+1):
+                nHs = wx.CheckBox(self.panel,-1,label=nHatms[i])
+                if i == neigh[2]:
+                    nHs.SetValue(True)
+                Indx[nHs.GetId()] = [inei,i]
+                Ids.append(nHs)
+                nHs.Bind(wx.EVT_CHECKBOX, OnHSelect)
+                checks.Add(nHs,0,WACV)
+            Indx[inei] = Ids
+            dataSizer.Add(checks,0,WACV)
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            for bond in neigh[1]:
+                lineSizer.Add(wx.StaticText(self.panel,-1,' %s, %.3f'%(bond[0],bond[1])),0,WACV)
+            dataSizer.Add(lineSizer,0,WACV)
+        mainSizer.Add(dataSizer,0,wx.LEFT,5)
+
+        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        OkBtn = wx.Button(self.panel,-1,'Ok')
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(CancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.SetupScrolling()
+        
+    def GetData(self):
+        'Returns the values from the dialog'
+        return self.Neigh       #has #Hs to add for each entry
+        
+    def OnOk(self,event):
+        'Called when the OK button is pressed'
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
 
 class DisAglDialog(wx.Dialog):
     '''Distance/Angle Controls input dialog. After
@@ -330,11 +421,12 @@ class DisAglDialog(wx.Dialog):
     :param dict default:  A dict containing the default
       search ranges for each element.
     '''
-    def __init__(self,parent,data,default):
+    def __init__(self,parent,data,default,Reset=True):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,
                            'Distance Angle Controls', 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.default = default
+        self.Reset = Reset
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self._default(data,self.default)
         self.Draw(self.data)
@@ -395,12 +487,13 @@ class DisAglDialog(wx.Dialog):
         
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
-        ResetBtn = wx.Button(self.panel,-1,'Reset')
-        ResetBtn.Bind(wx.EVT_BUTTON, self.OnReset)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add((20,20),1)
         btnSizer.Add(OkBtn)
-        btnSizer.Add(ResetBtn)
+        if self.Reset:
+            ResetBtn = wx.Button(self.panel,-1,'Reset')
+            ResetBtn.Bind(wx.EVT_BUTTON, self.OnReset)
+            btnSizer.Add(ResetBtn)
         btnSizer.Add((20,20),1)
         mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
         self.panel.SetSizer(mainSizer)

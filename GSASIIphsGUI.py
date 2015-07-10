@@ -1536,13 +1536,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         event.StopPropagation()
         
     def OnHydAtomAdd(event):
-        print "Doesn't do anything yet!"
         indx = Atoms.GetSelectedRows()
         if indx:
+            DisAglCtls = {}
             generalData = data['General']
             if 'DisAglCtls' in generalData:
                 DisAglCtls = generalData['DisAglCtls']
-            dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData)
+                if 'H' not in DisAglCtls['AtomTypes']:
+                    DisAglCtls['AtomTypes'].append('H')
+                    DisAglCtls['AngleRadii'].append(0.5)
+                    DisAglCtls['BondRadii'].append(0.5)
+            dlg = G2gd.DisAglDialog(G2frame,DisAglCtls,generalData,Reset=False)
             if dlg.ShowModal() == wx.ID_OK:
                 DisAglCtls = dlg.GetData()
             else:
@@ -1550,10 +1554,29 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 return
             dlg.Destroy()
             generalData['DisAglCtls'] = DisAglCtls
+            cx,ct,cs,cia = generalData['AtomPtrs']
             atomData = data['Atoms']
+            AtNames = [atom[ct-1] for atom in atomData]
             colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+            Neigh = []
             for ind in indx:
                 atom = atomData[ind]
+                if atom[ct] not in ['C','N','O']:
+                    continue
+                neigh = [atom[ct-1],G2mth.FindNeighbors(data,atom[ct-1],AtNames),0]
+                if len(neigh[1]) > 3 or (atom[ct] == 'O' and len(neigh[1]) > 1):
+                    continue
+                Neigh.append(neigh)
+            if Neigh:
+                dlg = G2gd.AddHatomDialog(G2frame,Neigh,data)
+                if dlg.ShowModal() == wx.ID_OK:
+                    Neigh = dlg.GetData()
+                    for neigh in Neigh:
+                        print neigh
+                    
+                dlg.Destroy()
+            else:
+                wx.MessageBox('No candidates found',caption='Add H atom Error',style=wx.ICON_EXCLAMATION)
         
     def OnAtomMove(event):
         drawData = data['Drawing']

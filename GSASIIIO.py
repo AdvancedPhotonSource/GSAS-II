@@ -177,12 +177,12 @@ def CheckImageFile(G2frame,imagefile):
 
     if not os.path.exists(imagefile):
         dlg = wx.FileDialog(G2frame, 'Previous image file not found; open here', '.', '',\
-        'Any image file (*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img)\
-        |*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img|\
+        'Any image file (*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.cor)\
+        |*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.cor|\
         European detector file (*.edf)|*.edf|\
         Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|\
         MAR file (*.mar*)|*.mar*|\
-        GE Image (*.ge*;*.avg;*.sum)|*.ge*;*.avg;*.sum|\
+        GE Image (*.ge*;*.avg;*.sum;*.cor)|*.ge*;*.avg;*.sum;*.cor|\
         ADSC Image (*.img)|*.img|\
         All files (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
         try:
@@ -302,7 +302,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
         Image[0][0] = 0
     elif ext in ['.mar3450','.mar2300','.mar2560']:
         Comments,Data,Npix,Image = GetMAR345Data(imagefile)
-    elif ext in ['.sum','.avg'] or 'ge' in ext:
+    elif ext in ['.sum','.avg','.cor'] or 'ge' in ext:
         Comments,Data,Npix,Image = GetGEsumData(imagefile)
     elif ext == '.G2img':
         Comments,Data,Npix,Image = GetG2Image(imagefile)
@@ -409,8 +409,8 @@ def GetGEsumData(filename,imageOnly=False):
     if not imageOnly:
         print 'Read GE sum file: ',filename    
     File = open(filename,'rb')
-    if '.sum' in filename:
-        head = ['GE detector sum data from APS 1-ID',]
+    if '.sum' in filename or '.cor' in filename:
+        head = ['GE detector sum or cor data from APS 1-ID',]
         sizexy = [2048,2048]
     elif '.avg' in filename or '.ge' in filename:
         head = ['GE detector avg or ge* data from APS 1-ID',]
@@ -423,7 +423,7 @@ def GetGEsumData(filename,imageOnly=False):
         pos = 8192
         File.seek(pos)
     Npix = sizexy[0]*sizexy[1]
-    if '.sum' in filename:
+    if '.sum' in filename or '.cor' in filename:
         image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
     elif '.avg' in filename or '.ge' in filename:
         image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)

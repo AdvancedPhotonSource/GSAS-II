@@ -774,7 +774,7 @@ def UpdateConstraints(G2frame,data):
         Neigh = []
         Dx = np.inner(Amat,XYZ-XYZ[Orig]).T
         dist = np.sqrt(np.sum(Dx**2,axis=1))
-        sumR = AtInfo[OType]+0.5
+        sumR = AtInfo[OType]+0.5    #H-atoms only!
         IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))
         for j in IndB[0]:
             if j != Orig:

@@ -375,6 +375,29 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
 
+def FindNeighbors(phase,FrstName,AtNames):
+    General = phase['General']
+    cx,ct,cs,cia = General['AtomPtrs']
+    Atoms = phase['Atoms']
+    atNames = [atom[ct-1] for atom in Atoms]
+    Cell = General['Cell'][1:7]
+    Amat,Bmat = G2lat.cell2AB(Cell)
+    atTypes = General['AtomTypes']
+    Radii = np.array(General['BondRadii'])
+    AtInfo = dict(zip(atTypes,Radii)) #or General['BondRadii']
+    Orig = atNames.index(FrstName)
+    OType = Atoms[Orig][ct]
+    XYZ = getAtomXYZ(Atoms,cx)        
+    Neigh = []
+    Dx = np.inner(Amat,XYZ-XYZ[Orig]).T
+    dist = np.sqrt(np.sum(Dx**2,axis=1))
+    sumR = np.array([AtInfo[OType]+AtInfo[atom[ct]] for atom in Atoms])
+    IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))
+    for j in IndB[0]:
+        if j != Orig:
+            Neigh.append([AtNames[j],dist[j]])
+    return Neigh
+        
 def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
     '''default doc string
     

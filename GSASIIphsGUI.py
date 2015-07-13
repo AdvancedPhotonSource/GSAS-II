@@ -1557,24 +1557,50 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             cx,ct,cs,cia = generalData['AtomPtrs']
             atomData = data['Atoms']
             AtNames = [atom[ct-1] for atom in atomData]
-            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+            AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
             Neigh = []
+            AddHydIds = []
             for ind in indx:
                 atom = atomData[ind]
                 if atom[ct] not in ['C','N','O']:
                     continue
                 neigh = [atom[ct-1],G2mth.FindNeighbors(data,atom[ct-1],AtNames),0]
-                if len(neigh[1]) > 3 or (atom[ct] == 'O' and len(neigh[1]) > 1):
+                if len(neigh[1][0]) > 3 or (atom[ct] == 'O' and len(neigh[1][0]) > 1):
                     continue
+                nH = 1      #for O atom
+                if 'C' in neigh[0] or 'N' in neigh[0]:
+                    nH = 4-len(neigh[1][0])
+                bonds = dict(neigh[1][0])
+                for bond in bonds:
+                    if 'C' in neigh[0]:
+                        if 'C' in bond and bonds[bond] < 1.42:
+                            nH -= 1
+                            break
+                        elif 'O' in bond and bonds[bond] < 1.3:
+                            nH -= 1
+                            break
+                    elif 'O' in neigh[0] and 'C' in bonds and bonds[bond] < 1.3:
+                        nH -= 1
+                        break
+                neigh[2] = max(0,nH)  #set expected no. H's needed
+                AddHydIds.append(neigh[1][1])
                 Neigh.append(neigh)
             if Neigh:
                 dlg = G2gd.AddHatomDialog(G2frame,Neigh,data)
                 if dlg.ShowModal() == wx.ID_OK:
+                    Nat = len(atomData)
                     Neigh = dlg.GetData()
-                    for neigh in Neigh:
-                        print neigh
-                    
+                    for ineigh,neigh in enumerate(Neigh):
+                        AddHydIds[ineigh].append(neigh[2])
+                        Hxyz = G2mth.AddHydrogens(AtLookUp,generalData,atomData,AddHydIds[ineigh])
+                        for X in Hxyz:
+                            Nat += 1
+                            AtomAdd(X[0],X[1],X[2],'H','H(%d)'%(Nat))
+
+                SetupGeneral()
+                FillAtomsGrid(Atoms)
                 dlg.Destroy()
+                G2plt.PlotStructure(G2frame,data)
             else:
                 wx.MessageBox('No candidates found',caption='Add H atom Error',style=wx.ICON_EXCLAMATION)
         

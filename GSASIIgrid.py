@@ -350,6 +350,7 @@ class AddHatomDialog(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,-1,'H atom add controls for phase %s:'%(phase['General']['Name'])),
             0,wx.LEFT|wx.TOP,10)
+        mainSizer.Add(wx.StaticText(self.panel,-1,'NB: Check selections as they may not be correct'),0,WACV|wx.LEFT,10)
         mainSizer.Add(wx.StaticText(self.panel,-1," Atom:  Add # H's          Neighbors, dist"),0,wx.TOP|wx.LEFT,5)
         nHatms = ['0','1','2','3']
         dataSizer = wx.FlexGridSizer(0,3,0,0)
@@ -358,8 +359,7 @@ class AddHatomDialog(wx.Dialog):
             dataSizer.Add(wx.StaticText(self.panel,-1,' %s:  '%(neigh[0])),0,WACV)
             nH = 1      #for O atom
             if 'C' in neigh[0] or 'N' in neigh[0]:
-                nH = 4-len(neigh[1])
-            neigh[2] = nH
+                nH = 4-len(neigh[1][0])
             checks = wx.BoxSizer(wx.HORIZONTAL)
             Ids = []
             for i in range(nH+1):
@@ -373,9 +373,9 @@ class AddHatomDialog(wx.Dialog):
             Indx[inei] = Ids
             dataSizer.Add(checks,0,WACV)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-            for bond in neigh[1]:
+            for bond in neigh[1][0]:
                 lineSizer.Add(wx.StaticText(self.panel,-1,' %s, %.3f'%(bond[0],bond[1])),0,WACV)
-            dataSizer.Add(lineSizer,0,WACV)
+            dataSizer.Add(lineSizer,0,WACV|wx.RIGHT,10)
         mainSizer.Add(dataSizer,0,wx.LEFT,5)
 
         CancelBtn = wx.Button(self.panel,-1,'Cancel')
@@ -388,9 +388,13 @@ class AddHatomDialog(wx.Dialog):
         btnSizer.Add((20,20),1)
         btnSizer.Add(CancelBtn)
         btnSizer.Add((20,20),1)
-        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
-        self.panel.SetSizer(mainSizer)
+        mainSizer.Add(btnSizer,0,wx.BOTTOM|wx.TOP, 10)
+        size = np.array(self.GetSize())
         self.panel.SetupScrolling()
+        self.panel.SetSizer(mainSizer)
+        self.panel.SetAutoLayout(1)
+        size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
+        self.panel.SetSize(size)
         
     def GetData(self):
         'Returns the values from the dialog'

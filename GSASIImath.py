@@ -384,19 +384,73 @@ def FindNeighbors(phase,FrstName,AtNames):
     Amat,Bmat = G2lat.cell2AB(Cell)
     atTypes = General['AtomTypes']
     Radii = np.array(General['BondRadii'])
+    DisAglCtls = General['DisAglCtls']    
+    radiusFactor = DisAglCtls['Factors'][0]
     AtInfo = dict(zip(atTypes,Radii)) #or General['BondRadii']
     Orig = atNames.index(FrstName)
+    OId = Atoms[Orig][cia+8]
     OType = Atoms[Orig][ct]
     XYZ = getAtomXYZ(Atoms,cx)        
     Neigh = []
+    Ids = []
     Dx = np.inner(Amat,XYZ-XYZ[Orig]).T
     dist = np.sqrt(np.sum(Dx**2,axis=1))
     sumR = np.array([AtInfo[OType]+AtInfo[atom[ct]] for atom in Atoms])
-    IndB = ma.nonzero(ma.masked_greater(dist-0.85*sumR,0.))
+    IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR,0.))
     for j in IndB[0]:
         if j != Orig:
             Neigh.append([AtNames[j],dist[j]])
-    return Neigh
+            Ids.append(Atoms[j][cia+8])
+    return Neigh,[OId,Ids]
+    
+def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
+    cx,ct,cs,cia = General['AtomPtrs']
+    Cell = General['Cell'][1:7]
+    Amat,Bmat = G2lat.cell2AB(Cell)
+    nBonds = AddHydId[2]+len(AddHydId[1])
+    Oatom = GetAtomsById(Atoms,AtLookUp,[AddHydId[0],])[0]
+    OXYZ = np.array(Oatom[cx:cx+3])
+    Tatoms = GetAtomsById(Atoms,AtLookUp,AddHydId[1])
+    TXYZ = np.array([tatom[cx:cx+3] for tatom in Tatoms]) #3 x xyz
+    DX = np.inner(Amat,TXYZ-OXYZ).T
+    if nBonds == 4:
+        if AddHydId[2] == 1:
+            Vec = TXYZ-OXYZ
+            Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2,axis=0))
+            Vec = np.sum(Vec/Len,axis=0)
+            Len = np.sqrt(np.sum(Vec**2))
+            Hpos = OXYZ-0.98*np.inner(Bmat,Vec).T/Len
+            return [Hpos,]
+        elif AddHydId[2] == 2:
+            print 'add 2 H'
+            return []
+        else:
+            print 'add 3 H'
+            return []            
+    elif nBonds == 3:
+        if AddHydId[2] == 1:
+            Vec = np.sum(TXYZ-OXYZ,axis=0)                
+            Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
+            Vec = -0.93*Vec/Len
+            Hpos = OXYZ+Vec
+            return [Hpos,]
+        elif AddHydId[2] == 2:
+            print 'add 2 H'
+            return []
+    else:   #2 bonds
+        if 'C' in Oatom[ct]:
+            print 'sp atom',Oatom[ct-1]
+            return []
+        elif 'O' in Oatom[ct]:
+            #idea - construct ring at 0.82 from O atom & find high spot?
+            print 'sp3 atom ',Oatom[ct-1]
+            print 'add 1 H'
+            return []
+    return []
+    
+    
+        
+    
         
 def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
     '''default doc string

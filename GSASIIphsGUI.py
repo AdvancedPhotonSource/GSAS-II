@@ -1571,6 +1571,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if 'C' in neigh[0] or 'N' in neigh[0]:
                     nH = 4-len(neigh[1][0])
                 bonds = dict(neigh[1][0])
+                nextName = ''
+                if len(bonds) == 1:
+                    nextName = bonds.keys()[0]
                 for bond in bonds:
                     if 'C' in neigh[0]:
                         if 'C' in bond and bonds[bond] < 1.42:
@@ -1582,6 +1585,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     elif 'O' in neigh[0] and 'C' in bonds and bonds[bond] < 1.3:
                         nH -= 1
                         break
+                nextneigh = []
+                if nextName:
+                    nextneigh = G2mth.FindNeighbors(data,nextName,AtNames,notName=neigh[0])
+                    neigh[1][1].append(nextneigh[1][1][0])
                 neigh[2] = max(0,nH)  #set expected no. H's needed
                 AddHydIds.append(neigh[1][1])
                 Neigh.append(neigh)
@@ -1590,13 +1597,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if dlg.ShowModal() == wx.ID_OK:
                     Nat = len(atomData)
                     Neigh = dlg.GetData()
-                    for ineigh,neigh in enumerate(Neigh):
+                    mapData = generalData['Map']
+                    mapError = False
+                    for ineigh,neigh in enumerate(Neigh):                        
                         AddHydIds[ineigh].append(neigh[2])
+                        if 'O' in neigh[0] and not len(mapData['rho']) or not 'delt-F' in mapData['MapType']:
+                            mapError = True
+                            continue                            
                         Hxyz = G2mth.AddHydrogens(AtLookUp,generalData,atomData,AddHydIds[ineigh])
                         for X in Hxyz:
                             Nat += 1
                             AtomAdd(X[0],X[1],X[2],'H','H(%d)'%(Nat))
-
+                if mapError:
+                    G2frame.ErrorDialog('Add H atom error','Adding O-H atoms requires delt-F map')
                 SetupGeneral()
                 FillAtomsGrid(Atoms)
                 dlg.Destroy()

@@ -375,7 +375,7 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
 
-def FindNeighbors(phase,FrstName,AtNames):
+def FindNeighbors(phase,FrstName,AtNames,notName=''):
     General = phase['General']
     cx,ct,cs,cia = General['AtomPtrs']
     Atoms = phase['Atoms']
@@ -399,58 +399,98 @@ def FindNeighbors(phase,FrstName,AtNames):
     IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR,0.))
     for j in IndB[0]:
         if j != Orig:
-            Neigh.append([AtNames[j],dist[j]])
-            Ids.append(Atoms[j][cia+8])
+            if AtNames[j] != notName:
+                Neigh.append([AtNames[j],dist[j]])
+                Ids.append(Atoms[j][cia+8])
     return Neigh,[OId,Ids]
     
 def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
+    
     cx,ct,cs,cia = General['AtomPtrs']
     Cell = General['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(Cell)
-    nBonds = AddHydId[2]+len(AddHydId[1])
+    nBonds = AddHydId[-1]+len(AddHydId[1])
     Oatom = GetAtomsById(Atoms,AtLookUp,[AddHydId[0],])[0]
     OXYZ = np.array(Oatom[cx:cx+3])
     Tatoms = GetAtomsById(Atoms,AtLookUp,AddHydId[1])
     TXYZ = np.array([tatom[cx:cx+3] for tatom in Tatoms]) #3 x xyz
     DX = np.inner(Amat,TXYZ-OXYZ).T
     if nBonds == 4:
-        if AddHydId[2] == 1:
+        if AddHydId[-1] == 1:
             Vec = TXYZ-OXYZ
             Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2,axis=0))
             Vec = np.sum(Vec/Len,axis=0)
             Len = np.sqrt(np.sum(Vec**2))
             Hpos = OXYZ-0.98*np.inner(Bmat,Vec).T/Len
             return [Hpos,]
-        elif AddHydId[2] == 2:
-            print 'add 2 H'
-            return []
+        elif AddHydId[-1] == 2:
+            Vec = np.inner(Amat,TXYZ-OXYZ).T
+            Vec[0] += Vec[1]            #U - along bisector
+            Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,np.newaxis]
+            Mat2 = np.cross(Vec[0],Vec[1])      #UxV
+            Mat2 /= np.sqrt(np.sum(Mat2**2))
+            Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
+            iMat = nl.inv(np.array([Vec[0],Mat2,Mat3]))
+            Hpos = np.array([[-0.97*cosd(54.75),0.97*sind(54.75),0.],
+                [-0.97*cosd(54.75),-0.97*sind(54.75),0.]])
+            Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
+            return Hpos
         else:
-            print 'add 3 H'
-            return []            
+            Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
+            RXYZ = np.array(Ratom[cx:cx+3])
+            Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T            
+            Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,np.newaxis]
+            Mat2 = np.cross(Vec[0],Vec[1])      #UxV
+            Mat2 /= np.sqrt(np.sum(Mat2**2))
+            Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
+            iMat = nl.inv(np.array([Vec[0],Mat2,Mat3]))
+            a = 0.96*cosd(70.5)
+            b = 0.96*sind(70.5)
+            Hpos = np.array([[a,0.,-b],[a,-b*cosd(30.),0.5*b],[a,b*cosd(30.),0.5*b]])
+            Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
+            return Hpos            
     elif nBonds == 3:
-        if AddHydId[2] == 1:
+        if AddHydId[-1] == 1:
             Vec = np.sum(TXYZ-OXYZ,axis=0)                
             Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
             Vec = -0.93*Vec/Len
             Hpos = OXYZ+Vec
             return [Hpos,]
-        elif AddHydId[2] == 2:
+        elif AddHydId[-1] == 2:
+            Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
+            RXYZ = np.array(Ratom[cx:cx+3])
+            Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T            
+            Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,np.newaxis]
+            Mat2 = np.cross(Vec[0],Vec[1])      #UxV
+            Mat2 /= np.sqrt(np.sum(Mat2**2))
+            Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
+            iMat = nl.inv(np.array([Vec[0],Mat2,Mat3]))
             print 'add 2 H'
             return []
     else:   #2 bonds
         if 'C' in Oatom[ct]:
-            print 'sp atom',Oatom[ct-1]
-            return []
+            Vec = TXYZ[0]-OXYZ
+            Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
+            Vec = -0.93*Vec/Len
+            Hpos = OXYZ+Vec
+            return [Hpos,]
         elif 'O' in Oatom[ct]:
-            #idea - construct ring at 0.82 from O atom & find high spot?
-            print 'sp3 atom ',Oatom[ct-1]
-            print 'add 1 H'
-            return []
+            mapData = General['Map']
+            Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
+            RXYZ = np.array(Ratom[cx:cx+3])
+            Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T            
+            Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,np.newaxis]
+            Mat2 = np.cross(Vec[0],Vec[1])      #UxV
+            Mat2 /= np.sqrt(np.sum(Mat2**2))
+            Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
+            iMat = nl.inv(np.array([Vec[0],Mat2,Mat3]))
+            a = 0.82*cosd(70.5)
+            b = 0.82*sind(70.5)
+            azm = np.arange(0.,360.,5.)
+            Hpos = np.array([[a,b*cosd(x),b*sind(x)] for x in azm])
+            Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
+            return Hpos
     return []
-    
-    
-        
-    
         
 def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
     '''default doc string

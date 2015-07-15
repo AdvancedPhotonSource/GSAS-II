@@ -2474,13 +2474,12 @@ def getRho(xyz,mapData):
     mapStep = 1./mapShape
     X = np.array(xyz)%1.    #get into unit cell
     I = np.array(X*mapShape,dtype='int')
-    return rho[I[0],I[1],I[2]]
     D = X-I*mapStep         #position inside map cell
     D12 = D[0]*D[1]
     D13 = D[0]*D[2]
     D23 = D[1]*D[2]
     D123 = np.prod(D)
-    Rho = rollMap(rho,I)    #shifts map so point is in corner
+    Rho = rollMap(rho,-I)    #shifts map so point is in corner
     R = Rho[0,0,0]*(1.-np.sum(D))+Rho[1,0,0]*D[0]+Rho[0,1,0]*D[1]+Rho[0,0,1]*D[2]+  \
         Rho[1,1,1]*D123+Rho[0,1,1]*(D23-D123)+Rho[1,0,1]*(D13-D123)+Rho[1,1,0]*(D12-D123)+  \
         Rho[0,0,0]*(D12+D13+D23-D123)-Rho[0,0,1]*(D13+D23-D123)-    \

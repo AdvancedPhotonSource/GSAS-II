@@ -1590,18 +1590,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     nextneigh = G2mth.FindNeighbors(data,nextName,AtNames,notName=neigh[0])
                     neigh[1][1].append(nextneigh[1][1][0])
                 neigh[2] = max(0,nH)  #set expected no. H's needed
-                AddHydIds.append(neigh[1][1])
-                Neigh.append(neigh)
+                if len(neigh[1][0]):
+                    AddHydIds.append(neigh[1][1])
+                    Neigh.append(neigh)
             if Neigh:
+                mapError = False
                 dlg = G2gd.AddHatomDialog(G2frame,Neigh,data)
                 if dlg.ShowModal() == wx.ID_OK:
                     Nat = len(atomData)
                     Neigh = dlg.GetData()
                     mapData = generalData['Map']
-                    mapError = False
-                    for ineigh,neigh in enumerate(Neigh):                        
+                    for ineigh,neigh in enumerate(Neigh):
                         AddHydIds[ineigh].append(neigh[2])
-                        if 'O' in neigh[0] and not len(mapData['rho']) or not 'delt-F' in mapData['MapType']:
+                        if 'O' in neigh[0] and (not len(mapData['rho']) or not 'delt-F' in mapData['MapType']):
                             mapError = True
                             continue                            
                         Hxyz = G2mth.AddHydrogens(AtLookUp,generalData,atomData,AddHydIds[ineigh])

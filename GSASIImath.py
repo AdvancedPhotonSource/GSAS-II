@@ -489,7 +489,9 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             azm = np.arange(0.,360.,5.)
             Hpos = np.array([[a,b*cosd(x),b*sind(x)] for x in azm])
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
-            return Hpos
+            Rhos = np.array([getRho(pos,mapData) for pos in Hpos])
+            imax = np.argmax(Rhos)
+            return [Hpos[imax],]
     return []
         
 def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
@@ -2048,10 +2050,10 @@ def FourierMap(data,reflDict):
             for i,hkl in enumerate(Uniq):        #uses uniq
                 hkl = np.asarray(hkl,dtype='i')
                 dp = 360.*Phi[i]                #and phi
-                a = cosd(ph)
-                b = sind(ph)
-                phasep = complex(a,b)+dp
-                phasem = complex(a,-b)-dp
+                a = cosd(ph+dp)
+                b = sind(ph+dp)
+                phasep = complex(a,b)
+                phasem = complex(a,-b)
                 if 'Fobs' in mapData['MapType']:
                     F = np.where(Fosq>0.,np.sqrt(Fosq),0.)
                     h,k,l = hkl+Hmax
@@ -2455,6 +2457,36 @@ def SSChargeFlip(data,reflDict,pgbar):
     map4DData['Type'] = reflDict['Type']
     return mapData,map4DData
     
+def getRho(xyz,mapData):
+    ''' get scattering density at a point by 8-point interpolation
+    param xyz: coordinate to be probed
+    param: mapData: dict of map data
+    
+    :returns: density at xyz
+    '''
+    rollMap = lambda rho,roll: np.roll(np.roll(np.roll(rho,roll[0],axis=0),roll[1],axis=1),roll[2],axis=2)
+    if not len(mapData):
+        return 0.0
+    rho = copy.copy(mapData['rho'])     #don't mess up original
+    if not len(rho):
+        return 0.0
+    mapShape = np.array(rho.shape)
+    mapStep = 1./mapShape
+    X = np.array(xyz)%1.    #get into unit cell
+    I = np.array(X*mapShape,dtype='int')
+    return rho[I[0],I[1],I[2]]
+    D = X-I*mapStep         #position inside map cell
+    D12 = D[0]*D[1]
+    D13 = D[0]*D[2]
+    D23 = D[1]*D[2]
+    D123 = np.prod(D)
+    Rho = rollMap(rho,I)    #shifts map so point is in corner
+    R = Rho[0,0,0]*(1.-np.sum(D))+Rho[1,0,0]*D[0]+Rho[0,1,0]*D[1]+Rho[0,0,1]*D[2]+  \
+        Rho[1,1,1]*D123+Rho[0,1,1]*(D23-D123)+Rho[1,0,1]*(D13-D123)+Rho[1,1,0]*(D12-D123)+  \
+        Rho[0,0,0]*(D12+D13+D23-D123)-Rho[0,0,1]*(D13+D23-D123)-    \
+        Rho[0,1,0]*(D23+D12-D123)-Rho[1,0,0]*(D13+D12-D123)    
+    return R
+       
 def SearchMap(generalData,drawingData,Neg=False):
     '''Does a search of a density map for peaks meeting the criterion of peak
     height is greater than mapData['cutOff']/100 of mapData['rhoMax'] where 

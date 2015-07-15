@@ -4520,7 +4520,8 @@ def PlotStructure(G2frame,data,firstCall=False):
                 elif event.RightIsDown():
                     SetTranslation(newxy)
                     Tx,Ty,Tz = drawingData['viewPoint'][0]
-                    G2frame.G2plotNB.status.SetStatusText('New view point: %.4f, %.4f, %.4f'%(Tx,Ty,Tz),1)
+                    rho = G2mth.getRho([Tx,Ty,Tz],mapData)
+                    G2frame.G2plotNB.status.SetStatusText('New view point: %.4f, %.4f, %.4f; density: %.4f'%(Tx,Ty,Tz,rho),1)
                 elif event.MiddleIsDown():
                     SetRotationZ(newxy)
                     Q = drawingData['Quaternion']
@@ -5227,6 +5228,10 @@ def PlotStructure(G2frame,data,firstCall=False):
         choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2','n: next','p: previous']
     if generalData['Type'] in ['modulated','magnetic',] and len(drawAtoms):
         choice += ['+: increase tau','-: decrease tau','0: set tau = 0']
+
+    Tx,Ty,Tz = drawingData['viewPoint'][0]
+    rho = G2mth.getRho([Tx,Ty,Tz],mapData)
+    G2frame.G2plotNB.status.SetStatusText('View point: %.4f, %.4f, %.4f; density: %.4f'%(Tx,Ty,Tz,rho),1)
 
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)

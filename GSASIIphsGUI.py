@@ -1639,6 +1639,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             except KeyError:
                 Error += 'Hydrogen atom not in atom list - ignored\n'
                 continue
+        data['Drawing']['Atoms'] = []
+        UpdateDrawAtoms()
         FillAtomsGrid(Atoms)
         G2plt.PlotStructure(G2frame,data)
         if Error:

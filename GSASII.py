@@ -71,6 +71,7 @@ import GSASIIctrls as G2G
 import GSASIIplot as G2plt
 import GSASIIpwd as G2pwd
 import GSASIIpwdGUI as G2pdG
+import GSASIIphsGUI as G2phsG
 import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2stIO
@@ -3549,9 +3550,6 @@ class GSASII(wx.Frame):
                         if name[:4] in ['PWDR','HKLF']:
                             Id = item
                         item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
-                    if Id:
-                        self.PickIdText = None  #force reload of PickId contents
-                        self.PatternTree.SelectItem(Id)
                     if parentName:
                         parentId = G2gd.GetPatternTreeItemId(self, self.root, parentName)
                         if parentId:
@@ -3560,7 +3558,14 @@ class GSASII(wx.Frame):
                             itemId = G2gd.GetPatternTreeItemId(self, self.root, oldName)
                         self.PatternTree.SelectItem(itemId)
                     if 'Phases' in parentName:
+                        data = self.PatternTree.GetItemPyData(itemId)
+                        data['Drawing']['Atoms'] = []
+                        self.dataDisplay.SetSelection(4)    #location of Drawing Data
                         self.dataDisplay.SetSelection(tabId)
+                    elif Id:
+                        self.PickIdText = None  #force reload of PickId contents
+                        self.PatternTree.SelectItem(Id)
+
             finally:
                 dlg2.Destroy()
         else:

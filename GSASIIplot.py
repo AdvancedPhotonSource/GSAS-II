@@ -1406,7 +1406,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             pick = str(G2frame.itemPicked).split('(')[1].strip(')')
             if 'line' not in pick:       #avoid data points, etc.
-                data = G2frame.PatternTree.GetItemPyData(PickId)
+                data = G2frame.PatternTree.GetItemPyData(PatternId)
                 num = Phases.keys().index(pick)
                 if num:
                     data[0]['refDelt'] = -(event.ydata-Pattern[0]['refOffset'])/(num*Ymax)

@@ -3559,8 +3559,9 @@ class GSASII(wx.Frame):
                         self.PatternTree.SelectItem(itemId)
                     if 'Phases' in parentName:
                         data = self.PatternTree.GetItemPyData(itemId)
-                        data['Drawing']['Atoms'] = []
-                        self.dataDisplay.SetSelection(4)    #location of Drawing Data
+                        if data['Drawing']:
+                            data['Drawing']['Atoms'] = []
+                            self.dataDisplay.SetSelection(4)    #location of Drawing Data
                         self.dataDisplay.SetSelection(tabId)
                     elif Id:
                         self.PickIdText = None  #force reload of PickId contents

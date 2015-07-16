@@ -400,11 +400,19 @@ def FindNeighbors(phase,FrstName,AtNames,notName=''):
     for j in IndB[0]:
         if j != Orig:
             if AtNames[j] != notName:
-                Neigh.append([AtNames[j],dist[j]])
+                Neigh.append([AtNames[j],dist[j],True])
                 Ids.append(Atoms[j][cia+8])
     return Neigh,[OId,Ids]
     
 def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
+    
+    def getTransMat(RXYZ,OXYZ,TXYZ,Amat):
+        Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T            
+        Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,np.newaxis]
+        Mat2 = np.cross(Vec[0],Vec[1])      #UxV
+        Mat2 /= np.sqrt(np.sum(Mat2**2))
+        Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
+        return nl.inv(np.array([Vec[0],Mat2,Mat3]))        
     
     cx,ct,cs,cia = General['AtomPtrs']
     Cell = General['Cell'][1:7]
@@ -438,12 +446,7 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
         else:
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
             RXYZ = np.array(Ratom[cx:cx+3])
-            Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T            
-            Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,np.newaxis]
-            Mat2 = np.cross(Vec[0],Vec[1])      #UxV
-            Mat2 /= np.sqrt(np.sum(Mat2**2))
-            Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
-            iMat = nl.inv(np.array([Vec[0],Mat2,Mat3]))
+            iMat = getTransMat(RXYZ,OXYZ,TXYZ,Amat)
             a = 0.96*cosd(70.5)
             b = 0.96*sind(70.5)
             Hpos = np.array([[a,0.,-b],[a,-b*cosd(30.),0.5*b],[a,b*cosd(30.),0.5*b]])
@@ -459,14 +462,12 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
         elif AddHydId[-1] == 2:
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
             RXYZ = np.array(Ratom[cx:cx+3])
-            Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T            
-            Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,np.newaxis]
-            Mat2 = np.cross(Vec[0],Vec[1])      #UxV
-            Mat2 /= np.sqrt(np.sum(Mat2**2))
-            Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
-            iMat = nl.inv(np.array([Vec[0],Mat2,Mat3]))
-            print 'add 2 H'
-            return []
+            iMat = getTransMat(RXYZ,OXYZ,TXYZ,Amat)
+            a = 0.93*cosd(60.)
+            b = 0.93*sind(60.)
+            Hpos = [[a,b,0],[a,-b,0]]
+            Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
+            return Hpos
     else:   #2 bonds
         if 'C' in Oatom[ct]:
             Vec = TXYZ[0]-OXYZ
@@ -478,12 +479,7 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             mapData = General['Map']
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
             RXYZ = np.array(Ratom[cx:cx+3])
-            Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T            
-            Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,np.newaxis]
-            Mat2 = np.cross(Vec[0],Vec[1])      #UxV
-            Mat2 /= np.sqrt(np.sum(Mat2**2))
-            Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
-            iMat = nl.inv(np.array([Vec[0],Mat2,Mat3]))
+            iMat = getTransMat(RXYZ,OXYZ,TXYZ,Amat)
             a = 0.82*cosd(70.5)
             b = 0.82*sind(70.5)
             azm = np.arange(0.,360.,5.)

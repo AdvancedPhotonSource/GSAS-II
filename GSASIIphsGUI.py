@@ -1570,19 +1570,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 nH = 1      #for O atom
                 if 'C' in neigh[0] or 'N' in neigh[0]:
                     nH = 4-len(neigh[1][0])
-                bonds = dict(neigh[1][0])
+                bonds = {item[0]:item[1:] for item in neigh[1][0]}
                 nextName = ''
                 if len(bonds) == 1:
                     nextName = bonds.keys()[0]
                 for bond in bonds:
                     if 'C' in neigh[0]:
-                        if 'C' in bond and bonds[bond] < 1.42:
+                        if 'C' in bond and bonds[bond][0] < 1.42:
                             nH -= 1
                             break
-                        elif 'O' in bond and bonds[bond] < 1.3:
+                        elif 'O' in bond and bonds[bond][0] < 1.3:
                             nH -= 1
                             break
-                    elif 'O' in neigh[0] and 'C' in bonds and bonds[bond] < 1.3:
+                    elif 'O' in neigh[0] and 'C' in bonds and bonds[bond][0] < 1.3:
                         nH -= 1
                         break
                 nextneigh = []
@@ -1594,6 +1594,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     AddHydIds.append(neigh[1][1])
                     Neigh.append(neigh)
             if Neigh:
+                HydIds = {}
                 mapError = False
                 dlg = G2gd.AddHatomDialog(G2frame,Neigh,data)
                 if dlg.ShowModal() == wx.ID_OK:
@@ -1606,17 +1607,42 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             mapError = True
                             continue                            
                         Hxyz = G2mth.AddHydrogens(AtLookUp,generalData,atomData,AddHydIds[ineigh])
-                        for X in Hxyz:
+                        for iX,X in enumerate(Hxyz):
                             Nat += 1
                             AtomAdd(X[0],X[1],X[2],'H','H(%d)'%(Nat))
+                            Id = data['Atoms'][-1][cia+8]
+                            HydIds[Id] = [iX,AddHydIds[ineigh]]
                 if mapError:
                     G2frame.ErrorDialog('Add H atom error','Adding O-H atoms requires delt-F map')
                 SetupGeneral()
+                data['General']['HydIds'] = HydIds
+                G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,True)
                 FillAtomsGrid(Atoms)
                 dlg.Destroy()
                 G2plt.PlotStructure(G2frame,data)
             else:
                 wx.MessageBox('No candidates found',caption='Add H atom Error',style=wx.ICON_EXCLAMATION)
+                
+    def OnHydAtomUpdate(event):
+        Error = ''
+        generalData = data['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        atomData = data['Atoms']
+        AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
+        HydIds = data['General']['HydIds']
+        for HId in HydIds:
+            hydIds = HydIds[HId]
+            num = hydIds[0]
+            Hxyz = G2mth.AddHydrogens(AtLookUp,generalData,atomData,hydIds[1])
+            try:
+                data['Atoms'][AtLookUp[HId]][cx:cx+3] = Hxyz[num]
+            except KeyError:
+                Error += 'Hydrogen atom not in atom list - ignored\n'
+                continue
+        FillAtomsGrid(Atoms)
+        G2plt.PlotStructure(G2frame,data)
+        if Error:
+            wx.MessageBox(Error,caption=' H atom update Error',style=wx.ICON_EXCLAMATION)
         
     def OnAtomMove(event):
         drawData = data['Drawing']
@@ -6261,6 +6287,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomInsert, id=G2gd.wxID_ATOMSEDITINSERT)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomViewInsert, id=G2gd.wxID_ATOMVIEWINSERT)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnHydAtomAdd, id=G2gd.wxID_ADDHATOM)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnHydAtomUpdate, id=G2gd.wxID_UPDATEHATOM)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnAtomMove, id=G2gd.wxID_ATOMMOVE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomDelete, id=G2gd.wxID_ATOMSEDITDELETE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
@@ -6271,6 +6298,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAnglePrt, id=G2gd.wxID_ATOMSPDISAGL)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnIsoDistortCalc, id=G2gd.wxID_ISODISP)
+        if 'HydIds' in data['General']:
+            G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,True)
+        else:
+            G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,False)
         for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)
         # Wave Data

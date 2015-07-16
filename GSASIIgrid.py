@@ -66,8 +66,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
     wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_MAKEMOLECULE,
-    wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL, wxID_ISODISP,wxID_ADDHATOM,
-] = [wx.NewId() for item in range(16)]
+    wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL, wxID_ISODISP,wxID_ADDHATOM,wxID_UPDATEHATOM,
+] = [wx.NewId() for item in range(17)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -316,6 +316,7 @@ class SymOpDialog(wx.Dialog):
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
         
+################################################################################
 class AddHatomDialog(wx.Dialog):
     '''H atom addition dialog. After :meth:`ShowModal` returns, the results 
     are found in dict :attr:`self.data`, which is accessed using :meth:`GetData`.
@@ -345,13 +346,18 @@ class AddHatomDialog(wx.Dialog):
             Obj.SetValue(True)
             self.Neigh[item][2] = i
             
+        def OnBond(event):
+            Obj = event.GetEventObject()
+            inei,ibond = Indx[Obj.GetId()]
+            self.Neigh[inei][1][0][ibond][2] = Obj.GetValue()
+            
         self.panel.Destroy()
         self.panel = wxscroll.ScrolledPanel(self,style = wx.DEFAULT_DIALOG_STYLE)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,-1,'H atom add controls for phase %s:'%(phase['General']['Name'])),
             0,wx.LEFT|wx.TOP,10)
         mainSizer.Add(wx.StaticText(self.panel,-1,'NB: Check selections as they may not be correct'),0,WACV|wx.LEFT,10)
-        mainSizer.Add(wx.StaticText(self.panel,-1," Atom:  Add # H's          Neighbors, dist"),0,wx.TOP|wx.LEFT,5)
+        mainSizer.Add(wx.StaticText(self.panel,-1," Atom:  Add # H's          Use: Neighbors, dist"),0,wx.TOP|wx.LEFT,5)
         nHatms = ['0','1','2','3']
         dataSizer = wx.FlexGridSizer(0,3,0,0)
         Indx = {}
@@ -373,8 +379,12 @@ class AddHatomDialog(wx.Dialog):
             Indx[inei] = Ids
             dataSizer.Add(checks,0,WACV)
             lineSizer = wx.BoxSizer(wx.HORIZONTAL)
-            for bond in neigh[1][0]:
-                lineSizer.Add(wx.StaticText(self.panel,-1,' %s, %.3f'%(bond[0],bond[1])),0,WACV)
+            for ib,bond in enumerate(neigh[1][0]):
+                Bond = wx.CheckBox(self.panel,-1,label=': %s, %.3f'%(bond[0],bond[1]))
+                Bond.SetValue(bond[2])
+                Indx[Bond.GetId()] = [inei,ib]
+                Bond.Bind(wx.EVT_CHECKBOX,OnBond)                
+                lineSizer.Add(Bond,0,WACV)                
             dataSizer.Add(lineSizer,0,WACV|wx.RIGHT,10)
         mainSizer.Add(dataSizer,0,wx.LEFT,5)
 
@@ -398,6 +408,11 @@ class AddHatomDialog(wx.Dialog):
         
     def GetData(self):
         'Returns the values from the dialog'
+        for neigh in self.Neigh:
+            for ibond,bond in enumerate(neigh[1][0]):
+                if not bond[2]:
+                    neigh[1][1][1][ibond] = 0   #deselected bond
+            neigh[1][1][1] = [a for a in  neigh[1][1][1] if a]
         return self.Neigh       #has #Hs to add for each entry
         
     def OnOk(self,event):
@@ -411,6 +426,7 @@ class AddHatomDialog(wx.Dialog):
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
 
+################################################################################
 class DisAglDialog(wx.Dialog):
     '''Distance/Angle Controls input dialog. After
     :meth:`ShowModal` returns, the results are found in
@@ -1230,6 +1246,8 @@ class DataFrame(wx.Frame):
             help='Select atom row to insert before; inserted as an H atom')
         self.AtomEdit.Append(id=wxID_ADDHATOM, kind=wx.ITEM_NORMAL,text='Insert H atoms',
             help='Insert H atoms in standard positions bonded to selected atoms')
+        self.AtomEdit.Append(id=wxID_UPDATEHATOM, kind=wx.ITEM_NORMAL,text='Update H atoms',
+            help='Update H atoms in standard positions')
         self.AtomEdit.Append(id=wxID_ATOMMOVE, kind=wx.ITEM_NORMAL,text='Move atom to view point',
             help='Select single atom to move')
         self.AtomEdit.Append(id=wxID_ATOMSEDITDELETE, kind=wx.ITEM_NORMAL,text='Delete atom',

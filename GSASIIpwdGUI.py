@@ -2298,6 +2298,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
                 Vec = ssopt['ModVec']
                 maxH = ssopt['maxH']
                 G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A)
+                G2frame.HKL = np.array(G2frame.HKL)
                 data[0] = G2indx.IndexSSPeaks(data[0],G2frame.HKL)[1]
             else:        #select cell from table - no SS
                 for i,cell in enumerate(cellist):
@@ -2307,6 +2308,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
                         G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
                         for hkl in G2frame.HKL:
                             hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3]))
+                        G2frame.HKL = np.array(G2frame.HKL)
                         data[0] = G2indx.IndexPeaks(data[0],G2frame.HKL)[1]
                         break
     rowLabels = []
@@ -2597,6 +2599,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             else:
                 M20 = X20 = 0.
                 G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+        G2frame.HKL = np.array(G2frame.HKL)
         if len(G2frame.HKL):
             print ' new M20,X20: %.2f %d fraction found: %.3f'%(M20,X20,float(len(peaks[0]))/len(G2frame.HKL))
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'),peaks)
@@ -2684,6 +2687,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
             peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
             Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])            
+        G2frame.HKL = np.array(G2frame.HKL)
         controls[1] = Zero
         controls[6:12] = G2lat.A2cell(Aref)
         controls[12] = G2lat.calc_V(Aref)
@@ -2707,6 +2711,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             ip = 5
         for hkl in G2frame.HKL:
             hkl[ip] = G2lat.Dsp2pos(Inst,hkl[ip-1])+controls[1]
+        G2frame.HKL = np.array(G2frame.HKL)
         if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
             G2plt.PlotPowderLines(G2frame)
         else:
@@ -2754,6 +2759,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 G2frame.HKL = G2lat.GenHBravais(dmin,bestCell[2],G2lat.cell2A(bestCell[3:9]))
                 for hkl in G2frame.HKL:
                     hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
+                G2frame.HKL = np.array(G2frame.HKL)
                 if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
                     G2plt.PlotPowderLines(G2frame)
                 else:
@@ -2781,6 +2787,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 G2frame.HKL = G2lat.GenHBravais(dmin,ibrav,A)
                 for hkl in G2frame.HKL:
                     hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
+                G2frame.HKL = np.array(G2frame.HKL)
                 if 'PKS' in G2frame.PatternTree.GetItemText(G2frame.PatternId):
                     G2plt.PlotPowderLines(G2frame)
                 else:
@@ -3029,6 +3036,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 G2frame.HKL = G2lat.GenHBravais(dmin,cell[2],A)
                 for hkl in G2frame.HKL:
                     hkl.insert(4,G2lat.Dsp2pos(Inst,hkl[3])+controls[1])
+                G2frame.HKL = np.array(G2frame.HKL)
             table.append(row)
         UnitCellsTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
         gridDisplay = G2G.GSGrid(G2frame.dataDisplay)
@@ -3149,7 +3157,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 refs = np.vstack((refList.T[:15+Super],I100)).T
             elif 'T' in Inst['Type'][0]:
                 refs = np.vstack((refList.T[:18+Super],I100)).T
-        for i in range(len(refs)): rowLabels.append(str(i))
+            G2frame.HKL = np.vstack((refList.T[:6+Super])).T    #build for plots
+        rowLabels = [str(i) for i in range(len(refs))]
         Types = (4+Super)*[wg.GRID_VALUE_LONG,]+4*[wg.GRID_VALUE_FLOAT+':10,4',]+ \
             2*[wg.GRID_VALUE_FLOAT+':10,2',]+[wg.GRID_VALUE_FLOAT+':10,3',]+ \
             [wg.GRID_VALUE_FLOAT+':10,3',]

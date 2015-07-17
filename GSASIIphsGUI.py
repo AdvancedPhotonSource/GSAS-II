@@ -101,13 +101,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
                 reflSets = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
                 reflData = reflSets[phaseName]
-                if 'list' in str(type(reflData)):       #patch for old reflection data
-                    RefData = {'RefList':[],'FF':[]}
-                    for ref in reflDict:
-                        RefData['RefList'].append(ref[:11]+[ref[13],])
-                        RefData['FF'].append(ref[14])
-                    RefData['RefList'] = np.array(RefData['RefList'])
-                    reflData = RefData
             elif 'HKLF' in reflName:
                 PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
                 reflData = G2frame.PatternTree.GetItemPyData(PatternId)[1]

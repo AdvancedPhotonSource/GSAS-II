@@ -968,7 +968,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     2-theta, q or TOF. Can display multiple patterns as "waterfall plots" or contour plots. Log I 
     plotting available.
     '''
-    global HKL
     global exclLines
     global DifLine
     global Ymax
@@ -1146,10 +1145,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         indx = -1
                         if pickIdText in ['Index Peak List','Unit Cells List',]:
                             indx = -2
-                        if len(HKL):
+                        if len(G2frame.HKL):
                             view = Page.toolbar._views.forward()[0][:2]
                             wid = view[1]-view[0]
-                            found = HKL[np.where(np.fabs(HKL.T[indx]-xpos) < 0.002*wid)]
+                            found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[indx]-xpos) < 0.002*wid)]
                         if len(found):
                             if len(found[0]) > 6:   #SS reflections
                                 h,k,l,m = found[0][:4]
@@ -1340,7 +1339,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             ypos = event.ydata
             Pattern[0]['delOffset'] = -ypos/Ymax
             G2frame.itemPicked = None
-            G2frame.PatternTree.SetItemPyData(PickId,data)
             wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
             return
         Parms,Parms2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))
@@ -1368,7 +1366,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                         limits[id].reverse()
                 limits[1][0] = min(max(limits[0][0],limits[1][0]),limits[1][1])
                 limits[1][1] = max(min(limits[0][1],limits[1][1]),limits[1][0])
-                G2frame.PatternTree.SetItemPyData(LimitId,limits)
                 if G2frame.PatternTree.GetItemText(G2frame.PickId) == 'Limits':
                     G2pdG.UpdateLimitsGrid(G2frame,limits,plottype)
             elif lineNo > 1:
@@ -1384,7 +1381,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     else:
                         peaks['peaks'][lineNo-2][0] = xpos
                     peaks['sigDict'] = {}        #no longer valid
-                G2frame.PatternTree.SetItemPyData(PeakId,peaks)
                 G2pdG.UpdatePeakGrid(G2frame,peaks)
         elif G2frame.PatternTree.GetItemText(PickId) in ['Models',] and xpos:
             lines = []
@@ -1400,7 +1396,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 data[1][lineNo] = xpos
                 data[1][0] = min(max(data[0][0],data[1][0]),data[1][1])
                 data[1][1] = max(min(data[0][1],data[1][1]),data[1][0])
-                G2frame.PatternTree.SetItemPyData(LimitId,data)        
         elif (G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' or \
             'PWDR' in G2frame.PatternTree.GetItemText(PickId)) and xpos:
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
@@ -1412,7 +1407,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     data[0]['refDelt'] = -(event.ydata-Pattern[0]['refOffset'])/(num*Ymax)
                 else:       #1st row of refl ticks
                     data[0]['refOffset'] = event.ydata
-                G2frame.PatternTree.SetItemPyData(PickId,data)
         PlotPatterns(G2frame,plotType=plottype)
         G2frame.itemPicked = None    
 
@@ -1521,23 +1515,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     item, 'Sample Parameters')))
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                
     lenX = 0
-    if PickId:
-        if G2frame.PatternTree.GetItemText(PickId) in ['Reflection Lists']:
-            Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
-            HKL = []
-            if Phases:  
-                try:
-                    for peak in Phases[G2frame.RefList]['RefList']:
-                        if len(peak) > 15:
-                            HKL.append(peak[:7])    #SS reflection list - need peak[:7]
-                        else:
-                            HKL.append(peak[:6])
-                except TypeError:   #old style patch
-                    for peak in Phases[G2frame.RefList]:
-                        HKL.append(peak[:6])                    
-                HKL = np.array(HKL)
-        else:
-            HKL = np.array(G2frame.HKL)
     Ymax = None
     for Pattern in PlotList:
         xye = Pattern[1]
@@ -1812,10 +1789,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             refColors=['b','r','c','g','m','k']
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             for pId,phase in enumerate(Phases):
-                try:    #patch for old style reflection lists
-                    peaks = Phases[phase]['RefList']
-                except TypeError:
-                    peaks = Phases[phase]
+                peaks = Phases[phase]['RefList']
                 if not len(peaks):
                     continue
                 if Phases[phase].get('Super',False):
@@ -2425,7 +2399,6 @@ def PlotSASDSizeDist(G2frame):
 def PlotPowderLines(G2frame):
     ''' plotting of powder lines (i.e. no powder pattern) as sticks
     '''
-    global HKL
 
     def OnMotion(event):
         xpos = event.xdata
@@ -2434,10 +2407,10 @@ def PlotPowderLines(G2frame):
             G2frame.G2plotNB.status.SetFields(['','2-theta =%9.3f '%(xpos,)])
             if G2frame.PickId and G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Index Peak List','Unit Cells List']:
                 found = []
-                if len(HKL):
+                if len(G2frame.HKL):
                     view = Page.toolbar._views.forward()[0][:2]
                     wid = view[1]-view[0]
-                    found = HKL[np.where(np.fabs(HKL.T[-1]-xpos) < 0.002*wid)]
+                    found = G2frame.HKL[np.where(np.fabs(G2frame.HKL.T[-1]-xpos) < 0.002*wid)]
                 if len(found):
                     h,k,l = found[0][:3] 
                     Page.canvas.SetToolTipString('%d,%d,%d'%(int(h),int(k),int(l)))
@@ -2464,7 +2437,6 @@ def PlotPowderLines(G2frame):
     peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Index Peak List'))[0]
     for peak in peaks:
         Plot.axvline(peak[0],color='b')
-    HKL = np.array(G2frame.HKL)
     for hkl in G2frame.HKL:
         Plot.axvline(hkl[-1],color='r',dashes=(5,5))
     xmin = peaks[0][0]

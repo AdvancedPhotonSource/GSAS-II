@@ -3540,7 +3540,7 @@ class GSASII(wx.Frame):
                 if dlg2.ShowModal() == wx.ID_OK:
                     Id = 0
                     self.PatternTree.DeleteChildren(self.root)
-                    if self.HKL: self.HKL = []
+                    self.HKL = []
 #                    if self.G2plotNB.plotList:
 #                        self.G2plotNB.clear()
                     G2IO.ProjFileOpen(self)

@@ -671,7 +671,7 @@ def UpdateImageControls(G2frame,data,masks):
         if 'PWDR' in data['type']:
             binChoice = ['2-theta','q']
         elif 'SASD' in data['type']:
-            binChoice = ['q','log(q)']
+            binChoice = ['2-theta','q','log(q)']
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Bin style: Constant step bins in'),0,WACV)            
         binSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['binType'],choices=binChoice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)

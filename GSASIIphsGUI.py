@@ -5908,6 +5908,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.BeginBusyCursor()
                 try:
                     Ind = G2mth.PeaksUnique(data,Ind)
+                    print ' No. unique peaks: ',len(Ind),   \
+                        ' Unique peak fraction: %.3f'%(float(len(Ind))/len(mapPeaks))
                     for r in range(MapPeaks.GetNumberRows()):
                         if r in Ind:
                             MapPeaks.SelectRow(r,addToSelected=True)

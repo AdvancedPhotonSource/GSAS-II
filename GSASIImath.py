@@ -420,6 +420,11 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
     nBonds = AddHydId[-1]+len(AddHydId[1])
     Oatom = GetAtomsById(Atoms,AtLookUp,[AddHydId[0],])[0]
     OXYZ = np.array(Oatom[cx:cx+3])
+    if 'I' in Oatom[cia]:
+        Uiso = Oatom[cia+1]
+    else:
+        Uiso = (Oatom[cia+2]+Oatom[cia+3]+Oatom[cia+4])/3.0       #simple average
+    Uiso = max(Uiso,0.005)                      #set floor!
     Tatoms = GetAtomsById(Atoms,AtLookUp,AddHydId[1])
     TXYZ = np.array([tatom[cx:cx+3] for tatom in Tatoms]) #3 x xyz
     DX = np.inner(Amat,TXYZ-OXYZ).T
@@ -430,7 +435,8 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Vec = np.sum(Vec/Len,axis=0)
             Len = np.sqrt(np.sum(Vec**2))
             Hpos = OXYZ-0.98*np.inner(Bmat,Vec).T/Len
-            return [Hpos,]
+            HU = 1.1*Uiso
+            return [Hpos,],[HU,]
         elif AddHydId[-1] == 2:
             Vec = np.inner(Amat,TXYZ-OXYZ).T
             Vec[0] += Vec[1]            #U - along bisector
@@ -441,8 +447,9 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             iMat = nl.inv(np.array([Vec[0],Mat2,Mat3]))
             Hpos = np.array([[-0.97*cosd(54.75),0.97*sind(54.75),0.],
                 [-0.97*cosd(54.75),-0.97*sind(54.75),0.]])
+            HU = 1.2*Uiso*np.ones(2)
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
-            return Hpos
+            return Hpos,HU
         else:
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
             RXYZ = np.array(Ratom[cx:cx+3])
@@ -451,14 +458,16 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             b = 0.96*sind(70.5)
             Hpos = np.array([[a,0.,-b],[a,-b*cosd(30.),0.5*b],[a,b*cosd(30.),0.5*b]])
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
-            return Hpos            
+            HU = 1.5*Uiso*np.ones(3)
+            return Hpos,HU          
     elif nBonds == 3:
         if AddHydId[-1] == 1:
             Vec = np.sum(TXYZ-OXYZ,axis=0)                
             Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
             Vec = -0.93*Vec/Len
             Hpos = OXYZ+Vec
-            return [Hpos,]
+            HU = 1.1*Uiso
+            return [Hpos,],[HU,]
         elif AddHydId[-1] == 2:
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
             RXYZ = np.array(Ratom[cx:cx+3])
@@ -467,14 +476,16 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             b = 0.93*sind(60.)
             Hpos = [[a,b,0],[a,-b,0]]
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
-            return Hpos
+            HU = 1.2*Uiso*np.ones(2)
+            return Hpos,HU
     else:   #2 bonds
         if 'C' in Oatom[ct]:
             Vec = TXYZ[0]-OXYZ
             Len = np.sqrt(np.sum(np.inner(Amat,Vec).T**2))
             Vec = -0.93*Vec/Len
             Hpos = OXYZ+Vec
-            return [Hpos,]
+            HU = 1.1*Uiso
+            return [Hpos,],[HU,]
         elif 'O' in Oatom[ct]:
             mapData = General['Map']
             Ratom = GetAtomsById(Atoms,AtLookUp,[AddHydId[2],])[0]
@@ -487,8 +498,9 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
             Hpos = np.inner(Bmat,np.inner(iMat,Hpos).T).T+OXYZ
             Rhos = np.array([getRho(pos,mapData) for pos in Hpos])
             imax = np.argmax(Rhos)
-            return [Hpos[imax],]
-    return []
+            HU = 1.5*Uiso
+            return [Hpos[imax],],[HU,]
+    return [],[]
         
 def AtomUij2TLS(atomData,atPtrs,Amat,Bmat,rbObj):   #unfinished & not used
     '''default doc string

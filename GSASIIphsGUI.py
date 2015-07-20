@@ -156,6 +156,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if '4DmapData' not in generalData:
                 generalData['4DmapData'] = mapDefault.copy()
                 generalData['4DmapData'].update({'MapType':'Fobs'})
+        if 'HydIds' not in generalData:
+            generalData['HydIds'] = {}
 # end of patches
         cx,ct,cs,cia = generalData['AtomPtrs']
         generalData['NoAtoms'] = {}
@@ -1187,7 +1189,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                         Atoms.SetCellStyle(r,ci,WHITE,False)
                             else:                           #'A' --> 'I'
                                 Uij = atomData[r][ui:ui+6]
-                                Uiso = (Uij[0]+Uij[1]+Uij[2])/3.0
+                                Uiso = (Uij[0]+Uij[1]+Uij[2])/3.0   
                                 atomData[r][us] = Uiso
                                 Atoms.SetCellStyle(r,us,WHITE,False)
                                 for i in range(6):
@@ -1599,16 +1601,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if 'O' in neigh[0] and (not len(mapData['rho']) or not 'delt-F' in mapData['MapType']):
                             mapError = True
                             continue                            
-                        Hxyz = G2mth.AddHydrogens(AtLookUp,generalData,atomData,AddHydIds[ineigh])
+                        Hxyz,HU = G2mth.AddHydrogens(AtLookUp,generalData,atomData,AddHydIds[ineigh])
                         for iX,X in enumerate(Hxyz):
                             Nat += 1
                             AtomAdd(X[0],X[1],X[2],'H','H(%d)'%(Nat))
+                            data['Atoms'][-1][cia+1] = HU[iX]
                             Id = data['Atoms'][-1][cia+8]
                             HydIds[Id] = [iX,AddHydIds[ineigh]]
                 if mapError:
                     G2frame.ErrorDialog('Add H atom error','Adding O-H atoms requires delt-F map')
                 SetupGeneral()
-                data['General']['HydIds'] = HydIds
+                data['General']['HydIds'].update(HydIds)
                 G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,True)
                 FillAtomsGrid(Atoms)
                 dlg.Destroy()
@@ -1623,21 +1626,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         atomData = data['Atoms']
         AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
         HydIds = data['General']['HydIds']
+        delList = []
         for HId in HydIds:
             hydIds = HydIds[HId]
             num = hydIds[0]
-            Hxyz = G2mth.AddHydrogens(AtLookUp,generalData,atomData,hydIds[1])
+            Hxyz,HU = G2mth.AddHydrogens(AtLookUp,generalData,atomData,hydIds[1])
             try:
                 data['Atoms'][AtLookUp[HId]][cx:cx+3] = Hxyz[num]
+                data['Atoms'][-1][cia+1] = HU[num]
             except KeyError:
-                Error += 'Hydrogen atom not in atom list - ignored\n'
+                delList.append(HId)
                 continue
+        for HId in delList: #clear out deleted H-atoms
+            del HydIds[HId]
         data['Drawing']['Atoms'] = []
         UpdateDrawAtoms()
         FillAtomsGrid(Atoms)
         G2plt.PlotStructure(G2frame,data)
-        if Error:
-            wx.MessageBox(Error,caption=' H atom update Error',style=wx.ICON_EXCLAMATION)
         
     def OnAtomMove(event):
         drawData = data['Drawing']

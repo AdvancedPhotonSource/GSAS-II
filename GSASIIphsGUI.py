@@ -1565,21 +1565,21 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if len(neigh[1][0]) > 3 or (atom[ct] == 'O' and len(neigh[1][0]) > 1):
                     continue
                 nH = 1      #for O atom
-                if 'C' in neigh[0] or 'N' in neigh[0]:
+                if atom[ct] in ['C','N']:
                     nH = 4-len(neigh[1][0])
                 bonds = {item[0]:item[1:] for item in neigh[1][0]}
                 nextName = ''
                 if len(bonds) == 1:
                     nextName = bonds.keys()[0]
                 for bond in bonds:
-                    if 'C' in neigh[0]:
+                    if 'C' in atom[ct]:
                         if 'C' in bond and bonds[bond][0] < 1.42:
                             nH -= 1
                             break
                         elif 'O' in bond and bonds[bond][0] < 1.3:
                             nH -= 1
                             break
-                    elif 'O' in neigh[0] and 'C' in bonds and bonds[bond][0] < 1.3:
+                    elif 'O' in atom[ct] and 'C' in bonds and bonds[bond][0] < 1.3:
                         nH -= 1
                         break
                 nextneigh = []
@@ -1733,6 +1733,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     def AtomDelete(event):
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+        HydIds = data['General']['HydIds']
         ci = colLabels.index('I/A')
         indx = Atoms.GetSelectedRows()
         IDs = []
@@ -1744,6 +1745,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if atom[ci+8] in rbAtmDict:
                     G2frame.dataFrame.SetStatusText('**** ERROR - atom is in a rigid body and can not be deleted ****')
                 else:
+                    if atom[ci+8] in HydIds:    #remove Hs from Hatom update dict
+                        del HydIds[atom[ci+8]]
                     IDs.append(atom[ci+8])
                     del atomData[ind]
             if 'Atoms' in data['Drawing']:
@@ -1754,6 +1757,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.CallAfter(FillAtomsGrid,Atoms)
                 G2plt.PlotStructure(G2frame,data)
             SetupGeneral()
+            if not len(HydIds):
+                G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,False)
         event.StopPropagation()
 
     def AtomRefine(event):

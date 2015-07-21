@@ -1517,10 +1517,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             DrawAtomAdd(data['Drawing'],atomData[-1])
 
     def OnAtomInsert(event):
-        AtomInsert(0,0,0)
-        FillAtomsGrid(Atoms)
-        event.StopPropagation()
-        G2plt.PlotStructure(G2frame,data)
+        indx = Atoms.GetSelectedRows()
+        if indx:
+            AtomInsert(indx[0],0,0,0)
+            FillAtomsGrid(Atoms)
+            event.StopPropagation()
+            G2plt.PlotStructure(G2frame,data)
         
     def OnAtomViewInsert(event):
         if 'Drawing' in data:
@@ -1598,21 +1600,26 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     mapData = generalData['Map']
                     for ineigh,neigh in enumerate(Neigh):
                         AddHydIds[ineigh].append(neigh[2])
+                        loc = AtLookUp[AddHydIds[ineigh][0]]+1
                         if 'O' in neigh[0] and (not len(mapData['rho']) or not 'delt-F' in mapData['MapType']):
                             mapError = True
                             continue                            
                         Hxyz,HU = G2mth.AddHydrogens(AtLookUp,generalData,atomData,AddHydIds[ineigh])
                         for iX,X in enumerate(Hxyz):
-                            Nat += 1
-                            AtomAdd(X[0],X[1],X[2],'H','H(%d)'%(Nat))
-                            data['Atoms'][-1][cia+1] = HU[iX]
-                            Id = data['Atoms'][-1][cia+8]
+                            AtomInsert(loc+iX,X[0],X[1],X[2],'H','H(%d)'%(Nat))
+                            data['Atoms'][loc+iX][cia+1] = HU[iX]
+                            Id = data['Atoms'][loc+iX][cia+8]
                             HydIds[Id] = [iX,AddHydIds[ineigh]]
+                            Nat += 1
+                            AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
+                            print Id,HydIds[Id]
                 if mapError:
                     G2frame.ErrorDialog('Add H atom error','Adding O-H atoms requires delt-F map')
                 SetupGeneral()
                 data['General']['HydIds'].update(HydIds)
                 G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,True)
+                data['Drawing']['Atoms'] = []
+                UpdateDrawAtoms()
                 FillAtomsGrid(Atoms)
                 dlg.Destroy()
                 G2plt.PlotStructure(G2frame,data)
@@ -1632,13 +1639,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             num = hydIds[0]
             Hxyz,HU = G2mth.AddHydrogens(AtLookUp,generalData,atomData,hydIds[1])
             try:
+                if data['Atoms'][AtLookUp[HId]][ct] != 'H':
+                    raise KeyError
                 data['Atoms'][AtLookUp[HId]][cx:cx+3] = Hxyz[num]
-                data['Atoms'][-1][cia+1] = HU[num]
+                data['Atoms'][AtLookUp[HId]][cia+1] = HU[num]
             except KeyError:
                 delList.append(HId)
                 continue
-        for HId in delList: #clear out deleted H-atoms
+        for HId in delList: #clear out deleted H-atom pointers
             del HydIds[HId]
+        if not len(HydIds):
+            G2frame.dataFrame.AtomEdit.Enable(G2gd.wxID_UPDATEHATOM,False)
         data['Drawing']['Atoms'] = []
         UpdateDrawAtoms()
         FillAtomsGrid(Atoms)
@@ -1705,23 +1716,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         atomInfo[cs] = list(generalData['Color'][atNum])
         return atomInfo
         
-    def AtomInsert(x,y,z):
-        indx = Atoms.GetSelectedRows()
-        if indx:
-            indx = indx[0]
-            atomData = data['Atoms']
-            generalData = data['General']
-            Ncol = Atoms.GetNumberCols()
-            E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
-            Sytsym,Mult = G2spc.SytSym([0,0,0],SGData)
-            atId = ran.randint(0,sys.maxint)
-            if generalData['Type'] == 'macromolecular':
-                atomData.insert(indx,[0,'UNK','','UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
-            elif generalData['Type'] == 'nuclear':
-                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
-            elif generalData['Type'] in ['modulated','magnetic']:
-                atomData.insert(indx,['UNK','UNK','',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],SSdefault])
-            SetupGeneral()
+    def AtomInsert(indx,x,y,z,El='H',Name='UNK'):
+        atomData = data['Atoms']
+        generalData = data['General']
+        Ncol = Atoms.GetNumberCols()
+        E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
+        Sytsym,Mult = G2spc.SytSym([0,0,0],SGData)
+        atId = ran.randint(0,sys.maxint)
+        if generalData['Type'] == 'macromolecular':
+            atomData.insert(indx,[0,Name,'',Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
+        elif generalData['Type'] == 'nuclear':
+            atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
+        elif generalData['Type'] in ['modulated','magnetic']:
+            atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],SSdefault])
+        SetupGeneral()
 
     def AtomDelete(event):
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
@@ -1739,7 +1747,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     IDs.append(atom[ci+8])
                     del atomData[ind]
             if 'Atoms' in data['Drawing']:
+                Atoms.ClearSelection()
                 DrawAtomsDeleteByIDs(IDs)
+                data['Drawing']['Atoms'] = []
+                UpdateDrawAtoms()
                 wx.CallAfter(FillAtomsGrid,Atoms)
                 G2plt.PlotStructure(G2frame,data)
             SetupGeneral()

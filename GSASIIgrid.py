@@ -734,10 +734,9 @@ class DataFrame(wx.Frame):
         self.ConstraintEdit.Append(id=wxID_EQUIVALANCEATOMS, kind=wx.ITEM_NORMAL,text='Add atom equivalence',
             help='Add equivalences between atom parameter values')
         self.ConstraintEdit.Enable(wxID_EQUIVALANCEATOMS,False)
-        self.ConstraintEdit.Append(id=wxID_ADDRIDING, kind=wx.ITEM_NORMAL,text='Add H riding constraints',
-            help='Add H atom riding constraints between atom parameter values')
-        self.ConstraintEdit.Enable(wxID_ADDRIDING,False)
-        wxID_ADDRIDING
+#        self.ConstraintEdit.Append(id=wxID_ADDRIDING, kind=wx.ITEM_NORMAL,text='Add H riding constraints',
+#            help='Add H atom riding constraints between atom parameter values')
+#        self.ConstraintEdit.Enable(wxID_ADDRIDING,False)
         self.PostfillDataMenu()
 
         # item = self.ConstraintEdit.Append(id=wx.ID_ANY,kind=wx.ITEM_NORMAL,text='Update GUI')

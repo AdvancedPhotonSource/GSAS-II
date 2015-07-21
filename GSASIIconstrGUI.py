@@ -825,9 +825,10 @@ def UpdateConstraints(G2frame,data):
             newcons = []
             constr = []
             if 'riding' in constType:
-                if 'AU11' in name or 'AUiso' in name:
-                    parts = name.split('AU11').split('AUiso')
-                    constr = [[1.0,G2obj.G2VarObj(parts[0]+'AUiso'+parts[1])]]
+                if 'AUiso' in name:
+                    constr = [[1.0,G2obj.G2VarObj(name)]]
+                elif 'AU11' in name:
+                    pass
                 elif 'AU' not in name:
                     constr = [[1.0,G2obj.G2VarObj(name)]]
             else:
@@ -836,7 +837,8 @@ def UpdateConstraints(G2frame,data):
             for sel in Selections:
                 id = Atoms[AtNames[sel]][0].rsplit(':',1)[-1]
                 if 'riding' in constType:
-                    if 'AU11' in pref or 'AUiso' in pref:
+                    if 'AUiso' in pref:
+                        parts = pref.split('AUiso')
                         constr += [[1.2,G2obj.G2VarObj('%s:%s'%(parts[0]+'AUiso',id))]]
                     elif 'AU' not in pref:
                         constr += [[1.0,G2obj.G2VarObj('%s:%s'%(pref,id))]]
@@ -1073,7 +1075,7 @@ def UpdateConstraints(G2frame,data):
         oldPage = G2frame.dataDisplay.ChangeSelection(page)
         text = G2frame.dataDisplay.GetPageText(page)
         G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_EQUIVALANCEATOMS,False)
-        G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_ADDRIDING,False)
+#        G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_ADDRIDING,False)
         if text == 'Histogram/Phase constraints':
             G2frame.Page = [page,'hap']
             UpdateConstraintPanel(HAPConstr,'HAP')
@@ -1083,7 +1085,7 @@ def UpdateConstraints(G2frame,data):
         elif text == 'Phase constraints':
             G2frame.Page = [page,'phs']
             G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_EQUIVALANCEATOMS,True)
-            G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_ADDRIDING,True)
+#            G2frame.dataFrame.ConstraintEdit.Enable(G2gd.wxID_ADDRIDING,True)
             UpdateConstraintPanel(PhaseConstr,'Phase')
         elif text == 'Global constraints':
             G2frame.Page = [page,'glb']
@@ -1118,7 +1120,7 @@ def UpdateConstraints(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddEquivalence, id=G2gd.wxID_EQUIVADD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddHold, id=G2gd.wxID_HOLDADD)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddAtomEquiv, id=G2gd.wxID_EQUIVALANCEATOMS)
-    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRiding, id=G2gd.wxID_ADDRIDING)
+#    G2frame.dataFrame.Bind(wx.EVT_MENU, OnAddRiding, id=G2gd.wxID_ADDRIDING)
     # tab commands
     for id in (G2gd.wxID_CONSPHASE,
                G2gd.wxID_CONSHAP,

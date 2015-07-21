@@ -1591,6 +1591,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     AddHydIds.append(neigh[1][1])
                     Neigh.append(neigh)
             if Neigh:
+                letters = ['A','B','C']
                 HydIds = {}
                 mapError = False
                 dlg = G2gd.AddHatomDialog(G2frame,Neigh,data)
@@ -1606,13 +1607,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             continue                            
                         Hxyz,HU = G2mth.AddHydrogens(AtLookUp,generalData,atomData,AddHydIds[ineigh])
                         for iX,X in enumerate(Hxyz):
-                            AtomInsert(loc+iX,X[0],X[1],X[2],'H','H(%d)'%(Nat))
+                            AtomInsert(loc+iX,X[0],X[1],X[2],'H','H%s'%(neigh[0][1:]+letters[iX]))
                             data['Atoms'][loc+iX][cia+1] = HU[iX]
                             Id = data['Atoms'][loc+iX][cia+8]
                             HydIds[Id] = [iX,AddHydIds[ineigh]]
                             Nat += 1
                             AtLookUp = G2mth.FillAtomLookUp(atomData,cia+8)
-                            print Id,HydIds[Id]
                 if mapError:
                     G2frame.ErrorDialog('Add H atom error','Adding O-H atoms requires delt-F map')
                 SetupGeneral()
@@ -1804,9 +1804,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             if not Atoms.IsReadOnly(r,cid):
                                 atomData[r][cid] = El
                                 if len(El) in [2,4]:
-                                    atomData[r][cid-1] = El[:2]+'(%d)'%(r+1)
+                                    atomData[r][cid-1] = El[:2]+'%d'%(r+1)
                                 else:
-                                    atomData[r][cid-1] = El[:1]+'(%d)'%(r+1)
+                                    atomData[r][cid-1] = El[:1]+'%d'%(r+1)
                         SetupGeneral()
                         if 'Atoms' in data['Drawing']:
                             for r in indx:
@@ -1824,9 +1824,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             if not Atoms.IsReadOnly(r,cid+1):
                                 El = atomData[r][cid+1]
                                 if len(El) in [2,4]:
-                                    atomData[r][cid] = El[:2]+'(%d)'%(r+1)
+                                    atomData[r][cid] = El[:2]+'%d'%(r+1)
                                 else:
-                                    atomData[r][cid] = El[:1]+'(%d)'%(r+1)
+                                    atomData[r][cid] = El[:1]+'%d'%(r+1)
                     FillAtomsGrid(Atoms)
                 finally:
                     dlg.Destroy()

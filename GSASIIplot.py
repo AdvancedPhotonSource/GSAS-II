@@ -1789,7 +1789,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             refColors=['b','r','c','g','m','k']
             Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
             for pId,phase in enumerate(Phases):
-                peaks = Phases[phase]['RefList']
+                peaks = Phases[phase].get('RefList',[])
                 if not len(peaks):
                     continue
                 if Phases[phase].get('Super',False):

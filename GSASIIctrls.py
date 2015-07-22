@@ -524,6 +524,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                                       **self.OnLeaveArgs)
         if event: event.Skip()
 
+################################################################################
 class NumberValidator(wx.PyValidator):
     '''A validator to be used with a TextCtrl to prevent
     entering characters other than digits, signs, and for float
@@ -718,6 +719,7 @@ class NumberValidator(wx.PyValidator):
         if not wx.Validator_IsSilent(): wx.Bell()
         return  # Returning without calling event.Skip, which eats the keystroke
 
+################################################################################
 class ASCIIValidator(wx.PyValidator):
     '''A validator to be used with a TextCtrl to prevent
     entering characters other than ASCII characters.
@@ -2087,6 +2089,115 @@ class G2ColumnIDDialog(wx.Dialog):
         return selCols,self.ColumnData
     
 ################################################################################
+class G2HistoDataDialog(wx.Dialog):
+    '''A dialog for editing histogram data globally.
+    
+    :param wx.Frame ParentFrame: reference to parent frame
+    :param str title: heading above list of choices
+    :param str header: Title to place on window frame 
+    :param list ParmList: a list of names for the columns
+    :param list ParmFmt: a list of formatting strings for the columns
+    :param list: HistoList: a list of histogram names
+    :param list ParmData: a list of lists of data matched to ParmList; one for each item in HistoList
+    :param bool monoFont: If False (default), use a variable-spaced font;
+      if True use a equally-spaced font.
+    :param kw: optional keyword parameters for the wx.Dialog may
+      be included such as size [which defaults to `(320,310)`] and
+      style (which defaults to 
+      ``wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.CENTRE | wx.OK | wx.CANCEL``);
+      note that ``wx.OK`` and ``wx.CANCEL`` controls the presence of the eponymous buttons in the dialog.
+    :returns: the modified ParmData
+    
+    '''
+
+    def __init__(self,parent, title, header,ParmList,ParmFmt,HistoList,ParmData,
+                 monoFont=False, **kw):
+
+        def OnOk(sevent):
+            parent.Raise()
+            self.EndModal(wx.ID_OK)
+            
+        def OnModify(event):
+            Obj = event.GetEventObject()
+            irow,it = Indx[Obj.GetId()]
+            try:
+                val = float(Obj.GetValue())
+            except ValueError:
+                val = self.ParmData[irow][it]
+            self.ParmData[irow][it] = val
+            Obj.SetValue(self.ParmFmt[it]%val)
+                        
+        # process keyword parameters, notably style
+        options = {'size':(600,310), # default Frame keywords
+                   'style':wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.CENTRE| wx.OK | wx.CANCEL,
+                   }
+        options.update(kw)
+        self.ParmList = ParmList
+        self.ParmFmt = ParmFmt
+        self.HistoList = HistoList
+        self.ParmData = ParmData
+        nCol = len(ParmList)
+        if options['style'] & wx.OK:
+            useOK = True
+            options['style'] ^= wx.OK
+        else:
+            useOK = False
+        if options['style'] & wx.CANCEL:
+            useCANCEL = True
+            options['style'] ^= wx.CANCEL
+        else:
+            useCANCEL = False        
+        # create the dialog frame
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,header,**options)
+        panel = wxscroll.ScrolledPanel(self)
+        # fill the dialog
+        Sizer = wx.BoxSizer(wx.VERTICAL)
+        Sizer.Add((-1,5))
+        Sizer.Add(wx.StaticText(panel,label=title),0,WACV)
+        dataSizer = wx.FlexGridSizer(0,nCol+1,0,0)
+        self.sel = []
+        self.mod = []
+        Indx = {}
+        for item in ['Histogram',]+self.ParmList:
+            dataSizer.Add(wx.StaticText(panel,-1,label=' %10s '%(item)),0,WACV)
+        for irow,name in enumerate(self.HistoList):
+            dataSizer.Add(wx.StaticText(panel,label=name),0,WACV|wx.LEFT|wx.RIGHT,10)
+            for it,item in enumerate(self.ParmData[irow]):
+                dat = wx.TextCtrl(panel,-1,value=self.ParmFmt[it]%(item),style=wx.TE_PROCESS_ENTER)
+                dataSizer.Add(dat,0,WACV)
+                dat.Bind(wx.EVT_TEXT_ENTER,OnModify)
+                dat.Bind(wx.EVT_KILL_FOCUS,OnModify)
+                Indx[dat.GetId()] = [irow,it]
+        Sizer.Add(dataSizer)
+        Sizer.Add((-1,10))
+        # OK/Cancel buttons
+        btnsizer = wx.StdDialogButtonSizer()
+        if useOK:
+            self.OKbtn = wx.Button(panel, wx.ID_OK)
+            self.OKbtn.SetDefault()
+            btnsizer.AddButton(self.OKbtn)
+            self.OKbtn.Bind(wx.EVT_BUTTON, OnOk)
+        if useCANCEL:
+            btn = wx.Button(panel, wx.ID_CANCEL)
+            btnsizer.AddButton(btn)
+        btnsizer.Realize()
+        Sizer.Add((-1,5))
+        Sizer.Add(btnsizer,0,wx.ALIGN_LEFT,20)
+        Sizer.Add((-1,5))
+        # OK done, let's get outa here
+        panel.SetSizer(Sizer)
+        panel.SetAutoLayout(1)
+        panel.SetupScrolling()
+        Size = [450,375]
+        panel.SetSize(Size)
+        Size[0] += 25; Size[1]+= 25
+        self.SetSize(Size)
+        
+    def GetData(self):
+        'Returns the modified ParmData'
+        return self.ParmData
+    
+################################################################################
 def ItemSelector(ChoiceList, ParentFrame=None,
                  title='Select an item',
                  size=None, header='Item Selector',
@@ -2161,8 +2272,6 @@ def GetItemOrder(parent,keylist,vallookup,posdict):
     sizer.Fit(dlg)
     val = dlg.ShowModal()
 
-################################################################################
-####
 ################################################################################
 class OrderBox(wxscroll.ScrolledPanel):
     '''Creates a panel with scrollbars where items can be ordered into columns
@@ -2651,7 +2760,6 @@ class GSNoteBook(wx.aui.AuiNotebook):
             
 ################################################################################
 #### Help support routines
-################################################################################
 ################################################################################
 class MyHelp(wx.Menu):
     '''

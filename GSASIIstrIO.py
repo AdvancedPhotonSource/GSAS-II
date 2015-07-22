@@ -479,7 +479,16 @@ def GPXBackup(GPXfile,makeBack=True):
     '''
     import distutils.file_util as dfu
     GPXback = getBackupName(GPXfile,makeBack)
-    dfu.copy_file(GPXfile,GPXback)
+    tries = 0
+    while True:
+        try:
+            dfu.copy_file(GPXfile,GPXback)
+            break
+        except:
+            tries += 1
+            if tries > 10:
+                return GPXfile  #failed!
+            time.sleep(1)           #just wait a second!         
     return GPXback
 
 def SetUsedHistogramsAndPhases(GPXfile,Histograms,Phases,RigidBodies,CovData,makeBack=True):

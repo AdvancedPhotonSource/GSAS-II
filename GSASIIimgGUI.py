@@ -963,6 +963,39 @@ def UpdateImageControls(G2frame,data,masks):
                 value = data['GonioAngles'][item]
             data['GonioAngles'][item] = value
             Obj.SetValue('%8.2f'%(value))
+            
+        def OnGlobalEdit(event):
+            Names = []
+            Items = []
+            if G2frame.PatternTree.GetCount():
+                id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+                while id:
+                    name = G2frame.PatternTree.GetItemText(id)
+                    if 'IMG' in name:
+                        ctrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'Image Controls'))
+                        Names.append(name)
+                        Items.append(ctrls['GonioAngles'])
+                    id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+                if len(Names) == 1:
+                    G2frame.ErrorDialog('Nothing for global editing','There must be more than one "IMG" pattern')
+                    return
+                dlg = G2G.G2HistoDataDialog(G2frame,' Edit sample goniometer data:',
+                    'Edit data',['Omega','Chi','Phi'],['%.2f','%.2f','%.2f'],Names,Items)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    result = dlg.GetData()
+                    id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+                    while id:
+                        name = G2frame.PatternTree.GetItemText(id)
+                        if 'IMG' in name:
+                            ctrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'Image Controls'))
+                            vals = Items[Names.index(name)]
+                            ctrls['GonioAngles'] = vals
+#                            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls'),ctrls)
+                        id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            finally:
+                dlg.Destroy()
+                G2frame.PatternTree.SelectItem(G2frame.PickId)
         
         gonioSizer = wx.BoxSizer(wx.HORIZONTAL)
         names = ['Omega','Chi','Phi']
@@ -975,6 +1008,9 @@ def UpdateImageControls(G2frame,data,masks):
             angle.Bind(wx.EVT_KILL_FOCUS,OnGonioAngle)
             ValObj[angle.GetId()] = i
             gonioSizer.Add(angle,0,WACV)
+        globEdit = wx.Button(G2frame.dataDisplay,-1,'Global edit')
+        globEdit.Bind(wx.EVT_BUTTON,OnGlobalEdit)
+        gonioSizer.Add(globEdit,0,WACV)
         return gonioSizer
         
 # Image Controls main code             

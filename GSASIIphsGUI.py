@@ -4204,7 +4204,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             'HStrain':[NDij*[0.0,],NDij*[False,]],                          
                             'Extinction':[0.0,False],'Babinet':{'BabA':[0.0,False],'BabU':[0.0,False]}}
                         refList = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Reflection Lists'))
-                        refList[generalData['Name']] = []                       
+                        refList[generalData['Name']] = {}                       
                     data['Histograms'] = UseList
                     wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
             finally:

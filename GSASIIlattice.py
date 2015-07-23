@@ -1128,20 +1128,20 @@ def GetKcl(L,N,SGLaue,phi,beta):
     'needs doc string'
     import pytexture as ptx
     if SGLaue in ['m3','m3m']:
-        if phi.shape:
+        if 'float' in str(type(phi)):
             Kcl = np.zeros_like(phi)
         else:
             Kcl = 0.
         for j in range(0,L+1,4):
-            im = j/4+1
-            if phi.shape:
-                pcrs = np.array([ptx.pyplmpsi(L,j,1,p)[0] for p in phi]).flatten()
+            im = j/4
+            if 'float' in str(type(phi)):
+                pcrs = ptx.pyplmpsi(L,j,len(phi),phi)[0]
             else:
                 pcrs,dum = ptx.pyplmpsi(L,j,1,phi)
-            Kcl += BOH['L='+str(L)][N-1][im-1]*pcrs*cosd(j*beta)        
+            Kcl += BOH['L='+str(L)][N-1][im]*pcrs*cosd(j*beta)        
     else:
-        if phi.shape:
-            pcrs = np.array([ptx.pyplmpsi(L,N,1,p)[0] for p in phi]).flatten()
+        if 'float' in str(type(phi)):
+            pcrs = ptx.pyplmpsi(L,N,len(phi),phi)[0]
         else:
             pcrs,dum = ptx.pyplmpsi(L,N,1,phi)
         pcrs *= RSQ2PI
@@ -1165,8 +1165,7 @@ def GetKsl(L,M,SamSym,psi,gam):
     if 'float' in str(type(psi)):
         psrs,dpdps = ptx.pyplmpsi(L,M,1,psi)
     else:
-        psrs = np.array([ptx.pyplmpsi(L,M,1,p) for p in psi])
-        psrs,dpdps = np.reshape(psrs.flatten(),(-1,2)).T
+        psrs,dpdps = ptx.pyplmpsi(L,M,len(psi),psi)
     psrs *= RSQ2PI
     dpdps *= RSQ2PI
     if M:

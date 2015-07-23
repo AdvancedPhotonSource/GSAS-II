@@ -1266,7 +1266,7 @@ class G2MultiChoiceDialog(wx.Dialog):
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
         topSizer.Add(
             wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
-            1,wx.ALL|wx.EXPAND|WACV,1)
+            1,wx.ALL|wx.EXPAND|WACV,8)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)

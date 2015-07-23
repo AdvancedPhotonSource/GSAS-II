@@ -1312,7 +1312,7 @@ def UpdateInstrumentGrid(G2frame,data):
         keys = data.keys()
         try:
             keys.remove('Source')
-        except ListError:
+        except ValueError:
             pass
         flags = dict(zip(keys,[data[key][2] for key in keys]))
         instType = data['Type'][0]
@@ -3213,7 +3213,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if HKLF:
             im = data[1].get('Super',0)
         else:
-            if 'T' in data[phaseName]['Type']:
+            if 'T' in data[phaseName].get('Type',''):
                 it = 3
             im = data[phaseName].get('Super',0)
         # has this table already been displayed?

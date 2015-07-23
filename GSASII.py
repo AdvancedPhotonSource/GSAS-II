@@ -704,7 +704,7 @@ class GSASII(wx.Frame):
                     Id = G2gd.GetPatternTreeItemId(self,self.root,histoName)
                     refList = self.PatternTree.GetItemPyData(
                         G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'))
-                    refList[generalData['Name']] = []
+                    refList[generalData['Name']] = {}
                     UseList[histoName] = SetDefaultDData('PWDR',histoName,NShkl=NShkl,NDij=NDij)
                 else:
                     raise Exception('Unexpected histogram '+str(histoName))
@@ -3615,7 +3615,7 @@ class GSASII(wx.Frame):
                     Id = 0
                     self.PickIdText = None  #force reload of PickId contents
                     self.PatternTree.DeleteChildren(self.root)
-                    if self.HKL: self.HKL = []
+                    if len(self.HKL): self.HKL = []
                     if self.G2plotNB.plotList:
                         self.G2plotNB.clear()
                     G2IO.ProjFileOpen(self)

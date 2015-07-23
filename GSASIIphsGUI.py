@@ -3917,9 +3917,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             colorSel.Bind(wx.EVT_COMBOBOX,OnColorSel)
             PTSizer.Add(colorSel,0,WACV)
-            popLA = wx.Button(Texture,-1,"Make popLA file")
-            popLA.Bind(wx.EVT_BUTTON, OnpopLA)
             if 'Inverse' not in textureData['PlotType']:
+                popLA = wx.Button(Texture,-1,"Make popLA file")
+                popLA.Bind(wx.EVT_BUTTON, OnpopLA)
                 PTSizer.Add(popLA,0,WACV)
         mainSizer.Add(PTSizer,0,WACV)
         mainSizer.Add((0,5),0)

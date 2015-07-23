@@ -1264,9 +1264,8 @@ class G2MultiChoiceDialog(wx.Dialog):
         # fill the dialog
         Sizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.HORIZONTAL)
-        topSizer.Add(
-            wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
-            1,wx.ALL|wx.EXPAND|WACV,8)
+        topSizer.Add(wx.StaticText(self,wx.ID_ANY,title,size=(-1,35)),
+            1,wx.ALL|wx.EXPAND|WACV,1)
         if filterBox:
             self.timer = wx.Timer()
             self.timer.Bind(wx.EVT_TIMER,self.Filter)
@@ -1534,9 +1533,7 @@ def SelectEdit1Var(G2frame,array,labelLst,elemKeysLst,dspLst,refFlgElem):
 
     copyList = []
     lbl = copyopts['currentsel']
-    dlg = G2MultiChoiceDialog(
-        G2frame.dataFrame, 
-        'Copy parameter '+lbl+' from\n'+hst,
+    dlg = G2MultiChoiceDialog(G2frame.dataFrame,'Copy parameter '+lbl+' from\n'+hst,
         'Copy parameters', histList)
     dlg.CenterOnParent()
     try:

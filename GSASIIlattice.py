@@ -1128,22 +1128,22 @@ def GetKcl(L,N,SGLaue,phi,beta):
     'needs doc string'
     import pytexture as ptx
     if SGLaue in ['m3','m3m']:
-        if 'float' in str(type(phi)):
+        if 'array' in str(type(phi)) and np.any(phi.shape):
             Kcl = np.zeros_like(phi)
         else:
             Kcl = 0.
         for j in range(0,L+1,4):
             im = j/4
-            if 'float' in str(type(phi)):
+            if 'array' in str(type(phi)) and np.any(phi.shape):
                 pcrs = ptx.pyplmpsi(L,j,len(phi),phi)[0]
             else:
-                pcrs,dum = ptx.pyplmpsi(L,j,1,phi)
-            Kcl += BOH['L='+str(L)][N-1][im]*pcrs*cosd(j*beta)        
+                pcrs = ptx.pyplmpsi(L,j,1,phi)[0]
+            Kcl += BOH['L=%d'%(L)][N-1][im]*pcrs*cosd(j*beta)        
     else:
-        if 'float' in str(type(phi)):
+        if 'array' in str(type(phi)) and np.any(phi.shape):
             pcrs = ptx.pyplmpsi(L,N,len(phi),phi)[0]
         else:
-            pcrs,dum = ptx.pyplmpsi(L,N,1,phi)
+            pcrs = ptx.pyplmpsi(L,N,1,phi)[0]
         pcrs *= RSQ2PI
         if N:
             pcrs *= SQ2
@@ -1162,10 +1162,10 @@ def GetKcl(L,N,SGLaue,phi,beta):
 def GetKsl(L,M,SamSym,psi,gam):
     'needs doc string'
     import pytexture as ptx
-    if 'float' in str(type(psi)):
-        psrs,dpdps = ptx.pyplmpsi(L,M,1,psi)
-    else:
+    if 'array' in str(type(psi)) and np.any(psi.shape):
         psrs,dpdps = ptx.pyplmpsi(L,M,len(psi),psi)
+    else:
+        psrs,dpdps = ptx.pyplmpsi(L,M,1,psi)
     psrs *= RSQ2PI
     dpdps *= RSQ2PI
     if M:
@@ -1194,9 +1194,9 @@ def GetKclKsl(L,N,SGLaue,psi,phi,beta):
     if SGLaue in ['m3','m3m']:
         Kcl = 0.0
         for j in range(0,L+1,4):
-            im = j/4+1
+            im = j/4
             pcrs,dum = ptx.pyplmpsi(L,j,1,phi)
-            Kcl += BOH['L='+str(L)][N-1][im-1]*pcrs*cosd(j*beta)        
+            Kcl += BOH['L=%d'%(L)][N-1][im]*pcrs*cosd(j*beta)        
     else:
         pcrs,dum = ptx.pyplmpsi(L,N,1,phi)
         pcrs *= RSQ2PI
@@ -1249,9 +1249,9 @@ def Flnh(Start,SHCoef,phi,beta,SGData):
         if SGData['SGLaue'] in ['m3','m3m']:
             Kcl = 0.0
             for j in range(0,l+1,4):
-                im = j/4+1
+                im = j/4
                 pcrs,dum = ptx.pyplmpsi(l,j,1,phi)
-                Kcl += BOH['L='+str(l)][n-1][im-1]*pcrs*cosd(j*beta)        
+                Kcl += BOH['L='+str(l)][n-1][im]*pcrs*cosd(j*beta)        
         else:                #all but cubic
             pcrs,dum = ptx.pyplmpsi(l,n,1,phi)
             pcrs *= RSQPI
@@ -1306,9 +1306,9 @@ def invpolfcal(ODFln,SGData,phi,beta):
             if SGData['SGLaue'] in ['m3','m3m']:
                 Kcl = 0.0
                 for j in range(0,l+1,4):
-                    im = j/4+1
+                    im = j/4
                     pcrs,dum = ptx.pyplmpsi(l,j,len(beta),phi)
-                    Kcl += BOH['L='+str(l)][n-1][im-1]*pcrs*cosd(j*beta)        
+                    Kcl += BOH['L=%d'%(l)][n-1][im]*pcrs*cosd(j*beta)        
             else:                #all but cubic
                 pcrs,dum = ptx.pyplmpsi(l,n,len(beta),phi)
                 pcrs *= RSQPI

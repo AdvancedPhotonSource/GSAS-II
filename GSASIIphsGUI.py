@@ -65,6 +65,7 @@ tand = lambda x: np.tan(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
+atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 
 def SetPhaseWindow(mainFrame,phasePage,mainSizer):
     phasePage.SetSizer(mainSizer)
@@ -3788,6 +3789,71 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 pf.close()
                 print ' popLA %d %d %d pole figure saved to %s'%(PH[0],PH[1],PH[2],pfFile)
 
+        def OnCSV(event):
+            pfName = PhaseName
+            pfFile = ''
+            cell = generalData['Cell'][1:7]
+            if 'Inverse' in textureData['PlotType']:
+                SHCoef = textureData['SH Coeff'][1]
+                PX = np.array(textureData['PFxyz'])
+                gam = atan2d(PX[0],PX[1])
+                xy = np.sqrt(PX[0]**2+PX[1]**2)
+                xyz = np.sqrt(PX[0]**2+PX[1]**2+PX[2]**2)
+                psi = asind(xy/xyz)
+                IODFln = G2lat.Glnh(True,SHCoef,psi,gam,SamSym[textureData['Model']])
+                pfName = PhaseName+'%d%d%dIPF.csv'%(int(PX[0]),int(PX[1]),int(PX[2]))
+                dlg = wx.FileDialog(G2frame, 'Choose CSV inverse pole figure file name', '.', pfName, 
+                    'CSV file (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+            else:    
+                PH = np.array(textureData['PFhkl'])
+                phi,beta = G2lat.CrsAng(PH,cell,SGData)
+                SHCoef = textureData['SH Coeff'][1]
+                ODFln = G2lat.Flnh(True,SHCoef,phi,beta,SGData)
+                pfName = PhaseName+'%d%d%dPF.csv'%(PH[0],PH[1],PH[2])
+                dlg = wx.FileDialog(G2frame, 'Choose CSV pole figure file name', '.', pfName, 
+                    'CSV file (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    pfFile = dlg.GetPath()
+                    print 'CSV save '+pfFile
+            finally:
+                dlg.Destroy()
+            if pfFile:
+                pf = open(pfFile,'w')
+                pf.write('"%s"\n'%(PhaseName))
+                if 'Inverse' in textureData['PlotType']:
+                    pf.write('" %s %d %d %d inverse pole figure"\n'%(PhaseName,int(PX[0]),int(PX[1]),int(PX[2])))
+                    P,R = np.mgrid[0:19,0:72]
+                    pf.write('"phi/beta",')
+                    np.savetxt(pf,np.linspace(0.,90.,19,True),fmt='%10.4f,',newline='')
+                    pf.write('\n')
+                    P = P.flatten()*5.
+                    R = R.flatten()*5.
+                    Z = G2lat.invpolfcal(IODFln,SGData,P,R)
+                    Z = np.reshape(Z,(19,72)).T
+                    for i,row in enumerate(Z):
+                        pf.write('%8d,  '%(i*5))
+                        np.savetxt(pf,row,fmt='%10.4f,',newline='')
+                        pf.write('\n')                
+                    pf.close()
+                    print ' %s %d %d %d inverse pole figure saved to %s'%(PhaseName,int(PX[0]),int(PX[1]),int(PX[2]),pfFile)
+                else:
+                    pf.write('" %s %d %d %d pole figure"\n'%(PhaseName,PH[0],PH[1],PH[2]))
+                    Psi,Gam = np.mgrid[0:19,0:72]
+                    pf.write('"psi/gam",')
+                    np.savetxt(pf,np.linspace(0.,90.,19,True),fmt='%10.4f,',newline='')
+                    pf.write('\n')
+                    Psi = Psi.flatten()*5.
+                    Gam = Gam.flatten()*5.
+                    Z = np.array(G2lat.polfcal(ODFln,SamSym[textureData['Model']],Psi,Gam))
+                    Z = np.reshape(Z,(19,72)).T
+                    for i,row in enumerate(Z):
+                        pf.write('%8d, '%(i*5))
+                        np.savetxt(pf,row,fmt='%10.4f,',newline='')
+                        pf.write('\n')               
+                    pf.close()
+                    print ' %s %d %d %d pole figure saved to %s'%(PhaseName,PH[0],PH[1],PH[2],pfFile)
+
         def SHPenalty(Penalty):
             
             def OnHKLList(event):
@@ -3917,9 +3983,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             colorSel.Bind(wx.EVT_COMBOBOX,OnColorSel)
             PTSizer.Add(colorSel,0,WACV)
-            if 'Inverse' not in textureData['PlotType']:
-                popLA = wx.Button(Texture,-1,"Make popLA file")
-                popLA.Bind(wx.EVT_BUTTON, OnpopLA)
+            if 'figure' in textureData['PlotType']:
+                popLA = wx.Button(Texture,-1,"Make CSV file")
+                popLA.Bind(wx.EVT_BUTTON, OnCSV)
                 PTSizer.Add(popLA,0,WACV)
         mainSizer.Add(PTSizer,0,WACV)
         mainSizer.Add((0,5),0)

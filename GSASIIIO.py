@@ -177,13 +177,14 @@ def CheckImageFile(G2frame,imagefile):
 
     if not os.path.exists(imagefile):
         dlg = wx.FileDialog(G2frame, 'Previous image file not found; open here', '.', '',\
-        'Any image file (*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.cor)\
-        |*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.cor|\
+        'Any image file (*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.cor;*.stl)\
+        |*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.cor;*.stl|\
         European detector file (*.edf)|*.edf|\
         Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|\
         MAR file (*.mar*)|*.mar*|\
         GE Image (*.ge*;*.avg;*.sum;*.cor)|*.ge*;*.avg;*.sum;*.cor|\
         ADSC Image (*.img)|*.img|\
+        Rigaku-Axis4 (*.stl)|*.stl|\
         All files (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
         try:
             dlg.SetFilename(''+ospath.split(imagefile)[1])
@@ -310,6 +311,10 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
         Comments,Data,Npix,Image = GetPNGData(imagefile)
         if not imageOnly:
             EditImageParms(G2frame,Data,Comments,Image,imagefile)
+    elif ext == '.stl':
+        Comments,Data,Npix,Image = GetRigaku(imagefile)
+#        if not imageOnly:
+#            EditImageParms(G2frame,Data,Comments,Image,imagefile)
     else:
         print 'Extension for file '+imagefile+' not recognized'
     if Image is None:
@@ -368,8 +373,8 @@ def GetEdfData(filename,imageOnly=False):
             wave = float(fields[2])
         elif 'Size' in line:
             imSize = int(fields[2])
-        elif 'DataType' in lines:
-            dType = fields[2]
+#        elif 'DataType' in lines:
+#            dType = fields[2]
         elif 'pixel_size_x' in line:
             pixSize[0] = float(fields[2])
         elif 'pixel_size_y' in line:
@@ -401,6 +406,38 @@ def GetEdfData(filename,imageOnly=False):
         return image
     else:
         return head,data,Npix,image
+        
+def GetRigaku(filename,imageOnly=False):
+    'Read Rigaku R-Axis IV image file'
+    import struct as st
+    import array as ar
+    if not imageOnly:
+        print 'Read Rigaku R-Axis IV file: ',filename    
+    File = open(filename,'rb')
+    fileSize = os.stat(filename).st_size
+    Npix = (fileSize-6000)/2
+    Head = File.read(6000)
+    head = ['Rigaku R-Axis IV detector data',]
+    image = np.array(ar.array('H',File.read(fileSize-6000)),dtype=np.int32)
+    print fileSize,image.shape
+    print head
+    if Npix == 9000000:
+        sizexy = [3000,3000]
+        pixSize = [100.,100.]        
+    elif Npix == 2250000:
+        sizexy = [1500,1500]
+        pixSize = [200.,200.]
+    else:
+        sizexy = [6000,6000]
+        pixSize = [50.,50.] 
+    image = np.reshape(image,(sizexy[1],sizexy[0]))        
+    data = {'pixelSize':pixSize,'wavelength':1.5428,'distance':250.0,'center':[150.,150.],'size':sizexy}  
+    File.close()    
+    if imageOnly:
+        return image
+    else:
+        return head,data,Npix,image
+    
         
 def GetGEsumData(filename,imageOnly=False):
     'Read SUM file as produced at 1-ID from G.E. images'

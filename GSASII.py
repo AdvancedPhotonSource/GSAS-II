@@ -2334,13 +2334,14 @@ class GSASII(wx.Frame):
         self.CheckNotebook()
         dlg = wx.FileDialog(
             self, 'Choose image files', '.', '',
-            'Any supported image file (*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.G2img;*.png)|'
-            '*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.G2img;*.png;*.zip|'
+            'Any supported image file (*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.stl;*.G2img;*.png)|'
+            '*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.stl;*.G2img;*.png;*.zip|'
             'European detector file (*.edf)|*.edf|'
             'Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|'
             'MAR file (*.mar*)|*.mar*|'
             'GE Image (*.ge*;*.avg;*.sum)|*.ge*;*.avg;*.sum|'
             'ADSC Image (*.img)|*.img|'
+            'Rigaku R-Axis IV (*.stl)|*.stl|'
             'GSAS-II Image (*.G2img)|*.G2img|'
             'Portable Network Graphics image (*.png)|*.png|'
             'Zip archive (*.zip)|*.zip|'

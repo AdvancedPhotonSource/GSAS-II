@@ -4226,6 +4226,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     if generalData['Type'] in ['modulated','magnetic']:
         SSGData = generalData['SSGData']
     Mydir = generalData['Mydir']
+    Super = generalData.get('Super',0)
     atomData = data['Atoms']
     mapPeaks = []
     drawingData = data['Drawing']
@@ -4334,12 +4335,14 @@ def PlotStructure(G2frame,data,firstCall=False):
         Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
 
     def OnKey(event):           #on key UP!!
+        keyBox = False
         try:
             keyCode = event.GetKeyCode()
             if keyCode > 255:
                 keyCode = 0
             key = chr(keyCode)
         except AttributeError:       #if from OnKeyBox above
+            keyBox = True
             key = str(event.key).upper()
         indx = drawingData['selectedAtoms']
         cx,ct = drawingData['atomPtrs'][:2]
@@ -4408,6 +4411,19 @@ def PlotStructure(G2frame,data,firstCall=False):
             SetPeakRoll(dirDict[key])
             SetMapPeaksText(mapPeaks)
         elif key in ['+','-','=','0'] and generalData['Type'] in ['modulated','magnetic']:
+            if keyBox:
+                OnKeyPressed(event)
+        Draw('key')
+        
+    def OnKeyPressed(event):    #On key down for repeating operation - used to change tau...
+        try:
+            keyCode = event.GetKeyCode()
+            if keyCode > 255:
+                keyCode = 0
+            key = chr(keyCode)
+        except AttributeError:       #if from OnKeyBox above
+            key = str(event.key).upper()
+        if key in ['+','-','=','0'] and generalData['Type'] in ['modulated','magnetic']:
             if key == '0':
                 G2frame.tau = 0.
             elif key in ['+','=']:
@@ -4415,7 +4431,11 @@ def PlotStructure(G2frame,data,firstCall=False):
             elif key == '-':
                 G2frame.tau -= 0.05
             G2frame.tau %= 1.   #force 0-1 range
-        Draw('key')
+            G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
+            data['Drawing']['Atoms'] = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
+            SetDrawAtomsText(data['Drawing']['Atoms'])
+            G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
+            Draw('key')
             
     def GetTruePosition(xy,Add=False):
         View = glGetIntegerv(GL_VIEWPORT)
@@ -4552,6 +4572,21 @@ def PlotStructure(G2frame,data,firstCall=False):
         if page:
             if G2frame.dataDisplay.GetPageText(page) == 'Map peaks':
                 G2frame.MapPeaksTable.SetData(mapPeaks)
+                panel = G2frame.dataDisplay.GetPage(page).GetChildren()
+                names = [child.GetName() for child in panel]
+                try:
+                    panel[names.index('GridWindow')].Refresh()
+                except ValueError:  #different wx versions!
+                    panel[names.index('grid window')].Refresh()
+            
+    def SetDrawAtomsText(drawAtoms):
+        page = getSelection()
+        if page:
+            if G2frame.dataDisplay.GetPageText(page) == 'Draw Atoms':
+                table = G2frame.atomTable.GetData()
+                for i,atom in enumerate(drawAtoms):
+                    table[i][2:5] = atom[2:5]
+                G2frame.atomTable.SetData(table)
                 panel = G2frame.dataDisplay.GetPage(page).GetChildren()
                 names = [child.GetName() for child in panel]
                 try:
@@ -4979,7 +5014,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         if len(mapData['rho']):
             VP = np.array(drawingData['viewPoint'][0])-np.array([.5,.5,.5])
             contLevel = drawingData['contourLevel']*mapData['rhoMax']
-            if 'delt-F' in mapData['MapType'] or 'N' in mapData['Type']:
+            if 'delt-F' in mapData['MapType'] or 'N' in mapData.get('Type',''):
                 rho = ma.array(mapData['rho'],mask=(np.abs(mapData['rho'])<contLevel))
             else:
                 rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))
@@ -5213,6 +5248,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_MIDDLE_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_KEY_UP, OnKey)
+    Page.canvas.Bind(wx.EVT_KEY_DOWN,OnKeyPressed)
     Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
     Page.canvas.Bind(wx.EVT_SIZE, OnSize)
 #    Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)

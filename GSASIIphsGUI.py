@@ -77,6 +77,105 @@ def SetPhaseWindow(mainFrame,phasePage,mainSizer):
     mainFrame.setSizePosLeft(Size)
     mainFrame.SendSizeEvent()
     
+#def FindBondsToo():                         #works but slow for large structures - keep as reference
+#    cx,ct,cs,ci = data['Drawing']['atomPtrs']
+#    atomData = data['Drawing']['Atoms']
+#    generalData = data['General']
+#    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+#    radii = generalData['BondRadii']
+#    atomTypes = generalData['AtomTypes']
+#    try:
+#        indH = atomTypes.index('H')
+#        radii[indH] = 0.5
+#    except:
+#        pass            
+#    for atom in atomData:
+#        atom[-1] = []
+#    Atoms = []
+#    for i,atom in enumerate(atomData):
+#        Atoms.append([i,np.array(atom[cx:cx+3]),atom[cs],radii[atomTypes.index(atom[ct])]])
+#    for atomA in Atoms:
+#        if atomA[2] in ['lines','sticks','ellipsoids','balls & sticks','polyhedra']:
+#            for atomB in Atoms:                    
+#                Dx = atomB[1]-atomA[1]
+#                DX = np.inner(Amat,Dx)
+#                dist = np.sqrt(np.sum(DX**2))
+#                sumR = atomA[3]+atomB[3]
+#                if 0.5 < dist <= 0.85*sumR:
+#                    i = atomA[0]
+#                    if atomA[2] == 'polyhedra':
+#                        atomData[i][-1].append(DX)
+#                    elif atomB[1] != 'polyhedra':
+#                        j = atomB[0]
+#                        atomData[i][-1].append(Dx*atomA[3]/sumR)
+#                        atomData[j][-1].append(-Dx*atomB[3]/sumR)
+                
+def FindBondsDraw(data):    
+    '''uses numpy & masks - very fast even for proteins!
+    '''
+    import numpy.ma as ma
+    cx,ct,cs,ci = data['Drawing']['atomPtrs']
+    hydro = data['Drawing']['showHydrogen']
+    atomData = data['Drawing']['Atoms']
+    generalData = data['General']
+    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+    radii = generalData['BondRadii']
+    atomTypes = generalData['AtomTypes']
+    try:
+        indH = atomTypes.index('H')
+        radii[indH] = 0.5
+    except:
+        pass            
+    for atom in atomData:
+        atom[-2] = []               #clear out old bonds/polyhedra
+        atom[-1] = []
+    Indx = range(len(atomData))
+    Atoms = []
+    Styles = []
+    Radii = []
+    for atom in atomData:
+        Atoms.append(np.array(atom[cx:cx+3]))
+        Styles.append(atom[cs])
+        try:
+            if not hydro and atom[ct] == 'H':
+                Radii.append(0.0)
+            else:
+                Radii.append(radii[atomTypes.index(atom[ct])])
+        except ValueError:          #changed atom type!
+            Radii.append(0.20)
+    Atoms = np.array(Atoms)
+    Radii = np.array(Radii)
+    IASR = zip(Indx,Atoms,Styles,Radii)
+    for atomA in IASR:
+        if atomA[2] in ['lines','sticks','ellipsoids','balls & sticks','polyhedra']:
+            Dx = Atoms-atomA[1]
+            dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of G2frame & disorder "bonds" < 0.5A
+            sumR = atomA[3]+Radii
+            IndB = ma.nonzero(ma.masked_greater(dist-data['Drawing']['radiusFactor']*sumR,0.))                 #get indices of bonded atoms
+            i = atomA[0]
+            for j in IndB[0]:
+                if Styles[i] == 'polyhedra':
+                    atomData[i][-2].append(np.inner(Amat,Dx[j]))
+                elif Styles[j] != 'polyhedra' and j > i:
+                    atomData[i][-2].append(Dx[j]*Radii[i]/sumR[j])
+                    atomData[j][-2].append(-Dx[j]*Radii[j]/sumR[j])
+            if Styles[i] == 'polyhedra':
+                Bonds = atomData[i][-2]
+                Faces = []
+                if len(Bonds) > 2:
+                    FaceGen = G2lat.uniqueCombinations(Bonds,3)     #N.B. this is a generator
+                    for face in FaceGen:
+                        vol = nl.det(face)
+                        if abs(vol) > 1. or len(Bonds) == 3:
+                            if vol < 0.:
+                                face = [face[0],face[2],face[1]]
+                            face = np.array(face)
+                            if not np.array([np.array(nl.det(face-bond))+0.0001 < 0 for bond in Bonds]).any():
+                                norm = np.cross(face[1]-face[0],face[2]-face[0])
+                                norm /= np.sqrt(np.sum(norm**2))
+                                Faces.append([face,norm])
+                    atomData[i][-1] = Faces
+                        
 def UpdatePhaseData(G2frame,Item,data,oldPage):
     '''Create the data display window contents when a phase is clicked on
     in the main (data tree) window.
@@ -97,6 +196,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     
     def GetReflData(G2frame,phaseName,reflNames):
         ReflData = {'RefList':[],'Type':''}
+        if '' in reflNames:
+            return None
         for reflName in reflNames:
             if 'PWDR' in reflName:
                 PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root, reflName)
@@ -1208,7 +1309,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             else: 
                                 atomData[r][c] = parms
                         if 'Atoms' in data['Drawing']:
-                            DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
+                            DrawAtomsReplaceByID(data['Drawing'],ui+6,atomData[r],ID)
                     wx.CallAfter(Paint)
                     
         def ChangeAtomCell(event):
@@ -1276,7 +1377,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     ci = colLabels.index('I/A')
                     atomData[r][c] = atomData[r][c].replace(rbAtmDict.get(atomData[r][ci+8],''),'')
                 if 'Atoms' in data['Drawing']:
-                    DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
+                    DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
                 wx.CallAfter(Paint)
 
         def AtomTypeSelect(event):
@@ -1299,7 +1400,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 ci = colLabels.index('I/A')
                 ID = atomData[r][ci+8]
                 if 'Atoms' in data['Drawing']:
-                    DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
+                    DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
                 SetupGeneral()
             else:
                 event.Skip()
@@ -1673,14 +1774,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             SetupGeneral()
             FillAtomsGrid(Atoms)
             ID = atomData[indx[0]][ci+8]
-            DrawAtomsReplaceByID(data['Drawing'],atomData[indx[0]],ID)
+            DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[indx[0]],ID)
             G2plt.PlotStructure(G2frame,data)
         event.StopPropagation()
             
-    def DrawAtomsReplaceByID(drawingData,atom,ID):
+    def DrawAtomsReplaceByID(drawingData,loc,atom,ID):
         IDs = [ID,]
         atomData = drawingData['Atoms']
-        indx = G2mth.FindAtomIndexByIDs(atomData,IDs)
+        indx = G2mth.FindAtomIndexByIDs(atomData,loc,IDs)
         for ind in indx:
             atomData[ind] = MakeDrawAtom(atom,atomData[ind])
                 
@@ -1817,7 +1918,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if 'Atoms' in data['Drawing']:
                             for r in indx:
                                 ID = atomData[r][ci+8]
-                                DrawAtomsReplaceByID(data['Drawing'],atomData[r],ID)
+                                DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
                     FillAtomsGrid(Atoms)
                 dlg.Destroy()
             elif parm in ['Name',]:
@@ -1903,7 +2004,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             XYZ = -XYZ
                         XYZ = XYZ+cent+Cell
                         if Force:
-                            XYZ = G2spc.MoveToUnitCell(XYZ)
+                            XYZ,cell = G2spc.MoveToUnitCell(XYZ)
+                            Cell += cell
                         if New:
                             atom = copy.copy(atomData[ind])
                         else:
@@ -2666,7 +2768,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         for r in range(len(atomData)):
                             atomData[r][c] = parms
                             drawAtoms.SetCellValue(r,c,parms)
-                        FindBondsDraw()
+                        FindBondsDraw(data)
                         G2plt.PlotStructure(G2frame,data)
                     dlg.Destroy()
                 elif drawAtoms.GetColLabelValue(c) == 'Label':
@@ -2708,7 +2810,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             else:
                 if drawAtoms.GetColLabelValue(c) in ['Style','Label']:
                     atomData[r][c] = drawAtoms.GetCellValue(r,c)
-                    FindBondsDraw()
+                    FindBondsDraw(data)
                 elif drawAtoms.GetColLabelValue(c) == 'Color':
                     dlg = wx.ColourDialog(G2frame)
                     if dlg.ShowModal() == wx.ID_OK:
@@ -2772,17 +2874,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','backbone','ribbons','schematic']
             labelChoice = [' ','type','name','number','residue','1-letter','chain']
             Types[9] = wg.GRID_VALUE_CHOICE+": ,type,name,number,residue,1-letter,chain"
-#        elif generalData['Type'] == 'modulated':
-#            Types += []
-#            colLabels += []
         table = []
         rowLabels = []
         for i,atom in enumerate(drawingData['Atoms']):
             table.append(atom[:colLabels.index('I/A')+1])
             rowLabels.append(str(i))
 
-        atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
-        drawAtoms.SetTable(atomTable, True)
+        G2frame.atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=Types)
+        drawAtoms.SetTable(G2frame.atomTable, True)
         drawAtoms.SetMargins(0,0)
         drawAtoms.AutoSizeColumns(True)
         drawAtoms.SetColSize(colLabels.index('Style'),80)
@@ -2810,7 +2909,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 drawAtoms.SetColAttr(c,attr)
         G2frame.dataFrame.setSizePosLeft([600,300])
 
-        FindBondsDraw()
+        FindBondsDraw(data)
         drawAtoms.ClearSelection()
 #        G2plt.PlotStructure(G2frame,data)
 
@@ -2832,7 +2931,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     atomData[r][cs] = parms
                     drawAtoms.SetCellValue(r,cs,parms)
             dlg.Destroy()
-            FindBondsDraw()
+            FindBondsDraw(data)
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
 
@@ -2991,7 +3090,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             XYZ = -XYZ
                         XYZ = XYZ+cent+Cell
                         if Force:
-                            XYZ = G2spc.MoveToUnitCell(XYZ)
+                            XYZ,cell = G2spc.MoveToUnitCell(XYZ)
+                            Cell += cell
                         atom = atomData[ind]
                         atom[cx:cx+3] = XYZ
                         atomOp = atom[cx+3]
@@ -3084,13 +3184,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                 +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
                             atom[cuij:cuij+6] = item[1]
                             Opp = G2spc.Opposite(item[0])
-                            for xyz in Opp:
-                                if noDuplicate(xyz,atomData):
-                                    cell = np.asarray(np.rint(xyz-atom[cx:cx+3]),dtype=np.int32)
-                                    cell = '1'+'+'+ \
-                                        str(cell[0])+','+str(cell[1])+','+str(cell[2])
-                                    atom[cx:cx+3] = xyz
-                                    atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
+                            for key in Opp:
+                                if noDuplicate(Opp[key],atomData):
+                                    unit = np.array([eval(i) for i in key.split(',')])-item[3]
+                                    cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
+                                    atom[cx:cx+3] = Opp[key]
+                                    atom[cx+3] = cell
                                     atomData.append(atom[:])
                     else:
                         result = G2spc.GenAtom(XYZ,SGData,False,Move=True)
@@ -3100,13 +3199,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             atom[cx+3] = str(item[1])+'+' \
                                 +str(item[2][0])+','+str(item[2][1])+','+str(item[2][2])
                             Opp = G2spc.Opposite(item[0])
-                            for xyz in Opp:
-                                if noDuplicate(xyz,atomData):
-                                    cell = np.asarray(np.rint(xyz-atom[cx:cx+3]),dtype=np.int32)
-                                    cell = '1'+'+'+ \
-                                        str(cell[0])+','+str(cell[1])+','+str(cell[2])
-                                    atom[cx:cx+3] = xyz
-                                    atom[cx+3] = G2spc.StringOpsProd(cell,atom[cx+3],SGData)
+                            for key in Opp:
+                                if noDuplicate(Opp[key],atomData):
+                                    unit = np.array([eval(i) for i in key.split(',')])-item[2]
+                                    cell = '%d+%d,%d,%d'%(item[1],unit[0],unit[1],unit[2])
+                                    atom[cx:cx+3] = Opp[key]
+                                    atom[cx+3] = cell
                                     atomData.append(atom[:])               
                     data['Drawing']['Atoms'] = atomData
             finally:
@@ -3115,103 +3213,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
             
-    def FindBondsToo():                         #works but slow for large structures - keep as reference
-        cx,ct,cs,ci = data['Drawing']['atomPtrs']
-        atomData = data['Drawing']['Atoms']
-        generalData = data['General']
-        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-        radii = generalData['BondRadii']
-        atomTypes = generalData['AtomTypes']
-        try:
-            indH = atomTypes.index('H')
-            radii[indH] = 0.5
-        except:
-            pass            
-        for atom in atomData:
-            atom[-1] = []
-        Atoms = []
-        for i,atom in enumerate(atomData):
-            Atoms.append([i,np.array(atom[cx:cx+3]),atom[cs],radii[atomTypes.index(atom[ct])]])
-        for atomA in Atoms:
-            if atomA[2] in ['lines','sticks','ellipsoids','balls & sticks','polyhedra']:
-                for atomB in Atoms:                    
-                    Dx = atomB[1]-atomA[1]
-                    DX = np.inner(Amat,Dx)
-                    dist = np.sqrt(np.sum(DX**2))
-                    sumR = atomA[3]+atomB[3]
-                    if 0.5 < dist <= 0.85*sumR:
-                        i = atomA[0]
-                        if atomA[2] == 'polyhedra':
-                            atomData[i][-1].append(DX)
-                        elif atomB[1] != 'polyhedra':
-                            j = atomB[0]
-                            atomData[i][-1].append(Dx*atomA[3]/sumR)
-                            atomData[j][-1].append(-Dx*atomB[3]/sumR)
-                    
-    def FindBondsDraw():                    #uses numpy & masks - very fast even for proteins!
-        import numpy.ma as ma
-        cx,ct,cs,ci = data['Drawing']['atomPtrs']
-        hydro = data['Drawing']['showHydrogen']
-        atomData = data['Drawing']['Atoms']
-        generalData = data['General']
-        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-        radii = generalData['BondRadii']
-        atomTypes = generalData['AtomTypes']
-        try:
-            indH = atomTypes.index('H')
-            radii[indH] = 0.5
-        except:
-            pass            
-        for atom in atomData:
-            atom[-2] = []               #clear out old bonds/polyhedra
-            atom[-1] = []
-        Indx = range(len(atomData))
-        Atoms = []
-        Styles = []
-        Radii = []
-        for atom in atomData:
-            Atoms.append(np.array(atom[cx:cx+3]))
-            Styles.append(atom[cs])
-            try:
-                if not hydro and atom[ct] == 'H':
-                    Radii.append(0.0)
-                else:
-                    Radii.append(radii[atomTypes.index(atom[ct])])
-            except ValueError:          #changed atom type!
-                Radii.append(0.20)
-        Atoms = np.array(Atoms)
-        Radii = np.array(Radii)
-        IASR = zip(Indx,Atoms,Styles,Radii)
-        for atomA in IASR:
-            if atomA[2] in ['lines','sticks','ellipsoids','balls & sticks','polyhedra']:
-                Dx = Atoms-atomA[1]
-                dist = ma.masked_less(np.sqrt(np.sum(np.inner(Amat,Dx)**2,axis=0)),0.5) #gets rid of G2frame & disorder "bonds" < 0.5A
-                sumR = atomA[3]+Radii
-                IndB = ma.nonzero(ma.masked_greater(dist-data['Drawing']['radiusFactor']*sumR,0.))                 #get indices of bonded atoms
-                i = atomA[0]
-                for j in IndB[0]:
-                    if Styles[i] == 'polyhedra':
-                        atomData[i][-2].append(np.inner(Amat,Dx[j]))
-                    elif Styles[j] != 'polyhedra' and j > i:
-                        atomData[i][-2].append(Dx[j]*Radii[i]/sumR[j])
-                        atomData[j][-2].append(-Dx[j]*Radii[j]/sumR[j])
-                if Styles[i] == 'polyhedra':
-                    Bonds = atomData[i][-2]
-                    Faces = []
-                    if len(Bonds) > 2:
-                        FaceGen = G2lat.uniqueCombinations(Bonds,3)     #N.B. this is a generator
-                        for face in FaceGen:
-                            vol = nl.det(face)
-                            if abs(vol) > 1. or len(Bonds) == 3:
-                                if vol < 0.:
-                                    face = [face[0],face[2],face[1]]
-                                face = np.array(face)
-                                if not np.array([np.array(nl.det(face-bond))+0.0001 < 0 for bond in Bonds]).any():
-                                    norm = np.cross(face[1]-face[0],face[2]-face[0])
-                                    norm /= np.sqrt(np.sum(norm**2))
-                                    Faces.append([face,norm])
-                        atomData[i][-1] = Faces
-                        
     def DrawAtomsDelete(event):   
         indx = drawAtoms.GetSelectedRows()
         indx.sort()
@@ -3226,7 +3227,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         event.StopPropagation()
         
     def OnReloadDrawAtoms(event):
-        data['Drawing']['Atoms'] = []
+        atomData = data['Atoms']
+        cx,ct,cs,ci = data['General']['AtomPtrs']
+        for atom in atomData:
+            ID = atom[ci+8]
+            DrawAtomsReplaceByID(data['Drawing'],ci+8,atom,ID)
         UpdateDrawAtoms()
         drawAtoms.ClearSelection()
         G2plt.PlotStructure(G2frame,data)
@@ -3234,7 +3239,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     def DrawAtomsDeleteByIDs(IDs):
         atomData = data['Drawing']['Atoms']
-        indx = G2mth.FindAtomIndexByIDs(atomData,IDs)
+        loc = data['Drawing']['atomPtrs'][3]+8
+        indx = G2mth.FindAtomIndexByIDs(atomData,loc,IDs)
         indx.reverse()
         for ind in indx:
             del atomData[ind]
@@ -3248,7 +3254,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             col = ct
         elif colName == 'I/A':
             col = cs
-        indx = G2mth.FindAtomIndexByIDs(atomData,IDs)
+        indx = G2mth.FindAtomIndexByIDs(atomData,ci+8,IDs)
         for ind in indx:
             atomData[ind][col] = value
                 
@@ -3315,7 +3321,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         for i in indx:
             atom = atomDData[i]
             xyz.append([i,]+atom[cn:cn+2]+atom[cx:cx+4]) #also gets Sym Op
-            id = G2mth.FindAtomIndexByIDs(atomData,[atom[cid],],False)[0]
+            id = G2mth.FindAtomIndexByIDs(atomData,cid,[atom[cid],],False)[0]
             Oxyz.append([id,]+atomData[id][cx+1:cx+4])
         DATData['Datoms'] = xyz
         DATData['Oatoms'] = Oxyz
@@ -3501,12 +3507,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     
             def OnShowHyd(event):
                 drawingData['showHydrogen'] = showHydrogen.GetValue()
-                FindBondsDraw()
+                FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnShowRB(event):
                 drawingData['showRigidBodies'] = showRB.GetValue()
-                FindBondsDraw()
+                FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnViewPoint(event):
@@ -3613,7 +3619,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     value = 0.85
                 drawingData['radiusFactor'] = value
                 radFactor.SetValue("%.2f"%(value))
-                FindBondsDraw()
+                FindBondsDraw(data)
                 G2plt.PlotStructure(G2frame,data)
             
             radSizer = wx.BoxSizer(wx.HORIZONTAL)

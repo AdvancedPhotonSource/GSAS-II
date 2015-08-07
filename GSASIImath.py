@@ -288,11 +288,12 @@ def FindMolecule(ind,generalData,atomData):                    #uses numpy & mas
             newAtoms.append(atom)
     return newAtoms
         
-def FindAtomIndexByIDs(atomData,IDs,Draw=True):
+def FindAtomIndexByIDs(atomData,loc,IDs,Draw=True):
     '''finds the set of atom array indices for a list of atom IDs. Will search 
     either the Atom table or the drawAtom table.
     
     :param list atomData: Atom or drawAtom table containting coordinates, etc.
+    :param int loc: location of atom id in atomData record
     :param list IDs: atom IDs to be found
     :param bool Draw: True if drawAtom table to be searched; False if Atom table
       is searched
@@ -302,9 +303,9 @@ def FindAtomIndexByIDs(atomData,IDs,Draw=True):
     '''
     indx = []
     for i,atom in enumerate(atomData):
-        if Draw and atom[-3] in IDs:
+        if Draw and atom[loc] in IDs:
             indx.append(i)
-        elif atom[-1] in IDs:
+        elif atom[loc] in IDs:
             indx.append(i)
     return indx
 
@@ -917,6 +918,10 @@ def XAnomAbs(Elements,wave):
         Xanom[El] = G2el.FPcalc(Orbs, kE)
     return Xanom
     
+################################################################################
+#### Modulation math
+################################################################################
+    
 def Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata):
     import scipy.special as sp
     import scipy.integrate as si
@@ -975,6 +980,50 @@ def fracFourier(tau,fsin,fcos):
     A = np.array([fs[:,np.newaxis]*np.sin(2.*np.pi*(i+1)*tau) for i,fs in enumerate(fsin)])
     B = np.array([fc[:,np.newaxis]*np.cos(2.*np.pi*(i+1)*tau) for i,fc in enumerate(fcos)])
     return np.sum(A,axis=0)+np.sum(B,axis=0)
+    
+def ApplyModulation(data,tau):
+    '''Applies modulation to drawing atom positions & Uijs for given tau
+    '''
+    generalData = data['General']
+    SGData = generalData['SGData']
+    cx,ct,cs,cia = generalData['AtomPtrs']
+    drawingData = data['Drawing']
+    dcx,dct,dcs,dci = drawingData['atomPtrs']
+    atoms = data['Atoms']
+    drawAtoms = drawingData['Atoms']
+    for atom in atoms:    
+        atxyz = np.array(atom[cx:cx+3])
+        waveType = atom[-1]['SS1']['waveType']
+        Spos = atom[-1]['SS1']['Spos']
+        wave = np.zeros(3)
+        if len(Spos):
+            scof = []
+            ccof = []
+            for i,spos in enumerate(Spos):
+                if waveType in ['Sawtooth','ZigZag'] and not i:
+                    Toff = spos[0][0]
+                    slopes = np.array(spos[0][1:])
+                    if waveType == 'Sawtooth':
+                        wave = posSawtooth(tau,Toff,slopes)
+                    elif waveType == 'ZigZag':
+                        wave = posZigZag(tau,Toff,slopes)
+                else:
+                    scof.append(spos[0][:3])
+                    ccof.append(spos[0][3:])
+            wave += np.sum(posFourier(tau,np.array(scof),np.array(ccof)),axis=1)
+        indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
+        for ind in indx:
+            drawatom = drawAtoms[ind]
+            opr = drawatom[dcs-1]
+            if atom[cia] == 'A':                    
+                X,U = G2spc.ApplyStringOps(opr,SGData,atxyz+wave,atom[cia+2:cia+8])
+                drawatom[dcx:dcx+3] = X
+#                drawatom[dci-6:dci] = U
+            else:
+                X = G2spc.ApplyStringOps(opr,SGData,atxyz+wave)
+                drawatom[dcx:dcx+3] = X
+    return drawAtoms
+    
     
 ################################################################################
 ##### distance, angle, planes, torsion stuff 

@@ -1060,10 +1060,9 @@ def MoveToUnitCell(xyz):
     :param xyz: a list or numpy array of fractional coordinates
     :returns: XYZ - numpy array of new coordinates now 0 or greater and less than 1
     '''
-    XYZ = np.zeros(3)
-    for i,x in enumerate(xyz):
-        XYZ[i] = (x-int(x))%1.0
-    return XYZ
+    XYZ = np.array([(x-int(x))%1.0 for x in xyz])
+    cell = np.asarray(np.rint(xyz-XYZ),dtype=np.int32)
+    return XYZ,cell
         
 def Opposite(XYZ,toler=0.0002):
     '''
@@ -1073,16 +1072,16 @@ def Opposite(XYZ,toler=0.0002):
     :param XYZ: 0 >= np.array[x,y,z] > 1 as by MoveToUnitCell
     :param toler: unit cell fraction tolerance making opposite
     :returns:
-        XYZ: array of opposite positions; always contains XYZ
+        XYZ: dict of opposite positions; key=unit cell & always contains XYZ
     '''
     perm3 = [[1,1,1],[0,1,1],[1,0,1],[1,1,0],[1,0,0],[0,1,0],[0,0,1],[0,0,0]]
     TB = np.where(abs(XYZ-1)<toler,-1,0)+np.where(abs(XYZ)<toler,1,0)
     perm = TB*perm3
-    cperm = ['%d%d%d'%(i,j,k) for i,j,k in perm]
+    cperm = ['%d,%d,%d'%(i,j,k) for i,j,k in perm]
     D = dict(zip(cperm,perm))
-    new = []
+    new = {}
     for key in D:
-        new.append(np.array(D[key])+np.array(XYZ))
+        new[key] = np.array(D[key])+np.array(XYZ)
     return new
         
 def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
@@ -1110,8 +1109,9 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     Idup = []
     Cell = []
     X = np.array(XYZ)
+    celli = np.zeros(3)
     if Move:
-        X = MoveToUnitCell(X)
+        X,celli = MoveToUnitCell(X)
     for ic,cen in enumerate(SGData['SGCen']):
         C = np.array(cen)
         for invers in range(int(SGData['SGInv']+1)):
@@ -1125,11 +1125,13 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                 if invers:
                     XT = -XT
                 XT += C
+                cell = np.zeros(3)
+                cellj = np.zeros(3)
                 if Move:
-                    newX = MoveToUnitCell(XT)
+                    newX,cellj = MoveToUnitCell(XT)
                 else:
                     newX = XT
-                cell = np.asarray(np.rint(newX-XT),dtype=np.int32)
+                cell += (celli+cellj)
                 if All:
                     if np.allclose(newX,X,atol=0.0002):
                         idup = False
@@ -2410,7 +2412,7 @@ def ApplyStringOps(A,SGData,X,Uij=[]):
         cellA = np.array([int(a) for a in cellA])
     else:
         cellA = np.zeros(3)
-    newX = (1-2*iC)*(Cen+np.inner(M,X)+T)+cellA
+    newX = Cen+(1-2*iC)*(np.inner(M,X)+T)+cellA
     if len(Uij):
         U = Uij2U(Uij)
         U = np.inner(M,np.inner(U,M).T)
@@ -3441,7 +3443,7 @@ def test2():
             for inv in onebar:
                 for cen in spc['SGCen']:
                     noff = off + cen
-                    noff = MoveToUnitCell(noff)
+                    noff = MoveToUnitCell(noff)[0]
                     mult = tuple((op*inv).ravel().tolist())
                     if debug: print "\n%s: %s + %s" % (spcname,mult,noff)
                     for refop in cctbx:
@@ -3451,7 +3453,7 @@ def test2():
                         if debug: print "mult match"
                         # check the translation
                         reftrans = list(refop[-3:])
-                        reftrans = MoveToUnitCell(reftrans)
+                        reftrans = MoveToUnitCell(reftrans)[0]
                         if all(abs(noff - reftrans) < 1.e-5):
                             cctbx.remove(refop)
                             break

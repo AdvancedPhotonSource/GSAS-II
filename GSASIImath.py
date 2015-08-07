@@ -993,9 +993,12 @@ def ApplyModulation(data,tau):
     drawAtoms = drawingData['Atoms']
     for atom in atoms:    
         atxyz = np.array(atom[cx:cx+3])
+        atuij = np.array(atom[cia+2:cia+8])
         waveType = atom[-1]['SS1']['waveType']
         Spos = atom[-1]['SS1']['Spos']
+        Sadp = atom[-1]['SS1']['Sadp']
         wave = np.zeros(3)
+        uwave = np.zeros(6)
         if len(Spos):
             scof = []
             ccof = []
@@ -1011,14 +1014,21 @@ def ApplyModulation(data,tau):
                     scof.append(spos[0][:3])
                     ccof.append(spos[0][3:])
             wave += np.sum(posFourier(tau,np.array(scof),np.array(ccof)),axis=1)
+        if len(Sadp):
+            scof = []
+            ccof = []
+            for i,sadp in enumerate(Sadp):
+                scof.append(sadp[0][:6])
+                ccof.append(sadp[0][6:])
+            uwave += np.sum(posFourier(tau,np.array(scof),np.array(ccof)),axis=1)
         indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
         for ind in indx:
             drawatom = drawAtoms[ind]
             opr = drawatom[dcs-1]
             if atom[cia] == 'A':                    
-                X,U = G2spc.ApplyStringOps(opr,SGData,atxyz+wave,atom[cia+2:cia+8])
+                X,U = G2spc.ApplyStringOps(opr,SGData,atxyz+wave,atuij+uwave)
                 drawatom[dcx:dcx+3] = X
-#                drawatom[dci-6:dci] = U
+                drawatom[dci-6:dci] = U
             else:
                 X = G2spc.ApplyStringOps(opr,SGData,atxyz+wave)
                 drawatom[dcx:dcx+3] = X

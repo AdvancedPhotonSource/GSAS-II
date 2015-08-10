@@ -3186,7 +3186,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             Opp = G2spc.Opposite(item[0])
                             for key in Opp:
                                 if noDuplicate(Opp[key],atomData):
-                                    unit = np.array([eval(i) for i in key.split(',')])-item[3]
+                                    unit = np.array(eval(key))*1.-item[3]
                                     cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
                                     atom[cx:cx+3] = Opp[key]
                                     atom[cx+3] = cell
@@ -3201,7 +3201,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             Opp = G2spc.Opposite(item[0])
                             for key in Opp:
                                 if noDuplicate(Opp[key],atomData):
-                                    unit = np.array([eval(i) for i in key.split(',')])-item[2]
+                                    unit = np.array(eval(key))*1.-item[2]
                                     cell = '%d+%d,%d,%d'%(item[1],unit[0],unit[1],unit[2])
                                     atom[cx:cx+3] = Opp[key]
                                     atom[cx+3] = cell

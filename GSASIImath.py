@@ -139,8 +139,9 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
             M2 = func(x0+Xvec,*args)
             nfev += 1
             chisq1 = np.sum(M2**2)
-            if chisq1 > chisq0:
+            if chisq1 > chisq0*(1.+ftol):
                 lam *= 10.
+                print 'matrix modification needed; lambda now %.1e'%(lam)
             else:
                 x0 += Xvec
                 lam /= 10.

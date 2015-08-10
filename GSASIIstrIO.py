@@ -1159,12 +1159,12 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                     phaseDict[pfx+'waveType:'+str(i)] = waveType    
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         Waves = AtomSS[Stype]
-                        uId,uCoef = CSI[Stype]
                         for iw,wave in enumerate(Waves):
                             if not iw:
-                                CSI = G2spc.GetSSfxuinel(waveType,at[cx:cx+3],SGData,SSGData)
+                                CSI = G2spc.GetSSfxuinel(waveType,iw,at[cx:cx+3],SGData,SSGData)
                             else:
-                                CSI = G2spc.GetSSfxuinel('Fourier',at[cx:cx+3],SGData,SSGData)
+                                CSI = G2spc.GetSSfxuinel('Fourier',iw,at[cx:cx+3],SGData,SSGData)
+                            uId,uCoef = CSI[Stype]
                             stiw = str(i)+':'+str(iw)
                             if Stype == 'Spos':
                                 if waveType in ['ZigZag','Sawtooth'] and not iw:
@@ -1191,11 +1191,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                                 names = [pfx+'MXsin:'+stiw,pfx+'MYsin:'+stiw,pfx+'MZsin:'+stiw,
                                     pfx+'MXcos:'+stiw,pfx+'MYcos:'+stiw,pfx+'MZcos:'+stiw]
                             phaseDict.update(dict(zip(names,wave[0])))
-                            if wave[1]:
+                            if wave[1]: #what do we do here for multiple terms in modulation constraints?
                                 for j in range(len(equivs)):
-                                    if uId[j] > 0:                               
+                                    if uId[j][0] > 0:                               
                                         phaseVary.append(names[j])
-                                        equivs[uId[j]-1].append([names[j],uCoef[j]])
+                                        equivs[uId[j][0]-1].append([names[j],uCoef[j][0]])
                                 for equiv in equivs:
                                     if len(equiv) > 1:
                                         name = equiv[0][0]

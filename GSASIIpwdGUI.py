@@ -1219,6 +1219,9 @@ def UpdateInstrumentGrid(G2frame,data):
         if not len(IndexPeaks[0]):
             G2frame.ErrorDialog('Can not calibrate','Index Peak List empty')
             return
+        if not np.any(IndexPeaks[1]):
+            G2frame.ErrorDialog('Can not calibrate','Peak positions not refined')
+            return False
         Ok = False
         for peak in IndexPeaks[0]:
             if peak[2] and peak[3]:

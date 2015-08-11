@@ -1518,7 +1518,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                         else:
                             fsc[i] = 0
                     FSC &= fsc
-#                    print SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,fsc
+                    if debug: print SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,fsc
         n = -1
         for i,F in enumerate(FSC):
             if F:
@@ -1609,10 +1609,10 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                             CSI[1][:2] = [[1.,0,0],[mul,0,0]]
                             xsc[:2] = 0
             XSC &= xsc
-#            print SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,xsc
+            if debug: print SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,xsc
         if waveType == 'Fourier':
             n = -1
-#            print XSC
+            if debug: print XSC
             for i,X in enumerate(XSC):
                 if X:
                     n += 1
@@ -1715,9 +1715,9 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
                             usc[4:6] = 0
                             usc[6:8] = 0
                         
-#                print SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,usc
+                if debug: print SSMT2text(ssop).replace(' ',''),sdet,ssdet,epsinv,usc
             USC &= usc
-#        print USC
+        if debug: print USC
         if not np.any(dtau%.5):
             n = -1
             for i,U in enumerate(USC):
@@ -1728,7 +1728,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
 
         return CSI,dU,dUTP
         
-#    print 'super space group: ',SSGData['SSpGrp']
+    if debug: print 'super space group: ',SSGData['SSpGrp']
     CSI = {'Sfrac':[[[1,0],[2,0]],[[1.,0.],[1.,0.]]],
         'Spos':[[[1,0,0],[2,0,0],[3,0,0], [4,0,0],[5,0,0],[6,0,0]],
             [[1.,0.,0.],[1.,0.,0.],[1.,0.,0.], [1.,0.,0.],[1.,0.,0.],[1.,0.,0.]]],    #sin & cos
@@ -1743,7 +1743,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
     SGOps = copy.deepcopy(SGData['SGOps'])
     laue = SGData['SGLaue']
     siteSym = SytSym(XYZ,SGData)[0].strip()
-#    print 'siteSym: ',siteSym
+    if debug: print 'siteSym: ',siteSym
     if siteSym == '1':   #"1" site symmetry
         if debug:
             return CSI,None,None,None,None
@@ -1780,7 +1780,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
     SdIndx = np.argsort(np.array(Sdtau))     # just to do in sensible order
     OpText =  [MT2text(s).replace(' ','') for s in Sop]         #debug?
     SSOpText = [SSMT2text(ss).replace(' ','') for ss in SSop]   #debug?
-#    print 'special pos super operators: ',SSOpText
+    if debug: print 'special pos super operators: ',SSOpText
     #setup displacement arrays
     tau = np.linspace(-1,1,49,True)
     #make modulation arrays - one parameter at a time

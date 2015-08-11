@@ -714,6 +714,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         fasq = fas**2
         fbsq = fbs**2        #imaginary
         refl[9+im] = np.sum(fasq)+np.sum(fbsq)
+        refl[7+im] = np.sum(fasq)+np.sum(fbsq)
         refl[10+im] = atan2d(fbs[0],fas[0])
     
 def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):

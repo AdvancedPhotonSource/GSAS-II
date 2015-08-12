@@ -1109,6 +1109,8 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
     Idup = []
     Cell = []
     X = np.array(XYZ)
+    if Move:
+        X = MoveToUnitCell(X)[0]
     for ic,cen in enumerate(SGData['SGCen']):
         C = np.array(cen)
         for invers in range(int(SGData['SGInv']+1)):
@@ -1122,8 +1124,8 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
                 if invers:
                     XT = -XT
                 XT += C
-                cell = np.zeros(3)
-                cellj = np.zeros(3)
+                cell = np.zeros(3,dtype=np.int32)
+                cellj = np.zeros(3,dtype=np.int32)
                 if Move:
                     newX,cellj = MoveToUnitCell(XT)
                 else:
@@ -1778,9 +1780,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
             epsinv = ssopinv[3][3]
             Sdtau.append(np.sum(mst*(XYZ-SGOps[iop][1])-epsinv*SSGOps[iop][1][3]))
     SdIndx = np.argsort(np.array(Sdtau))     # just to do in sensible order
-    OpText =  [MT2text(s).replace(' ','') for s in Sop]         #debug?
-    SSOpText = [SSMT2text(ss).replace(' ','') for ss in SSop]   #debug?
-    if debug: print 'special pos super operators: ',SSOpText
+    if debug: print 'special pos super operators: ',[SSMT2text(ss).replace(' ','') for ss in SSop]
     #setup displacement arrays
     tau = np.linspace(-1,1,49,True)
     #make modulation arrays - one parameter at a time

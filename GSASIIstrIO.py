@@ -1156,14 +1156,14 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 if General['Type'] in ['modulated','magnetic']:
                     AtomSS = at[-1]['SS1']
                     waveType = AtomSS['waveType']
-                    phaseDict[pfx+'waveType:'+str(i)] = waveType    
+                    phaseDict[pfx+'waveType:'+str(i)] = waveType
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         Waves = AtomSS[Stype]
                         for iw,wave in enumerate(Waves):
                             if not iw:
-                                CSI = G2spc.GetSSfxuinel(waveType,iw,at[cx:cx+3],SGData,SSGData)
+                                CSI = G2spc.GetSSfxuinel(waveType,iw+1,at[cx:cx+3],SGData,SSGData)
                             else:
-                                CSI = G2spc.GetSSfxuinel('Fourier',iw,at[cx:cx+3],SGData,SSGData)
+                                CSI = G2spc.GetSSfxuinel('Fourier',iw+1,at[cx:cx+3],SGData,SSGData)
                             uId,uCoef = CSI[Stype]
                             stiw = str(i)+':'+str(iw)
                             if Stype == 'Spos':
@@ -2187,7 +2187,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         HKLd = np.array(G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A))
                         HKLd = G2mth.sortArray(HKLd,4,reverse=True)
                         for h,k,l,m,d in HKLd:
-                            ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)    #is this right for SS refl.??
+                            ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
                             mul *= 2      # for powder overlap of Friedel pairs
                             if m or not ext:
                                 if 'C' in inst['Type'][0]:

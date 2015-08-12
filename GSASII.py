@@ -696,9 +696,15 @@ class GSASII(wx.Frame):
                         else:
                             H = hkl
                         ref[4+Super] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
-                        iabsnt,ref[3+Super],Uniq,phi = G2spc.GenHKLf(H,SGData)
+                        iabsnt = G2spc.GenHKLf(H,SGData)[0]
                         if iabsnt:  #flag space gp. absences
-                            ref[3+Super] = 0
+                            if Super: 
+                                if not ref[2+Super]:
+                                    ref[3+Super] = 0
+                                else:
+                                    ref[3+Super] = 1    #twin id?
+                            else:
+                                ref[3] = 0
                     UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
                 elif histoName in PWDRlist:
                     Id = G2gd.GetPatternTreeItemId(self,self.root,histoName)
@@ -851,7 +857,13 @@ class GSASII(wx.Frame):
                     ref[4+Super] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
                     iabsnt,mul,Uniq,phi = G2spc.GenHKLf(H,SGData)
                     if iabsnt:  #flag space gp. absences
-                        ref[3+Super] = 0
+                        if Super: 
+                            if not ref[2+Super]:
+                                ref[3+Super] = 0
+                            else:
+                                ref[3+Super] = 1    #twin id?
+                        else:
+                            ref[3] = 0
         wx.EndBusyCursor()
         
         return # success

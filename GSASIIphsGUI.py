@@ -2498,7 +2498,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             refList.Bind(wx.EVT_BUTTON,OnRefList)
             mapSizer.Add(refList,0,WACV)
             
-            mapTypes = ['Fobs','delt-F']
+            mapTypes = ['Fobs','Fcalc','delt-F']
             mapSizer.Add(wx.StaticText(waveData,label=' Map type: '),0,WACV)
             mapType = wx.ComboBox(waveData,-1,value=Map['MapType'],choices=mapTypes,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -2558,6 +2558,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mapData.update(G2mth.Fourier4DMap(data,ReflData))
         mapSig = np.std(mapData['rho'])
         print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+        wx.CallAfter(UpdateWavesData)
             
 ################################################################################
 #### Structure drawing GUI stuff                

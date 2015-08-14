@@ -902,6 +902,8 @@ def splitSSsym(SSymbol):
     Splits supersymmetry symbol into two lists of strings
     '''
     modsym,gensym = SSymbol.replace(' ','').split(')')
+    if gensym in ['0','00','000','0000']:       #get rid of extraneous symbols
+        gensym = ''
     nfrac = modsym.count('/')
     modsym = modsym.lstrip('(')
     if nfrac == 0:
@@ -1430,6 +1432,31 @@ def GetCSuinel(siteSym):
     indx = GetNXUPQsym(siteSym)
     return CSuinel[indx[1]]
     
+def getTauT(tau,sop,ssop,XYZ):
+    ssopinv = nl.inv(ssop[0])
+    mst = ssopinv[3][:3]
+    epsinv = ssopinv[3][3]
+    sdet = nl.det(sop[0])
+    ssdet = nl.det(ssop[0])
+    dtau = mst*(XYZ-sop[1])-epsinv*ssop[1][3]
+    dT = 1.0
+    if np.any(dtau%.5):
+        dT = np.tan(np.pi*np.sum(dtau%.5))
+    tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3])
+    return sdet,ssdet,dtau,dT,tauT
+    
+def OpsfromStringOps(A,SGData,SSGData):
+    SGOps = SGData['SGOps']
+    SSGOps = SSGData['SSGOps']
+    Ax = A.split('+')
+    Ax[0] = int(Ax[0])
+    iC = 1
+    if Ax[0] < 0:
+        iC = -1
+    Ax[0] = abs(Ax[0])
+    nA = Ax[0]%100-1
+    return SGOps[nA],SSGOps[nA],iC
+    
 def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
     
     def orderParms(CSI):
@@ -1442,7 +1469,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
             for i in [0,1,2]:
                 csi[i] = parms.index(csi[i])
         return CSI
-    
+        
     def fracCrenel(tau,Toff,Twid):
         Tau = (tau-Toff[:,np.newaxis])%1.
         A = np.where(Tau<Twid[:,np.newaxis],1.,0.)
@@ -1485,17 +1512,8 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         dFTP = []
         for i in SdIndx:
             sop = Sop[i]
-            ssop = SSop[i]
-            ssopinv = nl.inv(ssop[0])
-            mst = ssopinv[3][:3]
-            epsinv = ssopinv[3][3]
-            sdet = nl.det(sop[0])
-            ssdet = nl.det(ssop[0])
-            dtau = mst*(XYZ-sop[1])-epsinv*ssop[1][3]
-            dT = 1.0
-            if np.any(dtau%.5):
-                dT = np.tan(np.pi*np.sum(dtau%.5))
-            tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3])
+            ssop = SSop[i]            
+            sdet,ssdet,dtau,dT,tauT = getTauT(tau,sop,ssop,XYZ)
             fsc = np.ones(2,dtype='i')
             if 'Crenel' in waveType:
                 dFT = fracCrenel(tauT,delt2[:1],delt2[1:]).squeeze()
@@ -1550,17 +1568,8 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         for i in SdIndx:
             sop = Sop[i]
             ssop = SSop[i]
+            sdet,ssdet,dtau,dT,tauT = getTauT(tau,sop,ssop,XYZ)
             xsc = np.ones(6,dtype='i')
-            ssopinv = nl.inv(ssop[0])
-            mst = ssopinv[3][:3]
-            epsinv = ssopinv[3][3]
-            sdet = nl.det(sop[0])
-            ssdet = nl.det(ssop[0])
-            dtau = mst*(XYZ-sop[1])-epsinv*ssop[1][3]
-            dT = 1.0
-            if np.any(dtau%.5):
-                dT = np.tan(np.pi*np.sum(dtau%.5))
-            tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3])
             if waveType == 'Fourier':
                 dXT = posFourier(np.sort(tauT),nH,delt6[:3],delt6[3:])   #+np.array(XYZ)[:,np.newaxis,np.newaxis]
             elif waveType == 'Sawtooth':
@@ -1633,16 +1642,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         for i in SdIndx:
             sop = Sop[i]
             ssop = SSop[i]
-            ssopinv = nl.inv(ssop[0])
-            mst = ssopinv[3][:3]
-            epsinv = ssopinv[3][3]
-            sdet = nl.det(sop[0])
-            ssdet = nl.det(ssop[0])
-            dtau = mst*(XYZ-sop[1])-epsinv*ssop[1][3]
-            dT = 1.0
-            if np.any(dtau%.5):
-                dT = np.tan(np.pi*np.sum(dtau%.5))
-            tauT = np.inner(mst,XYZ-sop[1])+epsinv*(tau-ssop[1][3])
+            sdet,ssdet,dtau,dT,tauT = getTauT(tau,sop,ssop,XYZ)
             usc = np.ones(12,dtype='i')
             dUT = posFourier(tauT,nH,delt12[:6],delt12[6:])                  #Uij modulations - 6x12x49 array
             dUijT = np.rollaxis(np.rollaxis(np.array(Uij2U(dUT)),3),3)    #convert dUT to 12x49x3x3 
@@ -2113,7 +2113,7 @@ def ApplyStringOps(A,SGData,X,Uij=[]):
         cellA = np.array([int(a) for a in cellA])
     else:
         cellA = np.zeros(3)
-    newX = Cen+(1-2*iC)*(np.inner(M,X)+T)+cellA
+    newX = Cen+(1-2*iC)*(np.inner(M,X).T+T)+cellA
     if len(Uij):
         U = Uij2U(Uij)
         U = np.inner(M,np.inner(U,M).T)

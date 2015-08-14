@@ -3030,7 +3030,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
             else:
                 scof.append(spos[0][:3])
                 ccof.append(spos[0][3:])
-        wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof))
+        wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof),-1)  #hmm, why -1 work for Na2CO3?
     if mapData['Flip']:
         Title = 'Charge flip'
     else:

@@ -923,24 +923,25 @@ def XAnomAbs(Elements,wave):
 #### Modulation math
 ################################################################################
     
-def Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata):
+def Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM):
     import scipy.special as sp
     import scipy.integrate as si
+    Smult,TauT = SStauM             # both atoms x SGops
     m = SSUniq.T[3]
     nh = np.zeros(1)
     if XSSdata.ndim > 2:
-        nh = np.arange(XSSdata.shape[1])        
-    M = np.where(m>0,m+nh[:,np.newaxis],m-nh[:,np.newaxis])
-    A = np.array(XSSdata[:3])
-    B = np.array(XSSdata[3:])
-    HdotA = (np.inner(A.T,SSUniq.T[:3].T)+SSPhi)
-    HdotB = (np.inner(B.T,SSUniq.T[:3].T)+SSPhi)
-    GpA = sp.jn(M[:,np.newaxis],twopi*HdotA)
-    GpB = sp.jn(M[:,np.newaxis],twopi*HdotB)*(1.j)**M
-    Gp = np.sum(GpA+GpB,axis=0)
-    return np.real(Gp).T,np.imag(Gp).T
+        nh = np.arange(XSSdata.shape[1])        #0..max harmonic order-1
+    M = np.where(m>0,m+nh[:,np.newaxis],m-nh[:,np.newaxis])     # waves x SGops
+    A = np.array(XSSdata[:3])   #sin mods x waves x atoms
+    B = np.array(XSSdata[3:])   #cos mods...
+    HdotA = (np.inner(A.T,SSUniq.T[:3].T)+SSPhi+TauT[:,np.newaxis,:])    # atoms X waves x SGops
+    HdotB = (np.inner(B.T,SSUniq.T[:3].T)+SSPhi)    #+TauT[:,np.newaxis,:])    # ditto
+    GpA = sp.jn(M,twopi*HdotA)                      # atoms x waves x SGops
+    GpB = sp.jn(M,twopi*HdotB)*(1.j)**M             # ditto
+    Gp = np.sum(GpA+GpB,axis=1)                     # atoms x SGops
+    return np.real(Gp).T,np.imag(Gp).T              # SGops x atoms
     
-def ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata):
+def ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM):
     import scipy.special as sp
     m = SSUniq.T[3]
     nh = np.zeros(1)
@@ -949,16 +950,16 @@ def ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata):
     M = np.where(m>0,m+nh[:,np.newaxis],m-nh[:,np.newaxis])
     A = np.array([[a,b] for a,b in zip(XSSdata[:3],XSSdata[3:])])
     HdotA = twopi*(np.inner(SSUniq.T[:3].T,A.T)+SSPhi)
-    Gpm = sp.jn(M[:,np.newaxis,:]-1,HdotA)
-    Gpp = sp.jn(M[:,np.newaxis,:]+1,HdotA)
+    Gpm = sp.jn(M-1,HdotA)
+    Gpp = sp.jn(M+1,HdotA)
     if Gpm.ndim > 3: #sum over multiple harmonics
         Gpm = np.sum(Gpm,axis=0)
         Gpp = np.sum(Gpp,axis=0)
     dGpdk = 0.5*(Gpm+Gpp)
     return np.real(dGpdk),np.imag(dGpdk)
     
-def posFourier(tau,psin,pcos):
-    A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])
+def posFourier(tau,psin,pcos,smul):
+    A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])*smul
     B = np.array([pc[:,np.newaxis]*np.cos(2*np.pi*(i+1)*tau) for i,pc in enumerate(pcos)])
     return np.sum(A,axis=0)+np.sum(B,axis=0)
     
@@ -987,6 +988,7 @@ def ApplyModulation(data,tau):
     '''
     generalData = data['General']
     SGData = generalData['SGData']
+    SSGData = generalData['SSGData']
     cx,ct,cs,cia = generalData['AtomPtrs']
     drawingData = data['Drawing']
     dcx,dct,dcs,dci = drawingData['atomPtrs']
@@ -998,34 +1000,38 @@ def ApplyModulation(data,tau):
         waveType = atom[-1]['SS1']['waveType']
         Spos = atom[-1]['SS1']['Spos']
         Sadp = atom[-1]['SS1']['Sadp']
-        wave = np.zeros(3)
-        uwave = np.zeros(6)
-        if len(Spos):
-            scof = []
-            ccof = []
-            for i,spos in enumerate(Spos):
-                if waveType in ['Sawtooth','ZigZag'] and not i:
-                    Toff = spos[0][0]
-                    slopes = np.array(spos[0][1:])
-                    if waveType == 'Sawtooth':
-                        wave = posSawtooth(tau,Toff,slopes)
-                    elif waveType == 'ZigZag':
-                        wave = posZigZag(tau,Toff,slopes)
-                else:
-                    scof.append(spos[0][:3])
-                    ccof.append(spos[0][3:])
-            wave += np.sum(posFourier(tau,np.array(scof),np.array(ccof)),axis=1)
-        if len(Sadp):
-            scof = []
-            ccof = []
-            for i,sadp in enumerate(Sadp):
-                scof.append(sadp[0][:6])
-                ccof.append(sadp[0][6:])
-            uwave += np.sum(posFourier(tau,np.array(scof),np.array(ccof)),axis=1)
         indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
         for ind in indx:
             drawatom = drawAtoms[ind]
             opr = drawatom[dcs-1]
+            sop,ssop,icent = G2spc.OpsfromStringOps(opr,SGData,SSGData)
+            sdet,ssdet,dtau,dT,tauT = G2spc.getTauT(tau,sop,ssop,atxyz)
+            smul = sdet*ssdet
+#            tauT *= icent
+            wave = np.zeros(3)
+            uwave = np.zeros(6)
+            if len(Spos):
+                scof = []
+                ccof = []
+                for i,spos in enumerate(Spos):
+                    if waveType in ['Sawtooth','ZigZag'] and not i:
+                        Toff = spos[0][0]
+                        slopes = np.array(spos[0][1:])
+                        if waveType == 'Sawtooth':
+                            wave = posSawtooth(tauT,Toff,slopes)
+                        elif waveType == 'ZigZag':
+                            wave = posZigZag(tauT,Toff,slopes)
+                    else:
+                        scof.append(spos[0][:3])
+                        ccof.append(spos[0][3:])
+                wave += np.sum(posFourier(tauT,np.array(scof),np.array(ccof),smul),axis=1)
+            if len(Sadp):
+                scof = []
+                ccof = []
+                for i,sadp in enumerate(Sadp):
+                    scof.append(sadp[0][:6])
+                    ccof.append(sadp[0][6:])
+                uwave += np.sum(posFourier(tauT,np.array(scof),np.array(ccof),smul),axis=1)
             if atom[cia] == 'A':                    
                 X,U = G2spc.ApplyStringOps(opr,SGData,atxyz+wave,atuij+uwave)
                 drawatom[dcx:dcx+3] = X
@@ -2075,6 +2081,12 @@ def Fourier4DMap(data,reflDict):
                     Fhkl[h,k,l,m] = F*phasep
                     h,k,l,m = -hkl+Hmax
                     Fhkl[h,k,l,m] = F*phasem
+                elif 'Fcalc' in mapData['MapType']:
+                    F = np.where(Fcsq>0.,np.sqrt(Fcsq),0.)
+                    h,k,l,m = hkl+Hmax
+                    Fhkl[h,k,l,m] = F*phasep
+                    h,k,l,m = -hkl+Hmax
+                    Fhkl[h,k,l,m] = F*phasem                    
                 elif 'delt-F' in mapData['MapType']:
                     dF = np.where(Fosq>0.,np.sqrt(Fosq),0.)-np.sqrt(Fcsq)
                     h,k,l,m = hkl+Hmax

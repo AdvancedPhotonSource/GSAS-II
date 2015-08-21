@@ -639,7 +639,7 @@ def GetSSTauM(SGOps,SSOps,pfx,calcControls,XData):
     for ix,xyz in enumerate(XData.T):
         for isym,(sop,ssop) in enumerate(zip(SGOps,SSOps)):
             sdet,ssdet,dtau,dT,tauT = G2spc.getTauT(0,sop,ssop,xyz)
-            Smult[ix][isym] = sdet*ssdet
+            Smult[ix][isym] = sdet
             TauT[ix][isym] = tauT
     return Smult,TauT
     
@@ -970,6 +970,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     Mast = twopisq*np.multiply.outer(ast,ast)
     
     SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGInv = SGData['SGInv']
     SGT = np.array([ops[1] for ops in SGData['SGOps']])
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
@@ -977,7 +978,11 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     BLtables = calcControls['BLtables']
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
-    SStauM = GetSSTauM(SGData['SGOps'],SSGData['SSGOps'],pfx,calcControls,Xdata)
+    SStauM = list(GetSSTauM(SGData['SGOps'],SSGData['SSGOps'],pfx,calcControls,Xdata))
+    if SGData['SGInv']:
+        SStauM[0] = np.hstack((SStauM[0],SStauM[0]))
+        SStauM[1] = np.hstack((SStauM[1],SStauM[1]))
+    modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
@@ -1010,11 +1015,19 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
                 refDict['FF']['FF'][iref] = dat.values()
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = refDict['FF']['FF'][iref][Tindx]
-        Uniq = np.inner(H[:3],SGMT)
-        SSUniq = np.inner(H,SSGMT)
-        Phi = np.inner(H[:3],SGT)
-        SSPhi = np.inner(H,SSGT)
-        GfpuA,GfpuB = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM)        
+        HM = np.zeros(4)
+        HM[:3] += H[3]*modQ
+        HM += H
+        Uniq = np.inner(HM[:3],SGMT)
+        SSUniq = np.inner(HM,SSGMT)
+        Phi = np.inner(HM[:3],SGT)
+        SSPhi = np.inner(HM,SSGT)
+        if SGInv:   #if centro - expand HKL sets
+            Uniq = np.vstack((Uniq,-Uniq))
+            SSUniq = np.vstack((SSUniq,-SSUniq))
+            Phi = np.hstack((Phi,-Phi))
+            SSPhi = np.hstack((SSPhi,-SSPhi))
+        GfpuA,Hphi = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM)        
         phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
@@ -1024,18 +1037,17 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij*Mdata*Fdata/len(Uniq)
         fa = np.array([(FF+FP-Bab)*cosp*Tcorr,-FPP*sinp*Tcorr])     #2 x sym x atoms
-        fb = np.zeros_like(fa)                                      #ditto
-        if not SGData['SGInv']:
-            fb = np.array([(FF+FP-Bab)*sinp*Tcorr,FPP*cosp*Tcorr])
-        fa = fa*GfpuA[np.newaxis,:,:]-fb*GfpuB[np.newaxis,:,:]
-        fb = fb*GfpuA[np.newaxis,:,:]+fa*GfpuB[np.newaxis,:,:]
-        fas = np.real(np.sum(np.sum(fa,axis=1),axis=1))        #real
+        fb = np.array([(FF+FP-Bab)*sinp*Tcorr,FPP*cosp*Tcorr])
+        fa *= GfpuA
+        fb *= GfpuA        
+        fas = np.real(np.sum(np.sum(fa,axis=1),axis=1))
         fbs = np.real(np.sum(np.sum(fb,axis=1),axis=1))
         fasq = fas**2
         fbsq = fbs**2        #imaginary
         refl[9+im] = np.sum(fasq)+np.sum(fbsq)
         refl[7+im] = np.sum(fasq)+np.sum(fbsq)
         refl[10+im] = atan2d(fbs[0],fas[0])
+#        GSASIIpath.IPyBreak()
     
 def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     'Needs a doc string'
@@ -2771,9 +2783,18 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             sumFo2 = 0
             sumdF = 0
             sumdF2 = 0
+            if im:
+                sumSSFo = np.zeros(10)
+                sumSSFo2 = np.zeros(10)
+                sumSSdF = np.zeros(10)
+                sumSSdF2 = np.zeros(10)
+                sumSSwYo = np.zeros(10)
+                sumSSwdf2 = np.zeros(10)
+                SSnobs = np.zeros(10)
             nobs = 0
             nrej = 0
             next = 0
+            maxH = 0
             if calcControls['F**2']:
                 for i,ref in enumerate(refDict['RefList']):
                     if ref[6+im] > 0:
@@ -2791,6 +2812,16 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                             nobs += 1
                             df[i] = -w*(ref[5+im]-ref[7+im])
                             sumwYo += (w*ref[5+im])**2      #w*Fo^2
+                            if im:  #accumulate super lattice sums
+                                ind = int(abs(ref[3]))
+                                sumSSFo[ind] += Fo
+                                sumSSFo2[ind] += ref[5+im]
+                                sumSSdF[ind] += abs(Fo-np.sqrt(ref[7+im]))
+                                sumSSdF2[ind] += abs(ref[5+im]-ref[7+im])
+                                sumSSwYo[ind] += (w*ref[5+im])**2      #w*Fo^2
+                                sumSSwdf2[ind] +=  df[i]**2
+                                SSnobs[ind] += 1
+                                maxH = max(maxH,ind)                           
                         else:
                             if ref[3+im]:
                                 ref[3+im] = -abs(ref[3+im])      #mark as rejected
@@ -2815,6 +2846,16 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                             nobs += 1
                             df[i] = -w*(Fo-Fc)
                             sumwYo += (w*Fo)**2
+                            if im:
+                                ind = int(abs(ref[3]))
+                                sumSSFo[ind] += Fo
+                                sumSSFo2[ind] += ref[5+im]
+                                sumSSdF[ind] += abs(Fo-Fc)
+                                sumSSdF2[ind] += abs(ref[5+im]-ref[7+im])
+                                sumSSwYo[ind] += (w*Fo)**2                                                            
+                                sumSSwdf2[ind] +=  df[i]**2
+                                SSnobs[ind] += 1                           
+                                maxH = max(maxH,ind)                           
                         else:
                             if ref[3+im]:
                                 ref[3+im] = -abs(ref[3+im])      #mark as rejected
@@ -2830,6 +2871,11 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             Histogram['Residuals'][phfx+'Nref'] = nobs
             Histogram['Residuals'][phfx+'Nrej'] = nrej
             Histogram['Residuals'][phfx+'Next'] = next
+            if im:
+                Histogram['Residuals'][phfx+'SSRf'] = 100.*sumSSdF[:maxH+1]/sumSSFo[:maxH+1]
+                Histogram['Residuals'][phfx+'SSRf^2'] = 100.*sumSSdF2[:maxH+1]/sumSSFo2[:maxH+1]
+                Histogram['Residuals'][phfx+'SSNref'] = SSnobs[:maxH+1]
+                Histogram['Residuals']['SSwR'] = np.sqrt(sumSSwdf2[:maxH+1]/sumSSwYo[:maxH+1])*100.                
             Nobs += nobs
             Nrej += nrej
             Next += next

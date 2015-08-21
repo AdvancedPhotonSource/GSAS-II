@@ -2961,13 +2961,22 @@ def UpdatePWHKPlot(G2frame,kind,item):
             ' Data residual wR: %.3f%% on %d observations'%(data[0]['wR'],data[0]['Nobs'])))
         for value in data[0]:
             if 'Nref' in value:
-                mainSizer.Add((5,5),)
                 pfx = value.split('Nref')[0]
                 name = data[0].get(pfx.split(':')[0]+'::Name','?')
-                mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' For phase '+name+':'))
-                mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
-                    u' Unweighted phase residuals RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '% \
-                    (data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value])))
+                if 'SS' in value:
+                    mainSizer.Add((5,5),)
+                    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' For incommensurate phase '+name+':'))
+                    for m,(Rf2,Rf,Nobs) in enumerate(zip(data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value])):
+                        mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
+                            u' m = +/- %d: RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '% \
+                            (m,Rf2,Rf,Nobs)))
+                else:
+                    mainSizer.Add((5,5),)
+                    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' For phase '+name+':'))
+                    mainSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,
+                        u' Unweighted phase residuals RF\u00b2: %.3f%%, RF: %.3f%% on %d reflections  '% \
+                        (data[0][pfx+'Rf^2'],data[0][pfx+'Rf'],data[0][value])))
+                    
     mainSizer.Add((5,5),)
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)

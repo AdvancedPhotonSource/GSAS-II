@@ -928,28 +928,35 @@ def Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM):
     import scipy.integrate as si
     Smult,TauT = SStauM             # both atoms x SGops
     m = SSUniq.T[3]
-    nh = np.zeros(1)
-    if XSSdata.ndim > 2:
-        nh = np.arange(XSSdata.shape[1])        #0..max harmonic order-1
-    M = np.where(m>0,m+nh[:,np.newaxis],m-nh[:,np.newaxis])     # waves x SGops
     A = np.array(XSSdata[:3])   #sin mods x waves x atoms
     B = np.array(XSSdata[3:])   #cos mods...
-    HdotA = (np.inner(A.T,SSUniq.T[:3].T)+SSPhi+TauT[:,np.newaxis,:])    # atoms X waves x SGops
-    HdotB = (np.inner(B.T,SSUniq.T[:3].T)+SSPhi)    #+TauT[:,np.newaxis,:])    # ditto
-    GpA = sp.jn(M,twopi*HdotA)                      # atoms x waves x SGops
-    GpB = sp.jn(M,twopi*HdotB)*(1.j)**M             # ditto
-    Gp = np.sum(GpA+GpB,axis=1)                     # atoms x SGops
-    return np.real(Gp).T,np.imag(Gp).T              # SGops x atoms
+    if XSSdata.ndim > 2:
+        nh = np.arange(XSSdata.shape[1])        #0..max harmonic order-1
+        M = np.where(m>0,m+nh[:,np.newaxis],m-nh[:,np.newaxis])     # waves x SGops
+        HdotA = (np.inner(A.T,SSUniq.T[:3].T))    #atoms X waves x SGops
+        HdotB = (np.inner(B.T,SSUniq.T[:3].T))    # ditto
+        Hdot = np.sqrt(HdotA**2+HdotB**2)
+        Hphi = np.sum(np.arctan2(HdotB,HdotA)*M,axis=1)      
+        GpA = np.sum(sp.jn(-M,twopi*Hdot),axis=1)                      # sum on waves
+    else:
+        HdotA = np.inner(A.T,SSUniq.T[:3].T)    #atoms X SGops
+        HdotB = np.inner(B.T,SSUniq.T[:3].T)    # ditto
+        Hdot = np.sqrt(HdotA**2+HdotB**2)
+        Hphi = np.arctan2(HdotB,HdotA)        
+        GpA = sp.jn(-m,twopi*Hdot)                      # atoms x SGops
+        
+#    GSASIIpath.IPyBreak()
+    return GpA.T,Hphi.T             # SGops x atoms
     
 def ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM):
     import scipy.special as sp
-    m = SSUniq.T[3]
+    Smult,TauT = SStauM             # both atoms x SGops
     nh = np.zeros(1)
     if XSSdata.ndim > 2:
         nh = np.arange(XSSdata.shape[1])        
     M = np.where(m>0,m+nh[:,np.newaxis],m-nh[:,np.newaxis])
     A = np.array([[a,b] for a,b in zip(XSSdata[:3],XSSdata[3:])])
-    HdotA = twopi*(np.inner(SSUniq.T[:3].T,A.T)+SSPhi)
+    HdotA = twopi*(np.inner(A.T,SSUniq.T[:3].T)+SSPhi+TauT[:,np.newaxis,:])
     Gpm = sp.jn(M-1,HdotA)
     Gpp = sp.jn(M+1,HdotA)
     if Gpm.ndim > 3: #sum over multiple harmonics
@@ -994,10 +1001,12 @@ def ApplyModulation(data,tau):
     dcx,dct,dcs,dci = drawingData['atomPtrs']
     atoms = data['Atoms']
     drawAtoms = drawingData['Atoms']
+    Fade = np.zeros(len(drawAtoms))
     for atom in atoms:    
         atxyz = G2spc.MoveToUnitCell(np.array(atom[cx:cx+3]))[0]
         atuij = np.array(atom[cia+2:cia+8])
         waveType = atom[-1]['SS1']['waveType']
+        Sfrac = atom[-1]['SS1']['Sfrac']
         Spos = atom[-1]['SS1']['Spos']
         Sadp = atom[-1]['SS1']['Sadp']
         indx = FindAtomIndexByIDs(drawAtoms,dci,[atom[cia+8],],True)
@@ -1006,10 +1015,22 @@ def ApplyModulation(data,tau):
             opr = drawatom[dcs-1]
             sop,ssop,icent = G2spc.OpsfromStringOps(opr,SGData,SSGData)
             sdet,ssdet,dtau,dT,tauT = G2spc.getTauT(tau,sop,ssop,atxyz)
-            smul = sdet*ssdet
-#            tauT *= icent
+            smul = sdet         # n-fold vs m operator on wave
+            tauT *= icent       #invert wave on -1
             wave = np.zeros(3)
             uwave = np.zeros(6)
+            #how do I handle Sfrac? - fade the atoms?
+            if len(Sfrac):
+                scof = []
+                ccof = []
+                for i,sfrac in enumerate(Sfrac):
+                    if not i and 'Crenel' in waveType:
+                        Fade[ind] += fracCrenel(tauT,sfrac[0][0],sfrac[0][1])
+                    else:
+                        scof.append(sfrac[0][0])
+                        ccof.append(sfrac[0][1])
+                    if len(scof):
+                        Fade[ind] += np.sum(fracFourier(tauT,scof,ccof))                            
             if len(Spos):
                 scof = []
                 ccof = []
@@ -1039,7 +1060,7 @@ def ApplyModulation(data,tau):
             else:
                 X = G2spc.ApplyStringOps(opr,SGData,atxyz+wave)
                 drawatom[dcx:dcx+3] = X
-    return drawAtoms
+    return drawAtoms,Fade
     
     
 ################################################################################

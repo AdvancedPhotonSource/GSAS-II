@@ -1505,7 +1505,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         VFSC = np.ones(2)
         CSI = [np.zeros((2),dtype='i'),np.zeros(2)]
         if 'Crenel' in waveType:
-            dF = fracCrenel(tau,delt2[:1],delt2[1:]).squeeze()
+            dF = np.zeros_like(tau)
         else:
             dF = fracFourier(tau,nH,delt2[:1],delt2[1:]).squeeze()
         dFT = np.zeros_like(dF)
@@ -1516,7 +1516,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
             sdet,ssdet,dtau,dT,tauT = getTauT(tau,sop,ssop,XYZ)
             fsc = np.ones(2,dtype='i')
             if 'Crenel' in waveType:
-                dFT = fracCrenel(tauT,delt2[:1],delt2[1:]).squeeze()
+                dFT = np.zeros_like(tau)
                 fsc = [1,1]
             else:   #Fourier
                 dFT = fracFourier(tauT,nH,delt2[:1],delt2[1:]).squeeze()
@@ -1570,7 +1570,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
             ssop = SSop[i]
             sdet,ssdet,dtau,dT,tauT = getTauT(tau,sop,ssop,XYZ)
             xsc = np.ones(6,dtype='i')
-            if waveType == 'Fourier':
+            if 'Fourier' in waveType:
                 dXT = posFourier(np.sort(tauT),nH,delt6[:3],delt6[3:])   #+np.array(XYZ)[:,np.newaxis,np.newaxis]
             elif waveType == 'Sawtooth':
                 dXT = posSawtooth(tauT,delt4[0],delt4[1:])+np.array(XYZ)[:,np.newaxis,np.newaxis]

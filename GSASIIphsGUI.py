@@ -2441,7 +2441,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Waves = wx.FlexGridSizer(0,8,5,5)
                     waveSizer.Add(wx.StaticText(waveData,label=' %s  parameters: %s'%(waveName,str(names).rstrip(']').lstrip('[').replace("'",''))),0,WACV)
                     for ival,val in enumerate(wave[0]):
-                        if any(CSI[Stype][0][ival]):
+                        if np.any(CSI[Stype][0][ival]):
                             waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_PROCESS_ENTER)
                             waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
                             waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)

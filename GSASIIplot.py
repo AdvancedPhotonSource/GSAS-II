@@ -3030,7 +3030,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
             else:
                 scof.append(spos[0][:3])
                 ccof.append(spos[0][3:])
-        wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof),-1)  #hmm, why -1 work for Na2CO3?
+        wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof),1)  #hmm, why -1 work for Na2CO3?
     if mapData['Flip']:
         Title = 'Charge flip'
     else:
@@ -4413,7 +4413,8 @@ def PlotStructure(G2frame,data,firstCall=False):
         elif key in ['+','-','=','0'] and generalData['Type'] in ['modulated','magnetic']:
             if keyBox:
                 OnKeyPressed(event)
-        Draw('key')
+            return
+        Draw('key up')
         
     def OnKeyPressed(event):    #On key down for repeating operation - used to change tau...
         try:
@@ -4432,10 +4433,12 @@ def PlotStructure(G2frame,data,firstCall=False):
                 G2frame.tau -= 0.05
             G2frame.tau %= 1.   #force 0-1 range
             G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
-            data['Drawing']['Atoms'] = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
+            data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
             SetDrawAtomsText(data['Drawing']['Atoms'])
             G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
-            Draw('key')
+            if not np.any(Fade):
+                Fade += 1
+            Draw('key down',Fade)
             
     def GetTruePosition(xy,Add=False):
         View = glGetIntegerv(GL_VIEWPORT)
@@ -5000,7 +5003,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         RenderDots(XYZ,RC)
         glShadeModel(GL_SMOOTH)
                             
-    def Draw(caller=''):
+    def Draw(caller='',Fade=None):
 #useful debug?        
 #        if caller:
 #            print caller
@@ -5074,6 +5077,10 @@ def PlotStructure(G2frame,data,firstCall=False):
         time0 = time.time()
 #        glEnable(GL_BLEND)
 #        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+        if Fade == None:
+            atmFade = np.ones(len(drawingData['Atoms']))
+        else:
+            atmFade = Fade
         for iat,atom in enumerate(drawingData['Atoms']):
             x,y,z = atom[cx:cx+3]
             Bonds = atom[-2]
@@ -5083,7 +5090,9 @@ def PlotStructure(G2frame,data,firstCall=False):
             except ValueError:
                 atNum = -1
             CL = atom[cs+2]
-            atColor = np.array(CL)/255.
+            if not atmFade[iat]:
+                continue
+            atColor = atmFade[iat]*np.array(CL)/255.
             if drawingData['showRigidBodies'] and atom[ci] in rbAtmDict:
                 bndColor = Or
             else:

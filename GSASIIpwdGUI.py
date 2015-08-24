@@ -1996,7 +1996,8 @@ def UpdateSampleGrid(G2frame,data):
     def OnHistoChange():
         '''Called when the histogram type is changed to refresh the window
         '''
-        wx.CallAfter(UpdateSampleGrid,G2frame,data)
+        #wx.CallAfter(UpdateSampleGrid,G2frame,data)
+        wx.CallLater(100,UpdateSampleGrid,G2frame,data)
         
     def SetNameVal():
         inst = instNameVal.GetValue()

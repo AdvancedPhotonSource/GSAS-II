@@ -3664,7 +3664,7 @@ class GSASIImain(wx.App):
         '''Called automatically when the app is created.'''
         if '2.7' not in sys.version[:5]:
             dlg = wx.MessageDialog(None, 
-                'GSAS-II requires Python 2.7.x\n Yours is '+sys.version[:5],
+                'GSAS-II requires Python 2.7.x\n Yours is '+sys.version.split()[0],
                 'Python version error',  wx.OK)
             try:
                 result = dlg.ShowModal()
@@ -3706,7 +3706,7 @@ def main():
 if __name__ == '__main__':
     # print versions
     print "Python module versions loaded:"
-    print "python:     ",sys.version[:5]
+    print "python:     ",sys.version.split()[0]
     print "wxpython:   ",wx.__version__
     print "matplotlib: ",mpl.__version__
     print "numpy:      ",np.__version__

@@ -3675,6 +3675,20 @@ class GSASIImain(wx.App):
         self.main = GSASII(None)
         self.main.Show()
         self.SetTopWindow(self.main)
+        # save the current package versions
+        self.main.PackageVersions = {}
+        self.main.PackageVersions['Python'] = sys.version.split()[0]
+        for p in (wx,mpl,np,sp,ogl):
+            self.main.PackageVersions[p.__name__] = p.__version__
+        try:
+            self.main.PackageVersions[Image.__name__] = Image.VERSION
+        except:
+            try:
+                from PIL import PILLOW_VERSION
+                self.main.PackageVersions[Image.__name__] = PILLOW_VERSION
+            except:
+                pass
+        self.main.PackageVersions[' Platform'] = sys.platform+' '+platform.architecture()[0]+' '+platform.machine()
         # DEBUG: jump to sequential results
         #Id = G2gd.GetPatternTreeItemId(self.main,self.main.root,'Sequential results')
         #self.main.PatternTree.SelectItem(Id)
@@ -3691,7 +3705,7 @@ class GSASIImain(wx.App):
     #     # end PATCH
     #     self.main.OnFileOpen(None,filename)
     # removed because this gets triggered when a file is on the command line in canopy 1.4 -- not likely used anyway
-    
+       
 def main():
     '''Start up the GSAS-II application'''
     #application = GSASIImain() # don't redirect output, someday we

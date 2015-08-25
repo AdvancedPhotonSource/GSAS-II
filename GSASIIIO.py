@@ -1002,6 +1002,10 @@ def ProjFileOpen(G2frame):
                 G2frame.PatternTree.SetItemPyData(Id,datum[1])             
                 if datum[0] == 'Controls' and 'LastSavedUsing' in datum[1]:
                     LastSavedUsing = datum[1]['LastSavedUsing']
+                if datum[0] == 'Controls' and 'PythonVersions' in datum[1] and GSASIIpath.GetConfigValue('debug'):
+                    print('Packages used to create .GPX file:')
+                    for p in sorted(datum[1]['PythonVersions'],key=lambda s: s.lower()):
+                        print("{:>14s}: {:s}".format(p,datum[1]['PythonVersions'][p]))
             for datus in data[1:]:
                 sub = G2frame.PatternTree.AppendItem(Id,datus[0])
 #patch
@@ -1038,12 +1042,14 @@ def ProjFileSave(G2frame):
     if not G2frame.PatternTree.IsEmpty():
         file = open(G2frame.GSASprojectfile,'wb')
         print 'save to file: ',G2frame.GSASprojectfile
-        # stick the file name into the tree, if possible
+        # stick the file name into the tree and version info into tree so they are saved.
+        # (Controls should always be created at this point)
         try:
             Controls = G2frame.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
             Controls['LastSavedAs'] = os.path.abspath(G2frame.GSASprojectfile)
             Controls['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
+            Controls['PythonVersions'] = G2frame.PackageVersions
         except:
             pass
         wx.BeginBusyCursor()

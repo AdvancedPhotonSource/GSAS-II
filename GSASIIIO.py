@@ -975,6 +975,7 @@ def ProjFileOpen(G2frame):
         print ('\n*** Error attempt to open project file that does not exist:\n   '+
                str(G2frame.GSASprojectfile))
         return
+    LastSavedUsing = None
     file = open(G2frame.GSASprojectfile,'rb')
     print 'load from file: ',G2frame.GSASprojectfile
     G2frame.SetTitle("GSAS-II data tree: "+
@@ -998,7 +999,9 @@ def ProjFileOpen(G2frame):
                     datum[1][0]['ranId'] = ran.randint(0,sys.maxint)
                 G2frame.PatternTree.SetItemPyData(Id,datum[1])
             else:
-                G2frame.PatternTree.SetItemPyData(Id,datum[1])
+                G2frame.PatternTree.SetItemPyData(Id,datum[1])             
+                if datum[0] == 'Controls' and 'LastSavedUsing' in datum[1]:
+                    LastSavedUsing = datum[1]['LastSavedUsing']
             for datus in data[1:]:
                 sub = G2frame.PatternTree.AppendItem(Id,datus[0])
 #patch
@@ -1016,7 +1019,10 @@ def ProjFileOpen(G2frame):
                 if Data['setDefault']:
                     G2frame.imageDefault = Data                
         file.close()
-        print('project load successful')
+        if LastSavedUsing:
+            print('GPX load successful. Last saved with GSAS-II version '+LastSavedUsing)
+        else:
+            print('project load successful')
         G2frame.NewPlot = True
     except:
         msg = wx.MessageDialog(G2frame,message="Error reading file "+
@@ -1037,6 +1043,7 @@ def ProjFileSave(G2frame):
             Controls = G2frame.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
             Controls['LastSavedAs'] = os.path.abspath(G2frame.GSASprojectfile)
+            Controls['LastSavedUsing'] = str(GSASIIpath.GetVersionNumber())
         except:
             pass
         wx.BeginBusyCursor()

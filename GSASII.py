@@ -2438,7 +2438,6 @@ class GSASII(wx.Frame):
 
     def CheckNotebook(self):
         '''Make sure the data tree has the minimally expected controls.
-        (BHT) correct?
         '''
         if not G2gd.GetPatternTreeItemId(self,self.root,'Notebook'):
             sub = self.PatternTree.AppendItem(parent=self.root,text='Notebook')
@@ -3056,6 +3055,7 @@ class GSASII(wx.Frame):
         
         if self.GSASprojectfile: 
             self.PatternTree.SetItemText(self.root,'Loaded Data: '+self.GSASprojectfile)
+            self.CheckNotebook()
             G2IO.ProjFileSave(self)
         else:
             self.OnFileSaveas(event)
@@ -3072,6 +3072,7 @@ class GSASII(wx.Frame):
                 self.GSASprojectfile = G2IO.FileDlgFixExt(dlg,self.GSASprojectfile)
                 self.PatternTree.SetItemText(self.root,'Saving project as'+self.GSASprojectfile)
                 self.SetTitle("GSAS-II data tree: "+os.path.split(self.GSASprojectfile)[1])
+                self.CheckNotebook()
                 G2IO.ProjFileSave(self)
                 os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
         finally:

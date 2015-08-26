@@ -3676,19 +3676,33 @@ class GSASIImain(wx.App):
         self.main.Show()
         self.SetTopWindow(self.main)
         # save the current package versions
-        self.main.PackageVersions = {}
-        self.main.PackageVersions['Python'] = sys.version.split()[0]
+        self.main.PackageVersions = []
+        self.main.PackageVersions.append(['Python',sys.version.split()[0]])
         for p in (wx,mpl,np,sp,ogl):
-            self.main.PackageVersions[p.__name__] = p.__version__
+            self.main.PackageVersions.append([p.__name__,p.__version__])
         try:
-            self.main.PackageVersions[Image.__name__] = Image.VERSION
+            self.main.PackageVersions.append([Image.__name__,Image.VERSION])
         except:
             try:
                 from PIL import PILLOW_VERSION
-                self.main.PackageVersions[Image.__name__] = PILLOW_VERSION
+                self.main.PackageVersions.append([Image.__name__,PILLOW_VERSION])
             except:
                 pass
-        self.main.PackageVersions[' Platform'] = sys.platform+' '+platform.architecture()[0]+' '+platform.machine()
+        self.main.PackageVersions.append([' Platform',sys.platform+' '+platform.architecture()[0]+' '+platform.machine()])
+        
+#        self.main.PackageVersions = {}
+#        self.main.PackageVersions['Python'] = sys.version.split()[0]
+#        for p in (wx,mpl,np,sp,ogl):
+#            self.main.PackageVersions[p.__name__] = p.__version__
+#        try:
+#            self.main.PackageVersions[Image.__name__] = Image.VERSION
+#        except:
+#            try:
+#                from PIL import PILLOW_VERSION
+#                self.main.PackageVersions[Image.__name__] = PILLOW_VERSION
+#            except:
+#                pass
+#        self.main.PackageVersions[' Platform'] = sys.platform+' '+platform.architecture()[0]+' '+platform.machine()
         # DEBUG: jump to sequential results
         #Id = G2gd.GetPatternTreeItemId(self.main,self.main.root,'Sequential results')
         #self.main.PatternTree.SelectItem(Id)

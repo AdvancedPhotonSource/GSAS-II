@@ -1004,8 +1004,12 @@ def ProjFileOpen(G2frame):
                     LastSavedUsing = datum[1]['LastSavedUsing']
                 if datum[0] == 'Controls' and 'PythonVersions' in datum[1] and GSASIIpath.GetConfigValue('debug'):
                     print('Packages used to create .GPX file:')
-                    for p in sorted(datum[1]['PythonVersions'],key=lambda s: s.lower()):
-                        print("{:>14s}: {:s}".format(p,datum[1]['PythonVersions'][p]))
+                    if 'dict' in str(type(datum[1]['PythonVersions'])):  #patch
+                        for p in sorted(datum[1]['PythonVersions'],key=lambda s: s.lower()):
+                            print("{:>14s}: {:s}".format(p[0],p[1]))
+                    else:
+                        for p in datum[1]['PythonVersions']:
+                            print("{:<12s} {:s}".format(p[0]+':',p[1]))
             for datus in data[1:]:
                 sub = G2frame.PatternTree.AppendItem(Id,datus[0])
 #patch

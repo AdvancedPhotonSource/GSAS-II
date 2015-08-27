@@ -763,9 +763,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             modSizer.Add(wx.StaticText(General,label=' Superspace group: '+generalData['SGData']['SpGrp']),0,WACV)
             SSChoice = G2spc.ssdict.get(generalData['SGData']['SpGrp'],[])
             if SSChoice:
-                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=SSChoice,style=wx.CB_DROPDOWN)   #wx.CB_READONLY|
-                superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)
+                superGp = wx.ComboBox(General,value=generalData['SuperSg'],choices=SSChoice,style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
                 superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)
+                superGp.Bind(wx.EVT_COMBOBOX,OnSuperGp)
             else:   #nonstandard space group symbol not in my dictionary
                 superGp = wx.TextCtrl(General,value=generalData['SuperSg'],style=wx.TE_PROCESS_ENTER)
                 superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)                        

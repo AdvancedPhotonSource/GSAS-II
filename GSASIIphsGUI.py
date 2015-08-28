@@ -856,7 +856,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if 'list' not in str(type(Map['RefList'])):     #patch
                 Map['RefList'] = [Map['RefList'],]
             lineSizer.Add(wx.ComboBox(General,value=Map['RefList'][0],choices=Map['RefList'],
-                style=wx.CB_DROPDOWN),0,WACV)
+                style=wx.CB_DROPDOWN|wx.CB_READONLY),0,WACV)
             refList = wx.Button(General,label='Select reflection sets')
             refList.Bind(wx.EVT_BUTTON,OnRefList)
             lineSizer.Add(refList,0,WACV)
@@ -931,7 +931,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if 'list' not in str(type(Flip['RefList'])):     #patch
                 Flip['RefList'] = [Flip['RefList'],]
             lineSizer.Add(wx.ComboBox(General,value=Flip['RefList'][0],choices=Flip['RefList'],
-                style=wx.CB_DROPDOWN),0,WACV)
+                style=wx.CB_DROPDOWN|wx.CB_READONLY),0,WACV)
             refList = wx.Button(General,label='Select reflection sets')
             refList.Bind(wx.EVT_BUTTON,OnRefList)
             lineSizer.Add(refList,0,WACV)
@@ -1613,7 +1613,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif generalData['Type'] == 'nuclear':
             atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['modulated','magnetic']:
-            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],SSdefault])
+            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],SSdefault])
         SetupGeneral()
         if 'Atoms' in data['Drawing']:            
             DrawAtomAdd(data['Drawing'],atomData[-1])
@@ -2493,7 +2493,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if 'list' not in str(type(Map['RefList'])):     #patch
                 Map['RefList'] = [Map['RefList'],]
             mapSizer.Add(wx.ComboBox(waveData,value=Map['RefList'][0],choices=Map['RefList'],
-                style=wx.CB_DROPDOWN),0,WACV)
+                style=wx.CB_DROPDOWN|wx.CB_READONLY),0,WACV)
             refList = wx.Button(waveData,label='Select reflection sets')
             refList.Bind(wx.EVT_BUTTON,OnRefList)
             mapSizer.Add(refList,0,WACV)
@@ -3890,7 +3890,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             shPenalty = wx.BoxSizer(wx.HORIZONTAL)
             shPenalty.Add(wx.StaticText(Texture,wx.ID_ANY,' Negative MRD penalty list: '),0,WACV)
             shPenalty.Add(wx.ComboBox(Texture,value=Penalty[0][0],choices=Penalty[0],
-                style=wx.CB_DROPDOWN),0,WACV)
+                style=wx.CB_DROPDOWN|wx.CB_READONLY),0,WACV)
             hklList = wx.Button(Texture,label='Select penalty hkls')
             hklList.Bind(wx.EVT_BUTTON,OnHKLList)
             shPenalty.Add(hklList,0,WACV)

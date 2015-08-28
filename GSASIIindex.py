@@ -329,7 +329,7 @@ def IndexPeaks(peaks,HKL):
                 break
             hkl = HKL[pos]                                 # put in hkl
             if hkl[-1] >= 0:                                 # peak already assigned - test if this one better
-                opeak = peaks[hkl[-1]]
+                opeak = peaks[int(hkl[-1])]                 #hkl[-1] needs to be int here
                 dold = abs(opeak[-2]-hkl[3])
                 dnew = min(dm,dp)
                 if dold > dnew:                             # new better - zero out old

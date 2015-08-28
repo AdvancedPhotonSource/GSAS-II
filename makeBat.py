@@ -45,7 +45,7 @@ fp.write("@REM created by run of bootstrap.py on {:%d %b %Y %H:%M}\n".format(
 pexe = pythonexe
 if ' ' in pythonexe: pexe = '"'+pythonexe+'"'
 G2s = G2script
-if ' ' in G2s: G2script = '"'+G2script+'"'
+if ' ' in G2s: G2s = '"'+G2script+'"'
 fp.write(Script.format(pexe,G2s))
 fp.close()
 print '\nCreated GSAS-II batch file RunGSASII.bat in '+gsaspath

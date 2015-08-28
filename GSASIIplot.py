@@ -571,6 +571,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     def OnKey(event):           #on key UP!!
         global ifBox
         Choice = {'F':'Fo','S':'Fosq','U':'Unit','D':'dFsq','W':'dFsq/sig'}
+        viewChoice = {'H':[[1,0,0],[0,0,1]],'K':[[0,1,0],[1,0,0]],'L':[[0,0,1],[0,1,0]]}
         try:
             keyCode = event.GetKeyCode()
             if keyCode > 255:
@@ -578,17 +579,22 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             key = chr(keyCode)
         except AttributeError:       #if from OnKeyBox above
             key = str(event.key).upper()
-        if key in ['C']:
+        if key in ['C','H','K','L']:
+            if key == 'C':
+                Data['Zone'] = False 
+                key = 'L'
             drawingData['viewPoint'][0] = drawingData['default']
-            drawingData['viewDir'] = [0,0,1]
+            drawingData['viewDir'] = viewChoice[key][0]
+            drawingData['viewUp'] = viewChoice[key][1]
             drawingData['oldxy'] = []
-            V0 = np.array([0,0,1])
-            V = np.inner(Amat,V0)
-            V /= np.sqrt(np.sum(V**2))
-            A = np.arccos(np.sum(V*V0))
-            Q = G2mth.AV2Q(A,[0,1,0])
-            drawingData['Quaternion'] = Q
-            Q = drawingData['Quaternion']
+#            V0 = np.array(viewChoice[key][0])
+#            V = np.inner(Amat,V0)
+#            V /= np.sqrt(np.sum(V**2))
+#            A = np.arccos(np.sum(V*V0))
+#            Q = G2mth.AV2Q(A,viewChoice[key][1])
+            drawingData['Quaternion'] = [-1,0,0,0]  #the old stuff always gave this...
+        elif key in 'Z':
+            Data['Zone'] = not Data['Zone']
         elif key in 'B':
             ifBox = not ifBox
         elif key in ['+','=']:
@@ -882,6 +888,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         aspect = float(VS[0])/float(VS[1])
         cPos = drawingData['cameraPos']
         Zclip = drawingData['Zclip']*cPos/20.
+        if Data['Zone']:
+            Zclip = 0.1
         Q = drawingData['Quaternion']
         Tx,Ty,Tz = drawingData['viewPoint'][0]
         G,g = G2lat.cell2Gmat(cell)
@@ -900,7 +908,10 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         glLoadIdentity()
         glViewport(0,0,VS[0],VS[1])
         gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
-        gluLookAt(0,0,cPos,0,0,0,0,1,0)
+        vDir = drawingData['viewDir']
+        vUp = drawingData['viewUp']
+#        gluLookAt(0,0,cPos,0,0,0,0,1,0)
+        gluLookAt(vDir[0]*cPos,vDir[1]*cPos,vDir[2]*cPos, 0,0,0, vUp[0],vUp[1],vUp[2])
         SetLights()            
             
         glMatrixMode(GL_MODELVIEW)
@@ -935,8 +946,9 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Font = Page.GetFont()
     Page.SetFocus()
     Page.Choice = None
-    choice = [' save as/key:','jpeg','tiff','bmp','c: recenter to default','b: toggle box ','+: increase scale',
-    '-: decrease scale','f: Fobs','s: Fobs**2','u: unit','d: Fo-Fc','w: DF/sig','i: toggle intensity scaling']
+    choice = [' save as/key:','jpeg','tiff','bmp','h: view down h','k: view down k','l: view down l',
+    'z: zero zone toggle','c: reset to default','b: toggle box ','+: increase scale','-: decrease scale',
+    'f: Fobs','s: Fobs**2','u: unit','d: Fo-Fc','w: DF/sig','i: toggle intensity scaling']
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as/key:')

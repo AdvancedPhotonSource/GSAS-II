@@ -923,32 +923,42 @@ def XAnomAbs(Elements,wave):
 #### Modulation math
 ################################################################################
     
-def Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM):
+def Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast):
     import scipy.special as sp
     import scipy.integrate as si
+    
+    def cosMod(tau,H,A,B,S):
+        uTau = posFourier(tau,A,B,S)
+        SdotU = twopi*(np.inner(uTau.T,H[:3].T))+H[3]*tau
+        return list(np.cos(SdotU))[0]
+        
+    def sinMod(tau,H,A,B,S):
+        uTau = posFourier(tau,A,B,S)
+        SdotU = twopi*(np.inner(uTau.T,H[:3]))+H[3]*tau
+        return list(np.sin(SdotU))[0]
+                
+    def expModInt(H,A,B,S):
+        intReal = np.array([[si.romberg(cosMod,0,1,args=(h,a,b,s),rtol=1.e-1) for a,b in zip(A,B)] for h,s in zip(H,S)])
+        intImag = np.array([[si.romberg(sinMod,0,1,args=(h,a,b,s),rtol=1.e-1) for a,b in zip(A,B)] for h,s in zip(H,S)])
+#        return np.sqrt(intReal**2+intImag**2)
+        return intReal,intImag
+
     Smult,TauT = SStauM             # both atoms x SGops
     m = SSUniq.T[3]
-    A = np.array(XSSdata[:3])   #sin mods x waves x atoms
-    B = np.array(XSSdata[3:])   #cos mods...
-    if XSSdata.ndim > 2:
-        nh = np.arange(XSSdata.shape[1])        #0..max harmonic order-1
-        M = np.where(m>0,m+nh[:,np.newaxis],m-nh[:,np.newaxis])     # waves x SGops
-        HdotA = (np.inner(A.T,SSUniq.T[:3].T))    #atoms X waves x SGops
-        HdotB = (np.inner(B.T,SSUniq.T[:3].T))    # ditto
-        Hdot = np.sqrt(HdotA**2+HdotB**2)
-        Hphi = np.sum(np.arctan2(HdotB,HdotA)*M,axis=1)      
-        GpA = np.sum(sp.jn(-M,twopi*Hdot),axis=1)                      # sum on waves
+    Ax = np.array(XSSdata[:3]).T   #atoms x waves x sin pos mods
+    Bx = np.array(XSSdata[3:]).T   #...cos pos mods
+    Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
+    Bf = np.array(FSSdata[1]).T    #cos frac mods...
+    Ab = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
+    Bb = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
+#    GSASIIpath.IPyBreak()       
+    if Ax.ndim > 2:
+        GpA = np.array(expModInt(SSUniq,Ax,Bx,Smult))
     else:
-        HdotA = np.inner(A.T,SSUniq.T[:3].T)    #atoms X SGops
-        HdotB = np.inner(B.T,SSUniq.T[:3].T)    # ditto
-        Hdot = np.sqrt(HdotA**2+HdotB**2)
-        Hphi = np.arctan2(HdotB,HdotA)        
-        GpA = sp.jn(-m,twopi*Hdot)                      # atoms x SGops
-        
-#    GSASIIpath.IPyBreak()
-    return GpA.T,Hphi.T             # SGops x atoms
+        GpA = np.array(expModInt(SSUniq,Ax[:,np.newaxis,:],Bx[:,np.newaxis,:],Smult))        
+    return GpA             # SGops x atoms
     
-def ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM):
+def ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast):
     import scipy.special as sp
     Smult,TauT = SStauM             # both atoms x SGops
     nh = np.zeros(1)
@@ -1062,6 +1072,46 @@ def ApplyModulation(data,tau):
                 drawatom[dcx:dcx+3] = X
     return drawAtoms,Fade
     
+def BessJn(nmax,x):
+    ''' compute Bessel function J(n,x) from scipy routine & recurrance relation
+    returns sequence of J(n,x) for n in range [-nmax...0...nmax]
+    
+    :param  integer nmax: maximul order for Jn(x)
+    :param  float x: argument for Jn(x)
+    
+    :returns numpy array: [J(-nmax,x)...J(0,x)...J(nmax,x)]
+    
+    '''
+    import scipy.special as sp
+    bessJn = np.zeros(2*nmax+1)
+    bessJn[nmax] = sp.j0(x)
+    bessJn[nmax+1] = sp.j1(x)
+    bessJn[nmax-1] = -bessJn[nmax+1]
+    for i in range(2,nmax+1):
+        bessJn[i+nmax] = 2*(i-1)*bessJn[nmax+i-1]/x-bessJn[nmax+i-2]
+        bessJn[nmax-i] = bessJn[i+nmax]*(-1)**i
+    return bessJn
+    
+def BessIn(nmax,x):
+    ''' compute modified Bessel function I(n,x) from scipy routines & recurrance relation
+    returns sequence of I(n,x) for n in range [-nmax...0...nmax]
+    
+    :param  integer nmax: maximul order for In(x)
+    :param  float x: argument for In(x)
+    
+    :returns numpy array: [I(-nmax,x)...I(0,x)...I(nmax,x)]
+    
+    '''
+    import scipy.special as sp
+    bessIn = np.zeros(2*nmax+1)
+    bessIn[nmax] = sp.i0(x)
+    bessIn[nmax+1] = sp.i1(x)
+    bessIn[nmax-1] = bessIn[nmax+1]
+    for i in range(2,nmax+1):
+        bessIn[i+nmax] = bessIn[nmax+i-2]-2*(i-1)*bessIn[nmax+i-1]/x
+        bessIn[nmax-i] = bessIn[i+nmax]
+    return bessIn
+        
     
 ################################################################################
 ##### distance, angle, planes, torsion stuff 

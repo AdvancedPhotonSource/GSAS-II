@@ -813,6 +813,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
     Flack = 1.0
     if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
         Flack = 1.-2.*parmDict[phfx+'Flack']
+    time0 = time.time()
+    nref = len(refDict['RefList'])/100   
     for iref,refl in enumerate(refDict['RefList']):
         if 'T' in calcControls[hfx+'histType']:
             FP,FPP = G2el.BlenResCW(Tdata,BLtables,refl.T[12])
@@ -914,6 +916,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 dFdfl[iref] = -SA*dfadfl-SB*dfbdfl  #array(nRef,)
                 dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
                     2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
+    print ' derivative time %.4f\r'%(time.time()-time0)
         #loop over atoms - each dict entry is list of derivatives for all the reflections
     if nTwin > 1:
         for i in range(len(Mdata)):     #these all OK?
@@ -997,7 +1000,9 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         else:
             dat = G2el.getFFvalues(FFtables,0.)        
         refDict['FF']['El'] = dat.keys()
-        refDict['FF']['FF'] = np.zeros((len(refDict['RefList']),len(dat)))   
+        refDict['FF']['FF'] = np.zeros((len(refDict['RefList']),len(dat)))
+    time0 = time.time()
+    nref = len(refDict['RefList'])/100   
     for iref,refl in enumerate(refDict['RefList']):
         if 'NT' in calcControls[hfx+'histType']:
             FP,FPP = G2el.BlenResCW(Tdata,BLtables,refl[14+im])
@@ -1027,7 +1032,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             SSUniq = np.vstack((SSUniq,-SSUniq))
             Phi = np.hstack((Phi,-Phi))
             SSPhi = np.hstack((SSPhi,-SSPhi))
-        GfpuA,Hphi = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM)        
+        GfpuA = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast)
         phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
@@ -1039,7 +1044,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         fa = np.array([(FF+FP-Bab)*cosp*Tcorr,-FPP*sinp*Tcorr])     #2 x sym x atoms
         fb = np.array([(FF+FP-Bab)*sinp*Tcorr,FPP*cosp*Tcorr])
         fa *= GfpuA
-        fb *= GfpuA        
+        fb *= GfpuA       
         fas = np.real(np.sum(np.sum(fa,axis=1),axis=1))
         fbs = np.real(np.sum(np.sum(fb,axis=1),axis=1))
         fasq = fas**2
@@ -1047,6 +1052,8 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         refl[9+im] = np.sum(fasq)+np.sum(fbsq)
         refl[7+im] = np.sum(fasq)+np.sum(fbsq)
         refl[10+im] = atan2d(fbs[0],fas[0])
+        if not iref%nref: print 'ref no. %d time %.4f\r'%(iref,time.time()-time0),
+    print '\nref no. %d time %.4f\r'%(iref,time.time()-time0)
 #        GSASIIpath.IPyBreak()
     
 def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
@@ -1093,8 +1100,8 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         SSUniq = np.inner(H,SSGMT)
         Phi = np.inner(H[:3],SGT)
         SSPhi = np.inner(H,SSGT)
-        GfpuA,GfpuB = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM)
-        dGAdk,dGBdk = G2mth.ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM)
+        GfpuA,GfpuB = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast)
+        dGAdk,dGBdk = G2mth.ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast)
         #need ModulationDerv here dGAdXsin, etc  
         phase = twopi*(np.inner((dXdata.T+Xdata.T),Uniq)+Phi[np.newaxis,:])
         sinp = np.sin(phase)

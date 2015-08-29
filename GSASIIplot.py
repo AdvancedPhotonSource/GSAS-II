@@ -591,8 +591,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
 #            V = np.inner(Amat,V0)
 #            V /= np.sqrt(np.sum(V**2))
 #            A = np.arccos(np.sum(V*V0))
-#            Q = G2mth.AV2Q(A,viewChoice[key][1])
-            drawingData['Quaternion'] = [-1,0,0,0]  #the old stuff always gave this...
+            Q = G2mth.AV2Q(np.pi/2.,viewChoice[key][1])
+            drawingData['Quaternion'] = Q
         elif key in 'Z':
             Data['Zone'] = not Data['Zone']
         elif key in 'B':
@@ -908,10 +908,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         glLoadIdentity()
         glViewport(0,0,VS[0],VS[1])
         gluPerspective(20.,aspect,cPos-Zclip,cPos+Zclip)
-        vDir = drawingData['viewDir']
-        vUp = drawingData['viewUp']
-#        gluLookAt(0,0,cPos,0,0,0,0,1,0)
-        gluLookAt(vDir[0]*cPos,vDir[1]*cPos,vDir[2]*cPos, 0,0,0, vUp[0],vUp[1],vUp[2])
+        gluLookAt(0,0,cPos,0,0,0,0,1,0)
         SetLights()            
             
         glMatrixMode(GL_MODELVIEW)

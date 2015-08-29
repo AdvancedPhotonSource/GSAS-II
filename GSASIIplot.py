@@ -571,7 +571,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     def OnKey(event):           #on key UP!!
         global ifBox
         Choice = {'F':'Fo','S':'Fosq','U':'Unit','D':'dFsq','W':'dFsq/sig'}
-        viewChoice = {'H':[[1,0,0],[0,0,1]],'K':[[0,1,0],[1,0,0]],'L':[[0,0,1],[0,1,0]]}
+        viewChoice = {'L':[[1,0,0],[0,0,1]],'K':[[0,1,0],[1,0,0]],'H':[[0,0,1],[0,1,0]]}
         try:
             keyCode = event.GetKeyCode()
             if keyCode > 255:

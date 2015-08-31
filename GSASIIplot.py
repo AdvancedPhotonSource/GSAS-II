@@ -571,7 +571,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     def OnKey(event):           #on key UP!!
         global ifBox
         Choice = {'F':'Fo','S':'Fosq','U':'Unit','D':'dFsq','W':'dFsq/sig'}
-        viewChoice = {'L':[[1,0,0],[0,0,1]],'K':[[0,1,0],[1,0,0]],'H':[[0,0,1],[0,1,0]]}
+        viewChoice = {'L':[[0,0,1],[1,0,0],[0,1,0]],'K':[[0,1,0],[0,0,1],[1,0,0]],'H':[[1,0,0],[0,0,1],[0,1,0]]}
         try:
             keyCode = event.GetKeyCode()
             if keyCode > 255:
@@ -583,15 +583,30 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             if key == 'C':
                 Data['Zone'] = False 
                 key = 'L'
+            Data['viewKey'] = key
             drawingData['viewPoint'][0] = drawingData['default']
-            drawingData['viewDir'] = viewChoice[key][0]
-            drawingData['viewUp'] = viewChoice[key][1]
+            drawingData['viewDir'] = np.array(viewChoice[key][0])
+            drawingData['viewUp'] = np.array(viewChoice[key][1])
             drawingData['oldxy'] = []
-#            V0 = np.array(viewChoice[key][0])
-#            V = np.inner(Amat,V0)
-#            V /= np.sqrt(np.sum(V**2))
-#            A = np.arccos(np.sum(V*V0))
-            Q = G2mth.AV2Q(np.pi/2.,viewChoice[key][1])
+            if Data['Zone']:
+                if key == 'L':
+                    Q = [-1,0,0,0]
+                else:
+                    V0 = np.array(viewChoice[key][0])
+                    V1 = np.array(viewChoice[key][1])
+                    V0 = np.inner(Amat,V0)
+                    V1 = np.inner(Amat,V1)
+                    V0 /= nl.norm(V0)
+                    V1 /= nl.norm(V1)
+                    A = np.arccos(np.sum(V1*V0))
+                    Q = G2mth.AV2Q(-A,viewChoice[key][2])
+            else:
+                V0 = np.array(viewChoice[key][0])
+                V = np.inner(Bmat,V0)
+                V /= np.sqrt(np.sum(V**2))
+                V *= np.array([0,0,1])
+                A = np.arccos(np.sum(V*V0))
+                Q = G2mth.AV2Q(-A,viewChoice[key][2])
             drawingData['Quaternion'] = Q
         elif key in 'Z':
             Data['Zone'] = not Data['Zone']
@@ -601,6 +616,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             Data['Scale'] *= 1.25
         elif key == '-':
             Data['Scale'] /= 1.25
+        elif key == 'P':
+            vec = viewChoice[Data['viewKey']][0]
+            drawingData['viewPoint'][0] -= vec
+        elif key == 'N':
+            vec = viewChoice[Data['viewKey']][0]
+            drawingData['viewPoint'][0] += vec
         elif key == '0':
             drawingData['viewPoint'][0] = [0,0,0]
             Data['Scale'] = 1.0
@@ -805,8 +826,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             hkl = GetTruePosition(newxy)
             if hkl:
                 h,k,l = hkl
-                Page.canvas.SetToolTipString('%d %d %d'%(h,k,l))
-                G2frame.G2plotNB.status.SetStatusText('hkl = %d %d %d'%(h,k,l),1)
+                Page.canvas.SetToolTipString('%d,%d,%d'%(h,k,l))
+                G2frame.G2plotNB.status.SetStatusText('hkl = %d,%d,%d'%(h,k,l),1)
         
     def OnMouseWheel(event):
         if event.ShiftDown():
@@ -855,7 +876,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         glBegin(GL_LINES)
         for line,color in zip(uEdges,uColors)[:3]:
             glColor3ubv(color)
-            glVertex3fv(-line[1])
+            glVertex3fv([0,0,0])
+#            glVertex3fv(-line[1])
             glVertex3fv(line[1])
         glEnd()
         glPopMatrix()
@@ -869,7 +891,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         for xyz,rc in zip(XYZ,RC):
             x,y,z = xyz
             r,c = rc
-            glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,c)
+            glColor3ubv(c)
             glPointSize(r*50)
             glBegin(GL_POINTS)
             glVertex3fv(xyz)

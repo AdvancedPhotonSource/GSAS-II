@@ -232,6 +232,23 @@ Cf2py depend(NPTS) GAMPART
       RETURN
       END
       
+C python interface to gauleg
+      SUBROUTINE PYGAULEG(X1,X2,N,GL,WT)
+Cf2py intent(in) X1
+Cf2py intent(in) X2
+Cf2py intent(in) N
+Cf2py intent(out) GL
+Cf2py depend(N) GL
+Cf2py intent(out) WT
+Cf2py depends(N) WT
+
+      INTEGER*4 N
+      REAL*4 X1,X2,GL(0:N-1),WT(0:N-1)
+      CALL GAULEG(X1,X2,GL,WT,N)
+      RETURN
+      END
+
+
 C Fortran (fast) linear interpolation -- B.H. Toby 9/2011
       SUBROUTINE PYFINTERP(NIN,XIN,YIN,NOUT,XOUT,YOUT)
 C XIN(1:NIN) and YIN(1:NIN) are arrays of (x,y) points to be interpolated

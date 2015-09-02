@@ -924,24 +924,24 @@ def XAnomAbs(Elements,wave):
 ################################################################################
     
 def Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast):
-    import scipy.special as sp
-    import scipy.integrate as si
+    import pypowder as pwd
     
-    def cosMod(tau,H,A,B,S):
-        uTau = posFourier(tau,A,B,S)
-        SdotU = twopi*(np.inner(uTau.T,H[:3].T))+H[3]*tau
-        return list(np.cos(SdotU))[0]
-        
-    def sinMod(tau,H,A,B,S):
-        uTau = posFourier(tau,A,B,S)
-        SdotU = twopi*(np.inner(uTau.T,H[:3]))+H[3]*tau
-        return list(np.sin(SdotU))[0]
-                
-    def expModInt(H,A,B,S):
-        intReal = np.array([[si.romberg(cosMod,0,1,args=(h,a,b,s),rtol=1.e-1) for a,b in zip(A,B)] for h,s in zip(H,S)])
-        intImag = np.array([[si.romberg(sinMod,0,1,args=(h,a,b,s),rtol=1.e-1) for a,b in zip(A,B)] for h,s in zip(H,S)])
-#        return np.sqrt(intReal**2+intImag**2)
-        return intReal,intImag
+    nxs = np.newaxis
+    glTau,glWt = pwd.pygauleg(0.,1.,32)
+    
+    def expModInt(H,A,B):
+        tau = np.arange(1.,A.shape[1]+1)[:,nxs]*glTau #waves x 32
+        XmodA = np.swapaxes(A,1,2)[:,:,nxs]*np.sin(twopi*tau.T) #atoms X pos X 32 X waves
+        XmodB = np.swapaxes(B,1,2)[:,:,nxs]*np.cos(twopi*tau.T)
+        Xmod = np.sum(XmodA+XmodB,axis=-1)                    #atoms X pos X 32; sum waves
+        #Xmod is ParSup in J2K - values match after Calcm2 with klic=-1 
+        D = H[:,3][:,nxs]*tau[0,nxs]
+        HdotX = np.inner(np.swapaxes(Xmod,1,2),H[:,:3])+D.T         #atoms X 32 X ops
+        sinHA = np.sum(np.sin(twopi*HdotX)*glWt[nxs,:,nxs],axis=1)
+        cosHA = np.sum(np.cos(twopi*HdotX)*glWt[nxs,:,nxs],axis=1)
+            
+#        GSASIIpath.IPyBreak()      
+        return cosHA.T,sinHA.T
 
     Smult,TauT = SStauM             # both atoms x SGops
     m = SSUniq.T[3]
@@ -951,11 +951,10 @@ def Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast):
     Bf = np.array(FSSdata[1]).T    #cos frac mods...
     Ab = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
     Bb = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
-#    GSASIIpath.IPyBreak()       
     if Ax.ndim > 2:
-        GpA = np.array(expModInt(SSUniq,Ax,Bx,Smult))
+        GpA = np.array(expModInt(SSUniq,Ax,Bx))
     else:
-        GpA = np.array(expModInt(SSUniq,Ax[:,np.newaxis,:],Bx[:,np.newaxis,:],Smult))        
+        GpA = np.array(expModInt(SSUniq,Ax[:,np.newaxis,:],Bx[:,np.newaxis,:]))        
     return GpA             # SGops x atoms
     
 def ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast):
@@ -1071,6 +1070,46 @@ def ApplyModulation(data,tau):
                 X = G2spc.ApplyStringOps(opr,SGData,atxyz+wave)
                 drawatom[dcx:dcx+3] = X
     return drawAtoms,Fade
+    
+# gauleg.py Gauss Legendre numerical quadrature, x and w computation 
+# integrate from a to b using n evaluations of the function f(x)  
+# usage: from gauleg import gaulegf         
+#        x,w = gaulegf( a, b, n)                                
+#        area = 0.0                                            
+#        for i in range(1,n+1):          #  yes, 1..n                   
+#          area += w[i]*f(x[i])                                    
+
+import math
+def gaulegf(a, b, n):
+  x = range(n+1) # x[0] unused
+  w = range(n+1) # w[0] unused
+  eps = 3.0E-14
+  m = (n+1)/2
+  xm = 0.5*(b+a)
+  xl = 0.5*(b-a)
+  for i in range(1,m+1):
+    z = math.cos(3.141592654*(i-0.25)/(n+0.5))
+    while True:
+      p1 = 1.0
+      p2 = 0.0
+      for j in range(1,n+1):
+        p3 = p2
+        p2 = p1
+        p1 = ((2.0*j-1.0)*z*p2-(j-1.0)*p3)/j
+
+      pp = n*(z*p1-p2)/(z*z-1.0)
+      z1 = z
+      z = z1 - p1/pp
+      if abs(z-z1) <= eps:
+	    break
+
+    x[i] = xm - xl*z
+    x[n+1-i] = xm + xl*z
+    w[i] = 2.0*xl/((1.0-z*z)*pp*pp)
+    w[n+1-i] = w[i]
+  return np.array(x), np.array(w)
+# end gaulegf 
+    
     
 def BessJn(nmax,x):
     ''' compute Bessel function J(n,x) from scipy routine & recurrance relation

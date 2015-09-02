@@ -2969,7 +2969,7 @@ class GSASII(wx.Frame):
                 if result == wx.ID_OK:
                     self.PatternTree.DeleteChildren(self.root)
                     self.GSASprojectfile = ''
-                    if self.HKL: self.HKL = []
+                    self.HKL = []
                     if self.G2plotNB.plotList:
                         self.G2plotNB.clear()
             finally:

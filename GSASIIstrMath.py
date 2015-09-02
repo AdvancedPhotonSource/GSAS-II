@@ -1043,6 +1043,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Tcorr = Tiso*Tuij*Mdata*Fdata/len(Uniq)
         fa = np.array([(FF+FP-Bab)*cosp*Tcorr,-FPP*sinp*Tcorr])     #2 x sym x atoms
         fb = np.array([(FF+FP-Bab)*sinp*Tcorr,FPP*cosp*Tcorr])
+#        GSASIIpath.IPyBreak()
         fa *= GfpuA
         fb *= GfpuA       
         fas = np.real(np.sum(np.sum(fa,axis=1),axis=1))
@@ -1054,7 +1055,6 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         refl[10+im] = atan2d(fbs[0],fas[0])
         if not iref%nref: print 'ref no. %d time %.4f\r'%(iref,time.time()-time0),
     print '\nref no. %d time %.4f\r'%(iref,time.time()-time0)
-#        GSASIIpath.IPyBreak()
     
 def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     'Needs a doc string'

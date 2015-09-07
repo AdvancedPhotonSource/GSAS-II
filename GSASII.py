@@ -1617,6 +1617,12 @@ class GSASII(wx.Frame):
                 G2gd.GetPatternTreeItemId(self,Id,'Reflection Lists'))
             refList[generalData['Name']] = []
         return # success
+        
+    def OnPreferences(self,event):
+        'Edit the GSAS-II configuration variables'
+        dlg = G2G.SelectConfigSetting(self)
+        dlg.ShowModal() == wx.ID_OK
+        dlg.Destroy()
 
     def _Add_ImportMenu_smallangle(self,parent):
         '''configure the Small Angle Data menus accord to the readers found in _init_Imports
@@ -2017,6 +2023,9 @@ class GSASII(wx.Frame):
         self._Add_ImportMenu_powder(Import)
         self._Add_ImportMenu_Sfact(Import)
         self._Add_ImportMenu_smallangle(Import)
+        item = File.Append(wx.ID_PREFERENCES, text = "&Preferences")
+        self.Bind(wx.EVT_MENU, self.OnPreferences, item)
+
         #======================================================================
         # Code to help develop/debug an importer, much is hard-coded below
         # but module is reloaded before each use, allowing faster testing

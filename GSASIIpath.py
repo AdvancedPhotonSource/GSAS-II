@@ -19,6 +19,26 @@ Accesses configuration options, as defined in config.py
 import os
 import sys
 import platform
+# see if a directory for local modifications is defined. If so, stick that in the path
+if os.path.exists(os.path.expanduser('~/.G2local/')):
+    sys.path.insert(0,os.path.expanduser('~/.G2local/'))
+    import glob
+    fl = glob.glob(os.path.expanduser('~/.G2local/GSASII*.py*'))
+    files = ""
+    prev = None
+    for f in sorted(fl): # make a list of files, dropping .pyc files where a .py exists
+        f = os.path.split(f)[1]
+        if os.path.splitext(f)[0] == prev: continue
+        prev = os.path.splitext(f)[0]
+        if files: files += ", "
+        files += f
+    if files:
+        print("*"*75)
+        print("Warning: the following source files are locally overridden in "+os.path.expanduser('~/.G2local/'))
+        print("  "+files)
+        print("*"*75)
+            
+
 # determine a binary path for the pyd files based on the host OS and the python version,  
 # path is relative to location of the script that is called as well as this file
 # this must be imported before anything that imports any .pyd/.so file for GSASII
@@ -80,6 +100,19 @@ def GetConfigValue(key,default=None):
     :returns: the value found or the default.
     '''
     return configDict.get(key,default)
+
+def SetConfigValue(parmdict):
+    '''Set configuration variables from a dictionary where elements are lists
+    First item in list is the default value and second is the value to use.
+    '''
+    global configDict
+    for var in parmdict:
+        if var in configDict:
+            del configDict[var]
+        if parmdict[var][1] is None: continue
+        if parmdict[var][1] == '': continue
+        if parmdict[var][0] == parmdict[var][1]: continue
+        configDict[var] = parmdict[var][1]
 
 # routines for looking a version numbers in files
 version = -1

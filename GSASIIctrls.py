@@ -16,6 +16,8 @@ A library of GUI controls for reuse throughout GSAS-II
 (at present many are still in GSASIIgrid, but with time will be moved here)
 
 '''
+import os
+import sys
 import wx
 import wx.grid as wg
 # import wx.wizard as wz
@@ -24,8 +26,6 @@ import wx.lib.scrolledpanel as wxscroll
 import time
 import copy
 # import cPickle
-import sys
-import os
 # import numpy as np
 # import numpy.ma as ma
 # import scipy.optimize as so
@@ -346,14 +346,16 @@ class ValidatedTxtCtrl(wx.TextCtrl):
                 self.invalid = True
                 self._IndicateValidity()
 
-        elif isinstance(val,str) or isinstance(val,unicode):
+        elif isinstance(val,str) or isinstance(val,unicode) or typeHint is str:
             if self.CIFinput:
                 wx.TextCtrl.__init__(
-                    self,parent,wx.ID_ANY,val,
+                    self,parent,wx.ID_ANY,
                     validator=ASCIIValidator(result=loc,key=key),
                     **kw)
             else:
-                wx.TextCtrl.__init__(self,parent,wx.ID_ANY,val,**kw)
+                wx.TextCtrl.__init__(self,parent,wx.ID_ANY,**kw)
+            if val is not None:
+                self.SetValue(val)
             if notBlank:
                 self.Bind(wx.EVT_CHAR,self._onStringKey)
                 self.ShowStringValidity() # test if valid input
@@ -517,7 +519,8 @@ class ValidatedTxtCtrl(wx.TextCtrl):
             self.evaluated = False # expression has been recast as value, reset flag
             self._setValue(self.result[self.key])
         elif self.result is not None: # show formatted result, as Bob wants
-            self._setValue(self.result[self.key])
+            if not self.invalid: # don't update an invalid expression
+                self._setValue(self.result[self.key])
         if self.OnLeave: self.OnLeave(invalid=self.invalid,
                                       value=self.result[self.key],
                                       tc=self,
@@ -3123,6 +3126,269 @@ def StripIndents(msg):
         msg = msg1
         msg1 = msg.replace('\n ','\n')
     return msg.replace('\n\t','\n')
+        
+################################################################################
+class SelectConfigSetting(wx.Dialog):
+    '''Dialog to select configuration variables and set associated values.
+    '''
+    def __init__(self,parent=None):
+        import config_example
+        style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Set Config Variable', style=style)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.vars = self.GetVarDocs(config_example.__file__)
+        
+        label = wx.StaticText(
+            self,  wx.ID_ANY,
+            'Select a GSAS-II configuration variable to change'
+            )
+        self.sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        self.choice = {}
+        btn = G2ChoiceButton(self, sorted(self.vars.keys(),key=lambda s: s.lower()),
+                                 strLoc=self.choice,strKey=0,
+                                 onChoice=self.OnSelection)
+        btn.SetLabel("")
+        self.sizer.Add(btn)
+
+        self.varsizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.varsizer,1,wx.ALL|wx.EXPAND,1)
+        
+        self.doclbl = wx.StaticBox(self, wx.ID_ANY, "")
+        self.doclblsizr = wx.StaticBoxSizer(self.doclbl)
+        self.docinfo = wx.StaticText(self,  wx.ID_ANY, "")
+        self.doclblsizr.Add(self.docinfo, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer.Add(self.doclblsizr, 0, wx.ALIGN_LEFT|wx.EXPAND|wx.ALL, 5)
+        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.saveBtn = wx.Button(self,-1,"Save current settings")
+        btnsizer.Add(self.saveBtn, 0, wx.ALL, 2) 
+        self.saveBtn.Bind(wx.EVT_BUTTON, self.OnSave)
+        self.saveBtn.Enable(False)
+        self.applyBtn = wx.Button(self,-1,"Use current (no save)")
+        btnsizer.Add(self.applyBtn, 0, wx.ALL, 2) 
+        self.applyBtn.Bind(wx.EVT_BUTTON, self.OnApplyChanges)
+        self.applyBtn.Enable(False)
+        
+        btn = wx.Button(self,wx.ID_CANCEL)
+        btnsizer.Add(btn, 0, wx.ALL, 2) 
+        self.sizer.Add(btnsizer, 0, wx.ALIGN_CENTRE|wx.ALL, 5) 
+                
+        self.SetSizer(self.sizer)
+        self.sizer.Fit(self)
+        self.CenterOnParent()
+
+    def GetVarDocs(self,fname):
+        '''Read the module referenced in fname (often <module>.__file__) and return a
+        dict with names of global variables as keys.
+        For each global variable, the value contains four items:
+          item 0: the default value
+          item 1: the current value
+          item 2: the initial value (starts same as item 1)
+          item 3: the "docstring" that follows variable definition
+        '''
+        import config_example
+        import ast
+        fname = os.path.splitext(fname)[0]+'.py' # convert .pyc to .py
+        with open(fname, 'r') as f:
+            fstr = f.read()
+        fstr = fstr.replace('\r\n', '\n').replace('\r', '\n')
+        if not fstr.endswith('\n'):
+            fstr += '\n'
+        tree = ast.parse(fstr)
+        d = {}
+        key = None
+        for node in ast.walk(tree):
+            if isinstance(node,ast.Assign):
+                key = node.targets[0].id
+                d[key] = [config_example.__dict__.get(key),
+                          GSASIIpath.configDict.get(key),
+                          GSASIIpath.configDict.get(key),'']
+            elif isinstance(node,ast.Expr) and key:
+                d[key][3] = node.value.s.strip()
+            else:
+                key = None
+        return d
+    
+    def OnChange(self,event=None):
+        ''' Check if anything been changed. Turn the save button on/off.
+        '''
+        for var in self.vars:
+            if self.vars[var][0] is None and self.vars[var][1] is not None:
+                # make blank strings into None, if that is the default
+                if self.vars[var][1].strip() == '': self.vars[var][1] = None
+            if self.vars[var][1] != self.vars[var][2]:
+                #print 'changed',var,self.vars[var][:3]
+                self.saveBtn.Enable(True)
+                self.applyBtn.Enable(True)
+                break
+        else:
+            self.saveBtn.Enable(False)
+            self.applyBtn.Enable(False)
+        try:
+            self.resetBtn.Enable(True)
+        except:
+            pass
+        
+    def OnApplyChanges(self,event=None):
+        'Set config variables to match the current settings'
+        GSASIIpath.SetConfigValue(self.vars)
+        self.EndModal(wx.ID_OK)
+        
+    def OnSave(self,event):
+        '''Write the config variables to config.py and then set them
+        as the current settings
+        '''
+        # try to write to where an old config file is located
+        try:
+            import config
+            savefile = config.__file__
+        except ImportError: # no config.py file yet
+            savefile = os.path.join(GSASIIpath.path2GSAS2,'config.py')
+        # try to open file for write
+        try:
+            savefile = os.path.splitext(savefile)[0]+'.py' # convert .pyc to .py
+            fp = open(savefile,'w')
+        except IOError:  # can't write there, write in local mods directory
+            # create a local mods directory, if needed
+            if not os.path.exists(os.path.expanduser('~/.G2local/')):
+                print('Creating directory '+os.path.expanduser('~/.G2local/'))
+                os.mkdir(os.path.expanduser('~/.G2local/'))
+                sys.path.insert(0,os.path.expanduser('~/.G2local/'))
+            savefile = os.path.join(os.path.expanduser('~/.G2local/'),'config.py')
+            try:
+                fp = open(savefile,'w')
+            except IOError:
+                G2MessageBox(self,
+                                 'Error trying to write configuration to '+savefile,
+                                 'Unable to save')
+                return
+        import datetime
+        fp.write("'''\n")
+        fp.write("*config.py: Configuration options*\n----------------------------------\n")
+        fp.write("This file created in SelectConfigSetting on {:%d %b %Y %H:%M}\n".
+                 format(datetime.datetime.now()))
+        fp.write("'''\n\n")
+        fp.write("import os.path\n")
+        fp.write("import GSASIIpath\n\n")
+        for var in sorted(self.vars.keys(),key=lambda s: s.lower()):
+            if self.vars[var][1] is None: continue
+            if self.vars[var][1] == '': continue
+            if self.vars[var][0] == self.vars[var][1]: continue
+            try:
+                float(self.vars[var][1]) # test for number
+                fp.write(var + ' = ' + str(self.vars[var][1])+'\n')
+            except:
+                try:
+                    eval(self.vars[var][1]) # test for an expression
+                    fp.write(var + ' = ' + str(self.vars[var][1])+'\n')
+                except: # must be a string
+                    fp.write(var + ' = "' + str(self.vars[var][1])+'"\n')
+            if self.vars[var][3]:
+                fp.write("'''" + str(self.vars[var][3]) + "\n'''\n\n")
+        fp.close()
+        print('wrote file '+savefile)
+        # force a reload of the config settings
+        self.OnApplyChanges()
+        self.EndModal(wx.ID_OK)
+
+    def OnBoolSelect(self,event):
+        'Respond to a change in a True/False variable'
+        rb = event.GetEventObject()
+        var = self.choice[0]
+        self.vars[var][1] = (rb.GetSelection() == 0)
+        self.OnChange()
+        wx.CallAfter(self.OnSelection)
+        
+    def onSelDir(self,event):
+        'Select a directory from a menu'
+        dlg = wx.DirDialog(self, "Choose a directory:",style=wx.DD_DEFAULT_STYLE)
+        if dlg.ShowModal() == wx.ID_OK:
+            var = self.choice[0]
+            self.vars[var][1] = dlg.GetPath()
+            self.strEd.SetValue(self.vars[var][1])
+            self.OnChange()
+        dlg.Destroy()
+        
+    def OnSelection(self):
+        'show a selected variable'
+        self.varsizer.DeleteWindows()
+        var = self.choice[0]
+        showdef = True
+        if var not in self.vars:
+            raise Exception,"How did this happen?"
+        if type(self.vars[var][0]) is int:
+            ed = ValidatedTxtCtrl(self,self.vars[var],1,typeHint=int,OKcontrol=self.OnChange)
+            self.varsizer.Add(ed, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        elif type(self.vars[var][0]) is float:
+            ed = ValidatedTxtCtrl(self,self.vars[var],1,typeHint=float,OKcontrol=self.OnChange)
+            self.varsizer.Add(ed, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        elif type(self.vars[var][0]) is bool:
+            showdef = False
+            lbl = "value for "+var
+            ch = []
+            for i,v in enumerate((True,False)):
+                s = str(v)
+                if v == self.vars[var][0]:
+                    defopt = i
+                    s += ' (default)'
+                ch += [s]
+            rb = wx.RadioBox(
+                    self, wx.ID_ANY, lbl, wx.DefaultPosition, wx.DefaultSize,
+                    ch, 1, wx.RA_SPECIFY_COLS
+            )
+            # set initial value
+            if self.vars[var][1] is None:
+                rb.SetSelection(defopt)
+            elif self.vars[var][1]:
+                rb.SetSelection(0)
+            else:
+                rb.SetSelection(1)
+            rb.Bind(wx.EVT_RADIOBOX,self.OnBoolSelect)
+            self.varsizer.Add(rb, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        else:
+            if var.endswith('_directory') or var.endswith('_location'):
+                btn = wx.Button(self,wx.ID_ANY,'Select from dialog...')
+                sz = (400,-1)
+            else:
+                btn = None
+                sz = (250,-1)
+            self.strEd = ValidatedTxtCtrl(self,self.vars[var],1,typeHint=str,OKcontrol=self.OnChange,
+                                              size=sz)
+            if self.vars[var][1] is not None:
+                self.strEd.SetValue(self.vars[var][1])
+            self.varsizer.Add(self.strEd, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+            if btn:
+                btn.Bind(wx.EVT_BUTTON,self.onSelDir)
+                self.varsizer.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5) 
+        # button for reset to default value
+        lbl = "Reset to Default"
+        if showdef: # spell out default when needed
+            lbl += ' (='+str(self.vars[var][0])+')'
+            #label = wx.StaticText(self,  wx.ID_ANY, 'Default value = '+str(self.vars[var][0]))
+            #self.varsizer.Add(label, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.resetBtn = wx.Button(self,-1,lbl)
+        self.resetBtn.Bind(wx.EVT_BUTTON, self.OnClear)
+        if self.vars[var][1] is not None and self.vars[var][1] != '': # show current value, if one
+            #label = wx.StaticText(self,  wx.ID_ANY, 'Current value = '+str(self.vars[var][1]))
+            #self.varsizer.Add(label, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+            self.resetBtn.Enable(True)
+        else:
+            self.resetBtn.Enable(False)
+        self.varsizer.Add(self.resetBtn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        # show meaning, if defined
+        self.doclbl.SetLabel("Description of "+str(var)) 
+        if self.vars[var][3]:
+            self.docinfo.SetLabel(self.vars[var][3])
+        else:
+            self.docinfo.SetLabel("(not documented)")
+        self.sizer.Fit(self)
+        self.CenterOnParent()
+        wx.CallAfter(self.SendSizeEvent)
+
+    def OnClear(self, event):
+        var = self.choice[0]
+        self.vars[var][1] = self.vars[var][0]
+        self.OnChange()
+        wx.CallAfter(self.OnSelection)
         
 ################################################################################
 class downdate(wx.Dialog):

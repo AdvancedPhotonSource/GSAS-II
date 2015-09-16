@@ -42,8 +42,9 @@ class PickElement(wx.Dialog):
                 color=E[4]
             else:
                 color=E[6]
-            PickElement.ElButton(self,name=E[0],
-               pos=wx.Point(E[1]*self.butWid+25,E[2]*24+24),tip=E[3],color=color)
+            self.ElButton(name=E[0],
+               pos=wx.Point(E[1]*self.butWid+25,E[2]*24+24),
+               tip=E[3],color=color)
             i+=1
 
     def __init__(self, parent,oneOnly=False,ifNone=False):
@@ -53,7 +54,7 @@ class PickElement(wx.Dialog):
         self._init_ctrls(parent)
         
     def ElButton(self, name, pos, tip, color):
-        'Needs a doc string'
+        'Creates an element button widget'
         Black = wx.Colour(0,0,0)
         if not self.ifNone and name[0] == 'None':
             return
@@ -65,8 +66,16 @@ class PickElement(wx.Dialog):
             butWid = self.butWid
             if name[0] == 'None':
                 butWid *= 2
-            El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),
-                style=wx.CB_READONLY, value=name[0])
+            # patch for wx 2.9+ on Mac where EVT_COMBOBOX happens only on
+            # value change. Not ideal because wx.CB_READONLY is better.
+            i,j= wx.__version__.split('.')[0:2]
+            if int(i)+int(j)/10. > 2.8 and 'wxOSX' in wx.PlatformInfo:
+
+                El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),
+                    style=wx.CB_DROPDOWN, value=name[0]+' ') # add an invisible space
+            else:
+                El = wx.ComboBox(choices=name, parent=self, pos=pos, size=wx.Size(butWid,23),
+                    style=wx.CB_READONLY, value=name[0]) 
             El.Bind(wx.EVT_COMBOBOX,self.OnElButton)
         
         El.SetBackgroundColour(color)

@@ -1429,15 +1429,18 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 data[1][1] = max(min(data[0][1],data[1][1]),data[1][0])
         elif (G2frame.PatternTree.GetItemText(PickId) == 'Reflection Lists' or \
             'PWDR' in G2frame.PatternTree.GetItemText(PickId)) and xpos:
-            Phases = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists'))
-            pick = str(G2frame.itemPicked).split('(')[1].strip(')')
-            if 'line' not in pick:       #avoid data points, etc.
-                data = G2frame.PatternTree.GetItemPyData(PatternId)
-                num = Phases.keys().index(pick)
-                if num:
-                    data[0]['refDelt'] = -(event.ydata-Pattern[0]['refOffset'])/(num*Ymax)
-                else:       #1st row of refl ticks
-                    data[0]['refOffset'] = event.ydata
+            Id = G2gd.GetPatternTreeItemId(G2frame,PatternId,'Reflection Lists')
+#            GSASIIpath.IPyBreak()
+            if Id:     
+                Phases = G2frame.PatternTree.GetItemPyData(Id)
+                pick = str(G2frame.itemPicked).split('(')[1].strip(')')
+                if 'line' not in pick:       #avoid data points, etc.
+                    data = G2frame.PatternTree.GetItemPyData(PatternId)
+                    num = Phases.keys().index(pick)
+                    if num:
+                        data[0]['refDelt'] = -(event.ydata-Pattern[0]['refOffset'])/(num*Ymax)
+                    else:       #1st row of refl ticks
+                        data[0]['refOffset'] = event.ydata
         PlotPatterns(G2frame,plotType=plottype)
         G2frame.itemPicked = None    
 

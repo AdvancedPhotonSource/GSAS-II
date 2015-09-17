@@ -628,7 +628,7 @@ def GetAtomSSFXU(pfx,calcControls,parmDict):
                 parm = pfx+key+str(iatm)+':%d'%(m)
                 if parm in parmDict:
                     keys[key][m][iatm] = parmDict[parm]
-    return waveTypes,FSSdata.squeeze(),XSSdata.squeeze(),USSdata.squeeze(),MSSdata.squeeze()
+    return waveTypes,FSSdata,XSSdata,USSdata,MSSdata
     
 def GetSSTauM(SGOps,SSOps,pfx,calcControls,XData):
     
@@ -982,9 +982,11 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     SStauM = list(GetSSTauM(SGData['SGOps'],SSGData['SSGOps'],pfx,calcControls,Xdata))
+    SST = SSGT[:,3]
     if SGData['SGInv']:
         SStauM[0] = np.hstack((SStauM[0],SStauM[0]))
         SStauM[1] = np.hstack((SStauM[1],SStauM[1]))
+        SST = np.hstack((SST,-SST))
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1032,7 +1034,8 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             SSUniq = np.vstack((SSUniq,-SSUniq))
             Phi = np.hstack((Phi,-Phi))
             SSPhi = np.hstack((SSPhi,-SSPhi))
-        GfpuA = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast)
+#        GSASIIpath.IPyBreak()
+        GfpuA = G2mth.Modulation(waveTypes,SSUniq,SST,FSSdata,XSSdata,USSdata,SStauM,Mast)
         phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
@@ -1043,7 +1046,6 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Tcorr = Tiso*Tuij*Mdata*Fdata/len(Uniq)
         fa = np.array([(FF+FP-Bab)*cosp*Tcorr,-FPP*sinp*Tcorr])     #2 x sym x atoms
         fb = np.array([(FF+FP-Bab)*sinp*Tcorr,FPP*cosp*Tcorr])
-#        GSASIIpath.IPyBreak()
         fa *= GfpuA
         fb *= GfpuA       
         fas = np.real(np.sum(np.sum(fa,axis=1),axis=1))

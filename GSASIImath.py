@@ -923,38 +923,49 @@ def XAnomAbs(Elements,wave):
 #### Modulation math
 ################################################################################
     
-def Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast):
+def Modulation(waveTypes,SSUniq,SGT,FSSdata,XSSdata,USSdata,SStauM,Mast):
     import pypowder as pwd
     
     nxs = np.newaxis
-    glTau,glWt = pwd.pygauleg(0.,1.,32)
+    glTau,glWt = pwd.pygauleg(0.,1.,32)         #get Gauss-Legendre intervals & weights
     
-    def expModInt(H,A,B):
-        tau = np.arange(1.,A.shape[1]+1)[:,nxs]*glTau #waves x 32
-        XmodA = np.swapaxes(A,1,2)[:,:,nxs]*np.sin(twopi*tau.T) #atoms X pos X 32 X waves
-        XmodB = np.swapaxes(B,1,2)[:,:,nxs]*np.cos(twopi*tau.T)
-        Xmod = np.sum(XmodA+XmodB,axis=-1)                    #atoms X pos X 32; sum waves
-        #Xmod is ParSup in J2K - values match after Calcm2 with klic=-1 
-        D = H[:,3][:,nxs]*tau[0,nxs]
-        HdotX = np.inner(np.swapaxes(Xmod,1,2),H[:,:3])+D.T         #atoms X 32 X ops
-        sinHA = np.sum(np.sin(twopi*HdotX)*glWt[nxs,:,nxs],axis=1)
+    def expModInt(H,Af,Bf,Ax,Bx,Au,Bu,S):
+        '''
+        H: array ops X hklt
+        Ax: array atoms X waves X xyz
+        Bx: array atoms X waves X xyz
+        S: array ops
+        '''
+        nx = 1
+        if 'Fourier' in waveTypes:
+            nx = 0
+            XmodZ = 0
+        else:
+            nx = 1
+            if 'Sawtooth' in wavwTypes:
+                XmodZ = 0
+            else:
+                XmodZ = 0
+        tau = np.arange(1.,Ax.shape[1]+1-nx)[:,nxs]*glTau #waves x 32
+        XmodA = Ax[:,nx:,:,nxs]*np.sin(twopi*tau[nxs,:,nxs,:]) #atoms X waves X pos X 32
+        XmodB = Bx[:,nx:,:,nxs]*np.cos(twopi*tau[nxs,:,nxs,:]) #atoms X waves X pos  X 32
+        Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                    #atoms X pos X 32; sum waves
+        D = H[:,3][:,nxs]*(glTau[nxs,:]+S[:,nxs])                                     #m*tau; ops X 32
+        HdotX = np.inner(np.swapaxes(Xmod,1,2),H[0,:3])[:,:,nxs]+D.T[nxs,:,:]         #atoms X 32 X ops
+        sinHA = np.sum(np.sin(twopi*HdotX)*glWt[nxs,:,nxs],axis=1)              #atoms X ops
         cosHA = np.sum(np.cos(twopi*HdotX)*glWt[nxs,:,nxs],axis=1)
-            
 #        GSASIIpath.IPyBreak()      
-        return cosHA.T,sinHA.T
+            
+        return cosHA.T,sinHA.T      #ops X atoms
 
     Smult,TauT = SStauM             # both atoms x SGops
-    m = SSUniq.T[3]
     Ax = np.array(XSSdata[:3]).T   #atoms x waves x sin pos mods
     Bx = np.array(XSSdata[3:]).T   #...cos pos mods
     Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
     Bf = np.array(FSSdata[1]).T    #cos frac mods...
-    Ab = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
-    Bb = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
-    if Ax.ndim > 2:
-        GpA = np.array(expModInt(SSUniq,Ax,Bx))
-    else:
-        GpA = np.array(expModInt(SSUniq,Ax[:,np.newaxis,:],Bx[:,np.newaxis,:]))        
+    Au = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
+    Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
+    GpA = np.array(expModInt(SSUniq,Af,Bf,Ax,Bx,Au,Bu,SGT))
     return GpA             # SGops x atoms
     
 def ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast):

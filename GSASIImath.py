@@ -942,7 +942,7 @@ def Modulation(waveTypes,SSUniq,SGT,FSSdata,XSSdata,USSdata,SStauM,Mast):
             XmodZ = 0
         else:
             nx = 1
-            if 'Sawtooth' in wavwTypes:
+            if 'Sawtooth' in waveTypes:
                 XmodZ = 0
             else:
                 XmodZ = 0
@@ -951,7 +951,7 @@ def Modulation(waveTypes,SSUniq,SGT,FSSdata,XSSdata,USSdata,SStauM,Mast):
         XmodB = Bx[:,nx:,:,nxs]*np.cos(twopi*tau[nxs,:,nxs,:]) #atoms X waves X pos  X 32
         Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                    #atoms X pos X 32; sum waves
         D = H[:,3][:,nxs]*(glTau[nxs,:]+S[:,nxs])                                     #m*tau; ops X 32
-        HdotX = np.inner(np.swapaxes(Xmod,1,2),H[0,:3])[:,:,nxs]+D.T[nxs,:,:]         #atoms X 32 X ops
+        HdotX = np.inner(np.swapaxes(Xmod,1,2),H[:,:3])+D.T[nxs,:,:]         #atoms X 32 X ops
         sinHA = np.sum(np.sin(twopi*HdotX)*glWt[nxs,:,nxs],axis=1)              #atoms X ops
         cosHA = np.sum(np.cos(twopi*HdotX)*glWt[nxs,:,nxs],axis=1)
 #        GSASIIpath.IPyBreak()      

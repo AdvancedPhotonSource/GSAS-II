@@ -1062,7 +1062,7 @@ def MoveToUnitCell(xyz):
     :param xyz: a list or numpy array of fractional coordinates
     :returns: XYZ - numpy array of new coordinates now 0 or greater and less than 1
     '''
-    XYZ = (xyz+10.)%1.
+    XYZ = (np.array(xyz)+10.)%1.
     cell = np.asarray(np.rint(xyz-XYZ),dtype=np.int32)
     return XYZ,cell
         
@@ -3076,10 +3076,10 @@ def test0():
     '''self-test #0: exercise MoveToUnitCell'''
     _ReportTest()
     msg = "MoveToUnitCell failed"
-    assert (MoveToUnitCell([1,2,3]) == [0,0,0]).all, msg
-    assert (MoveToUnitCell([2,-1,-2]) == [0,0,0]).all, msg
-    assert abs(MoveToUnitCell(np.array([-.1]))[0]-0.9) < 1e-6, msg
-    assert abs(MoveToUnitCell(np.array([.1]))[0]-0.1) < 1e-6, msg
+    assert (MoveToUnitCell([1,2,3])[0] == [0,0,0]).all, msg
+    assert (MoveToUnitCell([2,-1,-2])[0] == [0,0,0]).all, msg
+    assert abs(MoveToUnitCell(np.array([-.1]))[0]-0.9)[0] < 1e-6, msg
+    assert abs(MoveToUnitCell(np.array([.1]))[0]-0.1)[0] < 1e-6, msg
 selftestlist.append(test0)
 
 def test1():

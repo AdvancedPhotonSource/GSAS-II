@@ -982,11 +982,9 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     SStauM = list(GetSSTauM(SGData['SGOps'],SSGData['SSGOps'],pfx,calcControls,Xdata))
-    SST = SSGT[:,3]
     if SGData['SGInv']:
         SStauM[0] = np.hstack((SStauM[0],SStauM[0]))
         SStauM[1] = np.hstack((SStauM[1],SStauM[1]))
-        SST = np.hstack((SST,-SST))
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1035,8 +1033,8 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             Phi = np.hstack((Phi,-Phi))
             SSPhi = np.hstack((SSPhi,-SSPhi))
 #        GSASIIpath.IPyBreak()
-        GfpuA = G2mth.Modulation(waveTypes,SSUniq,SST,FSSdata,XSSdata,USSdata,Mast)
-        phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
+        GfpuA = G2mth.Modulation(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast)
+        phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+SSPhi[:,np.newaxis])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
         biso = -SQfactor*Uisodata
@@ -1102,10 +1100,10 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         SSUniq = np.inner(H,SSGMT)
         Phi = np.inner(H[:3],SGT)
         SSPhi = np.inner(H,SSGT)
-        GfpuA,GfpuB = G2mth.Modulation(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast)
-        dGAdk,dGBdk = G2mth.ModulationDerv(waveTypes,SSUniq,SSPhi,FSSdata,XSSdata,USSdata,SStauM,Mast)
+        GfpuA = G2mth.Modulation(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast)
+        dGAdk = G2mth.ModulationDerv(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast)
         #need ModulationDerv here dGAdXsin, etc  
-        phase = twopi*(np.inner((dXdata.T+Xdata.T),Uniq)+Phi[np.newaxis,:])
+        phase = twopi*(np.inner((dXdata.T+Xdata.T),Uniq)+SSPhi[np.newaxis,:])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
         occ = Mdata*Fdata/len(Uniq)
@@ -1118,10 +1116,8 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         Tcorr = Tiso*Tuij
         fot = (FF+FP-Bab)*occ*Tcorr
         fotp = FPP*occ*Tcorr
-        fa = np.array([fot[:,np.newaxis]*cosp,fotp[:,np.newaxis]*cosp])       #non positions
-        fb = np.array([fot[:,np.newaxis]*sinp,-fotp[:,np.newaxis]*sinp])
-        fa = fa*GfpuA[:,:,np.newaxis]-fb*GfpuB[:,:,np.newaxis]
-        fb = fb*GfpuA[:,:,np.newaxis]+fa*GfpuB[:,:,np.newaxis]
+        fa *= GfpuA
+        fb *= GfpuA       
         
         fas = np.sum(np.sum(fa,axis=1),axis=1)
         fbs = np.sum(np.sum(fb,axis=1),axis=1)

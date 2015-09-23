@@ -600,6 +600,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                     V1 /= nl.norm(V1)
                     A = np.arccos(np.sum(V1*V0))
                     Q = G2mth.AV2Q(-A,viewChoice[key][2])
+                G2frame.G2plotNB.status.SetStatusText('zone = %s'%(str(viewChoice[key][0])),1)
             else:
                 V0 = np.array(viewChoice[key][0])
                 V = np.inner(Bmat,V0)
@@ -913,7 +914,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         if Data['Zone']:
             Zclip = 0.1
         Q = drawingData['Quaternion']
-        Tx,Ty,Tz = drawingData['viewPoint'][0]
+        Tx,Ty,Tz = drawingData['viewPoint'][0][:3]
         G,g = G2lat.cell2Gmat(cell)
         GS = G
         GS[0][1] = GS[1][0] = math.sqrt(GS[0][0]*GS[1][1])

@@ -1035,7 +1035,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             Phi = np.hstack((Phi,-Phi))
             SSPhi = np.hstack((SSPhi,-SSPhi))
 #        GSASIIpath.IPyBreak()
-        GfpuA = G2mth.Modulation(waveTypes,SSUniq,SST,FSSdata,XSSdata,USSdata,SStauM,Mast)
+        GfpuA = G2mth.Modulation(waveTypes,SSUniq,SST,FSSdata,XSSdata,USSdata,Mast)
         phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
         sinp = np.sin(phase)
         cosp = np.cos(phase)

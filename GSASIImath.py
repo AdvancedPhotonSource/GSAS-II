@@ -34,6 +34,8 @@ import GSASIIpwd as G2pwd
 import numpy.fft as fft
 import scipy.optimize as so
 import pypowder as pwd
+if GSASIIpath.GetConfigValue('debug'):
+    import pylab as pl
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)
@@ -938,22 +940,22 @@ def Modulation(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast):
         if 'Fourier' in waveTypes:
             nf = 0
             nx = 0
-            XmodZ = 0
-            FmodZ = 0
+            XmodZ = np.zeros((Ax.shape[0],Ax.shape[1],3,32))
+            FmodZ = np.zeros((Af.shape[0],Af.shape[1],32))
             if 'Crenel' in waveTypes:
+                nC = np.where('Crenel' in waveTypes)
                 nf = 1
-                FmodC = 0   #replace
+                #FmodZ = 0   replace
         else:
             nx = 1
             if 'Sawtooth' in waveTypes:
-                XmodZ = 0   #replace
-            else:
-                XmodZ = 0   #replace (use?)
+                nS = np.where('Sawtooth' in waveTypes)
+                #XmodZ = 0   replace
         if Af.shape[1]:
             tauF = np.arange(1.,Af.shape[1]+1-nf)[:,nxs]*glTau  #Fwaves x 32
-            FmodA = Af[:,nf:,nxs]*np.sin(twopi*tauF[nxs,:,:])
+            FmodA = Af[:,nf:,nxs]*np.sin(twopi*tauF[nxs,:,:])   #atoms X Fwaves X 32
             FmodB = Bf[:,nf:,nxs]*np.cos(twopi*tauF[nxs,:,:])
-            Fmod = np.sum(FmodA+FmodB+FmodC,axis=1)
+            Fmod = np.sum(FmodA+FmodB+FmodC,axis=1)             #atoms X 32; sum waves
         else:
             Fmod = 1.0           
         if Ax.shape[1]:

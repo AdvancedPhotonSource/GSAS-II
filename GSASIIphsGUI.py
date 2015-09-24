@@ -2377,7 +2377,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Obj = event.GetEventObject()
                 iatm,item = Indx[Obj.GetId()]
                 nt = numVals[Stype]
-                if not len(atomData[iatm][-1][SS][item]) and waveType in ['ZigZag','Sawtooth'] and Stype == 'Spos':
+                if not len(atomData[iatm][-1][SS][item]) and waveType in ['Sawtooth',] and Stype == 'Spos':
                     nt = 4
                 atomData[iatm][-1][SS][item].append([[0.0 for i in range(nt)],False])
                 UpdateWavesData()
@@ -2429,7 +2429,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             names = Names[:2]
                         Waves = wx.FlexGridSizer(0,4,5,5)
                     elif Stype == 'Spos':
-                        if waveType in ['ZigZag','Sawtooth'] and not iwave:
+                        if waveType in ['Sawtooth',] and not iwave:
                             names = Names[6:]
                             Waves = wx.FlexGridSizer(0,6,5,5)
                             waveName = waveType
@@ -2525,7 +2525,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'U11cos','U22cos','U33cos','U12cos','U13cos','U23cos']
         magNames = ['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']
         fracNames = ['Fsin','Fcos','Fzero','Fwid']
-        waveTypes = ['Fourier','Sawtooth','ZigZag','Crenel/Fourier']
+        waveTypes = ['Fourier','Sawtooth','Crenel/Fourier']
         Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
         mainSizer.Add(wx.StaticText(waveData,label=' Incommensurate propagation wave data:'),0,WACV)
         if generalData['Type'] in ['modulated','magnetic']:

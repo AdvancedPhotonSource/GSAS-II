@@ -628,7 +628,7 @@ def GetAtomSSFXU(pfx,calcControls,parmDict):
                 parm = pfx+key+str(iatm)+':%d'%(m)
                 if parm in parmDict:
                     keys[key][m][iatm] = parmDict[parm]
-    return waveTypes,FSSdata,XSSdata,USSdata,MSSdata
+    return np.array(waveTypes),FSSdata,XSSdata,USSdata,MSSdata
     
 def GetSSTauM(SGOps,SSOps,pfx,calcControls,XData):
     
@@ -1024,16 +1024,16 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         HM[:3] += H[3]*modQ
         HM += H
         Uniq = np.inner(HM[:3],SGMT)
-        SSUniq = np.inner(HM,SSGMT)
+        SSUniq = np.inner(H,SSGMT)
         Phi = np.inner(HM[:3],SGT)
-        SSPhi = np.inner(HM,SSGT)
+        SSPhi = np.inner(H,SSGT)
         if SGInv:   #if centro - expand HKL sets
             Uniq = np.vstack((Uniq,-Uniq))
             SSUniq = np.vstack((SSUniq,-SSUniq))
             Phi = np.hstack((Phi,-Phi))
             SSPhi = np.hstack((SSPhi,-SSPhi))
 #        GSASIIpath.IPyBreak()
-        GfpuA = G2mth.Modulation(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast)
+        GfpuA = G2mth.Modulation(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast) #2 x sym X atoms
         phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+SSPhi[:,np.newaxis])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
@@ -1043,11 +1043,11 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij*Mdata*Fdata/len(Uniq)
         fa = np.array([(FF+FP-Bab)*cosp*Tcorr,-FPP*sinp*Tcorr])     #2 x sym x atoms
-        fb = np.array([(FF+FP-Bab)*sinp*Tcorr,FPP*cosp*Tcorr])
+        fb = np.array([FPP*cosp*Tcorr,(FF+FP-Bab)*sinp*Tcorr])      #swapped around - better?
         fa *= GfpuA
         fb *= GfpuA       
-        fas = np.real(np.sum(np.sum(fa,axis=1),axis=1))
-        fbs = np.real(np.sum(np.sum(fb,axis=1),axis=1))
+        fas = np.sum(np.sum(fa,axis=1),axis=1)
+        fbs = np.sum(np.sum(fb,axis=1),axis=1)
         fasq = fas**2
         fbsq = fbs**2        #imaginary
         refl[9+im] = np.sum(fasq)+np.sum(fbsq)

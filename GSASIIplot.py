@@ -319,7 +319,8 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         to F, F**2, etc. as requested
     '''
     from matplotlib.patches import Circle,CirclePolygon
-    global HKL,HKLF
+    HKLref = hklRef
+    global HKL,HKLF,HKLref
     
     def OnSCKeyPress(event):
         i = zones.index(Data['Zone'])
@@ -352,7 +353,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         elif event.key in pwdrChoice and 'PWDR' in Name:
             Data['Type'] = pwdrChoice[event.key]            
             newPlot = True       
-        PlotSngl(G2frame,newPlot,Data,hklRef,Title)
+        PlotSngl(G2frame,newPlot,Data,HKLref,Title)
 
     def OnSCMotion(event):
         xpos = event.xdata
@@ -440,7 +441,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     HKL = []
     HKLF = []
     time0 = time.time()
-    for refl in hklRef:
+    for refl in HKLref:
         H = refl[:3]
         if 'HKLF' in Name:
             Fosq,sig,Fcsq = refl[5+Super:8+Super]

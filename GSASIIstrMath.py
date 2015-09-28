@@ -952,7 +952,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dFdvDict[phfx+'TwinFr:'+str(i)] = dFdtw.T[i]
     return dFdvDict
     
-def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
+def SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ''' 
     Compute super structure factors for all h,k,l,m for phase
     puts the result, F^2, in each ref[8+im] in refList
@@ -967,7 +967,8 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     :param dict calcControls:
     :param dict ParmDict:
 
-    '''        
+    '''
+    nxs = np.newaxis        
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)    
@@ -1012,68 +1013,169 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
             refDict['FF']['El'] = dat.keys()
             refDict['FF']['FF'] = np.ones((nRef,len(dat)))
             for iref,ref in enumerate(refDict['RefList']):
-                SQ = 1./(2.*ref[4])**2
+                SQ = 1./(2.*ref[5])**2
                 dat = G2el.getFFvalues(FFtables,SQ)
                 refDict['FF']['FF'][iref] *= dat.values()
     time0 = time.time()
-    nref = len(refDict['RefList'])/100   
 #reflection processing begins here - big arrays!
     iBeg = 0
     while iBeg < nRef:
         iFin = min(iBeg+blkSize,nRef)
         refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)
         H = refl.T[:4]                          #array(blkSize,4)
-        H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(blkSize,nTwins,3) or (blkSize,3)
-        TwMask = np.any(H,axis=-1)
-        if TwinLaw.shape[0] > 1 and TwDict: #need np.inner(TwinLaw[?],TwDict[iref][i])*TwinInv[i]
-            for ir in range(blkSize):
-                iref = ir+iBeg
-                if iref in TwDict:
-                    for i in TwDict[iref]:
-                        for n in range(NTL):
-                            H[ir][i+n*NM] = np.inner(TwinLaw[n*NM],np.array(TwDict[iref][i])*TwinInv[i+n*NM])
-            TwMask = np.any(H,axis=-1)
+#        H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(blkSize,nTwins,4) or (blkSize,4)
+#        TwMask = np.any(H,axis=-1)
+#        if TwinLaw.shape[0] > 1 and TwDict: #need np.inner(TwinLaw[?],TwDict[iref][i])*TwinInv[i]
+#            for ir in range(blkSize):
+#                iref = ir+iBeg
+#                if iref in TwDict:
+#                    for i in TwDict[iref]:
+#                        for n in range(NTL):
+#                            H[ir][i+n*NM] = np.inner(TwinLaw[n*NM],np.array(TwDict[iref][i])*TwinInv[i+n*NM])
+#            TwMask = np.any(H,axis=-1)
         SQ = 1./(2.*refl.T[5])**2               #array(blkSize)
         SQfactor = 4.0*SQ*twopisq               #ditto prev.
+        Uniq = np.inner(H.T,SSGMT)
+        Phi = np.inner(H.T,SSGT)
+        if SGInv:   #if centro - expand HKL sets
+            Uniq = np.hstack((Uniq,-Uniq))
+            Phi = np.hstack((Phi,-Phi))
         if 'T' in calcControls[hfx+'histType']:
             if 'P' in calcControls[hfx+'histType']:
                 FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[14])
             else:
                 FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[12])
-            FP = np.repeat(FP.T,len(SGT)*len(TwinLaw),axis=0)
-            FPP = np.repeat(FPP.T,len(SGT)*len(TwinLaw),axis=0)
-        Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT)*len(TwinLaw))
+            FP = np.repeat(FP.T,Uniq.shape[1]*len(TwinLaw),axis=0)
+            FPP = np.repeat(FPP.T,Uniq.shape[1]*len(TwinLaw),axis=0)
+        Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),Uniq.shape[1]*len(TwinLaw))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
-        FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
-        Uniq = np.inner(H,SSGMT)
-        Phi = np.inner(H,SSGT)
-        if SGInv:   #if centro - expand HKL sets
-            Uniq = np.vstack((Uniq,-Uniq))
-            Phi = np.hstack((Phi,-Phi))
-#        GSASIIpath.IPyBreak()
-        GfpuA = G2mth.Modulation(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast) #2 x sym X atoms
-        phase = twopi*(np.inner(Uniq[:,:3],(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
+        FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,Uniq.shape[1]*len(TwinLaw),axis=0)
+        phase = twopi*(np.inner(Uniq[:,:,:3],(dXdata.T+Xdata.T))+Phi[:,:,nxs])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
-        biso = -SQfactor*Uisodata
-        Tiso = np.where(biso<1.,np.exp(biso),1.0)
-        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in Uniq[:,:3]])
+        biso = -SQfactor*Uisodata[:,nxs]
+        Tiso = np.repeat(np.where(biso<1.,np.exp(biso),1.0),Uniq.shape[1]*len(TwinLaw),axis=1).T
+        HbH = -np.sum(Uniq[:,:,nxs,:3]*np.inner(Uniq[:,:,:3],bij),axis=-1)
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
-        Tcorr = Tiso*Tuij*Mdata*Fdata/len(Uniq)
-        fa = np.array([(FF+FP-Bab)*cosp*Tcorr,-FPP*sinp*Tcorr])     #2 x sym x atoms
-        fb = np.array([FPP*cosp*Tcorr,(FF+FP-Bab)*sinp*Tcorr])      #swapped around - better
+        Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[1]
+        if 'T' in calcControls[hfx+'histType']:
+            fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
+            fb = np.array([np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
+        else:
+            fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
+            fb = np.array([Flack*FPP*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
+        GfpuA = G2mth.Modulation2(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast) #2 x refBlk x sym X atoms
         fa *= GfpuA
         fb *= GfpuA       
-        fas = np.sum(np.sum(fa,axis=1),axis=1)
-        fbs = np.sum(np.sum(fb,axis=1),axis=1)
-        fasq = fas**2
-        fbsq = fbs**2        #imaginary
-        refl[9+im] = np.sum(fasq)+np.sum(fbsq)
-        refl[7+im] = np.sum(fasq)+np.sum(fbsq)
-        refl[10+im] = atan2d(fbs[0],fas[0])
-        if not iref%nref: print 'ref no. %d time %.4f\r'%(iref,time.time()-time0),
-    print '\nref no. %d time %.4f\r'%(iref,time.time()-time0)
-    
+#        GSASIIpath.IPyBreak()
+        fas = np.sum(np.sum(fa,axis=-1),axis=-1)
+        fbs = np.sum(np.sum(fb,axis=-1),axis=-1)
+        if 'P' in calcControls[hfx+'histType']:
+            refl.T[10] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
+            refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
+        else:
+            if len(TwinLaw) > 1:
+                refl.T[10] = np.sum(fas[:,:,0]**2,axis=0)+np.sum(fbs[:,:,0]**2,axis=0)   #FcT from primary twin element
+                refl.T[8] = np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fas,axis=0)**2,axis=-1)+   \
+                    np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
+                refl.T[11] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f"
+            else:
+                refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
+                refl.T[8] = np.copy(refl.T[10])                
+                refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
+        iBeg += blkSize
+    print 'nRef %d time %.4f\r'%(nRef,time.time()-time0)
+
+#def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
+#    ''' 
+#    Compute super structure factors for all h,k,l,m for phase
+#    puts the result, F^2, in each ref[8+im] in refList
+#    input:
+#    
+#    :param dict refDict: where
+#        'RefList' list where each ref = h,k,l,m,d,...
+#        'FF' dict of form factors - filed in below
+#    :param np.array G:      reciprocal metric tensor
+#    :param str pfx:    phase id string
+#    :param dict SGData: space group info. dictionary output from SpcGroup
+#    :param dict calcControls:
+#    :param dict ParmDict:
+#
+#    '''        
+#    phfx = pfx.split(':')[0]+hfx
+#    ast = np.sqrt(np.diag(G))
+#    Mast = twopisq*np.multiply.outer(ast,ast)
+#    
+#    SGInv = SGData['SGInv']
+#    SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
+#    SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
+#    FFtables = calcControls['FFtables']
+#    BLtables = calcControls['BLtables']
+#    Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
+#    waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
+#    FF = np.zeros(len(Tdata))
+#    if 'NC' in calcControls[hfx+'histType']:
+#        FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
+#    else:
+#        FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
+#        FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
+#    Uij = np.array(G2lat.U6toUij(Uijdata))
+#    bij = Mast*Uij.T
+#    if not len(refDict['FF']):
+#        if 'N' in calcControls[hfx+'histType']:
+#            dat = G2el.getBLvalues(BLtables)        #will need wave here for anom. neutron b's
+#        else:
+#            dat = G2el.getFFvalues(FFtables,0.)        
+#        refDict['FF']['El'] = dat.keys()
+#        refDict['FF']['FF'] = np.zeros((len(refDict['RefList']),len(dat)))
+#    time0 = time.time()
+#    nref = len(refDict['RefList'])/100   
+#    for iref,refl in enumerate(refDict['RefList']):
+#        if 'NT' in calcControls[hfx+'histType']:
+#            FP,FPP = G2el.BlenResCW(Tdata,BLtables,refl[14+im])
+#        fbs = np.array([0,0])
+#        H = refl[:4]
+#        SQ = 1./(2.*refl[4+im])**2
+#        SQfactor = 4.0*SQ*twopisq
+#        Bab = parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor)
+#        if not np.any(refDict['FF']['FF'][iref]):                #no form factors - 1st time thru StructureFactor
+#            if 'N' in calcControls[hfx+'histType']:
+#                dat = G2el.getBLvalues(BLtables)
+#                refDict['FF']['FF'][iref] = dat.values()
+#            else:       #'X'
+#                dat = G2el.getFFvalues(FFtables,SQ)
+#                refDict['FF']['FF'][iref] = dat.values()
+#        Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
+#        FF = refDict['FF']['FF'][iref][Tindx]
+#        SSUniq = np.inner(H,SSGMT)
+#        SSPhi = np.inner(H,SSGT)
+#        if SGInv:   #if centro - expand HKL sets
+#            SSUniq = np.vstack((SSUniq,-SSUniq))
+#            SSPhi = np.hstack((SSPhi,-SSPhi))
+#        phase = twopi*(np.inner(SSUniq[:,:3],(dXdata.T+Xdata.T))+SSPhi[:,np.newaxis])
+#        sinp = np.sin(phase)
+#        cosp = np.cos(phase)
+#        biso = -SQfactor*Uisodata
+#        Tiso = np.where(biso<1.,np.exp(biso),1.0)
+#        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in SSUniq[:,:3]])
+#        Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
+#        Tcorr = Tiso*Tuij*Mdata*Fdata/len(SSUniq)
+#        fa = np.array([(FF+FP-Bab)*cosp*Tcorr,-FPP*sinp*Tcorr])     #2 x sym x atoms
+#        fb = np.array([FPP*cosp*Tcorr,(FF+FP-Bab)*sinp*Tcorr])      #swapped around - better?
+#        GfpuA = G2mth.Modulation(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast) #2 x sym X atoms
+#        GSASIIpath.IPyBreak()
+#        fa *= GfpuA
+#        fb *= GfpuA       
+#        fas = np.sum(np.sum(fa,axis=1),axis=1)
+#        fbs = np.sum(np.sum(fb,axis=1),axis=1)
+#        fasq = fas**2
+#        fbsq = fbs**2        #imaginary
+#        refl[9+im] = np.sum(fasq)+np.sum(fbsq)
+#        refl[7+im] = np.sum(fasq)+np.sum(fbsq)
+#        refl[10+im] = atan2d(fbs[0],fas[0])
+#        if not iref%nref: print 'ref no. %d time %.4f\r'%(iref,time.time()-time0),
+#    print '\nref no. %d time %.4f\r'%(iref,time.time()-time0)
+#
 def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     'Needs a doc string'
     phfx = pfx.split(':')[0]+hfx
@@ -2796,7 +2898,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             refDict = Histogram['Data']
             time0 = time.time()
             if im:
-                SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
+                SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             else:
                 StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
 #            print 'sf-calc time: %.3f'%(time.time()-time0)

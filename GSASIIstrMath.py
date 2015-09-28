@@ -970,21 +970,27 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     '''        
     phfx = pfx.split(':')[0]+hfx
     ast = np.sqrt(np.diag(G))
-    Mast = twopisq*np.multiply.outer(ast,ast)
-    
-    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    Mast = twopisq*np.multiply.outer(ast,ast)    
+#    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
     SGInv = SGData['SGInv']
-    SGT = np.array([ops[1] for ops in SGData['SGOps']])
+#    SGT = np.array([ops[1] for ops in SGData['SGOps']])
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
+    Flack = 1.0
+    if not SGData['SGInv'] and 'S' in calcControls[hfx+'histType'] and phfx+'Flack' in parmDict:
+        Flack = 1.-2.*parmDict[phfx+'Flack']
+    TwinLaw = np.array([[[1,0,0],[0,1,0],[0,0,1]],])
+    TwDict = refDict.get('TwDict',{})           
+    if 'S' in calcControls[hfx+'histType']:
+        NTL = calcControls[phfx+'NTL']
+        NM = calcControls[phfx+'TwinNMN']+1
+        TwinLaw = calcControls[phfx+'TwinLaw']
+        TwinFr = np.array([parmDict[phfx+'TwinFr:'+str(i)] for i in range(len(TwinLaw))])
+        TwinInv = list(np.where(calcControls[phfx+'TwinInv'],-1,1))
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
-    SStauM = list(GetSSTauM(SGData['SGOps'],SSGData['SSGOps'],pfx,calcControls,Xdata))
-    if SGData['SGInv']:
-        SStauM[0] = np.hstack((SStauM[0],SStauM[0]))
-        SStauM[1] = np.hstack((SStauM[1],SStauM[1]))
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -994,56 +1000,68 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
     Uij = np.array(G2lat.U6toUij(Uijdata))
     bij = Mast*Uij.T
+    blkSize = 100       #no. of reflections in a block
+    nRef = refDict['RefList'].shape[0]
     if not len(refDict['FF']):
         if 'N' in calcControls[hfx+'histType']:
             dat = G2el.getBLvalues(BLtables)        #will need wave here for anom. neutron b's
+            refDict['FF']['El'] = dat.keys()
+            refDict['FF']['FF'] = np.ones((nRef,len(dat)))*dat.values()            
         else:
             dat = G2el.getFFvalues(FFtables,0.)        
-        refDict['FF']['El'] = dat.keys()
-        refDict['FF']['FF'] = np.zeros((len(refDict['RefList']),len(dat)))
+            refDict['FF']['El'] = dat.keys()
+            refDict['FF']['FF'] = np.ones((nRef,len(dat)))
+            for iref,ref in enumerate(refDict['RefList']):
+                SQ = 1./(2.*ref[4])**2
+                dat = G2el.getFFvalues(FFtables,SQ)
+                refDict['FF']['FF'][iref] *= dat.values()
     time0 = time.time()
     nref = len(refDict['RefList'])/100   
-    for iref,refl in enumerate(refDict['RefList']):
-        if 'NT' in calcControls[hfx+'histType']:
-            FP,FPP = G2el.BlenResCW(Tdata,BLtables,refl[14+im])
-        fbs = np.array([0,0])
-        H = refl[:4]
-        SQ = 1./(2.*refl[4+im])**2
-        SQfactor = 4.0*SQ*twopisq
-        Bab = parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor)
-        if not np.any(refDict['FF']['FF'][iref]):                #no form factors - 1st time thru StructureFactor
-            if 'N' in calcControls[hfx+'histType']:
-                dat = G2el.getBLvalues(BLtables)
-                refDict['FF']['FF'][iref] = dat.values()
-            else:       #'X'
-                dat = G2el.getFFvalues(FFtables,SQ)
-                refDict['FF']['FF'][iref] = dat.values()
+#reflection processing begins here - big arrays!
+    iBeg = 0
+    while iBeg < nRef:
+        iFin = min(iBeg+blkSize,nRef)
+        refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)
+        H = refl.T[:4]                          #array(blkSize,4)
+        H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(blkSize,nTwins,3) or (blkSize,3)
+        TwMask = np.any(H,axis=-1)
+        if TwinLaw.shape[0] > 1 and TwDict: #need np.inner(TwinLaw[?],TwDict[iref][i])*TwinInv[i]
+            for ir in range(blkSize):
+                iref = ir+iBeg
+                if iref in TwDict:
+                    for i in TwDict[iref]:
+                        for n in range(NTL):
+                            H[ir][i+n*NM] = np.inner(TwinLaw[n*NM],np.array(TwDict[iref][i])*TwinInv[i+n*NM])
+            TwMask = np.any(H,axis=-1)
+        SQ = 1./(2.*refl.T[5])**2               #array(blkSize)
+        SQfactor = 4.0*SQ*twopisq               #ditto prev.
+        if 'T' in calcControls[hfx+'histType']:
+            if 'P' in calcControls[hfx+'histType']:
+                FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[14])
+            else:
+                FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[12])
+            FP = np.repeat(FP.T,len(SGT)*len(TwinLaw),axis=0)
+            FPP = np.repeat(FPP.T,len(SGT)*len(TwinLaw),axis=0)
+        Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT)*len(TwinLaw))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
-        FF = refDict['FF']['FF'][iref][Tindx]
-        HM = np.zeros(4)
-        HM[:3] += H[3]*modQ
-        HM += H
-        Uniq = np.inner(HM[:3],SGMT)
-        SSUniq = np.inner(H,SSGMT)
-        Phi = np.inner(HM[:3],SGT)
-        SSPhi = np.inner(H,SSGT)
+        FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT)*len(TwinLaw),axis=0)
+        Uniq = np.inner(H,SSGMT)
+        Phi = np.inner(H,SSGT)
         if SGInv:   #if centro - expand HKL sets
             Uniq = np.vstack((Uniq,-Uniq))
-            SSUniq = np.vstack((SSUniq,-SSUniq))
             Phi = np.hstack((Phi,-Phi))
-            SSPhi = np.hstack((SSPhi,-SSPhi))
 #        GSASIIpath.IPyBreak()
-        GfpuA = G2mth.Modulation(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast) #2 x sym X atoms
-        phase = twopi*(np.inner(Uniq,(dXdata.T+Xdata.T))+SSPhi[:,np.newaxis])
+        GfpuA = G2mth.Modulation(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast) #2 x sym X atoms
+        phase = twopi*(np.inner(Uniq[:,:3],(dXdata.T+Xdata.T))+Phi[:,np.newaxis])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
         biso = -SQfactor*Uisodata
         Tiso = np.where(biso<1.,np.exp(biso),1.0)
-        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in Uniq])
+        HbH = np.array([-np.inner(h,np.inner(bij,h)) for h in Uniq[:,:3]])
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
         Tcorr = Tiso*Tuij*Mdata*Fdata/len(Uniq)
         fa = np.array([(FF+FP-Bab)*cosp*Tcorr,-FPP*sinp*Tcorr])     #2 x sym x atoms
-        fb = np.array([FPP*cosp*Tcorr,(FF+FP-Bab)*sinp*Tcorr])      #swapped around - better?
+        fb = np.array([FPP*cosp*Tcorr,(FF+FP-Bab)*sinp*Tcorr])      #swapped around - better
         fa *= GfpuA
         fb *= GfpuA       
         fas = np.sum(np.sum(fa,axis=1),axis=1)

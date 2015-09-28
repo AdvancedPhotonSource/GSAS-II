@@ -319,8 +319,8 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         to F, F**2, etc. as requested
     '''
     from matplotlib.patches import Circle,CirclePolygon
-    HKLref = hklRef
     global HKL,HKLF,HKLref
+    HKLref = hklRef
     
     def OnSCKeyPress(event):
         i = zones.index(Data['Zone'])

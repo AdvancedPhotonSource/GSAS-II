@@ -63,6 +63,7 @@ npasind = lambda x: 180.*np.arcsin(x)/np.pi
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
 GkDelta = unichr(0x0394)
+Gkrho = unichr(0x03C1)
     
 class G2PlotMpl(wx.Panel):    
     'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
@@ -2990,17 +2991,21 @@ def PlotTexture(G2frame,data,Start=False):
 ################################################################################
 
 def ModulationPlot(G2frame,data,atom,ax,off=0):
-    global Off,Atom,Ax
+    global Off,Atom,Ax,Slab,Off
     Off = off
     Atom = atom
     Ax = ax
+    
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
             ypos = event.ydata
+            ix = int(round(xpos*10))
+            iy = int(round((Slab.shape[0]-1)*(ypos+0.5-Off*0.005)))
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
             try:
-                G2frame.G2plotNB.status.SetStatusText('t =%9.3f %s =%9.3f'%(xpos,GkDelta+Ax,ypos),1)                   
+                G2frame.G2plotNB.status.SetStatusText('t =%9.3f %s =%9.3f %s=%9.3f'%(xpos,GkDelta+Ax,ypos,Gkrho,Slab[iy,ix]/8.),1)                   
+#                GSASIIpath.IPyBreak()                  
             except TypeError:
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
     
@@ -3045,7 +3050,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
         Page.Choice = ['+: shift up','-: shift down','0: reset shift']
     Page.keyPress = OnPlotKeyPress
     Map = General['4DmapData']
-    MapType = Map['MapType']
+    MapType = mapData['MapType']
     rhoSize = np.array(Map['rho'].shape)
     atxyz = np.array(atom[cx:cx+3])
     waveType = atom[-1]['SS1']['waveType']
@@ -3066,7 +3071,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
             else:
                 scof.append(spos[0][:3])
                 ccof.append(spos[0][3:])
-        wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof),1)  #hmm, why -1 work for Na2CO3?
+        wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof),1)
     if mapData['Flip']:
         Title = 'Charge flip'
     else:
@@ -3092,7 +3097,11 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     Plot.set_xlabel('t')
     Plot.set_ylabel(r'$\mathsf{\Delta}$%s'%(Ax))
     Slab = np.hstack((slab,slab,slab))
-    Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Off*.005,.5+Off*.005))
+    acolor = mpl.cm.get_cmap('RdYlGn')
+    if 'delt' in MapType:
+        Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Off*.005,.5+Off*.005),cmap=acolor)
+    else:
+        Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Off*.005,.5+Off*.005))
     Page.canvas.draw()
    
 ################################################################################

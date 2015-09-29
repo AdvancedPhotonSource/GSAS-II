@@ -2362,7 +2362,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
             atomSizer.Add(waveType,0,WACV)
             axchoice = ['x','y','z']
-            if len(Map['rho']):
+            if len(D4Map['rho']):
                 atomSizer.Add(wx.StaticText(waveData,label=' Show contour map for axis:'),0,WACV)
                 mapSel = wx.ComboBox(waveData,value=' ',choices=axchoice,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -2514,7 +2514,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         SSGData = generalData['SSGData']
         cx,ct,cs,cia = generalData['AtomPtrs']
         atomData = data['Atoms']
-        Map = generalData['4DmapData']
+        Map = generalData['Map']
+        D4Map = generalData['4DmapData']
         if waveData.GetSizer():
             waveData.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2555,9 +2556,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         phaseName = generalData['Name']
         ReflData = GetReflData(G2frame,phaseName,reflNames)
         if ReflData == None: return
-        mapData.update(G2mth.Fourier4DMap(data,ReflData))
+        G2mth.Fourier4DMap(data,ReflData)
+        data['Drawing']['contourLevel'] = 1.
+        data['Drawing']['mapSize'] = 10.
         mapSig = np.std(mapData['rho'])
-        print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+        print '4D '+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
         wx.CallAfter(UpdateWavesData)
             
 ################################################################################
@@ -6076,14 +6079,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mapData.update(G2mth.OmitMap(data,ReflData,pgbar))
             pgbar.Destroy()
         else:
-            mapData.update(G2mth.FourierMap(data,ReflData))
+            if generalData['Type'] in ['modulated',]:
+                dim = '4D '
+                G2mth.Fourier4DMap(data,ReflData)
+            else:
+                dim = '3D '
+                G2mth.FourierMap(data,ReflData)
         mapData['Flip'] = False
         mapSig = np.std(mapData['rho'])
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         data['Drawing']['contourLevel'] = 1.
         data['Drawing']['mapSize'] = 10.
-        print mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
+        print dim+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
         UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
         

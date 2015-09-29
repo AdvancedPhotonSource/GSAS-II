@@ -215,7 +215,9 @@ class CIFPhaseReader(G2IO.ImportPhase):
                         typ = atomlist[0].rstrip('0123456789-+')
                         if G2elem.CheckElement(typ):
                             atomlist[1] = typ
-                        if not atomlist[1]: atomlist[1] = 'Xe'
+                        if not atomlist[1]:
+                            atomlist[1] = 'Xe'
+                            self.warnings += ' Atom type '+typ+' not recognized; Xe assumed\n'
                     ulbl = '_atom_site_aniso_label'
                     if  atomlist[9] == 'A' and atomlist[0] in blk.get(ulbl):
                         for val,key in zip(anisoloop.GetKeyedPacket(ulbl,atomlist[0]),

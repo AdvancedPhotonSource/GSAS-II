@@ -1852,7 +1852,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.figure.colorbar(Img)
     else:
         G2frame.Lines = Lines
-    if G2frame.PatternTree.GetItemText(PickId) == 'Background':
+    if PickId and G2frame.PatternTree.GetItemText(PickId) == 'Background':
         # plot fixed background points
         backDict = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background'))[1]
         try:

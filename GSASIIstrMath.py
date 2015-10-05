@@ -1064,7 +1064,7 @@ def SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
         else:
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
             fb = np.array([Flack*FPP*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
-        GfpuA = G2mth.Modulation2(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast) #2 x refBlk x sym X atoms
+        GfpuA = G2mth.Modulation(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast) #2 x refBlk x sym X atoms
         fa *= GfpuA
         fb *= GfpuA       
 #        GSASIIpath.IPyBreak()
@@ -1220,8 +1220,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         SSUniq = np.inner(H,SSGMT)
         Phi = np.inner(H[:3],SGT)
         SSPhi = np.inner(H,SSGT)
-        GfpuA = G2mth.Modulation(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast)
-        dGAdk = G2mth.ModulationDerv(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast)
+        GfpuA,dGAdk = G2mth.ModulationDerv(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast)
         #need ModulationDerv here dGAdXsin, etc  
         phase = twopi*(np.inner((dXdata.T+Xdata.T),Uniq)+SSPhi[np.newaxis,:])
         sinp = np.sin(phase)

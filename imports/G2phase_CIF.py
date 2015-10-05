@@ -177,9 +177,11 @@ class CIFPhaseReader(G2IO.ImportPhase):
                 if blk.get('_atom_site_aniso_label'):
                     anisoloop = blk.GetLoop('_atom_site_aniso_label')
                     anisokeys = [i.lower() for i in anisoloop.keys()]
+                    anisolabels = blk.get('_atom_site_aniso_label')
                 else:
                     anisoloop = None
                     anisokeys = []
+                    anisolabels = []
                 self.Phase['Atoms'] = []
                 G2AtomDict = {  '_atom_site_type_symbol' : 1,
                                 '_atom_site_label' : 0,
@@ -203,6 +205,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
                         col = G2AtomDict.get(key)
                         if col >= 3:
                             atomlist[col] = cif.get_number_with_esd(val)[0]
+                            if col >= 11: atomlist[9] = 'A' # if any Aniso term is defined, set flag
                         elif col is not None:
                             atomlist[col] = val
                         elif key in ('_atom_site_thermal_displace_type',
@@ -210,7 +213,8 @@ class CIFPhaseReader(G2IO.ImportPhase):
                             if val.lower() == 'uani':
                                 atomlist[9] = 'A'
                         elif key == '_atom_site_u_iso_or_equiv':
-                            atomlist[10] =cif.get_number_with_esd(val)[0]
+                            uisoval =cif.get_number_with_esd(val)[0]
+                            if uisoval is not None: atomlist[10] = uisoval
                     if not atomlist[1] and atomlist[0]:
                         typ = atomlist[0].rstrip('0123456789-+')
                         if G2elem.CheckElement(typ):
@@ -218,10 +222,11 @@ class CIFPhaseReader(G2IO.ImportPhase):
                         if not atomlist[1]:
                             atomlist[1] = 'Xe'
                             self.warnings += ' Atom type '+typ+' not recognized; Xe assumed\n'
-                    ulbl = '_atom_site_aniso_label'
-                    if  atomlist[9] == 'A' and atomlist[0] in blk.get(ulbl):
-                        for val,key in zip(anisoloop.GetKeyedPacket(ulbl,atomlist[0]),
-                                           anisokeys):
+                    if atomlist[0] in anisolabels: # does this atom have aniso values in separate loop?
+                        atomlist[9] = 'A'  # set the aniso flag
+                        for val,key in zip( # load the values
+                                anisoloop.GetKeyedPacket('_atom_site_aniso_label',atomlist[0]), 
+                                anisokeys):
                             col = G2AtomDict.get(key)
                             if col:
                                 atomlist[col] = cif.get_number_with_esd(val)[0]

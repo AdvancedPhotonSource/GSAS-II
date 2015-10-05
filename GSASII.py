@@ -283,10 +283,11 @@ class GSASII(wx.Frame):
                             readerlist.append(reader)
             except AttributeError:
                 print 'Import_'+errprefix+': Attribute Error '+str(filename)
-                pass
-            except ImportError:
-                print 'Import_'+errprefix+': Error importing file '+str(filename)
-                pass
+            #except ImportError:
+            #    print 'Import_'+errprefix+': Error importing file '+str(filename)
+            except Exception,errmsg:
+                print('\nImport_'+errprefix+': Error importing file '+str(filename))
+                print('Error message: '+str(errmsg)+'\n')
             if fp: fp.close()
 
     def EnableSeqRefineMenu(self):

@@ -40,7 +40,8 @@ import GSASIIctrls as G2G
 import pytexture as ptx
 from  OpenGL.GL import *
 from OpenGL.GLU import *
-from OpenGL.GLE import *
+import OpenGL.GLE as gle
+#from OpenGL.GLE import *
 import gltext
 from matplotlib.backends.backend_wx import _load_bitmap
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
@@ -5006,8 +5007,8 @@ def PlotStructure(G2frame,data,firstCall=False):
         glMultMatrixf(B4mat.T)
         glEnable(GL_COLOR_MATERIAL)
         glShadeModel(GL_SMOOTH)
-        gleSetJoinStyle(TUBE_NORM_EDGE | TUBE_JN_ANGLE | TUBE_JN_CAP)
-        glePolyCylinder(Backbone,BackboneColor,radius)
+#        gle.gleSetJoinStyle(TUBE_NORM_EDGE | TUBE_JN_ANGLE | TUBE_JN_CAP)
+#        gle.glePolyCylinder(Backbone,BackboneColor,radius)
         glPopMatrix()        
         glDisable(GL_COLOR_MATERIAL)
         

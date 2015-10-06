@@ -1041,13 +1041,19 @@ def ModulationDerv(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast):
         return cosHA.T,sinHA.T      #ops X atoms
 
     Ax = np.array(XSSdata[:3]).T   #atoms x waves x sin pos mods
+    dGdAx = np.zeros_like(Ax)
     Bx = np.array(XSSdata[3:]).T   #...cos pos mods
+    dGdBx = np.zeros_like(Bx)
     Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
+    dGdAf = np.zeros_like(Af)
     Bf = np.array(FSSdata[1]).T    #cos frac mods...
+    dGdBf = np.zeros_like(Bf)
     Au = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
+    dGdAu = np.zeros_like(Au)
     Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
+    dGdBu = np.zeros_like(Bu)
     GpA = np.array(expModInt(SSUniq,Af,Bf,Ax,Bx,Au,Bu))
-    return GpA             # 2 x SGops x atoms
+    return GpA,dGdAf,dGdBf,dGdAx,dGdBx,dGdAu,dGdBu
     
 def posFourier(tau,psin,pcos,smul):
     A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])*smul

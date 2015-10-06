@@ -1270,8 +1270,8 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[1]  #ops x atoms
         fot = (FF+FP-Bab)*occ*Tcorr     #ops x atoms
         fotp = FPP*occ*Tcorr            #ops x atoms
-        GfpuA = G2mth.ModulationDerv(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast)
-        #need ModulationDerv here dGAdXsin, etc  
+        GfpuA,dGdAf,dGdBf,dGdAx,dGdBx,dGdAu,dGdBu =     \
+            G2mth.ModulationDerv(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast)
         fa = np.array([((FF+FP).T-Bab).T*cosp*Tcorr,-Flack*FPP*sinp*Tcorr]) # array(2,nTwin,nEqv,nAtoms)
         fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,Flack*FPP*cosp*Tcorr])
         fag = fa*GfpuA[0]-fb*GfpuA[1]
@@ -1288,11 +1288,11 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dfadba = np.sum(-cosp*(occ*Tcorr)[:,nxs],axis=1)
         dfadui = np.sum(-SQfactor*fag,axis=1)
         if nTwin > 1:
-            dfadx = np.array([np.sum(twopi*Uniq[it]*np.swapaxes(fax,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
+            dfadx = np.array([np.sum(twopi*Uniq[it,:,:3]*np.swapaxes(fax,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
             dfadua = np.array([np.sum(-Hij[it]*np.swapaxes(fa,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
             # array(nTwin,2,nAtom,3) & array(nTwin,2,nAtom,6)
         else:
-            dfadx = np.sum(twopi*Uniq*np.swapaxes(fax,-2,-1)[:,:,:,np.newaxis],axis=-2)
+            dfadx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fax,-2,-1)[:,:,:,np.newaxis],axis=-2)
             dfadua = np.sum(-Hij*np.swapaxes(fa,-2,-1)[:,:,:,np.newaxis],axis=-2)
             # array(2,nAtom,3) & array(2,nAtom,6)
         #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for al2O3!    

@@ -307,6 +307,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         self.OnLeave = OnLeave
         self.OnLeaveArgs = OnLeaveArgs
         self.CIFinput = CIFinput
+        self.notBlank = notBlank
         self.type = str
         # initialization
         self.invalid = False   # indicates if the control has invalid contents
@@ -463,7 +464,10 @@ class ValidatedTxtCtrl(wx.TextCtrl):
           
         '''
         val = self.GetValue().strip()
-        self.invalid = not val
+        if self.notBlank:
+            self.invalid = not val
+        else:
+            self.invalid = False
         self._IndicateValidity()
         if self.invalid:
             if self.OKcontrol:
@@ -961,18 +965,23 @@ class G2CheckBox(wx.CheckBox):
       edited by the CheckBox. The ``loc[key]`` element must exist.
       The CheckBox will be initialized from this value.
       If the value is anything other that True (or 1), it will be taken as
-      False. 
+      False.
+    :param function OnChange: specifies a function or method that will be
+      called when the CheckBox is changed (Default is None). 
+      The called function is supplied with one argument, the calling event.
     '''
-    def __init__(self,parent,label,loc,key):
+    def __init__(self,parent,label,loc,key,OnChange=None):
         wx.CheckBox.__init__(self,parent,id=wx.ID_ANY,label=label)
         self.loc = loc
         self.key = key
+        self.OnChange = OnChange
         self.SetValue(self.loc[self.key]==True)
         self.Bind(wx.EVT_CHECKBOX, self._OnCheckBox)
     def _OnCheckBox(self,event):
         self.loc[self.key] = self.GetValue()
         log.LogVarChange(self.loc,self.key)
-            
+        if self.OnChange: self.OnChange(event)
+                    
 ################################################################################
 #### Commonly used dialogs
 ################################################################################

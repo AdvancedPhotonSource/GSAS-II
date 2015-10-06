@@ -1871,10 +1871,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomData = data['Atoms']
             generalData = data['General']
             Type = generalData['Type']
-            if Type in ['nuclear','macromolecular']:
-                choice = ['F - site fraction','X - coordinates','U - thermal parameters']
-            elif Type == 'magnetic':
-                choice = ['F - site fraction','X - coordinates','U - thermal parameters']
+            choice = ['F - site fraction','X - coordinates','U - thermal parameters']
             dlg = wx.MultiChoiceDialog(G2frame,'Select','Refinement controls',choice)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelections()

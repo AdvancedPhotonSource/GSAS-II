@@ -1289,11 +1289,11 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dfadui = np.sum(-SQfactor*fag,axis=1)
         if nTwin > 1:
             dfadx = np.array([np.sum(twopi*Uniq[it,:,:3]*np.swapaxes(fax,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
-            dfadua = np.array([np.sum(-Hij[it]*np.swapaxes(fa,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
+            dfadua = np.array([np.sum(-Hij[it]*np.swapaxes(fag,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
             # array(nTwin,2,nAtom,3) & array(nTwin,2,nAtom,6)
         else:
             dfadx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fax,-2,-1)[:,:,:,np.newaxis],axis=-2)
-            dfadua = np.sum(-Hij*np.swapaxes(fa,-2,-1)[:,:,:,np.newaxis],axis=-2)
+            dfadua = np.sum(-Hij*np.swapaxes(fag,-2,-1)[:,:,:,np.newaxis],axis=-2)
             # array(2,nAtom,3) & array(2,nAtom,6)
         #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for al2O3!    
         if not SGData['SGInv']:
@@ -1302,12 +1302,12 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             dfbdui = np.sum(-SQfactor*fb,axis=1)
             if len(TwinLaw) > 1:
                 dfbdx = np.array([np.sum(twopi*Uniq[it]*np.swapaxes(fbx,-2,-1)[:,it,:,:,np.newaxis],axis=2) for it in range(nTwin)])           
-                dfbdua = np.array([np.sum(-Hij[it]*np.swapaxes(fb,-2,-1)[:,it,:,:,np.newaxis],axis=2) for it in range(nTwin)])
+                dfbdua = np.array([np.sum(-Hij[it]*np.swapaxes(fbg,-2,-1)[:,it,:,:,np.newaxis],axis=2) for it in range(nTwin)])
             else:
                 dfadfl = np.sum(-FPP*Tcorr*sinp)
                 dfbdfl = np.sum(FPP*Tcorr*cosp)
                 dfbdx = np.sum(twopi*Uniq*np.swapaxes(fbx,-2,-1)[:,:,:,np.newaxis],axis=2)           
-                dfbdua = np.sum(-Hij*np.swapaxes(fb,-2,-1)[:,:,:,np.newaxis],axis=2)
+                dfbdua = np.sum(-Hij*np.swapaxes(fbg,-2,-1)[:,:,:,np.newaxis],axis=2)
         else:
             dfbdfr = np.zeros_like(dfadfr)
             dfbdx = np.zeros_like(dfadx)

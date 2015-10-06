@@ -88,7 +88,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         Names += [atom[ct-1] for atom in Atoms]
     Types += [atom[ct] for atom in Atoms]
     Coords += [atom[cx:cx+3] for atom in Atoms]
-    Ids += [atom[-1] for atom in Atoms]
+    Ids += [atom[cia+8] for atom in Atoms]
     rama = G2data.ramachandranDist['All']
     ramaName = 'All'
     

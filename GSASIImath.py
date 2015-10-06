@@ -925,121 +925,73 @@ def XAnomAbs(Elements,wave):
 #### Modulation math
 ################################################################################
     
-def Modulation(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast):
+def Modulation(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
+    '''
+    H: array ops X hklt
+    Ax: array atoms X waves X xyz
+    Bx: array atoms X waves X xyz
+    '''
     
     nxs = np.newaxis
     glTau,glWt = pwd.pygauleg(0.,1.,32)         #get Gauss-Legendre intervals & weights
-    
-    def expModInt(H,Af,Bf,Ax,Bx,Au,Bu):
-        '''
-        H: array ops X hklt
-        Ax: array atoms X waves X xyz
-        Bx: array atoms X waves X xyz
-        S: array ops
-        '''
-        if 'Fourier' in waveTypes:
-            nf = 0
-            nx = 0
-            XmodZ = np.zeros((Ax.shape[0],Ax.shape[1],3,32))
-            FmodZ = np.zeros((Af.shape[0],Af.shape[1],32))
-            if 'Crenel' in waveTypes:
-                nC = np.where('Crenel' in waveTypes)
-                nf = 1
-                #FmodZ = 0   replace
-        else:
-            nx = 1
-            if 'Sawtooth' in waveTypes:
-                nS = np.where('Sawtooth' in waveTypes)
-                #XmodZ = 0   replace
-        if Af.shape[1]:
-            tauF = np.arange(1.,Af.shape[1]+1-nf)[:,nxs]*glTau  #Fwaves x 32
-            FmodA = Af[:,nf:,nxs]*np.sin(twopi*tauF[nxs,:,:])   #atoms X Fwaves X 32
-            FmodB = Bf[:,nf:,nxs]*np.cos(twopi*tauF[nxs,:,:])
-            Fmod = np.sum(FmodA+FmodB+FmodC,axis=1)             #atoms X 32; sum waves
-        else:
-            Fmod = 1.0           
-        if Ax.shape[1]:
-            tauX = np.arange(1.,Ax.shape[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
-            XmodA = Ax[:,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X pos X 32
-            XmodB = Bx[:,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
-            Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X pos X 32; sum waves
-        if Au.shape[1]:
-            tauU = np.arange(1.,Au.shape[1]+1)[:,nxs]*glTau     #Uwaves x 32
-            UmodA = Au[:,:,:,:,nxs]*np.sin(twopi*tauU[nxs,:,nxs,nxs,:]) #atoms x waves x 3x3 x 32
-            UmodB = Bu[:,:,:,:,nxs]*np.cos(twopi*tauU[nxs,:,nxs,nxs,:]) #ditto
-            Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x 32; sum waves
-            HbH = np.exp(-np.sum(H[:,:,nxs,nxs,:3]*np.inner(H[:,:,:3],Umod),axis=-1)) # refBlk x ops x atoms x 32 add Overhauser corr.?
-        else:
-            HbH = 1.0
-        D = H[:,:,3][:,:,nxs]*glTau[nxs,nxs,:]              #m*tau;refBlk x ops X 32
-        HdotX = np.inner(H[:,:,:3],np.swapaxes(Xmod,1,2))+D[:,:,nxs,:]     #refBlk X ops x atoms X 32
-        sinHA = np.sum(Fmod*HbH*np.sin(twopi*HdotX)*glWt,axis=-1)       #refBlk X ops x atoms; sum for G-L integration
-        cosHA = np.sum(Fmod*HbH*np.cos(twopi*HdotX)*glWt,axis=-1)       #ditto
-#        GSASIIpath.IPyBreak()                  
-        return cosHA,sinHA     #each refBlk x ops X atoms
-
     Ax = np.array(XSSdata[:3]).T   #atoms x waves x sin pos mods
     Bx = np.array(XSSdata[3:]).T   #...cos pos mods
     Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
     Bf = np.array(FSSdata[1]).T    #cos frac mods...
     Au = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
     Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
-    GpA = np.array(expModInt(Uniq,Af,Bf,Ax,Bx,Au,Bu))
-    return GpA             # 2 x refBlk x SGops x atoms
     
-def ModulationDerv(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast):
+    if 'Fourier' in waveTypes:
+        nf = 0
+        nx = 0
+        XmodZ = np.zeros((Ax.shape[0],Ax.shape[1],3,32))
+        FmodZ = np.zeros((Af.shape[0],Af.shape[1],32))
+        if 'Crenel' in waveTypes:
+            nC = np.where('Crenel' in waveTypes)
+            nf = 1
+            #FmodZ = 0   replace
+    else:
+        nx = 1
+        if 'Sawtooth' in waveTypes:
+            nS = np.where('Sawtooth' in waveTypes)
+            #XmodZ = 0   replace
+    if Af.shape[1]:
+        tauF = np.arange(1.,Af.shape[1]+1-nf)[:,nxs]*glTau  #Fwaves x 32
+        FmodA = Af[:,nf:,nxs]*np.sin(twopi*tauF[nxs,:,:])   #atoms X Fwaves X 32
+        FmodB = Bf[:,nf:,nxs]*np.cos(twopi*tauF[nxs,:,:])
+        Fmod = np.sum(FmodA+FmodB+FmodC,axis=1)             #atoms X 32; sum waves
+    else:
+        Fmod = 1.0           
+    if Ax.shape[1]:
+        tauX = np.arange(1.,Ax.shape[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
+        XmodA = Ax[:,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X pos X 32
+        XmodB = Bx[:,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
+        Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X pos X 32; sum waves
+    if Au.shape[1]:
+        tauU = np.arange(1.,Au.shape[1]+1)[:,nxs]*glTau     #Uwaves x 32
+        UmodA = Au[:,:,:,:,nxs]*np.sin(twopi*tauU[nxs,:,nxs,nxs,:]) #atoms x waves x 3x3 x 32
+        UmodB = Bu[:,:,:,:,nxs]*np.cos(twopi*tauU[nxs,:,nxs,nxs,:]) #ditto
+        Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x 32; sum waves
+        HbH = np.exp(-np.sum(H[:,:,nxs,nxs,:3]*np.inner(H[:,:,:3],Umod),axis=-1)) # refBlk x ops x atoms x 32 add Overhauser corr.?
+    else:
+        HbH = 1.0
+    D = H[:,:,3][:,:,nxs]*glTau[nxs,nxs,:]              #m*tau;refBlk x ops X 32
+    HdotX = np.inner(H[:,:,:3],np.swapaxes(Xmod,1,2))+D[:,:,nxs,:]     #refBlk X ops x atoms X 32
+    sinHA = np.sum(Fmod*HbH*np.sin(twopi*HdotX)*glWt,axis=-1)       #refBlk X ops x atoms; sum for G-L integration
+    cosHA = np.sum(Fmod*HbH*np.cos(twopi*HdotX)*glWt,axis=-1)       #ditto
+#        GSASIIpath.IPyBreak()                  
+
+    return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
+    
+def ModulationDerv(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
+    '''
+    H: array ops X hklt
+    Ax: array atoms X waves X xyz
+    Bx: array atoms X waves X xyz
+    '''
     
     nxs = np.newaxis
     glTau,glWt = pwd.pygauleg(0.,1.,32)         #get Gauss-Legendre intervals & weights
-    
-    def expModInt(H,Af,Bf,Ax,Bx,Au,Bu):
-        '''
-        H: array ops X hklt
-        Ax: array atoms X waves X xyz
-        Bx: array atoms X waves X xyz
-        S: array ops
-        '''
-        if 'Fourier' in waveTypes:
-            nf = 0
-            nx = 0
-            XmodZ = np.zeros((Ax.shape[0],Ax.shape[1],3,32))
-            FmodZ = np.zeros((Af.shape[0],Af.shape[1],32))
-            if 'Crenel' in waveTypes:
-                nC = np.where('Crenel' in waveTypes)
-                nf = 1
-                #FmodZ = 0   replace
-        else:
-            nx = 1
-            if 'Sawtooth' in waveTypes:
-                nS = np.where('Sawtooth' in waveTypes)
-                #XmodZ = 0   replace
-        if Af.shape[1]:
-            tauF = np.arange(1.,Af.shape[1]+1-nf)[:,nxs]*glTau  #Fwaves x 32
-            FmodA = Af[:,nf:,nxs]*np.sin(twopi*tauF[nxs,:,:])   #atoms X Fwaves X 32
-            FmodB = Bf[:,nf:,nxs]*np.cos(twopi*tauF[nxs,:,:])
-            Fmod = np.sum(FmodA+FmodB+FmodC,axis=1)             #atoms X 32; sum waves
-        else:
-            Fmod = 1.0           
-        if Ax.shape[1]:
-            tauX = np.arange(1.,Ax.shape[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
-            XmodA = Ax[:,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X pos X 32
-            XmodB = Bx[:,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
-            Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X pos X 32; sum waves
-        if Au.shape[1]:
-            tauU = np.arange(1.,Au.shape[1]+1)[:,nxs]*glTau     #Uwaves x 32
-            UmodA = Au[:,:,:,:,nxs]*np.sin(twopi*tauU[nxs,:,nxs,nxs,:]) #atoms x waves x 3x3 x 32
-            UmodB = Bu[:,:,:,:,nxs]*np.cos(twopi*tauU[nxs,:,nxs,nxs,:]) #ditto
-            Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x 32; sum waves
-            HbH = np.exp(np.swapaxes(np.array([-np.inner(h,np.inner(Umod,h)) for h in H[:,:3]]),1,2)).T #Overhauser corr.?
-        else:
-            HbH = 1.0
-        D = H[:,3][:,nxs]*glTau[nxs,:]              #m*tau; ops X 32
-        HdotX = np.inner(np.swapaxes(Xmod,1,2),H[:,:3])+D.T[nxs,:,:]     #atoms X 32 X ops
-        sinHA = np.sum(Fmod*HbH*np.sin(twopi*HdotX)*glWt[nxs,:,nxs],axis=1)       #atoms X ops; sum for G-L integration
-        cosHA = np.sum(Fmod*HbH*np.cos(twopi*HdotX)*glWt[nxs,:,nxs],axis=1)       #ditto
-#        GSASIIpath.IPyBreak()                  
-        return cosHA.T,sinHA.T      #ops X atoms
-
     Ax = np.array(XSSdata[:3]).T   #atoms x waves x sin pos mods
     dGdAx = np.zeros_like(Ax)
     Bx = np.array(XSSdata[3:]).T   #...cos pos mods
@@ -1052,8 +1004,53 @@ def ModulationDerv(waveTypes,SSUniq,FSSdata,XSSdata,USSdata,Mast):
     dGdAu = np.zeros_like(Au)
     Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
     dGdBu = np.zeros_like(Bu)
-    GpA = np.array(expModInt(SSUniq,Af,Bf,Ax,Bx,Au,Bu))
-    return GpA,dGdAf,dGdBf,dGdAx,dGdBx,dGdAu,dGdBu
+    
+    if 'Fourier' in waveTypes:
+        nf = 0
+        nx = 0
+        XmodZ = np.zeros((Ax.shape[0],Ax.shape[1],3,32))
+        FmodZ = np.zeros((Af.shape[0],Af.shape[1],32))
+        if 'Crenel' in waveTypes:
+            nC = np.where('Crenel' in waveTypes)
+            nf = 1
+            #FmodZ = 0   replace
+    else:
+        nx = 1
+        if 'Sawtooth' in waveTypes:
+            nS = np.where('Sawtooth' in waveTypes)
+            #XmodZ = 0   replace
+    if Af.shape[1]:
+        tauF = np.arange(1.,Af.shape[1]+1-nf)[:,nxs]*glTau  #Fwaves x 32
+        StauF = np.ones_like(Af)[:,nf:,nxs]*np.sin(twopi*tauF)[nxs,:,:] #also dFmodA/dAf
+        CtauF = np.ones_like(Bf)[:,nf:,nxs]*np.cos(twopi*tauF)[nxs,:,:] #also dFmodB/dBf
+        FmodA = Af[:,nf:,nxs]*StauF   #atoms X Fwaves X 32
+        FmodB = Bf[:,nf:,nxs]*CtauF
+        Fmod = np.sum(FmodA+FmodB+FmodC,axis=1)             #atoms X 32; sum waves
+    else:
+        Fmod = 1.0           
+    if Ax.shape[1]:
+        tauX = np.arange(1.,Ax.shape[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
+        StauX = np.ones_like(Ax)[:,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #also dXmodA/dAx
+        CtauX = np.ones_like(Bx)[:,nx:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #also dXmodB/dBx
+        XmodA = Ax[:,nx:,:,nxs]*StauX #atoms X waves X pos X 32
+        XmodB = Bx[:,nx:,:,nxs]*CtauX #ditto
+        Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X pos X 32; sum waves
+    if Au.shape[1]:
+        tauU = np.arange(1.,Au.shape[1]+1)[:,nxs]*glTau     #Uwaves x 32
+        StauU = np.ones_like(Au)[:,:,:,:,nxs]*np.sin(twopi*tauU)[nxs,:,nxs,nxs,:]   #also dUmodA/dAu
+        CtauU = np.ones_like(Bu)[:,:,:,:,nxs]*np.cos(twopi*tauU)[nxs,:,nxs,nxs,:]   #also dUmodB/dBu
+        UmodA = Au[:,:,:,:,nxs]*StauU #atoms x waves x 3x3 x 32
+        UmodB = Bu[:,:,:,:,nxs]*CtauU #ditto
+        Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x 32; sum waves
+        HbH = np.exp(-np.sum(H[:,nxs,nxs,:3]*np.inner(H[:,:3],Umod),axis=-1)) # ops x atoms x 32 add Overhauser corr.?
+    else:
+        HbH = 1.0
+    D = H[:,3][:,nxs]*glTau[nxs,:]              #m*tau; ops X 32
+    HdotX = np.inner(H[:,:3],np.swapaxes(Xmod,1,2))+D[:,nxs,:]     #ops x atoms X 32
+    sinHA = np.sum(Fmod*HbH*np.sin(twopi*HdotX)*glWt,axis=-1)       #ops x atoms; sum for G-L integration
+    cosHA = np.sum(Fmod*HbH*np.cos(twopi*HdotX)*glWt,axis=-1)       #ditto
+#   GSASIIpath.IPyBreak()                  
+    return np.array([cosHA,sinHA]),dGdAf,dGdBf,dGdAx,dGdBx,dGdAu,dGdBu      #ops X atoms
     
 def posFourier(tau,psin,pcos,smul):
     A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])*smul

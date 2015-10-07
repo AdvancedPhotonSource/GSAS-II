@@ -1061,7 +1061,8 @@ def ModulationDerv(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
 # ops x atoms x waves x xyz
     dGdBx = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(twopi*dHdXB*np.cos(twopi*HdotXB)-np.sin(twopi*HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
 #    GSASIIpath.IPyBreak()                  
-    return np.array([cosHA,sinHA]),dGdAf,dGdBf,dGdAx,dGdBx,dGdAu,dGdBu      #ops X atoms
+    return np.array([cosHA,sinHA]),np.concatenate((dGdAf,dGdBf),-1), \
+        np.concatenate((dGdAx,dGdBx),-1),np.concatenate((dGdAu,dGdBu),-1)      #ops X atoms
     
 def posFourier(tau,psin,pcos,smul):
     A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])*smul

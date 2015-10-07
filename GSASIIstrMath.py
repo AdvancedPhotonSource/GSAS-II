@@ -1256,10 +1256,13 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         FF = refDict['FF']['FF'][iref].T[Tindx]
         Uniq = np.inner(H,SSGMT)
         Phi = np.inner(H,SSGT)
+        if SGInv:   #if centro - expand HKL sets
+            Uniq = np.vstack((Uniq,-Uniq))
+            Phi = np.hstack((Phi,-Phi))
         phase = twopi*(np.inner(Uniq[:,:3],(dXdata+Xdata).T)+Phi[:,nxs])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
-        occ = Mdata*Fdata/len(Uniq)
+        occ = Mdata*Fdata/Uniq.shape[0]
         biso = -SQfactor*Uisodata[:,nxs]
         Tiso = np.repeat(np.where(biso<1.,np.exp(biso),1.0),Uniq.shape[0]*len(TwinLaw),axis=1).T    #ops x atoms
         HbH = -np.sum(Uniq[:,nxs,:3]*np.inner(Uniq[:,:3],bij),axis=-1)  #ops x atoms
@@ -1267,7 +1270,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         Hij = np.array([Mast*np.multiply.outer(U[:3],U[:3]) for U in Uniq]) #atoms x 3x3
         Hij = np.squeeze(np.reshape(np.array([G2lat.UijtoU6(Uij) for Uij in Hij]),(nTwin,-1,6)))
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)     #ops x atoms
-        Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[1]  #ops x atoms
+        Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[0]  #ops x atoms
         fot = (FF+FP-Bab)*occ*Tcorr     #ops x atoms
         fotp = FPP*occ*Tcorr            #ops x atoms
         GfpuA,dGdAf,dGdBf,dGdAx,dGdBx,dGdAu,dGdBu =     \
@@ -1285,37 +1288,30 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         fbx = fbx*GfpuA[0]+fax*GfpuA[1]
         #sum below is over Uniq
         dfadfr = np.sum(fag/occ,axis=1)        #Fdata != 0 ever avoids /0. problem
+        dfbdfr = np.sum(fbg/occ,axis=1)        #Fdata != 0 avoids /0. problem
         dfadba = np.sum(-cosp*(occ*Tcorr)[:,nxs],axis=1)
+        dfbdba = np.sum(-sinp*(occ*Tcorr)[:,nxs],axis=1)
         dfadui = np.sum(-SQfactor*fag,axis=1)
+        dfbdui = np.sum(-SQfactor*fbg,axis=1)
         if nTwin > 1:
             dfadx = np.array([np.sum(twopi*Uniq[it,:,:3]*np.swapaxes(fax,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
+            dfbdx = np.array([np.sum(twopi*Uniq[it,:,:3]*np.swapaxes(fbx,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])           
             dfadua = np.array([np.sum(-Hij[it]*np.swapaxes(fag,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
+            dfbdua = np.array([np.sum(-Hij[it]*np.swapaxes(fbg,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
             # array(nTwin,2,nAtom,3) & array(nTwin,2,nAtom,6)
         else:
             dfadx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fax,-2,-1)[:,:,:,np.newaxis],axis=-2)
+            dfbdx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fbx,-2,-1)[:,:,:,np.newaxis],axis=-2)           
             dfadua = np.sum(-Hij*np.swapaxes(fag,-2,-1)[:,:,:,np.newaxis],axis=-2)
+            dfbdua = np.sum(-Hij*np.swapaxes(fbg,-2,-1)[:,:,:,np.newaxis],axis=-2)
             # array(2,nAtom,3) & array(2,nAtom,6)
         #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for al2O3!    
-        if not SGData['SGInv']:
-            dfbdfr = np.sum(fbg/occ,axis=1)        #Fdata != 0 avoids /0. problem
-            dfbdba = np.sum(-sinp*Tcorr[:,np.newaxis],axis=1)
-            dfbdui = np.sum(-SQfactor*fb,axis=1)
-            if len(TwinLaw) > 1:
-                dfbdx = np.array([np.sum(twopi*Uniq[it]*np.swapaxes(fbx,-2,-1)[:,it,:,:,np.newaxis],axis=2) for it in range(nTwin)])           
-                dfbdua = np.array([np.sum(-Hij[it]*np.swapaxes(fbg,-2,-1)[:,it,:,:,np.newaxis],axis=2) for it in range(nTwin)])
-            else:
-                dfadfl = np.sum(-FPP*Tcorr*sinp)
-                dfbdfl = np.sum(FPP*Tcorr*cosp)
-                dfbdx = np.sum(twopi*Uniq*np.swapaxes(fbx,-2,-1)[:,:,:,np.newaxis],axis=2)           
-                dfbdua = np.sum(-Hij*np.swapaxes(fbg,-2,-1)[:,:,:,np.newaxis],axis=2)
+        if not SGData['SGInv'] and len(TwinLaw) == 1:   #Flack derivative
+            dfadfl = np.sum(-FPP*Tcorr*sinp)
+            dfbdfl = np.sum(FPP*Tcorr*cosp)
         else:
-            dfbdfr = np.zeros_like(dfadfr)
-            dfbdx = np.zeros_like(dfadx)
-            dfbdui = np.zeros_like(dfadui)
-            dfbdua = np.zeros_like(dfadua)
-            dfbdba = np.zeros_like(dfadba)
-            dfadfl = 0.0
-            dfbdfl = 0.0
+            dfadfl = 1.0
+            dfbdfl = 1.0
         #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for Al2O3!    
         if 'P' in calcControls[hfx+'histType']: #checked perfect for centro & noncentro
             dFdfr[iref] = 2.*(fas[0]*dfadfr[0]+fas[1]*dfadfr[1])*Mdata/len(Uniq)+   \

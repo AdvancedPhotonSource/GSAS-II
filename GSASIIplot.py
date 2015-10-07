@@ -574,7 +574,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     def OnKey(event):           #on key UP!!
         global ifBox
         Choice = {'F':'Fo','S':'Fosq','U':'Unit','D':'dFsq','W':'dFsq/sig'}
-        viewChoice = {'L':[[0,0,1],[1,0,0],[0,1,0]],'K':[[0,1,0],[0,0,1],[1,0,0]],'H':[[1,0,0],[0,0,1],[0,1,0]]}
+        viewChoice = {'L':np.array([[0,0,1],[1,0,0],[0,1,0]]),'K':np.array([[0,1,0],[0,0,1],[1,0,0]]),'H':np.array([[1,0,0],[0,0,1],[0,1,0]])}
         try:
             keyCode = event.GetKeyCode()
             if keyCode > 255:
@@ -587,25 +587,25 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 Data['Zone'] = False 
                 key = 'L'
             Data['viewKey'] = key
-            drawingData['viewPoint'][0] = drawingData['default']
-            drawingData['viewDir'] = np.array(viewChoice[key][0])
-            drawingData['viewUp'] = np.array(viewChoice[key][1])
+            drawingData['viewPoint'][0] = np.array(drawingData['default'])
+            drawingData['viewDir'] = viewChoice[key][0]
+            drawingData['viewUp'] = viewChoice[key][1]
             drawingData['oldxy'] = []
             if Data['Zone']:
                 if key == 'L':
                     Q = [-1,0,0,0]
                 else:
-                    V0 = np.array(viewChoice[key][0])
-                    V1 = np.array(viewChoice[key][1])
+                    V0 = viewChoice[key][0]
+                    V1 = viewChoice[key][1]
                     V0 = np.inner(Amat,V0)
                     V1 = np.inner(Amat,V1)
                     V0 /= nl.norm(V0)
                     V1 /= nl.norm(V1)
                     A = np.arccos(np.sum(V1*V0))
                     Q = G2mth.AV2Q(-A,viewChoice[key][2])
-                G2frame.G2plotNB.status.SetStatusText('zone = %s'%(str(viewChoice[key][0])),1)
+                G2frame.G2plotNB.status.SetStatusText('zone = %s'%(str(list(viewChoice[key][0]))),1)
             else:
-                V0 = np.array(viewChoice[key][0])
+                V0 = viewChoice[key][0]
                 V = np.inner(Bmat,V0)
                 V /= np.sqrt(np.sum(V**2))
                 V *= np.array([0,0,1])
@@ -627,7 +627,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             vec = viewChoice[Data['viewKey']][0]
             drawingData['viewPoint'][0] += vec
         elif key == '0':
-            drawingData['viewPoint'][0] = [0,0,0]
+            drawingData['viewPoint'][0] = np.array([0,0,0])
             Data['Scale'] = 1.0
         elif key == 'I':
             Data['Iscale'] = not Data['Iscale']
@@ -757,7 +757,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         Tx += V[0]*0.1
         Ty += V[1]*0.1
         Tz += V[2]*0.1
-        drawingData['viewPoint'][0] =  Tx,Ty,Tz
+        drawingData['viewPoint'][0] =  np.array([Tx,Ty,Tz])
         
     def SetRotation(newxy):
         'Perform a rotation in x-y space due to a left-mouse drag'
@@ -4393,7 +4393,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         indx = drawingData['selectedAtoms']
         cx,ct = drawingData['atomPtrs'][:2]
         if key in ['C']:
-            drawingData['viewPoint'] = [[.5,.5,.5],[0,0]]
+            drawingData['viewPoint'] = [np.array([.5,.5,.5]),[0,0]]
             drawingData['viewDir'] = [0,0,1]
             drawingData['oldxy'] = []
             V0 = np.array([0,0,1])
@@ -4424,7 +4424,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 pI[0] += 1
                 if pI[0] >= len(drawAtoms):
                     pI[0] = 0
-            drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
+            drawingData['viewPoint'] = [np.array([Tx,Ty,Tz]),pI]
             SetViewPointText(drawingData['viewPoint'][0])
             G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
                 
@@ -4446,7 +4446,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 pI[0] -= 1
                 if pI[0] < 0:
                     pI[0] = len(drawAtoms)-1
-            drawingData['viewPoint'] = [[Tx,Ty,Tz],pI]
+            drawingData['viewPoint'] = [np.array([Tx,Ty,Tz]),pI]
             SetViewPointText(drawingData['viewPoint'][0])            
             G2frame.G2plotNB.status.SetStatusText('View point at atom '+drawAtoms[pI[0]][ct-1]+str(pI),1)
         elif key in ['U','D','L','R'] and mapData['Flip'] == True:
@@ -4735,7 +4735,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         Tx += V[0]*0.01
         Ty += V[1]*0.01
         Tz += V[2]*0.01
-        drawingData['viewPoint'][0] =  Tx,Ty,Tz
+        drawingData['viewPoint'][0] =  np.array([Tx,Ty,Tz])
         SetViewPointText([Tx,Ty,Tz])
         
     def SetRBTranslation(newxy):
@@ -5061,7 +5061,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             pageName = G2frame.dataDisplay.GetPageText(page)
         rhoXYZ = []
         if len(mapData['rho']):
-            VP = np.array(drawingData['viewPoint'][0])-np.array([.5,.5,.5])
+            VP = drawingData['viewPoint'][0]-np.array([.5,.5,.5])
             contLevel = drawingData['contourLevel']*mapData['rhoMax']
             if 'delt-F' in mapData['MapType'] or 'N' in mapData.get('Type',''):
                 rho = ma.array(mapData['rho'],mask=(np.abs(mapData['rho'])<contLevel))
@@ -5077,7 +5077,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             rcube = 2000.*Vol/(ForthirdPI*Nc)
             rmax = math.exp(math.log(rcube)/3.)**2
             radius = min(drawingData['mapSize']**2,rmax)
-            view = np.array(drawingData['viewPoint'][0])
+            view = drawingData['viewPoint'][0]
             Rok = np.sum(np.inner(Amat,rhoXYZ-view).T**2,axis=1)>radius
         Ind = GetSelectedAtoms()
         VS = np.array(Page.canvas.GetSize())

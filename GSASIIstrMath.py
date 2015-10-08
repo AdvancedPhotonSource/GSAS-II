@@ -1133,9 +1133,12 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dFdbab = np.zeros((nRef,nTwin,2))
         dFdfl = np.zeros((nRef,nTwin))
         dFdtw = np.zeros((nRef,nTwin))
-        dFdGf = np.zeros((nRef,nTwin,mSize,FSSdata.shape[1],2))
-        dFdGx = np.zeros((nRef,nTwin,mSize,XSSdata.shape[1],6))
-        dFdGu = np.zeros((nRef,nTwin,mSize,USSdata.shape[1],12))
+        dFdGfA = np.zeros((nRef,nTwin,mSize,FSSdata.shape[1]))
+        dFdGfB = np.zeros((nRef,nTwin,mSize,FSSdata.shape[1]))
+        dFdGxA = np.zeros((nRef,nTwin,mSize,XSSdata.shape[1],3))
+        dFdGxB = np.zeros((nRef,nTwin,mSize,XSSdata.shape[1],3))
+        dFdGuA = np.zeros((nRef,nTwin,mSize,USSdata.shape[1],6))
+        dFdGuB = np.zeros((nRef,nTwin,mSize,USSdata.shape[1],6))
     else:
         dFdfr = np.zeros((nRef,mSize))
         dFdx = np.zeros((nRef,mSize,3))
@@ -1189,6 +1192,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         fot = (FF+FP-Bab)*Tcorr     #ops x atoms
         fotp = FPP*Tcorr            #ops x atoms
         GfpuA,dGdf,dGdx,dGdu = G2mth.ModulationDerv(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast)
+        # derivs are: ops x atoms x waves x 1,3,or 6 parms as [real,imag] parts
         fa = np.array([((FF+FP).T-Bab).T*cosp*Tcorr,-Flack*FPP*sinp*Tcorr]) # array(2,nTwin,nEqv,nAtoms)
         fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,Flack*FPP*cosp*Tcorr])
         fag = fa*GfpuA[0]-fb*GfpuA[1]
@@ -1207,18 +1211,25 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dfbdba = np.sum(-sinp*Tcorr[:,nxs],axis=1)
         dfadui = np.sum(-SQfactor*fag,axis=1)
         dfbdui = np.sum(-SQfactor*fbg,axis=1)
+#        GSASIIpath.IPyBreak()                  
         if nTwin > 1:
-            dfadx = np.array([np.sum(twopi*Uniq[it,:,:3]*np.swapaxes(fax,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
-            dfbdx = np.array([np.sum(twopi*Uniq[it,:,:3]*np.swapaxes(fbx,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])           
-            dfadua = np.array([np.sum(-Hij[it]*np.swapaxes(fag,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
-            dfbdua = np.array([np.sum(-Hij[it]*np.swapaxes(fbg,-2,-1)[:,it,:,:,np.newaxis],axis=-2) for it in range(nTwin)])
-            # array(nTwin,2,nAtom,3) & array(nTwin,2,nAtom,6)
+            dfadx = np.array([np.sum(twopi*Uniq[it,:,:3]*np.swapaxes(fax,-2,-1)[:,it,:,:,nxs],axis=-2) for it in range(nTwin)])
+            dfbdx = np.array([np.sum(twopi*Uniq[it,:,:3]*np.swapaxes(fbx,-2,-1)[:,it,:,:,nxs],axis=-2) for it in range(nTwin)])           
+            dfadua = np.array([np.sum(-Hij[it]*np.swapaxes(fag,-2,-1)[:,it,:,:,nxs],axis=-2) for it in range(nTwin)])
+            dfbdua = np.array([np.sum(-Hij[it]*np.swapaxes(fbg,-2,-1)[:,it,:,:,nxs],axis=-2) for it in range(nTwin)])
+            # array(nTwin,2,nAtom,3) & array(2,nTwin,nAtom,6)
+            dfadGx = np.sum(fa[:,it,:,:,nxs,nxs]*dGdx[0][nxs,nxs,:,:,:,:]-fb[:,it,:,:,nxs,nxs]*dGdx[1][nxs,nxs,:,:,:,:],axis=1)
+            dfbdGx = np.sum(fb[:,it,:,:,nxs,nxs]*dGdx[0][nxs,nxs,:,:,:,:]+fa[:,it,:,:,nxs,nxs]*dGdx[1][nxs,nxs,:,:,:,:],axis=1)
+            # array (2,nAtom,wave,3)
         else:
-            dfadx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fax,-2,-1)[:,:,:,np.newaxis],axis=-2)
-            dfbdx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fbx,-2,-1)[:,:,:,np.newaxis],axis=-2)           
-            dfadua = np.sum(-Hij*np.swapaxes(fag,-2,-1)[:,:,:,np.newaxis],axis=-2)
-            dfbdua = np.sum(-Hij*np.swapaxes(fbg,-2,-1)[:,:,:,np.newaxis],axis=-2)
+            dfadx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fax,-2,-1)[:,:,:,nxs],axis=-2)
+            dfbdx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fbx,-2,-1)[:,:,:,nxs],axis=-2)           
+            dfadua = np.sum(-Hij*np.swapaxes(fag,-2,-1)[:,:,:,nxs],axis=-2)
+            dfbdua = np.sum(-Hij*np.swapaxes(fbg,-2,-1)[:,:,:,nxs],axis=-2)
             # array(2,nAtom,3) & array(2,nAtom,6)
+            dfadGx = np.sum(fa[:,:,:,nxs,nxs]*dGdx[0][nxs,:,:,:,:]-fb[:,:,:,nxs,nxs]*dGdx[1][nxs,:,:,:,:],axis=1)
+            dfbdGx = np.sum(fb[:,:,:,nxs,nxs]*dGdx[0][nxs,:,:,:,:]+fa[:,:,:,nxs,nxs]*dGdx[1][nxs,:,:,:,:],axis=1)
+            # array (2,nAtom,wave,3)
         #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for al2O3!    
 #        GSASIIpath.IPyBreak()
         if not SGData['SGInv'] and len(TwinLaw) == 1:   #Flack derivative
@@ -1254,11 +1265,12 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
                 dFdx[iref] = 2.*SA*(dfadx[0]+dfbdx[1])+2.*SB*(dfbdx[0]+dfadx[1])    #array(nRef,nAtom,3)
                 dFdui[iref] = 2.*SA*(dfadui[0]+dfbdui[1])+2.*SB*(dfbdui[0]+dfadui[1])   #array(nRef,nAtom)
                 dFdua[iref] = 2.*SA*(dfadua[0]+dfbdua[1])+2.*SB*(dfbdua[0]+dfadua[1])    #array(nRef,nAtom,6)
-                dFdfl[iref] = -SA*dfadfl-SB*dfbdfl  #array(nRef,)
+                dFdfl[iref] = -SA*dfadfl-SB*dfbdfl                  #array(nRef,)
+                dFdGx[iref] = 2.*SA*(dfadGx[0]+dfbdGx[1])+2.*SB*(dfadGx[1]+dfbdGx[0])      #array(nRef,natom,nwave,6)
         dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
             2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         #loop over atoms - each dict entry is list of derivatives for all the reflections
-    for i in range(len(Mdata)):     
+    for i in range(len(Mdata)):     #loop over atoms  
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
         dFdvDict[pfx+'dAx:'+str(i)] = dFdx.T[0][i]
         dFdvDict[pfx+'dAy:'+str(i)] = dFdx.T[1][i]
@@ -1270,7 +1282,13 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dFdvDict[pfx+'AU12:'+str(i)] = .5*dFdua.T[3][i]
         dFdvDict[pfx+'AU13:'+str(i)] = .5*dFdua.T[4][i]
         dFdvDict[pfx+'AU23:'+str(i)] = .5*dFdua.T[5][i]
-        #need dFdvDict[pfx+'Xsin:'+str[i]:str(m)], etc for modulations...
+        for j in range(XSSdata.shape[1]):
+            dFdvDict[pfx+'Xsin:'+str(i)+':'+str(j)] = dFdGx.T[0][j][i]
+            dFdvDict[pfx+'Ysin:'+str(i)+':'+str(j)] = dFdGx.T[1][j][i]
+            dFdvDict[pfx+'Zsin:'+str(i)+':'+str(j)] = dFdGx.T[2][j][i]
+            dFdvDict[pfx+'Xcos:'+str(i)+':'+str(j)] = dFdGx.T[3][j][i]
+            dFdvDict[pfx+'Ycos:'+str(i)+':'+str(j)] = dFdGx.T[4][j][i]
+            dFdvDict[pfx+'Zcos:'+str(i)+':'+str(j)] = dFdGx.T[5][j][i]
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
     return dFdvDict

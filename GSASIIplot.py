@@ -4474,9 +4474,9 @@ def PlotStructure(G2frame,data,firstCall=False):
             if key == '0':
                 G2frame.tau = 0.
             elif key in ['+','=']:
-                G2frame.tau += 0.05
+                G2frame.tau += 0.1
             elif key == '-':
-                G2frame.tau -= 0.05
+                G2frame.tau -= 0.1
             G2frame.tau %= 1.   #force 0-1 range
             G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
             data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
@@ -5055,18 +5055,23 @@ def PlotStructure(G2frame,data,firstCall=False):
 #            print caller
 # end of useful debug
         mapData = generalData['Map']
+        D4mapData = generalData.get('4DmapData',{})
         pageName = ''
         page = getSelection()
         if page:
             pageName = G2frame.dataDisplay.GetPageText(page)
         rhoXYZ = []
-        if len(mapData['rho']):
+        if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
+            rho = D4mapData['rho'][:,:,:,int(G2frame.tau*10)]   #pick current tau 3D slice
+        elif len(mapData['rho']):               #ordinary 3D map
+            rho = mapData['rho']
+        if len(rho):
             VP = drawingData['viewPoint'][0]-np.array([.5,.5,.5])
             contLevel = drawingData['contourLevel']*mapData['rhoMax']
             if 'delt-F' in mapData['MapType'] or 'N' in mapData.get('Type',''):
-                rho = ma.array(mapData['rho'],mask=(np.abs(mapData['rho'])<contLevel))
+                rho = ma.array(rho,mask=(np.abs(rho)<contLevel))
             else:
-                rho = ma.array(mapData['rho'],mask=(mapData['rho']<contLevel))
+                rho = ma.array(rho,mask=(rho<contLevel))
             steps = 1./np.array(rho.shape)
             incre = np.where(VP>=0,VP%steps,VP%steps-steps)
             Vsteps = -np.array(VP/steps,dtype='i')
@@ -5076,7 +5081,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             Nc = len(rhoXYZ)
             rcube = 2000.*Vol/(ForthirdPI*Nc)
             rmax = math.exp(math.log(rcube)/3.)**2
-            radius = min(drawingData['mapSize']**2,rmax)
+            radius = min(drawingData.get('mapSize',10.)**2,rmax)
             view = drawingData['viewPoint'][0]
             Rok = np.sum(np.inner(Amat,rhoXYZ-view).T**2,axis=1)>radius
         Ind = GetSelectedAtoms()

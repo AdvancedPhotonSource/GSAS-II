@@ -1377,6 +1377,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     ci = colLabels.index('I/A')
                     atomData[r][c] = atomData[r][c].replace(rbAtmDict.get(atomData[r][ci+8],''),'')
                 if 'Atoms' in data['Drawing']:
+                    ci = colLabels.index('I/A')
                     DrawAtomsReplaceByID(data['Drawing'],ci+8,atomData[r],ID)
                 wx.CallAfter(Paint)
 
@@ -2482,7 +2483,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnMapType(event):
                 Map['MapType'] = mapType.GetValue()
                 
-            Map['Resolution'] = 0.25
+            Map['Resolution'] = 0.5
             refsList = data['Histograms'].keys()
             mapSizer = wx.BoxSizer(wx.HORIZONTAL)
             

@@ -2288,7 +2288,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         sumTwFr += twin[1]
                     else:
                         hapDict[pfx+'TwinFr:0'] = twin[1][0]
-                        controlDict[pfx+'TwinNMN'] = twin[1][2]
+                        controlDict[pfx+'TwinNMN'] = twin[1][1]
                     if Twins[0][1][1]:
                         hapVary.append(pfx+'TwinFr:'+str(it))
                 controlDict[pfx+'NTL'] = NTL

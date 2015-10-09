@@ -753,7 +753,7 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         else:
             if len(TwinLaw) > 1:
-                refl.T[9] = np.sum(fas[:,:,0]**2,axis=0)+np.sum(fbs[:,:,0]**2,axis=0)   #FcT from primary twin element
+                refl.T[9] = np.sum(fas[:,:,0],axis=0)**2+np.sum(fbs[:,:,0],axis=0)**2   #FcT from primary twin element
                 refl.T[7] = np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fas,axis=0)**2,axis=-1)+   \
                     np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
                 refl.T[10] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f"
@@ -1066,15 +1066,15 @@ def SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
         GfpuA = G2mth.Modulation(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast) #2 x refBlk x sym X atoms
         fag = fa*GfpuA[0]-fb*GfpuA[1]
         fbg = fb*GfpuA[0]+fa*GfpuA[1]
-#        GSASIIpath.IPyBreak()
         fas = np.sum(np.sum(fag,axis=-1),axis=-1)
         fbs = np.sum(np.sum(fbg,axis=-1),axis=-1)
+#        GSASIIpath.IPyBreak()
         if 'P' in calcControls[hfx+'histType']:
             refl.T[10] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
             refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         else:
             if len(TwinLaw) > 1:
-                refl.T[10] = np.sum(fas[:,:,0]**2,axis=0)+np.sum(fbs[:,:,0]**2,axis=0)   #FcT from primary twin element
+                refl.T[10] = np.sum(fas[:,:,0],axis=0)**2+np.sum(fbs[:,:,0],axis=0)**2   #FcT from primary twin element
                 refl.T[8] = np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fas,axis=0)**2,axis=-1)+   \
                     np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
                 refl.T[11] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f"

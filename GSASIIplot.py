@@ -5049,7 +5049,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         RenderDots(XYZ,RC)
         glShadeModel(GL_SMOOTH)
                             
-    def Draw(caller='',Fade=None):
+    def Draw(caller='',Fade=[]):
 #useful debug?        
 #        if caller:
 #            print caller
@@ -5061,6 +5061,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         if page:
             pageName = G2frame.dataDisplay.GetPageText(page)
         rhoXYZ = []
+        rho = []
         if len(D4mapData.get('rho',[])):        #preferentially select 4D map if there
             rho = D4mapData['rho'][:,:,:,int(G2frame.tau*10)]   #pick current tau 3D slice
         elif len(mapData['rho']):               #ordinary 3D map
@@ -5128,7 +5129,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         time0 = time.time()
 #        glEnable(GL_BLEND)
 #        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
-        if Fade == None:
+        if not len(Fade):
             atmFade = np.ones(len(drawingData['Atoms']))
         else:
             atmFade = Fade

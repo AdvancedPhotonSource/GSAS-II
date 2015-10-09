@@ -1091,7 +1091,7 @@ def ModulationDerv(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
     return np.array([cosHA,sinHA]),[dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS]
     
 def posFourier(tau,psin,pcos,smul):
-    A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])*smul
+    A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])  #*smul
     B = np.array([pc[:,np.newaxis]*np.cos(2*np.pi*(i+1)*tau) for i,pc in enumerate(pcos)])
     return np.sum(A,axis=0)+np.sum(B,axis=0)
     
@@ -2321,7 +2321,7 @@ def Fourier4DMap(data,reflDict):
                     Fhkl[h,k,l,m] = dF*phasep
                     h,k,l,m = -hkl+Hmax
                     Fhkl[h,k,l,m] = dF*phasem
-    SSrho = fft.fftn(fft.fftshift(Fhkl))/(10.*cell[6])          #4D map 
+    SSrho = fft.fftn(fft.fftshift(Fhkl))/cell[6]          #4D map 
     rho = fft.fftn(fft.fftshift(Fhkl[:,:,:,maxM+1]))/cell[6]    #3D map
     map4DData['rho'] = np.real(SSrho)
     map4DData['rhoMax'] = max(np.max(map4DData['rho']),-np.min(map4DData['rho']))

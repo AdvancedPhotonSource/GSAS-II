@@ -116,7 +116,7 @@ def UpdateImageControls(G2frame,data,masks):
         G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=True)    
         G2frame.dataFrame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick, RB on point to delete else RB to finish')
         G2frame.ifGetRing = True
-        
+                
     def OnRecalibrate(event):
         G2img.ImageRecalibrate(G2frame,data,masks)
         wx.CallAfter(UpdateImageControls,G2frame,data,masks)
@@ -1052,6 +1052,15 @@ def UpdateImageControls(G2frame,data,masks):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyControls, id=G2gd.wxID_IMCOPYCONTROLS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveControls, id=G2gd.wxID_IMSAVECONTROLS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadControls, id=G2gd.wxID_IMLOADCONTROLS)
+    try: # remove after AutoInt is completed
+        import autoint
+        def OnAutoInt(event):
+            frame = autoint.AutoIntFrame(G2frame,PollTime=5.0)
+
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoInt, id=G2gd.wxID_IMAUTOINTEG)
+        print "development code: AutoInt found"
+    except ImportError:
+        pass
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
 
     mainSizer = wx.BoxSizer(wx.VERTICAL)

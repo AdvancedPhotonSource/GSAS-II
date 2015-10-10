@@ -179,7 +179,7 @@ class GSASII(wx.Frame):
         item = parent.Append(
             help='',id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,
-            text='Add phase')
+            text='Add new phase')
         self.Bind(wx.EVT_MENU, self.OnAddPhase, id=item.GetId())
         item = parent.Append(
             help='',id=wx.ID_ANY,
@@ -1901,7 +1901,7 @@ class GSASII(wx.Frame):
             for filename in glob.iglob(os.path.join(path,"G2export*.py")):
                 filelist.append(filename)    
         filelist = sorted(list(set(filelist))) # remove duplicates
-        exporterlist = []
+        self.exporterlist = []
         # go through the routines and import them, saving objects that
         # have export routines (method Exporter)
         for filename in filelist:
@@ -1920,7 +1920,7 @@ class GSASII(wx.Frame):
                             if not callable(getattr(clss[1],m)): break
                         else:
                             exporter = clss[1](self) # create an export instance
-                            exporterlist.append(exporter)
+                            self.exporterlist.append(exporter)
             except AttributeError:
                 print 'Import_'+errprefix+': Attribute Error'+str(filename)
                 pass
@@ -1929,7 +1929,7 @@ class GSASII(wx.Frame):
                 pass
             if fp: fp.close()
         # Add submenu item(s) for each Exporter by its self-declared type (can be more than one)
-        for obj in exporterlist:
+        for obj in self.exporterlist:
             #print 'exporter',obj
             for typ in obj.exporttype:
                 if typ == "project":
@@ -2374,73 +2374,9 @@ class GSASII(wx.Frame):
                 imagefiles = dlg.GetPaths()
                 imagefiles.sort()
                 for imagefile in imagefiles:
-                    # if a zip file, open and extract
-                    if os.path.splitext(imagefile)[1].lower() == '.zip':
-                        extractedfile = G2IO.ExtractFileFromZip(imagefile,parent=self)
-                        if extractedfile is not None and extractedfile != imagefile:
-                            imagefile = extractedfile
-                    Comments,Data,Npix,Image = G2IO.GetImageData(self,imagefile)
-                    if Comments:
-                        Id = self.PatternTree.AppendItem(parent=self.root,text='IMG '+os.path.basename(imagefile))
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),Comments)
-                        Imax = np.amax(Image)
-                        Imin = max(0.0,np.amin(Image))          #force positive
-                        if self.imageDefault:
-                            Data = copy.copy(self.imageDefault)
-                            Data['showLines'] = True
-                            Data['ring'] = []
-                            Data['rings'] = []
-                            Data['cutoff'] = 10
-                            Data['pixLimit'] = 20
-                            Data['edgemin'] = 100000000
-                            Data['calibdmin'] = 0.5
-                            Data['calibskip'] = 0
-                            Data['ellipses'] = []
-                            Data['calibrant'] = ''
-                            Data['GonioAngles'] = [0.,0.,0.]
-                            Data['DetDepthRef'] = False
-                        else:
-                            Data['type'] = 'PWDR'
-                            Data['color'] = 'Paired'
-                            Data['tilt'] = 0.0
-                            Data['rotation'] = 0.0
-                            Data['showLines'] = False
-                            Data['ring'] = []
-                            Data['rings'] = []
-                            Data['cutoff'] = 10
-                            Data['pixLimit'] = 20
-                            Data['calibdmin'] = 0.5
-                            Data['calibskip'] = 0
-                            Data['edgemin'] = 100000000
-                            Data['ellipses'] = []
-                            Data['GonioAngles'] = [0.,0.,0.]
-                            Data['DetDepth'] = 0.
-                            Data['DetDepthRef'] = False
-                            Data['calibrant'] = ''
-                            Data['IOtth'] = [2.0,5.0]
-                            Data['LRazimuth'] = [135,225]
-                            Data['azmthOff'] = 0.0
-                            Data['outChannels'] = 2500
-                            Data['outAzimuths'] = 1
-                            Data['centerAzm'] = False
-                            Data['fullIntegrate'] = False
-                            Data['setRings'] = False
-                            Data['background image'] = ['',-1.0]                            
-                            Data['dark image'] = ['',-1.0]
-                            Data['Flat Bkg'] = 0.0
-                        Data['setDefault'] = False
-                        Data['range'] = [(Imin,Imax),[Imin,Imax]]
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Image Controls'),Data)
-                        Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Masks'),Masks)
-                        self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Stress/Strain'),
-                            {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'Sample load':0.0})
-                        self.PatternTree.SetItemPyData(Id,[Npix,imagefile])
-                        self.PickId = Id
-                        self.PickIdText = self.GetTreeItemsList(self.PickId)
-                        self.Image = Id
-                os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!                
-                self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,Id,'Image Controls'))             #show last one
+                    G2IO.ReadLoadImage(imagefile,self)
+                os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
+                self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,self.Image,'Image Controls'))             #show last image to be read
         finally:
             path = dlg.GetDirectory()           # to get Mac/Linux to change directory!
             os.chdir(path)

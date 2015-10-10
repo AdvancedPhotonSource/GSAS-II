@@ -32,6 +32,7 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIgrid as G2gd
 import GSASIIspc as G2spc
+import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
 import GSASIIpwdGUI as G2pdG
 import GSASIIimage as G2img
@@ -264,7 +265,87 @@ def EditImageParms(parent,Data,Comments,Image,filename):
     dlg.SetSizer(mainsizer)
     dlg.CenterOnParent()
     dlg.ShowModal()
-
+    
+def ReadLoadImage(imagefile,G2frame):
+    '''Read a GSAS-II image file and load it into the data tree
+    '''
+    # get a list of existing Image entries
+    ImgNames = []
+    if G2frame.PatternTree.GetCount():
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        while item:
+            name = G2frame.PatternTree.GetItemText(item)
+            if name.startswith('IMG'): ImgNames.append(name)        
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+    # if a zip file, open and extract
+    if os.path.splitext(imagefile)[1].lower() == '.zip':
+        extractedfile = ExtractFileFromZip(imagefile,parent=G2frame)
+        if extractedfile is not None and extractedfile != imagefile:
+            imagefile = extractedfile
+    Comments,Data,Npix,Image = GetImageData(G2frame,imagefile)
+    if Comments:
+        TreeName = G2obj.MakeUniqueLabel('IMG '+os.path.basename(imagefile),ImgNames)
+        print 'b=','IMG '+os.path.basename(imagefile)
+        print 'a=',TreeName
+        Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=TreeName)
+        G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)
+        Imax = np.amax(Image)
+        Imin = max(0.0,np.amin(Image))          #force positive
+        if G2frame.imageDefault:
+            Data = copy.copy(G2frame.imageDefault)
+            Data['showLines'] = True
+            Data['ring'] = []
+            Data['rings'] = []
+            Data['cutoff'] = 10
+            Data['pixLimit'] = 20
+            Data['edgemin'] = 100000000
+            Data['calibdmin'] = 0.5
+            Data['calibskip'] = 0
+            Data['ellipses'] = []
+            Data['calibrant'] = ''
+            Data['GonioAngles'] = [0.,0.,0.]
+            Data['DetDepthRef'] = False
+        else:
+            Data['type'] = 'PWDR'
+            Data['color'] = 'Paired'
+            Data['tilt'] = 0.0
+            Data['rotation'] = 0.0
+            Data['showLines'] = False
+            Data['ring'] = []
+            Data['rings'] = []
+            Data['cutoff'] = 10
+            Data['pixLimit'] = 20
+            Data['calibdmin'] = 0.5
+            Data['calibskip'] = 0
+            Data['edgemin'] = 100000000
+            Data['ellipses'] = []
+            Data['GonioAngles'] = [0.,0.,0.]
+            Data['DetDepth'] = 0.
+            Data['DetDepthRef'] = False
+            Data['calibrant'] = ''
+            Data['IOtth'] = [2.0,5.0]
+            Data['LRazimuth'] = [135,225]
+            Data['azmthOff'] = 0.0
+            Data['outChannels'] = 2500
+            Data['outAzimuths'] = 1
+            Data['centerAzm'] = False
+            Data['fullIntegrate'] = False
+            Data['setRings'] = False
+            Data['background image'] = ['',-1.0]                            
+            Data['dark image'] = ['',-1.0]
+            Data['Flat Bkg'] = 0.0
+        Data['setDefault'] = False
+        Data['range'] = [(Imin,Imax),[Imin,Imax]]
+        G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Image Controls'),Data)
+        Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
+        G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Masks'),Masks)
+        G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Stress/Strain'),
+            {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'Sample load':0.0})
+        G2frame.PatternTree.SetItemPyData(Id,[Npix,imagefile])
+        G2frame.PickId = Id
+        G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)
+        G2frame.Image = Id
+    
 def GetImageData(G2frame,imagefile,imageOnly=False):
     '''Read an image with the file reader keyed by the
     file extension
@@ -1878,7 +1959,9 @@ class ExportBaseclass(object):
     are imported in :meth:`GSASII.GSASII._init_Exports` which defines the
     appropriate menu items for each one and the .Exporter method is called
     directly from the menu item.
-    
+
+    Routines may also define a .Writer method, which is used to write a single
+    file without invoking any GUI objects.
     '''
     def __init__(self,
                  G2frame,
@@ -2367,7 +2450,7 @@ class ExportBaseclass(object):
             if not os.path.splitext(self.filename)[1]:
                 self.filename += self.extension
             fil = os.path.join(self.dirname,self.filename)
-        self.fullpath = fil
+        self.fullpath = os.path.abspath(fil)
         self.fp = open(fil,mode)
         return self.fp
 
@@ -2462,6 +2545,45 @@ class ExportBaseclass(object):
             atomslist.append((label,typ,mult,xyz,td))
         return atomslist
 ######################################################################
+def ExportPowderList(G2frame):
+    '''Returns a list of extensions supported by :func:`GSASIIIO:ExportPowder`
+    
+    :param wx.Frame G2frame: the GSAS-II main data tree window
+    '''
+    extList = []
+    for obj in G2frame.exporterlist:
+        if 'powder' in obj.exporttype:
+            try:
+                obj.Writer
+                extList.append(obj.extension)
+            except AttributeError:
+                pass
+    return extList
+
+def ExportPowder(G2frame,TreeName,fileroot,extension):
+    '''Writes a single powder histogram using the Export routines
+
+    :param wx.Frame G2frame: the GSAS-II main data tree window
+    :param str TreeName: the name of the histogram (PWDR ...) in the data tree
+    :param str fileroot: name for file to be written, extension ignored
+    :param str extension: extension for file to be written (start with '.'). Must
+      match a powder export routine that has a Writer object. 
+    '''
+    filename = os.path.abspath(os.path.splitext(fileroot)[1]+extension)
+    for obj in G2frame.exporterlist:
+        if obj.extension == extension and 'powder' in obj.exporttype:
+            obj.currentExportType = 'powder'
+            obj.InitExport(None)
+            obj.loadTree() # load all histograms in tree into dicts
+            if TreeName not in obj.Histograms:
+                raise Exception('Histogram not found: '+hst)
+            try:
+                obj.Writer(TreeName,filename)
+                return
+            except AttributeError:
+                print('Export Routine for '+extension+' does not have a .Writer method')
+    else:
+        print('No Export routine supports extension '+extension)
 
 def ReadCIF(URLorFile):
     '''Open a CIF, which may be specified as a file name or as a URL using PyCifRW

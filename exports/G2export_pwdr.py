@@ -61,13 +61,36 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
         print('Parameters from '+str(hist)+' written to file '+str(prmname))
         return prmname
 
+    def Writer(self,TreeName,filename=None,prmname=''):
+        '''Write a single PWDR entry to a FXYE file
+        '''
+        histblk = self.Histograms[TreeName]
+        self.OpenFile(filename) # ***rethink
+        self.Write(TreeName[5:])
+        if prmname: self.Write('Instrument parameter file:'+os.path.split(prmname)[1])
+        x = 100*np.array(histblk['Data'][0])
+        # convert weights to sigmas; use largest weight as minimum esd
+        s = np.sqrt(np.maximum(0.,np.array(histblk['Data'][2])))
+        s[s==0] = np.max(s)
+        s = 1./s
+        self.Write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE' % (
+            len(x),len(x),x[0],(x[1]-x[0])
+            ))
+#            for X,Y,S in zip(x,histblk['Data'][1],s):
+#                self.Write("{:15.6g} {:15.6g} {:15.6g}".format(X,Y,S))
+        for XYS in zip(x,histblk['Data'][1],s):
+            line = ''
+            for val in XYS:
+                line += G2py3.FormatPadValue(val,(15,6))
+            self.Write(line)
+        self.CloseFile()
+        
     def Exporter(self,event=None):
         '''Export one or more sets of powder data as FXYE file(s)
         '''
         # the export process starts here
         self.InitExport(event)
-        # load all of the tree into a set of dicts
-        self.loadTree()
+        self.loadTree() # load all of the tree into a set of dicts
         if self.ExportSelect( # set export parameters
             AskFile='single' # get a file name/directory to save in
             ): return
@@ -81,29 +104,9 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
             else:
                 # use the supplied name, but force the extension
                 self.filename= os.path.splitext(self.filename)[0] + self.extension
-                
-            histblk = self.Histograms[hist]
-            prmname = self.WriteInstFile(hist,histblk['Instrument Parameters'][0])
-            
-            self.OpenFile()
-            self.Write(hist[5:])
-            self.Write('Instrument parameter file:'+os.path.split(prmname)[1])
-            x = 100*np.array(histblk['Data'][0])
-            # convert weights to sigmas; use largest weight as minimum esd
-            s = np.sqrt(np.maximum(0.,np.array(histblk['Data'][2])))
-            s[s==0] = np.max(s)
-            s = 1./s
-            self.Write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE' % (
-                len(x),len(x),x[0],(x[1]-x[0])
-                ))
-#            for X,Y,S in zip(x,histblk['Data'][1],s):
-#                self.Write("{:15.6g} {:15.6g} {:15.6g}".format(X,Y,S))
-            for XYS in zip(x,histblk['Data'][1],s):
-                line = ''
-                for val in XYS:
-                    line += G2py3.FormatPadValue(val,(15,6))
-                self.Write(line)
-            self.CloseFile()
+
+            prmname = self.WriteInstFile(TreeName,histblk['Instrument Parameters'][0])
+            self.Writer(hist,prmname=prmname)
             print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
 
 
@@ -121,6 +124,26 @@ class ExportPowderXYE(G2IO.ExportBaseclass):
             )
         self.exporttype = ['powder']
         self.multiple = True
+        
+    def Writer(self,TreeName,filename=None):
+        GSASIIpath.IPyBreak()
+
+        self.OpenFile()
+        histblk = self.Histograms[TreeName]
+        self.Write('/*')    #The ugly c comment delimiter used in topas!
+        self.Write('# '+TreeName[5:])  #evidently this by itself fails in topas
+        self.Write('*/')
+        x = np.array(histblk['Data'][0])
+        # convert weights to sigmas; use largest weight as minimum esd
+        s = np.sqrt(np.maximum(0.,np.array(histblk['Data'][2])))
+        s[s==0] = np.max(s)
+        s = 1./s
+        for XYS in zip(x,histblk['Data'][1],s):
+            line = ''
+            for val in XYS:
+                line += G2py3.FormatPadValue(val,(15,6))
+            self.Write(line)
+        self.CloseFile()
 
     def Exporter(self,event=None):
         '''Export one or more sets of powder data as XYE file(s)
@@ -143,20 +166,5 @@ class ExportPowderXYE(G2IO.ExportBaseclass):
                 # use the supplied name, but force the extension
                 self.filename= os.path.splitext(self.filename)[0] + self.extension
 
-            self.OpenFile()
-            histblk = self.Histograms[hist]
-            self.Write('/*')    #The ugly c comment delimiter used in topas!
-            self.Write('# '+hist[5:])  #evidently this by itself fails in topas
-            self.Write('*/')
-            x = np.array(histblk['Data'][0])
-            # convert weights to sigmas; use largest weight as minimum esd
-            s = np.sqrt(np.maximum(0.,np.array(histblk['Data'][2])))
-            s[s==0] = np.max(s)
-            s = 1./s
-            for XYS in zip(x,histblk['Data'][1],s):
-                line = ''
-                for val in XYS:
-                    line += G2py3.FormatPadValue(val,(15,6))
-                self.Write(line)
-            self.CloseFile()
+            self.Writer(hist)
             print('Histogram '+str(hist)+' written to file '+str(self.fullpath))

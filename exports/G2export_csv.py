@@ -125,6 +125,25 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
         #self.multiple = False # only allow one histogram to be selected
         self.multiple = True
 
+    def Writer(self,TreeName,filename=None):
+        self.OpenFile(filename)
+        histblk = self.Histograms[TreeName]
+        WriteList(self,("x","y_obs","weight","y_calc","y_bkg"))
+        digitList = 2*((13,3),) + ((13,5),) + 2*((13,3),)
+        for vallist in zip(histblk['Data'][0],
+                       histblk['Data'][1],
+                       histblk['Data'][2],
+                       histblk['Data'][3],
+                       histblk['Data'][4],
+                       #histblk['Data'][5],
+                       ):
+            line = ""
+            for val,digits in zip(vallist,digitList):
+                if line: line += ','
+                line += G2py3.FormatValue(val,digits)
+            self.Write(line)
+        self.CloseFile()
+        
     def Exporter(self,event=None):
         '''Export a set of powder data as a csv file
         '''
@@ -137,28 +156,12 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
             ): return
         filenamelist = []
         for hist in self.histnam:
-            if len(self.histnam) > 1:
-                # multiple files: create a unique name from the histogram
-                fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
-                # create an instrument parameter file
-                self.filename = os.path.join(self.dirname,fileroot + self.extension)
-            self.OpenFile()
-            histblk = self.Histograms[hist]
-            WriteList(self,("x","y_obs","weight","y_calc","y_bkg"))
-            digitList = 2*((13,3),) + ((13,5),) + 2*((13,3),)
-            for vallist in zip(histblk['Data'][0],
-                           histblk['Data'][1],
-                           histblk['Data'][2],
-                           histblk['Data'][3],
-                           histblk['Data'][4],
-                           #histblk['Data'][5],
-                           ):
-                line = ""
-                for val,digits in zip(vallist,digitList):
-                    if line: line += ','
-                    line += G2py3.FormatValue(val,digits)
-                self.Write(line)
-            self.CloseFile()
+            #if len(self.histnam) > 1:
+            #    # multiple files: create a unique name from the histogram
+            #    fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
+            #    # create an instrument parameter file
+            #    self.filename = os.path.join(self.dirname,fileroot + self.extension)
+            self.Writer(hist)
             print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
 
 class ExportMultiPowderCSV(G2IO.ExportBaseclass):

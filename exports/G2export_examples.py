@@ -131,19 +131,9 @@ class ExportPowderText(G2IO.ExportBaseclass):
         self.exporttype = ['powder']
         self.multiple = False # only allow one histogram to be selected
 
-    def Exporter(self,event=None):
-        '''Export a set of powder data as a text file
-        '''
-        # the export process starts here
-        self.InitExport(event)
-        # load all of the tree into a set of dicts
-        self.loadTree()
-        if self.ExportSelect( # set export parameters
-            AskFile='default' # base name on the GPX file name
-            ): return 
-        self.OpenFile()
-        hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
-        histblk = self.Histograms[hist]
+    def Writer(self,TreeName,filename=None):
+        self.OpenFile(filename)
+        histblk = self.Histograms[TreeName]
         hfmt = 5*"{:12s} "
         digitList = 2*((13,3),) + ((13,5),) + 2*((13,3),)
         
@@ -160,6 +150,19 @@ class ExportPowderText(G2IO.ExportBaseclass):
                 strg += G2py3.FormatPadValue(val,digits)
             self.Write(strg)
         self.CloseFile()
+        
+    def Exporter(self,event=None):
+        '''Export a set of powder data as a text file
+        '''
+        # the export process starts here
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.loadTree()
+        if self.ExportSelect( # set export parameters
+            AskFile='default' # base name on the GPX file name
+            ): return 
+        hist = self.histnam[0] # there should only be one histogram, in any case take the 1st
+        self.Writer(hist)
         print(str(hist)+' written to file '+str(self.fullpath))
         
 class ExportPowderReflText(G2IO.ExportBaseclass):

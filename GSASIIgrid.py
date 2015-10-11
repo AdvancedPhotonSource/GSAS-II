@@ -320,6 +320,7 @@ class SymOpDialog(wx.Dialog):
 class AddHatomDialog(wx.Dialog):
     '''H atom addition dialog. After :meth:`ShowModal` returns, the results 
     are found in dict :attr:`self.data`, which is accessed using :meth:`GetData`.
+    
     :param wx.Frame parent: reference to parent frame (or None)
     :param dict Neigh: a dict of atom names with list of atom name, dist pairs for neighboring atoms
     :param dict phase: a dict containing the phase as defined by

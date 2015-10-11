@@ -10,9 +10,9 @@
 ########### SVN repository information ###################
 '''
 *defaultIparms: Table of instrument parameters*
---------------------------------------
+-----------------------------------------------
 
-Define some default instrument parameters:
+Defines some default instrument parameters.
 Format for each is a list of strings finished with a '\n'.
 Begin with '#GSAS-II...' as the reader routine checks this.
 Each line can be comprised of a block of ';' delimited name:value pairs.
@@ -22,11 +22,12 @@ Use a GSAS-II instprm file as a source for the entries.
 For a new entry:
 
     Append a useful name to defaultIparms_lbl.
+    
     Append the list of lines to defaultIparms.
 
-defaultIparm_lbl: defines a list of labels
+defaultIparm_lbl: defines a list of labels.
 
-defaultIparms: defines a list of multiple strings with values for each set of defaults
+defaultIparms: defines a list of multiple strings with values for each set of defaults.
 '''
 #See examples below.
 

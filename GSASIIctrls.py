@@ -3186,12 +3186,16 @@ class SelectConfigSetting(wx.Dialog):
         self.CenterOnParent()
 
     def GetVarDocs(self,fname):
-        '''Read the module referenced in fname (often <module>.__file__) and return a
-        dict with names of global variables as keys.
+        '''Read the module referenced in fname (often <module>.__file__) and
+        return a dict with names of global variables as keys.
         For each global variable, the value contains four items:
+        
           item 0: the default value
+          
           item 1: the current value
+          
           item 2: the initial value (starts same as item 1)
+          
           item 3: the "docstring" that follows variable definition
         '''
         import config_example

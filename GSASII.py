@@ -329,14 +329,16 @@ class GSASII(wx.Frame):
     
     def OnImportGeneric(self,reader,readerlist,label,multiple=False,
                         usedRanIdList=[],Preview=True):
-        '''Used to import Phases, powder dataset or single
-        crystal datasets (structure factor tables) using reader objects
+        '''Used to import Phases or datasets using reader objects
         subclassed from :class:`GSASIIIO.ImportPhase`,
-        :class:`GSASIIIO.ImportStructFactor`
-        or :class:`GSASIIIO.ImportPowderData`. If a reader is specified, only
-        that will be attempted, but if no reader is specified, every one
-        that is potentially compatible (by file extension) will
-        be tried on the selected file(s). 
+        :class:`GSASIIIO.ImportStructFactor`,
+        :class:`GSASIIIO.ImportPowderData`,
+        :class:`GSASIIIO.ImportSmallAngleData` or
+        :class:`GSASIIIO.ImportImage`.
+        If a specific reader is specified, only that method will be called,
+        but if no reader is specified, every one that is potentially
+        compatible (by file extension) will be tried on the file(s)
+        selected in the Open File dialog.
 
         :param readerobject reader: This will be a reference to
           a particular object to be used to read a file or None,
@@ -429,7 +431,7 @@ class GSASII(wx.Frame):
                 if extractedfile is None: continue # error or Cancel 
                 if extractedfile != filename:
                     filename,self.zipfile = extractedfile,filename # now use the file that was created
-            # set what formats are compatible with this file
+            # determine which formats are compatible with this file
             primaryReaders = []
             secondaryReaders = []
             for rd in readerlist:
@@ -438,40 +440,49 @@ class GSASII(wx.Frame):
                     secondaryReaders.append(rd)
                 elif flag:
                     primaryReaders.append(rd)
-            if len(secondaryReaders) + len(primaryReaders) == 0:
+            if len(secondaryReaders) + len(primaryReaders) == 0 and reader:
+                self.ErrorDialog('Not supported','The selected reader cannot read file '+filename)
+                return []
+            elif len(secondaryReaders) + len(primaryReaders) == 0:
                 self.ErrorDialog('No Format','No matching format for file '+filename)
                 return []
 
             fp = None
             msg = ''
-            try:
-                fp = open(filename,'Ur')
-                if len(filelist) == 1 and Preview:
-                    if self.PreviewFile(filename,fp): return []
-                self.lastimport = filename # this is probably not what I want to do -- it saves only the
-                # last name in a series. See rd.readfilename for a better name.
-                
-                # try the file first with Readers that specify the
-                # file's extension and later with ones that merely allow it
-                errorReport = ''
-                for rd in primaryReaders+secondaryReaders:
-                    rd.ReInitialize() # purge anything from a previous read
+            fp = open(filename,'Ur')
+            if len(filelist) == 1 and Preview:
+                if self.PreviewFile(filename,fp): return []
+            self.lastimport = filename # this is probably not what I want to do -- it saves only the
+            # last name in a series. See rd.readfilename for a better name.
+
+            # try the file first with Readers that specify the
+            # file's extension and later with ones that merely allow it
+            errorReport = ''
+            for rd in primaryReaders+secondaryReaders:
+                rd.ReInitialize() # purge anything from a previous read
+                fp.seek(0)  # rewind
+                rd.errors = "" # clear out any old errors
+                if not rd.ContentsValidator(fp): # rejected on cursory check
+                    errorReport += "\n  "+rd.formatName + ' validator error'
+                    if rd.errors: 
+                        errorReport += ': '+rd.errors
+                    continue 
+                repeat = True
+                rdbuffer = {} # create temporary storage for file reader
+                block = 0
+                while repeat: # loop if the reader asks for another pass on the file
+                    block += 1
+                    repeat = False
                     fp.seek(0)  # rewind
-                    rd.errors = "" # clear out any old errors
-                    if not rd.ContentsValidator(fp): # rejected on cursory check
-                        errorReport += "\n  "+rd.formatName + ' validator error'
-                        if rd.errors: 
-                            errorReport += ': '+rd.errors
-                        continue 
-                    repeat = True
-                    rdbuffer = {} # create temporary storage for file reader
-                    block = 0
-                    while repeat: # loop if the reader asks for another pass on the file
-                        block += 1
-                        repeat = False
-                        fp.seek(0)  # rewind
-                        rd.objname = os.path.basename(filename)
-                        flag = False
+                    rd.objname = os.path.basename(filename)
+                    flag = False
+                    if GSASIIpath.GetConfigValue('debug'):
+                        flag = rd.Reader(filename,fp,self,
+                                         buffer=rdbuffer,
+                                         blocknum=block,
+                                         usedRanIdList=usedRanIdList,
+                                         )
+                    else:
                         try:
                             flag = rd.Reader(filename,fp,self,
                                              buffer=rdbuffer,
@@ -484,35 +495,31 @@ class GSASII(wx.Frame):
                             import traceback
                             rd.errors += "\n  Unhandled read exception: "+str(detail)
                             rd.errors += "\n  Traceback info:\n"+str(traceback.format_exc())
-                        if flag: # this read succeeded
-                            rd.readfilename = filename
-                            rd_list.append(copy.deepcopy(rd)) # save the result before it is written over
-                            if rd.repeat:
-                                repeat = True
-                            continue
-                        errorReport += '\n'+rd.formatName + ' read error'
-                        if rd.errors:
-                            errorReport += ': '+rd.errors
-                    if rd_list: # read succeeded, was there a warning or any errors? 
-                        if rd.warnings:
-                            self.ErrorDialog('Read Warning','The '+ rd.formatName+
-                                             ' reader reported a warning message:\n\n'+
-                                             rd.warnings)
-                        break # success in reading, try no further
+                    if flag: # this read succeeded
+                        rd.readfilename = filename
+                        rd_list.append(copy.deepcopy(rd)) # save the result before it is written over
+                        if rd.repeat:
+                            repeat = True
+                        continue
+                    errorReport += '\n'+rd.formatName + ' read error'
+                    if rd.errors:
+                        errorReport += ': '+rd.errors
+                if rd_list: # read succeeded, was there a warning or any errors? 
+                    if rd.warnings:
+                        self.ErrorDialog('Read Warning','The '+ rd.formatName+
+                                         ' reader reported a warning message:\n\n'+
+                                         rd.warnings)
+                    break # success in reading, try no further
+            else:
+                if singlereader:
+                    self.ErrorDialog('Read Error','The '+ rd.formatName+
+                                     ' reader was not able to read file '+filename+msg+
+                                     '\n\nError message(s):\n'+errorReport
+                                     )
                 else:
-                    if singlereader:
-                        self.ErrorDialog('Read Error','The '+ rd.formatName+
-                                         ' reader was not able to read file '+filename+msg+
-                                         '\n\nError message(s):\n'+errorReport
-                                         )
-                    else:
-                        self.ErrorDialog('Read Error','No reader was able to read file '+filename+msg+
-                                         '\n\nError messages:\n'+errorReport
-                                         )
-            except:
-                import traceback
-                print traceback.format_exc()
-                self.ErrorDialog('Open Error','Unexpected error trying to open or read file '+filename)
+                    self.ErrorDialog('Read Error','No reader was able to read file '+filename+msg+
+                                     '\n\nError messages:\n'+errorReport
+                                     )
             if fp: fp.close()
         return rd_list
 
@@ -2074,8 +2081,7 @@ class GSASII(wx.Frame):
         self._Add_CalculateMenuItems(Calculate)
         Import = wx.Menu(title='')        
         menubar.Append(menu=Import, title='Import')
-        if GSASIIpath.GetConfigValue('debug'):
-            self._Add_ImportMenu_Image(Import)
+        self._Add_ImportMenu_Image(Import)
         self._Add_ImportMenu_Phase(Import)
         self._Add_ImportMenu_powder(Import)
         self._Add_ImportMenu_Sfact(Import)

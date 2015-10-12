@@ -36,8 +36,6 @@ class ADSC_ReaderClass(G2IO.ImportImage):
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         '''Read using Bob's routine
         '''
-        filepointer.close() # close the file, since it will be reopened below. 
-        filepointer = None
         self.Comments,self.Data,self.Npix,self.Image = G2IO.GetImgData(filename)
         Image[0][0] = 0
         if self.Npix == 0 or not self.Comments:

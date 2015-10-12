@@ -45,6 +45,7 @@ import os.path as ospath
 
 DEBUG = False       #=True for various prints
 TRANSP = False      #=true to transpose images for testing
+if GSASIIpath.GetConfigValue('Transpose'): TRANSP = True
 npsind = lambda x: np.sin(x*np.pi/180.)
 
 def sfloat(S):
@@ -348,6 +349,71 @@ def LoadImage(imagefile,G2frame,Comments,Data,Npix,Image):
     G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)
     G2frame.Image = Id
     
+def ReadImageData(G2frame,imagefile,imageOnly=False):
+    '''Read a single image with an image importer. replacement for GetImageData
+
+    :param wx.Frame G2frame: main GSAS-II Frame and data object.
+    :param str imagefile: name of image file
+    :param bool imageOnly: If True return only the image,
+      otherwise  (default) return more (see below)
+
+    :returns: an image as a numpy array or a list of four items:
+      Comments, Data, Npix and the Image, as selected by imageOnly
+
+    '''
+    # determine which formats are compatible with this file
+    print 'Debug: using ReadImageData'
+    primaryReaders = []
+    secondaryReaders = []
+    for rd in G2frame.ImportImageReaderlist:
+        flag = rd.ExtensionValidator(imagefile)
+        if flag is None: 
+            secondaryReaders.append(rd)
+        elif flag:
+            primaryReaders.append(rd)
+    if len(secondaryReaders) + len(primaryReaders) == 0:
+        print('Error: No matching format for file '+filename)
+        raise Exception('No image read')
+    fp = None
+    errorReport = ''
+    fp = open(imagefile,'Ur')
+    for rd in primaryReaders+secondaryReaders:
+        rd.ReInitialize() # purge anything from a previous read
+        fp.seek(0)  # rewind
+        rd.errors = "" # clear out any old errors
+        if not rd.ContentsValidator(fp): # rejected on cursory check
+            errorReport += "\n  "+rd.formatName + ' validator error'
+            if rd.errors: 
+                errorReport += ': '+rd.errors
+                continue 
+        rdbuffer = {} # create temporary storage for file reader
+        if GSASIIpath.GetConfigValue('debug'):
+            flag = rd.Reader(imagefile,fp,G2frame)
+        else:
+            flag = False
+            try:
+                flag = rd.Reader(imagefile,fp,G2frame)
+            except rd.ImportException as detail:
+                rd.errors += "\n  Read exception: "+str(detail)
+            except Exception as detail:
+                import traceback
+                rd.errors += "\n  Unhandled read exception: "+str(detail)
+                rd.errors += "\n  Traceback info:\n"+str(traceback.format_exc())
+        if flag: # this read succeeded
+            if rd.Image is None:
+                raise Exception('No image read. Strange!')
+            if GSASIIpath.GetConfigValue('Transpose'):
+                rd.Image = rd.Image.T
+            #rd.readfilename = imagefile
+            if imageOnly:
+                return rd.Image.T
+            else:
+                return rd.Comments,rd.Data,rd.Npix,rd.Image
+    else:
+        print('Error reading file '+filename)
+        print('Error messages(s)\n'+errorReport)
+        raise Exception('No image read')
+    
 def GetImageData(G2frame,imagefile,imageOnly=False):
     '''Read an image with the file reader keyed by the
     file extension
@@ -363,6 +429,9 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
       Comments, Data, Npix and the Image, as selected by imageOnly
 
     '''
+    if GSASIIpath.GetConfigValue('debug'):  # test out using replacement routine
+        return ReadImageData(G2frame,imagefile,imageOnly)
+    
     ext = ospath.splitext(imagefile)[1]
     Comments = []
     Image = None
@@ -521,7 +590,6 @@ def GetRigaku(filename,imageOnly=False):
     else:
         return head,data,Npix,image
     
-        
 def GetGEsumData(filename,imageOnly=False):
     'Read SUM file as produced at 1-ID from G.E. images'
     import struct as st

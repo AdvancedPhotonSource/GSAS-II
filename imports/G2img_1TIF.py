@@ -49,8 +49,6 @@ class TIF_ReaderClass(G2IO.ImportImage):
         '''Read the TIF file using Bob's routine
         '''
         
-        filepointer.close() # close the file, since it will be reopened below. 
-        filepointer = None
         self.Comments,self.Data,self.Npix,self.Image = G2IO.GetTifData(filename)
         if self.Npix == 0:
             print("GetTifData failed to read "+str(filename)+" Trying SciPy")

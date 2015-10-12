@@ -39,8 +39,6 @@ class png_ReaderClass(G2IO.ImportImage):
         '''Read using scipy PNG reader
         '''
         import scipy.misc
-        filepointer.close() # close the file, since it will be reopened below. 
-        filepointer = None
         self.Image = scipy.misc.imread(filename,flatten=True)
         self.Npix = self.Image.size
         self.Comments = ['no metadata']

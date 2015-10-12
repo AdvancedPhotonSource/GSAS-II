@@ -25,7 +25,7 @@ class G2_ReaderClass(G2IO.ImportImage):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.G2img',),
             strictExtension=True,
-            formatName = 'G2 summed image',
+            formatName = 'Summed GSAS-II image',
             longFormatName = 'Pickled image from GSAS-II "Sum image data" command'
             )
 
@@ -38,8 +38,6 @@ class G2_ReaderClass(G2IO.ImportImage):
         '''Read using scipy PNG reader
         '''
         import scipy.misc
-        filepointer.close() # close the file, since it will be reopened below. 
-        filepointer = None
         Fp = open(filename,'rb')
         self.Comments,self.Data,self.Npix,self.image = cPickle.load(Fp)
         Fp.close()

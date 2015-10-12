@@ -42,6 +42,9 @@ If debug is False, calls to :func:`GSASIIpath.IPyBreak` and
 :func:`GSASIIpath.pdbBreak` are ignored.
 '''
 
+Transpose = False
+'Set to True to cause images to be Transposed when read (for code development)'
+
 Enable_logging = False
 'Set to True to enable use of command logging (under development.)'
 

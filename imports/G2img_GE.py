@@ -22,7 +22,7 @@ GSASIIpath.SetVersionNumber("$Revision: $")
 class GEsum_ReaderClass(G2IO.ImportImage):
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.sum','.cor','.avg','.ge','.ge1','ge2','ge3','.ge4'),
+            extensionlist=('.sum','.cor','.avg','.ge','.ge1','.ge2','.ge3','.ge4'),
             strictExtension=True,
             formatName = 'GE image',
             longFormatName = 'Summed GE image file'
@@ -36,9 +36,7 @@ class GEsum_ReaderClass(G2IO.ImportImage):
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         '''Read using Bob's routine
         '''
-        filepointer.close() # close the file, since it will be reopened below. 
-        filepointer = None
-        self.Comments,self.Data,self.Npix,self.Image = G2IO.GetGEsum(filename)
+        self.Comments,self.Data,self.Npix,self.Image = G2IO.GetGEsumData(filename)
         if self.Npix == 0 or not self.Comments:
             return False
         return True

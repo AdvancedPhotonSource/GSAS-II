@@ -241,6 +241,8 @@ class GSASII(wx.Frame):
         self._init_Import_routines('pwd',self.ImportPowderReaderlist,'Powder_Data')
         self.ImportSmallAngleReaderlist = []
         self._init_Import_routines('sad',self.ImportSmallAngleReaderlist,'SmallAngle_Data')
+        self.ImportImageReaderlist = []
+        self._init_Import_routines('img',self.ImportImageReaderlist,'Images')
         self.ImportMenuId = {}
 
     def _init_Import_routines(self,prefix,readerlist,errprefix):
@@ -300,10 +302,37 @@ class GSASII(wx.Frame):
         else:
             for i in self.SeqRefine: i.Enable(False)
 
-    def OnImportGeneric(self,reader,readerlist,label,multiple=False,usedRanIdList=[]):
+    def PreviewFile(self,filename,fp):
+        'confirm we have the right file'
+        rdmsg = 'File '+str(filename)+' begins:\n\n'
+        for i in range(3):
+            rdmsg += fp.readline()
+        rdmsg += '\n\nDo you want to read this file?'
+        if not all([ord(c) < 128 and ord(c) != 0 for c in rdmsg]): # show only if ASCII
+            rdmsg = 'File '+str(
+                filename)+' is a binary file. Do you want to read this file?'
+        # it would be better to use something that
+        # would resize better, but this will do for now
+        dlg = wx.MessageDialog(
+            self, rdmsg,
+            'Is this the file you want?', 
+            wx.YES_NO | wx.ICON_QUESTION,
+            )
+        dlg.SetSize((700,300)) # does not resize on Mac
+        result = wx.ID_NO
+        try:
+            result = dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        if result == wx.ID_NO: return True
+        return False
+    
+    def OnImportGeneric(self,reader,readerlist,label,multiple=False,
+                        usedRanIdList=[],Preview=True):
         '''Used to import Phases, powder dataset or single
         crystal datasets (structure factor tables) using reader objects
-        subclassed from :class:`GSASIIIO.ImportPhase`, :class:`GSASIIIO.ImportStructFactor`
+        subclassed from :class:`GSASIIIO.ImportPhase`,
+        :class:`GSASIIIO.ImportStructFactor`
         or :class:`GSASIIIO.ImportPowderData`. If a reader is specified, only
         that will be attempted, but if no reader is specified, every one
         that is potentially compatible (by file extension) will
@@ -329,6 +358,10 @@ class GSASII(wx.Frame):
 
         :param list usedRanIdList: an optional list of random Ids that 
           have been used and should not be reused
+
+        :param bool Preview: indicates if a preview of the file should
+          be shown. Default is True, but set to False for image files
+          which are all binary. 
 
         :returns: a list of reader objects (rd_list) that were able
           to read the specified file(s). This list may be empty. 
@@ -413,30 +446,8 @@ class GSASII(wx.Frame):
             msg = ''
             try:
                 fp = open(filename,'Ur')
-                if len(filelist) == 1:
-                    # confirm we have the right file
-                    rdmsg = 'File '+str(filename)+' begins:\n\n'
-                    for i in range(3):
-                        rdmsg += fp.readline()
-                    rdmsg += '\n\nDo you want to read this file?'
-                    if not all([ord(c) < 128 and ord(c) != 0 for c in rdmsg]): # show only if ASCII
-                        rdmsg = 'File '+str(
-                            filename)+' is a binary file. Do you want to read this file?'
-                    result = wx.ID_NO
-                    # it would be better to use something that
-                    # would resize better, but this will do for now
-                    dlg = wx.MessageDialog(
-                        self, rdmsg,
-                        'Is this the file you want?', 
-                        wx.YES_NO | wx.ICON_QUESTION,
-                        )
-                    dlg.SetSize((700,300)) # does not resize on Mac
-                    try:
-                        result = dlg.ShowModal()
-                    finally:
-                        dlg.Destroy()
-                    if result == wx.ID_NO: return []
-                            
+                if len(filelist) == 1 and Preview:
+                    if self.PreviewFile(filename,fp): return []
                 self.lastimport = filename # this is probably not what I want to do -- it saves only the
                 # last name in a series. See rd.readfilename for a better name.
                 
@@ -553,8 +564,8 @@ class GSASII(wx.Frame):
                 return []
         finally:
             dlg.Destroy()
-        return filelist
-            
+        return filelist            
+        
     def OnImportPhase(self,event):
         '''Called in response to an Import/Phase/... menu item
         to read phase information.
@@ -718,6 +729,48 @@ class GSASII(wx.Frame):
         wx.EndBusyCursor()
         return # success
         
+    def _Add_ImportMenu_Image(self,parent):
+        '''configure the Import Image menus accord to the readers found in _init_Imports
+        '''
+        submenu = wx.Menu()
+        item = parent.AppendMenu(wx.ID_ANY, 'Image',
+            submenu, help='Import image file')
+        for reader in self.ImportImageReaderlist:
+            item = submenu.Append(wx.ID_ANY,help=reader.longFormatName,
+                kind=wx.ITEM_NORMAL,text='from '+reader.formatName+' file')
+            self.ImportMenuId[item.GetId()] = reader
+            self.Bind(wx.EVT_MENU, self.OnImportImage, id=item.GetId())
+        item = submenu.Append(wx.ID_ANY,
+                              help='Import image data, use file to try to determine format',
+                              kind=wx.ITEM_NORMAL,
+                              text='guess format from file')
+        self.Bind(wx.EVT_MENU, self.OnImportImage, id=item.GetId())
+        
+    def OnImportImage(self,event):
+        '''Called in response to an Import/Image/... menu item
+        to read an image from a file. Like all the other imports,
+        dict self.ImportMenuId is used to look up the specific
+        reader item associated with the menu item, which will be
+        None for the last menu item, which is the "guess" option
+        where all appropriate formats will be tried.
+
+        A reader object is filled each time an image is read. 
+        '''
+        # look up which format was requested
+        reqrdr = self.ImportMenuId.get(event.GetId())
+        rdlist = self.OnImportGeneric(reqrdr,
+                                  self.ImportImageReaderlist,
+                                  'image',multiple=True,Preview=False)
+        first = True
+        for rd in rdlist:
+            if first:
+                first = False
+                self.CheckNotebook()
+            G2IO.LoadImage(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
+        self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,self.Image,'Image Controls'))             #show last image to have beeen read
+        # replace G2IO.GetImageData with something using imports
+        # look over G2IO.ReadLoadImage
+                    
     def _Add_ImportMenu_Sfact(self,parent):
         '''configure the Import Structure Factor menus accord to the readers found in _init_Imports
         '''
@@ -2020,6 +2073,8 @@ class GSASII(wx.Frame):
         self._Add_CalculateMenuItems(Calculate)
         Import = wx.Menu(title='')        
         menubar.Append(menu=Import, title='Import')
+        if GSASIIpath.GetConfigValue('debug'):
+            self._Add_ImportMenu_Image(Import)
         self._Add_ImportMenu_Phase(Import)
         self._Add_ImportMenu_powder(Import)
         self._Add_ImportMenu_Sfact(Import)

@@ -129,13 +129,12 @@ def GetPowderPeaks(fileName):
     return Comments,Peaks
 
 def CheckImageFile(G2frame,imagefile):
-    '''Get an new image file name if the specified one does not
-    exist
+    '''Try to locate an image file if the project and image have been moved
+    together. If the image file cannot be found, request the location from
+    the user.
 
     :param wx.Frame G2frame: main GSAS-II Frame and data object
-
     :param str imagefile: name of image file
-
     :returns: imagefile, if it exists, or the name of a file
       that does exist or False if the user presses Cancel
 
@@ -269,14 +268,6 @@ def EditImageParms(parent,Data,Comments,Image,filename):
 def ReadLoadImage(imagefile,G2frame):
     '''Read a GSAS-II image file and load it into the data tree
     '''
-    # get a list of existing Image entries
-    ImgNames = []
-    if G2frame.PatternTree.GetCount():
-        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-        while item:
-            name = G2frame.PatternTree.GetItemText(item)
-            if name.startswith('IMG'): ImgNames.append(name)        
-            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
     # if a zip file, open and extract
     if os.path.splitext(imagefile)[1].lower() == '.zip':
         extractedfile = ExtractFileFromZip(imagefile,parent=G2frame)
@@ -284,67 +275,78 @@ def ReadLoadImage(imagefile,G2frame):
             imagefile = extractedfile
     Comments,Data,Npix,Image = GetImageData(G2frame,imagefile)
     if Comments:
-        TreeName = G2obj.MakeUniqueLabel('IMG '+os.path.basename(imagefile),ImgNames)
-        print 'b=','IMG '+os.path.basename(imagefile)
-        print 'a=',TreeName
-        Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=TreeName)
-        G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)
-        Imax = np.amax(Image)
-        Imin = max(0.0,np.amin(Image))          #force positive
-        if G2frame.imageDefault:
-            Data = copy.copy(G2frame.imageDefault)
-            Data['showLines'] = True
-            Data['ring'] = []
-            Data['rings'] = []
-            Data['cutoff'] = 10
-            Data['pixLimit'] = 20
-            Data['edgemin'] = 100000000
-            Data['calibdmin'] = 0.5
-            Data['calibskip'] = 0
-            Data['ellipses'] = []
-            Data['calibrant'] = ''
-            Data['GonioAngles'] = [0.,0.,0.]
-            Data['DetDepthRef'] = False
-        else:
-            Data['type'] = 'PWDR'
-            Data['color'] = 'Paired'
-            Data['tilt'] = 0.0
-            Data['rotation'] = 0.0
-            Data['showLines'] = False
-            Data['ring'] = []
-            Data['rings'] = []
-            Data['cutoff'] = 10
-            Data['pixLimit'] = 20
-            Data['calibdmin'] = 0.5
-            Data['calibskip'] = 0
-            Data['edgemin'] = 100000000
-            Data['ellipses'] = []
-            Data['GonioAngles'] = [0.,0.,0.]
-            Data['DetDepth'] = 0.
-            Data['DetDepthRef'] = False
-            Data['calibrant'] = ''
-            Data['IOtth'] = [2.0,5.0]
-            Data['LRazimuth'] = [135,225]
-            Data['azmthOff'] = 0.0
-            Data['outChannels'] = 2500
-            Data['outAzimuths'] = 1
-            Data['centerAzm'] = False
-            Data['fullIntegrate'] = False
-            Data['setRings'] = False
-            Data['background image'] = ['',-1.0]                            
-            Data['dark image'] = ['',-1.0]
-            Data['Flat Bkg'] = 0.0
-        Data['setDefault'] = False
-        Data['range'] = [(Imin,Imax),[Imin,Imax]]
-        G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Image Controls'),Data)
-        Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
-        G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Masks'),Masks)
-        G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Stress/Strain'),
-            {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'Sample load':0.0})
-        G2frame.PatternTree.SetItemPyData(Id,[Npix,imagefile])
-        G2frame.PickId = Id
-        G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)
-        G2frame.Image = Id
+        LoadImage(imagefile,G2frame,Comments,Data,Npix,Image)
+    
+def LoadImage(imagefile,G2frame,Comments,Data,Npix,Image):
+    '''Load an image into the tree
+    '''
+    
+    ImgNames = []
+    if G2frame.PatternTree.GetCount(): # get a list of existing Image entries
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        while item:
+            name = G2frame.PatternTree.GetItemText(item)
+            if name.startswith('IMG'): ImgNames.append(name)        
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+    TreeName = G2obj.MakeUniqueLabel('IMG '+os.path.basename(imagefile),ImgNames)
+    Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=TreeName)
+    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)
+    Imax = np.amax(Image)
+    Imin = max(0.0,np.amin(Image))          #force positive
+    if G2frame.imageDefault:
+        Data = copy.copy(G2frame.imageDefault)
+        Data['showLines'] = True
+        Data['ring'] = []
+        Data['rings'] = []
+        Data['cutoff'] = 10
+        Data['pixLimit'] = 20
+        Data['edgemin'] = 100000000
+        Data['calibdmin'] = 0.5
+        Data['calibskip'] = 0
+        Data['ellipses'] = []
+        Data['calibrant'] = ''
+        Data['GonioAngles'] = [0.,0.,0.]
+        Data['DetDepthRef'] = False
+    else:
+        Data['type'] = 'PWDR'
+        Data['color'] = 'Paired'
+        Data['tilt'] = 0.0
+        Data['rotation'] = 0.0
+        Data['showLines'] = False
+        Data['ring'] = []
+        Data['rings'] = []
+        Data['cutoff'] = 10
+        Data['pixLimit'] = 20
+        Data['calibdmin'] = 0.5
+        Data['calibskip'] = 0
+        Data['edgemin'] = 100000000
+        Data['ellipses'] = []
+        Data['GonioAngles'] = [0.,0.,0.]
+        Data['DetDepth'] = 0.
+        Data['DetDepthRef'] = False
+        Data['calibrant'] = ''
+        Data['IOtth'] = [2.0,5.0]
+        Data['LRazimuth'] = [135,225]
+        Data['azmthOff'] = 0.0
+        Data['outChannels'] = 2500
+        Data['outAzimuths'] = 1
+        Data['centerAzm'] = False
+        Data['fullIntegrate'] = False
+        Data['setRings'] = False
+        Data['background image'] = ['',-1.0]                            
+        Data['dark image'] = ['',-1.0]
+        Data['Flat Bkg'] = 0.0
+    Data['setDefault'] = False
+    Data['range'] = [(Imin,Imax),[Imin,Imax]]
+    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Image Controls'),Data)
+    Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
+    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Masks'),Masks)
+    G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Stress/Strain'),
+        {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'Sample load':0.0})
+    G2frame.PatternTree.SetItemPyData(Id,[Npix,imagefile])
+    G2frame.PickId = Id
+    G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)
+    G2frame.Image = Id
     
 def GetImageData(G2frame,imagefile,imageOnly=False):
     '''Read an image with the file reader keyed by the
@@ -1951,6 +1953,43 @@ class ImportSmallAngleData(ImportBaseclass):
         self.clockWd = None  # used in TOF
         self.numbanks = 1
         self.instdict = {} # place items here that will be transferred to the instrument parameters
+
+######################################################################
+class ImportImage(ImportBaseclass):
+    '''Defines a base class for the reading of images
+
+    Structure factors are read with a call to :meth:`GSASII.GSASII.OnImportImage`
+    which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`, which calls
+    methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
+    :meth:`Reader`.
+
+    See :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use import classes in general. The specifics 
+    for reading an image requires that the ``Reader()`` routine in the import
+    class need to do only a few things:...
+    
+    (should load :attr:`RefDict` item ``'RefList'`` with the reflection list,
+    (and set :attr:`Parameters` with the instrument parameters
+    (initialized with :meth:`InitParameters` and set with :meth:`UpdateParameters`).
+    '''
+    def __init__(self,formatName,longFormatName=None,extensionlist=[],
+        strictExtension=False,):
+        ImportBaseclass.__init__(self,formatName,longFormatName,
+            extensionlist,strictExtension)
+        self.InitParameters()
+        
+    def ReInitialize(self):
+        'Reinitialize the Reader to initial settings -- not used at present'
+        ImportBaseclass.ReInitialize(self)
+        self.InitParameters()
+        
+    def InitParameters(self):
+        'initialize the instrument parameters structure'
+        self.Comments = ['No comments']
+        self.Data = {}
+        self.Npix = 0
+        self.Image = None
+
 ######################################################################
 class ExportBaseclass(object):
     '''Defines a base class for the exporting of GSAS-II results.

@@ -753,12 +753,12 @@ def StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         else:
             if len(TwinLaw) > 1:
-                refl.T[9] = np.sum(fas[:,:,0],axis=0)**2+np.sum(fbs[:,:,0],axis=0)**2   #FcT from primary twin element
+                refl.T[9] = np.sum(fas[:,:,0]**2,axis=0)+np.sum(fbs[:,:,0]**2,axis=0)   #FcT from primary twin element
                 refl.T[7] = np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fas,axis=0)**2,axis=-1)+   \
                     np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
                 refl.T[10] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f"
             else:
-                refl.T[9] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
+                refl.T[9] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
                 refl.T[7] = np.copy(refl.T[9])                
                 refl.T[10] = atan2d(fbs[0],fas[0])  #ignore f' & f"
 #        refl.T[10] = atan2d(np.sum(fbs,axis=0),np.sum(fas,axis=0)) #include f' & f"
@@ -929,9 +929,9 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dFdvDict[pfx+'AU11:'+str(i)] = np.sum(dFdua.T[0][i]*TwinFr[:,np.newaxis],axis=0)
             dFdvDict[pfx+'AU22:'+str(i)] = np.sum(dFdua.T[1][i]*TwinFr[:,np.newaxis],axis=0)
             dFdvDict[pfx+'AU33:'+str(i)] = np.sum(dFdua.T[2][i]*TwinFr[:,np.newaxis],axis=0)
-            dFdvDict[pfx+'AU12:'+str(i)] = np.sum(0.5*dFdua.T[3][i]*TwinFr[:,np.newaxis],axis=0)
-            dFdvDict[pfx+'AU13:'+str(i)] = np.sum(0.5*dFdua.T[4][i]*TwinFr[:,np.newaxis],axis=0)
-            dFdvDict[pfx+'AU23:'+str(i)] = np.sum(0.5*dFdua.T[5][i]*TwinFr[:,np.newaxis],axis=0)
+            dFdvDict[pfx+'AU12:'+str(i)] = np.sum(dFdua.T[3][i]*TwinFr[:,np.newaxis],axis=0)
+            dFdvDict[pfx+'AU13:'+str(i)] = np.sum(dFdua.T[4][i]*TwinFr[:,np.newaxis],axis=0)
+            dFdvDict[pfx+'AU23:'+str(i)] = np.sum(dFdua.T[5][i]*TwinFr[:,np.newaxis],axis=0)
     else:
         for i in range(len(Mdata)):
             dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
@@ -942,9 +942,9 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
             dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
             dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-            dFdvDict[pfx+'AU12:'+str(i)] = 0.5*dFdua.T[3][i]
-            dFdvDict[pfx+'AU13:'+str(i)] = 0.5*dFdua.T[4][i]
-            dFdvDict[pfx+'AU23:'+str(i)] = 0.5*dFdua.T[5][i]
+            dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]
+            dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
+            dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         dFdvDict[phfx+'Flack'] = 4.*dFdfl.T
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
@@ -1074,12 +1074,12 @@ def SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         else:
             if len(TwinLaw) > 1:
-                refl.T[10] = np.sum(fas[:,:,0],axis=0)**2+np.sum(fbs[:,:,0],axis=0)**2   #FcT from primary twin element
+                refl.T[10] = np.sum(fas[:,:,0]**2,axis=0)+np.sum(fbs[:,:,0]**2,axis=0)   #FcT from primary twin element
                 refl.T[8] = np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fas,axis=0)**2,axis=-1)+   \
                     np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
                 refl.T[11] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f"
             else:
-                refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2
+                refl.T[10] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
                 refl.T[8] = np.copy(refl.T[10])                
                 refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         iBeg += blkSize
@@ -1279,9 +1279,9 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dFdvDict[pfx+'AU11:'+str(i)] = dFdua.T[0][i]
         dFdvDict[pfx+'AU22:'+str(i)] = dFdua.T[1][i]
         dFdvDict[pfx+'AU33:'+str(i)] = dFdua.T[2][i]
-        dFdvDict[pfx+'AU12:'+str(i)] = .5*dFdua.T[3][i]
-        dFdvDict[pfx+'AU13:'+str(i)] = .5*dFdua.T[4][i]
-        dFdvDict[pfx+'AU23:'+str(i)] = .5*dFdua.T[5][i]
+        dFdvDict[pfx+'AU12:'+str(i)] = dFdua.T[3][i]
+        dFdvDict[pfx+'AU13:'+str(i)] = dFdua.T[4][i]
+        dFdvDict[pfx+'AU23:'+str(i)] = dFdua.T[5][i]
         for j in range(XSSdata.shape[1]):
             dFdvDict[pfx+'Xsin:'+str(i)+':'+str(j)] = dFdGx.T[0][j][i]
             dFdvDict[pfx+'Ysin:'+str(i)+':'+str(j)] = dFdGx.T[1][j][i]

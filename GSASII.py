@@ -761,6 +761,7 @@ class GSASII(wx.Frame):
         rdlist = self.OnImportGeneric(reqrdr,
                                   self.ImportImageReaderlist,
                                   'image',multiple=True,Preview=False)
+        if not rdlist: return
         first = True
         for rd in rdlist:
             if first:

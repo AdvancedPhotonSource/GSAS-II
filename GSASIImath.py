@@ -978,12 +978,12 @@ def Modulation(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
         HbH = 1.0
     D = H[:,:,3][:,:,nxs]*glTau[nxs,nxs,:]              #m*tau;refBlk x ops X 32
     HdotX = np.inner(H[:,:,:3],np.swapaxes(Xmod,1,2))+D[:,:,nxs,:]     #refBlk X ops x atoms X 32
-    sinHA = np.sum(Fmod*HbH*np.sin(twopi*HdotX)*glWt,axis=-1)       #refBlk X ops x atoms; sum for G-L integration
-    cosHA = np.sum(Fmod*HbH*np.cos(twopi*HdotX)*glWt,axis=-1)       #ditto
+    cosHA = np.sum(Fmod*HbH*np.cos(twopi*HdotX)*glWt,axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
+    sinHA = np.sum(Fmod*HbH*np.sin(twopi*HdotX)*glWt,axis=-1)       #imag part; ditto
 #    GSASIIpath.IPyBreak()
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
     
-def ModulationDerv(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
+def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):
     '''
     H: array ops X hklt
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
@@ -1042,8 +1042,8 @@ def ModulationDerv(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
                 nS = np.where('Sawtooth' in waveTypes)
                 #XmodZ = 0   replace
         tauX = np.arange(1.,Ax.shape[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
-        StauX = np.ones_like(Ax)[:,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #also dXmod/dAx
-        CtauX = np.ones_like(Bx)[:,nx:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #also dXmod/dBx
+        StauX = np.ones_like(Ax)[:,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X pos X 32
+        CtauX = np.ones_like(Bx)[:,nx:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
         XmodA = Ax[:,nx:,:,nxs]*StauX #atoms X waves X pos X 32
         XmodB = Bx[:,nx:,:,nxs]*CtauX #ditto
         Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X pos X 32; sum waves
@@ -1066,19 +1066,22 @@ def ModulationDerv(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
             UmodB = Bu[:,:,:,:,nxs]*CtauU #ditto
             Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x 32; sum waves
             HbH = np.exp(-np.sum(H[:,nxs,nxs,:3]*np.inner(H[:,:3],Umod),axis=-1)) # ops x atoms x 32 add Overhauser corr.?
+            
         else:
             HbH = np.ones_like(HdotX)
-        HdotXA = H[:,nxs,nxs,nxs,:3]*np.swapaxes(XmodA,-1,-2)[nxs,:,:,:,:]  #ops x atoms x waves x 32 x xyz
-        HdotXB = H[:,nxs,nxs,nxs,:3]*np.swapaxes(XmodB,-1,-2)[nxs,:,:,:,:]
-        sinHA = np.sum(Fmod*HbH*np.sin(twopi*HdotX)*glWt,axis=-1)       #ops x atoms x waves x xyz; sum for G-L integration
-        cosHA = np.sum(Fmod*HbH*np.cos(twopi*HdotX)*glWt,axis=-1)       #ditto
-#    GSASIIpath.IPyBreak()
-#    dHdXA = H[:,nxs,nxs,nxs,:3]*np.swapaxes(StauX,-1,-2)[nxs,:,:,:,:]    #ops x atoms x waves x 32 x xyz
-#    dHdXB = H[:,nxs,nxs,nxs,:3]*np.swapaxes(CtauX,-1,-2)[nxs,:,:,:,:]              #ditto
-#    dGdAx = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(twopi*dHdXA*np.sin(twopi*HdotXA)+np.cos(twopi*HdotXA))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
-## ops x atoms x waves x xyz - imaginary part
-#    dGdBx = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(twopi*dHdXB*np.cos(twopi*HdotXB)-np.sin(twopi*HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
-## ops x atoms x waves x xyz - real part
+        HdotXA = H[:,nxs,nxs,nxs,:3]*np.swapaxes(XmodA,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]  #ops x atoms x waves x 32 x xyz
+        HdotXB = H[:,nxs,nxs,nxs,:3]*np.swapaxes(XmodB,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]
+        dHdXA = H[:,nxs,nxs,nxs,:3]*np.swapaxes(StauX,-1,-2)[nxs,:,:,:,:]    #ops x atoms x waves x 32 x xyz
+        dHdXB = H[:,nxs,nxs,nxs,:3]*np.swapaxes(CtauX,-1,-2)[nxs,:,:,:,:]              #ditto
+        dGdMxCa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(-twopi*dHdXA*np.sin(twopi*HdotXA))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
+        dGdMxCb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(-twopi*dHdXB*np.sin(twopi*HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
+        dGdMxC = np.concatenate((dGdMxCa,dGdMxCb),axis=-1)
+# ops x atoms x waves x xyz - real part
+        dGdMxSa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(twopi*dHdXA*np.cos(twopi*HdotXA))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
+        dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(twopi*dHdXB*np.cos(twopi*HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
+        dGdMxS = np.concatenate((dGdMxSa,dGdMxSb),axis=-1)
+# ops x atoms x waves x xyz - imaginary part
+    GSASIIpath.IPyBreak()
     return np.array([cosHA,sinHA]),[dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS]
     
 def posFourier(tau,psin,pcos,smul):

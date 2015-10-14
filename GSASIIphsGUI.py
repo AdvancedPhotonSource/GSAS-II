@@ -3241,7 +3241,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     def DrawAtomsDeleteByIDs(IDs):
         atomData = data['Drawing']['Atoms']
-        loc = data['Drawing']['atomPtrs'][3]+8
+        cx,ct,cs,ci = data['General']['AtomPtrs']
+        loc = ci+8
         indx = G2mth.FindAtomIndexByIDs(atomData,loc,IDs)
         indx.reverse()
         for ind in indx:

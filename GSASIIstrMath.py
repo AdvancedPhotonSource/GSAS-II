@@ -915,7 +915,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
             2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
 #        GSASIIpath.IPyBreak()
-    print ' derivative time %.4f\r'%(time.time()-time0)
+        if not iref%100 :
+            print ' %d derivative time %.4f\r'%(iref,time.time()-time0),
         #loop over atoms - each dict entry is list of derivatives for all the reflections
     if nTwin > 1:
         for i in range(len(Mdata)):     #these all OK?
@@ -1273,6 +1274,8 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
             2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         #loop over atoms - each dict entry is list of derivatives for all the reflections
+        if not iref%100 :
+            print ' %d derivative time %.4f\r'%(iref,time.time()-time0),
     for i in range(len(Mdata)):     #loop over atoms  
         dFdvDict[pfx+'Afrac:'+str(i)] = dFdfr.T[i]
         dFdvDict[pfx+'dAx:'+str(i)] = dFdx.T[0][i]

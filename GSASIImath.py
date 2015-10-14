@@ -1007,7 +1007,7 @@ def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):
     if numeric:        #numeric derivatives - slow!! works for pos waves
         deltx = 0.00001
         deltf = 0.0001
-        deltu = 0.000001
+        deltu = 0.00001
         for i in range(Mx[1]):  #atoms
             for j in range(Mx[2]):  #waves
                 for k in range(Mx[3]):  #coeff
@@ -1018,6 +1018,16 @@ def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):
                     XSSdata[k,j,i] += deltx
                     dGdMxC[:,:,j,k] += (Cap-Cam)/(2*deltx) 
                     dGdMxS[:,:,j,k] += (Sap-Sam)/(2*deltx) 
+        Ca0,Sa0 = np.squeeze(Modulation(waveTypes,np.array([H,]),FSSdata,XSSdata,USSdata,Mast))
+        for i in range(Mu[1]):  #atoms
+            for j in range(Mu[2]):  #waves
+                for k in range(Mu[3]):  #coeff
+                    USSdata[k,j,i] += deltu
+                    Cap,Sap = np.squeeze(Modulation(waveTypes,np.array([H,]),FSSdata,XSSdata,USSdata,Mast))
+                    USSdata[k,j,i] -= deltu
+                    dGdMuC[:,:,j,k] += (Cap-Ca0)/deltu 
+                    dGdMuS[:,:,j,k] += (Sap-Sa0)/deltu 
+#        GSASIIpath.IPyBreak()
     else:   #analytic derivatives                 
         glTau,glWt = pwd.pygauleg(0.,1.,32)         #get Gauss-Legendre intervals & weights
         Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
@@ -1081,7 +1091,6 @@ def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):
         dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(twopi*dHdXB*np.cos(twopi*HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
         dGdMxS = np.concatenate((dGdMxSa,dGdMxSb),axis=-1)
 # ops x atoms x waves x xyz - imaginary part
-    GSASIIpath.IPyBreak()
     return np.array([cosHA,sinHA]),[dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS]
     
 def posFourier(tau,psin,pcos,smul):

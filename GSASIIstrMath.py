@@ -1065,12 +1065,12 @@ def SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
         else:
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
             fb = np.array([Flack*FPP*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
-        GfpuA = G2mth.Modulation(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast) #2 x refBlk x sym X atoms
-        fag = fa*GfpuA[0]-fb*GfpuA[1]
+        GfpuA = G2mth.Modulation(waveTypes,Uniq,Phi,FSSdata,XSSdata,USSdata,Mast) #2 x refBlk x sym X atoms
+        fag = fa*GfpuA[0]-fb*GfpuA[1]   #real; 2 x refBlk x sym x atoms
         fbg = fb*GfpuA[0]+fa*GfpuA[1]
-        fas = np.sum(np.sum(fag,axis=-1),axis=-1)
+        fas = np.sum(np.sum(fag,axis=-1),axis=-1)   #2 x refBlk; sum sym & atoms
         fbs = np.sum(np.sum(fbg,axis=-1),axis=-1)
-#        GSASIIpath.IPyBreak()
+   #     GSASIIpath.IPyBreak()
         if 'P' in calcControls[hfx+'histType']:
             refl.T[10] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
             refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
@@ -1081,7 +1081,7 @@ def SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
                     np.sum(TwinFr*np.sum(TwMask[np.newaxis,:,:]*fbs,axis=0)**2,axis=-1)                        #Fc sum over twins
                 refl.T[11] = atan2d(fbs[0].T[0],fas[0].T[0])  #ignore f' & f"
             else:
-                refl.T[10] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
+                refl.T[10] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)    #sum of squares
                 refl.T[8] = np.copy(refl.T[10])                
                 refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         iBeg += blkSize
@@ -1196,7 +1196,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[0]  #ops x atoms
         fot = (FF+FP-Bab)*Tcorr     #ops x atoms
         fotp = FPP*Tcorr            #ops x atoms
-        GfpuA,dGdf,dGdx,dGdu = G2mth.ModulationDerv(waveTypes,Uniq,Hij,FSSdata,XSSdata,USSdata,Mast)
+        GfpuA,dGdf,dGdx,dGdu = G2mth.ModulationDerv(waveTypes,Uniq,Phi,Hij,FSSdata,XSSdata,USSdata,Mast)
         # derivs are: ops x atoms x waves x 1,3,or 6 parms as [real,imag] parts
         fa = np.array([((FF+FP).T-Bab).T*cosp*Tcorr,-Flack*FPP*sinp*Tcorr]) # array(2,nTwin,nEqv,nAtoms)
         fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,Flack*FPP*cosp*Tcorr])

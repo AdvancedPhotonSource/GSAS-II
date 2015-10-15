@@ -925,7 +925,7 @@ def XAnomAbs(Elements,wave):
 #### Modulation math
 ################################################################################
     
-def Modulation(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
+def Modulation(waveTypes,H,Phi,FSSdata,XSSdata,USSdata,Mast):
     '''
     H: array nRefBlk x ops X hklt
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
@@ -940,8 +940,8 @@ def Modulation(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
     Bx = np.array(XSSdata[3:]).T   #...cos pos mods
     Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
     Bf = np.array(FSSdata[1]).T    #cos frac mods...
-    Au = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
-    Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
+    Au = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods as betaij
+    Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods as betaij
     
     if 'Fourier' in waveTypes:
         nf = 0
@@ -965,9 +965,11 @@ def Modulation(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
     else:
         Fmod = 1.0           
     tauX = np.arange(1.,Ax.shape[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
-    XmodA = Ax[:,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X pos X 32
+    XmodA = Ax[:,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X 3 X 32
     XmodB = Bx[:,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
-    Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X pos X 32; sum waves
+    Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X 3 X 32; sum waves
+    Tau = np.reshape(np.tile(glTau,Xmod.shape[0]),(Xmod.shape[0],-1))   #atoms x 32
+    XmodT = np.swapaxes(np.concatenate((Xmod,Tau[:,nxs,:]),axis=1),1,2)      # atoms x 32 x 4 (x,y,z,t)
     if Au.shape[1]:
         tauU = np.arange(1.,Au.shape[1]+1)[:,nxs]*glTau     #Uwaves x 32
         UmodA = Au[:,:,:,:,nxs]*np.sin(twopi*tauU[nxs,:,nxs,nxs,:]) #atoms x waves x 3x3 x 32
@@ -976,14 +978,13 @@ def Modulation(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
         HbH = np.exp(-np.sum(H[:,:,nxs,nxs,:3]*np.inner(H[:,:,:3],Umod),axis=-1)) # refBlk x ops x atoms x 32 add Overhauser corr.?
     else:
         HbH = 1.0
-    D = H[:,:,3][:,:,nxs]*glTau[nxs,nxs,:]              #m*tau;refBlk x ops X 32
-    HdotX = np.inner(H[:,:,:3],np.swapaxes(Xmod,1,2))+D[:,:,nxs,:]     #refBlk X ops x atoms X 32
+    HdotX = np.inner(H,XmodT)     #refBlk X ops x atoms X 32
     cosHA = np.sum(Fmod*HbH*np.cos(twopi*HdotX)*glWt,axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
     sinHA = np.sum(Fmod*HbH*np.sin(twopi*HdotX)*glWt,axis=-1)       #imag part; ditto
 #    GSASIIpath.IPyBreak()
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
     
-def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):
+def ModulationDerv(waveTypes,H,Phi,Hij,FSSdata,XSSdata,USSdata,Mast):
     '''
     H: array ops X hklt
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
@@ -994,7 +995,7 @@ def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):
    
     nxs = np.newaxis
     numeric = False   
-    cosHA,sinHA = Modulation(waveTypes,np.array([H,]),FSSdata,XSSdata,USSdata,Mast)
+    cosHA,sinHA = Modulation(waveTypes,np.array([H,]),np.array([Phi,]),FSSdata,XSSdata,USSdata,Mast)
     Mf = [H.shape[0],]+list(FSSdata.T.shape)    #ops x atoms x waves x 2 (sin+cos frac mods)
     dGdMfC = np.zeros(Mf)
     dGdMfS = np.zeros(Mf)

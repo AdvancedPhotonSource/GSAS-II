@@ -473,14 +473,12 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
     if Image is None:
         raise Exception('No image read')
     if imageOnly:
-        print 'transpose:',TRANSP
         if TRANSP:
             print 'Transposing Image!'
             return Image.T
         else:
             return Image
     else:
-        print 'transpose:',TRANSP
         if TRANSP:
             print 'Transposing Image!'
             return Comments,Data,Npix,Image.T

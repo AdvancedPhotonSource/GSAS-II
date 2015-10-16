@@ -925,7 +925,7 @@ def XAnomAbs(Elements,wave):
 #### Modulation math
 ################################################################################
     
-def Modulation(waveTypes,H,Phi,FSSdata,XSSdata,USSdata,Mast):
+def Modulation(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
     '''
     H: array nRefBlk x ops X hklt
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
@@ -984,7 +984,7 @@ def Modulation(waveTypes,H,Phi,FSSdata,XSSdata,USSdata,Mast):
 #    GSASIIpath.IPyBreak()
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
     
-def ModulationDerv(waveTypes,H,Phi,Hij,FSSdata,XSSdata,USSdata,Mast):
+def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):
     '''
     H: array ops X hklt
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
@@ -995,7 +995,7 @@ def ModulationDerv(waveTypes,H,Phi,Hij,FSSdata,XSSdata,USSdata,Mast):
    
     nxs = np.newaxis
     numeric = True   
-    cosHA,sinHA = Modulation(waveTypes,np.array([H,]),np.array([Phi,]),FSSdata,XSSdata,USSdata,Mast)
+    cosHA,sinHA = Modulation(waveTypes,np.array([H,]),FSSdata,XSSdata,USSdata,Mast)
     Mf = [H.shape[0],]+list(FSSdata.T.shape)    #ops x atoms x waves x 2 (sin+cos frac mods)
     dGdMfC = np.zeros(Mf)
     dGdMfS = np.zeros(Mf)

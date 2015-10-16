@@ -403,6 +403,7 @@ def ReadImageData(G2frame,imagefile,imageOnly=False):
             if rd.Image is None:
                 raise Exception('No image read. Strange!')
             if GSASIIpath.GetConfigValue('Transpose'):
+                print 'Transposing Image!'
                 rd.Image = rd.Image.T
             #rd.readfilename = imagefile
             if imageOnly:
@@ -474,12 +475,14 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
     if imageOnly:
         print 'transpose:',TRANSP
         if TRANSP:
+            print 'Transposing Image!'
             return Image.T
         else:
             return Image
     else:
         print 'transpose:',TRANSP
         if TRANSP:
+            print 'Transposing Image!'
             return Comments,Data,Npix,Image.T
         else:
             return Comments,Data,Npix,Image

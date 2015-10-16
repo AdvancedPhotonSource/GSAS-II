@@ -872,6 +872,7 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
                     HKLM = np.array([h,k,l,dH])
                     if G2spc.checkSSextc(HKLM,SSGData):
                         HKLs.append([h,k,l,dH,d,G2lat.Dsp2pos(Inst,d),-1])    
+#    GSASIIpath.IPyBreak()
     return G2lat.sortHKLd(HKLs,True,True,True)
 
 def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):

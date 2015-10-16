@@ -519,7 +519,8 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     Plot.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=12)
     Plot.set_ylabel(ylabel[izone],fontsize=12)
     if sumFo and sumDF:
-        G2frame.G2plotNB.status.SetStatusText('layer R = %6.2f%s'%(100.*sumDF/sumFo,'%'),1)
+        G2frame.G2plotNB.status.SetStatusText(xlabel[izone].split(',')[1]+str(Data['Layer'])+   \
+            ' layer R = %6.2f%s'%(100.*sumDF/sumFo,'%'),1)
     else:
         G2frame.G2plotNB.status.SetStatusText('Use K-box to set plot controls',1)
     if not newPlot:

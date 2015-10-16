@@ -2361,7 +2361,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomSizer.Add(waveType,0,WACV)
             axchoice = ['x','y','z']
             if len(D4Map['rho']):
-                atomSizer.Add(wx.StaticText(waveData,label=' Show contour map for axis:'),0,WACV)
+                atomSizer.Add(wx.StaticText(waveData,label=' Show contour map for axis: '),0,WACV)
                 mapSel = wx.ComboBox(waveData,value=' ',choices=axchoice,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 mapSel.Bind(wx.EVT_COMBOBOX,OnShowWave)
@@ -2466,44 +2466,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     waveSizer.Add(Waves)                    
             return waveSizer
             
-        def MapSizer():
-
-            def OnRefList(event):
-                dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select reflection sets to use',
-                    'Use data',refsList)
-                try:
-                    if dlg.ShowModal() == wx.ID_OK:
-                        Map['RefList'] = [refsList[i] for i in dlg.GetSelections()]
-                    else:
-                        return
-                finally:
-                    dlg.Destroy()
-                UpdateWavesData()
-                
-            def OnMapType(event):
-                Map['MapType'] = mapType.GetValue()
-                
-            Map['Resolution'] = 0.5
-            refsList = data['Histograms'].keys()
-            mapSizer = wx.BoxSizer(wx.HORIZONTAL)
-            
-            mapSizer.Add(wx.StaticText(waveData,label=' 4D map data: Reflection set from: '),0,WACV)
-            if 'list' not in str(type(Map['RefList'])):     #patch
-                Map['RefList'] = [Map['RefList'],]
-            mapSizer.Add(wx.ComboBox(waveData,value=Map['RefList'][0],choices=Map['RefList'],
-                style=wx.CB_DROPDOWN|wx.CB_READONLY),0,WACV)
-            refList = wx.Button(waveData,label='Select reflection sets')
-            refList.Bind(wx.EVT_BUTTON,OnRefList)
-            mapSizer.Add(refList,0,WACV)
-            
-            mapTypes = ['Fobs','Fcalc','delt-F']
-            mapSizer.Add(wx.StaticText(waveData,label=' Map type: '),0,WACV)
-            mapType = wx.ComboBox(waveData,-1,value=Map['MapType'],choices=mapTypes,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            mapType.Bind(wx.EVT_COMBOBOX,OnMapType)
-            mapSizer.Add(mapType,0,WACV)
-            return mapSizer
-            
         Indx = {}
         waveData = G2frame.waveData
         G2frame.dataFrame.SetStatusText('')
@@ -2528,7 +2490,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
         mainSizer.Add(wx.StaticText(waveData,label=' Incommensurate propagation wave data:'),0,WACV)
         if generalData['Type'] in ['modulated','magnetic']:
-            mainSizer.Add(MapSizer(),0,WACV)            
             for iatm,atom in enumerate(atomData):
                 xyz = atom[cx:cx+3]
                 uij = atom[cia+2:cia+8]
@@ -6405,7 +6366,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         # Wave Data
         if data['General']['Type'] in ['modulated','magnetic']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.WavesData)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, On4DMapCompute, id=G2gd.wxID_4DMAPCOMPUTE)
         # Draw Options
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataDrawOptions)
         # Draw Atoms

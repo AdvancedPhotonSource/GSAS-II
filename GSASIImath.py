@@ -994,7 +994,7 @@ def ModulationDerv(waveTypes,H,Phi,Hij,FSSdata,XSSdata,USSdata,Mast):
     '''
    
     nxs = np.newaxis
-    numeric = False   
+    numeric = True   
     cosHA,sinHA = Modulation(waveTypes,np.array([H,]),np.array([Phi,]),FSSdata,XSSdata,USSdata,Mast)
     Mf = [H.shape[0],]+list(FSSdata.T.shape)    #ops x atoms x waves x 2 (sin+cos frac mods)
     dGdMfC = np.zeros(Mf)
@@ -1005,92 +1005,70 @@ def ModulationDerv(waveTypes,H,Phi,Hij,FSSdata,XSSdata,USSdata,Mast):
     Mu = [H.shape[0],]+list(USSdata.T.shape)    #ops x atoms x waves x 12 (sin+cos Uij mods)
     dGdMuC = np.zeros(Mu)
     dGdMuS = np.zeros(Mu)
-    if numeric:        #numeric derivatives - slow!! works for pos waves
-        deltx = 0.00001
-        deltf = 0.0001
-        deltu = 0.00001
-        for i in range(Mx[1]):  #atoms
-            for j in range(Mx[2]):  #waves
-                for k in range(Mx[3]):  #coeff
-                    XSSdata[k,j,i] += deltx
-                    Cap,Sap = np.squeeze(Modulation(waveTypes,np.array([H,]),FSSdata,XSSdata,USSdata,Mast))
-                    XSSdata[k,j,i] -= 2*deltx
-                    Cam,Sam = np.squeeze(Modulation(waveTypes,np.array([H,]),FSSdata,XSSdata,USSdata,Mast))
-                    XSSdata[k,j,i] += deltx
-                    dGdMxC[:,:,j,k] += (Cap-Cam)/(2*deltx) 
-                    dGdMxS[:,:,j,k] += (Sap-Sam)/(2*deltx) 
-        Ca0,Sa0 = np.squeeze(Modulation(waveTypes,np.array([H,]),FSSdata,XSSdata,USSdata,Mast))
-        for i in range(Mu[1]):  #atoms
-            for j in range(Mu[2]):  #waves
-                for k in range(Mu[3]):  #coeff
-                    USSdata[k,j,i] += deltu
-                    Cap,Sap = np.squeeze(Modulation(waveTypes,np.array([H,]),FSSdata,XSSdata,USSdata,Mast))
-                    USSdata[k,j,i] -= deltu
-                    dGdMuC[:,:,j,k] += (Cap-Ca0)/deltu 
-                    dGdMuS[:,:,j,k] += (Sap-Sa0)/deltu 
-#        GSASIIpath.IPyBreak()
-    else:   #analytic derivatives                 
-        glTau,glWt = pwd.pygauleg(0.,1.,32)         #get Gauss-Legendre intervals & weights
-        Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
-        Bf = np.array(FSSdata[1]).T    #cos frac mods...
-        Ax = np.array(XSSdata[:3]).T   #...cos pos mods
-        Bx = np.array(XSSdata[3:]).T   #...cos pos mods
-        Au = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
-        Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
+    glTau,glWt = pwd.pygauleg(0.,1.,32)         #get Gauss-Legendre intervals & weights
+    Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
+    Bf = np.array(FSSdata[1]).T    #cos frac mods...
+    Ax = np.array(XSSdata[:3]).T   #...cos pos mods
+    Bx = np.array(XSSdata[3:]).T   #...cos pos mods
+    Au = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
+    Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
+    
+    if 'Fourier' in waveTypes:
+        nf = 0
+        nx = 0
+        XmodZ = np.zeros((Ax.shape[0],Ax.shape[1],3,32))
+        FmodZ = np.zeros((Af.shape[0],Af.shape[1],32))
+        if 'Crenel' in waveTypes:
+            nC = np.where('Crenel' in waveTypes)
+            nf = 1
+            #FmodZ = 0   replace
+    else:
+        nx = 1
+        if 'Sawtooth' in waveTypes:
+            nS = np.where('Sawtooth' in waveTypes)
+            #XmodZ = 0   replace
+    tauX = np.arange(1.,Ax.shape[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
+    StauX = np.ones_like(Ax)[:,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X pos X 32
+    CtauX = np.ones_like(Bx)[:,nx:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
+    XmodA = Ax[:,nx:,:,nxs]*StauX #atoms X waves X pos X 32
+    XmodB = Bx[:,nx:,:,nxs]*CtauX #ditto
+    Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X pos X 32; sum waves
+    Tau = np.reshape(np.tile(glTau,Xmod.shape[0]),(Xmod.shape[0],-1))   #atoms x 32
+    XmodT = np.swapaxes(np.concatenate((Xmod,Tau[:,nxs,:]),axis=1),1,2)      # atoms x 32 x 4 (x,y,z,t)
+    D = H[:,3][:,nxs]*glTau[nxs,:]              #m*tau; ops X 32
+#    HdotX = np.inner(H[:,:3],np.swapaxes(Xmod,1,2))+D[:,nxs,:]     #ops x atoms X 32
+    HdotX = np.inner(H,XmodT)     #refBlk X ops x atoms X 32
+    if Af.shape[1]:
+        tauF = np.arange(1.,Af.shape[1]+1-nf)[:,nxs]*glTau  #Fwaves x 32
+        StauF = np.ones_like(Af)[:,nf:,nxs]*np.sin(twopi*tauF)[nxs,:,:] #also dFmod/dAf
+        CtauF = np.ones_like(Bf)[:,nf:,nxs]*np.cos(twopi*tauF)[nxs,:,:] #also dFmod/dBf
+        FmodA = Af[:,nf:,nxs]*StauF   #atoms X Fwaves X 32
+        FmodB = Bf[:,nf:,nxs]*CtauF
+        Fmod = np.sum(FmodA+FmodB+FmodC,axis=1)             #atoms X 32; sum waves
+    else:
+        Fmod = np.ones_like(HdotX)           
+    if Au.shape[1]:
+        tauU = np.arange(1.,Au.shape[1]+1)[:,nxs]*glTau     #Uwaves x 32
+        StauU = np.ones_like(Au)[:,:,:,:,nxs]*np.sin(twopi*tauU)[nxs,:,nxs,nxs,:]   #also dUmod/dAu
+        CtauU = np.ones_like(Bu)[:,:,:,:,nxs]*np.cos(twopi*tauU)[nxs,:,nxs,nxs,:]   #also dUmod/dBu
+        UmodA = Au[:,:,:,:,nxs]*StauU #atoms x waves x 3x3 x 32
+        UmodB = Bu[:,:,:,:,nxs]*CtauU #ditto
+        Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x 32; sum waves
+        HbH = np.exp(-np.sum(H[:,nxs,nxs,:3]*np.inner(H[:,:3],Umod),axis=-1)) # ops x atoms x 32 add Overhauser corr.?
         
-        if 'Fourier' in waveTypes:
-            nf = 0
-            nx = 0
-            XmodZ = np.zeros((Ax.shape[0],Ax.shape[1],3,32))
-            FmodZ = np.zeros((Af.shape[0],Af.shape[1],32))
-            if 'Crenel' in waveTypes:
-                nC = np.where('Crenel' in waveTypes)
-                nf = 1
-                #FmodZ = 0   replace
-        else:
-            nx = 1
-            if 'Sawtooth' in waveTypes:
-                nS = np.where('Sawtooth' in waveTypes)
-                #XmodZ = 0   replace
-        tauX = np.arange(1.,Ax.shape[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
-        StauX = np.ones_like(Ax)[:,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X pos X 32
-        CtauX = np.ones_like(Bx)[:,nx:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
-        XmodA = Ax[:,nx:,:,nxs]*StauX #atoms X waves X pos X 32
-        XmodB = Bx[:,nx:,:,nxs]*CtauX #ditto
-        Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X pos X 32; sum waves
-        D = H[:,3][:,nxs]*glTau[nxs,:]              #m*tau; ops X 32
-        HdotX = np.inner(H[:,:3],np.swapaxes(Xmod,1,2))+D[:,nxs,:]     #ops x atoms X 32
-        if Af.shape[1]:
-            tauF = np.arange(1.,Af.shape[1]+1-nf)[:,nxs]*glTau  #Fwaves x 32
-            StauF = np.ones_like(Af)[:,nf:,nxs]*np.sin(twopi*tauF)[nxs,:,:] #also dFmod/dAf
-            CtauF = np.ones_like(Bf)[:,nf:,nxs]*np.cos(twopi*tauF)[nxs,:,:] #also dFmod/dBf
-            FmodA = Af[:,nf:,nxs]*StauF   #atoms X Fwaves X 32
-            FmodB = Bf[:,nf:,nxs]*CtauF
-            Fmod = np.sum(FmodA+FmodB+FmodC,axis=1)             #atoms X 32; sum waves
-        else:
-            Fmod = np.ones_like(HdotX)           
-        if Au.shape[1]:
-            tauU = np.arange(1.,Au.shape[1]+1)[:,nxs]*glTau     #Uwaves x 32
-            StauU = np.ones_like(Au)[:,:,:,:,nxs]*np.sin(twopi*tauU)[nxs,:,nxs,nxs,:]   #also dUmod/dAu
-            CtauU = np.ones_like(Bu)[:,:,:,:,nxs]*np.cos(twopi*tauU)[nxs,:,nxs,nxs,:]   #also dUmod/dBu
-            UmodA = Au[:,:,:,:,nxs]*StauU #atoms x waves x 3x3 x 32
-            UmodB = Bu[:,:,:,:,nxs]*CtauU #ditto
-            Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x 32; sum waves
-            HbH = np.exp(-np.sum(H[:,nxs,nxs,:3]*np.inner(H[:,:3],Umod),axis=-1)) # ops x atoms x 32 add Overhauser corr.?
-            
-        else:
-            HbH = np.ones_like(HdotX)
-        HdotXA = H[:,nxs,nxs,nxs,:3]*np.swapaxes(XmodA,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]  #ops x atoms x waves x 32 x xyz
-        HdotXB = H[:,nxs,nxs,nxs,:3]*np.swapaxes(XmodB,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]
-        dHdXA = H[:,nxs,nxs,nxs,:3]*np.swapaxes(StauX,-1,-2)[nxs,:,:,:,:]    #ops x atoms x waves x 32 x xyz
-        dHdXB = H[:,nxs,nxs,nxs,:3]*np.swapaxes(CtauX,-1,-2)[nxs,:,:,:,:]              #ditto
-        dGdMxCa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(-twopi*dHdXA*np.sin(twopi*HdotXA))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
-        dGdMxCb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(-twopi*dHdXB*np.sin(twopi*HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
-        dGdMxC = np.concatenate((dGdMxCa,dGdMxCb),axis=-1)
+    else:
+        HbH = np.ones_like(HdotX)
+    HdotXA = H[:,nxs,nxs,nxs,:3]*np.swapaxes(XmodA,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]  #ops x atoms x waves x 32 x xyz
+    HdotXB = H[:,nxs,nxs,nxs,:3]*np.swapaxes(XmodB,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]
+    dHdXA = H[:,nxs,nxs,nxs,:3]*np.swapaxes(StauX,-1,-2)[nxs,:,:,:,:]    #ops x atoms x waves x 32 x xyz
+    dHdXB = H[:,nxs,nxs,nxs,:3]*np.swapaxes(CtauX,-1,-2)[nxs,:,:,:,:]              #ditto
+    dGdMxCa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(-twopi*dHdXA*np.sin(twopi*HdotXA))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
+    dGdMxCb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(-twopi*dHdXB*np.sin(twopi*HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
+    dGdMxC = np.concatenate((dGdMxCa,dGdMxCb),axis=-1)
 # ops x atoms x waves x xyz - real part
-        dGdMxSa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(twopi*dHdXA*np.cos(twopi*HdotXA))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
-        dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(twopi*dHdXB*np.cos(twopi*HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
-        dGdMxS = np.concatenate((dGdMxSa,dGdMxSb),axis=-1)
+    dGdMxSa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(twopi*dHdXA*np.cos(twopi*HdotXA))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
+    dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(twopi*dHdXB*np.cos(twopi*HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
+    dGdMxS = np.concatenate((dGdMxSa,dGdMxSb),axis=-1)
 # ops x atoms x waves x xyz - imaginary part
     return np.array([cosHA,sinHA]),[dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS]
     

@@ -371,7 +371,6 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 HKLtxt = '(%3d,%3d,%3d)'%(xpos,ypos,zpos)
             Page.canvas.SetToolTipString(HKLtxt)
             G2frame.G2plotNB.status.SetStatusText('HKL = '+HKLtxt,0)
-            G2frame.G2plotNB.status.SetStatusText('Use K-box to set plot controls',1)
                 
     def OnSCPress(event):
         zpos = Data['Layer']
@@ -420,8 +419,6 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         if 'HKLF' in Name:
             Page.Choice += ('w: select |DFsq|/sig','1: select |DFsq|>sig','3: select |DFsq|>3sig',)
     Page.SetFocus()
-    
-    G2frame.G2plotNB.status.SetStatusText('Use K-box to set plot controls',1)
     Plot.set_aspect(aspect='equal')
     
     Type = Data['Type']            
@@ -443,6 +440,9 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     HKL = []
     HKLF = []
     time0 = time.time()
+    sumFo = 0.
+    sumDF = 0.
+#    GSASIIpath.IPyBreak()
     for refl in HKLref:
         H = refl[:3]
         if 'HKLF' in Name:
@@ -459,12 +459,16 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             B = 0
             if Type == 'Fosq':
                 A = scale*Fosq/FosqMax
+                sumFo += A
                 B = scale*Fcsq/FosqMax
                 C = abs(A-B)
+                sumDF += C
             elif Type == 'Fo':
                 A = scale*math.sqrt(max(0,Fosq))/FoMax
+                sumFo += A
                 B = scale*math.sqrt(max(0,Fcsq))/FoMax
                 C = abs(A-B)
+                sumDF += C
             elif Type == 'Unit Fc':
                 A = scale/2
                 B = scale/2
@@ -514,6 +518,10 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
     HKLF = np.array(HKLF)
     Plot.set_xlabel(xlabel[izone]+str(Data['Layer']),fontsize=12)
     Plot.set_ylabel(ylabel[izone],fontsize=12)
+    if sumFo and sumDF:
+        G2frame.G2plotNB.status.SetStatusText('layer R = %6.2f%s'%(100.*sumDF/sumFo,'%'),1)
+    else:
+        G2frame.G2plotNB.status.SetStatusText('Use K-box to set plot controls',1)
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
@@ -534,7 +542,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     '''3D Structure factor plotting package - displays reflections as rings proportional
         to F, F**2, etc. as requested as 3D array
     '''
-
+    super2 = unichr(0xb2)
     global ifBox
     ifBox = False
     def OnKeyBox(event):
@@ -669,7 +677,12 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
         [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
     uColors = [Rd,Gr,Bl, Wt,Wt,Wt, Wt,Wt,Wt, Wt,Wt,Wt]
+    
     def FillHKLRC():
+        sumFo2 = 0.
+        sumDF2 = 0.
+        sumFo = 0.
+        sumDF = 0.
         R = np.zeros(len(hklRef))
         C = []
         HKL = []
@@ -682,6 +695,11 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                     Fosq,sig,Fcsq = [0,1,0]
             else:
                 Fosq,sig,Fcsq = refl[8+Super],1.0,refl[9+Super]
+            sumFo2 += Fosq
+            sumDF2 += abs(Fosq-Fcsq)
+            if Fosq > 0.:
+                sumFo += np.sqrt(Fosq)
+                sumDF += abs(np.sqrt(Fosq)-np.sqrt(Fcsq))
             if Super:
                 HKL.append(H+SuperVec*refl[3])
             else:
@@ -726,8 +744,13 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             R = np.where(R<=1.,R,1.)
             C = np.array(C)
             C = (C.T*R).T
-            R = np.ones_like(R)*0.05     
-        return HKL,zip(list(R),C)
+            R = np.ones_like(R)*0.05
+        RF = 100.
+        RF2 = 100.
+        if sumFo and sumDF:
+            RF = 100.*sumDF/sumFo
+            RF2 = 100.*sumDF2/sumFo2  
+        return HKL,zip(list(R),C),RF,RF2
 
     def GetTruePosition(xy):
         View = glGetIntegerv(GL_VIEWPORT)
@@ -909,7 +932,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
 #        if caller:
 #            print caller
 # end of useful debug
-        G2frame.G2plotNB.status.SetStatusText('Plot type = %s for %s'%(Data['Type'],Name),1)
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])
         cPos = drawingData['cameraPos']
@@ -924,7 +946,9 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         GS[0][2] = GS[2][0] = math.sqrt(GS[0][0]*GS[2][2])
         GS[1][2] = GS[2][1] = math.sqrt(GS[1][1]*GS[2][2])
         
-        HKL,RC = FillHKLRC()
+        HKL,RC,RF,RF2 = FillHKLRC()
+        G2frame.G2plotNB.status.SetStatusText   \
+            ('Plot type = %s for %s; RF = %6.2f%%, RF%s = %6.2f%%'%(Data['Type'],Name,RF,super2,RF2),1)
         
         SetBackground()
         glInitNames()

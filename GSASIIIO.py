@@ -406,7 +406,7 @@ def ReadImageData(G2frame,imagefile,imageOnly=False):
                 rd.Image = rd.Image.T
             #rd.readfilename = imagefile
             if imageOnly:
-                return rd.Image.T
+                return rd.Image
             else:
                 return rd.Comments,rd.Data,rd.Npix,rd.Image
     else:
@@ -472,11 +472,13 @@ def GetImageData(G2frame,imagefile,imageOnly=False):
     if Image is None:
         raise Exception('No image read')
     if imageOnly:
+        print 'transpose:',TRANSP
         if TRANSP:
             return Image.T
         else:
             return Image
     else:
+        print 'transpose:',TRANSP
         if TRANSP:
             return Comments,Data,Npix,Image.T
         else:

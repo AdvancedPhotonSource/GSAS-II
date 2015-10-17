@@ -41,5 +41,6 @@ class G2_ReaderClass(G2IO.ImportImage):
         Fp = open(filename,'rb')
         self.Comments,self.Data,self.Npix,self.image = cPickle.load(Fp)
         Fp.close()
+        self.LoadImage(ParentFrame,filename)
         return True
 # N.B. This replaces G2IO.GetG2Image

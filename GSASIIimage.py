@@ -500,7 +500,7 @@ def MakeFrameMask(data,frame):
                 tam[iBeg:iFin,jBeg:jFin] = True
     return tam.T
     
-def ImageRecalibrate(self,data,masks):
+def ImageRecalibrate(G2frame,data,masks):
     'Needs a doc string'
     import ImageCalibrants as calFile
     print 'Image recalibration:'
@@ -535,7 +535,7 @@ def ImageRecalibrate(self,data,masks):
     Found = False
     wave = data['wavelength']
     frame = masks['Frames']
-    tam = ma.make_mask_none(self.ImageZ.shape)
+    tam = ma.make_mask_none(G2frame.ImageZ.shape)
     if frame:
         tam = ma.mask_or(tam,MakeFrameMask(data,frame))
     for iH,H in enumerate(HKL):
@@ -546,7 +546,7 @@ def ImageRecalibrate(self,data,masks):
             print 'next line is a hyperbola - search stopped'
             break
         ellipse = GetEllipse(dsp,data)
-        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(self.ImageZ,mask=tam))
+        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(G2frame.ImageZ,mask=tam))
         if Ring:
             if iH >= skip:
                 data['rings'].append(np.array(Ring))
@@ -573,10 +573,10 @@ def ImageRecalibrate(self,data,masks):
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))    
     print 'calibration time = ',time.time()-time0
-    G2plt.PlotImage(self,newImage=True)        
+    G2plt.PlotImage(G2frame,newImage=True)        
     return True
             
-def ImageCalibrate(self,data):
+def ImageCalibrate(G2frame,data):
     'Needs a doc string'
     import copy
     import ImageCalibrants as calFile
@@ -610,10 +610,10 @@ def ImageCalibrate(self,data):
         
     #setup 360 points on that ring for "good" fit
     data['ellipses'].append(ellipse[:]+('g',))
-    Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
+    Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)
     if Ring:
         ellipse = FitEllipse(Ring)
-        Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)    #do again
+        Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)    #do again
         ellipse = FitEllipse(Ring)
     else:
         print '1st ring not sufficiently complete to proceed'
@@ -623,7 +623,7 @@ def ImageCalibrate(self,data):
             ellipse[2][0],ellipse[2][1],0.,len(Ring))     #cent,phi,radii
     data['ellipses'].append(ellipse[:]+('r',))
     data['rings'].append(np.array(Ring))
-    G2plt.PlotImage(self,newImage=True)
+    G2plt.PlotImage(G2frame,newImage=True)
     
 #setup for calibration
     data['rings'] = []
@@ -657,7 +657,7 @@ def ImageCalibrate(self,data):
         dist = data['distance']
         tth = npatan2d(radii[0],dist)
         data['wavelength'] = wave =  2.0*dsp*sind(tth/2.0)
-    Ring0 = makeRing(dsp,ellipse,3,cutoff,scalex,scaley,self.ImageZ)
+    Ring0 = makeRing(dsp,ellipse,3,cutoff,scalex,scaley,G2frame.ImageZ)
     ttth = nptand(tth)
     stth = npsind(tth)
     ctth = npcosd(tth)
@@ -693,7 +693,7 @@ def ImageCalibrate(self,data):
             tth = 2.0*asind(wave/(2.*dsp))
             ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
             print fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1])
-            Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,self.ImageZ)
+            Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,G2frame.ImageZ)
             parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
                 'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}        
             varyList = [item for item in varyDict if varyDict[item]]
@@ -707,7 +707,7 @@ def ImageCalibrate(self,data):
                 chip = 1e6
             ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
             print fmt%('minus ellipse:',ellipsem[0][0],ellipsem[0][1],ellipsem[1],ellipsem[2][0],ellipsem[2][1])
-            Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,self.ImageZ)
+            Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,G2frame.ImageZ)
             if len(Ringm) > 10:
                 parmDict['tilt'] *= -1
                 chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)
@@ -731,7 +731,7 @@ def ImageCalibrate(self,data):
         data['rings'].append(np.array(Ringp))
         data['ellipses'].append(ellipsem[:]+('r',))
         data['rings'].append(np.array(Ringm))
-        G2plt.PlotImage(self,newImage=True)
+        G2plt.PlotImage(G2frame,newImage=True)
     parmDict = {'dist':data['distance'],'det-X':data['center'][0],'det-Y':data['center'][1],
         'tilt':data['tilt'],'phi':data['rotation'],'wave':data['wavelength'],'dep':data['DetDepth']}
     varyList = [item for item in varyDict if varyDict[item]]
@@ -747,7 +747,7 @@ def ImageCalibrate(self,data):
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
         data['ellipses'].append(copy.deepcopy(ellipse+('g',)))
         if debug:   print fmt%('predicted ellipse:',elcent[0],elcent[1],phi,radii[0],radii[1])
-        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,self.ImageZ)
+        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)
         if Ring:
             data['rings'].append(np.array(Ring))
             rings = np.concatenate((data['rings']),axis=0)
@@ -762,12 +762,12 @@ def ImageCalibrate(self,data):
                 elcent,phi,radii = ellipse = GetEllipse(dsp,data)
                 if debug:   print fmt2%('fitted ellipse:   ',elcent[0],elcent[1],phi,radii[0],radii[1],chisq,len(rings))
             data['ellipses'].append(copy.deepcopy(ellipse+('r',)))
-#            G2plt.PlotImage(self,newImage=True)
+#            G2plt.PlotImage(G2frame,newImage=True)
         else:
             if debug:   print 'insufficient number of points in this ellipse to fit'
 #            break
-    G2plt.PlotImage(self,newImage=True)
-    fullSize = len(self.ImageZ)/scalex
+    G2plt.PlotImage(G2frame,newImage=True)
+    fullSize = len(G2frame.ImageZ)/scalex
     if 2*radii[1] < .9*fullSize:
         print 'Are all usable rings (>25% visible) used? Try reducing Min ring I/Ib'
     N = len(data['ellipses'])
@@ -783,7 +783,7 @@ def ImageCalibrate(self,data):
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
     print 'calibration time = ',time.time()-time0
-    G2plt.PlotImage(self,newImage=True)        
+    G2plt.PlotImage(G2frame,newImage=True)        
     return True
     
 def Make2ThetaAzimuthMap(data,masks,iLim,jLim,times): #most expensive part of integration!

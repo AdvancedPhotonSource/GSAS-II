@@ -3925,7 +3925,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     if dark[0]:
         darkfile = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, 
             G2frame.root,dark[0]))[1]
-    if imagefile != G2frame.oldImagefile:
+    if imagefile != G2frame.oldImagefile or dark[0]: # always reread with dark correction
         imagefile = G2IO.CheckImageFile(G2frame,imagefile)
         if not imagefile:
             G2frame.G2plotNB.Delete('2D Powder Image')
@@ -3935,7 +3935,9 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         if dark[0]:
             darkImg = G2IO.GetImageData(G2frame,darkfile,imageOnly=True)
             G2frame.ImageZ += dark[1]*darkImg
-        G2frame.oldImagefile = imagefile
+        G2frame.oldImagefile = imagefile # save name of the last image file read
+    else:
+        if GSASIIpath.GetConfigValue('debug'): print('Skipping image reread')
 
     imScale = 1
     if len(G2frame.ImageZ) > 1024:

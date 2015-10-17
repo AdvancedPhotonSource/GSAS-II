@@ -776,8 +776,6 @@ class GSASII(wx.Frame):
                 self.CheckNotebook()
             G2IO.LoadImage(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
         self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,self.Image,'Image Controls'))             #show last image to have beeen read
-        # replace G2IO.GetImageData with something using imports
-        # look over G2IO.ReadLoadImage
                     
     def _Add_ImportMenu_Sfact(self,parent):
         '''configure the Import Structure Factor menus accord to the readers found in _init_Imports
@@ -2244,8 +2242,11 @@ class GSASII(wx.Frame):
         self.seqLines = True #draw lines between points
         self.plotView = 0
         self.Image = 0
-        self.oldImagefile = ''
-        self.ImageZ = []
+        self.oldImagefile = '' # the name of the last image file read
+        self.ImageZ = []  # this contains the image plotted and used for integration
+        # self.ImageZ and self.oldImagefile are set in GSASIIplot.PlotImage
+        # and GSASIIIO.ReadImageData (GetImageData soon)
+        # any changes to self.ImageZ should initialize self.oldImagefile to force a reread
         self.Integrate = 0
         self.imageDefault = {}
         self.Sngl = False

@@ -41,14 +41,15 @@ class png_ReaderClass(G2IO.ImportImage):
         import scipy.misc
         self.Image = scipy.misc.imread(filename,flatten=True)
         self.Npix = self.Image.size
-        self.Comments = ['no metadata']
-        pixy = list(self.Image.shape)
-        sizexy = [40,40]
-        self.Data = {'wavelength': 1.78892, 'pixelSize': sizexy, 'distance': 18.0,'size':pixy}
-        self.Data['center'] = [pixy[0]*sizexy[0]/1000,pixy[1]*sizexy[1]/2000]
-        if self.Npix == 0 or not self.Comments:
+        if self.Npix == 0:
             return False
         if ParentFrame:
+            self.Comments = ['no metadata']
+            pixy = list(self.Image.shape)
+            sizexy = [40,40]
+            self.Data = {'wavelength': 1.78892, 'pixelSize': sizexy, 'distance': 18.0,'size':pixy}
+            self.Data['center'] = [pixy[0]*sizexy[0]/1000,pixy[1]*sizexy[1]/2000]
             G2IO.EditImageParms(ParentFrame,self.Data,self.Comments,self.Image,filename)
+        self.LoadImage(ParentFrame,filename)
         return True
 # N.B. This replaces G2IO.GetPNGData

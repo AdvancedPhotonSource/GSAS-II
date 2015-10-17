@@ -55,13 +55,14 @@ class TIF_ReaderClass(G2IO.ImportImage):
             import scipy.misc
             self.Image = scipy.misc.imread(filename,flatten=True)
             self.Npix = self.Image.size
-            self.Comments = ['no metadata']
-            self.Data = {'wavelength': 0.1, 'pixelSize': [200, 200], 'distance': 100.0}
-            self.Data['size'] = list(self.Image.shape)
-            self.Data['center'] = [int(i/2) for i in self.Image.shape]
             if ParentFrame:
+                self.Comments = ['no metadata']
+                self.Data = {'wavelength': 0.1, 'pixelSize': [200, 200], 'distance': 100.0}
+                self.Data['size'] = list(self.Image.shape)
+                self.Data['center'] = [int(i/2) for i in self.Image.shape]
                 G2IO.EditImageParms(ParentFrame,self.Data,self.Comments,self.Image,filename)
-        if self.Npix == 0 or not self.Comments:
+        if self.Npix == 0:
             return False
+        self.LoadImage(ParentFrame,filename)
         return True
 

@@ -40,4 +40,5 @@ class EDF_ReaderClass(G2IO.ImportImage):
         self.Comments,self.Data,self.Npix,self.Image = G2IO.GetEdfData(filename)
         if self.Npix == 0 or not self.Comments:
             return False
+        self.LoadImage(ParentFrame,filename)
         return True

@@ -40,4 +40,5 @@ class ADSC_ReaderClass(G2IO.ImportImage):
         Image[0][0] = 0
         if self.Npix == 0 or not self.Comments:
             return False
+        self.LoadImage(ParentFrame,filename)
         return True

@@ -350,7 +350,7 @@ def LoadImage(imagefile,G2frame,Comments,Data,Npix,Image):
     G2frame.Image = Id
     
 def ReadImageData(G2frame,imagefile,imageOnly=False):
-    '''Read a single image with an image importer. replacement for GetImageData
+    '''Read a single image with an image importer. Replacement for GetImageData
 
     :param wx.Frame G2frame: main GSAS-II Frame and data object.
     :param str imagefile: name of image file
@@ -387,12 +387,16 @@ def ReadImageData(G2frame,imagefile,imageOnly=False):
                 errorReport += ': '+rd.errors
                 continue 
         rdbuffer = {} # create temporary storage for file reader
+        if imageOnly:
+            ParentFrame = None # prevent GUI access on reread
+        else:
+            ParentFrame = G2frame
         if GSASIIpath.GetConfigValue('debug'):
-            flag = rd.Reader(imagefile,fp,G2frame)
+            flag = rd.Reader(imagefile,fp,ParentFrame)
         else:
             flag = False
             try:
-                flag = rd.Reader(imagefile,fp,G2frame)
+                flag = rd.Reader(imagefile,fp,ParentFrame)
             except rd.ImportException as detail:
                 rd.errors += "\n  Read exception: "+str(detail)
             except Exception as detail:
@@ -417,7 +421,9 @@ def ReadImageData(G2frame,imagefile,imageOnly=False):
     
 def GetImageData(G2frame,imagefile,imageOnly=False):
     '''Read an image with the file reader keyed by the
-    file extension
+    file extension.
+
+    This routine will be replaced by ReadImageData, which will be renamed to this.
 
     :param wx.Frame G2frame: main GSAS-II Frame and data object.
 
@@ -964,6 +970,10 @@ def GetTifData(filename,imageOnly=False):
 #        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
            
     else:
+        lines = ['not a known detector tiff file',]
+        return lines,0,0,0
+
+    if sizexy[1]*sizexy[0] != image.size: # test is resize is allowed
         lines = ['not a known detector tiff file',]
         return lines,0,0,0
         
@@ -2060,6 +2070,15 @@ class ImportImage(ImportBaseclass):
         self.Data = {}
         self.Npix = 0
         self.Image = None
+
+    def LoadImage(self,ParentFrame,imagefile):
+        '''Optionally, call this after reading in an image to load it into the tree.
+        This does saves time by preventing a reread of the same information.
+        '''
+        if ParentFrame:
+            ParentFrame.ImageZ = self.Image   # store the image for plotting
+            ParentFrame.oldImagefile = imagefile # save the name of the last image file read
+            
 
 ######################################################################
 class ExportBaseclass(object):

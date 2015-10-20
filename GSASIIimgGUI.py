@@ -1052,15 +1052,11 @@ def UpdateImageControls(G2frame,data,masks):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyControls, id=G2gd.wxID_IMCOPYCONTROLS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveControls, id=G2gd.wxID_IMSAVECONTROLS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadControls, id=G2gd.wxID_IMLOADCONTROLS)
-    try: # remove after AutoInt is completed
+    if GSASIIpath.GetConfigValue('debug'):
         import autoint
         def OnAutoInt(event):
             frame = autoint.AutoIntFrame(G2frame,PollTime=5.0)
-
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoInt, id=G2gd.wxID_IMAUTOINTEG)
-        print "development code: AutoInt found"
-    except ImportError:
-        pass
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
 
     mainSizer = wx.BoxSizer(wx.VERTICAL)

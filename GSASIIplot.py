@@ -3525,6 +3525,7 @@ def PlotExposedImage(G2frame,newPlot=False,event=None):
     '''General access module for 2D image plotting
     '''
     plotNo = G2frame.G2plotNB.nb.GetSelection()
+    if plotNo < 0: return # no plots
     if G2frame.G2plotNB.nb.GetPageText(plotNo) == '2D Powder Image':
         PlotImage(G2frame,newPlot,event,newImage=True)
     elif G2frame.G2plotNB.nb.GetPageText(plotNo) == '2D Integration':

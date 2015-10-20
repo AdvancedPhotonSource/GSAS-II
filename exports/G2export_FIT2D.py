@@ -24,8 +24,8 @@ import GSASIIobj as G2obj
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 
-class ExportPowderCSV(G2IO.ExportBaseclass):
-    '''Used to create a csv file for a powder data set
+class ExportPowderCHI(G2IO.ExportBaseclass):
+    '''Used to create a CHI file for a powder data set
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
@@ -42,7 +42,7 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
     def Writer(self,TreeName,filename=None):
         self.OpenFile(filename)
         histblk = self.Histograms[TreeName]
-        self.Write(os.path.split(self.fullpath)[1])
+        self.Write(str(TreeName)[5:]) # drop 'PWDR '
         self.Write("2-Theta Angle (Degrees)")
         self.Write("Intensity")
         self.Write("       "+str(len(histblk['Data'][0])))

@@ -105,7 +105,8 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
                 # use the supplied name, but force the extension
                 self.filename= os.path.splitext(self.filename)[0] + self.extension
 
-            prmname = self.WriteInstFile(TreeName,histblk['Instrument Parameters'][0])
+            histblk = self.Histograms[hist]
+            prmname = self.WriteInstFile(hist,histblk['Instrument Parameters'][0])
             self.Writer(hist,prmname=prmname)
             print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
 

@@ -1,8 +1,11 @@
 import os
 import wx
+import copy
+import glob
 import GSASIIpath
 import GSASIIIO as G2IO
 import GSASIIctrls as G2G
+import GSASIIgrid as G2gd
 #('xye','fxye','xy','chi')
 '''
 Define a class to be used for Andrey's AutoIntegration process
@@ -20,14 +23,73 @@ class AutoIntFrame(wx.Frame):
     :param float PollTime: frequency in seconds to repeat calling the
       processing loop. (Default is 3.0 seconds.)
     '''
-    def OnTimer(self,event):
+    def OnTimerLoop(self,event):
         '''A method that is called every :meth:`PollTime` seconds that is
         used to check for new files and process them. This is called only
         after the "Start" button is pressed (when its label reads "Pause").
         '''
+        try:
+            self.currImageList = sorted(
+                glob.glob(os.path.join(self.imagedir,self.params['filter'])))
+        except IndexError:
+            self.currImageList = []
+            return
+
+        createdImageIdList = []
+        for newImage in self.currImageList:
+            if newImage in self.IntegratedList: continue
+            # need to read in this file
+            Comments,Data,Npix,Image = G2IO.GetImageData(self.G2frame,newImage)
+            if not Npix:
+                print('problem reading '+newImage)
+                continue
+            G2IO.LoadImage(newImage,self.G2frame,Comments,Data,Npix,Image)
+            controlsDict = self.G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(self.G2frame,self.G2frame.Image, 'Image Controls'))
+            controlsDict.update(self.ImageControls)
+            ImageMasks = self.G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(self.G2frame,self.G2frame.Image, 'Masks'))
+            createdImageIdList.append(self.G2frame.Image)
+            self.IntegratedList.append(newImage)
+            print('debug: read '+newImage)
+
+        for newImagId in createdImageIdList:
+            print('debug: process '+str(newImagId))
+            pass
+            # need to integrate in this entry
         import datetime
         print ("Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
         #GSASIIpath.IPyBreak_base()
+
+    def StartLoop(self):
+        '''Save current Image params for use in future integrations
+        also label the window so users understand whatis being used
+        '''
+        print '\nStarting new autointegration\n'
+        # show current IMG base
+        self.ControlBaseLbl.SetLabel(self.G2frame.PatternTree.GetItemText(self.G2frame.Image))
+        if self.params['Mode'] == 'file':
+            'get file info'
+            #GSASIIpath.IPyBreak()
+        else:
+            # load copy of Image Controls from current image and clean up
+            # items that should not be copied
+            self.ImageControls = copy.deepcopy(
+                self.G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                    self.G2frame,self.G2frame.Image, 'Image Controls')))
+            self.ImageControls['showLines'] = True
+            self.ImageControls['ring'] = []
+            self.ImageControls['rings'] = []
+            self.ImageControls['ellipses'] = []
+            self.ImageControls['setDefault'] = False
+            del self.ImageControls['range']
+            del self.ImageControls['size']
+            del self.ImageControls['GonioAngles']
+            # load copy of Image Masks, keep thresholds
+            self.ImageMasks = copy.deepcopy(
+                self.G2frame.PatternTree.GetItemPyData(
+                    G2gd.GetPatternTreeItemId(self.G2frame,self.G2frame.Image, 'Masks')))
+            self.Thresholds = self.ImageMasks['Thresholds'][:]
         
     def __init__(self,G2frame,PollTime=3.0):
         def OnStart(event):
@@ -56,11 +118,13 @@ class AutoIntFrame(wx.Frame):
             if btnstart.GetLabel() != 'Pause':
                 btnstart.SetLabel('Pause')
                 if self.timer.IsRunning(): self.timer.Stop()
-                self.OnTimer(None) # run once immediately and again after delay
+                self.StartLoop()
+                self.OnTimerLoop(None) # run once immediately and again after delay
                 self.timer.Start(int(1000*PollTime),oneShot=False)
             else:
                 btnstart.SetLabel('Resume')
                 if self.timer.IsRunning(): self.timer.Stop()
+                print('\nPausing autointegration\n')
 
         def OnStop(event):
             '''Called when Stop button is pressed. At present this only
@@ -137,19 +201,33 @@ class AutoIntFrame(wx.Frame):
         ##################################################
         # beginning of __init__ processing
         ##################################################
+        self.G2frame = G2frame
         self.params = {}
-        self.params['filter'] = '*.tif'
         self.params['IMGfile'] = ''
         self.params['MaskFile'] = ''
         self.params['IgnoreMask'] = True
+        self.IntegratedList = []
         fmtlist = G2IO.ExportPowderList(G2frame)
         self.timer = wx.Timer()
-        self.timer.Bind(wx.EVT_TIMER,self.OnTimer)
+        self.timer.Bind(wx.EVT_TIMER,self.OnTimerLoop)
 
+        controlsId = G2frame.PatternTree.GetSelection()
+        size,imagefile = G2frame.PatternTree.GetItemPyData(G2frame.Image)
+        self.imagedir,fileroot = os.path.split(imagefile)
+        self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
+        os.chdir(self.imagedir)
+        
         wx.Frame.__init__(self, G2frame)
         mnpnl = wx.Panel(self)
         mnsizer = wx.BoxSizer(wx.VERTICAL)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Integration based on: '))
+        self.ControlBaseLbl = wx.StaticText(mnpnl, wx.ID_ANY,'?')
+        self.ControlBaseLbl.SetLabel(G2frame.PatternTree.GetItemText(G2frame.Image))
+        sizer.Add(self.ControlBaseLbl)
+        mnsizer.Add(sizer,1,wx.ALIGN_LEFT,1)
         mnpnl.SetSizer(mnsizer)
+        #GSASIIpath.IPyBreak()
         # file filter stuff
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Image filter'))

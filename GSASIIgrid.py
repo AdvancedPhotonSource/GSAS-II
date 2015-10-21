@@ -3030,7 +3030,12 @@ def UpdatePWHKPlot(G2frame,kind,item):
 ################################################################################           
        
 def GetPatternTreeDataNames(G2frame,dataTypes):
-    '''Needs a doc string
+    '''Finds all items in tree that match a 4 character prefix
+    
+    :param wx.Frame G2frame: Data tree frame object
+    :param list dataTypes: Contains one or more data tree item types to be matched
+      such as ['IMG '] or ['PWDR','HKLF']
+    :returns: a list of tree item names for the matching items  
     '''
     names = []
     item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)        

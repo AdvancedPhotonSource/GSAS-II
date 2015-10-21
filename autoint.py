@@ -70,7 +70,7 @@ class AutoIntFrame(wx.Frame):
         self.ControlBaseLbl.SetLabel(self.G2frame.PatternTree.GetItemText(self.G2frame.Image))
         if self.params['Mode'] == 'file':
             'get file info'
-            #GSASIIpath.IPyBreak()
+            GSASIIpath.IPyBreak()
         else:
             # load copy of Image Controls from current image and clean up
             # items that should not be copied
@@ -206,7 +206,6 @@ class AutoIntFrame(wx.Frame):
         self.params['IMGfile'] = ''
         self.params['MaskFile'] = ''
         self.params['IgnoreMask'] = True
-        self.IntegratedList = []
         fmtlist = G2IO.ExportPowderList(G2frame)
         self.timer = wx.Timer()
         self.timer.Bind(wx.EVT_TIMER,self.OnTimerLoop)
@@ -216,6 +215,14 @@ class AutoIntFrame(wx.Frame):
         self.imagedir,fileroot = os.path.split(imagefile)
         self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
         os.chdir(self.imagedir)
+        # get image names that have already been read
+        self.IntegratedList = []
+        for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
+            self.IntegratedList.append(G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
+                )[1])
+            
+        GSASIIpath.IPyBreak()
         
         wx.Frame.__init__(self, G2frame)
         mnpnl = wx.Panel(self)

@@ -491,7 +491,7 @@ def calc_rDsqT(H,A,Z,tof,difC):
        
 def calc_rDsqTSS(H,A,vec,Z,tof,difC):
     'needs doc string'
-    rdsq = calc_rDsq(H[:3]+H[3][:,np.newaxis]*vec,A)+Z/difC
+    rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z/difC
     return rdsq
        
 def MaxIndex(dmin,A):

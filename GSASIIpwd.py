@@ -867,7 +867,7 @@ def getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A):
             if dH:
                 DH = SSdH[dH]
                 H = [h+DH[0],k+DH[1],l+DH[2]]
-                d = 1/np.sqrt(G2lat.calc_rDsq(H,A))
+                d = float(1/np.sqrt(G2lat.calc_rDsq(H,A)))
                 if d >= dmin:
                     HKLM = np.array([h,k,l,dH])
                     if G2spc.checkSSextc(HKLM,SSGData):

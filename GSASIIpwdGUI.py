@@ -2222,6 +2222,7 @@ def UpdateIndexPeaksGrid(G2frame, data):
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
     IndexId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+    Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
 
     def RefreshIndexPeaksGrid(event):
         r,c =  event.GetRow(),event.GetCol()
@@ -2291,6 +2292,10 @@ def UpdateIndexPeaksGrid(G2frame, data):
             if len(Unit) == 4:  #patch
                 Unit.append({})
             controls,bravais,cellist,dmin,ssopt = Unit
+            if 'C' in Inst['Type'][0]:
+                dmin = G2lat.Pos2dsp(Inst,Limits[1][1])
+            else:   #TOF - use other limit!
+                dmin = G2lat.Pos2dsp(Inst,Limits[1][0])
             G2frame.HKL = []
             if ssopt.get('Use',False):
                 cell = controls[6:12]
@@ -2587,7 +2592,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         else:   #TOF - use other limit!
             dmin = G2lat.Pos2dsp(Inst,limits[0])
         if ssopt.get('Use',False):
-            dmin = peaks[0][-1][8]
+#            dmin = peaks[0][-1][8]
             SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
             Vec = ssopt['ModVec']
             maxH = ssopt['maxH']
@@ -2674,7 +2679,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
         SGData = G2spc.SpcGroup(controls[13])[1]
-        dmin = G2indx.getDmin(peaks[0])-0.005
+#        dmin = G2indx.getDmin(peaks[0])-0.005
         if 'C' in Inst['Type'][0]:
             if ssopt.get('Use',False):
                 vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
@@ -2845,7 +2850,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     controls,bravais,cells,dmin,ssopt = data
     if len(controls) < 13:              #add cell volume if missing
         controls.append(G2lat.calc_V(G2lat.cell2A(controls[6:12])))
-    if len(controls) < 14:              #add space gropu used in indexing
+    if len(controls) < 14:              #add space group used in indexing
         controls.append(spaceGroups[bravaisSymb.index(controls[5])])
     G2frame.PatternTree.SetItemPyData(UnitCellsId,data)            #update with volume
     bravaisNames = ['Cubic-F','Cubic-I','Cubic-P','Trigonal-R','Trigonal/Hexagonal-P',

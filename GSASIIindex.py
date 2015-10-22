@@ -285,6 +285,17 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
         if dlg:
             dlg.Pulse()    
         return chi
+        
+    def TSSfunc(values,peaks,dmin,Inst,SGData,SSGData,vec,Vref,maxH,A,difC,Z,dlg=None):
+        Vec = Val2Vec(vec,Vref,values)
+        HKL =  G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vec,maxH,A)
+        Peaks = np.array(IndexSSPeaks(peaks,HKL)[1]).T
+        Qo = 1./Peaks[-2]**2
+        Qc = G2lat.calc_rDsqTSS(Peaks[4:8],A,vec,Z,Peaks[0],difC)
+        chi = np.sum((Qo-Qc)**2)
+        if dlg:
+            dlg.Pulse()    
+        return chi
 
     if 'C' in Inst['Type'][0]:
         wave = G2mth.getWave(Inst)
@@ -302,9 +313,13 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
             ranges += [slice(.02,.98,.05),]
             values += [v,]
     dmin = getDmin(peaks)-0.005
-    Peaks = np.copy(np.array(peaks).T)    
-    result = so.brute(ZSSfunc,ranges,finish=so.fmin_cg,
-        args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,ssopt['maxH'],A,wave,Z,dlg))
+    Peaks = np.copy(np.array(peaks).T)
+    if 'C' in Inst['Type'][0]:    
+        result = so.brute(ZSSfunc,ranges,finish=so.fmin_cg,
+            args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,ssopt['maxH'],A,wave,Z,dlg))
+    else:
+        result = so.brute(TSSfunc,ranges,finish=so.fmin_cg,
+            args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,ssopt['maxH'],A,difC,Z,dlg))
     return Val2Vec(ssopt['ModVec'],Vref,result)
                 
 def IndexPeaks(peaks,HKL):

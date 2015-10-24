@@ -952,7 +952,7 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             dFdvDict[phfx+'TwinFr:'+str(i)] = dFdtw.T[i]
     return dFdvDict
     
-def SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
+def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ''' 
     Compute super structure factors for all h,k,l,m for phase
     puts the result, F^2, in each ref[8+im] in refList
@@ -975,6 +975,7 @@ def SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
     SGInv = SGData['SGInv']
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
+    eps = SSGMT[:,3,3]
     FFtables = calcControls['FFtables']
     BLtables = calcControls['BLtables']
     Flack = 1.0
@@ -991,8 +992,10 @@ def SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
     Smult,TauT = GetSSTauM(SGData['SGOps'],SSGData['SSGOps'],pfx,calcControls,Xdata)
+#    GSASIIpath.IPyBreak()
     if SGInv:
         TauT = np.hstack((TauT,-TauT))
+        eps = np.concatenate((eps,-eps))
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1051,7 +1054,7 @@ def SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),Uniq.shape[1]*len(TwinLaw))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,Uniq.shape[1]*len(TwinLaw),axis=0)
-        phase = twopi*(np.inner(Uniq[:,:,:3],(dXdata.T+Xdata.T))+Phi[:,:,nxs])
+        phase = twopi*(np.inner(Uniq[:,:,:3],(dXdata.T+Xdata.T))+Phi[:,:,nxs]) #+TauT.T[nxs,:,:]*eps[nxs,:,nxs]
         sinp = np.sin(phase)
         cosp = np.cos(phase)
         biso = -SQfactor*Uisodata[:,nxs]
@@ -2909,7 +2912,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             refDict = Histogram['Data']
             time0 = time.time()
             if im:
-                SStructureFactor2(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
+                SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict)
             else:
                 StructureFactor2(refDict,G,hfx,pfx,SGData,calcControls,parmDict)
 #            print 'sf-calc time: %.3f'%(time.time()-time0)

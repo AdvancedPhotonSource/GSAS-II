@@ -86,7 +86,7 @@ def UpdateImageData(G2frame,data):
 ################################################################################
 ##### Image Controls
 ################################################################################                    
-def UpdateImageControls(G2frame,data,masks):
+def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     '''Shows and handles the controls on the "Image Controls"
     data tree entry
     '''
@@ -109,7 +109,7 @@ def UpdateImageControls(G2frame,data,masks):
     if 'varyList' not in data:
         data['varyList'] = {'dist':True,'det-X':True,'det-Y':True,'tilt':True,'phi':True,'dep':False,'wave':False}
 #end patch
-    
+
 # Menu items
             
     def OnCalibrate(event):        
@@ -1030,6 +1030,10 @@ def UpdateImageControls(G2frame,data,masks):
         data['PolaVal'] = [0.99,False]
     #end fix
     
+    if IntegrateOnly:
+        OnIntegrate(None)
+        return
+    
     colorList = sorted([m for m in mpl.cm.datad.keys() if not m.endswith("_r")],key=lambda s: s.lower())
     calList = sorted([m for m in calFile.Calibrants.keys()],key=lambda s: s.lower())
     typeList = ['PWDR - powder diffraction data','SASD - small angle scattering data',
@@ -1054,8 +1058,15 @@ def UpdateImageControls(G2frame,data,masks):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadControls, id=G2gd.wxID_IMLOADCONTROLS)
     if GSASIIpath.GetConfigValue('debug'):
         import autoint
+        def OnDestroy(event):
+            G2frame.autoIntFrame = None
         def OnAutoInt(event):
-            frame = autoint.AutoIntFrame(G2frame,PollTime=5.0)
+            reload(autoint)
+            if G2frame.autoIntFrame: # ensure only one open at a time
+                G2frame.autoIntFrame.Raise()
+                return
+            G2frame.autoIntFrame = autoint.AutoIntFrame(G2frame,PollTime=5.0)
+            G2frame.autoIntFrame.Bind(wx.EVT_WINDOW_DESTROY,OnDestroy) # clean up name on window close 
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnAutoInt, id=G2gd.wxID_IMAUTOINTEG)
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
 

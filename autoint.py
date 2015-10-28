@@ -2,11 +2,12 @@ import os
 import wx
 import copy
 import glob
+import re
 import GSASIIpath
 import GSASIIIO as G2IO
 import GSASIIctrls as G2G
 import GSASIIgrid as G2gd
-#('xye','fxye','xy','chi')
+import GSASIIimgGUI as G2imG
 '''
 Define a class to be used for Andrey's AutoIntegration process
 '''
@@ -28,6 +29,7 @@ class AutoIntFrame(wx.Frame):
         used to check for new files and process them. This is called only
         after the "Start" button is pressed (when its label reads "Pause").
         '''
+        G2frame = self.G2frame
         try:
             self.currImageList = sorted(
                 glob.glob(os.path.join(self.imagedir,self.params['filter'])))
@@ -36,30 +38,70 @@ class AutoIntFrame(wx.Frame):
             return
 
         createdImageIdList = []
+        # loop over files that are found, reading in new ones
         for newImage in self.currImageList:
-            if newImage in self.IntegratedList: continue
-            # need to read in this file
-            Comments,Data,Npix,Image = G2IO.GetImageData(self.G2frame,newImage)
+            if newImage in self.IntegratedList: continue # already processed
+            Comments,Data,Npix,Image = G2IO.GetImageData(G2frame,newImage)
             if not Npix:
                 print('problem reading '+newImage)
                 continue
-            G2IO.LoadImage(newImage,self.G2frame,Comments,Data,Npix,Image)
-            controlsDict = self.G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(self.G2frame,self.G2frame.Image, 'Image Controls'))
+            G2IO.LoadImage2Tree(newImage,G2frame,Comments,Data,Npix,Image)
+            # update controls from master
+            controlsDict = G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
             controlsDict.update(self.ImageControls)
-            ImageMasks = self.G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(self.G2frame,self.G2frame.Image, 'Masks'))
-            createdImageIdList.append(self.G2frame.Image)
-            self.IntegratedList.append(newImage)
-            print('debug: read '+newImage)
+            # update masks from master
+            ImageMasks = G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
+            createdImageIdList.append(G2frame.Image) # save IMG Id
+            self.IntegratedList.append(newImage) # save name of image so we don't process it again
+            #print('debug: read '+newImage)
 
+        # now integrate the images we have read
         for newImagId in createdImageIdList:
-            print('debug: process '+str(newImagId))
-            pass
-            # need to integrate in this entry
-        import datetime
-        print ("Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
-        #GSASIIpath.IPyBreak_base()
+            G2frame.Image = newImagId
+            G2frame.PickId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls')
+            #  integrate in this entry
+            size,imagefile = G2frame.PatternTree.GetItemPyData(G2frame.Image)
+            masks = G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
+            data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
+            G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,True)
+            self.oldImagefile = '' # mark image as changed; reread as needed
+            G2imG.UpdateImageControls(G2frame,data,masks,IntegrateOnly=True)
+            # split name and control number
+            s = re.split(r'(\d+)\Z',os.path.split(os.path.splitext(imagefile)[0])[1])
+            namepre = s[0]
+            if len(s) > 1:
+                namenum = s[1]
+            else:
+                namenum = ''
+            # write out the images in the selected formats
+            for Id in G2frame.IntgOutList:
+                treename = G2frame.PatternTree.GetItemText(Id)
+                Sdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Sample Parameters'))
+                # determine the name for the current file
+                fileroot = namepre
+                if len(G2frame.IntgOutList) > 1:
+                    fileroot += "_AZM"
+                    if 'Azimuth' in Sdata:
+                        fileroot += str(int(10*Sdata['Azimuth']))
+                    fileroot += "_" 
+                fileroot += namenum
+                # loop over selected formats
+                for dfmt in self.fmtlist:
+                    if not self.params[dfmt[1:]]: continue
+                    if self.params['SeparateDir']:
+                        subdir = dfmt[1:]
+                    else:
+                        subdir = ''
+                    fil = os.path.join(self.params['outdir'],subdir,fileroot)
+                    print('writing file '+fil+dfmt)
+                    G2IO.ExportPowder(G2frame,treename,fil,dfmt)
+        
+        if GSASIIpath.GetConfigValue('debug'):
+            import datetime
+            print ("Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
 
     def StartLoop(self):
         '''Save current Image params for use in future integrations
@@ -90,19 +132,27 @@ class AutoIntFrame(wx.Frame):
                 self.G2frame.PatternTree.GetItemPyData(
                     G2gd.GetPatternTreeItemId(self.G2frame,self.G2frame.Image, 'Masks')))
             self.Thresholds = self.ImageMasks['Thresholds'][:]
-        
-    def __init__(self,G2frame,PollTime=3.0):
+        # make sure all output directories exist
+        if self.params['SeparateDir']:
+            for dfmt in self.fmtlist:
+                if not self.params[dfmt[1:]]: continue
+                dir = os.path.join(self.params['outdir'],dfmt[1:])
+                if not os.path.exists(dir): os.makedirs(dir)
+        else:
+            if not os.path.exists(self.params['outdir']):
+                os.makedirs(self.params['outdir'])
+    def __init__(self,G2frame,PollTime=60.0):
         def OnStart(event):
             '''Called when the start button is pressed. Changes button label 
             to Pause. When Pause is pressed the label changes to Resume.
             When either Start or Resume is pressed, the processing loop
             is started. When Pause is pressed, the loop is stopped. 
             '''
-            print self.params # for debug
+            #print self.params # for debug
 
             # check inputs before starting
             err = ''
-            #if not any([self.params[fmt] for fmt in fmtlist]):
+            #if not any([self.params[fmt] for fmt in self.fmtlist]):
             #    err += '\nPlease select at least one output format\n'
             if (self.params['Mode'] == 'file' and not
                     os.path.exists(self.params['IMGfile'])):
@@ -147,10 +197,21 @@ class AutoIntFrame(wx.Frame):
             appropriate file type and loads it into the appropriate place
             in the dict.
             '''
+            if btn3 == event.GetEventObject():
+                dlg = wx.DirDialog(
+                    self, 'Select directory for output files',
+                    self.params['outdir'],wx.DD_DEFAULT_STYLE)
+                dlg.CenterOnParent()
+                try:
+                    if dlg.ShowModal() == wx.ID_OK:
+                        self.params['outdir'] = dlg.GetPath()
+                        fInp3.SetValue(self.params['outdir'])
+                finally:
+                    dlg.Destroy()
+                return
             if btn1 == event.GetEventObject():
                 ext = '.imctrl'
                 title = 'Image control'
-                print 'button 1'
             else:
                 ext = '.immask'
                 title = 'Image masks'                
@@ -206,7 +267,7 @@ class AutoIntFrame(wx.Frame):
         self.params['IMGfile'] = ''
         self.params['MaskFile'] = ''
         self.params['IgnoreMask'] = True
-        fmtlist = G2IO.ExportPowderList(G2frame)
+        self.fmtlist = G2IO.ExportPowderList(G2frame)
         self.timer = wx.Timer()
         self.timer.Bind(wx.EVT_TIMER,self.OnTimerLoop)
 
@@ -214,7 +275,7 @@ class AutoIntFrame(wx.Frame):
         size,imagefile = G2frame.PatternTree.GetItemPyData(G2frame.Image)
         self.imagedir,fileroot = os.path.split(imagefile)
         self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
-        os.chdir(self.imagedir)
+        self.params['outdir'] = os.path.abspath(self.imagedir)
         # get image names that have already been read
         self.IntegratedList = []
         for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
@@ -222,9 +283,7 @@ class AutoIntFrame(wx.Frame):
                 G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
                 )[1])
             
-        GSASIIpath.IPyBreak()
-        
-        wx.Frame.__init__(self, G2frame)
+        wx.Frame.__init__(self, G2frame,title='Automatic Integration')
         mnpnl = wx.Panel(self)
         mnsizer = wx.BoxSizer(wx.VERTICAL)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -232,17 +291,15 @@ class AutoIntFrame(wx.Frame):
         self.ControlBaseLbl = wx.StaticText(mnpnl, wx.ID_ANY,'?')
         self.ControlBaseLbl.SetLabel(G2frame.PatternTree.GetItemText(G2frame.Image))
         sizer.Add(self.ControlBaseLbl)
-        mnsizer.Add(sizer,1,wx.ALIGN_LEFT,1)
-        mnpnl.SetSizer(mnsizer)
-        #GSASIIpath.IPyBreak()
+        mnsizer.Add(sizer,0,wx.ALIGN_LEFT,1)
         # file filter stuff
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Image filter'))
         flterInp = G2G.ValidatedTxtCtrl(mnpnl,self.params,'filter')
         sizer.Add(flterInp)
-        mnsizer.Add(sizer,1,wx.ALIGN_RIGHT,1)
+        mnsizer.Add(sizer,0,wx.ALIGN_RIGHT,1)
         # box for integration controls & masks input
-        lbl = wx.StaticBox(mnpnl, wx.ID_ANY, "Integration Controls/Masks from")
+        lbl = wx.StaticBox(mnpnl, wx.ID_ANY, "Integration Controls/Masks source")
         lblsizr = wx.StaticBoxSizer(lbl, wx.VERTICAL)
         r1 = wx.RadioButton(mnpnl, wx.ID_ANY, "Use Active Image",
                             style = wx.RB_GROUP)
@@ -252,6 +309,7 @@ class AutoIntFrame(wx.Frame):
         r2 = wx.RadioButton(mnpnl, wx.ID_ANY, "Use from file(s)")
         lblsizr.Add(r2)
         r2.Bind(wx.EVT_RADIOBUTTON, OnRadioSelect)
+        r2.Disable()         # deactivate this until implemented
         # Image controls file
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add((20,-1))
@@ -282,17 +340,35 @@ class AutoIntFrame(wx.Frame):
         mnsizer.Add(lblsizr)
 
         # box for output selections
-        lbl = wx.StaticBox(mnpnl, wx.ID_ANY, "Select output format(s)")
-        lblsizr = wx.StaticBoxSizer(lbl, wx.HORIZONTAL)
-        for dfmt in fmtlist:
+        lbl = wx.StaticBox(mnpnl, wx.ID_ANY, "Output settings")
+        lblsizr = wx.StaticBoxSizer(lbl, wx.VERTICAL)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Write to: '))
+        fInp3 = G2G.ValidatedTxtCtrl(mnpnl,self.params,'outdir',
+                                       notBlank=False,size=(300,-1))
+        sizer.Add(fInp3)
+        btn3 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
+        btn3.Bind(wx.EVT_BUTTON, OnBrowse)
+        sizer.Add(btn3)
+        lblsizr.Add(sizer)
+        #lblsizr.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format(s): '))
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Select format(s): '))
+        for dfmt in self.fmtlist:
             fmt = dfmt[1:]
             self.params[fmt] = False
             btn = G2G.G2CheckBox(mnpnl,dfmt,self.params,fmt)
-            lblsizr.Add(btn)
-        mnsizer.Add(lblsizr,1,wx.ALIGN_CENTER,1)
+            sizer.Add(btn)
+        lblsizr.Add(sizer)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Separate dir for each format: '))
+        self.params['SeparateDir'] = False
+        sizer.Add(G2G.G2CheckBox(mnpnl,'',self.params,'SeparateDir'))
+        lblsizr.Add(sizer)
+        mnsizer.Add(lblsizr,0,wx.ALIGN_CENTER,1)
 
         # buttons on bottom
-        mnsizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'AutoIntegration controls'))
+        mnsizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'AutoIntegration controls'),0,wx.TOP,5)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add((20,-1))
         btnstart = wx.Button(mnpnl,  wx.ID_ANY, "Start")
@@ -306,13 +382,14 @@ class AutoIntFrame(wx.Frame):
         btnquit.Bind(wx.EVT_BUTTON, OnQuit)
         sizer.Add(btnquit)
         sizer.Add((20,-1))
-        mnsizer.Add(sizer,1,wx.EXPAND|wx.BOTTOM,1)
+        mnsizer.Add(sizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP,5)
         
         # finish up window
+        mnpnl.SetSizer(mnsizer)
         OnRadioSelect(None) # disable widgets
         mnsizer.Fit(self)
-        self.Show()
-    
+        self.CenterOnParent()
+        self.Show()  
 
 if __name__ == '__main__':
     app = wx.PySimpleApp()

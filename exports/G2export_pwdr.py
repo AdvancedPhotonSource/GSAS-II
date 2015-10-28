@@ -65,7 +65,7 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
         '''Write a single PWDR entry to a FXYE file
         '''
         histblk = self.Histograms[TreeName]
-        self.OpenFile(filename) # ***rethink
+        self.OpenFile(filename)
         self.Write(TreeName[5:])
         if prmname: self.Write('Instrument parameter file:'+os.path.split(prmname)[1])
         x = 100*np.array(histblk['Data'][0])
@@ -127,9 +127,7 @@ class ExportPowderXYE(G2IO.ExportBaseclass):
         self.multiple = True
         
     def Writer(self,TreeName,filename=None):
-        GSASIIpath.IPyBreak()
-
-        self.OpenFile()
+        self.OpenFile(filename)
         histblk = self.Histograms[TreeName]
         self.Write('/*')    #The ugly c comment delimiter used in topas!
         self.Write('# '+TreeName[5:])  #evidently this by itself fails in topas

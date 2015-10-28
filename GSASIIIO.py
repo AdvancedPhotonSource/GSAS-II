@@ -276,9 +276,9 @@ def ReadLoadImage(imagefile,G2frame):
             imagefile = extractedfile
     Comments,Data,Npix,Image = GetImageData(G2frame,imagefile)
     if Comments:
-        LoadImage(imagefile,G2frame,Comments,Data,Npix,Image)
+        LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image)
     
-def LoadImage(imagefile,G2frame,Comments,Data,Npix,Image):
+def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     '''Load an image into the tree
     '''
     
@@ -1268,6 +1268,7 @@ def SaveIntegration(G2frame,PickId,data):
             else:    
                 Azms.append(G2img.meanAzm(azm,azms[i+1]))
         dazm = np.min(np.abs(np.diff(azms)))/2.
+    G2frame.IntgOutList = []
     for i,azm in enumerate(azms[:-1]):
         Aname = name+" Azm= %.2f"%((azm+dazm)%360.)
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
@@ -1293,6 +1294,7 @@ def SaveIntegration(G2frame,PickId,data):
         Y = G2frame.Integrate[0][i]
         W = np.where(Y>0.,1./Y,1.e-6)                    #probably not true
         Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=Aname)
+        G2frame.IntgOutList.append(Id)
         G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)                    
         G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Limits'),[tuple(Xminmax),Xminmax])
         if 'PWDR' in Aname:
@@ -2580,7 +2582,7 @@ class ExportBaseclass(object):
                 self.filename += self.extension
             fil = os.path.join(self.dirname,self.filename)
         self.fullpath = os.path.abspath(fil)
-        self.fp = open(fil,mode)
+        self.fp = open(self.fullpath,mode)
         return self.fp
 
     def Write(self,line):
@@ -2698,19 +2700,24 @@ def ExportPowder(G2frame,TreeName,fileroot,extension):
     :param str extension: extension for file to be written (start with '.'). Must
       match a powder export routine that has a Writer object. 
     '''
-    filename = os.path.abspath(os.path.splitext(fileroot)[1]+extension)
+    filename = os.path.abspath(os.path.splitext(fileroot)[0]+extension)
     for obj in G2frame.exporterlist:
         if obj.extension == extension and 'powder' in obj.exporttype:
             obj.currentExportType = 'powder'
             obj.InitExport(None)
             obj.loadTree() # load all histograms in tree into dicts
             if TreeName not in obj.Histograms:
-                raise Exception('Histogram not found: '+hst)
+                raise Exception('Histogram not found: '+str(TreeName))
+            try:
+                obj.Writer
+            except AttributeError:
+                continue
             try:
                 obj.Writer(TreeName,filename)
                 return
-            except AttributeError:
-                print('Export Routine for '+extension+' does not have a .Writer method')
+            except Exception,err:
+                print('Export Routine for '+extension+' failed.')
+                print err
     else:
         print('No Export routine supports extension '+extension)
 

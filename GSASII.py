@@ -774,7 +774,7 @@ class GSASII(wx.Frame):
             if first:
                 first = False
                 self.CheckNotebook()
-            G2IO.LoadImage(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
+            G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
         self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,self.Image,'Image Controls'))             #show last image to have beeen read
                     
     def _Add_ImportMenu_Sfact(self,parent):
@@ -2249,6 +2249,8 @@ class GSASII(wx.Frame):
         # any changes to self.ImageZ should initialize self.oldImagefile to force a reread
         self.Integrate = 0
         self.imageDefault = {}
+        self.IntgOutList = [] # list of integration tree item Ids created in G2IO.SaveIntegration
+        self.autoIntFrame = None
         self.Sngl = False
         self.ifGetRing = False
         self.MaskKey = ''           #trigger for making image masks

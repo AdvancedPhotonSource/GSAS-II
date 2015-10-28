@@ -744,7 +744,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 ind = Indx[Obj.GetId()]
                 val = Obj.GetValue()
                 try:
-                    val = min(1.0,max(0.0,float(val)))
+                    val = min(2.0,max(0.0,float(val)))
                 except ValueError:
                     val = generalData['SuperVec'][0][ind]
                 generalData['SuperVec'][0][ind] = val

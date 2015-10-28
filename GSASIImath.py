@@ -143,7 +143,8 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
             chisq1 = np.sum(M2**2)
             if chisq1 > chisq0*(1.+ftol):
                 lam *= 10.
-                print 'matrix modification needed; lambda now %.1e'%(lam)
+                if Print:
+                    print 'matrix modification needed; lambda now %.1e'%(lam)
             else:
                 x0 += Xvec
                 lam /= 10.
@@ -982,6 +983,8 @@ def Modulation(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
     cosHA = np.sum(Fmod*HbH*np.cos(twopi*HdotX)*glWt,axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
     sinHA = np.sum(Fmod*HbH*np.sin(twopi*HdotX)*glWt,axis=-1)       #imag part; ditto
 #    GSASIIpath.IPyBreak()
+#    if np.any(cosHA<0.) or np.any(cosHA>1.) or np.any(sinHA<0.) or np.any(sinHA>1.):
+#        GSASIIpath.IPyBreak()
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
     
 def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):

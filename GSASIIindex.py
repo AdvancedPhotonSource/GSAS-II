@@ -267,9 +267,9 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
         for j,r in enumerate(Vref):
             if r:
                 if values.size > 1:
-                    Vec.append(max(0.0,min(1.0,values[i])))
+                    Vec.append(max(0.0,min(2.0,values[i])))
                 else:
-                    Vec.append(max(0.0,min(1.0,values)))                    
+                    Vec.append(max(0.0,min(2.0,values)))                    
                 i += 1
             else:
                 Vec.append(vec[j])
@@ -310,7 +310,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
     ranges = []    
     for v,r in zip(ssopt['ModVec'],Vref):
         if r:
-            ranges += [slice(.02,.98,.05),]
+            ranges += [slice(0.05,1.98,.05),]
             values += [v,]
     dmin = getDmin(peaks)-0.005
     Peaks = np.copy(np.array(peaks).T)
@@ -340,7 +340,6 @@ def IndexPeaks(peaks,HKL):
             pos = N-i                                       # reverse the order
             if dp > dm: pos += 1                            # closer to upper than lower
             if pos >= N:
-                print pos,N
                 break
             hkl = HKL[pos]                                 # put in hkl
             if hkl[-1] >= 0:                                 # peak already assigned - test if this one better

@@ -1012,13 +1012,11 @@ def SSMT2text(Opr):
 def SSLatt2text(SSGCen):
     "Lattice centering vectors to text"
     lattTxt = ''
+    lattDir = {4:'1/3',6:'1/2',8:'2/3',0:'0'}
     for vec in SSGCen:
         lattTxt += ' '
         for item in vec:
-            if int(item*12.):
-                lattTxt += '1/%d,'%(12/int(item*12))
-            else:
-                lattTxt += '0,'
+            lattTxt += '%s,'%(lattDir[int(item*12)])
         lattTxt = lattTxt.rstrip(',')
         lattTxt += ';'
     lattTxt = lattTxt.rstrip(';').lstrip(' ')

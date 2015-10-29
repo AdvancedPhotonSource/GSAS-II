@@ -11,6 +11,16 @@
 # serve to show the default.
 
 import sys, os
+# dummy packages for misc imports not on readthedocs
+from mock import Mock as MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return Mock()
+
+MOCK_MODULES = ['wx', 'numpy', 'scipy', 'pypowder', 'pyspg', 'pytexture']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

@@ -21,7 +21,8 @@ class Mock(MagicMock):
 
 MOCK_MODULES = ['wx', 'numpy', 'scipy', 'pypowder', 'pyspg', 'pytexture', 'matplotlib', 'wx.grid',
                 'numpy.linalg', 'wx.lib.colourselect', 'wx.lib.scrolledpanel', 'numpy.ma', 'wx.aui',
-                'OpenGL', 'OpenGL.GL']
+                'OpenGL', 'OpenGL.GL', 'numpy.core.multiarray', 'wx.lib.scrolledpanel', 'wx.lib.gridmovers',
+                'scipy.optimize', 'wx.lib.colourselect']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,

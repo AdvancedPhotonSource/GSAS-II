@@ -34,6 +34,7 @@ class wx(MagicMock):
             ScrolledPanel = object
         class gridmovers(MagicMock): pass
         class colourselect(MagicMock): pass
+        class resizewidget(MagicMock): pass
 
 sys.modules.update({'wx':wx()})
 sys.modules.update({'wx.aui':wx.aui()})
@@ -45,6 +46,7 @@ sys.modules.update({'wx.glcanvas':wx.lib()})
 sys.modules.update({'wx.lib.scrolledpanel':wx.lib.scrolledpanel()})
 sys.modules.update({'wx.lib.gridmovers':wx.lib.gridmovers()})
 sys.modules.update({'wx.lib.colourselect':wx.lib.gridmovers()})
+sys.modules.update({'wx.lib.resizewidget':wx.lib.resizewidget()})
 
 class numpy(MagicMock):
     pi = 3.0
@@ -64,6 +66,7 @@ sys.modules.update({'scipy.optimize':scipy.optimize()})
 sys.modules.update({'scipy.stats':scipy.optimize()})
 sys.modules.update({'scipy.interpolate':scipy.optimize()})
 sys.modules.update({'scipy.special':scipy.optimize()})
+sys.modules.update({'scipy.misc':scipy.optimize()})
 
 class OpenGL(MagicMock):
     class GL(MagicMock):pass

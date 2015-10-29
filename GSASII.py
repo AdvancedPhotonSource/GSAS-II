@@ -3566,54 +3566,15 @@ class GSASII(wx.Frame):
                     Id = 0
                     self.PatternTree.DeleteChildren(self.root)
                     self.HKL = []
-#                    if self.G2plotNB.plotList:
-#                        self.G2plotNB.clear()
                     G2IO.ProjFileOpen(self)
-                    # The code below seems to open the first histogram in the tree
-                    # it does not seem to open sub-items, but will reload a phase. 
-                    # Not exactly sure what this is doing and if it works properly
-                    # Modified to make sure that PickId and PickIdText are always set
-                    #
-
-                    item, cookie = self.PatternTree.GetFirstChild(self.root)
-                    while item and not Id:
-                        name = self.PatternTree.GetItemText(item)
-                        if name[:4] in ['PWDR','HKLF']:
-                            Id = item
-                        item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                
-                    if parentName:
-                        parentId = G2gd.GetPatternTreeItemId(self, self.root, parentName)
-                        if parentId:
-                            itemId = G2gd.GetPatternTreeItemId(self, parentId, oldName)
-                        else:
-                            itemId = G2gd.GetPatternTreeItemId(self, self.root, oldName)
-                        self.PatternTree.SelectItem(itemId)
-                    if 'Phases' in parentName:
-                        data = self.PatternTree.GetItemPyData(itemId)
-                        if data['Drawing']:
-                            data['Drawing']['Atoms'] = []
-                            self.dataDisplay.SetSelection(4)    #location of Drawing Data
-                        self.dataDisplay.SetSelection(tabId)
-                        self.PickId = itemId
-                    elif Id:
-                        self.PickId = Id
-                        self.PatternTree.SelectItem(Id)
-                    else: # make sure PickId contains some valid Id
-                        self.PickId = self.root
-                        self.PatternTree.SelectItem(Id)
-                    self.PickIdText = None  #force reload of PickId contents
-                    # alternate code. This re-selects current tree item
-                    # and then triggers the loading and replotting that is
-                    # expected. 
-                    # Id =  self.root
-                    # txt = None
-                    # for txt in oldPath:
-                    #     Id = G2gd.GetPatternTreeItemId(self, Id, txt)
-                    #     #print Id,self.PatternTree.GetItemText(Id)
-                    # self.PickIdText = None  #force reload of page
-                    # self.PickId = Id
-                    # self.PatternTree.SelectItem(Id)
-                    # G2gd.MovePatternTreeToGrid(self,Id)
+                    Id =  self.root
+                    txt = None
+                    for txt in oldPath:
+                        Id = G2gd.GetPatternTreeItemId(self, Id, txt)
+                    self.PickIdText = None  #force reload of page
+                    self.PickId = Id
+                    self.PatternTree.SelectItem(Id)
+                    G2gd.MovePatternTreeToGrid(self,Id)
             finally:
                 dlg2.Destroy()
         else:

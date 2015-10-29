@@ -5069,7 +5069,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 I,J,K = indx[i]
                 alpha = 1.0
                 if cLevel < 1.:
-                    alpha = (abs(rho[I,J,K])/mapData['rhoMax']-cLevel)/(1.-cLevel)
+                    alpha = min(1.0,(abs(rho[I,J,K])/mapData['rhoMax']-cLevel)/(1.-cLevel))
                 if rho[I,J,K] < 0.:
                     XYZ.append(xyz)
                     RC.append([0.1*alpha,Rd])

@@ -1681,7 +1681,10 @@ def ExtractFileFromZip(filename, selection=None, confirmread=True,
 # base classes for reading various types of data files
 #   not used directly, only by subclassing
 ######################################################################
-E,SGData = G2spc.SpcGroup('P 1') # data structure for default space group
+try:
+    E,SGData = G2spc.SpcGroup('P 1') # data structure for default space group
+except: # errors on doc build
+    SGData = None
 P1SGData = SGData
 class ImportBaseclass(object):
     '''Defines a base class for the reading of input files (diffraction

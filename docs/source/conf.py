@@ -11,21 +11,81 @@
 # serve to show the default.
 
 import sys, os
-# dummy packages for misc imports not on readthedocs
+# set up dummy packages for misc imports not on readthedocs
 from mock import Mock as MagicMock
+class wx(MagicMock):
+    #@classmethod
+    #def __getattr__(cls, name):
+    #    return wx()
+    Menu = Panel = Dialog = CheckBox = Choice = ComboBox = object
+    Button = PyValidator = TextCtrl = TreeCtrl = object
+    DEFAULT_DIALOG_STYLE = RESIZE_BORDER = CENTRE = OK = CANCEL = True
+    ID_ANY = -1
+    def __getitem__(self,*args):
+        return '3.0.0'
+    class grid(object):
+        PyGridTableBase = PyGridCellEditor = Grid = object
+    class html(object):
+        HtmlWindow = object
+    class aui(MagicMock):
+        AuiNotebook = HtmlWindow = object
+    class lib(MagicMock):
+        class scrolledpanel(MagicMock):
+            ScrolledPanel = object
+        class gridmovers(MagicMock): pass
+        class colourselect(MagicMock): pass
+
+sys.modules.update({'wx':wx()})
+sys.modules.update({'wx.aui':wx.aui()})
+sys.modules.update({'wx.html':wx.html()})
+sys.modules.update({'wx.grid':wx.grid()})
+sys.modules.update({'wx.lib':wx.lib()})
+sys.modules.update({'wx.wizard':wx.grid()})
+sys.modules.update({'wx.glcanvas':wx.lib()})
+sys.modules.update({'wx.lib.scrolledpanel':wx.lib.scrolledpanel()})
+sys.modules.update({'wx.lib.gridmovers':wx.lib.gridmovers()})
+sys.modules.update({'wx.lib.colourselect':wx.lib.gridmovers()})
+
+class numpy(MagicMock):
+    pi = 3.0
+    def log(self,*args): return 0
+    def sqrt(self,*args): return 1
+    class ma(MagicMock):pass
+    class linalg(MagicMock):pass
+sys.modules.update({'numpy':numpy()})
+sys.modules.update({'numpy.ma':numpy.ma()})
+sys.modules.update({'numpy.linalg':numpy.linalg()})
+sys.modules.update({'numpy.fft':numpy.linalg()})
+
+class scipy(MagicMock):
+    class optimize(MagicMock):pass
+sys.modules.update({'scipy':scipy()})
+sys.modules.update({'scipy.optimize':scipy.optimize()})
+sys.modules.update({'scipy.stats':scipy.optimize()})
+sys.modules.update({'scipy.interpolate':scipy.optimize()})
+sys.modules.update({'scipy.special':scipy.optimize()})
+
+class OpenGL(MagicMock):
+    class GL(MagicMock):pass
+    class GLU(MagicMock):pass
+sys.modules.update({'OpenGL':OpenGL()})
+sys.modules.update({'OpenGL.GL':OpenGL.GL()})
+sys.modules.update({'OpenGL.GLU':OpenGL.GLU()})
+sys.modules.update({'OpenGL.GLE':OpenGL.GL()})
 
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
-            return Mock()
+        return Mock()
 
-MOCK_MODULES = ['wx.lib.scrolledpanel', 'wx.lib.gridmovers', 'wx.grid', 'wx.lib.colourselect', 'wx.aui', 'wx',
-                'numpy.core.multiarray', 'numpy.linalg',  'numpy.ma', 'numpy',
-                'scipy.optimize', 'scipy',
-                'pypowder', 'pyspg', 'pytexture', 'matplotlib', 
-                'OpenGL.GL', 'OpenGL', 
+MOCK_MODULES = [
+                'pypowder', 'pyspg', 'pytexture', 'polymask', 'fellipse',
+                'matplotlib', 'matplotlib.backends', 'matplotlib.backends.backend_wx', 
+                'matplotlib.backends.backend_wxagg','pylab',
+                'mpl_toolkits', 'mpl_toolkits.mplot3d', 'mpl_toolkits.mplot3d.axes3d',
                 ]
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

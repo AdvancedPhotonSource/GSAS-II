@@ -12,19 +12,18 @@
 --------------------------------
 
 '''
-import wx
-import wx.grid as wg
-#import wx.wizard as wz
-#import wx.aui
-import wx.lib.scrolledpanel as wxscroll
 import time
 import copy
 import cPickle
 import sys
 import os
-import numpy as np
-import numpy.ma as ma
-import scipy.optimize as so
+if not os.environ.get('READTHEDOCS', False):
+    import wx
+    import wx.grid as wg
+    import wx.lib.scrolledpanel as wxscroll
+    import numpy as np
+    import numpy.ma as ma
+    import scipy.optimize as so
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIImath as G2mth

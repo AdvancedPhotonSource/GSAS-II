@@ -21,18 +21,22 @@ that respond to some tabs in the phase GUI in other modules
 
 '''
 import os.path
-import wx
-import wx.grid as wg
-import wx.lib.gridmovers as wgmove
-import wx.wizard as wz
-import wx.lib.scrolledpanel as wxscroll
-import matplotlib as mpl
 import copy
 import time
 import sys
 import random as ran
 import cPickle
-import GSASIIpath
+if not os.environ.get('READTHEDOCS', False):
+    import wx
+    import wx.grid as wg
+    import wx.lib.gridmovers as wgmove
+    import wx.wizard as wz
+    import wx.lib.scrolledpanel as wxscroll
+    import matplotlib as mpl
+    import numpy as np
+    import numpy.linalg as nl
+    import numpy.ma as ma
+    import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIlattice as G2lat
 import GSASIIspc as G2spc
@@ -48,9 +52,6 @@ import GSASIIpwd as G2pwd
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIIctrls as G2G
-import numpy as np
-import numpy.linalg as nl
-import numpy.ma as ma
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 WHITE = wx.Colour(255,255,255)

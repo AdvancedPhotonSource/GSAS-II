@@ -812,7 +812,7 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
             GoOn = dlg.Update(Nc)[0]
             if not GoOn:
                 break
-        tries += 1    
+        tries += 1
     X = sortM20(Asave)
     if X:
         Lhkl,M20,X20,A = refinePeaks(peaks,ibrav,X[0][1],ifX20)

@@ -195,6 +195,20 @@ class CIFPhaseReader(G2IO.ImportPhase):
                                 '_atom_site_aniso_u_12' : 14,
                                 '_atom_site_aniso_u_13' : 15,
                                 '_atom_site_aniso_u_23' : 16, }
+                G2SSAtomDict = {'_atom_site_occ_Fourier_wave_vector_seq_id' : 1,
+                                '_atom_site_occ_Fourier_param_cos' : 2,
+                                '_atom_site_occ_Fourier_param_sin' : 3,
+                                '_atom_site_displace_Fourier_axis' : 2,
+                                '_atom_site_displace_Fourier_wave_vector_seq_id' : 3,
+                                '_atom_site_displace_Fourier_param_cos' : 5,
+                                '_atom_site_displace_Fourier_param_sin' : 4,
+                                '_atom_site_U_Fourier_tens_elem' : 7,
+                                '_atom_site_U_Fourier_wave_vector_seq_id' : 8,
+                                '_atom_site_U_Fourier_param_cos' : 9,
+                                '_atom_site_U_Fourier_param_sin' : 10,  }
+
+                                    
+
                 ranIdlookup = {}
                 for aitem in atomloop:
                     atomlist = ['','','',0,0,0,1.0,'',0,'I',0.01,0,0,0,0,0,0,0]

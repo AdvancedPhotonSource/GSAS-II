@@ -84,6 +84,49 @@ class HKLF_ReaderClass(G2IO.ImportStructFactor):
             traceback.print_exc(file=sys.stdout)
             return False
 
+class HKLMF_ReaderClass(G2IO.ImportStructFactor):
+    'Routines to import F, reflections from a REMOS HKLMF file'
+    def __init__(self):
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.fo','.FO'),
+            strictExtension=False,
+            formatName = 'HKLM F',
+            longFormatName = 'REMOS [hklm, Fo] Structure factor text file'
+            )
+
+    def ContentsValidator(self, filepointer):
+        'Make sure file contains the expected columns on numbers'
+        return ColumnValidator(self, filepointer)
+
+    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        'Read the file'
+        try:
+            for line,S in enumerate(filepointer):
+                self.errors = '  Error reading line '+str(line+1)
+                if S[0] == '#': continue       #ignore comments, if any
+                h,k,l,m,Fo= S.split()
+                h,k,l,m = [int(h),int(k),int(l),int(m)]
+                if h == 999 or not any([h,k,l]):
+                    break
+                Fo = float(Fo)
+                sigFo2 = Fo
+                if Fo < 1.0:
+                    sigFo2 = 1.0
+               # h,k,l,m,tw,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
+                self.RefDict['RefList'].append([h,k,l,m,1,0,Fo**2,sigFo2,0,Fo**2,0,0,0])
+            self.errors = 'Error after reading reflections (unexpected!)'
+            self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+            self.RefDict['Type'] = 'SXC'
+            self.RefDict['Super'] = 1
+            self.UpdateParameters(Type='SXC',Wave=None) # histogram type
+            return True
+        except Exception as detail:
+            self.errors += '\n  '+str(detail)
+            print '\n\n'+self.formatName+' read error: '+str(detail) # for testing
+            import traceback
+            traceback.print_exc(file=sys.stdout)
+            return False
+
 class SHELX4_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import F**2, sig(F**2) reflections from a Shelx HKLF 4 file'
     def __init__(self):

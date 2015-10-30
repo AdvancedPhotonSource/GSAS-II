@@ -49,6 +49,7 @@ rpd = np.pi/180.
 RSQ2PI = 1./np.sqrt(2.*np.pi)
 SQ2 = np.sqrt(2.)
 RSQPI = 1./np.sqrt(np.pi)
+R2pisq = 1./(2.*np.pi**2)
 
 def sec2HMS(sec):
     """Convert time in sec to H:M:S string
@@ -284,6 +285,18 @@ def UijtoU6(U):
     U6 = np.array([U[0][0],U[1][1],U[2][2],U[0][1],U[0][2],U[1][2]])
     return U6
 
+def betaij2Uij(betaij,G):
+    """
+    Convert beta-ij to Uij tensors
+    
+    :param beta-ij - numpy array [beta-ij]
+    :param G: reciprocal metric tensor
+    :returns: Uij: numpy array [Uij]
+    """
+    ast = np.sqrt(np.diag(G))   #a*, b*, c*
+    Mast = np.multiply.outer(ast,ast)    
+    return R2pisq*UijtoU6(U6toUij(betaij)/Mast)
+    
 def Uij2betaij(Uij,G):
     """
     Convert Uij to beta-ij tensors -- stub for eventual completion

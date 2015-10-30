@@ -926,9 +926,10 @@ def XAnomAbs(Elements,wave):
 #### Modulation math
 ################################################################################
     
-def Modulation(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
+def Modulation(waveTypes,H,HP,FSSdata,XSSdata,USSdata,Mast):
     '''
     H: array nRefBlk x ops X hklt
+    HP: array nRefBlk x ops X hklt proj to hkl
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
     XSSdata: array 2x3 x atoms X waves (sin,cos terms)
     USSdata: array 2x6 x atoms X waves (sin,cos terms)
@@ -969,27 +970,25 @@ def Modulation(waveTypes,H,FSSdata,XSSdata,USSdata,Mast):
     XmodA = Ax[:,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X 3 X 32
     XmodB = Bx[:,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
     Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X 3 X 32; sum waves
-    Tau = np.reshape(np.tile(glTau,Xmod.shape[0]),(Xmod.shape[0],-1))   #atoms x 32
-    XmodT = np.swapaxes(np.concatenate((Xmod,Tau[:,nxs,:]),axis=1),1,2)      # atoms x 32 x 4 (x,y,z,t)
+    Xmod = np.swapaxes(Xmod,1,2)                            #agree with J2K ParSup
     if Au.shape[1]:
         tauU = np.arange(1.,Au.shape[1]+1)[:,nxs]*glTau     #Uwaves x 32
         UmodA = Au[:,:,:,:,nxs]*np.sin(twopi*tauU[nxs,:,nxs,nxs,:]) #atoms x waves x 3x3 x 32
         UmodB = Bu[:,:,:,:,nxs]*np.cos(twopi*tauU[nxs,:,nxs,nxs,:]) #ditto
         Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x 32; sum waves
-        HbH = np.exp(-np.sum(H[:,:,nxs,nxs,:3]*np.inner(H[:,:,:3],Umod),axis=-1)) # refBlk x ops x atoms x 32 add Overhauser corr.?
+        HbH = np.exp(-np.sum(HP[:,:,nxs,nxs]*np.inner(HP[:,:],Umod),axis=-1)) # refBlk x ops x atoms x 32 add Overhauser corr.?
     else:
         HbH = 1.0
-    HdotX = np.inner(H,XmodT)     #refBlk X ops x atoms X 32
+    D = H[:,:,3:]*glTau[nxs,nxs,:]              #m*e*tau; refBlk x  ops X 32
+    HdotX = np.inner(HP,Xmod)+D[:,:,nxs,:]     #refBlk x ops x atoms X 32
     cosHA = np.sum(Fmod*HbH*np.cos(twopi*HdotX)*glWt,axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
     sinHA = np.sum(Fmod*HbH*np.sin(twopi*HdotX)*glWt,axis=-1)       #imag part; ditto
 #    GSASIIpath.IPyBreak()
-#    if np.any(cosHA<0.) or np.any(cosHA>1.) or np.any(sinHA<0.) or np.any(sinHA>1.):
-#        GSASIIpath.IPyBreak()
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
     
-def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):
+def ModulationDerv(waveTypes,H,HP,Hij,FSSdata,XSSdata,USSdata,Mast):
     '''
-    H: array ops X hklt
+    H: array ops X hklt proj to hkl
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
     XSSdata: array 2x3 x atoms X waves (sin,cos terms)
     USSdata: array 2x6 x atoms X waves (sin,cos terms)
@@ -998,7 +997,7 @@ def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):
    
     nxs = np.newaxis
     numeric = True   
-    cosHA,sinHA = Modulation(waveTypes,np.array([H,]),FSSdata,XSSdata,USSdata,Mast)
+    cosHA,sinHA = Modulation(waveTypes,np.array([H,]),np.array([HP,]),FSSdata,XSSdata,USSdata,Mast)
     Mf = [H.shape[0],]+list(FSSdata.T.shape)    #ops x atoms x waves x 2 (sin+cos frac mods)
     dGdMfC = np.zeros(Mf)
     dGdMfS = np.zeros(Mf)
@@ -1036,11 +1035,9 @@ def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):
     XmodA = Ax[:,nx:,:,nxs]*StauX #atoms X waves X pos X 32
     XmodB = Bx[:,nx:,:,nxs]*CtauX #ditto
     Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X pos X 32; sum waves
-    Tau = np.reshape(np.tile(glTau,Xmod.shape[0]),(Xmod.shape[0],-1))   #atoms x 32
-    XmodT = np.swapaxes(np.concatenate((Xmod,Tau[:,nxs,:]),axis=1),1,2)      # atoms x 32 x 4 (x,y,z,t)
-    D = H[:,3][:,nxs]*glTau[nxs,:]              #m*tau; ops X 32
-#    HdotX = np.inner(H[:,:3],np.swapaxes(Xmod,1,2))+D[:,nxs,:]     #ops x atoms X 32
-    HdotX = np.inner(H,XmodT)     #refBlk X ops x atoms X 32
+    Xmod = np.swapaxes(Xmod,1,2)
+    D = H[:,3][:,nxs]*glTau[nxs,:]              #m*e*tau; ops X 32
+    HdotX = np.inner(HP,Xmod)+D[:,nxs,:]     #refBlk X ops x atoms X 32
     if Af.shape[1]:
         tauF = np.arange(1.,Af.shape[1]+1-nf)[:,nxs]*glTau  #Fwaves x 32
         StauF = np.ones_like(Af)[:,nf:,nxs]*np.sin(twopi*tauF)[nxs,:,:] #also dFmod/dAf
@@ -1057,14 +1054,14 @@ def ModulationDerv(waveTypes,H,Hij,FSSdata,XSSdata,USSdata,Mast):
         UmodA = Au[:,:,:,:,nxs]*StauU #atoms x waves x 3x3 x 32
         UmodB = Bu[:,:,:,:,nxs]*CtauU #ditto
         Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x 32; sum waves
-        HbH = np.exp(-np.sum(H[:,nxs,nxs,:3]*np.inner(H[:,:3],Umod),axis=-1)) # ops x atoms x 32 add Overhauser corr.?
-        
+        HbH = np.exp(-np.sum(HP[:,nxs,nxs]*np.inner(HP[:],Umod),axis=-1)) # ops x atoms x 32 add Overhauser corr.?
+        #derivatives??
     else:
         HbH = np.ones_like(HdotX)
-    HdotXA = H[:,nxs,nxs,nxs,:3]*np.swapaxes(XmodA,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]  #ops x atoms x waves x 32 x xyz
-    HdotXB = H[:,nxs,nxs,nxs,:3]*np.swapaxes(XmodB,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]
-    dHdXA = H[:,nxs,nxs,nxs,:3]*np.swapaxes(StauX,-1,-2)[nxs,:,:,:,:]    #ops x atoms x waves x 32 x xyz
-    dHdXB = H[:,nxs,nxs,nxs,:3]*np.swapaxes(CtauX,-1,-2)[nxs,:,:,:,:]              #ditto
+    HdotXA = HP[:,nxs,nxs,nxs,:]*np.swapaxes(XmodA,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]  #ops x atoms x waves x 32 x xyz
+    HdotXB = HP[:,nxs,nxs,nxs,:]*np.swapaxes(XmodB,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]
+    dHdXA = HP[:,nxs,nxs,nxs,:]*np.swapaxes(StauX,-1,-2)[nxs,:,:,:,:]    #ops x atoms x waves x 32 x xyz
+    dHdXB = HP[:,nxs,nxs,nxs,:]*np.swapaxes(CtauX,-1,-2)[nxs,:,:,:,:]              #ditto
     dGdMxCa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(-twopi*dHdXA*np.sin(twopi*HdotXA))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxCb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(-twopi*dHdXB*np.sin(twopi*HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxC = np.concatenate((dGdMxCa,dGdMxCb),axis=-1)
@@ -2251,73 +2248,6 @@ def OmitMap(data,reflDict,pgbar=None):
     print 'Omit map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
     return mapData
     
-def Fourier4DMap(data,reflDict):
-    '''default doc string
-    
-    :param type name: description
-    
-    :returns: type name: description
-    
-    '''
-    generalData = data['General']
-    map4DData = generalData['4DmapData']
-    mapData = generalData['Map']
-    dmin = mapData['Resolution']
-    SGData = generalData['SGData']
-    SSGData = generalData['SSGData']
-    SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
-    SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
-    cell = generalData['Cell'][1:8]        
-    A = G2lat.cell2A(cell[:6])
-    maxM = generalData['SuperVec'][2]
-    Hmax = G2lat.getHKLmax(dmin,SGData,A)+[maxM,]
-    adjHKLmax(SGData,Hmax)
-    Hmax = np.asarray(Hmax,dtype='i')+1
-    Fhkl = np.zeros(shape=2*Hmax,dtype='c16')
-    time0 = time.time()
-    for iref,ref in enumerate(reflDict['RefList']):
-        if ref[5] > dmin:
-            Fosq,Fcsq,ph = ref[9:12]
-            Fosq = np.where(Fosq>0.,Fosq,0.)    #can't use Fo^2 < 0
-            Uniq = np.inner(ref[:4],SSGMT)
-            Phi = np.inner(ref[:4],SSGT)
-            for i,hkl in enumerate(Uniq):        #uses uniq
-                hkl = np.asarray(hkl,dtype='i')
-                dp = 360.*Phi[i]                #and phi
-                a = cosd(ph+dp)
-                b = sind(ph+dp)
-                phasep = complex(a,b)
-                phasem = complex(a,-b)
-                if 'Fobs' in mapData['MapType']:
-                    F = np.sqrt(Fosq)
-                    h,k,l,m = hkl+Hmax
-                    Fhkl[h,k,l,m] = F*phasep
-                    h,k,l,m = -hkl+Hmax
-                    Fhkl[h,k,l,m] = F*phasem
-                elif 'Fcalc' in mapData['MapType']:
-                    F = np.sqrt(Fcsq)
-                    h,k,l,m = hkl+Hmax
-                    Fhkl[h,k,l,m] = F*phasep
-                    h,k,l,m = -hkl+Hmax
-                    Fhkl[h,k,l,m] = F*phasem                    
-                elif 'delt-F' in mapData['MapType']:
-                    dF = np.sqrt(Fosq)-np.sqrt(Fcsq)
-                    h,k,l,m = hkl+Hmax
-                    Fhkl[h,k,l,m] = dF*phasep
-                    h,k,l,m = -hkl+Hmax
-                    Fhkl[h,k,l,m] = dF*phasem
-    SSrho = fft.fftn(fft.fftshift(Fhkl))/cell[6]          #4D map 
-    rho = fft.fftn(fft.fftshift(Fhkl[:,:,:,maxM+1]))/cell[6]    #3D map
-    map4DData['rho'] = np.real(SSrho)
-    map4DData['rhoMax'] = max(np.max(map4DData['rho']),-np.min(map4DData['rho']))
-    map4DData['minmax'] = [np.max(map4DData['rho']),np.min(map4DData['rho'])]
-    map4DData['Type'] = reflDict['Type']
-    mapData['Type'] = reflDict['Type']
-    mapData['rho'] = np.real(rho)
-    mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
-    mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
-    print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
-
 def FourierMap(data,reflDict):
     '''default doc string
     
@@ -2387,6 +2317,73 @@ def FourierMap(data,reflDict):
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
     
+def Fourier4DMap(data,reflDict):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+    generalData = data['General']
+    map4DData = generalData['4DmapData']
+    mapData = generalData['Map']
+    dmin = mapData['Resolution']
+    SGData = generalData['SGData']
+    SSGData = generalData['SSGData']
+    SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
+    SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
+    cell = generalData['Cell'][1:8]        
+    A = G2lat.cell2A(cell[:6])
+    maxM = generalData['SuperVec'][2]
+    Hmax = G2lat.getHKLmax(dmin,SGData,A)+[maxM,]
+    adjHKLmax(SGData,Hmax)
+    Hmax = np.asarray(Hmax,dtype='i')+1
+    Fhkl = np.zeros(shape=2*Hmax,dtype='c16')
+    time0 = time.time()
+    for iref,ref in enumerate(reflDict['RefList']):
+        if ref[5] > dmin:
+            Fosq,Fcsq,ph = ref[9:12]
+            Fosq = np.where(Fosq>0.,Fosq,0.)    #can't use Fo^2 < 0
+            Uniq = np.inner(ref[:4],SSGMT)
+            Phi = np.inner(ref[:4],SSGT)
+            for i,hkl in enumerate(Uniq):        #uses uniq
+                hkl = np.asarray(hkl,dtype='i')
+                dp = 360.*Phi[i]                #and phi
+                a = cosd(ph+dp)
+                b = sind(ph+dp)
+                phasep = complex(a,b)
+                phasem = complex(a,-b)
+                if 'Fobs' in mapData['MapType']:
+                    F = np.sqrt(Fosq)
+                    h,k,l,m = hkl+Hmax
+                    Fhkl[h,k,l,m] = F*phasep
+                    h,k,l,m = -hkl+Hmax
+                    Fhkl[h,k,l,m] = F*phasem
+                elif 'Fcalc' in mapData['MapType']:
+                    F = np.sqrt(Fcsq)
+                    h,k,l,m = hkl+Hmax
+                    Fhkl[h,k,l,m] = F*phasep
+                    h,k,l,m = -hkl+Hmax
+                    Fhkl[h,k,l,m] = F*phasem                    
+                elif 'delt-F' in mapData['MapType']:
+                    dF = np.sqrt(Fosq)-np.sqrt(Fcsq)
+                    h,k,l,m = hkl+Hmax
+                    Fhkl[h,k,l,m] = dF*phasep
+                    h,k,l,m = -hkl+Hmax
+                    Fhkl[h,k,l,m] = dF*phasem
+    SSrho = fft.fftn(fft.fftshift(Fhkl))/cell[6]          #4D map 
+    rho = fft.fftn(fft.fftshift(Fhkl[:,:,:,maxM+1]))/cell[6]    #3D map
+    map4DData['rho'] = np.real(SSrho)
+    map4DData['rhoMax'] = max(np.max(map4DData['rho']),-np.min(map4DData['rho']))
+    map4DData['minmax'] = [np.max(map4DData['rho']),np.min(map4DData['rho'])]
+    map4DData['Type'] = reflDict['Type']
+    mapData['Type'] = reflDict['Type']
+    mapData['rho'] = np.real(rho)
+    mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
+    mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
+    print 'Fourier map time: %.4f'%(time.time()-time0),'no. elements: %d'%(Fhkl.size)
+
 # map printing for testing purposes
 def printRho(SGLaue,rho,rhoMax):                          
     '''default doc string
@@ -2573,7 +2570,7 @@ def ChargeFlip(data,reflDict,pgbar):
             break
     np.seterr(**old)
     print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
-    CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))
+    CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))/10.  #? to get on same scale as e-map
     print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
     roll = findOffset(SGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
         
@@ -2735,8 +2732,8 @@ def SSChargeFlip(data,reflDict,pgbar):
             break
     np.seterr(**old)
     print ' Charge flip time: %.4f'%(time.time()-time0),'no. elements: %d'%(Ehkl.size)
-    CErho = np.real(fft.fftn(fft.fftshift(CEhkl[:,:,:,maxM+1])))
-    SSrho = np.real(fft.fftn(fft.fftshift(CEhkl)))
+    CErho = np.real(fft.fftn(fft.fftshift(CEhkl[:,:,:,maxM+1])))/10.    #? to get on same scale as e-map
+    SSrho = np.real(fft.fftn(fft.fftshift(CEhkl)))/10.                  #? ditto
     print ' No.cycles = ',Ncyc,'Residual Rcf =%8.3f%s'%(Rcf,'%')+' Map size:',CErho.shape
     roll = findSSOffset(SGData,SSGData,A,CEhkl)               #CEhkl needs to be just the observed set, not the full set!
 

@@ -28,6 +28,7 @@ import GSASIIspc as G2spc
 import GSASIIlattice as G2lat
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
+R2pisq = 1./(2.*np.pi**2)
 
 class PDB_ReaderClass(G2IO.ImportPhase):
     'Routine to import Phase information from a PDB file'
@@ -401,6 +402,10 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                 cell=[float(cell[0]),float(cell[1]),float(cell[2]),
                     float(cell[3]),float(cell[4]),float(cell[5])]
                 Volume = G2lat.calc_V(G2lat.cell2A(cell))
+                G,g = G2lat.cell2Gmat(cell)
+                ast = np.sqrt(np.diag(G))
+                Mast = np.multiply.outer(ast,ast)    
+                
             elif 'spgroup' in S:
                 if 'X' in S:
                     raise self.ImportException("Supersymmetry "+S+" too high; GSAS-II limited to (3+1) supersymmetry")            
@@ -478,7 +483,8 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                 IA = 'A'
                 Uiso = 0.
                 Uij = [float(S2[:9]),float(S2[9:18]),float(S2[18:27]),
-                    float(S2[27:36]),float(S2[36:45]),float(S2[45:54])]
+                    float(S2[27:36]),float(S2[36:45]),float(S2[45:54])] #these things are betaij! need to convert to Uij
+                Uij = R2pisq*G2lat.UijtoU6(G2lat.U6toUij(Uij)/Mast)
             for i in range(S1N[0]):
                 if not i:
                     FS = file2.readline()
@@ -515,8 +521,11 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                     vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36]),float(it[36:45]),float(it[45:54])]
                 Spos[i] = [vals,False]
             for i,it in enumerate(Sadp):
+                #these are betaij modulations! need to convert to Uij modulations
                 vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36]),float(it[36:45]),float(it[45:54]),
                     float(it[54:63]),float(it[63:72]),float(it[72:81]),float(it[81:90]),float(it[90:99]),float(it[99:108])]                
+                vals[:6] = R2pisq*G2lat.UijtoU6(G2lat.U6toUij(vals[:6])/Mast)    #convert sin bij to Uij
+                vals[6:] = R2pisq*G2lat.UijtoU6(G2lat.U6toUij(vals[6:])/Mast)    #convert cos bij to Uij
                 Sadp[i] = [vals,False]
             Atom = [Name,aType,'',XYZ[0],XYZ[1],XYZ[2],1.0,SytSym,Mult,IA,Uiso]
             Atom += Uij

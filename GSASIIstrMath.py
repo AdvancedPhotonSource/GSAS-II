@@ -973,6 +973,8 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)    
     SGInv = SGData['SGInv']
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGT = np.array([ops[1] for ops in SGData['SGOps']])
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     eps = SSGMT[:,3,3]
@@ -1003,8 +1005,8 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
     else:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
-    Uij = np.array(G2lat.U6toUij(Uijdata))
-    bij = Mast*Uij.T
+    Uij = np.array(G2lat.U6toUij(Uijdata)).T
+    bij = Mast*Uij
     blkSize = 100       #no. of reflections in a block
     nRef = refDict['RefList'].shape[0]
     if not len(refDict['FF']):
@@ -1027,6 +1029,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         iFin = min(iBeg+blkSize,nRef)
         refl = refDict['RefList'][iBeg:iFin]    #array(blkSize,nItems)
         H = refl.T[:4]                          #array(blkSize,4)
+        HP = H[:3]+modQ[:,nxs]*H[3:]            #projected hklm to hkl
 #        H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(blkSize,nTwins,4) or (blkSize,4)
 #        TwMask = np.any(H,axis=-1)
 #        if TwinLaw.shape[0] > 1 and TwDict: #need np.inner(TwinLaw[?],TwDict[iref][i])*TwinInv[i]
@@ -1040,10 +1043,14 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         SQ = 1./(2.*refl.T[5])**2               #array(blkSize)
         SQfactor = 4.0*SQ*twopisq               #ditto prev.
         Uniq = np.inner(H.T,SSGMT)
+        UniqP = np.inner(HP.T,SGMT)
         Phi = np.inner(H.T,SSGT)
+        PhiP = np.inner(HP.T,SGT)
         if SGInv:   #if centro - expand HKL sets
             Uniq = np.hstack((Uniq,-Uniq))
             Phi = np.hstack((Phi,-Phi))
+            UniqP = np.hstack((UniqP,-UniqP))
+            PhiP = np.hstack((PhiP,-PhiP))
         if 'T' in calcControls[hfx+'histType']:
             if 'P' in calcControls[hfx+'histType']:
                 FP,FPP = G2el.BlenResTOF(Tdata,BLtables,refl.T[14])
@@ -1054,26 +1061,26 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),Uniq.shape[1]*len(TwinLaw))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,Uniq.shape[1]*len(TwinLaw),axis=0)
-        phase = twopi*(np.inner(Uniq[:,:,:3],(dXdata.T+Xdata.T))+Phi[:,:,nxs]) #+TauT.T[nxs,:,:]*eps[nxs,:,nxs]
+        phase = twopi*(np.inner(Uniq[:,:,:3],(dXdata.T+Xdata.T))+Phi[:,:,nxs])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
         biso = -SQfactor*Uisodata[:,nxs]
         Tiso = np.repeat(np.where(biso<1.,np.exp(biso),1.0),Uniq.shape[1]*len(TwinLaw),axis=1).T
-        HbH = -np.sum(Uniq[:,:,nxs,:3]*np.inner(Uniq[:,:,:3],bij),axis=-1)
+        HbH = -np.sum(UniqP[:,:,nxs,:]*np.inner(UniqP[:,:,:],bij),axis=-1)  #use hklt proj to hkl
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)
-        Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[1]
+        Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[1]  #refBlk x ops x atoms
         if 'T' in calcControls[hfx+'histType']:
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
             fb = np.array([np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
         else:
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
             fb = np.array([Flack*FPP*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
-        GfpuA = G2mth.Modulation(waveTypes,Uniq,FSSdata,XSSdata,USSdata,Mast) #2 x refBlk x sym X atoms
+        GfpuA = G2mth.Modulation(waveTypes,Uniq,UniqP,FSSdata,XSSdata,USSdata,Mast) #2 x refBlk x sym X atoms
         fag = fa*GfpuA[0]-fb*GfpuA[1]   #real; 2 x refBlk x sym x atoms
         fbg = fb*GfpuA[0]+fa*GfpuA[1]
         fas = np.sum(np.sum(fag,axis=-1),axis=-1)   #2 x refBlk; sum sym & atoms
         fbs = np.sum(np.sum(fbg,axis=-1),axis=-1)
-   #     GSASIIpath.IPyBreak()
+#        GSASIIpath.IPyBreak()
         if 'P' in calcControls[hfx+'histType']:
             refl.T[10] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
             refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
@@ -1097,6 +1104,8 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
     ast = np.sqrt(np.diag(G))
     Mast = twopisq*np.multiply.outer(ast,ast)
     SGInv = SGData['SGInv']
+    SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
+    SGT = np.array([ops[1] for ops in SGData['SGOps']])
     SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     FFtables = calcControls['FFtables']
@@ -1117,14 +1126,15 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
     Smult,TauT = GetSSTauM(SGData['SGOps'],SSGData['SSGOps'],pfx,calcControls,Xdata)
     if SGInv:
         TauT = np.hstack((TauT,-TauT))
+    modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
         FP,FPP = G2el.BlenResCW(Tdata,BLtables,parmDict[hfx+'Lam'])
     elif 'X' in calcControls[hfx+'histType']:
         FP = np.array([FFtables[El][hfx+'FP'] for El in Tdata])
         FPP = np.array([FFtables[El][hfx+'FPP'] for El in Tdata])
-    Uij = np.array(G2lat.U6toUij(Uijdata))
-    bij = Mast*Uij.T
+    Uij = np.array(G2lat.U6toUij(Uijdata)).T
+    bij = Mast*Uij
     if not len(refDict['FF']):
         if 'N' in calcControls[hfx+'histType']:
             dat = G2el.getBLvalues(BLtables)        #will need wave here for anom. neutron b's
@@ -1167,6 +1177,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         if 'T' in calcControls[hfx+'histType']:
             FP,FPP = G2el.BlenResCW(Tdata,BLtables,refl.T[12+im])
         H = np.array(refl[:4])
+        HP = H[:3]+modQ*H[3:]            #projected hklm to hkl
 #        H = np.squeeze(np.inner(H.T,TwinLaw))   #maybe array(4,nTwins) or (4)
 #        TwMask = np.any(H,axis=-1)
 #        if TwinLaw.shape[0] > 1 and TwDict:
@@ -1183,23 +1194,28 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         FF = refDict['FF']['FF'][iref].T[Tindx]
         Uniq = np.inner(H,SSGMT)
         Phi = np.inner(H,SSGT)
+        UniqP = np.inner(HP,SGMT)
+        PhiP = np.inner(HP,SGT)
         if SGInv:   #if centro - expand HKL sets
             Uniq = np.vstack((Uniq,-Uniq))
             Phi = np.hstack((Phi,-Phi))
+            UniqP = np.vstack((UniqP,-UniqP))
+            PhiP = np.hstack((PhiP,-PhiP))
+#        GSASIIpath.IPyBreak()                  
         phase = twopi*(np.inner(Uniq[:,:3],(dXdata+Xdata).T)+Phi[:,nxs])
         sinp = np.sin(phase)
         cosp = np.cos(phase)
         occ = Mdata*Fdata/Uniq.shape[0]
         biso = -SQfactor*Uisodata[:,nxs]
         Tiso = np.repeat(np.where(biso<1.,np.exp(biso),1.0),Uniq.shape[0]*len(TwinLaw),axis=1).T    #ops x atoms
-        HbH = -np.sum(Uniq[:,nxs,:3]*np.inner(Uniq[:,:3],bij),axis=-1)  #ops x atoms
-        Hij = np.array([Mast*np.multiply.outer(U[:3],U[:3]) for U in Uniq]) #atoms x 3x3
+        HbH = -np.sum(UniqP[:,nxs,:3]*np.inner(UniqP[:,:3],bij),axis=-1)  #ops x atoms
+        Hij = np.array([Mast*np.multiply.outer(U[:3],U[:3]) for U in UniqP]) #atoms x 3x3
         Hij = np.squeeze(np.reshape(np.array([G2lat.UijtoU6(Uij) for Uij in Hij]),(nTwin,-1,6)))
         Tuij = np.where(HbH<1.,np.exp(HbH),1.0)     #ops x atoms
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[0]  #ops x atoms
         fot = (FF+FP-Bab)*Tcorr     #ops x atoms
         fotp = FPP*Tcorr            #ops x atoms
-        GfpuA,dGdf,dGdx,dGdu = G2mth.ModulationDerv(waveTypes,Uniq,Hij,FSSdata,XSSdata,USSdata,Mast)
+        GfpuA,dGdf,dGdx,dGdu = G2mth.ModulationDerv(waveTypes,Uniq,UniqP,Hij,FSSdata,XSSdata,USSdata,Mast)
         # derivs are: ops x atoms x waves x 1,3,or 6 parms as [real,imag] parts
         fa = np.array([((FF+FP).T-Bab).T*cosp*Tcorr,-Flack*FPP*sinp*Tcorr]) # array(2,nTwin,nEqv,nAtoms)
         fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,Flack*FPP*cosp*Tcorr])
@@ -1219,7 +1235,6 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         dfbdba = np.sum(-sinp*Tcorr[:,nxs],axis=1)
         dfadui = np.sum(-SQfactor*fag,axis=1)
         dfbdui = np.sum(-SQfactor*fbg,axis=1)
-#        GSASIIpath.IPyBreak()                  
         if nTwin > 1:
             dfadx = np.array([np.sum(twopi*Uniq[it,:,:3]*np.swapaxes(fax,-2,-1)[:,it,:,:,nxs],axis=-2) for it in range(nTwin)])
             dfbdx = np.array([np.sum(twopi*Uniq[it,:,:3]*np.swapaxes(fbx,-2,-1)[:,it,:,:,nxs],axis=-2) for it in range(nTwin)])           
@@ -1228,6 +1243,8 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             # array(nTwin,2,nAtom,3) & array(2,nTwin,nAtom,6)
             dfadGx = np.sum(fa[:,it,:,:,nxs,nxs]*dGdx[0][nxs,nxs,:,:,:,:]-fb[:,it,:,:,nxs,nxs]*dGdx[1][nxs,nxs,:,:,:,:],axis=1)
             dfbdGx = np.sum(fb[:,it,:,:,nxs,nxs]*dGdx[0][nxs,nxs,:,:,:,:]+fa[:,it,:,:,nxs,nxs]*dGdx[1][nxs,nxs,:,:,:,:],axis=1)
+            dfadGx = np.sum(fa[:,it,:,:,nxs,nxs]*dGdu[0][nxs,nxs,:,:,:,:]-fb[:,it,:,:,nxs,nxs]*dGdu[1][nxs,nxs,:,:,:,:],axis=1)
+            dfbdGx = np.sum(fb[:,it,:,:,nxs,nxs]*dGdu[0][nxs,nxs,:,:,:,:]+fa[:,it,:,:,nxs,nxs]*dGdu[1][nxs,nxs,:,:,:,:],axis=1)
             # array (2,nAtom,wave,3)
         else:
             dfadx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fax,-2,-1)[:,:,:,nxs],axis=-2)
@@ -1237,6 +1254,8 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             # array(2,nAtom,3) & array(2,nAtom,6)
             dfadGx = np.sum(fa[:,:,:,nxs,nxs]*dGdx[0][nxs,:,:,:,:]-fb[:,:,:,nxs,nxs]*dGdx[1][nxs,:,:,:,:],axis=1)
             dfbdGx = np.sum(fb[:,:,:,nxs,nxs]*dGdx[0][nxs,:,:,:,:]+fa[:,:,:,nxs,nxs]*dGdx[1][nxs,:,:,:,:],axis=1)
+            dfadGu = np.sum(fa[:,:,:,nxs,nxs]*dGdu[0][nxs,:,:,:,:]-fb[:,:,:,nxs,nxs]*dGdu[1][nxs,:,:,:,:],axis=1)
+            dfbdGu = np.sum(fb[:,:,:,nxs,nxs]*dGdu[0][nxs,:,:,:,:]+fa[:,:,:,nxs,nxs]*dGdu[1][nxs,:,:,:,:],axis=1)   
             # array (2,nAtom,wave,3)
         #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for al2O3!    
 #        GSASIIpath.IPyBreak()
@@ -1256,6 +1275,10 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
                 2.*(fbs[0]*dfbdui[0]-fbs[1]*dfbdui[1])
             dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])+   \
                 2.*(fbs[0]*dfbdua[0]+fbs[1]*dfbdua[1])
+            dFdGx[iref] = 2.*(fas[0]*dfadGx[0]+fas[1]*dfadGx[1])+  \
+                2.*(fbs[0]*dfbdGx[0]+fbs[1]*dfbdGx[1])
+            dFdGu[iref] = 2.*(fas[0]*dfadGu[0]+fas[1]*dfadGu[1])+  \
+                2.*(fbs[0]*dfbdGu[0]+fbs[1]*dfbdGu[1])
         else:
             SA = fas[0]-fbs[1]
             SB = fbs[0]+fas[1]
@@ -1265,6 +1288,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
                 dFdui[iref] = [2.*TwMask[it]*(fas[0][it]*dfadui[it][0]+fas[1][it]*dfadui[it][1]+fbs[0][it]*dfbdui[it][0]+fbs[1][it]*dfbdui[it][1]) for it in range(nTwin)]
                 dFdua[iref] = [2.*TwMask[it]*(fas[0][it]*dfadua[it][0]+fas[1][it]*dfadua[it][1]+fbs[0][it]*dfbdua[it][0]+fbs[1][it]*dfbdua[it][1]) for it in range(nTwin)]
                 dFdGx[iref] = [2.*TwMask[it]*(fas[0][it]*dfadGx[0]+fas[1][it]*dfadGx[1]+fbs[0][it]*dfbdGx[0]+fbs[1][it]*dfbdGx[1]) for it in range(nTwin)]
+                dFdGu[iref] = [2.*TwMask[it]*(fas[0][it]*dfadGu[0]+fas[1][it]*dfadGu[1]+fbs[0][it]*dfbdGu[0]+fbs[1][it]*dfbdGu[1]) for it in range(nTwin)]
                 dFdtw[iref] = np.sum(TwMask*fas,axis=0)**2+np.sum(TwMask*fbs,axis=0)**2
                 
             else:   #these are good for no twin single crystals
@@ -1274,6 +1298,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
                 dFdua[iref] = 2.*(fas[0]*dfadua[0]+fbs[1]*dfbdua[1]+fbs[0]*dfbdua[0]+fas[1]*dfadua[1])    #array(nRef,nAtom,6)
                 dFdfl[iref] = -SA*dfadfl-SB*dfbdfl                  #array(nRef,)
                 dFdGx[iref] = 2.*(fas[0]*dfadGx[0]+fas[1]*dfadGx[1]+fbs[0]*dfbdGx[0]+fbs[1]*dfbdGx[1])      #array(nRef,natom,nwave,6)
+                dFdGu[iref] = 2.*(fas[0]*dfadGu[0]+fas[1]*dfadGu[1]+fbs[0]*dfbdGu[0]+fbs[1]*dfbdGu[1])      #array(nRef,natom,nwave,6)
         dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
             2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         #loop over atoms - each dict entry is list of derivatives for all the reflections
@@ -1298,6 +1323,20 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             dFdvDict[pfx+'Xcos:'+str(i)+':'+str(j)] = dFdGx.T[3][j][i]
             dFdvDict[pfx+'Ycos:'+str(i)+':'+str(j)] = dFdGx.T[4][j][i]
             dFdvDict[pfx+'Zcos:'+str(i)+':'+str(j)] = dFdGx.T[5][j][i]
+        for j in range(USSdata.shape[1]):
+            dFdvDict[pfx+'U11sin:'+str(i)+':'+str(j)] = dFdGu.T[0][j][i]
+            dFdvDict[pfx+'U22sin:'+str(i)+':'+str(j)] = dFdGu.T[1][j][i]
+            dFdvDict[pfx+'U33sin:'+str(i)+':'+str(j)] = dFdGu.T[2][j][i]
+            dFdvDict[pfx+'U12sin:'+str(i)+':'+str(j)] = dFdGu.T[3][j][i]
+            dFdvDict[pfx+'U13sin:'+str(i)+':'+str(j)] = dFdGu.T[4][j][i]
+            dFdvDict[pfx+'U23sin:'+str(i)+':'+str(j)] = dFdGu.T[5][j][i]
+            dFdvDict[pfx+'U11cos:'+str(i)+':'+str(j)] = dFdGu.T[6][j][i]
+            dFdvDict[pfx+'U22cos:'+str(i)+':'+str(j)] = dFdGu.T[7][j][i]
+            dFdvDict[pfx+'U33cos:'+str(i)+':'+str(j)] = dFdGu.T[8][j][i]
+            dFdvDict[pfx+'U12cos:'+str(i)+':'+str(j)] = dFdGu.T[9][j][i]
+            dFdvDict[pfx+'U13cos:'+str(i)+':'+str(j)] = dFdGu.T[10][j][i]
+            dFdvDict[pfx+'U23cos:'+str(i)+':'+str(j)] = dFdGu.T[11][j][i]
+            
     dFdvDict[phfx+'BabA'] = dFdbab.T[0]
     dFdvDict[phfx+'BabU'] = dFdbab.T[1]
     return dFdvDict

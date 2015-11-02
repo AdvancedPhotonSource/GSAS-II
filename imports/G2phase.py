@@ -464,7 +464,6 @@ class JANA_ReaderClass(G2IO.ImportPhase):
             S1N = [int(i) for i in S1N]
             S1T = list(S1[60:63])
             waveType = waveTypes[int(S1T[1])]
-            crenelType = ''
             Spos = []
             Sadp = []
             Sfrac = []
@@ -491,7 +490,6 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                     Sfrac.append(FS[:9])    #'O' or 'delta' = 'length' for crenel
                     if int(S1T[0]):  #"", "Legendre" or "Xharm" in 18:27 for "crenel"!
                         waveType = 'Crenel/Fourier' #all waves 'Fourier' no other choice
-                        crenelType = FS[18:27]
                 Sfrac.append(file2.readline()[:18]) #if not crenel = Osin & Ocos
                 # else Osin & Ocos except last one is X40 = 'Center'
             for i in range(S1N[1]):  
@@ -515,7 +513,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                 Sfrac[i] = [vals,False]
                 print Sfrac[i]
             for i,it in enumerate(Spos):
-                if waveType in ['ZigZag','Sawtooth'] and not i:
+                if waveType in ['Sawtooth',] and not i:
                     vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36])]
                 else:
                     vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36]),float(it[36:45]),float(it[45:54])]
@@ -532,7 +530,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
             Atom.append(ran.randint(0,sys.maxint))
             Atom.append([])
             Atom.append([])
-            Atom.append({'SS1':{'waveType':waveType,'crenelType':crenelType,'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':Smag}})    #SS2 is for (3+2), etc.
+            Atom.append({'SS1':{'waveType':waveType,'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':Smag}})    #SS2 is for (3+2), etc.
             Atoms.append(Atom)
         file2.close()
         self.errors = 'Error after read complete'

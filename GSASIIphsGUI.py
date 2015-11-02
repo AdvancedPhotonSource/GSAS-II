@@ -1176,7 +1176,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #####  Atom routines
 ################################################################################
 
-    SSdefault = {'SS1':{'waveType':'Fourier','crenelType':None,'Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}
+    SSdefault = {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}
     def FillAtomsGrid(Atoms):
         '''Display the contents of the Atoms tab
         '''

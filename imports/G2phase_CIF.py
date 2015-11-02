@@ -182,6 +182,32 @@ class CIFPhaseReader(G2IO.ImportPhase):
                     anisoloop = None
                     anisokeys = []
                     anisolabels = []
+                if Super:
+                    occFloop = None
+                    occCloop = None
+                    occFdict = {}
+                    cooCdict = {}
+                    displSloop = None
+                    displFloop = None
+                    dispSdict = {}
+                    dispFdict = {}
+                    UijFloop = None
+                    UijFdict = {}
+                    if blk.get('_atom_site_occ_Fourier_atom_site_label'):
+                        occFloop = blk.GetLoop('_atom_site_occ_Fourier_atom_site_label')
+                        occFdict = dict(occFloop.items())
+                    if blk.get('_atom_site_occ_special_func_atom_site_label'):  #Crenel (i.e. Block Wave) occ
+                        occCloop = blk.GetLoop('_atom_site_occ_special_func_atom_site_label')
+                        occCdict = dict(occCloop.items())
+                    if blk.get('_atom_site_displace_Fourier_atom_site_label'):
+                        displFloop = blk.GetLoop('_atom_site_displace_Fourier_atom_site_label')
+                        displFdict = dict(displFloop.items())                            
+                    if blk.get('_atom_site_displace_special_func_atom_site_label'): #sawtooth
+                        displSloop = blk.GetLoop('_atom_site_displace_special_func_atom_site_label')
+                        displSdict = dict(displSloop.items())
+                    if blk.get('_atom_site_U_Fourier_atom_site_label'):
+                        UijFloop = blk.GetLoop('_atom_site_U_Fourier_atom_site_label')
+                        UijFdict = dict(UijFloop.items())
                 self.Phase['Atoms'] = []
                 G2AtomDict = {  '_atom_site_type_symbol' : 1,
                                 '_atom_site_label' : 0,
@@ -195,19 +221,6 @@ class CIFPhaseReader(G2IO.ImportPhase):
                                 '_atom_site_aniso_u_12' : 14,
                                 '_atom_site_aniso_u_13' : 15,
                                 '_atom_site_aniso_u_23' : 16, }
-                G2SSAtomDict = {'_atom_site_occ_Fourier_wave_vector_seq_id' : 1,
-                                '_atom_site_occ_Fourier_param_cos' : 2,
-                                '_atom_site_occ_Fourier_param_sin' : 3,
-                                '_atom_site_displace_Fourier_axis' : 2,
-                                '_atom_site_displace_Fourier_wave_vector_seq_id' : 3,
-                                '_atom_site_displace_Fourier_param_cos' : 5,
-                                '_atom_site_displace_Fourier_param_sin' : 4,
-                                '_atom_site_U_Fourier_tens_elem' : 7,
-                                '_atom_site_U_Fourier_wave_vector_seq_id' : 8,
-                                '_atom_site_U_Fourier_param_cos' : 9,
-                                '_atom_site_U_Fourier_param_sin' : 10,  }
-
-                                    
 
                 ranIdlookup = {}
                 for aitem in atomloop:
@@ -252,6 +265,46 @@ class CIFPhaseReader(G2IO.ImportPhase):
                         self.warnings += ' ERROR: repeated atom label: '+atomlist[0]
                     else:
                         atomlbllist.append(atomlist[0])
+                    if Super:
+                        Sfrac = []
+                        Sadp = []                      
+                        Spos = np.zeros((4,6))
+                        nim = -1
+                        for i,item in enumerate(displFdict['_atom_site_displace_Fourier_atom_site_label']):
+                            if item == atomlist[0]:
+                                waveType = 'Fourier'                                
+                                ix = ['x','y','z'].index(displFdict['_atom_site_displace_Fourier_axis'][i])
+                                im = int(displFdict['_atom_site_displace_Fourier_wave_vector_seq_id'][i])
+                                if im != nim:
+                                    nim = im
+                                val = displFdict['_atom_site_displace_Fourier_param_sin'][i]
+                                Spos[im-1][ix] = cif.get_number_with_esd(val)[0]
+                                val = displFdict['_atom_site_displace_Fourier_param_cos'][i]
+                                Spos[im-1][ix+3] = cif.get_number_with_esd(val)[0]
+                        if nim >= 0:
+                            Spos = [[spos,False] for spos in Spos[:nim]]
+                        else:
+                            Spos = []
+                        if UijFdict:
+                            nim = -1
+                            Sadp = np.zeros((4,12))
+                            for i,item in enumerate(UijFdict['_atom_site_U_Fourier_atom_site_label']):
+                                if item == atomlist[0]:
+                                    ix = ['U11','U22','U33','U12','U13','U23'].index(UijFdict['_atom_site_U_Fourier_tens_elem'][i])
+                                    im = int(UijFdict['_atom_site_U_Fourier_wave_vector_seq_id'][i])
+                                    if im != nim:
+                                        nim = im
+                                    val = UijFdict['_atom_site_U_Fourier_param_sin'][i]
+                                    Sadp[im-1][ix] = cif.get_number_with_esd(val)[0]
+                                    val = UijFdict['_atom_site_U_Fourier_param_cos'][i]
+                                    Sadp[im-1][ix+6] = cif.get_number_with_esd(val)[0]
+                            if nim >= 0:
+                                Sadp = [[sadp,False] for sadp in Sadp[:nim]]
+                            else:
+                                Sadp = []
+                        
+                        SSdict = {'SS1':{'waveType':waveType,'Sfrac':Sfrac,'Spos':Spos,'Sadp':Sadp,'Smag':[]}}
+                        atomlist.append(SSdict)
                 if len(atomlbllist) != len(self.Phase['Atoms']):
                     self.isodistort_warnings += '\nRepeated atom labels prevents ISODISTORT decode'
                 for lbl in phasenamefields: # get a name for the phase

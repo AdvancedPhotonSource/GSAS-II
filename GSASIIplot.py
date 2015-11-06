@@ -364,11 +364,11 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             ypos = round(event.ydata)
             zpos = Data['Layer']
             if '100' in Data['Zone']:
-                HKLtxt = '(%3d,%3d,%3d)'%(zpos,xpos,ypos)
+                HKLtxt = '(%d,%d,%d)'%(zpos,xpos,ypos)
             elif '010' in Data['Zone']:
-                HKLtxt = '(%3d,%3d,%3d)'%(xpos,zpos,ypos)
+                HKLtxt = '(%d,%d,%d)'%(xpos,zpos,ypos)
             elif '001' in Data['Zone']:
-                HKLtxt = '(%3d,%3d,%3d)'%(xpos,ypos,zpos)
+                HKLtxt = '(%d,%d,%d)'%(xpos,ypos,zpos)
             Page.canvas.SetToolTipString(HKLtxt)
             G2frame.G2plotNB.status.SetStatusText('HKL = '+HKLtxt,0)
                 
@@ -378,13 +378,10 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         if xpos:
             pos = int(round(event.xdata)),int(round(event.ydata))
             if '100' in Data['Zone']:
-                Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(zpos,pos[0],pos[1]))
                 hkl = np.array([zpos,pos[0],pos[1]])
             elif '010' in Data['Zone']:
-                Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],zpos,pos[1]))
                 hkl = np.array([pos[0],zpos,pos[1]])
             elif '001' in Data['Zone']:
-                Page.canvas.SetToolTipString('(picked:(%3d,%3d,%3d))'%(pos[0],pos[1],zpos))
                 hkl = np.array([pos[0],pos[1],zpos])
             h,k,l = hkl
             hklf = HKLF[np.where(np.all(HKL-hkl == [0,0,0],axis=1))]
@@ -392,6 +389,12 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                 Fosq,sig,Fcsq = hklf[0]
                 HKLtxt = '( %.2f %.3f %.2f %.2f)'%(Fosq,sig,Fcsq,(Fosq-Fcsq)/(scale*sig))
                 G2frame.G2plotNB.status.SetStatusText('Fosq, sig, Fcsq, delFsq/sig = '+HKLtxt,1)
+                
+    def OnPick(event):
+        pick = event.artist
+        HKLtext = pick.get_gid()
+        Page.canvas.SetToolTipString(HKLtext)
+        G2frame.G2plotNB.status.SetStatusText('H = '+HKLtext,0)
                                  
     Name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
     if not Title:
@@ -410,6 +413,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('button_press_event', OnSCPress)
         Page.canvas.mpl_connect('motion_notify_event', OnSCMotion)
+        Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('key_press_event', OnSCKeyPress)
         Page.keyPress = OnSCKeyPress
         Page.Choice = (' key press','i: increase scale','d: decrease scale',
@@ -478,33 +482,38 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
                     C = abs(A-B)
             elif Type == '|DFsq|/sig':
                 if sig > 0.:
-                    A = (Fosq-Fcsq)/(3*sig)
+                    A = scale*(Fosq-Fcsq)/(3*sig)
                 B = 0
             elif Type == '|DFsq|>sig':
                 if sig > 0.:
-                    A = (Fosq-Fcsq)/(3*sig)
+                    A = scale*(Fosq-Fcsq)/(3*sig)
                 if abs(A) < 1.0: A = 0
                 B = 0                    
             elif Type == '|DFsq|>3sig':
                 if sig > 0.:
-                    A = (Fosq-Fcsq)/(3*sig)
+                    A = scale*(Fosq-Fcsq)/(3*sig)
                 if abs(A) < 3.0: A = 0
                 B = 0
             if Super:
-                h = H+SuperVec*refl[3]                
+                h = H+SuperVec*refl[3]
+                if refl[3]:
+                    hid = '(%d,%d,%d,%d)'%(refl[0],refl[1],refl[2],refl[3])
+                else:
+                    hid = '(%d,%d,%d)'%(refl[0],refl[1],refl[2])                
             else:
                 h = H
+                hid = '(%d,%d,%d)'%(refl[0],refl[1],refl[2])                
             xy = (h[pzone[izone][0]],h[pzone[izone][1]])
             if Type in ['|DFsq|/sig','|DFsq|>sig','|DFsq|>3sig']:
                 if A > 0.0:
-                    Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w'))
+                    Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w',picker=1.,gid=hid))
                 else:
-                    Plot.add_artist(Circle(xy,radius=-A,ec='r',fc='w'))
+                    Plot.add_artist(Circle(xy,radius=-A,ec='r',fc='w',picker=1.,gid=hid))
             else:
                 if A > 0.0 and A > B:
                     Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w'))
                 if B:
-                    Plot.add_artist(Circle(xy,radius=B,ec='b',fc='w'))
+                    Plot.add_artist(Circle(xy,radius=B,ec='b',fc='w',picker=1.,gid=hid))
                     if A < B:
                         Plot.add_artist(Circle(xy,radius=A,ec='g',fc='w'))
                     radius = C

@@ -970,7 +970,7 @@ def Modulation(waveTypes,H,HP,FSSdata,XSSdata,USSdata,Mast):
     XmodA = Ax[:,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X 3 X 32
     XmodB = Bx[:,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
     Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X 3 X 32; sum waves
-    Xmod = np.swapaxes(Xmod,1,2)                            #agree with J2K ParSup
+    Xmod = np.swapaxes(Xmod,1,2)                            #agrees with J2K ParSup & shape is right
     if Au.shape[1]:
         tauU = np.arange(1.,Au.shape[1]+1)[:,nxs]*glTau     #Uwaves x 32
         UmodA = Au[:,:,:,:,nxs]*np.sin(twopi*tauU[nxs,:,nxs,nxs,:]) #atoms x waves x 3x3 x 32
@@ -979,10 +979,11 @@ def Modulation(waveTypes,H,HP,FSSdata,XSSdata,USSdata,Mast):
         HbH = np.exp(-np.sum(HP[:,:,nxs,nxs]*np.inner(HP[:,:],Umod),axis=-1)) # refBlk x ops x atoms x 32 add Overhauser corr.?
     else:
         HbH = 1.0
-    D = H[:,:,3:]*glTau[nxs,nxs,:]              #m*e*tau; refBlk x  ops X 32
-    HdotX = np.inner(HP,Xmod)+D[:,:,nxs,:]     #refBlk x ops x atoms X 32
-    cosHA = np.sum(Fmod*HbH*np.cos(twopi*HdotX)*glWt,axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
-    sinHA = np.sum(Fmod*HbH*np.sin(twopi*HdotX)*glWt,axis=-1)       #imag part; ditto
+    D = twopi*H[:,:,3:]*glTau[nxs,nxs,:]              #m*e*tau; refBlk x ops X 32
+    HdotX = twopi*np.inner(HP,Xmod)                   #refBlk x ops x atoms X 32
+    HdotXD = HdotX+D[:,:,nxs,:]
+    cosHA = np.sum(Fmod*HbH*np.cos(HdotXD)*glWt,axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
+    sinHA = np.sum(Fmod*HbH*np.sin(HdotXD)*glWt,axis=-1)       #imag part; ditto
 #    GSASIIpath.IPyBreak()
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
     

@@ -319,14 +319,13 @@ class CIFhklReader(G2IO.ImportStructFactor):
 #                self.RefDict['FF'].append({})
             self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
             self.errors = 'Error during reading of dataset parameters'
+            Type = 'SXC'
             if blk.get('_diffrn_radiation_probe'):
                 if blk['_diffrn_radiation_probe'] == 'neutron':
                     Type = 'SNC'
             elif blk.get('_diffrn_radiation.probe'):
                 if blk['_diffrn_radiation.probe'] == 'neutron':
                     Type = 'SNC'
-            else:
-                Type = 'SXC'
             self.RefDict['Type'] = Type
             self.RefDict['Super'] = im
             if blk.get('_diffrn_radiation_wavelength'):

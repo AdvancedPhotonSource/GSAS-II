@@ -474,7 +474,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
             Name = S1[:8].strip()
             if S1[11:15].strip() == '1':
                 S2 = file2.readline()
-                Uiso = float(S2[:9])
+                Uiso = R2pisq*float(S2[:9])/4.      #Biso -> Uiso
                 Uij = [0,0,0,0,0,0]
                 IA = 'I'
             elif S1[11:15].strip() == '2':

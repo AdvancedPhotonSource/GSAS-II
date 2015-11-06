@@ -2387,7 +2387,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     val = float(Obj.GetValue())
                 except ValueError:
                     val = atomData[iatm][-1][SS][item][iwave][0][ival]
-                Obj.SetValue('%.4f'%val)
+                Obj.SetValue('%.5f'%val)
                 atomData[iatm][-1][SS][item][iwave][0][ival] = val
                 
             def OnRefWave(event):
@@ -2440,12 +2440,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     waveSizer.Add(wx.StaticText(waveData,label=' %s  parameters: %s'%(waveName,str(names).rstrip(']').lstrip('[').replace("'",''))),0,WACV)
                     for ival,val in enumerate(wave[0]):
                         if np.any(CSI[Stype][0][ival]):
-                            waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_PROCESS_ENTER)
+                            waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_PROCESS_ENTER)
                             waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
                             waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
                             Indx[waveVal.GetId()] = [iatm,Stype,iwave,ival]
                         else:
-                            waveVal = wx.TextCtrl(waveData,value='%.4f'%(val),style=wx.TE_READONLY)
+                            waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_READONLY)
                             waveVal.SetBackgroundColour(VERY_LIGHT_GREY)
                         Waves.Add(waveVal,0,WACV)
                         if len(wave[0]) > 6 and ival == 5:

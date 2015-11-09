@@ -944,7 +944,19 @@ def GetTifData(filename,imageOnly=False):
             File.seek(512)
             if not imageOnly:
                 print 'Read 11-ID-C tiff file: ',filename
-            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)            
+            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        elif IFD[273][2][0] == 168:
+            tifType = 'ImageJ'
+            dataType = 0
+            pixy = [200,200]
+            File.seek(IFD[273][2][0])
+            if not imageOnly:
+                print 'Read ImageJ tiff file: ',filename
+            image = ar.array('H',File.read(2*Npix))
+            if '>' in byteOrd:
+                image.byteswap()
+            image = np.array(np.asarray(image,dtype='H'),dtype=np.int32)            
+                    
     elif sizexy == [4096,4096]:
         if IFD[273][2][0] == 8:
             if IFD[258][2][0] == 16:

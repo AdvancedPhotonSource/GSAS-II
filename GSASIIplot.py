@@ -1041,6 +1041,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     global DifLine
     global Ymax
     plottype = plotType
+    if not G2frame.PatternId:
+        return
 #patch
     data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
     if 'Offset' not in data[0] and plotType in ['PWDR','SASD']:     #plot offset data
@@ -3115,19 +3117,23 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
         Title = MapType
     Title += ' map for atom '+atom[0]+    \
         ' at %.4f %.4f %.4f'%(atxyz[0],atxyz[1],atxyz[2])
-    ix = -np.array(np.rint(rhoSize[:3]*atxyz),dtype='i')
+    ix = -np.array(np.rint(rhoSize[:3]*atxyz)+1,dtype='i')
     ix += (rhoSize[:3]/2)
     ix = ix%rhoSize[:3]
     rho = np.roll(np.roll(np.roll(Map['rho'],ix[0],axis=0),ix[1],axis=1),ix[2],axis=2)
     ix = rhoSize[:3]/2
     ib = 4
+    hdx = [0,0,0]       #this needs to be something for an offset correction on atom positions
     if Ax == 'x':
+        Doff = (hdx[0]+Off)*.005
         slab = np.sum(np.sum(rho[:,ix[1]-ib:ix[1]+ib,ix[2]-ib:ix[2]+ib,:],axis=2),axis=1)
         Plot.plot(tau,wave[0])
     elif Ax == 'y':
+        Doff = (hdx[1]+Off)*.005
         slab = np.sum(np.sum(rho[ix[0]-ib:ix[0]+ib,:,ix[2]-ib:ix[2]+ib,:],axis=2),axis=0)
         Plot.plot(tau,wave[1])
     elif Ax == 'z':
+        Doff = (hdx[2]+Off)*.005
         slab = np.sum(np.sum(rho[ix[0]-ib:ix[0]+ib,ix[1]-ib:ix[1]+ib,:,:],axis=1),axis=0)
         Plot.plot(tau,wave[2])
     Plot.set_title(Title)
@@ -3136,9 +3142,9 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     Slab = np.hstack((slab,slab,slab))
     acolor = mpl.cm.get_cmap('RdYlGn')
     if 'delt' in MapType:
-        Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Off*.005,.5+Off*.005),cmap=acolor)
+        Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Doff,.5+Doff),cmap=acolor)
     else:
-        Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Off*.005,.5+Off*.005))
+        Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Doff,.5+Doff))
     Page.canvas.draw()
    
 ################################################################################

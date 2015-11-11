@@ -1076,6 +1076,7 @@ class GSASII(wx.Frame):
             Irads = {0:' ',1:'CrKa',2:'FeKa',3:'CuKa',4:'MoKa',5:'AgKa',6:'TiKa',7:'CoKa'}
             DataType = Iparm['INS   HTYPE '].strip()[:3]  # take 1st 3 chars
             # override inst values with values read from data file
+            Bank = rd.powderentry[2]    #should be used in multibank iparm files
             if rd.instdict.get('type'):
                 DataType = rd.instdict.get('type')
             data = [DataType,]

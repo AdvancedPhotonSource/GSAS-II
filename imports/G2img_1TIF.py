@@ -20,6 +20,7 @@ import struct as st
 import os.path as ospath
 import GSASIIIO as G2IO
 import GSASIIpath
+import numpy as np
 GSASIIpath.SetVersionNumber("$Revision: $")
 class TIF_ReaderClass(G2IO.ImportImage):
     '''Routine to read an image in Tagged-image file (TIF) format as well as a variety
@@ -196,7 +197,20 @@ def GetTifData(filename,imageOnly=False):
                 if not imageOnly:
                     print 'Read CHESS-detector tiff file: ',filename
                 image = np.array(ar.array('L',File.read(4*Npix)),dtype=np.int32)
-            
+    elif 270 in IFD:
+        File.seek(IFD[270][2][0])
+        S = File.read(IFD[273][2][0]-IFD[270][2][0])
+        if 'ImageJ' in S:
+            tifType = 'ImageJ'
+            dataType = 0
+            pixy = [200,200]*IFD[277][2][0]
+            File.seek(IFD[273][2][0])
+            if not imageOnly:
+                print 'Read ImageJ tiff file: ',filename
+            image = ar.array('H',File.read(2*Npix))
+            if '>' in byteOrd:
+                image.byteswap()
+            image = np.array(np.asarray(image,dtype='H'),dtype=np.int32)            
     elif 262 in IFD and IFD[262][2][0] > 4:
         tifType = 'DND'
         pixy = [158,158]
@@ -249,17 +263,6 @@ def GetTifData(filename,imageOnly=False):
             if not imageOnly:
                 print 'Read 11-ID-C tiff file: ',filename
             image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-        elif IFD[273][2][0] == 168:
-            tifType = 'ImageJ'
-            dataType = 0
-            pixy = [200,200]
-            File.seek(IFD[273][2][0])
-            if not imageOnly:
-                print 'Read ImageJ tiff file: ',filename
-            image = ar.array('H',File.read(2*Npix))
-            if '>' in byteOrd:
-                image.byteswap()
-            image = np.array(np.asarray(image,dtype='H'),dtype=np.int32)            
                     
     elif sizexy == [4096,4096]:
         if IFD[273][2][0] == 8:

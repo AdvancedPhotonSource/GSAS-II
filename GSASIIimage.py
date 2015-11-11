@@ -557,7 +557,10 @@ def ImageRecalibrate(G2frame,data,masks):
         else:                   #no more rings beyond edge of detector
             data['ellipses'].append([])
             continue
-#            break
+    if not data['rings']:
+        print 'no rings found; try lower Min ring I/Ib'
+        return True    
+        
     rings = np.concatenate((data['rings']),axis=0)
     chisq = FitDetector(rings,varyList,parmDict)
     data['wavelength'] = parmDict['wave']

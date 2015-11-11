@@ -21,6 +21,7 @@ import os.path as ospath
 import GSASIIIO as G2IO
 import GSASIIpath
 import numpy as np
+DEBUG = False
 GSASIIpath.SetVersionNumber("$Revision: $")
 class TIF_ReaderClass(G2IO.ImportImage):
     '''Routine to read an image in Tagged-image file (TIF) format as well as a variety
@@ -110,7 +111,7 @@ def GetTifData(filename,imageOnly=False):
     for ied in range(NED):
         Tag,Type = st.unpack(byteOrd+'Hh',File.read(4))
         nVal = st.unpack(byteOrd+'i',File.read(4))[0]
-        #if DEBUG: print 'Try:',Tag,Type,nVal
+        if DEBUG: print 'Try:',Tag,Type,nVal
         if Type == 1:
             Value = st.unpack(byteOrd+nVal*'b',File.read(nVal))
         elif Type == 2:
@@ -128,7 +129,7 @@ def GetTifData(filename,imageOnly=False):
         elif Type == 11:
             Value = st.unpack(byteOrd+nVal*'f',File.read(nVal*4))
         IFD[Tag] = [Type,nVal,Value]
-        #if DEBUG: print Tag,IFD[Tag]
+        if DEBUG: print Tag,IFD[Tag]
     sizexy = [IFD[256][2][0],IFD[257][2][0]]
     [nx,ny] = sizexy
     Npix = nx*ny

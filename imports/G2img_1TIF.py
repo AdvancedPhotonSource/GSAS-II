@@ -49,7 +49,7 @@ class TIF_ReaderClass(G2IO.ImportImage):
         '''Read the TIF file using Bob's routine
         '''
         
-        self.Comments,self.Data,self.Npix,self.Image = G2IO.GetTifData(filename)
+        self.Comments,self.Data,self.Npix,self.Image = GetTifData(filename)
         if self.Npix == 0:
             print("GetTifData failed to read "+str(filename)+" Trying SciPy")
             import scipy.misc
@@ -66,3 +66,240 @@ class TIF_ReaderClass(G2IO.ImportImage):
         self.LoadImage(ParentFrame,filename)
         return True
 
+def GetTifData(filename,imageOnly=False):
+    '''Read an image in a pseudo-tif format,
+    as produced by a wide variety of software, almost always
+    incorrectly in some way. 
+    '''
+    import struct as st
+    import array as ar
+    import ReadMarCCDFrame as rmf
+    image = None
+    File = open(filename,'rb')
+    dataType = 5
+    center = [None,None]
+    wavelength = None
+    distance = None
+    try:
+        Meta = open(filename+'.metadata','Ur')
+        head = Meta.readlines()
+        for line in head:
+            line = line.strip()
+            if 'dataType=' in line:
+                dataType = int(line.split('=')[1])
+        Meta.close()
+    except IOError:
+        print 'no metadata file found - will try to read file anyway'
+        head = ['no metadata file found',]
+        
+    tag = File.read(2)
+    byteOrd = '<'
+    if tag == 'II' and int(st.unpack('<h',File.read(2))[0]) == 42:     #little endian
+        IFD = int(st.unpack(byteOrd+'i',File.read(4))[0])
+    elif tag == 'MM' and int(st.unpack('>h',File.read(2))[0]) == 42:   #big endian
+        byteOrd = '>'
+        IFD = int(st.unpack(byteOrd+'i',File.read(4))[0])        
+    else:
+        lines = ['not a detector tiff file',]
+        return lines,0,0,0
+    File.seek(IFD)                                                  #get number of directory entries
+    NED = int(st.unpack(byteOrd+'h',File.read(2))[0])
+    IFD = {}
+    nSlice = 1
+    for ied in range(NED):
+        Tag,Type = st.unpack(byteOrd+'Hh',File.read(4))
+        nVal = st.unpack(byteOrd+'i',File.read(4))[0]
+        #if DEBUG: print 'Try:',Tag,Type,nVal
+        if Type == 1:
+            Value = st.unpack(byteOrd+nVal*'b',File.read(nVal))
+        elif Type == 2:
+            Value = st.unpack(byteOrd+'i',File.read(4))
+        elif Type == 3:
+            Value = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
+            x = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
+        elif Type == 4:
+            if Tag in [273,279]:
+                nSlice = nVal
+                nVal = 1
+            Value = st.unpack(byteOrd+nVal*'i',File.read(nVal*4))
+        elif Type == 5:
+            Value = st.unpack(byteOrd+nVal*'i',File.read(nVal*4))
+        elif Type == 11:
+            Value = st.unpack(byteOrd+nVal*'f',File.read(nVal*4))
+        IFD[Tag] = [Type,nVal,Value]
+        #if DEBUG: print Tag,IFD[Tag]
+    sizexy = [IFD[256][2][0],IFD[257][2][0]]
+    [nx,ny] = sizexy
+    Npix = nx*ny
+    if 34710 in IFD:
+        if not imageOnly:
+            print 'Read MAR CCD tiff file: ',filename
+        marFrame = rmf.marFrame(File,byteOrd,IFD)
+        image = np.flipud(np.array(np.asarray(marFrame.image),dtype=np.int32))
+        tifType = marFrame.filetitle
+        pixy = [marFrame.pixelsizeX/1000.0,marFrame.pixelsizeY/1000.0]
+        head = marFrame.outputHead()
+# extract resonable wavelength from header
+        wavelength = marFrame.sourceWavelength*1e-5
+        wavelength = (marFrame.opticsWavelength > 0) and marFrame.opticsWavelength*1e-5 or wavelength
+        wavelength = (wavelength <= 0) and None or wavelength
+# extract resonable distance from header
+        distance = (marFrame.startXtalToDetector+marFrame.endXtalToDetector)*5e-4
+        distance = (distance <= 0) and marFrame.xtalToDetector*1e-3 or distance
+        distance = (distance <= 0) and None or distance
+# extract resonable center from header
+        center = [marFrame.beamX*marFrame.pixelsizeX*1e-9,marFrame.beamY*marFrame.pixelsizeY*1e-9]
+        center = (center[0] != 0 and center[1] != 0) and center or [None,None]
+#print head,tifType,pixy
+    elif nSlice > 1:    #CheMin multislice tif file!
+        try:
+            import Image as Im
+        except ImportError:
+            try:
+                from PIL import Image as Im
+            except ImportError:
+                print "PIL/pillow Image module not present. This TIF cannot be read without this"
+                #raise Exception("PIL/pillow Image module not found")
+                lines = ['not a detector tiff file',]
+                return lines,0,0,0
+        tifType = 'CheMin'
+        pixy = [40,40]
+        image = np.flipud(np.array(Im.open(filename)))*10.
+        distance = 18.0
+        center = [pixy[0]*sizexy[0]/2000,0]     #the CheMin beam stop is here
+        wavelength = 1.78892
+    elif 272 in IFD:
+        ifd = IFD[272]
+        File.seek(ifd[2][0])
+        S = File.read(ifd[1])
+        if 'PILATUS' in S:
+            tifType = 'Pilatus'
+            dataType = 0
+            pixy = [172,172]
+            File.seek(4096)
+            if not imageOnly:
+                print 'Read Pilatus tiff file: ',filename
+            image = ar.array('L',File.read(4*Npix))
+            image = np.array(np.asarray(image),dtype=np.int32)
+        else:
+            if IFD[258][2][0] == 16:
+                tifType = 'GE'
+                pixy = [200,200]
+                File.seek(8)
+                if not imageOnly:
+                    print 'Read GE-detector tiff file: ',filename
+                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+            elif IFD[258][2][0] == 32:
+                tifType = 'CHESS'
+                pixy = [200,200]
+                File.seek(8)
+                if not imageOnly:
+                    print 'Read CHESS-detector tiff file: ',filename
+                image = np.array(ar.array('L',File.read(4*Npix)),dtype=np.int32)
+            
+    elif 262 in IFD and IFD[262][2][0] > 4:
+        tifType = 'DND'
+        pixy = [158,158]
+        File.seek(512)
+        if not imageOnly:
+            print 'Read DND SAX/WAX-detector tiff file: ',filename
+        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+    elif sizexy == [1536,1536]:
+        tifType = 'APS Gold'
+        pixy = [150,150]
+        File.seek(64)
+        if not imageOnly:
+            print 'Read Gold tiff file:',filename
+        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+    elif sizexy == [2048,2048] or sizexy == [1024,1024] or sizexy == [3072,3072]:
+        if IFD[273][2][0] == 8:
+            if IFD[258][2][0] == 32:
+                tifType = 'PE'
+                pixy = [200,200]
+                File.seek(8)
+                if not imageOnly:
+                    print 'Read APS PE-detector tiff file: ',filename
+                if dataType == 5:
+                    image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.float32)
+                else:
+                    image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
+            elif IFD[258][2][0] == 16: 
+                tifType = 'MedOptics D1'
+                pixy = [46.9,46.9]
+                File.seek(8)
+                if not imageOnly:
+                    print 'Read MedOptics D1 tiff file: ',filename
+                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+                  
+        elif IFD[273][2][0] == 4096:
+            if sizexy[0] == 3072:
+                pixy =  [73,73]
+                tifType = 'MAR225'            
+            else:
+                pixy = [158,158]
+                tifType = 'MAR325'            
+            File.seek(4096)
+            if not imageOnly:
+                print 'Read MAR CCD tiff file: ',filename
+            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        elif IFD[273][2][0] == 512:
+            tiftype = '11-ID-C'
+            pixy = [200,200]
+            File.seek(512)
+            if not imageOnly:
+                print 'Read 11-ID-C tiff file: ',filename
+            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        elif IFD[273][2][0] == 168:
+            tifType = 'ImageJ'
+            dataType = 0
+            pixy = [200,200]
+            File.seek(IFD[273][2][0])
+            if not imageOnly:
+                print 'Read ImageJ tiff file: ',filename
+            image = ar.array('H',File.read(2*Npix))
+            if '>' in byteOrd:
+                image.byteswap()
+            image = np.array(np.asarray(image,dtype='H'),dtype=np.int32)            
+                    
+    elif sizexy == [4096,4096]:
+        if IFD[273][2][0] == 8:
+            if IFD[258][2][0] == 16:
+                tifType = 'scanCCD'
+                pixy = [9,9]
+                File.seek(8)
+                if not imageOnly:
+                    print 'Read APS scanCCD tiff file: ',filename
+                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        elif IFD[273][2][0] == 4096:
+            tifType = 'Rayonix'
+            pixy = [73.242,73.242]
+            File.seek(4096)
+            if not imageOnly:
+                print 'Read Rayonix MX300HE tiff file: ',filename
+            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+#    elif sizexy == [960,960]:
+#        tiftype = 'PE-BE'
+#        pixy = (200,200)
+#        File.seek(8)
+#        if not imageOnly:
+#            print 'Read Gold tiff file:',filename
+#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+           
+    if image is None:
+        lines = ['not a known detector tiff file',]
+        return lines,0,0,0
+        
+    if sizexy[1]*sizexy[0] != image.size: # test is resize is allowed
+        lines = ['not a known detector tiff file',]
+        return lines,0,0,0
+        
+    image = np.reshape(image,(sizexy[1],sizexy[0]))
+    center = (not center[0]) and [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000] or center
+    wavelength = (not wavelength) and 0.10 or wavelength
+    distance = (not distance) and 100.0 or distance
+    data = {'pixelSize':pixy,'wavelength':wavelength,'distance':distance,'center':center,'size':sizexy}
+    File.close()    
+    if imageOnly:
+        return image
+    else:
+        return head,data,Npix,image

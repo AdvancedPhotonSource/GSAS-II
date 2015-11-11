@@ -1213,9 +1213,10 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         fot = (FF+FP-Bab)*Tcorr     #ops x atoms
         fotp = FPP*Tcorr            #ops x atoms
         GfpuA,dGdf,dGdx,dGdu = G2mth.ModulationDerv(waveTypes,Uniq,UniqP,Hij,FSSdata,XSSdata,USSdata,Mast)
-        # derivs are: ops x atoms x waves x 1,3,or 6 parms as [real,imag] parts
+        # GfpuA is 2 x ops x atoms
+        # derivs are: ops x atoms x waves x 2,6,or 12 parms as [real,imag] parts
         fa = np.array([((FF+FP).T-Bab).T*cosp*Tcorr,-Flack*FPP*sinp*Tcorr]) # array(2,nTwin,nEqv,nAtoms)
-        fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,Flack*FPP*cosp*Tcorr])
+        fb = np.array([((FF+FP).T-Bab).T*sinp*Tcorr,Flack*FPP*cosp*Tcorr])  #or array(2,nEqv,nAtoms)
         fag = fa*GfpuA[0]-fb*GfpuA[1]
         fbg = fb*GfpuA[0]+fa*GfpuA[1]
         
@@ -1237,7 +1238,7 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             dfbdx = np.array([np.sum(twopi*Uniq[it,:,:3]*np.swapaxes(fbx,-2,-1)[:,it,:,:,nxs],axis=-2) for it in range(nTwin)])           
             dfadua = np.array([np.sum(-Hij[it]*np.swapaxes(fag,-2,-1)[:,it,:,:,nxs],axis=-2) for it in range(nTwin)])
             dfbdua = np.array([np.sum(-Hij[it]*np.swapaxes(fbg,-2,-1)[:,it,:,:,nxs],axis=-2) for it in range(nTwin)])
-            # array(nTwin,2,nAtom,3) & array(2,nTwin,nAtom,6) & array(2,nTwin,nAtom,12)
+            # array(2,nTwin,nAtom,3) & array(2,nTwin,nAtom,6) & array(2,nTwin,nAtom,12)
             dfadGf = np.sum(fa[:,it,:,:,nxs,nxs]*dGdf[0][nxs,nxs,:,:,:,:]-fb[:,it,:,:,nxs,nxs]*dGdf[1][nxs,nxs,:,:,:,:],axis=1)
             dfbdGf = np.sum(fb[:,it,:,:,nxs,nxs]*dGdf[0][nxs,nxs,:,:,:,:]+fa[:,it,:,:,nxs,nxs]*dGdf[1][nxs,nxs,:,:,:,:],axis=1)
             dfadGx = np.sum(fa[:,it,:,:,nxs,nxs]*dGdx[0][nxs,nxs,:,:,:,:]-fb[:,it,:,:,nxs,nxs]*dGdx[1][nxs,nxs,:,:,:,:],axis=1)
@@ -1245,18 +1246,17 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             dfadGu = np.sum(fa[:,it,:,:,nxs,nxs]*dGdu[0][nxs,nxs,:,:,:,:]-fb[:,it,:,:,nxs,nxs]*dGdu[1][nxs,nxs,:,:,:,:],axis=1)
             dfbdGu = np.sum(fb[:,it,:,:,nxs,nxs]*dGdu[0][nxs,nxs,:,:,:,:]+fa[:,it,:,:,nxs,nxs]*dGdu[1][nxs,nxs,:,:,:,:],axis=1)
         else:
-            dfadx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fax,-2,-1)[:,:,:,nxs],axis=-2)
+            dfadx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fax,-2,-1)[:,:,:,nxs],axis=-2)  #2 x nAtom x 3xyz; sum nOps
             dfbdx = np.sum(twopi*Uniq[:,:3]*np.swapaxes(fbx,-2,-1)[:,:,:,nxs],axis=-2)           
-            dfadua = np.sum(-Hij*np.swapaxes(fag,-2,-1)[:,:,:,nxs],axis=-2)
-            dfbdua = np.sum(-Hij*np.swapaxes(fbg,-2,-1)[:,:,:,nxs],axis=-2)
-            # array(2,nAtom,3) & array(2,nAtom,6) & array(2,nAtom,12)
+            dfadua = np.sum(-Hij*np.swapaxes(fag,-2,-1)[:,:,:,nxs],axis=-2)             #2 x nAtom x 6Uij; sum nOps
+            dfbdua = np.sum(-Hij*np.swapaxes(fbg,-2,-1)[:,:,:,nxs],axis=-2)         #these are correct also for twins above
+            # array(2,nAtom,nWave,2) & array(2,nAtom,nWave,6) & array(2,nAtom,nWave,12); sum on nOps
             dfadGf = np.sum(fa[:,:,:,nxs,nxs]*dGdf[0][nxs,:,:,:,:]-fb[:,:,:,nxs,nxs]*dGdf[1][nxs,:,:,:,:],axis=1)
             dfbdGf = np.sum(fb[:,:,:,nxs,nxs]*dGdf[0][nxs,:,:,:,:]+fa[:,:,:,nxs,nxs]*dGdf[1][nxs,:,:,:,:],axis=1)
             dfadGx = np.sum(fa[:,:,:,nxs,nxs]*dGdx[0][nxs,:,:,:,:]-fb[:,:,:,nxs,nxs]*dGdx[1][nxs,:,:,:,:],axis=1)
             dfbdGx = np.sum(fb[:,:,:,nxs,nxs]*dGdx[0][nxs,:,:,:,:]+fa[:,:,:,nxs,nxs]*dGdx[1][nxs,:,:,:,:],axis=1)
             dfadGu = np.sum(fa[:,:,:,nxs,nxs]*dGdu[0][nxs,:,:,:,:]-fb[:,:,:,nxs,nxs]*dGdu[1][nxs,:,:,:,:],axis=1)
             dfbdGu = np.sum(fb[:,:,:,nxs,nxs]*dGdu[0][nxs,:,:,:,:]+fa[:,:,:,nxs,nxs]*dGdu[1][nxs,:,:,:,:],axis=1)   
-#        GSASIIpath.IPyBreak()
         if not SGData['SGInv'] and len(TwinLaw) == 1:   #Flack derivative
             dfadfl = np.sum(-FPP*Tcorr*sinp)
             dfbdfl = np.sum(FPP*Tcorr*cosp)
@@ -1285,23 +1285,25 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
                 dFdx[iref] = [2.*TwMask[it]*(SA[it]*dfadx[it][0]+SA[it]*dfadx[it][1]+SB[it]*dfbdx[it][0]+SB[it]*dfbdx[it][1]) for it in range(nTwin)]
                 dFdui[iref] = [2.*TwMask[it]*(SA[it]*dfadui[it][0]+SA[it]*dfadui[it][1]+SB[it]*dfbdui[it][0]+SB[it]*dfbdui[it][1]) for it in range(nTwin)]
                 dFdua[iref] = [2.*TwMask[it]*(SA[it]*dfadua[it][0]+SA[it]*dfadua[it][1]+SB[it]*dfbdua[it][0]+SB[it]*dfbdua[it][1]) for it in range(nTwin)]
-                dFdGf[iref] = [2.*TwMask[it]*(fas[0][it]*dfadGf[0]+fas[1][it]*dfadGf[1]+fbs[0][it]*dfbdGf[0]+fbs[1][it]*dfbdGf[1]) for it in range(nTwin)]
-                dFdGx[iref] = [2.*TwMask[it]*(fas[0][it]*dfadGx[0]+fas[1][it]*dfadGx[1]+fbs[0][it]*dfbdGx[0]+fbs[1][it]*dfbdGx[1]) for it in range(nTwin)]
-                dFdGu[iref] = [2.*TwMask[it]*(fas[0][it]*dfadGu[0]+fas[1][it]*dfadGu[1]+fbs[0][it]*dfbdGu[0]+fbs[1][it]*dfbdGu[1]) for it in range(nTwin)]
                 dFdtw[iref] = np.sum(TwMask*fas,axis=0)**2+np.sum(TwMask*fbs,axis=0)**2
-                
+
+                dFdGf[iref] = [2.*TwMask[it]*(SA[it]*dfadGf[1]+SB[it]*dfbdGf[1]) for it in range(nTwin)]
+                dFdGx[iref] = [2.*TwMask[it]*(SA[it]*dfadGx[1]+SB[it]*dfbdGx[1]) for it in range(nTwin)]
+                dFdGu[iref] = [2.*TwMask[it]*(SA[it]*dfadGu[1]+SB[it]*dfbdGu[1]) for it in range(nTwin)]                
             else:   #these are good for no twin single crystals
                 dFdfr[iref] = 2.*(SA*dfadfr[0]+SA*dfadfr[1]+SB*dfbdfr[0]+SB*dfbdfr[1])*Mdata/len(Uniq) #array(nRef,nAtom)
                 dFdx[iref] = 2.*(SA*dfadx[0]+SA*dfadx[1]+SB*dfbdx[0]+SB*dfbdx[1])    #array(nRef,nAtom,3)
                 dFdui[iref] = 2.*(SA*dfadui[0]+SA*dfadui[1]+SB*dfbdui[0]+SB*dfbdui[1])   #array(nRef,nAtom)
                 dFdua[iref] = 2.*(SA*dfadua[0]+SA*dfadua[1]+SB*dfbdua[0]+SB*dfbdua[1])    #array(nRef,nAtom,6)
-                dFdfl[iref] = -SA*dfadfl-SB*dfbdfl                  #array(nRef,)                
-                dFdGf[iref] = 2.*(fas[0]*dfadGf[0]+fas[1]*dfadGf[1]+fbs[0]*dfbdGf[0]+SB*dfbdGf[1])      #array(nRef,natom,nwave,2)
-                dFdGx[iref] = 2.*(fas[0]*dfadGx[0]+fas[1]*dfadGx[1]+fbs[0]*dfbdGx[0]+SB*dfbdGx[1])      #array(nRef,natom,nwave,6)
-                dFdGu[iref] = 2.*(fas[0]*dfadGu[0]+fas[1]*dfadGu[1]+fbs[0]*dfbdGu[0]+SB*dfbdGu[1])      #array(nRef,natom,nwave,6)
+                dFdfl[iref] = -SA*dfadfl-SB*dfbdfl                  #array(nRef,) 
+                               
+                dFdGf[iref] = 2.*(SA*dfadGf[0]+SB*dfbdGf[1])      #array(nRef,natom,nwave,2)
+                dFdGx[iref] = 2.*(SA*dfadGx[0]+SB*dfbdGx[1])      #array(nRef,natom,nwave,6)
+                dFdGu[iref] = 2.*(SA*dfadGu[0]+SB*dfbdGu[1])      #array(nRef,natom,nwave,12)
         dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
             2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
         #loop over atoms - each dict entry is list of derivatives for all the reflections
+#        GSASIIpath.IPyBreak()
         if not iref%100 :
             print ' %d derivative time %.4f\r'%(iref,time.time()-time0),
     for i in range(len(Mdata)):     #loop over atoms  

@@ -37,15 +37,24 @@ class AutoIntFrame(wx.Frame):
             self.currImageList = []
             return
 
+        # index of image tree items by file name:
+        imageDict = {G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img))[1]:
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
+                     for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG '])}
         createdImageIdList = []
         # loop over files that are found, reading in new ones
         for newImage in self.currImageList:
-            if newImage in self.IntegratedList: continue # already processed
-            Comments,Data,Npix,Image = G2IO.GetImageData(G2frame,newImage)
-            if not Npix:
-                print('problem reading '+newImage)
-                continue
-            G2IO.LoadImage2Tree(newImage,G2frame,Comments,Data,Npix,Image)
+            if newImage in self.G2frame.IntegratedList: continue # already integrated
+            # has this image already been loaded?
+            if newImage not in imageDict:
+                Comments,Data,Npix,Image = G2IO.GetImageData(G2frame,newImage)
+                if not Npix:
+                    print('problem reading '+newImage)
+                    continue
+                G2IO.LoadImage2Tree(newImage,G2frame,Comments,Data,Npix,Image)
+            else:
+                G2frame.Image = imageDict[newImage]
             # update controls from master
             controlsDict = G2frame.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
@@ -54,7 +63,7 @@ class AutoIntFrame(wx.Frame):
             ImageMasks = G2frame.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
             createdImageIdList.append(G2frame.Image) # save IMG Id
-            self.IntegratedList.append(newImage) # save name of image so we don't process it again
+            self.G2frame.IntegratedList.append(newImage) # save name of image so we don't process it again
             #print('debug: read '+newImage)
 
         # now integrate the images we have read
@@ -68,6 +77,8 @@ class AutoIntFrame(wx.Frame):
             data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
             G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,True)
             self.oldImagefile = '' # mark image as changed; reread as needed
+            # simulate a Image Controls press, since that is where the
+            # integration is hidden
             G2imG.UpdateImageControls(G2frame,data,masks,IntegrateOnly=True)
             # split name and control number
             s = re.split(r'(\d+)\Z',os.path.split(os.path.splitext(imagefile)[0])[1])
@@ -76,9 +87,11 @@ class AutoIntFrame(wx.Frame):
                 namenum = s[1]
             else:
                 namenum = ''
-            # write out the images in the selected formats
+            # write out the images in the selected formats and save the names,
+            # reset will delete them
             for Id in G2frame.IntgOutList:
                 treename = G2frame.PatternTree.GetItemText(Id)
+                self.CreatedPWDRnames.append(treename)
                 Sdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Sample Parameters'))
                 # determine the name for the current file
                 fileroot = namepre
@@ -141,6 +154,21 @@ class AutoIntFrame(wx.Frame):
         else:
             if not os.path.exists(self.params['outdir']):
                 os.makedirs(self.params['outdir'])
+        if self.Reset: # after Reset has been pressed, delete all PWDR items
+            # created after last Start was pressed 
+            G2frame = self.G2frame
+            idlist = []
+            item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+            while item:
+                itemName = G2frame.PatternTree.GetItemText(item)
+                if itemName in self.CreatedPWDRnames:
+                    idlist.append(item)
+                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            for item in idlist:
+                G2frame.PatternTree.Delete(item)
+        self.Reset = False
+        self.CreatedPWDRnames = [] # list of created PWDR tree item names
+
     def __init__(self,G2frame,PollTime=60.0):
         def OnStart(event):
             '''Called when the start button is pressed. Changes button label 
@@ -171,25 +199,29 @@ class AutoIntFrame(wx.Frame):
                 self.StartLoop()
                 self.OnTimerLoop(None) # run once immediately and again after delay
                 self.timer.Start(int(1000*PollTime),oneShot=False)
+                self.Status.SetStatusText('Press Pause to delay integration or Reset to prepare to reintegrate all images')
             else:
                 btnstart.SetLabel('Resume')
                 if self.timer.IsRunning(): self.timer.Stop()
                 print('\nPausing autointegration\n')
+                self.Status.SetStatusText('Press Resume to continue integration or Reset to prepare to reintegrate all images')
 
-        def OnStop(event):
-            '''Called when Stop button is pressed. At present this only
-            stops the processing loop (same as pressing Pause except the
-            label is reset to "Start".) 
+        def OnReset(event):
+            '''Called when Reset button is pressed. This stops the
+            processing loop and resets the list of integrated files so
+            all images can be reintegrated. 
             '''
-            btnstart.SetLabel('Start')
+            btnstart.SetLabel('Restart')
+            self.Status.SetStatusText('Press Restart to reload and re-integrate images matching filter')
             if self.timer.IsRunning(): self.timer.Stop()
+            self.Reset = True
+            self.G2frame.IntegratedList = []
             
         def OnQuit(event):
             '''Stop the processing loop and close the Frame
             '''
-            # make sure we stop first
-            OnStop(event)
-            self.Destroy()
+            if self.timer.IsRunning(): self.timer.Stop() # make sure we stop first
+            wx.CallAfter(self.Destroy)
             
         def OnBrowse(event):
             '''Responds when the Browse button is pressed to load a file.
@@ -264,6 +296,7 @@ class AutoIntFrame(wx.Frame):
         ##################################################
         self.G2frame = G2frame
         self.params = {}
+        self.Reset = False
         self.params['IMGfile'] = ''
         self.params['MaskFile'] = ''
         self.params['IgnoreMask'] = True
@@ -276,14 +309,10 @@ class AutoIntFrame(wx.Frame):
         self.imagedir,fileroot = os.path.split(imagefile)
         self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
         self.params['outdir'] = os.path.abspath(self.imagedir)
-        # get image names that have already been read
-        self.IntegratedList = []
-        for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
-            self.IntegratedList.append(G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
-                )[1])
-            
+        self.CreatedPWDRnames = [] # list of created PWDR tree item names
         wx.Frame.__init__(self, G2frame,title='Automatic Integration')
+        self.Status = self.CreateStatusBar()
+        self.Status.SetStatusText('Press Start to load and integrate images matching filter')
         mnpnl = wx.Panel(self)
         mnsizer = wx.BoxSizer(wx.VERTICAL)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -374,8 +403,8 @@ class AutoIntFrame(wx.Frame):
         btnstart = wx.Button(mnpnl,  wx.ID_ANY, "Start")
         btnstart.Bind(wx.EVT_BUTTON, OnStart)
         sizer.Add(btnstart)
-        btnstop = wx.Button(mnpnl,  wx.ID_ANY, "Stop")
-        btnstop.Bind(wx.EVT_BUTTON, OnStop)
+        btnstop = wx.Button(mnpnl,  wx.ID_ANY, "Reset")
+        btnstop.Bind(wx.EVT_BUTTON, OnReset)
         sizer.Add(btnstop)
         sizer.Add((20,-1),wx.EXPAND,1)
         btnquit = wx.Button(mnpnl,  wx.ID_ANY, "Close")

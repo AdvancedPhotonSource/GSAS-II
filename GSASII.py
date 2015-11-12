@@ -2252,6 +2252,7 @@ class GSASII(wx.Frame):
         self.imageDefault = {}
         self.IntgOutList = [] # list of integration tree item Ids created in G2IO.SaveIntegration
         self.autoIntFrame = None
+        self.IntegratedList = [] # list of integrated image files
         self.Sngl = False
         self.ifGetRing = False
         self.MaskKey = ''           #trigger for making image masks
@@ -2419,6 +2420,7 @@ class GSASII(wx.Frame):
                         
     def OnImageRead(self,event):
         'Called to read in an image in any known format'
+        G2G.G2MessageBox(self,'Please use the Import/Image/... menu item rather than this','depreciating menu item')
         self.CheckNotebook()
         dlg = wx.FileDialog(
             self, 'Choose image files', '.', '',

@@ -91,7 +91,7 @@ class AutoIntFrame(wx.Frame):
             # reset will delete them
             for Id in G2frame.IntgOutList:
                 treename = G2frame.PatternTree.GetItemText(Id)
-                self.CreatedPWDRnames.append(treename)
+                self.G2frame.AutointPWDRnames.append(treename)
                 Sdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Sample Parameters'))
                 # determine the name for the current file
                 fileroot = namepre
@@ -161,13 +161,13 @@ class AutoIntFrame(wx.Frame):
             item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while item:
                 itemName = G2frame.PatternTree.GetItemText(item)
-                if itemName in self.CreatedPWDRnames:
+                if itemName in self.G2frame.AutointPWDRnames:
                     idlist.append(item)
                 item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
             for item in idlist:
                 G2frame.PatternTree.Delete(item)
         self.Reset = False
-        self.CreatedPWDRnames = [] # list of created PWDR tree item names
+        self.G2frame.AutointPWDRnames = [] # list of created PWDR tree item names
 
     def __init__(self,G2frame,PollTime=60.0):
         def OnStart(event):
@@ -309,7 +309,6 @@ class AutoIntFrame(wx.Frame):
         self.imagedir,fileroot = os.path.split(imagefile)
         self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
         self.params['outdir'] = os.path.abspath(self.imagedir)
-        self.CreatedPWDRnames = [] # list of created PWDR tree item names
         wx.Frame.__init__(self, G2frame,title='Automatic Integration')
         self.Status = self.CreateStatusBar()
         self.Status.SetStatusText('Press Start to load and integrate images matching filter')

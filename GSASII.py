@@ -2251,6 +2251,7 @@ class GSASII(wx.Frame):
         self.Integrate = 0
         self.imageDefault = {}
         self.IntgOutList = [] # list of integration tree item Ids created in G2IO.SaveIntegration
+        self.AutointPWDRnames = [] # list of autoint created PWDR tree item names
         self.autoIntFrame = None
         self.IntegratedList = [] # list of integrated image files
         self.Sngl = False

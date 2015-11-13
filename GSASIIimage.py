@@ -864,7 +864,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
     Dazm = (LRazm[1]-LRazm[0])/numAzms
     if 'log(q)' in data['binType']:
         lutth = np.log(4.*np.pi*npsind(LUtth/2.)/data['wavelength'])
-    elif 'q' == data['binType']:
+    elif 'Q' == data['binType']:
         lutth = 4.*np.pi*npsind(LUtth/2.)/data['wavelength']
     elif '2-theta' in data['binType']:
         lutth = LUtth                
@@ -912,7 +912,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
                     tabs = G2pwd.Absorb('Fixed',muT,tay)
             if 'log(q)' in data['binType']:
                 tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])
-            elif 'q' == data['binType']:
+            elif 'Q' == data['binType']:
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
             t0 = time.time()
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
@@ -929,7 +929,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
     H2 = np.array([tth for tth in np.linspace(lutth[0],lutth[1],numChans+1)])
     if 'log(q)' in data['binType']:
         H2 = 2.*npasind(np.exp(H2)*data['wavelength']/(4.*np.pi))
-    elif 'q' == data['binType']:
+    elif 'Q' == data['binType']:
         H2 = 2.*npasind(H2*data['wavelength']/(4.*np.pi))
     if Dazm:        
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])

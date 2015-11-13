@@ -119,7 +119,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 
     def OnRecalibrate(event):
         G2img.ImageRecalibrate(G2frame,data,masks)
-        wx.CallAfter(UpdateImageControls,G2frame,data,masks)
+        wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
         
     def OnClearCalib(event):
         data['ring'] = []
@@ -342,7 +342,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     S = File.readline()
                 data.update(save)
                 G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(data))
-                wx.CallAfter(UpdateImageControls,G2frame,data,masks)
+                wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
                 G2plt.PlotExposedImage(G2frame,event=event)
                 
                 File.close()
@@ -361,7 +361,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             elif 'PWDR' in data['type']:
                 data['SampleAbs'][0] = -np.log(data['SampleAbs'][0])  #switch from trans to muT!
                 if data['binType'] == 'log(q)': data['binType'] = '2-theta'  #switch default bin type                 
-            wx.CallAfter(UpdateImageControls,G2frame,data,masks)
+            wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
     
         def OnNewColorBar(event):
             data['color'] = colSel.GetValue()
@@ -530,14 +530,14 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         
         def OnNewBinType(event):
             data['binType'] = binSel.GetValue()
-            wx.CallAfter(UpdateImageControls,G2frame,data,masks)
+            wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
         
         def OnIOtth(event):
             Ltth = max(float(G2frame.InnerTth.GetValue()),0.001)
             Utth = float(G2frame.OuterTth.GetValue())
             if Ltth > Utth:
                 Ltth,Utth = Utth,Ltth
-            if 'q' in data['binType']:
+            if 'Q' in data['binType']:
                 data['IOtth'] = [2.*asind(Ltth*wave/(4.*math.pi)),2.*asind(Utth*wave/(4.*math.pi))]
             else:
                 data['IOtth'] = [Ltth,Utth]
@@ -630,7 +630,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             else:
                 data['fullIntegrate'] = True
                 data['LRazimuth'] = [Lazm,Lazm+360]
-            wx.CallAfter(UpdateImageControls,G2frame,data,masks)
+            wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
             G2plt.PlotExposedImage(G2frame,event=event)
             
         def OnSetDefault(event):
@@ -669,20 +669,20 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Integration coefficients'),0,WACV)    
         dataSizer.Add((5,0),0)
         if 'PWDR' in data['type']:
-            binChoice = ['2-theta','q']
+            binChoice = ['2-theta','Q']
         elif 'SASD' in data['type']:
-            binChoice = ['2-theta','q','log(q)']
+            binChoice = ['2-theta','Q','log(q)']
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Bin style: Constant step bins in'),0,WACV)            
         binSel = wx.ComboBox(parent=G2frame.dataDisplay,value=data['binType'],choices=binChoice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         binSel.Bind(wx.EVT_COMBOBOX, OnNewBinType)
         dataSizer.Add(binSel,0,WACV)
         binType = '2-theta'
-        if 'q' in data['binType']:
-            binType = 'q'
+        if 'q' in data['binType'].lower():
+            binType = 'Q'
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Inner/Outer '+binType),0,WACV)            
         IOtth = data['IOtth'][:]
-        if 'q' in data['binType']:
+        if 'Q' in data['binType']:
             wave = data['wavelength']
             IOtth = [4.*math.pi*sind(IOtth[0]/2.)/wave,4.*math.pi*sind(IOtth[1]/2.)/wave]
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)

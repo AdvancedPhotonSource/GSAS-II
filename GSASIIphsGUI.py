@@ -744,7 +744,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 ind = Indx[Obj.GetId()]
                 val = Obj.GetValue()
                 try:
-                    val = min(2.0,max(0.0,float(val)))
+                    val = min(2.0,max(-1.0,float(val)))
                 except ValueError:
                     val = generalData['SuperVec'][0][ind]
                 generalData['SuperVec'][0][ind] = val
@@ -1176,7 +1176,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #####  Atom routines
 ################################################################################
 
-    SSdefault = {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}
     def FillAtomsGrid(Atoms):
         '''Display the contents of the Atoms tab
         '''
@@ -1614,7 +1613,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif generalData['Type'] == 'nuclear':
             atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['modulated','magnetic']:
-            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],SSdefault])
+            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
+                {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
         SetupGeneral()
         if 'Atoms' in data['Drawing']:            
             DrawAtomAdd(data['Drawing'],atomData[-1])
@@ -1831,7 +1831,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif generalData['Type'] == 'nuclear':
             atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['modulated','magnetic']:
-            atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],SSdefault])
+            atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],
+                {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
         SetupGeneral()
 
     def AtomDelete(event):
@@ -2490,18 +2491,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
         mainSizer.Add(wx.StaticText(waveData,label=' Incommensurate propagation wave data:'),0,WACV)
         if generalData['Type'] in ['modulated','magnetic']:
-            for iatm,atom in enumerate(atomData):
-                xyz = atom[cx:cx+3]
-                uij = atom[cia+2:cia+8]
+            for iatm,atm in enumerate(atomData):
+                xyz = atm[cx:cx+3]
+                uij = atm[cia+2:cia+8]
                 for SS in ['SS1',]:  #future SS2 & SS3 - I doubt it!
                     G2G.HorizontalLine(mainSizer,waveData)
-                    mainSizer.Add(AtomSizer(SS,atom))
+                    mainSizer.Add(AtomSizer(SS,atm))
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
-                        if atom[cia] != 'A' and Stype == 'Sadp':    #Uiso can't have modulations!
+                        if atm[cia] != 'A' and Stype == 'Sadp':    #Uiso can't have modulations!
                             continue
                         if generalData['Type'] != 'magnetic' and Stype == 'Smag':
                             break
-                        mainSizer.Add(WaveSizer(atom[-1][SS]['waveType'],atom[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype]))                        
+                        mainSizer.Add(WaveSizer(atm[-1][SS]['waveType'],atm[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype]))                        
         SetPhaseWindow(G2frame.dataFrame,waveData,mainSizer)
                        
     def On4DMapCompute(event):

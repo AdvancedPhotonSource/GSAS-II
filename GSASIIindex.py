@@ -157,7 +157,7 @@ def rancell(Bravais,dmin,dmax):
         b = ranaxis(dmin,dmax)
         c = ac[1]
         alp = gam = 90
-        bet = ranaxis(90.,130.)
+        bet = ranaxis(90.,140.)
     else:                           #triclinic - a<b<c convention
         abc = [ranaxis(dmin,dmax),ranaxis(dmin,dmax),ranaxis(dmin,dmax)]
         abc.sort()
@@ -267,7 +267,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
         for j,r in enumerate(Vref):
             if r:
                 if values.size > 1:
-                    Vec.append(max(0.0,min(2.0,values[i])))
+                    Vec.append(max(-1.,min(1.0,values[i])))
                 else:
                     Vec.append(max(0.0,min(2.0,values)))                    
                 i += 1

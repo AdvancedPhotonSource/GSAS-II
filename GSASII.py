@@ -1128,6 +1128,7 @@ class GSASII(wx.Frame):
                 codes.extend([0,0,0,0,0,0,0])
                 Iparm1 = G2IO.makeInstDict(names,data,codes)
                 Iparm1['Source'] = [Irads[irad],Irads[irad]]
+                Iparm1['Bank'] = [Bank,Bank,0]
                 return [Iparm1,{}]
             elif 'T' in DataType:
                 names = ['Type','fltPath','2-theta','difC','difA', 'difB','Zero','alpha','beta-0','beta-1',
@@ -1175,6 +1176,7 @@ class GSASII(wx.Frame):
                             s = Iparm['INS  1PRCF12'].split()
                             data.extend([0.0,0.0,G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y                       
                 Inst1 = G2IO.makeInstDict(names,data,codes)
+                Iparm1['Bank'] = [Bank,Bank,0]
                 Inst2 = {}
                 if pfType < 0:
                     Ipab = 'INS  1PAB'+str(-pfType)

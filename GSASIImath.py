@@ -785,7 +785,7 @@ def getMass(generalData):
     mass = 0.
     for i,elem in enumerate(generalData['AtomTypes']):
         mass += generalData['NoAtoms'][elem]*generalData['AtomMass'][i]
-    return mass    
+    return max(mass,1.0)    
 
 def getDensity(generalData):
     '''calculate crystal structure density
@@ -2351,7 +2351,7 @@ def Fourier4DMap(data,reflDict):
     SSGT = np.array([ops[1] for ops in SSGData['SSGOps']])
     cell = generalData['Cell'][1:8]        
     A = G2lat.cell2A(cell[:6])
-    maxM = generalData['SuperVec'][2]
+    maxM = 4
     Hmax = G2lat.getHKLmax(dmin,SGData,A)+[maxM,]
     adjHKLmax(SGData,Hmax)
     Hmax = np.asarray(Hmax,dtype='i')+1
@@ -2690,7 +2690,7 @@ def SSChargeFlip(data,reflDict,pgbar):
     cell = generalData['Cell'][1:8]        
     A = G2lat.cell2A(cell[:6])
     Vol = cell[6]
-    maxM = generalData['SuperVec'][2]
+    maxM = 4
     Hmax = np.asarray(G2lat.getHKLmax(dmin,SGData,A)+[maxM,],dtype='i')+1
     adjHKLmax(SGData,Hmax)
     Ehkl = np.zeros(shape=2*Hmax,dtype='c16')       #2X64bits per complex no.

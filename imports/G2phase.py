@@ -393,10 +393,14 @@ class JANA_ReaderClass(G2IO.ImportPhase):
         SuperSg = ''
         cell = None
         nqi = 0
+        version = '2000'
         while S:
             self.errors = 'Error reading at line '+str(line)
             if 'title' in S and S != 'title\n':
                 Title = S.split()[1]
+            elif 'Jana2006' in S:
+                self.warnings += '\nJana2006 file detected'
+                version = '2006'
             elif 'cell' in S[:4]:
                 cell = S[5:].split()
                 cell=[float(cell[0]),float(cell[1]),float(cell[2]),
@@ -474,7 +478,9 @@ class JANA_ReaderClass(G2IO.ImportPhase):
             Name = S1[:8].strip()
             if S1[11:15].strip() == '1':
                 S2 = file2.readline()
-                Uiso = R2pisq*float(S2[:9])/4.      #Biso -> Uiso
+                Uiso = S2[:9]
+                if version == '2000':
+                    Uiso = R2pisq*float(Uiso)/4.      #Biso -> Uiso
                 Uij = [0,0,0,0,0,0]
                 IA = 'I'
             elif S1[11:15].strip() == '2':
@@ -482,8 +488,9 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                 IA = 'A'
                 Uiso = 0.
                 Uij = [float(S2[:9]),float(S2[9:18]),float(S2[18:27]),
-                    float(S2[27:36]),float(S2[36:45]),float(S2[45:54])] #these things are betaij! need to convert to Uij
-                Uij = R2pisq*G2lat.UijtoU6(G2lat.U6toUij(Uij)/Mast)
+                    float(S2[27:36]),float(S2[36:45]),float(S2[45:54])] #Uij in Jana2006!
+                if version == '2000':
+                    Uij = R2pisq*G2lat.UijtoU6(G2lat.U6toUij(Uij)/Mast) #these things are betaij in Jana2000! need to convert to Uij
             for i in range(S1N[0]):
                 if not i:
                     FS = file2.readline()
@@ -519,11 +526,12 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                     vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36]),float(it[36:45]),float(it[45:54])]
                 Spos[i] = [vals,False]
             for i,it in enumerate(Sadp):
-                #these are betaij modulations! need to convert to Uij modulations
                 vals = [float(it[:9]),float(it[9:18]),float(it[18:27]),float(it[27:36]),float(it[36:45]),float(it[45:54]),
-                    float(it[54:63]),float(it[63:72]),float(it[72:81]),float(it[81:90]),float(it[90:99]),float(it[99:108])]                
-                vals[:6] = R2pisq*G2lat.UijtoU6(G2lat.U6toUij(vals[:6])/Mast)    #convert sin bij to Uij
-                vals[6:] = R2pisq*G2lat.UijtoU6(G2lat.U6toUij(vals[6:])/Mast)    #convert cos bij to Uij
+                    float(it[54:63]),float(it[63:72]),float(it[72:81]),float(it[81:90]),float(it[90:99]),float(it[99:108])]
+                #these are betaij modulations in Jana2000! need to convert to Uij modulations
+                if version == '2000':               
+                    vals[:6] = R2pisq*G2lat.UijtoU6(G2lat.U6toUij(vals[:6])/Mast)    #convert sin bij to Uij
+                    vals[6:] = R2pisq*G2lat.UijtoU6(G2lat.U6toUij(vals[6:])/Mast)    #convert cos bij to Uij
                 Sadp[i] = [vals,False]
             Atom = [Name,aType,'',XYZ[0],XYZ[1],XYZ[2],1.0,SytSym,Mult,IA,Uiso]
             Atom += Uij

@@ -1181,10 +1181,14 @@ def UpdateInstrumentGrid(G2frame,data):
     '''respond to selection of PWDR/SASD Instrument Parameters
     data tree item.
     '''
+#patch
+    if 'Bank' not in data:
+        data['Bank'] = [1,1,0]
+#end patch    
     def keycheck(keys):
         good = []
         for key in keys:
-            if key in ['Type','U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
+            if key in ['Type','Bank','U','V','W','X','Y','SH/L','I(L2)/I(L1)','alpha',
                 'beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','Polariz.',
                 'Lam','Azimuth','2-theta','fltPath','difC','difA','difB','Zero','Lam1','Lam2']:
                 good.append(key)
@@ -1272,6 +1276,8 @@ def UpdateInstrumentGrid(G2frame,data):
                     S = File.readline()                
                 File.close()
                 Inst,Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'))
+                if 'Bank' not in Inst:  #patch for old .instprm files - may cause faults for TOF data
+                    Inst['Bank'] = [1,1,0]
                 data = G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,])
                 G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'),[data,Inst2])
                 RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
@@ -1425,7 +1431,8 @@ def UpdateInstrumentGrid(G2frame,data):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         instSizer = wx.FlexGridSizer(0,6,5,5)
         subSizer = wx.BoxSizer(wx.HORIZONTAL)
-        subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Histogram Type: '+insVal['Type']),0,WACV)
+        text = ' Histogram Type: %s  Bank: %d'%(insVal['Type'],insVal['Bank'])
+        subSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,text),0,WACV)
         mainSizer.Add(subSizer)
         labelLst[:],elemKeysLst[:],dspLst[:],refFlgElem[:] = [],[],[],[]
         if 'P' in insVal['Type']:                   #powder data
@@ -2454,7 +2461,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         ObjId = Obj.GetId()
         Id = Indx[ObjId]
         try:
-            value = min(1.0,max(0.,float(Obj.GetValue())))
+            value = min(1.0,max(-1.0,float(Obj.GetValue())))
         except ValueError:
             value = ssopt['ModVec'][Id]
         Obj.SetValue('%.4f'%(value))
@@ -2465,9 +2472,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         Obj = event.GetEventObject()
         ObjId = Obj.GetId()
         Id,valObj = Indx[ObjId]
-        move = Obj.GetValue()*0.0005
+        move = Obj.GetValue()*0.001
         Obj.SetValue(0)
-        value = min(1.0,max(.0,float(valObj.GetValue())+move))
+        value = min(1.0,max(-1.0,float(valObj.GetValue())+move))
         valObj.SetValue('%.4f'%(value)) 
         ssopt['ModVec'][Id] = value
         OnHklShow(event)
@@ -2884,7 +2891,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     littleSizer = wx.FlexGridSizer(0,5,5,5)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max Nc/Nobs '),0,WACV)
     NcNo = wx.SpinCtrl(G2frame.dataDisplay)
-    NcNo.SetRange(2,6)
+    NcNo.SetRange(2,8)
     NcNo.SetValue(controls[2])
     NcNo.Bind(wx.EVT_SPINCTRL,OnNcNo)
     littleSizer.Add(NcNo,0,WACV)

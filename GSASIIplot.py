@@ -3045,7 +3045,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
             try:
                 G2frame.G2plotNB.status.SetStatusText('t =%9.3f %s =%9.3f %s=%9.3f'%(xpos,GkDelta+Ax,ypos,Gkrho,Slab[iy,ix]/8.),1)                   
 #                GSASIIpath.IPyBreak()                  
-            except TypeError:
+            except (TypeError,IndexError):
                 G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
     
     def OnPlotKeyPress(event):

@@ -423,7 +423,7 @@ def UpdatePeakGrid(G2frame, data):
         G2frame.dataFrame.UnDo.Enable(True)
         
     def OnLSQPeakFit(event):
-        if not G2frame.GSASprojectfile:            #force a save of the gpx file so SaveState can wirte in the same directory
+        if not G2frame.GSASprojectfile:            #force a save of the gpx file so SaveState can write in the same directory
             G2frame.OnFileSaveas(event)
         OnPeakFit('LSQ')
         

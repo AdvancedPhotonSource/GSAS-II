@@ -1323,8 +1323,7 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
     '''Called to perform a peak fit, refining the selected items in the peak
     table as well as selected items in the background.
 
-    :param str FitPgm: type of fit to perform. At present "LSQ" is the only
-      option that works
+    :param str FitPgm: type of fit to perform. At present this is ignored.
     :param list Peaks: a list of peaks. Each peak entry is a list with 8 values:
       four values followed by a refine flag where the values are: position, intensity,
       sigma (Gaussian width) and gamma (Lorentzian width). From the Histogram/"Peak List"
@@ -1612,44 +1611,37 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
         values =  np.array(Dict2Values(parmDict, varyList))
         Rvals = {}
         badVary = []
-        if FitPgm == 'LSQ':
-            try:
-                result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
-                   args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
-                ncyc = int(result[2]['nfev']/2)
-            finally:
-                if dlg: dlg.Destroy()
-            runtime = time.time()-begin    
-            chisq = np.sum(result[2]['fvec']**2)
-            Values2Dict(parmDict, varyList, result[0])
-            Rvals['Rwp'] = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
-            Rvals['GOF'] = chisq/(xFin-xBeg-len(varyList))       #reduced chi^2
-            print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
-            if ncyc:
-                print 'fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
-            print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
-            sig = [0]*len(varyList)
-            if len(varyList) == 0: break  # if nothing was refined
-            try:
-                sig = np.sqrt(np.diag(result[1])*Rvals['GOF'])
-                if np.any(np.isnan(sig)):
-                    print '*** Least squares aborted - some invalid esds possible ***'
-                break                   #refinement succeeded - finish up!
-            except ValueError:          #result[1] is None on singular matrix
-                print '**** Refinement failed - singular matrix ****'
-                Ipvt = result[2]['ipvt']
-                for i,ipvt in enumerate(Ipvt):
-                    if not np.sum(result[2]['fjac'],axis=1)[i]:
-                        print 'Removing parameter: ',varyList[ipvt-1]
-                        badVary.append(varyList[ipvt-1])
-                        del(varyList[ipvt-1])
-                        break
-                else: # nothing removed
+        result = so.leastsq(errPeakProfile,values,Dfun=devPeakProfile,full_output=True,ftol=Ftol,col_deriv=True,
+               args=(x[xBeg:xFin],y[xBeg:xFin],w[xBeg:xFin],dataType,parmDict,varyList,bakType,dlg))
+        ncyc = int(result[2]['nfev']/2)
+        runtime = time.time()-begin    
+        chisq = np.sum(result[2]['fvec']**2)
+        Values2Dict(parmDict, varyList, result[0])
+        Rvals['Rwp'] = np.sqrt(chisq/np.sum(w[xBeg:xFin]*y[xBeg:xFin]**2))*100.      #to %
+        Rvals['GOF'] = chisq/(xFin-xBeg-len(varyList))       #reduced chi^2
+        print 'Number of function calls:',result[2]['nfev'],' Number of observations: ',xFin-xBeg,' Number of parameters: ',len(varyList)
+        if ncyc:
+            print 'fitpeak time = %8.3fs, %8.3fs/cycle'%(runtime,runtime/ncyc)
+        print 'Rwp = %7.2f%%, chi**2 = %12.6g, reduced chi**2 = %6.2f'%(Rvals['Rwp'],chisq,Rvals['GOF'])
+        sig = [0]*len(varyList)
+        if len(varyList) == 0: break  # if nothing was refined
+        try:
+            sig = np.sqrt(np.diag(result[1])*Rvals['GOF'])
+            if np.any(np.isnan(sig)):
+                print '*** Least squares aborted - some invalid esds possible ***'
+            break                   #refinement succeeded - finish up!
+        except ValueError:          #result[1] is None on singular matrix
+            print '**** Refinement failed - singular matrix ****'
+            Ipvt = result[2]['ipvt']
+            for i,ipvt in enumerate(Ipvt):
+                if not np.sum(result[2]['fjac'],axis=1)[i]:
+                    print 'Removing parameter: ',varyList[ipvt-1]
+                    badVary.append(varyList[ipvt-1])
+                    del(varyList[ipvt-1])
                     break
-        elif FitPgm == 'BFGS':
-            print 'Other program here'
-            return {}
-        
+            else: # nothing removed
+                break
+    if dlg: dlg.Destroy()
     sigDict = dict(zip(varyList,sig))
     yb[xBeg:xFin] = getBackground('',parmDict,bakType,dataType,x[xBeg:xFin])[0]
     yc[xBeg:xFin] = getPeakProfile(dataType,parmDict,x[xBeg:xFin],varyList,bakType)

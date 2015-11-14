@@ -1082,7 +1082,8 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         fbs = np.sum(np.sum(fbg,axis=-1),axis=-1)
 #        GSASIIpath.IPyBreak()
         if 'P' in calcControls[hfx+'histType']:
-            refl.T[10] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
+            refl.T[10] = np.sum(fas,axis=0)**2+np.sum(fbs,axis=0)**2    #square of sums
+#            refl.T[10] = np.sum(fas**2,axis=0)+np.sum(fbs**2,axis=0)
             refl.T[11] = atan2d(fbs[0],fas[0])  #ignore f' & f"
         else:
             if len(TwinLaw) > 1:
@@ -1264,22 +1265,33 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
             dfadfl = 1.0
             dfbdfl = 1.0
         #NB: the above have been checked against PA(1:10,1:2) in strfctr.for for Al2O3!    
+        SA = fas[0]+fas[1]      #float = A+A' (might be array[nTwin])
+        SB = fbs[0]+fbs[1]      #float = B+B' (might be array[nTwin])
         if 'P' in calcControls[hfx+'histType']: #checked perfect for centro & noncentro
-            dFdfr[iref] = 2.*(fas[0]*dfadfr[0]+fas[1]*dfadfr[1])*Mdata/len(Uniq)+   \
-                2.*(fbs[0]*dfbdfr[0]-fbs[1]*dfbdfr[1])*Mdata/len(Uniq)
-            dFdx[iref] = 2.*(fas[0]*dfadx[0]+fas[1]*dfadx[1])+  \
-                2.*(fbs[0]*dfbdx[0]+fbs[1]*dfbdx[1])
-            dFdui[iref] = 2.*(fas[0]*dfadui[0]+fas[1]*dfadui[1])+   \
-                2.*(fbs[0]*dfbdui[0]-fbs[1]*dfbdui[1])
-            dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])+   \
-                2.*(fbs[0]*dfbdua[0]+fbs[1]*dfbdua[1])
-            dFdGx[iref] = 2.*(fas[0]*dfadGx[0]+fas[1]*dfadGx[1])+  \
-                2.*(fbs[0]*dfbdGx[0]+fbs[1]*dfbdGx[1])
-            dFdGu[iref] = 2.*(fas[0]*dfadGu[0]+fas[1]*dfadGu[1])+  \
-                2.*(fbs[0]*dfbdGu[0]+fbs[1]*dfbdGu[1])
+            dFdfr[iref] = 2.*(SA*dfadfr[0]+SA*dfadfr[1]+SB*dfbdfr[0]+SB*dfbdfr[1])*Mdata/len(Uniq) #array(nRef,nAtom)
+            dFdx[iref] = 2.*(SA*dfadx[0]+SA*dfadx[1]+SB*dfbdx[0]+SB*dfbdx[1])    #array(nRef,nAtom,3)
+            dFdui[iref] = 2.*(SA*dfadui[0]+SA*dfadui[1]+SB*dfbdui[0]+SB*dfbdui[1])   #array(nRef,nAtom)
+            dFdua[iref] = 2.*(SA*dfadua[0]+SA*dfadua[1]+SB*dfbdua[0]+SB*dfbdua[1])    #array(nRef,nAtom,6)
+            dFdfl[iref] = -SA*dfadfl-SB*dfbdfl                  #array(nRef,) 
+                           
+            dFdGf[iref] = 2.*(SA*dfadGf[0]+SB*dfbdGf[1])      #array(nRef,natom,nwave,2)
+            dFdGx[iref] = 2.*(SA*dfadGx[0]+SB*dfbdGx[1])      #array(nRef,natom,nwave,6)
+            dFdGu[iref] = 2.*(SA*dfadGu[0]+SB*dfbdGu[1])      #array(nRef,natom,nwave,12)
+#            dFdfr[iref] = 2.*(fas[0]*dfadfr[0]+fas[1]*dfadfr[1])*Mdata/len(Uniq)+   \
+#                2.*(fbs[0]*dfbdfr[0]-fbs[1]*dfbdfr[1])*Mdata/len(Uniq)
+#            dFdx[iref] = 2.*(fas[0]*dfadx[0]+fas[1]*dfadx[1])+  \
+#                2.*(fbs[0]*dfbdx[0]+fbs[1]*dfbdx[1])
+#            dFdui[iref] = 2.*(fas[0]*dfadui[0]+fas[1]*dfadui[1])+   \
+#                2.*(fbs[0]*dfbdui[0]-fbs[1]*dfbdui[1])
+#            dFdua[iref] = 2.*(fas[0]*dfadua[0]+fas[1]*dfadua[1])+   \
+#                2.*(fbs[0]*dfbdua[0]+fbs[1]*dfbdua[1])
+#            dFdGf[iref] = 2.*(fas[0]*dfadGf[0]+fas[1]*dfadGf[1])+  \
+#                2.*(fbs[0]*dfbdGf[0]+fbs[1]*dfbdGf[1])
+#            dFdGx[iref] = 2.*(fas[0]*dfadGx[0]+fas[1]*dfadGx[1])+  \
+#                2.*(fbs[0]*dfbdGx[0]+fbs[1]*dfbdGx[1])
+#            dFdGu[iref] = 2.*(fas[0]*dfadGu[0]+fas[1]*dfadGu[1])+  \
+#                2.*(fbs[0]*dfbdGu[0]+fbs[1]*dfbdGu[1])
         else:
-            SA = fas[0]+fas[1]      #float = A+A' (might be array[nTwin])
-            SB = fbs[0]+fbs[1]      #float = B+B' (might be array[nTwin])
             if nTwin > 1:
                 dFdfr[iref] = [2.*TwMask[it]*(SA[it]*dfadfr[0][it]+SA[it]*dfadfr[1][it]+SB[it]*dfbdfr[0][it]+SB[it]*dfbdfr[1][it])*Mdata/len(Uniq[it]) for it in range(nTwin)]
                 dFdx[iref] = [2.*TwMask[it]*(SA[it]*dfadx[it][0]+SA[it]*dfadx[it][1]+SB[it]*dfbdx[it][0]+SB[it]*dfbdx[it][1]) for it in range(nTwin)]
@@ -2623,7 +2635,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
                     else:
                         try:
                             aname = name.split(pfx)[1][:2]
-                            if aname not in ['Af','dA','AU','RB']: continue # skip anything not an atom or rigid body param
+                            if aname not in ['Af','dA','AU','RB','Xs','Xc','Ys','Yc','Zs','Zc','U1','U2','U3']: continue # skip anything not an atom or rigid body param
                         except IndexError:
                             continue
                     if name in varylist:

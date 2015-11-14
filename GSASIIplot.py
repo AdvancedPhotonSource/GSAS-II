@@ -1040,6 +1040,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     global exclLines
     global DifLine
     global Ymax
+    global Pattern
     plottype = plotType
     if not G2frame.PatternId:
         return
@@ -1247,6 +1248,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             G2frame.itemPicked.set_data([event.xdata], [event.ydata])
             Page.figure.gca().draw_artist(G2frame.itemPicked)
             Page.canvas.blit(Page.figure.gca().bbox)
+            
         def OnDragLine(event):
             '''Respond to dragging of a plot line
             '''
@@ -3123,7 +3125,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     rho = np.roll(np.roll(np.roll(Map['rho'],ix[0],axis=0),ix[1],axis=1),ix[2],axis=2)
     ix = rhoSize[:3]/2
     ib = 4
-    hdx = [0,0,0]       #this needs to be something for an offset correction on atom positions
+    hdx = [2,2,2]       #this needs to be something for an offset correction on atom positions
     if Ax == 'x':
         Doff = (hdx[0]+Off)*.005
         slab = np.sum(np.sum(rho[:,ix[1]-ib:ix[1]+ib,ix[2]-ib:ix[2]+ib,:],axis=2),axis=1)
@@ -3145,6 +3147,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
         Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Doff,.5+Doff),cmap=acolor)
     else:
         Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Doff,.5+Doff))
+    Plot.set_ylim([-0.25,0.25])
     Page.canvas.draw()
    
 ################################################################################

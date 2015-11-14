@@ -1001,13 +1001,13 @@ def ModulationDerv(waveTypes,H,HP,Hij,FSSdata,XSSdata,USSdata,Mast):
     nxs = np.newaxis
     numeric = True   
     cosHA,sinHA = Modulation(waveTypes,np.array([H,]),np.array([HP,]),FSSdata,XSSdata,USSdata,Mast)
-    Mf = [H.shape[0],]+list(FSSdata.T.shape)    #ops x atoms x waves x 2 (sin+cos frac mods)
+    Mf = [H.shape[0],]+list(FSSdata.T.shape)    #=[ops,atoms,waves,2] (sin+cos frac mods)
     dGdMfC = np.zeros(Mf)
     dGdMfS = np.zeros(Mf)
-    Mx = [H.shape[0],]+list(XSSdata.T.shape)   #ops x atoms x waves x 6 (sin+cos pos mods)
+    Mx = [H.shape[0],]+list(XSSdata.T.shape)   #=[ops,atoms,waves,6] (sin+cos pos mods)
     dGdMxC = np.zeros(Mx)
     dGdMxS = np.zeros(Mx)
-    Mu = [H.shape[0],]+list(USSdata.T.shape)    #ops x atoms x waves x 12 (sin+cos Uij mods)
+    Mu = [H.shape[0],]+list(USSdata.T.shape)    #=[ops,atoms,waves,12] (sin+cos Uij mods)
     dGdMuC = np.zeros(Mu)
     dGdMuS = np.zeros(Mu)
     glTau,glWt = pwd.pygauleg(0.,1.,32)         #get Gauss-Legendre intervals & weights
@@ -1033,7 +1033,7 @@ def ModulationDerv(waveTypes,H,HP,Hij,FSSdata,XSSdata,USSdata,Mast):
             nS = np.where('Sawtooth' in waveTypes)
             #XmodZ = 0   replace
     tauX = np.arange(1.,Ax.shape[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
-    StauX = np.ones_like(Ax)[:,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X pos X 32
+    StauX = np.ones_like(Ax)[:,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X 3(xyz) X 32
     CtauX = np.ones_like(Bx)[:,nx:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
     XmodA = Ax[:,nx:,:,nxs]*StauX #atoms X waves X pos X 32
     XmodB = Bx[:,nx:,:,nxs]*CtauX #ditto

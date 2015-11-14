@@ -145,14 +145,16 @@ def rancell(Bravais,dmin,dmax):
         alp = bet = gam = 90
     elif Bravais in [7,8,9,10]:       #orthorhombic - F,I,C,P - a<b<c convention
         abc = [ranaxis(dmin,dmax),ranaxis(dmin,dmax),ranaxis(dmin,dmax)]
-        abc.sort()
+        if Bravais in [7,8,10]:
+            abc.sort()
         a = abc[0]
         b = abc[1]
         c = abc[2]
         alp = bet = gam = 90
     elif Bravais in [11,12]:        #monoclinic - C,P - a<c convention
         ac = [ranaxis(dmin,dmax),ranaxis(dmin,dmax)]
-        ac.sort()
+        if Bravais == 12:
+            ac.sort()
         a = ac[0]
         b = ranaxis(dmin,dmax)
         c = ac[1]

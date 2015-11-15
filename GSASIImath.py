@@ -1042,8 +1042,8 @@ def ModulationDerv(waveTypes,H,HP,Hij,FSSdata,XSSdata,USSdata,Mast):
     D = twopi*H[:,3][:,nxs]*glTau[nxs,:]              #m*e*tau; ops X 32
     HdotX = twopi*np.inner(HP,Xmod)        #ops x atoms X 32
     HdotXD = HdotX+D[:,nxs,:]
-    HdotXA = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(XmodA,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]  #ops x atoms x waves x 32 x xyz
-    HdotXB = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(XmodB,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]
+#    HdotXA = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(XmodA,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]  #ops x atoms x waves x 32 x xyz
+#    HdotXB = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(XmodB,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]
     if Af.shape[1]:
         tauF = np.arange(1.,Af.shape[1]+1-nf)[:,nxs]*glTau  #Fwaves x 32
         StauF = np.ones_like(Af)[:,nf:,nxs]*np.sin(twopi*tauF)[nxs,:,:] #also dFmod/dAf
@@ -1060,7 +1060,7 @@ def ModulationDerv(waveTypes,H,HP,Hij,FSSdata,XSSdata,USSdata,Mast):
         UmodA = Au[:,:,:,:,nxs]*StauU #atoms x waves x 3x3 x 32
         UmodB = Bu[:,:,:,:,nxs]*CtauU #ditto
         Umod = np.swapaxes((UmodA+UmodB),2,4)      #atoms x waves x 32 x 3x3 (symmetric so I can do this!) 
-        HuH = np.sum(HP[:,nxs,nxs,nxs]*np.inner(HP[:],Umod),axis=-1)    #ops x atoms x waves x 32
+        HuH = np.sum(HP[:,nxs,nxs,nxs]*np.inner(HP,Umod),axis=-1)    #ops x atoms x waves x 32
         HbH = np.exp(-np.sum(HuH,axis=-2)) # ops x atoms x 32; sum waves
 #derivs need to be ops x atoms x waves x 6uij; ops x atoms x waves x 32 x 6uij before sum
         StauU = np.rollaxis(np.rollaxis(np.swapaxes(StauU,2,4),-1),-1)
@@ -1078,12 +1078,12 @@ def ModulationDerv(waveTypes,H,HP,Hij,FSSdata,XSSdata,USSdata,Mast):
         HbH = np.ones_like(HdotX)
     dHdXA = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(StauX,-1,-2)[nxs,:,:,:,:]    #ops x atoms x sine waves x 32 x xyz
     dHdXB = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(CtauX,-1,-2)[nxs,:,:,:,:]    #ditto - cos waves
-    dGdMxCa = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.sin(HdotXA))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
-    dGdMxCb = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.sin(HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
+    dGdMxCa = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
+    dGdMxCb = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxC = np.concatenate((dGdMxCa,dGdMxCb),axis=-1)
 # ops x atoms x waves x 2xyz - real part
-    dGdMxSa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.cos(HdotXA))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
-    dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.cos(HdotXB))*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
+    dGdMxSa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
+    dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
     dGdMxS = np.concatenate((dGdMxSa,dGdMxSb),axis=-1)
 # ops x atoms x waves x 2xyz - imaginary part
     return np.array([cosHA,sinHA]),[dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS]

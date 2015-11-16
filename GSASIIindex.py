@@ -859,7 +859,11 @@ def DoIndexPeaks(peaks,controls,bravais,ifX20=True):
     N1s = [1,1,1,   5,5,  5,5, 50,50,50,50,  50,50, 200]
     N2s = [1,1,1,   2,2,  2,2,     2,2,2,2,   2,2,   4]
     Nm  = [1,1,1,   1,1,  1,1,     1,1,1,1,   2,2,   4]
-    Nobs = len(peaks)
+    notUse = 0
+    for peak in peaks:
+        if not peak[2]:
+            notUse += 1
+    Nobs = len(peaks)-notUse
     zero,ncno = controls[1:3]
     ncMax = Nobs*ncno
     print "%s %8.3f %8.3f" % ('lattice parameter range = ',amin,amax)

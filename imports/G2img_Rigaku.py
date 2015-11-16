@@ -32,7 +32,7 @@ class Rigaku_ReaderClass(G2IO.ImportImage):
         
         '''Does the file size make sense?
         '''
-        fileSize = os.stat(fp.name).st_size
+        fileSize = os.stat(filepointer.name).st_size
         Npix = (fileSize-6000)/2
         if Npix == 9000000 or Npix == 2250000 or Npix == 36000000:
             return True

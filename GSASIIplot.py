@@ -1373,7 +1373,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         if G2frame.cid is not None:         # if there is a drag connection, delete it
             Page.canvas.mpl_disconnect(G2frame.cid)
             G2frame.cid = None
+        if not G2frame.PickId:
+            return
         PickId = G2frame.PickId                             # points to item in tree
+#        GSASIIpath.IPyBreak()
         if G2frame.PatternTree.GetItemText(PickId) == 'Background' and event.xdata:
             if Page.toolbar._active:    # prevent ops. if a toolbar zoom button pressed
                 return 

@@ -938,7 +938,8 @@ def DoIndexPeaks(peaks,controls,bravais,ifX20=True):
                             else:
                                 cycle = 10
                 finally:
-                    dlg.Destroy()
+                    pass
+                dlg.Destroy()
             print '%s%s%s%s'%('finished cell search for ',bravaisNames[ibrav], \
                 ', elapsed time = ',G2lat.sec2HMS(time.time()-begin))
             

@@ -1044,6 +1044,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     plottype = plotType
     if not G2frame.PatternId:
         return
+    if 'PKS' in plottype:
+        PlotPowderLines(G2frame)
+        return
 #patch
     data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
     if 'Offset' not in data[0] and plotType in ['PWDR','SASD']:     #plot offset data
@@ -2516,7 +2519,7 @@ def PlotPowderLines(G2frame):
     for peak in peaks:
         Plot.axvline(peak[0],color='b')
     for hkl in G2frame.HKL:
-        Plot.axvline(hkl[-1],color='r',dashes=(5,5))
+        Plot.axvline(hkl[-2],color='r',dashes=(5,5))
     xmin = peaks[0][0]
     xmax = peaks[-1][0]
     delt = xmax-xmin
@@ -2545,10 +2548,12 @@ def PlotPeakWidths(G2frame):
         return
     Parms,Parms2 = G2frame.PatternTree.GetItemPyData( \
         G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
-    if 'C' in Parms['Type'][0]:
-        lam = G2mth.getWave(Parms)
-    else:
+    if 'PKS' in Parms['Type'][0]:
+        return
+    elif 'T' in Parms['Type'][0]:
         difC = Parms['difC'][0]
+    else:
+        lam = G2mth.getWave(Parms)
     try:  # PATCH: deal with older peak lists, before changed to dict to implement TOF
         peaks = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Peak List'))['peaks']
     except TypeError:

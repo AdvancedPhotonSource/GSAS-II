@@ -75,6 +75,7 @@ import GSASIIphsGUI as G2phsG
 import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2stIO
+import GSASIImath as G2mth
 import GSASIImapvars as G2mv
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
@@ -2405,14 +2406,15 @@ class GSASII(wx.Frame):
             if dlg.ShowModal() == wx.ID_OK:
                 self.HKL = []
                 self.powderfile = dlg.GetPath()
-                comments,peaks = G2IO.GetPowderPeaks(self.powderfile)
+                comments,peaks,limits,wave = G2IO.GetPowderPeaks(self.powderfile)
                 Id = self.PatternTree.AppendItem(parent=self.root,text='PKS '+os.path.basename(self.powderfile))
-                data = ['PKS',Cuka,0.0]
+                data = ['PKS',wave,0.0]
                 names = ['Type','Lam','Zero'] 
                 codes = [0,0,0]
                 inst = [G2IO.makeInstDict(names,data,codes),{}]
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Instrument Parameters'),inst)
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Comments'),comments)
+                self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Limits'),[tuple(limits),limits])
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Index Peak List'),[peaks,[]])
                 self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='Unit Cells List'),[])             
                 self.PatternTree.Expand(Id)
@@ -3121,25 +3123,33 @@ class GSASII(wx.Frame):
                     name = self.PatternTree.GetItemText(item)
                     if 'PWDR' in name:
                         item2, cookie2 = self.PatternTree.GetFirstChild(item)
+                        wave = 0.0
                         while item2:
                             name2 = self.PatternTree.GetItemText(item2)
-                            if name2 == 'Peak List':
+                            if name2 == 'Instrument Parameters':
+                                Inst = self.PatternTree.GetItemPyData(item2)[0]
+                                Type = Inst['Type'][0]
+                                if 'T' not in Type:
+                                    wave = G2mth.getWave(Inst)
+                            elif name2 == 'Peak List':
                                 peaks = self.PatternTree.GetItemPyData(item2)['peaks']
-                                file.write("%s \n" % (name+' Peak List'))
-                                if len(peaks[0]) == 8:
-                                    file.write('%10s %12s %10s %10s %10s\n'%('pos','int','sig','gam','FWHM'))
-                                else:
-                                    file.write('%10s %12s %10s %10s %10s %10s %10s\n'%('pos','int','alp','bet','sig','gam','FWHM'))                                    
-                                for peak in peaks:
-                                    if len(peak) == 8:  #CW
-                                        FWHM = 2.*G2pwd.getgamFW(peak[6],peak[4])      #to get delta-2-theta in deg. from Gam(peak)
-                                        file.write("%10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
-                                            (peak[0],peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
-                                    else:               #TOF - more cols
-                                        FWHM = 2.*G2pwd.getgamFW(peak[10],peak[8])      #to get delta-TOF from Gam(peak)
-                                        file.write("%10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
-                                            (peak[0],peak[2],np.sqrt(max(0.0001,peak[4])),peak[6],peak[8],peak[10],FWHM))
                             item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            
+                        file.write("#%s \n" % (name+' Peak List'))
+                        if wave:
+                            file.write('#wavelength = %10.6f\n'%(wave))
+                        if 'T' in Type:
+                            file.write('#%10s %12s %10s %10s %10s %10s %10s\n'%('pos','int','alp','bet','sig','gam','FWHM'))                                    
+                        else:
+                            file.write('#%10s %12s %10s %10s %10s\n'%('pos','int','sig','gam','FWHM'))
+                        for peak in peaks:
+                            if 'T' in Type:  #TOF - more cols
+                                FWHM = 2.*G2pwd.getgamFW(peak[10],peak[8])      #to get delta-TOF from Gam(peak)
+                                file.write("%10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
+                                    (peak[0],peak[2],np.sqrt(max(0.0001,peak[4])),peak[6],peak[8],peak[10],FWHM))
+                            else:               #CW
+                                FWHM = 2.*G2pwd.getgamFW(peak[6],peak[4])      #to get delta-2-theta in deg. from Gam(peak)
+                                file.write("%10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
+                                    (peak[0],peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            
                 file.close()
         finally:

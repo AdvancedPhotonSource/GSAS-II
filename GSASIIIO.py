@@ -93,7 +93,7 @@ def GetPowderPeaks(fileName):
     'Read powder peaks from a file'
     sind = lambda x: math.sin(x*math.pi/180.)
     asind = lambda x: 180.*math.asin(x)/math.pi
-    Cuka = 1.54052
+    wave = 1.54052
     File = open(fileName,'Ur')
     Comments = []
     peaks = []
@@ -111,12 +111,15 @@ def GetPowderPeaks(fileName):
     File.close()
     if Comments:
        print 'Comments on file:'
-       for Comment in Comments: print Comment
+       for Comment in Comments: 
+            print Comment
+            if 'wavelength' in Comment:
+                wave = float(Comment.split('=')[1])
     Peaks = []
     if peaks[0][0] > peaks[-1][0]:          # d-spacings - assume CuKa
         for peak in peaks:
             dsp = peak[0]
-            sth = Cuka/(2.0*dsp)
+            sth = wave/(2.0*dsp)
             if sth < 1.0:
                 tth = 2.0*asind(sth)
             else:
@@ -125,9 +128,15 @@ def GetPowderPeaks(fileName):
     else:                                   #2-thetas - assume Cuka (for now)
         for peak in peaks:
             tth = peak[0]
-            dsp = Cuka/(2.0*sind(tth/2.0))
+            dsp = wave/(2.0*sind(tth/2.0))
             Peaks.append([tth,peak[1],True,False,0,0,0,dsp,0.0])
-    return Comments,Peaks
+    limits = [1000.,0.]
+    for peak in Peaks:
+        limits[0] = min(limits[0],peak[0])
+        limits[1] = max(limits[1],peak[0])
+    limits[0] = max(1.,(int(limits[0]-1.)/5)*5.)
+    limits[1] = min(170.,(int(limits[1]+1.)/5)*5.)
+    return Comments,Peaks,limits,wave
 
 def CheckImageFile(G2frame,imagefile):
     '''Try to locate an image file if the project and image have been moved

@@ -2229,8 +2229,8 @@ def UpdateIndexPeaksGrid(G2frame, data):
         'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
     IndexId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Index Peak List')
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-    Limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits'))
-
+    limitId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Limits')
+    Limits = G2frame.PatternTree.GetItemPyData(limitId)
     def RefreshIndexPeaksGrid(event):
         r,c =  event.GetRow(),event.GetCol()
         peaks = G2frame.IndexPeaksTable.GetData()
@@ -2299,10 +2299,10 @@ def UpdateIndexPeaksGrid(G2frame, data):
             if len(Unit) == 4:  #patch
                 Unit.append({})
             controls,bravais,cellist,dmin,ssopt = Unit
-            if 'C' in Inst['Type'][0]:
-                dmin = G2lat.Pos2dsp(Inst,Limits[1][1])
-            else:   #TOF - use other limit!
+            if 'T' in Inst['Type'][0]:   #TOF - use other limit!
                 dmin = G2lat.Pos2dsp(Inst,Limits[1][0])
+            else:
+                dmin = G2lat.Pos2dsp(Inst,Limits[1][1])
             G2frame.HKL = []
             if ssopt.get('Use',False):
                 cell = controls[6:12]
@@ -2684,7 +2684,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         A = G2lat.cell2A(cell)
         ibrav = bravaisSymb.index(controls[5])
         SGData = G2spc.SpcGroup(controls[13])[1]
-        if 'C' in Inst['Type'][0]:
+        if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
             if ssopt.get('Use',False):
                 vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
                 SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]

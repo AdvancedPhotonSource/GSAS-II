@@ -502,6 +502,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             Obj.SetValue(Parms[name][1]%(value))
             
         calibSizer = wx.FlexGridSizer(0,2,5,5)
+        calibSizer.SetFlexibleDirection(wx.HORIZONTAL)
         calibSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Calibration coefficients'),0,WACV)    
         calibSizer.Add((5,0),0)
         cent = data['center']

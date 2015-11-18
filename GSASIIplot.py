@@ -89,7 +89,7 @@ class G2PlotOgl(wx.Panel):
         if 'win' in sys.platform:           #Windows (& Mac) already double buffered
             self.canvas = wx.glcanvas.GLCanvas(self,-1,**kwargs)
         else:                               #fix from Jim Hester for X systems
-            attribs = (wx.glcanvas.WX_GL_DOUBLEBUFFER,)         
+            attribs = (wx.glcanvas.WX_GL_DOUBLEBUFFER,)
             self.canvas = wx.glcanvas.GLCanvas(self,-1,attribList=attribs,**kwargs)
         # create GL context for wx > 2.8
         i,j= wx.__version__.split('.')[0:2]
@@ -5368,7 +5368,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     Page.canvas.Bind(wx.EVT_KEY_DOWN,OnKeyPressed)
     Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
     Page.canvas.Bind(wx.EVT_SIZE, OnSize)
-#    Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)
+    Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)
     Page.camera['position'] = drawingData['cameraPos']
     Page.camera['viewPoint'] = np.inner(Amat,drawingData['viewPoint'][0])
     Page.camera['backColor'] = backColor/255.

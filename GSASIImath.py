@@ -3647,9 +3647,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
     :param type name: description
     
     :returns: type name: description
-    
     '''
-    
+   
     global tsum
     tsum = 0.
     

@@ -155,6 +155,7 @@ def FormatSigFigs(val, maxdigits=10, sigfigs=5, treatAsZero=1e-20):
         fmt = "{" + (":{:d}.{:d}f".format(maxdigits,decimals))+"}"
     else: # larger numbers, remove decimal places
         decimals = sigfigs - 1 - int(np.log10(abs(val)))
+        print decimals,maxdigits,val
         if decimals <= 0: 
             fmt = "{" + (":{:d}.0f".format(maxdigits))+"}."
         else:

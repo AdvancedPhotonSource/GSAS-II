@@ -1,8 +1,3 @@
-      SUBROUTINE PYQLMNINIT()
-      CALL QLMNINIT
-      RETURN
-      END
-
       SUBROUTINE PYPLMPSI(L,I,NPHI,PHI,PCRS,DPDPS)
 Cf2py intent(in) L
 Cf2Py intent(in) I
@@ -23,4 +18,10 @@ Cf2py depend(NPHI) PHI,PCRS,DPDPS
       END DO
       RETURN
       END
+
+      SUBROUTINE PYQLMNINIT()
+      CALL QLMNINIT
+      RETURN
+      END
+
 

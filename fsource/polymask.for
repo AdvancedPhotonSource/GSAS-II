@@ -19,7 +19,7 @@ Cf2py intent(in,out) MASK
       INTEGER*4    I,K
       REAL*4       P1X,P1Y,P2X,P2Y,XINTERS
       
-      DO K=0,N
+      DO K=0,N-1
         MASK(K) = .FALSE.
         DO I=0,M-1
           P2X = POLY(I,0)

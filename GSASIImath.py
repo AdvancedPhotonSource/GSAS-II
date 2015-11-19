@@ -979,9 +979,9 @@ def Modulation(waveTypes,H,HP,FSSdata,XSSdata,USSdata,Mast):
         HbH = np.exp(-np.sum(HP[:,:,nxs,nxs]*np.inner(HP[:,:],Umod),axis=-1)) # refBlk x ops x atoms x 32 add Overhauser corr.?
     else:
         HbH = 1.0
-    D = twopi*H[:,:,3:]*glTau[nxs,nxs,:]              #m*e*tau; refBlk x ops X 32
-    HdotX = twopi*np.inner(HP,Xmod)                   #refBlk x ops x atoms X 32
-    HdotXD = HdotX+D[:,:,nxs,:]
+    D = H[:,:,3:]*glTau[nxs,nxs,:]              #m*e*tau; refBlk x ops X 32
+    HdotX = np.inner(HP,Xmod)                   #refBlk x ops x atoms X 32
+    HdotXD = twopi*(HdotX+D[:,:,nxs,:])
     cosHA = np.sum(Fmod*HbH*np.cos(HdotXD)*glWt,axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
     sinHA = np.sum(Fmod*HbH*np.sin(HdotXD)*glWt,axis=-1)       #imag part; ditto
 #    GSASIIpath.IPyBreak()
@@ -992,7 +992,7 @@ def ModulationDerv(waveTypes,H,HP,Hij,FSSdata,XSSdata,USSdata,Mast):
     H: array ops X hklt proj to hkl
     HP: array nRefBlk x ops X hklt proj to hkl
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
-    Hij: array 3x3
+    Hij: array 2pi^2[a*^2h^2 b*^2k^2 c*^2l^2 a*b*hk a*c*hl b*c*kl] of projected hklm to hkl space
     XSSdata: array 2x3 x atoms X waves (sin,cos terms)
     USSdata: array 2x6 x atoms X waves (sin,cos terms)
     Mast: array orthogonalization matrix for Uij
@@ -1042,8 +1042,6 @@ def ModulationDerv(waveTypes,H,HP,Hij,FSSdata,XSSdata,USSdata,Mast):
     D = twopi*H[:,3][:,nxs]*glTau[nxs,:]              #m*e*tau; ops X 32
     HdotX = twopi*np.inner(HP,Xmod)        #ops x atoms X 32
     HdotXD = HdotX+D[:,nxs,:]
-#    HdotXA = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(XmodA,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]  #ops x atoms x waves x 32 x xyz
-#    HdotXB = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(XmodB,-1,-2)[nxs,:,:,:,:]+D[:,nxs,nxs,:,nxs]
     if Af.shape[1]:
         tauF = np.arange(1.,Af.shape[1]+1-nf)[:,nxs]*glTau  #Fwaves x 32
         StauF = np.ones_like(Af)[:,nf:,nxs]*np.sin(twopi*tauF)[nxs,:,:] #also dFmod/dAf
@@ -1055,25 +1053,26 @@ def ModulationDerv(waveTypes,H,HP,Hij,FSSdata,XSSdata,USSdata,Mast):
         Fmod = np.ones_like(HdotX)           
     if Au.shape[1]:
         tauU = np.arange(1.,Au.shape[1]+1)[:,nxs]*glTau     #Uwaves x 32
-        StauU = np.ones_like(Au)[:,:,:,:,nxs]*np.sin(twopi*tauU)[nxs,:,nxs,nxs,:]   #also dUmod/dAu
-        CtauU = np.ones_like(Bu)[:,:,:,:,nxs]*np.cos(twopi*tauU)[nxs,:,nxs,nxs,:]   #also dUmod/dBu
+        StauU = np.ones_like(Au)[:,:,:,:,nxs]*np.sin(twopi*tauU)[nxs,:,nxs,nxs,:]   #also dUmodA/dAu
+        CtauU = np.ones_like(Bu)[:,:,:,:,nxs]*np.cos(twopi*tauU)[nxs,:,nxs,nxs,:]   #also dUmodB/dBu
         UmodA = Au[:,:,:,:,nxs]*StauU #atoms x waves x 3x3 x 32
         UmodB = Bu[:,:,:,:,nxs]*CtauU #ditto
         Umod = np.swapaxes((UmodA+UmodB),2,4)      #atoms x waves x 32 x 3x3 (symmetric so I can do this!) 
         HuH = np.sum(HP[:,nxs,nxs,nxs]*np.inner(HP,Umod),axis=-1)    #ops x atoms x waves x 32
-        HbH = np.exp(-np.sum(HuH,axis=-2)) # ops x atoms x 32; sum waves
+        HbH = np.exp(-np.sum(HuH,axis=-2)) # ops x atoms x 32; sum waves - OK vs Modulation version
 #derivs need to be ops x atoms x waves x 6uij; ops x atoms x waves x 32 x 6uij before sum
         StauU = np.rollaxis(np.rollaxis(np.swapaxes(StauU,2,4),-1),-1)
         CtauU = np.rollaxis(np.rollaxis(np.swapaxes(CtauU,2,4),-1),-1)
-        dUdAu = Hij[:,nxs,nxs,nxs,:]*np.rollaxis(G2lat.UijtoU6(StauU),0,4)[nxs,:,:,:,:]    #ops x atoms x waves x 32 x 6Uij
-        dUdBu = Hij[:,nxs,nxs,nxs,:]*np.rollaxis(G2lat.UijtoU6(CtauU),0,4)[nxs,:,:,:,:]    #ops x atoms x waves x 32 x 6Uij
-        part1 = -HuH*np.exp(-HuH)*Fmod[:,:,nxs,:]    #ops x atoms x waves x 32
+        dUdAu = Hij[:,nxs,nxs,nxs,:]*np.rollaxis(G2lat.UijtoU6(StauU),0,4)[nxs,:,:,:,:]    #ops x atoms x waves x 32 x 6sinUij
+        dUdBu = Hij[:,nxs,nxs,nxs,:]*np.rollaxis(G2lat.UijtoU6(CtauU),0,4)[nxs,:,:,:,:]    #ops x atoms x waves x 32 x 6cosUij
+        part1 = -np.exp(-HuH)*Fmod[:,:,nxs,:]    #ops x atoms x waves x 32
         dGdMuCa = np.sum(part1[:,:,:,:,nxs]*dUdAu*np.cos(HdotXD)[:,:,nxs,:,nxs]*glWt[nxs,nxs,nxs,:,nxs],axis=-2)   #ops x atoms x waves x 6uij; G-L sum
         dGdMuCb = np.sum(part1[:,:,:,:,nxs]*dUdBu*np.cos(HdotXD)[:,:,nxs,:,nxs]*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
-        dGdMuC = np.concatenate((dGdMuCa,dGdMuCb),axis=-1)   #ops x atoms x waves x 12uij; G-L sum
+        dGdMuC = np.concatenate((dGdMuCa,dGdMuCb),axis=-1)   #ops x atoms x waves x 12uij
         dGdMuSa = np.sum(part1[:,:,:,:,nxs]*dUdAu*np.sin(HdotXD)[:,:,nxs,:,nxs]*glWt[nxs,nxs,nxs,:,nxs],axis=-2)   #ops x atoms x waves x 6uij; G-L sum
         dGdMuSb = np.sum(part1[:,:,:,:,nxs]*dUdBu*np.sin(HdotXD)[:,:,nxs,:,nxs]*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
-        dGdMuS = np.concatenate((dGdMuSa,dGdMuSb),axis=-1)   #ops x atoms x waves x 12uij; G-L sum
+        dGdMuS = np.concatenate((dGdMuSa,dGdMuSb),axis=-1)   #ops x atoms x waves x 12uij
+#        #GSASIIpath.IPyBreak()
     else:
         HbH = np.ones_like(HdotX)
     dHdXA = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(StauX,-1,-2)[nxs,:,:,:,:]    #ops x atoms x sine waves x 32 x xyz
@@ -1081,11 +1080,11 @@ def ModulationDerv(waveTypes,H,HP,Hij,FSSdata,XSSdata,USSdata,Mast):
     dGdMxCa = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxCb = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxC = np.concatenate((dGdMxCa,dGdMxCb),axis=-1)
-# ops x atoms x waves x 2xyz - real part
+# ops x atoms x waves x 2xyz - real part - good
     dGdMxSa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
     dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
     dGdMxS = np.concatenate((dGdMxSa,dGdMxSb),axis=-1)
-# ops x atoms x waves x 2xyz - imaginary part
+# ops x atoms x waves x 2xyz - imaginary part - good
     return np.array([cosHA,sinHA]),[dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS]
     
 def posFourier(tau,psin,pcos,smul):

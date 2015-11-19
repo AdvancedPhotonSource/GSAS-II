@@ -3138,18 +3138,19 @@ class GSASII(wx.Frame):
                         if wave:
                             file.write('#wavelength = %10.6f\n'%(wave))
                         if 'T' in Type:
-                            file.write('#%10s %12s %10s %10s %10s %10s %10s\n'%('pos','int','alp','bet','sig','gam','FWHM'))                                    
+                            file.write('#%9s %10s %12s %10s %10s %10s %10s %10s\n'%('pos','dsp','int','alp','bet','sig','gam','FWHM'))                                    
                         else:
-                            file.write('#%10s %12s %10s %10s %10s\n'%('pos','int','sig','gam','FWHM'))
+                            file.write('#%9s %10s %12s %10s %10s %10s\n'%('pos','dsp','int','sig','gam','FWHM'))
                         for peak in peaks:
+                            dsp = G2lat.Pos2dsp(Inst,peak[0])
                             if 'T' in Type:  #TOF - more cols
                                 FWHM = 2.*G2pwd.getgamFW(peak[10],peak[8])      #to get delta-TOF from Gam(peak)
-                                file.write("%10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
-                                    (peak[0],peak[2],np.sqrt(max(0.0001,peak[4])),peak[6],peak[8],peak[10],FWHM))
+                                file.write("%10.2f %10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
+                                    (peak[0],dsp,peak[2],np.sqrt(max(0.0001,peak[4])),peak[6],peak[8],peak[10],FWHM))
                             else:               #CW
                                 FWHM = 2.*G2pwd.getgamFW(peak[6],peak[4])      #to get delta-2-theta in deg. from Gam(peak)
-                                file.write("%10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
-                                    (peak[0],peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
+                                file.write("%10.3f %10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
+                                    (peak[0],dsp,peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            
                 file.close()
         finally:

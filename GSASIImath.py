@@ -928,6 +928,7 @@ def XAnomAbs(Elements,wave):
     
 def Modulation(waveTypes,H,HP,FSSdata,XSSdata,USSdata,Mast):
     '''
+    waveTypes: array nAtoms: 'Fourier','ZigZag' or 'Block'
     H: array nRefBlk x ops X hklt
     HP: array nRefBlk x ops X hklt proj to hkl
     FSSdata: array 2 x atoms x waves    (sin,cos terms)
@@ -945,20 +946,25 @@ def Modulation(waveTypes,H,HP,FSSdata,XSSdata,USSdata,Mast):
     Au = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods as betaij
     Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods as betaij
     
+    GSASIIpath.IPyBreak()
+    XmodZ = np.zeros((Ax.shape[0],Ax.shape[1],3,32))
     if 'Fourier' in waveTypes:
         nf = 0
         nx = 0
-        XmodZ = np.zeros((Ax.shape[0],Ax.shape[1],3,32))
         FmodZ = np.zeros((Af.shape[0],Af.shape[1],32))
-        if 'Crenel' in waveTypes:
+        if 'Crenel' in waveTypes:   #do we need 'Crenel'??
             nC = np.where('Crenel' in waveTypes)
             nf = 1
             #FmodZ = 0   replace
-    else:
+    else:   #1st wave is 'ZigZag' or 'Block'; rest can be 'Fourier'
         nx = 1
-        if 'Sawtooth' in waveTypes:
-            nS = np.where('Sawtooth' in waveTypes)
-            #XmodZ = 0   replace
+        if 'ZigZag' in waveTypes:
+            DT = Tmm[1]-Tmm[0]
+            slopeUp = 2.*XYZmax/DT
+            slopeDn = 2.*XYZmax/(1.-DT)
+            XmodZ = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in tau])
+        elif 'Block' in waveTypes:
+            XmodZ = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax,XYZmax) for t in tau])
     if Af.shape[1]:
         tauF = np.arange(1.,Af.shape[1]+1-nf)[:,nxs]*glTau  #Fwaves x 32
         FmodA = Af[:,nf:,nxs]*np.sin(twopi*tauF[nxs,:,:])   #atoms X Fwaves X 32
@@ -984,7 +990,6 @@ def Modulation(waveTypes,H,HP,FSSdata,XSSdata,USSdata,Mast):
     HdotXD = twopi*(HdotX+D[:,:,nxs,:])
     cosHA = np.sum(Fmod*HbH*np.cos(HdotXD)*glWt,axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
     sinHA = np.sum(Fmod*HbH*np.sin(HdotXD)*glWt,axis=-1)       #imag part; ditto
-#    GSASIIpath.IPyBreak()
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
     
 def ModulationDerv(waveTypes,H,HP,Hij,FSSdata,XSSdata,USSdata,Mast):
@@ -1092,11 +1097,11 @@ def posFourier(tau,psin,pcos,smul):
     B = np.array([pc[:,np.newaxis]*np.cos(2*np.pi*(i+1)*tau) for i,pc in enumerate(pcos)])
     return np.sum(A,axis=0)+np.sum(B,axis=0)
     
-def posSawtooth(tau,Toff,slopes):
-    Tau = (tau-Toff)%1.
-    A = slopes[:,np.newaxis]*Tau
-    return A
-
+#def posSawtooth(tau,Toff,slopes):
+#    Tau = (tau-Toff)%1.
+#    A = slopes[:,np.newaxis]*Tau
+#    return A
+#
 def posZigZag(tau,Tmm,XYZmax):
     DT = Tmm[1]-Tmm[0]
     slopeUp = 2.*XYZmax/DT

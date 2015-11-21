@@ -2386,7 +2386,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 iatm,item,iwave,ival = Indx[Obj.GetId()]
                 try:
                     val = float(Obj.GetValue())
-                    if waveType in ['ZigZag','Block'] and Stype == 'Spos' and ival < 2:
+                    if waveType in ['ZigZag','Block'] and Stype == 'Spos' and ival < 2 and not iwave:
                         if ival == 1: #Tmax
                             val = min(1.0,max(0.0,val))
                         elif ival == 0: #Tmin
@@ -2411,9 +2411,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             waveHead = wx.BoxSizer(wx.HORIZONTAL)
             waveHead.Add(wx.StaticText(waveData,label=typeName+' modulation parameters: '),0,WACV)
             waveAdd = wx.CheckBox(waveData,label='Add wave?')
-            waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
-            Indx[waveAdd.GetId()] = [iatm,Stype]
-            waveHead.Add(waveAdd,0,WACV)
             waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
             Indx[waveAdd.GetId()] = [iatm,Stype]
             waveHead.Add(waveAdd,0,WACV)

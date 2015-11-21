@@ -916,7 +916,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
     def PrintWaves(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
         print >>pFile,'\n Modulation waves'
-        names = {'Sfrac':['Fsin','Fcos','Fzero','Fwid'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tzero','Xslope','Yslope','Zslope'],
+        names = {'Sfrac':['Fsin','Fcos','Fzero','Fwid'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tmin','Tmax','Xmax','Ymax','Zmax'],
             'Sadp':['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin','U11cos','U22cos',
             'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
         print >>pFile,135*'-'
@@ -927,11 +927,19 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 if len(Waves):
                     print >>pFile,' atom: %s, site sym: %s, type: %s wave type: %s:'    \
                         %(at[ct-1],at[cs],Stype,AtomSS['waveType'])
+                for iw,wave in enumerate(Waves):                    
                     line = ''
-                    for item in names[Stype]:
-                        line += '%8s '%(item)
+                    if AtomSS['waveType'] in ['Block','ZigZag'] and Stype == 'Spos' and not iw:
+                        for item in names[Stype][6:]:
+                            line += '%8s '%(item)                        
+                    else:
+                        if Stype == 'Spos':
+                            for item in names[Stype][:6]:
+                                line += '%8s '%(item)
+                        else:
+                            for item in names[Stype]:
+                                line += '%8s '%(item)
                     print >>pFile,line
-                for wave in Waves:                    
                     line = ''
                     for item in wave[0]:
                         line += '%8.4f '%(item)

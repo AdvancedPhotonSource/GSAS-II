@@ -2415,10 +2415,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Indx[waveAdd.GetId()] = [iatm,Stype]
             waveHead.Add(waveAdd,0,WACV)
             waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
-                Indx[waveAdd.GetId()] = [iatm,Stype]
-                waveHead.Add(waveAdd,0,WACV)
+            Indx[waveAdd.GetId()] = [iatm,Stype]
+            waveHead.Add(waveAdd,0,WACV)
             waveSizer.Add(waveHead)
-#            print atm[0],waveBlk
             if len(waveBlk):
                 nFour = 0
                 for iwave,wave in enumerate(waveBlk):

@@ -1492,9 +1492,15 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         A = slopes[:,np.newaxis]*Tau
         return A
     
-    def posZigZag(tau,Toff,slopes):
-        Tau = (tau-Toff)%1.
-        A = np.where(Tau <= 0.5,slopes[:,np.newaxis]*Tau,slopes[:,np.newaxis]*(1.-Tau))
+    def posZigZag(tau,Tmm,XYZmax):
+        DT = Tmm[1]-Tmm[0]
+        slopeUp = 2.*XYZmax/DT
+        slopeDn = 2.*XYZmax/(1.-DT)
+        A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in tau])
+        return A
+
+    def posBlock(tau,Tmm,XYZmax):
+        A = np.array([np.where(Tmm[0] < t <= Tmm[1],XYZmax,-XYZmax) for t in tau])
         return A
         
     def DoFrac():
@@ -1548,6 +1554,7 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
         
     def DoXYZ():
         delt4 = np.ones(4)*0.001
+        delt5 = np.ones(5)*0.001
         delt6 = np.eye(6)*0.001
         if 'Fourier' in waveType:
             dX = posFourier(tau,nH,delt6[:3],delt6[3:]) #+np.array(XYZ)[:,np.newaxis,np.newaxis]
@@ -1557,10 +1564,13 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
             dX = posSawtooth(tau,delt4[0],delt4[1:])
             CSI = [np.array([[1,0,0],[2,0,0],[3,0,0],[4,0,0]]),
                 np.array([[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0]])]
-        elif waveType == 'ZigZag':
-            dX = posZigZag(tau,delt4[0],delt4[1:])
-            CSI = [np.array([[1,0,0],[2,0,0],[3,0,0],[4,0,0]]),
-                np.array([[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0]])]
+        elif waveType in ['ZigZag','Block']:
+            if waveType == 'ZigZag':
+                dX = posZigZag(tau,delt5[:2],delt5[2:])
+            else:
+                dX = posBlock(tau,delt5[:2],delt5[2:])
+            CSI = [np.array([[1,0,0],[2,0,0],[3,0,0],[4,0,0],[5,0,0]]),
+                np.array([[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0],[1.0,.0,.0]])]
         XSC = np.ones(6,dtype='i')
         dXTP = []
         for i in SdIndx:
@@ -1573,7 +1583,9 @@ def GetSSfxuinel(waveType,nH,XYZ,SGData,SSGData,debug=False):
             elif waveType == 'Sawtooth':
                 dXT = posSawtooth(tauT,delt4[0],delt4[1:])+np.array(XYZ)[:,np.newaxis,np.newaxis]
             elif waveType == 'ZigZag':
-                dXT = posZigZag(tauT,delt4[0],delt4[1:])+np.array(XYZ)[:,np.newaxis,np.newaxis] 
+                dXT = posZigZag(tauT,delt5[:2],delt5[2:])+np.array(XYZ)[:,np.newaxis,np.newaxis]
+            elif waveType == 'Block':
+                dXT = posBlock(tauT,delt5[:2],delt5[2:])+np.array(XYZ)[:,np.newaxis,np.newaxis]
             dXT = np.inner(sop[0],dXT.T)    # X modulations array(3x6x49) -> array(3x49x6)
             dXT = np.swapaxes(dXT,1,2)      # back to array(3x6x49)
             dXT[:,:3,:] *= (ssdet*sdet)            # modify the sin component

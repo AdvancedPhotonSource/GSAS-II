@@ -3110,13 +3110,13 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
         scof = []
         ccof = []
         for i,spos in enumerate(Spos):
-            if waveType in ['Sawtooth','ZigZag'] and not i:
-                Toff = spos[0][0]
-                slopes = np.array(spos[0][1:])
-                if waveType == 'Sawtooth':
-                    wave = G2mth.posSawtooth(tau,Toff,slopes)
+            if waveType in ['ZigZag','Block'] and not i:
+                Tminmax = spos[0][:2]
+                XYZmax = np.array(spos[0][2:])
+                if waveType == 'Block':
+                    wave = G2mth.posBlock(tau,Tminmax,XYZmax).T
                 elif waveType == 'ZigZag':
-                    wave = G2mth.posZigZag(tau,Toff,slopes)
+                    wave = G2mth.posZigZag(tau,Tminmax,XYZmax).T
             else:
                 scof.append(spos[0][:3])
                 ccof.append(spos[0][3:])
@@ -4512,6 +4512,17 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Set4DMapRoll(dirDict[key])
             SetPeakRoll(dirDict[key])
             SetMapPeaksText(mapPeaks)
+        elif key in ['M',]and generalData['Type'] in ['modulated','magnetic']:  #make a movie file
+            G2frame.tau = 0.
+            for i in range(10):
+                G2frame.tau += 0.1
+                G2frame.G2plotNB.status.SetStatusText('Modulation tau = %.2f'%(G2frame.tau),1)
+                data['Drawing']['Atoms'],Fade = G2mth.ApplyModulation(data,G2frame.tau)     #modifies drawing atom array!          
+                SetDrawAtomsText(data['Drawing']['Atoms'])
+                G2phG.FindBondsDraw(data)           #rebuild bonds & polygons
+                if not np.any(Fade):
+                    Fade += 1
+                Draw('key down',Fade)
         elif key in ['+','-','=','0'] and generalData['Type'] in ['modulated','magnetic']:
             if keyBox:
                 OnKeyPressed(event)
@@ -5351,7 +5362,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     else:
         choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2','n: next','p: previous']
     if generalData['Type'] in ['modulated','magnetic',] and len(drawAtoms):
-        choice += ['+: increase tau','-: decrease tau','0: set tau = 0']
+        choice += ['+: increase tau','-: decrease tau','0: set tau = 0']    #add 'm: make modulation movie'
 
     Tx,Ty,Tz = drawingData['viewPoint'][0]
     rho = G2mth.getRho([Tx,Ty,Tz],mapData)

@@ -1097,9 +1097,15 @@ def posSawtooth(tau,Toff,slopes):
     A = slopes[:,np.newaxis]*Tau
     return A
 
-def posZigZag(tau,Toff,slopes):
-    Tau = (tau-Toff)%1.
-    A = np.where(Tau <= 0.5,slopes[:,np.newaxis]*Tau,slopes[:,np.newaxis]*(1.-Tau))
+def posZigZag(tau,Tmm,XYZmax):
+    DT = Tmm[1]-Tmm[0]
+    slopeUp = 2.*XYZmax/DT
+    slopeDn = 2.*XYZmax/(1.-DT)
+    A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in tau])
+    return A
+
+def posBlock(tau,Tmm,XYZmax):
+    A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax,XYZmax) for t in tau])
     return A
     
 def fracCrenel(tau,Toff,Twid):
@@ -1157,17 +1163,18 @@ def ApplyModulation(data,tau):
                 scof = []
                 ccof = []
                 for i,spos in enumerate(Spos):
-                    if waveType in ['Sawtooth','ZigZag'] and not i:
-                        Toff = spos[0][0]
-                        slopes = np.array(spos[0][1:])
-                        if waveType == 'Sawtooth':
-                            wave = posSawtooth(tauT,Toff,slopes)
+                    if waveType in ['ZigZag','Block'] and not i:
+                        Tminmax = spos[0][:2]
+                        XYZmax = np.array(spos[0][2:])
+                        if waveType == 'Block':
+                            wave = np.array(posBlock([tauT,],Tminmax,XYZmax))[0]
                         elif waveType == 'ZigZag':
-                            wave = posZigZag(tauT,Toff,slopes)
+                            wave = np.array(posZigZag([tauT,],Tminmax,XYZmax))[0]
                     else:
                         scof.append(spos[0][:3])
                         ccof.append(spos[0][3:])
-                wave += np.sum(posFourier(tauT,np.array(scof),np.array(ccof),smul),axis=1)
+                if len(scof):
+                    wave += np.sum(posFourier(tauT,np.array(scof),np.array(ccof),smul),axis=1)
             if len(Sadp):
                 scof = []
                 ccof = []

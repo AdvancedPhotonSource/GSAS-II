@@ -1167,9 +1167,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                             uId,uCoef = CSI[Stype]
                             stiw = str(i)+':'+str(iw)
                             if Stype == 'Spos':
-                                if waveType in ['Sawtooth',] and not iw:
-                                    names = [pfx+'Tzero:'+stiw,pfx+'Xslope:'+stiw,pfx+'Yslope:'+stiw,pfx+'Zslope:'+stiw]
-                                    equivs = [[], [],[],[]]
+                                if waveType in ['ZigZag','Block',] and not iw:
+                                    names = [pfx+'Tmin:'+stiw,pfx+'Tmax:'+stiw,pfx+'Xmax:'+stiw,pfx+'Ymax:'+stiw,pfx+'Zmax:'+stiw]
+                                    equivs = [[],[], [],[],[]]
                                 else:
                                     names = [pfx+'Xsin:'+stiw,pfx+'Ysin:'+stiw,pfx+'Zsin:'+stiw,
                                         pfx+'Xcos:'+stiw,pfx+'Ycos:'+stiw,pfx+'Zcos:'+stiw]
@@ -1564,7 +1564,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
     def PrintWavesAndSig(General,Atoms,wavesSig):
         cx,ct,cs,cia = General['AtomPtrs']
         print >>pFile,'\n Modulation waves'
-        names = {'Sfrac':['Fsin','Fcos','Fzero','Fwid'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tzero','Xslope','Yslope','Zslope'],
+        names = {'Sfrac':['Fsin','Fcos','Fzero','Fwid'],'Spos':['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tmin','Tmax','Xmax','Ymax','Zmax'],
             'Sadp':['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin','U11cos','U22cos',
             'U33cos','U12cos','U13cos','U23cos'],'Smag':['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']}
         print >>pFile,135*'-'
@@ -1585,8 +1585,8 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                         if Stype == 'Spos':
                             nt = 6
                             ot = 0
-                            if waveType in ['Sawtooth',] and not iw:
-                                nt = 4
+                            if waveType in ['ZigZag','Block',] and not iw:
+                                nt = 5
                                 ot = 6
                             for j in range(nt):
                                 name = names['Spos'][j+ot]
@@ -1904,8 +1904,8 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                         for iw,wave in enumerate(Waves):
                             stiw = str(i)+':'+str(iw)
                             if Stype == 'Spos':
-                                if waveType in ['Sawtooth',] and not iw:
-                                    names = ['Tzero:'+stiw,'Xslope:'+stiw,'Yslope:'+stiw,'Zslope:'+stiw]
+                                if waveType in ['ZigZag','Block',] and not iw:
+                                    names = ['Tmin:'+stiw,'Tmax:'+stiw,'Xmax:'+stiw,'Ymax:'+stiw,'Zmax:'+stiw]
                                 else:
                                     names = ['Xsin:'+stiw,'Ysin:'+stiw,'Zsin:'+stiw,
                                         'Xcos:'+stiw,'Ycos:'+stiw,'Zcos:'+stiw]

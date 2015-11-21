@@ -226,6 +226,7 @@ def UpdateConstraints(G2frame,data):
         G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = G2stIO.GetRigidBodyModels(rigidbodyDict,Print=False)
+    badPhaseParms = ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder','mV0','mV1','mV2','waveType','Vol',]
     globalList = rbDict.keys()
     globalList.sort()
     try:
@@ -239,7 +240,7 @@ def UpdateConstraints(G2frame,data):
     Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtable,BLtable,maxSSwave = G2stIO.GetPhaseData(Phases,rbIds=rbIds,Print=False)
     phaseList = []
     for item in phaseDict:
-        if item.split(':')[2] not in ['Ax','Ay','Az','Amul','AI/A','Atype','SHorder']:
+        if item.split(':')[2] not in badPhaseParms:
             phaseList.append(item)
     phaseList.sort()
     phaseAtNames = {}

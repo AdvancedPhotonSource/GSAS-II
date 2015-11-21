@@ -2376,8 +2376,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Obj = event.GetEventObject()
                 iatm,item = Indx[Obj.GetId()]
                 nt = numVals[Stype]
-                if not len(atomData[iatm][-1][SS][item]) and waveType in ['Sawtooth',] and Stype == 'Spos':
-                    nt = 4
+                if not len(atomData[iatm][-1][SS][item]) and waveType in ['ZigZag','Block'] and Stype == 'Spos':
+                    nt = numVals[waveType]
                 atomData[iatm][-1][SS][item].append([[0.0 for i in range(nt)],False])
                 UpdateWavesData()
                 
@@ -2386,6 +2386,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 iatm,item,iwave,ival = Indx[Obj.GetId()]
                 try:
                     val = float(Obj.GetValue())
+                    if waveType in ['ZigZag','Block'] and Stype == 'Spos' and ival < 2:
+                        if ival == 1: #Tmax
+                            val = min(1.0,max(0.0,val))
+                        elif ival == 0: #Tmin
+                            val = max(-1.,min(val,atomData[iatm][-1][SS][item][iwave][0][1]))
                 except ValueError:
                     val = atomData[iatm][-1][SS][item][iwave][0][ival]
                 Obj.SetValue('%.5f'%val)
@@ -2409,7 +2414,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
             Indx[waveAdd.GetId()] = [iatm,Stype]
             waveHead.Add(waveAdd,0,WACV)
+            waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
+                Indx[waveAdd.GetId()] = [iatm,Stype]
+                waveHead.Add(waveAdd,0,WACV)
             waveSizer.Add(waveHead)
+#            print atm[0],waveBlk
             if len(waveBlk):
                 nFour = 0
                 for iwave,wave in enumerate(waveBlk):
@@ -2428,9 +2437,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             names = Names[:2]
                         Waves = wx.FlexGridSizer(0,4,5,5)
                     elif Stype == 'Spos':
-                        if waveType in ['Sawtooth',] and not iwave:
+                        if waveType in ['ZigZag','Block'] and not iwave:
                             names = Names[6:]
-                            Waves = wx.FlexGridSizer(0,6,5,5)
+                            Waves = wx.FlexGridSizer(0,7,5,5)
                             waveName = waveType
                         else:
                             names = Names[:6]
@@ -2481,13 +2490,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             waveData.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         typeNames = {'Sfrac':' Site fraction','Spos':' Position','Sadp':' Thermal motion','Smag':' Magnetic moment'}
-        numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6}
-        posNames = ['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tzero','Xslope','Yslope','Zslope']
+        numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6,'ZigZag':5,'Block':5}
+        posNames = ['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tmin','Tmax','Xmax','Ymax','Zmax']
         adpNames = ['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin',
             'U11cos','U22cos','U33cos','U12cos','U13cos','U23cos']
         magNames = ['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']
         fracNames = ['Fsin','Fcos','Fzero','Fwid']
-        waveTypes = ['Fourier','Sawtooth','Crenel/Fourier']
+        waveTypes = ['Fourier','ZigZag','Block','Crenel/Fourier']
         Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
         mainSizer.Add(wx.StaticText(waveData,label=' Incommensurate propagation wave data:'),0,WACV)
         if generalData['Type'] in ['modulated','magnetic']:
@@ -2498,7 +2507,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     G2G.HorizontalLine(mainSizer,waveData)
                     mainSizer.Add(AtomSizer(SS,atm))
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
-                        if atm[cia] != 'A' and Stype == 'Sadp':    #Uiso can't have modulations!
+                        if atm[cia] != 'A' and Stype == 'Sadp':    #Uiso can't have modulations! (why not?)
                             continue
                         if generalData['Type'] != 'magnetic' and Stype == 'Smag':
                             break
@@ -3021,7 +3030,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                 Uij = atom[cuij:cuij+6]
                                 Uij = G2spc.U2Uij(np.inner(np.inner(M,G2spc.Uij2U(Uij)),M))
                                 atom[cuij:cuij+6] = Uij
-                            atomData.append(atom)
+                            atomData.append(atom[:cuij+9])  #not SS stuff
             finally:
                 dlg.Destroy()
             UpdateDrawAtoms()
@@ -3091,6 +3100,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomData = data['Drawing']['Atoms']
             numAtoms = len(atomData)
             cx,ct,cs,ci = data['Drawing']['atomPtrs']
+            cij = ci+2
             generalData = data['General']
             SGData = generalData['SGData']
             cellArray = G2lat.CellBlock(1)
@@ -3114,7 +3124,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     newAtom = atomB[:]
                                     newAtom[cx:cx+3] = xyz
                                     newAtom[cx+3] = G2spc.StringOpsProd(oprB,newOp,SGData)
-                                    atomData.append(newAtom)
+                                    atomData.append(newAtom[:cij+9])  #not SS stuff
             finally:
                 wx.EndBusyCursor()
             data['Drawing']['Atoms'] = atomData
@@ -3154,7 +3164,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
                                     atom[cx:cx+3] = Opp[key]
                                     atom[cx+3] = cell
-                                    atomData.append(atom[:])
+                                    atomData.append(atom[:cuij+9])  #not SS stuff
                     else:
                         result = G2spc.GenAtom(XYZ,SGData,False,Move=True)
                         for item in result:
@@ -3169,7 +3179,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     cell = '%d+%d,%d,%d'%(item[1],unit[0],unit[1],unit[2])
                                     atom[cx:cx+3] = Opp[key]
                                     atom[cx+3] = cell
-                                    atomData.append(atom[:])               
+                                    atomData.append(atom[:cuij+9])  #not SS stuff
                     data['Drawing']['Atoms'] = atomData
             finally:
                 wx.EndBusyCursor()

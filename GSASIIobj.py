@@ -1186,9 +1186,12 @@ def VarDescr(varname):
         if l[2] == 'Back': # background parameters are "special", alas
             s = 'Hist='+ShortHistNames.get(l[1],'? #'+str(l[1]))
             l[-1] += ' #'+str(l[3])
-        elif l[4] is not None: # rigid body parameter
+        elif l[4] is not None: # rigid body parameter or modulation parm
             lbl = ShortPhaseNames.get(l[0],'phase?')
-            s = "Res #"+str(l[3])+" body #"+str(l[4])+" in "+str(lbl)
+            if 'RB' in l[2]:    #rigid body parm
+                s = "Res #"+str(l[3])+" body #"+str(l[4])+" in "+str(lbl)
+            else: #modulation parm
+                s = 'Atom %s wave %s in %s'%(LookupAtomLabel(l[0],l[3])[0],l[4],lbl)
         elif l[3] is not None: # atom parameter, 
             lbl = ShortPhaseNames.get(l[0],'phase?')
             try:
@@ -1323,10 +1326,11 @@ def CompileVarDesc():
         'mV([0-2])$' : 'Modulation vector component \\1',
         'Fsin'  :   'Sin site fraction modulation',
         'Fcos'  :   'Cos site fraction modulation',
-        'Fzero'  :   'Crenel function offset',
+        'Fzero'  :   'Crenel function offset',      #may go away
         'Fwid'   :   'Crenel function width',
-        'Tzero'  :   'Sawtooth/ZigZag location',
-        '([XYZ])slope': 'Sawtooth/ZigZag slope for \\1',
+        'Tmin'   :   'ZigZag/Block min location',
+        'Tmax'   :   'ZigZag/Block max location',
+        '([XYZ])max': 'ZigZag/Block max value for \\1',
         '([XYZ])sin'  : 'Sin position wave for \\1',
         '([XYZ])cos'  : 'Cos position wave for \\1',
         'U([123][123])sin$' :  'Sin thermal wave for U\\1',

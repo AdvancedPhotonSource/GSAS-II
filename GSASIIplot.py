@@ -3949,22 +3949,26 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             Page.keyPress = OnImPlotKeyPress
     except TypeError:
         pass
-    size,imagefile = G2frame.PatternTree.GetItemPyData(G2frame.Image)
+    size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)
     dark = Data.get('dark image',[0,''])
-    if dark[0]:
-        darkfile = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, 
-            G2frame.root,dark[0]))[1]
-    if imagefile != G2frame.oldImagefile or dark[0]: # always reread with dark correction
+    if imagefile != G2frame.oldImagefile or G2frame.oldImageTag != imagetag or dark[0]: # always reread to apply dark correction
         imagefile = G2IO.CheckImageFile(G2frame,imagefile)
         if not imagefile:
             G2frame.G2plotNB.Delete('2D Powder Image')
             return
-        G2frame.PatternTree.SetItemPyData(G2frame.Image,[size,imagefile])
-        G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,imageOnly=True)
+        if imagetag:
+            G2frame.PatternTree.SetItemPyData(G2frame.Image,
+                                              [size,(imagefile,imagetag)])
+        else:
+            G2frame.PatternTree.SetItemPyData(G2frame.Image,[size,imagefile])          
+        G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,imageOnly=True,ImageTag=imagetag)
         if dark[0]:
-            darkImg = G2IO.GetImageData(G2frame,darkfile,imageOnly=True)
+            dsize,darkfile,darktag = G2frame.PatternTree.GetImageLoc(
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,dark[0]))
+            darkImg = G2IO.GetImageData(G2frame,darkfile,imageOnly=True,ImageTag=darktag)
             G2frame.ImageZ += dark[1]*darkImg
         G2frame.oldImagefile = imagefile # save name of the last image file read
+        G2frame.oldImageTag = imagetag   # save tag of the last image file read
     else:
         if GSASIIpath.GetConfigValue('debug'): print('Skipping image reread')
 

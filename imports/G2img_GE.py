@@ -16,6 +16,7 @@ Routine to read a summed GE image from APS Sector 1
 
 import sys
 import os
+import numpy as np
 import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: $")
@@ -33,11 +34,68 @@ class GEsum_ReaderClass(G2IO.ImportImage):
         '''
         return True
         
-    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        '''Read using Bob's routine
+    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+        '''Read using GE file reader
         '''
-        self.Comments,self.Data,self.Npix,self.Image = G2IO.GetGEsumData(filename)
+        #rdbuffer = kwarg.get('buffer')
+        imagenum = kwarg.get('blocknum')
+        if imagenum is None: imagenum = 1
+        self.Comments,self.Data,self.Npix,self.Image,more = GetGEsumData(filename,imagenum=imagenum)
         if self.Npix == 0 or not self.Comments:
             return False
-        self.LoadImage(ParentFrame,filename)
+        self.LoadImage(ParentFrame,filename,imagenum)
+        self.repeat = more
         return True
+
+def GetGEsumData(filename,imagenum=1):
+    '''Read G.E. detector images from various files as produced at 1-ID and
+    with Detector Pool detector.
+    '''
+    import struct as st
+    import array as ar
+    more = False
+    File = open(filename,'rb')
+    if '.sum' in filename or '.cor' in filename:
+        head = ['GE detector sum or cor data from APS 1-ID',]
+        sizexy = [2048,2048]
+        Npix = sizexy[0]*sizexy[1]
+        image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
+    elif '.avg' in filename:
+        head = ['GE detector avg or ge* data from APS 1-ID',]
+        sizexy = [2048,2048]
+        Npix = sizexy[0]*sizexy[1]
+        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+    else:
+        head = ['GE detector raw data',]
+        File.seek(18)
+        size,nframes = st.unpack('<ih',File.read(6))
+        # number of frames seems to be 3 for single-image files
+        if size != 2048:
+            print('Warning GE image size unexpected: '+str(size))
+            return 0,0,0,0,False # probably should quit now
+        if imagenum > nframes:
+            print('Error: attempt to read image #'+str(imagenum)+
+                  ' from file with '+str(nframes)+' images.')
+            return 0,0,0,0,False
+        elif imagenum < nframes:
+            more = True
+        sizexy = [2048,2048]
+        Npix = sizexy[0]*sizexy[1]
+        pos = 8192 + (imagenum-1)*2*Npix
+        File.seek(pos)
+        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        if len(image) != sizexy[1]*sizexy[0]:
+            print('not enough images while reading GE file: '+filename+'image #'+str(imagenum))
+            return 0,0,0,0,False            
+        head += ['file: '+filename+' image #'+str(imagenum),]
+        #while nframes > 1:
+        #    print 'adding'
+        #    image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        #    nframes -= 1
+    image = np.reshape(image,(sizexy[1],sizexy[0]))
+    data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
+    data['ImageTag'] = imagenum
+    File.close()
+    if GSASIIpath.GetConfigValue('debug'):
+        print 'Read GE file: '+filename+' image #'+str(imagenum)
+    return head,data,Npix,image,more

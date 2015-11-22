@@ -208,6 +208,18 @@ class G2TreeCtrl(wx.TreeCtrl):
         else:
             raise Exception("No phases found ")
 
+    def GetImageLoc(self,TreeId):
+        '''Get Image data from the Tree. Handles cases where the
+        image name is specified, as well as where the image file name is
+        a tuple containing the image file and an image number
+        '''
+        
+        size,imagefile = self.GetItemPyData(TreeId)
+        if type(imagefile) is tuple or type(imagefile) is list:
+            return size,imagefile[0],imagefile[1]
+        else:
+            return size,imagefile,None
+
 ################################################################################
 #### TextCtrl that stores input as entered with optional validation
 ################################################################################

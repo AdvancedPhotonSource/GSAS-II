@@ -330,8 +330,13 @@ class GSASII(wx.Frame):
     
     def OnImportGeneric(self,reader,readerlist,label,multiple=False,
                         usedRanIdList=[],Preview=True):
-        '''Used to import Phases or datasets using reader objects
-        subclassed from :class:`GSASIIIO.ImportPhase`,
+        '''Used for all imports, including Phases, datasets, images...
+
+        Called from :meth:`GSASII.OnImportPhase`, :meth:`GSASII.OnImportImage`,
+        :meth:`GSASII.OnImportSfact`, :meth:`GSASII.OnImportPowder` and
+        :meth:`GSASII.OnImportSmallAngle`
+
+        Uses reader_objects subclassed from :class:`GSASIIIO.ImportPhase`,
         :class:`GSASIIIO.ImportStructFactor`,
         :class:`GSASIIIO.ImportPowderData`,
         :class:`GSASIIIO.ImportSmallAngleData` or
@@ -341,16 +346,17 @@ class GSASII(wx.Frame):
         compatible (by file extension) will be tried on the file(s)
         selected in the Open File dialog.
 
-        :param readerobject reader: This will be a reference to
+        :param reader_object reader: This will be a reference to
           a particular object to be used to read a file or None,
           if every appropriate reader should be used.
 
         :param list readerlist: a list of reader objects appropriate for
           the current read attempt. At present, this will be either
-          self.ImportPhaseReaderlist, self.ImportSfactReaderlist or
-          self.ImportPowderReaderlist (defined in _init_Imports from
-          the files found in the path), but in theory this list could
-          be tailored. Used only when reader is None.
+          self.ImportPhaseReaderlist, self.ImportSfactReaderlist
+          self.ImportPowderReaderlist or self.ImportImageReaderlist
+          (defined in _init_Imports from the files found in the path),
+          but in theory this list could be tailored.
+          Used only when reader is None.
 
         :param str label: string to place on the open file dialog:
           Open `label` input file
@@ -2247,16 +2253,17 @@ class GSASII(wx.Frame):
         self.plotView = 0
         self.Image = 0
         self.oldImagefile = '' # the name of the last image file read
+        self.oldImageTag = None # the name of the tag for multi-image files
         self.ImageZ = []  # this contains the image plotted and used for integration
         # self.ImageZ and self.oldImagefile are set in GSASIIplot.PlotImage
-        # and GSASIIIO.ReadImageData (GetImageData soon)
+        # and GSASIIIO.GetImageData
         # any changes to self.ImageZ should initialize self.oldImagefile to force a reread
         self.Integrate = 0
         self.imageDefault = {}
         self.IntgOutList = [] # list of integration tree item Ids created in G2IO.SaveIntegration
-        self.AutointPWDRnames = [] # list of autoint created PWDR tree item names
+        self.AutointPWDRnames = [] # list of autoint created PWDR tree item names (to be deleted on a reset)
         self.autoIntFrame = None
-        self.IntegratedList = [] # list of integrated image files
+        self.IntegratedList = [] # list of already integrated IMG tree items
         self.Sngl = False
         self.ifGetRing = False
         self.MaskKey = ''           #trigger for making image masks
@@ -2424,7 +2431,9 @@ class GSASII(wx.Frame):
             dlg.Destroy()
                         
     def OnImageRead(self,event):
-        'Called to read in an image in any known format'
+        '''Called to read in an image in any known format. *** Depreciated. ***
+        Note: When removed, G2IO.ReadLoadImage can also be removed
+        '''
         G2G.G2MessageBox(self,'Please use the Import/Image/... menu item rather than this','depreciating menu item')
         self.CheckNotebook()
         dlg = wx.FileDialog(
@@ -2722,7 +2731,7 @@ class GSASII(wx.Frame):
                 Names.append(name)
                 if 'IMG' in name:
                     TextList.append([0.0,name])
-                    DataList.append(self.PatternTree.GetItemPyData(item))        #Size,Image
+                    DataList.append(self.PatternTree.GetImageLoc(item))        #Size,Image,Tag
                     Data = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,item,'Image Controls'))
                 item, cookie = self.PatternTree.GetNextChild(self.root, cookie)
             if len(TextList) < 2:
@@ -2738,12 +2747,11 @@ class GSASII(wx.Frame):
                     Found = False
                     for i,item in enumerate(result[:-1]):
                         scale,name = item
-                        data = DataList[i]
                         if scale:
                             Found = True                                
                             Comments.append("%10.3f %s" % (scale,' * '+name))
-                            Npix,imagefile = data
-                            image = G2IO.GetImageData(self,imagefile,imageOnly=True)
+                            Npix,imagefile,imagetag = DataList[i]
+                            image = G2IO.GetImageData(self,imagefile,imageOnly=True,ImageTag=imagetag)
                             if First:
                                 newImage = np.zeros_like(image)
                                 First = False

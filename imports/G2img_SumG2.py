@@ -17,6 +17,7 @@ in this format are created by the "Sum image data" command.
 
 import sys
 import os
+import cPickle
 import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: $")
@@ -39,8 +40,7 @@ class G2_ReaderClass(G2IO.ImportImage):
         '''
         import scipy.misc
         Fp = open(filename,'rb')
-        self.Comments,self.Data,self.Npix,self.image = cPickle.load(Fp)
+        self.Comments,self.Data,self.Npix,self.Image = cPickle.load(Fp)
         Fp.close()
         self.LoadImage(ParentFrame,filename)
         return True
-# N.B. This replaces G2IO.GetG2Image

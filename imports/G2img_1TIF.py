@@ -68,7 +68,7 @@ class TIF_ReaderClass(G2IO.ImportImage):
         self.LoadImage(ParentFrame,filename)
         return True
 
-def GetTifData(filename,imageOnly=False):
+def GetTifData(filename):
     '''Read an image in a pseudo-tif format,
     as produced by a wide variety of software, almost always
     incorrectly in some way. 
@@ -134,8 +134,7 @@ def GetTifData(filename,imageOnly=False):
     [nx,ny] = sizexy
     Npix = nx*ny
     if 34710 in IFD:
-        if not imageOnly:
-            print 'Read MAR CCD tiff file: ',filename
+        print 'Read MAR CCD tiff file: ',filename
         marFrame = rmf.marFrame(File,byteOrd,IFD)
         image = np.flipud(np.array(np.asarray(marFrame.image),dtype=np.int32))
         tifType = marFrame.filetitle
@@ -179,8 +178,7 @@ def GetTifData(filename,imageOnly=False):
             dataType = 0
             pixy = [172,172]
             File.seek(4096)
-            if not imageOnly:
-                print 'Read Pilatus tiff file: ',filename
+            print 'Read Pilatus tiff file: ',filename
             image = ar.array('L',File.read(4*Npix))
             image = np.array(np.asarray(image),dtype=np.int32)
         else:
@@ -188,15 +186,13 @@ def GetTifData(filename,imageOnly=False):
                 tifType = 'GE'
                 pixy = [200,200]
                 File.seek(8)
-                if not imageOnly:
-                    print 'Read GE-detector tiff file: ',filename
+                print 'Read GE-detector tiff file: ',filename
                 image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 32:
                 tifType = 'CHESS'
                 pixy = [200,200]
                 File.seek(8)
-                if not imageOnly:
-                    print 'Read CHESS-detector tiff file: ',filename
+                print 'Read CHESS-detector tiff file: ',filename
                 image = np.array(ar.array('L',File.read(4*Npix)),dtype=np.int32)
     elif 270 in IFD:
         File.seek(IFD[270][2][0])
@@ -206,8 +202,7 @@ def GetTifData(filename,imageOnly=False):
             dataType = 0
             pixy = [200,200]*IFD[277][2][0]
             File.seek(IFD[273][2][0])
-            if not imageOnly:
-                print 'Read ImageJ tiff file: ',filename
+            print 'Read ImageJ tiff file: ',filename
             image = ar.array('H',File.read(2*Npix))
             if '>' in byteOrd:
                 image.byteswap()
@@ -216,15 +211,13 @@ def GetTifData(filename,imageOnly=False):
         tifType = 'DND'
         pixy = [158,158]
         File.seek(512)
-        if not imageOnly:
-            print 'Read DND SAX/WAX-detector tiff file: ',filename
+        print 'Read DND SAX/WAX-detector tiff file: ',filename
         image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     elif sizexy == [1536,1536]:
         tifType = 'APS Gold'
         pixy = [150,150]
         File.seek(64)
-        if not imageOnly:
-            print 'Read Gold tiff file:',filename
+        print 'Read Gold tiff file:',filename
         image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     elif sizexy == [2048,2048] or sizexy == [1024,1024] or sizexy == [3072,3072]:
         if IFD[273][2][0] == 8:
@@ -232,8 +225,7 @@ def GetTifData(filename,imageOnly=False):
                 tifType = 'PE'
                 pixy = [200,200]
                 File.seek(8)
-                if not imageOnly:
-                    print 'Read APS PE-detector tiff file: ',filename
+                print 'Read APS PE-detector tiff file: ',filename
                 if dataType == 5:
                     image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.float32)
                 else:
@@ -242,8 +234,7 @@ def GetTifData(filename,imageOnly=False):
                 tifType = 'MedOptics D1'
                 pixy = [46.9,46.9]
                 File.seek(8)
-                if not imageOnly:
-                    print 'Read MedOptics D1 tiff file: ',filename
+                print 'Read MedOptics D1 tiff file: ',filename
                 image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
                   
         elif IFD[273][2][0] == 4096:
@@ -254,15 +245,13 @@ def GetTifData(filename,imageOnly=False):
                 pixy = [158,158]
                 tifType = 'MAR325'            
             File.seek(4096)
-            if not imageOnly:
-                print 'Read MAR CCD tiff file: ',filename
+            print 'Read MAR CCD tiff file: ',filename
             image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
         elif IFD[273][2][0] == 512:
             tiftype = '11-ID-C'
             pixy = [200,200]
             File.seek(512)
-            if not imageOnly:
-                print 'Read 11-ID-C tiff file: ',filename
+            print 'Read 11-ID-C tiff file: ',filename
             image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
                     
     elif sizexy == [4096,4096]:
@@ -271,15 +260,13 @@ def GetTifData(filename,imageOnly=False):
                 tifType = 'scanCCD'
                 pixy = [9,9]
                 File.seek(8)
-                if not imageOnly:
-                    print 'Read APS scanCCD tiff file: ',filename
+                print 'Read APS scanCCD tiff file: ',filename
                 image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
         elif IFD[273][2][0] == 4096:
             tifType = 'Rayonix'
             pixy = [73.242,73.242]
             File.seek(4096)
-            if not imageOnly:
-                print 'Read Rayonix MX300HE tiff file: ',filename
+            print 'Read Rayonix MX300HE tiff file: ',filename
             image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
 #    elif sizexy == [960,960]:
 #        tiftype = 'PE-BE'
@@ -303,7 +290,4 @@ def GetTifData(filename,imageOnly=False):
     distance = (not distance) and 100.0 or distance
     data = {'pixelSize':pixy,'wavelength':wavelength,'distance':distance,'center':center,'size':sizexy}
     File.close()    
-    if imageOnly:
-        return image
-    else:
-        return head,data,Npix,image
+    return head,data,Npix,image

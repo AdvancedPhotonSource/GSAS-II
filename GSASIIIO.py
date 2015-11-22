@@ -277,20 +277,21 @@ def EditImageParms(parent,Data,Comments,Image,filename):
     
 def ReadLoadImage(imagefile,G2frame):
     '''Read a GSAS-II image file and load it into the data tree
+    Called only from GSASII.OnImageRead (depreciated).
     '''
     # if a zip file, open and extract
     if os.path.splitext(imagefile)[1].lower() == '.zip':
         extractedfile = ExtractFileFromZip(imagefile,parent=G2frame)
         if extractedfile is not None and extractedfile != imagefile:
             imagefile = extractedfile
-    Comments,Data,Npix,Image = GetImageData(G2frame,imagefile)
+    Comments,Data,Npix,Image = GetImageData(G2frame,imagefile) # can only read 1st image
     if Comments:
         LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image)
     
 def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
-    '''Load an image into the tree
+    '''Load an image into the tree. Saves the location of the image, as well as the
+    ImageTag (where there is more than one image in the file), if defined.
     '''
-    
     ImgNames = []
     if G2frame.PatternTree.GetCount(): # get a list of existing Image entries
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
@@ -298,7 +299,14 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
             name = G2frame.PatternTree.GetItemText(item)
             if name.startswith('IMG'): ImgNames.append(name)        
             item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-    TreeName = G2obj.MakeUniqueLabel('IMG '+os.path.basename(imagefile),ImgNames)
+    TreeLbl = 'IMG '+os.path.basename(imagefile)
+    ImageTag = Data.get('ImageTag')
+    if ImageTag:
+        TreeLbl += ' #'+str(ImageTag)
+        imageInfo = (imagefile,ImageTag)
+    else:
+        imageInfo = imagefile
+    TreeName = G2obj.MakeUniqueLabel(TreeLbl,ImgNames)
     Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=TreeName)
     G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)
     Imax = np.amax(Image)
@@ -353,18 +361,20 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Masks'),Masks)
     G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Stress/Strain'),
         {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'Sample load':0.0})
-    G2frame.PatternTree.SetItemPyData(Id,[Npix,imagefile])
+    G2frame.PatternTree.SetItemPyData(Id,[Npix,imageInfo])
     G2frame.PickId = Id
     G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)
     G2frame.Image = Id
-    
-def ReadImageData(G2frame,imagefile,imageOnly=False):
-    '''Read a single image with an image importer. Replacement for GetImageData
+
+def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None):
+    '''Read a single image with an image importer. 
 
     :param wx.Frame G2frame: main GSAS-II Frame and data object.
     :param str imagefile: name of image file
     :param bool imageOnly: If True return only the image,
       otherwise  (default) return more (see below)
+    :param int/str ImageTag: specifies a particular image to be read from a file.
+      First image is read if None (default).
 
     :returns: an image as a numpy array or a list of four items:
       Comments, Data, Npix and the Image, as selected by imageOnly
@@ -393,18 +403,18 @@ def ReadImageData(G2frame,imagefile,imageOnly=False):
             errorReport += "\n  "+rd.formatName + ' validator error'
             if rd.errors: 
                 errorReport += ': '+rd.errors
-                continue 
+                continue
         rdbuffer = {} # create temporary storage for file reader
         if imageOnly:
             ParentFrame = None # prevent GUI access on reread
         else:
             ParentFrame = G2frame
         if GSASIIpath.GetConfigValue('debug'):
-            flag = rd.Reader(imagefile,fp,ParentFrame)
+            flag = rd.Reader(imagefile,fp,ParentFrame,blocknum=ImageTag)
         else:
             flag = False
             try:
-                flag = rd.Reader(imagefile,fp,ParentFrame)
+                flag = rd.Reader(imagefile,fp,ParentFrame,blocknum=ImageTag)
             except rd.ImportException as detail:
                 rd.errors += "\n  Read exception: "+str(detail)
             except Exception as detail:
@@ -426,8 +436,74 @@ def ReadImageData(G2frame,imagefile,imageOnly=False):
         print('Error reading file '+filename)
         print('Error messages(s)\n'+errorReport)
         raise Exception('No image read')    
-def GetImageData(G2frame,imagefile,imageOnly=False):
-    return ReadImageData(G2frame,imagefile,imageOnly)
+
+def ReadImages(G2frame,imagefile):
+    '''Read one or more images from a file and put them into the Tree
+    using image importers. Called only in :meth:`AutoIntFrame.OnTimerLoop`.
+
+    :param wx.Frame G2frame: main GSAS-II Frame and data object.
+    :param str imagefile: name of image file 
+
+    :returns: a list of the id's of the IMG tree items created 
+    '''
+    # determine which formats are compatible with this file
+    primaryReaders = []
+    secondaryReaders = []
+    for rd in G2frame.ImportImageReaderlist:
+        flag = rd.ExtensionValidator(imagefile)
+        if flag is None:
+            secondaryReaders.append(rd)
+        elif flag:
+            primaryReaders.append(rd)
+    if len(secondaryReaders) + len(primaryReaders) == 0:
+        print('Error: No matching format for file '+filename)
+        raise Exception('No image read')
+    errorReport = ''
+    fp = open(imagefile,'Ur')
+    rdbuffer = {} # create temporary storage for file reader
+    for rd in primaryReaders+secondaryReaders:
+        rd.ReInitialize() # purge anything from a previous read
+        fp.seek(0)  # rewind
+        rd.errors = "" # clear out any old errors
+        if not rd.ContentsValidator(fp): # rejected on cursory check
+            errorReport += "\n  "+rd.formatName + ' validator error'
+            if rd.errors: 
+                errorReport += ': '+rd.errors
+                continue
+        ParentFrame = G2frame
+        block = 0
+        repeat = True
+        CreatedIMGitems = []
+        while repeat: # loop if the reader asks for another pass on the file
+            block += 1
+            repeat = False
+            if GSASIIpath.GetConfigValue('debug'):
+                flag = rd.Reader(imagefile,fp,ParentFrame,blocknum=block,Buffer=rdbuffer)
+            else:
+                flag = False
+                try:
+                    flag = rd.Reader(imagefile,fp,ParentFrame,blocknum=block,Buffer=rdbuffer)
+                except rd.ImportException as detail:
+                    rd.errors += "\n  Read exception: "+str(detail)
+                except Exception as detail:
+                    import traceback
+                    rd.errors += "\n  Unhandled read exception: "+str(detail)
+                    rd.errors += "\n  Traceback info:\n"+str(traceback.format_exc())
+            if flag: # this read succeeded
+                if rd.Image is None:
+                    raise Exception('No image read. Strange!')
+                if GSASIIpath.GetConfigValue('Transpose'):
+                    print 'Transposing Image!'
+                    rd.Image = rd.Image.T
+                LoadImage2Tree(imagefile,G2frame,rd.Comments,rd.Data,rd.Npix,rd.Image)
+                repeat = rd.repeat
+            CreatedIMGitems.append(G2frame.Image)
+        if CreatedIMGitems: return CreatedIMGitems
+    else:
+        print('Error reading file '+filename)
+        print('Error messages(s)\n'+errorReport)
+        return []
+        #raise Exception('No image read')    
         
 def PutG2Image(filename,Comments,Data,Npix,image):
     'Write an image as a python pickle - might be better as an .edf file?'
@@ -436,13 +512,7 @@ def PutG2Image(filename,Comments,Data,Npix,image):
     File.close()
     return
     
-def GetG2Image(filename):
-    'Read an image as a python pickle'
-    File = open(filename,'rb')
-    Comments,Data,Npix,image = cPickle.load(File)
-    File.close()
-    return Comments,Data,Npix,image
-    
+# should get moved to importer when ready to test
 def GetEdfData(filename,imageOnly=False):    
     'Read European detector data edf file'
     import struct as st
@@ -506,6 +576,7 @@ def GetEdfData(filename,imageOnly=False):
     else:
         return head,data,Npix,image
         
+# should get moved to importer when ready to test
 def GetRigaku(filename,imageOnly=False):
     'Read Rigaku R-Axis IV image file'
     import struct as st
@@ -537,44 +608,7 @@ def GetRigaku(filename,imageOnly=False):
     else:
         return head,data,Npix,image
     
-def GetGEsumData(filename,imageOnly=False):
-    'Read SUM file as produced at 1-ID from G.E. images'
-    import struct as st
-    import array as ar
-    if not imageOnly:
-        print 'Read GE sum file: ',filename    
-    File = open(filename,'rb')
-    if '.sum' in filename or '.cor' in filename:
-        head = ['GE detector sum or cor data from APS 1-ID',]
-        sizexy = [2048,2048]
-    elif '.avg' in filename or '.ge' in filename:
-        head = ['GE detector avg or ge* data from APS 1-ID',]
-        sizexy = [2048,2048]
-    else:
-        head = ['GE detector raw data from APS 1-ID',]
-        File.seek(18)
-        size,nframes = st.unpack('<ih',File.read(6))
-        sizexy = [2048,2048]
-        pos = 8192
-        File.seek(pos)
-    Npix = sizexy[0]*sizexy[1]
-    if '.sum' in filename or '.cor' in filename:
-        image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
-    elif '.avg' in filename or '.ge' in filename:
-        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-    else:
-        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-        while nframes > 1:
-            image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-            nframes -= 1
-    image = np.reshape(image,(sizexy[1],sizexy[0]))
-    data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}  
-    File.close()    
-    if imageOnly:
-        return image
-    else:
-        return head,data,Npix,image
-        
+# should get moved to importer when ready to test        
 def GetImgData(filename,imageOnly=False):
     'Read an ADSC image file'
     import struct as st
@@ -626,6 +660,7 @@ def GetImgData(filename,imageOnly=False):
     else:
         return lines[1:-2],data,Npix,image
        
+# should get moved to importer when ready to test
 def GetMAR345Data(filename,imageOnly=False):
     'Read a MAR-345 image plate image'
     import array as ar
@@ -686,6 +721,7 @@ def GetMAR345Data(filename,imageOnly=False):
     else:
         return head,data,Npix,image
         
+# should get moved to importer when ready to test
 def GetPNGData(filename,imageOnly=False):
     '''Read an image in a png format, assumes image is converted from CheMin tif file
     so default parameters are that machine.
@@ -702,153 +738,7 @@ def GetPNGData(filename,imageOnly=False):
         return Image.T
     else:
         return Comments,Data,Npix,Image.T
-
     
-#def GetTifData(filename,imageOnly=False):
-#    import struct as st
-#    import array as ar
-#    File = open(filename,'rb')
-#    dataType = 5
-#    try:
-#        Meta = open(filename+'.metadata','Ur')
-#        head = Meta.readlines()
-#        for line in head:
-#            line = line.strip()
-#            if 'dataType=' in line:
-#                dataType = int(line.split('=')[1])
-#        Meta.close()
-#    except IOError:
-#        print 'no metadata file found - will try to read file anyway'
-#        head = ['no metadata file found',]
-#        
-#    tag = File.read(2)
-#    byteOrd = '<'
-#    if tag == 'II' and int(st.unpack('<h',File.read(2))[0]) == 42:     #little endian
-#        IFD = int(st.unpack(byteOrd+'i',File.read(4))[0])
-#    elif tag == 'MM' and int(st.unpack('>h',File.read(2))[0]) == 42:   #big endian
-#        byteOrd = '>'
-#        IFD = int(st.unpack(byteOrd+'i',File.read(4))[0])        
-#    else:
-#        lines = ['not a detector tiff file',]
-#        return lines,0,0,0
-#    File.seek(IFD)                                                  #get number of directory entries
-#    NED = int(st.unpack(byteOrd+'h',File.read(2))[0])
-#    IFD = {}
-#    for ied in range(NED):
-#        Tag,Type = st.unpack(byteOrd+'Hh',File.read(4))
-#        nVal = st.unpack(byteOrd+'i',File.read(4))[0]
-#        if Type == 1:
-#            Value = st.unpack(byteOrd+nVal*'b',File.read(nVal))
-#        elif Type == 2:
-#            Value = st.unpack(byteOrd+'i',File.read(4))
-#        elif Type == 3:
-#            Value = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
-#            x = st.unpack(byteOrd+nVal*'h',File.read(nVal*2))
-#        elif Type == 4:
-#            Value = st.unpack(byteOrd+nVal*'i',File.read(nVal*4))
-#        elif Type == 5:
-#            Value = st.unpack(byteOrd+nVal*'i',File.read(nVal*4))
-#        elif Type == 11:
-#            Value = st.unpack(byteOrd+nVal*'f',File.read(nVal*4))
-#        IFD[Tag] = [Type,nVal,Value]
-##        print Tag,IFD[Tag]
-#    sizexy = [IFD[256][2][0],IFD[257][2][0]]
-#    [nx,ny] = sizexy
-#    Npix = nx*ny
-#    if 272 in IFD:
-#        ifd = IFD[272]
-#        File.seek(ifd[2][0])
-#        S = File.read(ifd[1])
-#        if 'PILATUS' in S:
-#            tifType = 'Pilatus'
-#            dataType = 0
-#            pixy = (172,172)
-#            File.seek(4096)
-#            if not imageOnly:
-#                print 'Read Pilatus tiff file: ',filename
-#            image = ar.array('L',File.read(4*Npix))
-#            image = np.array(np.asarray(image),dtype=np.int32)
-#    elif 262 in IFD and IFD[262][2][0] > 4:
-#        tifType = 'DND'
-#        pixy = (158,158)
-#        File.seek(512)
-#        if not imageOnly:
-#            print 'Read DND SAX/WAX-detector tiff file: ',filename
-#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-#    elif sizexy == [1536,1536]:
-#        tifType = 'APS Gold'
-#        pixy = (150,150)
-#        File.seek(64)
-#        if not imageOnly:
-#            print 'Read Gold tiff file:',filename
-#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-#    elif sizexy == [2048,2048] or sizexy == [1024,1024] or sizexy == [3072,3072]:
-#        if IFD[273][2][0] == 8:
-#            if IFD[258][2][0] == 32:
-#                tifType = 'PE'
-#                pixy = (200,200)
-#                File.seek(8)
-#                if not imageOnly:
-#                    print 'Read APS PE-detector tiff file: ',filename
-#                if dataType == 5:
-#                    image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.float32)
-#                else:
-#                    image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
-#        elif IFD[273][2][0] == 4096:
-#            if sizexy[0] == 3072:
-#                pixy =  (73,73)
-#                tifType = 'MAR225'            
-#            else:
-#                pixy = (158,158)
-#                tifType = 'MAR325'            
-#            File.seek(4096)
-#            if not imageOnly:
-#                print 'Read MAR CCD tiff file: ',filename
-#            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-#        elif IFD[273][2][0] == 512:
-#            tiftype = '11-ID-C'
-#            pixy = [200,200]
-#            File.seek(512)
-#            if not imageOnly:
-#                print 'Read 11-ID-C tiff file: ',filename
-#            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)            
-#    elif sizexy == [4096,4096]:
-#        if IFD[273][2][0] == 8:
-#            if IFD[258][2][0] == 16:
-#                tifType = 'scanCCD'
-#                pixy = (9,9)
-#                File.seek(8)
-#                if not imageOnly:
-#                    print 'Read APS scanCCD tiff file: ',filename
-#                image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-#        elif IFD[273][2][0] == 4096:
-#            tifType = 'Rayonix'
-#            pixy = (73.242,73.242)
-#            File.seek(4096)
-#            if not imageOnly:
-#                print 'Read Rayonix MX300HE tiff file: ',filename
-#            image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-##    elif sizexy == [960,960]:
-##        tiftype = 'PE-BE'
-##        pixy = (200,200)
-##        File.seek(8)
-##        if not imageOnly:
-##            print 'Read Gold tiff file:',filename
-##        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-#           
-#    else:
-#        lines = ['not a known detector tiff file',]
-#        return lines,0,0,0
-#        
-#    image = np.reshape(image,(sizexy[1],sizexy[0]))
-#    center = [pixy[0]*sizexy[0]/2000,pixy[1]*sizexy[1]/2000]
-#    data = {'pixelSize':pixy,'wavelength':0.10,'distance':100.0,'center':center,'size':sizexy}
-#    File.close()    
-#    if imageOnly:
-#        return image
-#    else:
-#        return head,data,Npix,image
-#    
 def ProjFileOpen(G2frame):
     'Read a GSAS-II project file and load into the G2 data tree'
     if not os.path.exists(G2frame.GSASprojectfile):
@@ -1760,19 +1650,25 @@ class ImportSmallAngleData(ImportBaseclass):
 class ImportImage(ImportBaseclass):
     '''Defines a base class for the reading of images
 
-    Structure factors are read with a call to :meth:`GSASII.GSASII.OnImportImage`
+    Images are intially read with a call to :meth:`GSASII.GSASII.OnImportImage`
     which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`, which calls
     methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
-    :meth:`Reader`.
+    :meth:`Reader`. Images are also reread with :func:`GSASIIIO.GetImageData`
 
     See :ref:`Writing a Import Routine<Import_Routines>`
     for an explanation on how to use import classes in general. The specifics 
     for reading an image requires that the ``Reader()`` routine in the import
-    class need to do only a few things:...
+    class should set:
     
-    (should load :attr:`RefDict` item ``'RefList'`` with the reflection list,
-    (and set :attr:`Parameters` with the instrument parameters
-    (initialized with :meth:`InitParameters` and set with :meth:`UpdateParameters`).
+      * :attr:`Comments` (a list of strings),
+      * :attr:`Data` (a dict defining image parameters),
+      * :attr:`Npix` (the number of pixels in the image) 
+      * :attr:`Image` (the actual image)
+      * optionally: :attr:`repeat` (set to True if there are additional images to
+        read in the file)
+      
+      
+    Note that the above is initialized with :meth:`InitParameters`.
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
         strictExtension=False,):
@@ -1791,15 +1687,16 @@ class ImportImage(ImportBaseclass):
         self.Data = {}
         self.Npix = 0
         self.Image = None
+        self.repeat = False
 
-    def LoadImage(self,ParentFrame,imagefile):
+    def LoadImage(self,ParentFrame,imagefile,imagetag=None):
         '''Optionally, call this after reading in an image to load it into the tree.
-        This does saves time by preventing a reread of the same information.
+        This saves time by preventing a reread of the same information.
         '''
         if ParentFrame:
             ParentFrame.ImageZ = self.Image   # store the image for plotting
             ParentFrame.oldImagefile = imagefile # save the name of the last image file read
-            
+            ParentFrame.oldImageTag = imagetag   # save the tag of the last image file read            
 
 ######################################################################
 class ExportBaseclass(object):

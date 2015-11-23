@@ -589,7 +589,7 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
             line = ' %s %s'%(item.ljust(30),SGtable[2*i+1].ljust(30))
             MyPrint(line)   
     else:
-        MyPrint(' ( 1)    %s'%(SGtable[0])) 
+        MyPrint(' ( 1)    %s'%(SGtable[0])) #triclinic case
     Cell = DisAglData['Cell']
     
     Amat,Bmat = G2lat.cell2AB(Cell[:6])

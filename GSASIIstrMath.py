@@ -616,7 +616,7 @@ def GetAtomSSFXU(pfx,calcControls,parmDict):
     MSSdata = np.zeros((6,maxSSwave['Smag'],Natoms))
     waveTypes = []
     keys = {'Fsin:':FSSdata[0],'Fcos:':FSSdata[1],'Fzero:':FSSdata[0],'Fwid:':FSSdata[1],
-        'Tzero:':XSSdata[0],'Xslope:':XSSdata[1],'Yslope:':XSSdata[2],'Zslope:':XSSdata[3],
+        'Tmin:':XSSdata[0],'Tmax:':XSSdata[1],'Xmax:':XSSdata[2],'Ymax:':XSSdata[3],'Zmax:':XSSdata[4],
         'Xsin:':XSSdata[0],'Ysin:':XSSdata[1],'Zsin:':XSSdata[2],'Xcos:':XSSdata[3],'Ycos:':XSSdata[4],'Zcos:':XSSdata[5],
         'U11sin:':USSdata[0],'U22sin:':USSdata[1],'U33sin:':USSdata[2],'U12sin:':USSdata[3],'U13sin:':USSdata[4],'U23sin:':USSdata[5],
         'U11cos:':USSdata[6],'U22cos:':USSdata[7],'U33cos:':USSdata[8],'U12cos:':USSdata[9],'U13cos:':USSdata[10],'U23cos:':USSdata[11],
@@ -993,11 +993,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         TwinInv = list(np.where(calcControls[phfx+'TwinInv'],-1,1))
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
-#    Smult,TauT = GetSSTauM(SGData['SGOps'],SSGData['SSGOps'],pfx,calcControls,Xdata)
-#    GSASIIpath.IPyBreak()
-#    if SGInv:
-#        TauT = np.hstack((TauT,-TauT))
-#        eps = np.concatenate((eps,-eps))
+    nWaves,Fmod,Xmod,Umod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast)
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1075,7 +1071,7 @@ def SStructureFactor(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDict):
         else:
             fa = np.array([np.reshape(((FF+FP).T-Bab).T,cosp.shape)*cosp*Tcorr,-Flack*FPP*sinp*Tcorr])
             fb = np.array([Flack*FPP*cosp*Tcorr,np.reshape(((FF+FP).T-Bab).T,sinp.shape)*sinp*Tcorr])
-        GfpuA = G2mth.Modulation(waveTypes,Uniq,UniqP,FSSdata,XSSdata,USSdata,Mast) #2 x refBlk x sym X atoms
+        GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,glTau,glWt) #2 x refBlk x sym X atoms
         fag = fa*GfpuA[0]-fb*GfpuA[1]   #real; 2 x refBlk x sym x atoms
         fbg = fb*GfpuA[0]+fa*GfpuA[1]
         fas = np.sum(np.sum(fag,axis=-1),axis=-1)   #2 x refBlk; sum sym & atoms
@@ -1124,9 +1120,8 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
     Tdata,Mdata,Fdata,Xdata,dXdata,IAdata,Uisodata,Uijdata = GetAtomFXU(pfx,calcControls,parmDict)
     mSize = len(Mdata)  #no. atoms
     waveTypes,FSSdata,XSSdata,USSdata,MSSdata = GetAtomSSFXU(pfx,calcControls,parmDict)
-#    Smult,TauT = GetSSTauM(SGData['SGOps'],SSGData['SSGOps'],pfx,calcControls,Xdata)
-#    if SGInv:
-#        TauT = np.hstack((TauT,-TauT))
+    nWaves,Fmod,Xmod,Umod,glTau,glWt = G2mth.makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast)
+    waveShapes,SCtauF,SCtauX,SCtauU,UmodAB = G2mth.makeWavesDerv(waveTypes,FSSdata,XSSdata,USSdata,Mast)
     modQ = np.array([parmDict[pfx+'mV0'],parmDict[pfx+'mV1'],parmDict[pfx+'mV2']])
     FF = np.zeros(len(Tdata))
     if 'NC' in calcControls[hfx+'histType']:
@@ -1213,7 +1208,8 @@ def SStructureFactorDerv(refDict,im,G,hfx,pfx,SGData,SSGData,calcControls,parmDi
         Tcorr = np.reshape(Tiso,Tuij.shape)*Tuij*Mdata*Fdata/Uniq.shape[0]  #ops x atoms
         fot = (FF+FP-Bab)*Tcorr     #ops x atoms
         fotp = FPP*Tcorr            #ops x atoms
-        GfpuA,dGdf,dGdx,dGdu = G2mth.ModulationDerv(waveTypes,Uniq,UniqP,Hij,FSSdata,XSSdata,USSdata,Mast)
+        GfpuA = G2mth.Modulation(Uniq,UniqP,nWaves,Fmod,Xmod,Umod,glTau,glWt) #2 x sym X atoms
+        dGdf,dGdx,dGdu = G2mth.ModulationDerv(Uniq,UniqP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCtauU,glTau,glWt)
         # GfpuA is 2 x ops x atoms
         # derivs are: ops x atoms x waves x 2,6,or 12 parms as [real,imag] parts
         fa = np.array([((FF+FP).T-Bab).T*cosp*Tcorr,-Flack*FPP*sinp*Tcorr]) # array(2,nTwin,nEqv,nAtoms)

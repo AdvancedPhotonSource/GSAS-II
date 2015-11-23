@@ -584,7 +584,7 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
     SGData = DisAglData['SGData']
     SGtext,SGtable = G2spc.SGPrint(SGData)
     for line in SGtext: MyPrint(line)
-    if len(SGtable):
+    if len(SGtable) > 1:
         for i,item in enumerate(SGtable[::2]):
             line = ' %s %s'%(item.ljust(30),SGtable[2*i+1].ljust(30))
             MyPrint(line)   

@@ -54,6 +54,7 @@ class GEsum_ReaderClass(G2IO.ImportImage):
         if self.Npix == 0 or not self.Comments:
             return False
         self.LoadImage(ParentFrame,filename,imagenum)
+        self.repeatcount = imagenum
         self.repeat = more
         return True
 
@@ -104,7 +105,6 @@ def GetGEsumData(filename,imagenum=1):
         #    nframes -= 1
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
-    self.repeatcount = imagenum
     File.close()
     if GSASIIpath.GetConfigValue('debug'):
         print 'Read GE file: '+filename+' image #'+str(imagenum)

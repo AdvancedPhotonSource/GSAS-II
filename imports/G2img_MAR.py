@@ -10,8 +10,6 @@
 *Module G2img_MAR: MAR image files*
 --------------------------------------
 
-Routine to read several MAR formats, .mar3450,.mar2300,.mar2560
-
 '''
 
 import sys
@@ -20,6 +18,8 @@ import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: $")
 class MAR_ReaderClass(G2IO.ImportImage):
+    '''Routine to read several MAR formats, .mar3450,.mar2300,.mar2560
+    '''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.mar3450','.mar2300','.mar2560'),
@@ -34,7 +34,8 @@ class MAR_ReaderClass(G2IO.ImportImage):
         return True
         
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        '''Read using Bob's routine
+        '''Read using Bob's routine :func:`GSASIIIO.GetMAR345Data`
+        (to be moved to this file, eventually)
         '''
         self.Comments,self.Data,self.Npix,self.Image = G2IO.GetMAR345Data(filename)
         if self.Npix == 0 or not self.Comments:

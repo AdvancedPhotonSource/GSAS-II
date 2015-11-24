@@ -10,8 +10,6 @@
 *Module G2img_ADSC: .img image file*
 --------------------------------------
 
-Routine to read an ADSC .img file
-
 '''
 
 import sys
@@ -20,6 +18,8 @@ import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: $")
 class ADSC_ReaderClass(G2IO.ImportImage):
+    '''Reads an ADSC .img file
+    '''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.img',),
@@ -34,7 +34,8 @@ class ADSC_ReaderClass(G2IO.ImportImage):
         return True
         
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        '''Read using Bob's routine
+        '''Read using Bob's routine :func:`GSASIIIO.GetImgData`
+        (to be moved to this file, eventually)
         '''
         self.Comments,self.Data,self.Npix,self.Image = G2IO.GetImgData(filename)
         Image[0][0] = 0

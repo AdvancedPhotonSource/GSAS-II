@@ -781,6 +781,7 @@ class GSASII(wx.Frame):
             if first:
                 first = False
                 self.CheckNotebook()
+            rd.Data['ImageTag'] = rd.repeatcount
             G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
         self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,self.Image,'Image Controls'))             #show last image to have beeen read
                     

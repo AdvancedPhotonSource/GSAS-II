@@ -11,8 +11,8 @@
 ---------------------------------------
 
 Routine to read an image in .png (Portable Network Graphics) format.
-For now, the only known use of this is with converted CheMin tif files
-so default parameters are that machine.
+For now, the only known use of this is with converted Mars Rover (CheMin)
+tif files, so default parameters are for that.
 
 '''
 
@@ -22,6 +22,9 @@ import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: $")
 class png_ReaderClass(G2IO.ImportImage):
+    '''Reads standard PNG images; parameters are set to those of the
+    Mars Rover (CheMin) diffractometer.
+    '''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.png',),
@@ -36,7 +39,7 @@ class png_ReaderClass(G2IO.ImportImage):
         return True
         
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        '''Read using scipy PNG reader
+        '''Reads using standard scipy PNG reader
         '''
         import scipy.misc
         self.Image = scipy.misc.imread(filename,flatten=True)
@@ -52,4 +55,3 @@ class png_ReaderClass(G2IO.ImportImage):
             G2IO.EditImageParms(ParentFrame,self.Data,self.Comments,self.Image,filename)
         self.LoadImage(ParentFrame,filename)
         return True
-# N.B. This replaces G2IO.GetPNGData

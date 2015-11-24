@@ -10,7 +10,8 @@
 *Module G2img_GE: summed GE image file*
 ---------------------------------------
 
-Routine to read a summed GE image from APS Sector 1
+This shows an example of an importer that will handle files with
+more than a single image. 
 
 '''
 
@@ -21,6 +22,15 @@ import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: $")
 class GEsum_ReaderClass(G2IO.ImportImage):
+    '''Routine to read a GE image, typically from APS Sector 1.
+        
+        The image files may be of form .geX (where X is ' ', 1, 2, 3 or 4),
+        which is a raw image from the detector. These files may contain more
+        than one image and have a rudimentary header. 
+        Files with extension .sum or .cor are 4 byte integers/pixel, one image/file.
+        Files with extension .avg are 2 byte integers/pixel, one image/file.
+    '''
+
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.sum','.cor','.avg','.ge','.ge1','.ge2','.ge3','.ge4'),
@@ -35,7 +45,7 @@ class GEsum_ReaderClass(G2IO.ImportImage):
         return True
         
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
-        '''Read using GE file reader
+        '''Read using GE file reader, :func:`GetGEsumData`
         '''
         #rdbuffer = kwarg.get('buffer')
         imagenum = kwarg.get('blocknum')
@@ -94,7 +104,7 @@ def GetGEsumData(filename,imagenum=1):
         #    nframes -= 1
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
-    data['ImageTag'] = imagenum
+    self.repeatcount = imagenum
     File.close()
     if GSASIIpath.GetConfigValue('debug'):
         print 'Read GE file: '+filename+' image #'+str(imagenum)

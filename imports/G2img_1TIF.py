@@ -7,11 +7,14 @@
 # $Id: $
 ########### SVN repository information ###################
 '''
-*Module G2img_TIF: .tif image file*
---------------------------------------
+*Module G2img_1TIF: Tagged-image File images*
+--------------------------------------------------
 
 Routine to read an image in Tagged-image file (TIF) format as well as a variety
-of slightly incorrect pseudo-TIF formats used at instruments around the world. 
+of slightly incorrect pseudo-TIF formats used at instruments around the world.
+Note that the name ``G2img_1TIF`` is used so that this file will
+sort to the top of the image formats and thus show up first in the menu.
+(It is the most common, alas).
 
 '''
 
@@ -24,8 +27,11 @@ import numpy as np
 DEBUG = False
 GSASIIpath.SetVersionNumber("$Revision: $")
 class TIF_ReaderClass(G2IO.ImportImage):
-    '''Routine to read an image in Tagged-image file (TIF) format as well as a variety
-    of slightly incorrect pseudo-TIF formats
+    '''Reads TIF files using a routine (:func:`GetTifData`) that looks
+    for files that can be identified from known instruments and will
+    correct for slightly incorrect TIF usage. If that routine fails,
+    it will be read with a standard TIF reader, which can handle compression
+    and other things less commonly used at beamlines. 
     '''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -48,7 +54,9 @@ class TIF_ReaderClass(G2IO.ImportImage):
         return True
     
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
-        '''Read the TIF file using Bob's routine
+        '''Read the TIF file using :func:`GetTifData`. If that fails,
+        use :func:`scipy.misc.imread` and give the user a chance to
+        edit the likely wrong default image parameters. 
         '''
         
         self.Comments,self.Data,self.Npix,self.Image = GetTifData(filename)

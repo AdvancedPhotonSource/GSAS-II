@@ -2,7 +2,8 @@
 ====================================
 
 Imports are implemented by deriving a class from 
-:class:`GSASIIIO.ImportPhase`, :class:`GSASIIIO.ImportStructFactor`
+:class:`GSASIIIO.ImportPhase`, :class:`GSASIIIO.ImportStructFactor`,
+:class:`GSASIIIO.ImportPowderData`
 or :class:`GSASIIIO.ImportPowderData` (which are in turn 
 derived from :class:`GSASIIIO.ImportBaseclass`)
 to implement import of 
@@ -19,32 +20,46 @@ Writing an Import Routine
 
 .. _Import_routines:
 
-
 When writing a import routine, one should create a new class derived
 from :class:`GSASIIIO.ImportPhase`, :class:`GSASIIIO.ImportStructFactor`
 or :class:`GSASIIIO.ImportPowderData`. As described below, 
 all these classes will implement
 an ``__init__()`` and a ``Reader()`` method, and most will supply a 
 ``ContentsValidator()`` method, too.
-See the :class:`~GSASIIIO.ImportPhase`, :class:`~GSASIIIO.ImportStructFactor`
-or :class:`~GSASIIIO.ImportPowderData` class documentation 
+See the :class:`~GSASIIIO.ImportPhase`,
+:class:`~GSASIIIO.ImportStructFactor`,
+:class:`~GSASIIIO.ImportPowderData`
+or :class:`~GSASIIIO.ImportImage` class documentation 
 for details on what values each type of ``Reader()`` should set. 
 
 __init__()
 ~~~~~~~~~~~~~~
  
-The class should supply a
-``__init__`` method which calls the parent ``__init__`` method and
-specifies the following parameters: 
+The ``__init__`` method will follow standard boilerplate: 
 
-  * `extensionlist`: a list of extensions that may be used for this type of file.
-  * `strictExtension`: Should be True if only files with extensions in
-    `extensionlist` are allows; False if all file types should be offered
+.. code-block:: python
+
+    def __init__(self):
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.ext1','ext2'),
+            strictExtension=True,
+            formatName = 'example image',
+            longFormatName = 'A longer description that this is an example image format'
+            )
+
+The first line in the ``__init__`` method calls the parent class 
+``__init__`` method with the following parameters: 
+
+  * ``extensionlist``: a list of extensions that may be used for this type of file.
+  * ``strictExtension``: Should be True if only files with extensions in
+    ``extensionlist`` are allows; False if all file types should be offered
     in the file browser. Also if False, the import class will be
     used on all files when "guess from format" is tried, though 
-    readers with matching extensions will be tried first.
-  * `formatName`: a string to be used in the menu. Should be short. 
-  * `longFormatName`: a longer string to be used to describe the format in help. 
+    readers with matching extensions will be tried first. 
+    It is a very good idea to supply  a :ref:`ContentsValidator <ContentsValidator>`
+    method when ``strictExtension`` is False.
+  * ``formatName``: a string to be used in the menu. Should be short. 
+  * ``longFormatName``: a longer string to be used to describe the format in help. 
 
 Reader()
 ~~~~~~~~~~~~~~
@@ -56,22 +71,26 @@ reading. All readers must have at a minimum these arguments::
 
 where the arguments have the following uses: 
 
- * `filename`: a string with the name of the file being read
- * `filepointer`: a file object (created by :func:`open`) that accesses
+ * ``filename``: a string with the name of the file being read
+ * ``filepointer``: a file object (created by :func:`open`) that accesses
    the file and is points to the beginning of the file when Reader is
    called. 
- * `ParentFrame`: a reference to the main GSAS-II (tree) windows, for
+ * ``ParentFrame``: a reference to the main GSAS-II (tree) windows, for
    the unusual ``Reader`` routines that will create GUI windows to ask
-   questions. 
+   questions. The Reader should do something reasonable such as take a
+   reasonable default if ``ParentFrame`` is None, which indicates that
+   GUI should not be accessed. 
 
 In addition, the following keyword parameters are defined that ``Reader``
 routines may optionally use:
 
- * `buffer`: a dict that can be used to retain information between repeated calls of the routine
- * `blocknum`: counts the number of times that a reader is called 
- * `usedRanIdList`: a list of previously used random Id values that can be checked to determine that a value is unique. 
+ * ``buffer``: a dict that can be used to retain information between repeated calls of the routine
+ * ``blocknum``: counts the number of times that a reader is called, to
+   be used with files that contain more than one set of data (e.g. GSAS
+   .gsa/.fxye files with multiple banks or image files with multiple images.)
+ * ``usedRanIdList``: a list of previously used random Id values that can be checked to determine that a value is unique. 
 
-As an example, the `buffer` dict is used for CIF reading to hold the parsed CIF file
+As an example, the ``buffer`` dict is used in CIF reading to hold the parsed CIF file
 so that it can be reused without having to reread the file from
 scratch. 
 
@@ -110,10 +129,10 @@ self.repeat
 _____________________
 
 Set `self.repeat` to True (the default is False) if a Reader should be
-called again to read a second block from a file. Most commonly 
-(only?) used for reading multiple powder histograms from a single
-file. Variable `self.repeatcount` is used to keep track of the block
-numbers. 
+called again to after reading to indicate that more data may exist in
+the file to be read. This is used for reading multiple powder
+histograms or multiple images from a single file. Variable
+`self.repeatcount` is used to keep track of the block numbers.
 
 *support routines*
 _________________________
@@ -132,6 +151,8 @@ that something is happening.
 
 ContentsValidator()
 ~~~~~~~~~~~~~~~~~~~~
+
+.. _ContentsValidator:
 
 Defining a ``ContentsValidator`` method is optional, but is usually a
 good idea, particularly if the file extension is not a reliable
@@ -250,9 +271,15 @@ The distributed routines are:
 Image Import Routines
 -----------------------------------------------------
 Image import routines are classes derived from
-, :class:`GSASIIIO.ImportImage`.
-They must be found in files named `G2img*.py` that are in the Python path
-and the class must override the ``__init__`` method and add a ``Reader`` method.
+:class:`GSASIIIO.ImportImage`. 
+See :ref:`Writing a Import Routine<Import_Routines>` for general
+information on importers and 
+:ref:`the ImportImage docstring<Image_import_routines>`
+for what a reader should define. 
+Image importers must be found in files named `G2img*.py` that are in the Python path
+and the class must override the ``__init__`` method and add a
+``Reader`` method.
+
 The distributed routines are:
 
 .. automodule:: G2img_ADSC

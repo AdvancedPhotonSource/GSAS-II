@@ -495,6 +495,7 @@ def ReadImages(G2frame,imagefile):
                 if GSASIIpath.GetConfigValue('Transpose'):
                     print 'Transposing Image!'
                     rd.Image = rd.Image.T
+                rd.Data['ImageTag'] = rd.repeatcount
                 LoadImage2Tree(imagefile,G2frame,rd.Comments,rd.Data,rd.Npix,rd.Image)
                 repeat = rd.repeat
             CreatedIMGitems.append(G2frame.Image)
@@ -721,24 +722,6 @@ def GetMAR345Data(filename,imageOnly=False):
     else:
         return head,data,Npix,image
         
-# should get moved to importer when ready to test
-def GetPNGData(filename,imageOnly=False):
-    '''Read an image in a png format, assumes image is converted from CheMin tif file
-    so default parameters are that machine.
-    '''
-    import scipy.misc
-    Image = scipy.misc.imread(filename,flatten=True)
-    Npix = Image.size
-    Comments = ['no metadata']
-    pixy = list(Image.shape)
-    sizexy = [40,40]
-    Data = {'wavelength': 1.78892, 'pixelSize': sizexy, 'distance': 18.0,'size':pixy}
-    Data['center'] = [pixy[0]*sizexy[0]/1000,pixy[1]*sizexy[1]/2000]
-    if imageOnly:
-        return Image.T
-    else:
-        return Comments,Data,Npix,Image.T
-    
 def ProjFileOpen(G2frame):
     'Read a GSAS-II project file and load into the G2 data tree'
     if not os.path.exists(G2frame.GSASprojectfile):
@@ -1650,25 +1633,47 @@ class ImportSmallAngleData(ImportBaseclass):
 class ImportImage(ImportBaseclass):
     '''Defines a base class for the reading of images
 
-    Images are intially read with a call to :meth:`GSASII.GSASII.OnImportImage`
-    which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`, which calls
-    methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
-    :meth:`Reader`. Images are also reread with :func:`GSASIIIO.GetImageData`
-
-    See :ref:`Writing a Import Routine<Import_Routines>`
-    for an explanation on how to use import classes in general. The specifics 
-    for reading an image requires that the ``Reader()`` routine in the import
-    class should set:
+    Images are read in only these places:
     
-      * :attr:`Comments` (a list of strings),
-      * :attr:`Data` (a dict defining image parameters),
-      * :attr:`Npix` (the number of pixels in the image) 
-      * :attr:`Image` (the actual image)
-      * optionally: :attr:`repeat` (set to True if there are additional images to
-        read in the file)
-      
+      * Initial reading is typically done from a menu item
+        with a call to :meth:`GSASII.GSASII.OnImportImage`
+        which in turn calls :meth:`GSASII.GSASII.OnImportGeneric`. That calls
+        methods :meth:`ExtensionValidator`, :meth:`ContentsValidator` and
+        :meth:`Reader`. This returns a list of reader objects for each read image. 
+
+      * Images are read alternatively in :func:`GSASIIIO.ReadImages`, which puts image info
+        directly into the data tree.
+
+      * Images are reloaded with :func:`GSASIIIO.GetImageData`.
+
+    .. _Image_import_routines:
+
+    When reading an image, the ``Reader()`` routine in the ImportImage class
+    should set:
+    
+      * :attr:`Comments`: a list of strings (str),
+      * :attr:`Npix`: the number of pixels in the image (int),
+      * :attr:`Image`: the actual image as a numpy array (np.array)
+      * :attr:`Data`: a dict defining image parameters (dict). Within this dict the following
+        data items are needed:
+        
+         * 'pixelSize': size of each pixel in microns (such as ``[200,200]``.
+         * 'wavelength': wavelength in Angstoms.
+         * 'distance': distance of detector from sample in cm.
+         * 'center': uncalibrated center of beam on detector (such as ``[204.8,204.8]``.
+         * 'size': size of image (such as ``[2048,2048]``).
+         * 'ImageTag': image number or other keyword used to retrieve image from
+           a multi-image data file (defaults to ``1`` if not specified).
+
+    optional data items:
+    
+      * :attr:`repeat`: set to True if there are additional images to
+        read in the file, False otherwise
+      * :attr:`repeatcount`: set to the number of the image.
       
     Note that the above is initialized with :meth:`InitParameters`.
+    (Also see :ref:`Writing a Import Routine<Import_Routines>`
+    for an explanation on how to use import classes in general.)
     '''
     def __init__(self,formatName,longFormatName=None,extensionlist=[],
         strictExtension=False,):
@@ -1688,6 +1693,7 @@ class ImportImage(ImportBaseclass):
         self.Npix = 0
         self.Image = None
         self.repeat = False
+        self.repeatcount = 1
 
     def LoadImage(self,ParentFrame,imagefile,imagetag=None):
         '''Optionally, call this after reading in an image to load it into the tree.

@@ -2416,14 +2416,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             waveHead.Add(waveAdd,0,WACV)
             waveSizer.Add(waveHead)
             if len(waveBlk):
-                nFour = 0
+                nx = 0
                 for iwave,wave in enumerate(waveBlk):
-                    if waveType == 'Fourier':
-                        nFour += 1
                     if not iwave:
-                        CSI = G2spc.GetSSfxuinel(waveType,nFour,xyz,SGData,SSGData)
+                        if waveType in ['ZigZag','Block']:
+                            nx = 1
+                        CSI = G2spc.GetSSfxuinel(waveType,1,xyz,SGData,SSGData)
                     else:
-                        CSI = G2spc.GetSSfxuinel('Fourier',nFour,xyz,SGData,SSGData)
+                        CSI = G2spc.GetSSfxuinel('Fourier',iwave+1-nx,xyz,SGData,SSGData)
                     waveName = 'Fourier'
                     if Stype == 'Sfrac':
                         if 'Crenel' in waveType and not iwave:

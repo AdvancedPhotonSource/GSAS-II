@@ -1167,11 +1167,14 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                     phaseDict[pfx+'waveType:'+str(i)] = waveType
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
                         Waves = AtomSS[Stype]
+                        nx = 0
                         for iw,wave in enumerate(Waves):
                             if not iw:
-                                CSI = G2spc.GetSSfxuinel(waveType,iw+1,at[cx:cx+3],SGData,SSGData)
+                                if waveType in ['ZigZag','Block']:
+                                    nx = 1
+                                CSI = G2spc.GetSSfxuinel(waveType,1,at[cx:cx+3],SGData,SSGData)
                             else:
-                                CSI = G2spc.GetSSfxuinel('Fourier',iw+1,at[cx:cx+3],SGData,SSGData)
+                                CSI = G2spc.GetSSfxuinel('Fourier',iw+1-nx,at[cx:cx+3],SGData,SSGData)
                             uId,uCoef = CSI[Stype]
                             stiw = str(i)+':'+str(iw)
                             if Stype == 'Spos':

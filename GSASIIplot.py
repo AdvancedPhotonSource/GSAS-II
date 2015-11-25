@@ -3120,7 +3120,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
             else:
                 scof.append(spos[0][:3])
                 ccof.append(spos[0][3:])
-        wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof),1)
+        wave += G2mth.posFourier(tau,np.array(scof),np.array(ccof))
     if mapData['Flip']:
         Title = 'Charge flip'
     else:
@@ -3149,7 +3149,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
     Plot.set_title(Title)
     Plot.set_xlabel('t')
     Plot.set_ylabel(r'$\mathsf{\Delta}$%s'%(Ax))
-    Slab = np.hstack((slab,slab,slab))
+    Slab = np.hstack((slab,slab,slab))   
     acolor = mpl.cm.get_cmap('RdYlGn')
     if 'delt' in MapType:
         Plot.contour(Slab[:,:21],20,extent=(0.,2.,-.5+Doff,.5+Doff),cmap=acolor)

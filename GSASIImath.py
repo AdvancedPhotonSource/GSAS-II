@@ -956,21 +956,21 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast):
     for iatm in range(Ax.shape[0]):
         nx = 0
         if 'ZigZag' in waveTypes[iatm]:
-            nt = 1
+            nx = 1
             Tmm = Ax[iatm][0][:2]                        
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
             DT = Tmm[1]-Tmm[0]
             slopeUp = 2.*XYZmax/DT
             slopeDn = 2.*XYZmax/(1.-DT)
-            XmodZ[iatm][0] = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in glTau]).T
+            XmodZ[iatm][0] += np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in glTau]).T
         elif 'Block' in waveTypes[iatm]:
-            nt = 1
+            nx = 1
             Tmm = Ax[iatm][0][:2]                        
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
-            XmodZ[iatm][0] = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax,XYZmax) for t in glTau]).T                    
+            XmodZ[iatm][0] += np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax,XYZmax) for t in glTau]).T                    
         tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
-        XmodA[iatm] = Ax[iatm,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X 3 X 32
-        XmodB[iatm] = Bx[iatm,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
+        XmodA[iatm][nx:] = Ax[iatm,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X 3 X 32
+        XmodB[iatm][nx:] = Bx[iatm,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
     Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X 3 X 32; sum waves
     Xmod = np.swapaxes(Xmod,1,2)
     if nWaves[2]:
@@ -980,6 +980,7 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast):
         Umod = np.swapaxes(np.sum(UmodA+UmodB,axis=1),1,3)      #atoms x 3x3 x 32; sum waves
     else:
         Umod = 1.0
+#    GSASIIpath.IPyBreak()
     return nWaves,Fmod,Xmod,Umod,glTau,glWt
         
 def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
@@ -1022,34 +1023,40 @@ def makeWavesDerv(waveTypes,FSSdata,XSSdata,USSdata,Mast):
     waveShapes = [FSSdata.T.shape,XSSdata.T.shape,USSdata.T.shape]
     Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
     Bf = np.array(FSSdata[1]).T    #cos frac mods...
-    Ax = np.array(XSSdata[:3]).T   #...cos pos mods
+    Ax = np.array(XSSdata[:3]).T   #...cos pos mods x waves x atoms
     Bx = np.array(XSSdata[3:]).T   #...cos pos mods
     Au = Mast*np.array(G2lat.U6toUij(USSdata[:6])).T   #atoms x waves x sin Uij mods
     Bu = Mast*np.array(G2lat.U6toUij(USSdata[6:])).T   #...cos Uij mods
     nWaves = [Af.shape[1],Ax.shape[1],Au.shape[1]] 
-    nf = 0
     nx = 0
-#    if 'Fourier' in waveTypes:
-#        nf = 0
-#        nx = 0
-#        XmodZ = np.zeros((Ax.shape[0],Ax.shape[1],3,32))
-#        FmodZ = np.zeros((Af.shape[0],Af.shape[1],32))
-#        if 'Crenel' in waveTypes:
-#            nC = np.where('Crenel' in waveTypes)
-#            nf = 1
-#            #FmodZ = 0   replace
-#    else:
-#        nx = 1
-#        if 'Sawtooth' in waveTypes:
-#            nS = np.where('Sawtooth' in waveTypes)
-#            #XmodZ = 0   replace
-    tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
-    StauX = np.ones_like(Ax)[:,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X 3(xyz) X 32
-    CtauX = np.ones_like(Bx)[:,nx:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
+    StauX = np.zeros((Ax.shape[0],Ax.shape[1],3,32))    #atoms x waves x 3 x 32
+    CtauX = np.zeros((Ax.shape[0],Ax.shape[1],3,32))
+    ZtauXx = np.zeros((Ax.shape[0],3,32))               #atoms x XYZmax x 32
+    ZtauXt = np.zeros((Ax.shape[0],2,32))               #atoms x Tminmax x 32
+    for iatm in range(Ax.shape[0]):
+        nx = 0
+        if 'ZigZag' in waveTypes[iatm]:
+            nx = 1
+#            Tmm = Ax[iatm][0][:2]                        
+#            XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
+#            DT = Tmm[1]-Tmm[0]
+#            slopeUp = 2.*XYZmax/DT
+#            slopeDn = 2.*XYZmax/(1.-DT)
+#            XmodZ[iatm][0] += np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in glTau]).T
+        elif 'Block' in waveTypes[iatm]:
+            nx = 1
+            Tmm = Ax[iatm][0][:2]                        
+            XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
+            ZtauXt[iatm] = np.ones(2)[:,nxs]
+            ZtauXx[iatm] += np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-np.ones(3),np.ones(3)) for t in glTau]).T                    
+        tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
+        StauX[iatm][nx:] = np.ones_like(Ax)[iatm,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X 3(xyz) X 32
+        CtauX[iatm][nx:] = np.ones_like(Bx)[iatm,nx:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
+#    GSASIIpath.IPyBreak()
     if nWaves[0]:
         tauF = np.arange(1.,nWaves[0]+1-nf)[:,nxs]*glTau  #Fwaves x 32
-        StauF = np.ones_like(Af)[:,nf:,nxs]*np.sin(twopi*tauF)[nxs,:,:] #also dFmod/dAf
-        CtauF = np.ones_like(Bf)[:,nf:,nxs]*np.cos(twopi*tauF)[nxs,:,:] #also dFmod/dBf
+        StauF = np.ones_like(Af)[:,:,nxs]*np.sin(twopi*tauF)[nxs,:,:] #also dFmod/dAf
+        CtauF = np.ones_like(Bf)[:,:,nxs]*np.cos(twopi*tauF)[nxs,:,:] #also dFmod/dBf
     else:
         StauF = 1.0
         CtauF = 1.0
@@ -1067,7 +1074,7 @@ def makeWavesDerv(waveTypes,FSSdata,XSSdata,USSdata,Mast):
         CtauU = 1.0
         UmodA = 0.
         UmodB = 0.
-    return waveShapes,[StauF,CtauF],[StauX,CtauX],[StauU,CtauU],UmodA+UmodB
+    return waveShapes,[StauF,CtauF],[StauX,CtauX,ZtauXt,ZtauXx],[StauU,CtauU],UmodA+UmodB
     
 def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCtauU,glTau,glWt):
     '''
@@ -1115,11 +1122,21 @@ def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCt
     dGdMxSa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
     dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
     dGdMxS = np.concatenate((dGdMxSa,dGdMxSb),axis=-1)
+# ZigZag/Block waves
+    dHdXZt = twopi*np.ones(HP.shape[0])[:,nxs,nxs,nxs]*np.swapaxes(SCtauX[2],-1,-2)[nxs,:,:,:]          #??ops x atoms x 32 x 3(ZigZag/Block Tminmax)
+    dHdXZx = twopi*HP[:,nxs,nxs,:]*np.swapaxes(SCtauX[3],-1,-2)[nxs,:,:,:]          #ops x atoms x 32 x 3(ZigZag/Block XYZmax)
+    dGdMzCt = -np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZt*np.sin(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
+    dGdMzCx = -np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZx*np.sin(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
+    dGdMzC = np.concatenate((dGdMzCt,dGdMzCx),axis=-1)
+    dGdMzSt = np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZt*np.cos(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
+    dGdMzSx = np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZx*np.cos(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
+    dGdMzS = np.concatenate((dGdMzSt,dGdMzSx),axis=-1)
 # ops x atoms x waves x 2xyz - imaginary part - good
-    return [dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS]
+#    GSASIIpath.IPyBreak()
+    return [dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS],[dGdMzC,dGdMzS]
     
-def posFourier(tau,psin,pcos,smul):
-    A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])  #*smul
+def posFourier(tau,psin,pcos):
+    A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])
     B = np.array([pc[:,np.newaxis]*np.cos(2*np.pi*(i+1)*tau) for i,pc in enumerate(pcos)])
     return np.sum(A,axis=0)+np.sum(B,axis=0)
     
@@ -1174,7 +1191,6 @@ def ApplyModulation(data,tau):
             opr = drawatom[dcs-1]
             sop,ssop,icent = G2spc.OpsfromStringOps(opr,SGData,SSGData)
             sdet,ssdet,dtau,dT,tauT = G2spc.getTauT(tau,sop,ssop,atxyz)
-            smul = sdet         # n-fold vs m operator on wave
             tauT *= icent       #invert wave on -1
             wave = np.zeros(3)
             uwave = np.zeros(6)
@@ -1205,14 +1221,14 @@ def ApplyModulation(data,tau):
                         scof.append(spos[0][:3])
                         ccof.append(spos[0][3:])
                 if len(scof):
-                    wave += np.sum(posFourier(tauT,np.array(scof),np.array(ccof),smul),axis=1)
+                    wave += np.sum(posFourier(tauT,np.array(scof),np.array(ccof)),axis=1)
             if len(Sadp):
                 scof = []
                 ccof = []
                 for i,sadp in enumerate(Sadp):
                     scof.append(sadp[0][:6])
                     ccof.append(sadp[0][6:])
-                uwave += np.sum(posFourier(tauT,np.array(scof),np.array(ccof),smul),axis=1)
+                uwave += np.sum(posFourier(tauT,np.array(scof),np.array(ccof)),axis=1)
             if atom[cia] == 'A':                    
                 X,U = G2spc.ApplyStringOps(opr,SGData,atxyz+wave,atuij+uwave)
                 drawatom[dcx:dcx+3] = X

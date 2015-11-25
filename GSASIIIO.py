@@ -2370,17 +2370,20 @@ def ReadCIF(URLorFile):
         return cif.ReadCif(URLorFile)
 
 if __name__ == '__main__':
-    app = wx.PySimpleApp()
-    frm = wx.Frame(None) # create a frame
-    frm.Show(True)
-    filename = '/tmp/notzip.zip'
-    filename = '/tmp/all.zip'
+    import GSASII
+    application = GSASII.GSASIImain(0)
+    G2frame = application.main
+    #app = wx.PySimpleApp()
+    #G2frame = wx.Frame(None) # create a frame
+    #frm.Show(True)
+    #filename = '/tmp/notzip.zip'
+    #filename = '/tmp/all.zip'
     #filename = '/tmp/11bmb_7652.zip'
     
     #selection=None, confirmoverwrite=True, parent=None
     #print ExtractFileFromZip(filename, selection='11bmb_7652.fxye',parent=frm)
-    print ExtractFileFromZip(filename,multipleselect=True)
-                             #confirmread=False, confirmoverwrite=False)
+    #print ExtractFileFromZip(filename,multipleselect=True)
+    #                         #confirmread=False, confirmoverwrite=False)
 
     # choicelist=[ ('a','b','c'),
     #              ('test1','test2'),('no choice',)]
@@ -2390,3 +2393,9 @@ if __name__ == '__main__':
     #     parent=frm)
     # if dlg.ShowModal() == wx.ID_OK:
     #     print 'Got OK'
+    imagefile = '/tmp/NDC5_00237_3.ge3'
+    Comments, Data, Npix, Image = GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None)
+
+    print("\n\nResults loaded to Comments, Data, Npix and Image\n\n")
+
+    GSASIIpath.IPyBreak_base()

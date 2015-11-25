@@ -3683,6 +3683,7 @@ class GSASIImain(wx.App):
     '''
     def OnInit(self):
         '''Called automatically when the app is created.'''
+        import platform
         if '2.7' not in sys.version[:5]:
             dlg = wx.MessageDialog(None, 
                 'GSAS-II requires Python 2.7.x\n Yours is '+sys.version.split()[0],

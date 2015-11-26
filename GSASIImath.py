@@ -959,15 +959,13 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast):
             nx = 1
             Tmm = Ax[iatm][0][:2]                        
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
-            DT = Tmm[1]-Tmm[0]
-            slopeUp = 2.*XYZmax/DT
-            slopeDn = 2.*XYZmax/(1.-DT)
-            XmodZ[iatm][0] += np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in glTau]).T
+            XmodZ[iatm][0] += posZigZag(glTau,Tmm,XYZmax).T
         elif 'Block' in waveTypes[iatm]:
+
             nx = 1
             Tmm = Ax[iatm][0][:2]                        
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
-            XmodZ[iatm][0] += np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax,XYZmax) for t in glTau]).T                    
+            XmodZ[iatm][0] += posBlock(glTau,Tmm,XYZmax).T
         tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
         XmodA[iatm][nx:] = Ax[iatm,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X 3 X 32
         XmodB[iatm][nx:] = Bx[iatm,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto

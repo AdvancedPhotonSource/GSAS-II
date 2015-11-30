@@ -961,6 +961,7 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast):
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
             XmodZ[iatm][0] += posZigZag(glTau,Tmm,XYZmax).T
         elif 'Block' in waveTypes[iatm]:
+            nx = 1
             Tmm = Ax[iatm][0][:2]                        
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
             XmodZ[iatm][0] += posBlock(glTau,Tmm,XYZmax).T

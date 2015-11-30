@@ -961,14 +961,16 @@ def makeWaves(waveTypes,FSSdata,XSSdata,USSdata,Mast):
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
             XmodZ[iatm][0] += posZigZag(glTau,Tmm,XYZmax).T
         elif 'Block' in waveTypes[iatm]:
-
-            nx = 1
             Tmm = Ax[iatm][0][:2]                        
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
             XmodZ[iatm][0] += posBlock(glTau,Tmm,XYZmax).T
         tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
-        XmodA[iatm][nx:] = Ax[iatm,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X 3 X 32
-        XmodB[iatm][nx:] = Bx[iatm,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
+        if nx:    
+            XmodA[iatm][:-nx] = Ax[iatm,nx:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X 3 X 32
+            XmodB[iatm][:-nx] = Bx[iatm,nx:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
+        else:
+            XmodA[iatm] = Ax[iatm,:,:,nxs]*np.sin(twopi*tauX[nxs,:,nxs,:]) #atoms X waves X 3 X 32
+            XmodB[iatm] = Bx[iatm,:,:,nxs]*np.cos(twopi*tauX[nxs,:,nxs,:]) #ditto
     Xmod = np.sum(XmodA+XmodB+XmodZ,axis=1)                #atoms X 3 X 32; sum waves
     Xmod = np.swapaxes(Xmod,1,2)
     if nWaves[2]:
@@ -1018,6 +1020,8 @@ def makeWavesDerv(waveTypes,FSSdata,XSSdata,USSdata,Mast):
     Mast: array orthogonalization matrix for Uij
     '''
     glTau,glWt = pwd.pygauleg(0.,1.,32)         #get Gauss-Legendre intervals & weights
+    dT = 1/32.
+    dX = 0.0001
     waveShapes = [FSSdata.T.shape,XSSdata.T.shape,USSdata.T.shape]
     Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms
     Bf = np.array(FSSdata[1]).T    #cos frac mods...
@@ -1035,21 +1039,47 @@ def makeWavesDerv(waveTypes,FSSdata,XSSdata,USSdata,Mast):
         nx = 0
         if 'ZigZag' in waveTypes[iatm]:
             nx = 1
-#            Tmm = Ax[iatm][0][:2]                        
-#            XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
-#            DT = Tmm[1]-Tmm[0]
-#            slopeUp = 2.*XYZmax/DT
-#            slopeDn = 2.*XYZmax/(1.-DT)
-#            XmodZ[iatm][0] += np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in glTau]).T
+            Tmm = Ax[iatm][0][:2]                        
+            XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])            
+            for i in range(2):
+                Tmm[i] += dT
+                Zp = posZigZag(glTau,Tmm,XYZmax).T
+                Tmm[i] -= 2.*dT
+                Zm = posZigZag(glTau,Tmm,XYZmax).T
+                Tmm[i] += dT
+                ZtauXt[iatm][i] = (Zp-Zm)[i]/(2.*dT)
+            for i in range(3):
+                XYZmax[i] += dX
+                Zp = posZigZag(glTau,Tmm,XYZmax).T
+                XYZmax[i] -= 2.*dX
+                Zm = posZigZag(glTau,Tmm,XYZmax).T
+                XYZmax[i] += dX
+                ZtauXx[iatm][i] = (Zp-Zm)[i]/(2.*dX)
         elif 'Block' in waveTypes[iatm]:
             nx = 1
             Tmm = Ax[iatm][0][:2]                        
-            XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])
-            ZtauXt[iatm] = np.ones(2)[:,nxs]
-            ZtauXx[iatm] += np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-np.ones(3),np.ones(3)) for t in glTau]).T                    
+            XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])            
+            for i in range(2):
+                Tmm[i] += dT
+                Zp = posBlock(glTau,Tmm,XYZmax).T
+                Tmm[i] -= 2.*dT
+                Zm = posBlock(glTau,Tmm,XYZmax).T
+                Tmm[i] += dT
+                ZtauXt[iatm][i] = (Zp-Zm)[i]/(2.*dT)
+            for i in range(3):
+                XYZmax[i] += dX
+                Zp = posBlock(glTau,Tmm,XYZmax).T
+                XYZmax[i] -= 2.*dX
+                Zm = posBlock(glTau,Tmm,XYZmax).T
+                XYZmax[i] += dX
+                ZtauXx[iatm][i] = (Zp-Zm)[i]/(2.*dX)
         tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x 32
-        StauX[iatm][nx:] = np.ones_like(Ax)[iatm,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X 3(xyz) X 32
-        CtauX[iatm][nx:] = np.ones_like(Bx)[iatm,nx:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
+        if nx:    
+            StauX[iatm][:-nx] = np.ones_like(Ax)[iatm,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X 3(xyz) X 32
+            CtauX[iatm][:-nx] = np.ones_like(Bx)[iatm,nx:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
+        else:
+            StauX[iatm] = np.ones_like(Ax)[iatm,:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X 3(xyz) X 32
+            CtauX[iatm] = np.ones_like(Bx)[iatm,:,:,nxs]*np.cos(twopi*tauX)[nxs,:,nxs,:]   #ditto
 #    GSASIIpath.IPyBreak()
     if nWaves[0]:
         tauF = np.arange(1.,nWaves[0]+1-nf)[:,nxs]*glTau  #Fwaves x 32
@@ -1108,7 +1138,6 @@ def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCt
         dGdMuSa = np.sum(part1[:,:,:,:,nxs]*dUdAu*np.sin(HdotXD)[:,:,nxs,:,nxs]*glWt[nxs,nxs,nxs,:,nxs],axis=-2)   #ops x atoms x waves x 6uij; G-L sum
         dGdMuSb = np.sum(part1[:,:,:,:,nxs]*dUdBu*np.sin(HdotXD)[:,:,nxs,:,nxs]*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
         dGdMuS = np.concatenate((dGdMuSa,dGdMuSb),axis=-1)   #ops x atoms x waves x 12uij
-#        #GSASIIpath.IPyBreak()
     else:
         HbH = np.ones_like(HdotX)
     dHdXA = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(SCtauX[0],-1,-2)[nxs,:,:,:,:]    #ops x atoms x sine waves x 32 x xyz
@@ -1129,8 +1158,8 @@ def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCt
     dGdMzSt = np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZt*np.cos(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
     dGdMzSx = np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZx*np.cos(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
     dGdMzS = np.concatenate((dGdMzSt,dGdMzSx),axis=-1)
-# ops x atoms x waves x 2xyz - imaginary part - good
 #    GSASIIpath.IPyBreak()
+# ops x atoms x waves x 2xyz - imaginary part - good
     return [dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS],[dGdMzC,dGdMzS]
     
 def posFourier(tau,psin,pcos):

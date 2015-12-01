@@ -299,10 +299,10 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
             dlg.Pulse()    
         return chi
 
-    if 'C' in Inst['Type'][0]:
-        wave = G2mth.getWave(Inst)
-    else:
+    if 'T' in Inst['Type'][0]:
         difC = Inst['difC'][1]
+    else:
+        wave = G2mth.getWave(Inst)
     SGData = G2spc.SpcGroup(controls[13])[1]
     SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
     A = G2lat.cell2A(controls[6:12])
@@ -316,12 +316,12 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
             values += [v,]
     dmin = getDmin(peaks)-0.005
     Peaks = np.copy(np.array(peaks).T)
-    if 'C' in Inst['Type'][0]:    
-        result = so.brute(ZSSfunc,ranges,finish=so.fmin_cg,
-            args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,ssopt['maxH'],A,wave,Z,dlg))
-    else:
+    if 'T' in Inst['Type'][0]:    
         result = so.brute(TSSfunc,ranges,finish=so.fmin_cg,
             args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,ssopt['maxH'],A,difC,Z,dlg))
+    else:
+        result = so.brute(ZSSfunc,ranges,finish=so.fmin_cg,
+            args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,ssopt['maxH'],A,wave,Z,dlg))
     return Val2Vec(ssopt['ModVec'],Vref,result)
                 
 def IndexPeaks(peaks,HKL):

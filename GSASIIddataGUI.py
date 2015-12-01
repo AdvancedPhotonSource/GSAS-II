@@ -42,15 +42,15 @@ mapDefault = {'MapType':'','RefList':'','Resolution':0.5,'Show bonds':True,
 ################################################################################
 ##### DData routines
 ################################################################################        
-def UpdateDData(G2frame,DData,data,hist=''):
+def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     '''Display the Diffraction Data associated with a phase
     (items where there is a value for each histogram and phase)
 
     :param wx.frame G2frame: the main GSAS-II frame object
-
     :param wx.ScrolledWindow DData: notebook page to be used for the display
-
     :param dict data: all the information on the phase in a dictionary
+    :param str hist: histogram name
+    :param int Scroll: previous scroll position
 
     '''
     G2frame.dataFrame.SetStatusText('')
@@ -170,7 +170,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         Obj = event.GetEventObject()
         UseList[G2frame.hist]['Size'][0] = Obj.GetValue()
         G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
-        wx.CallLater(100,RepaintHistogramInfo)
+        wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
         
     def OnSizeRef(event):
         Obj = event.GetEventObject()
@@ -207,7 +207,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         Obj = event.GetEventObject()
         UseList[G2frame.hist]['Mustrain'][0] = Obj.GetValue()
         G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
-        wx.CallLater(100,RepaintHistogramInfo)
+        wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
         
     def OnStrainRef(event):
         Obj = event.GetEventObject()
@@ -270,7 +270,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             for i in range(nTerm):
                 UseList[item]['Mustrain'][4][i] = vals[i]
         G2plt.PlotSizeStrainPO(G2frame,data,item)
-        wx.CallLater(100,RepaintHistogramInfo)
+        wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
     def OnHstrainRef(event):
         Obj = event.GetEventObject()
@@ -316,7 +316,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         Order = int(Obj.GetValue())
         UseList[G2frame.hist]['Pref.Ori.'][4] = Order
         UseList[G2frame.hist]['Pref.Ori.'][5] = SetPOCoef(Order,G2frame.hist)
-        wx.CallLater(100,RepaintHistogramInfo)
+        wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
 
     def OnPOType(event):
         Obj = event.GetEventObject()
@@ -324,7 +324,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             UseList[G2frame.hist]['Pref.Ori.'][0] = 'MD'
         else:
             UseList[G2frame.hist]['Pref.Ori.'][0] = 'SH'
-        wx.CallLater(100,RepaintHistogramInfo)
+        wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
 
     def OnPORef(event):
         Obj = event.GetEventObject()
@@ -561,7 +561,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
                     return
             finally:
                 dlg.Destroy()
-            wx.CallLater(100,RepaintHistogramInfo)
+            wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
         def OnshToler(event):
             try:
@@ -593,7 +593,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             Obj = event.GetEventObject()
             item = Indx[Obj.GetId()]
             UseList[item[0]]['Extinction'][item[1]] = Obj.GetValue()
-            wx.CallLater(100,RepaintHistogramInfo)
+            wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
                 
         def OnTbarVal(event):
             Obj = event.GetEventObject()
@@ -786,7 +786,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             for i in range(nNonM):
                 UseList[G2frame.hist]['Twins'].append([False,0.0])
             addtwin.SetValue(False)
-            wx.CallLater(100,RepaintHistogramInfo)
+            wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
         def OnMat(event):
             Obj = event.GetEventObject()
@@ -814,7 +814,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
                 if it:
                     sumTw += twin[1]
             UseList[G2frame.hist]['Twins'][0][1][0] = 1.-sumTw
-            wx.CallLater(100,RepaintHistogramInfo)
+            wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
         def OnTwinRef(event):
             Obj = event.GetEventObject()
@@ -839,7 +839,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
             UseList[G2frame.hist]['Twins'][0][1][0] = 1.-sumTw
             if len(UseList[G2frame.hist]['Twins']) == 1:
                 UseList[G2frame.hist]['Twins'][0][1][1] = False
-            wx.CallLater(100,RepaintHistogramInfo)           
+            wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))           
             
         nTwin = len(UseList[G2frame.hist]['Twins'])
         twinsizer = wx.BoxSizer(wx.VERTICAL)
@@ -913,7 +913,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         oldFocus.SetFocus()
         wx.CallLater(100,RepaintHistogramInfo)
        
-    def RepaintHistogramInfo():
+    def RepaintHistogramInfo(Scroll=0):
         G2frame.bottomSizer.DeleteWindows()
         Indx.clear()
         G2frame.bottomSizer = ShowHistogramInfo()
@@ -921,6 +921,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
         mainSizer.Layout()
         G2frame.dataFrame.Refresh()
         DData.SetVirtualSize(mainSizer.GetMinSize())
+        DData.Scroll(0,Scroll)
         G2frame.dataFrame.SendSizeEvent()
         
     def ShowHistogramInfo():
@@ -943,7 +944,7 @@ def UpdateDData(G2frame,DData,data,hist=''):
                     UseList[item]['Size'][4][i] = 1.0
                     UseList[item]['Size'][4][i+3] = 0.0
             G2plt.PlotSizeStrainPO(G2frame,data,item)
-            wx.CallLater(100,RepaintHistogramInfo)
+            wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
         def OnSizeAxis(event):            
             Obj = event.GetEventObject()
@@ -1103,4 +1104,4 @@ def UpdateDData(G2frame,DData,data,hist=''):
         mainSizer.Add(wx.StaticText(DData,wx.ID_ANY,'  (Strange, how did we get here?)'),
                       0,WACV|wx.TOP,10)
         
-    G2phsGUI.SetPhaseWindow(G2frame.dataFrame,DData,mainSizer)
+    G2phsGUI.SetPhaseWindow(G2frame.dataFrame,DData,mainSizer,Scroll)

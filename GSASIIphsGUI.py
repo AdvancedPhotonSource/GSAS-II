@@ -67,15 +67,15 @@ asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
 
-def SetPhaseWindow(mainFrame,phasePage,mainSizer):
+def SetPhaseWindow(mainFrame,phasePage,mainSizer,Scroll=0):
     phasePage.SetSizer(mainSizer)
     Size = mainSizer.GetMinSize()
     Size[0] += 40
     Size[1] = min(Size[1]+ 150,500) 
-    phasePage.SetSize(Size)
     phasePage.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
+    phasePage.SetSize(Size)
+    phasePage.Scroll(0,Scroll)
     mainFrame.setSizePosLeft(Size)
-    mainFrame.SendSizeEvent()
     
 #def FindBondsToo():                         #works but slow for large structures - keep as reference
 #    cx,ct,cs,ci = data['Drawing']['atomPtrs']
@@ -318,7 +318,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 ##### General phase routines
 ################################################################################
 
-    def UpdateGeneral():
+    def UpdateGeneral(Scroll=0):
         '''Draw the controls for the General phase data subpage
         '''
         
@@ -714,7 +714,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         def ModulatedSizer(name):
             
-            def OnSuperGp(event):
+            def OnSuperGp(event):   #for HKLF needs to reject SSgps not agreeing with modVec!
                 SSymbol = superGp.GetValue()
                 E,SSGData = G2spc.SSpcGroup(generalData['SGData'],SSymbol)
                 if SSGData:
@@ -770,12 +770,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 superGp = wx.TextCtrl(General,value=generalData['SuperSg'],style=wx.TE_PROCESS_ENTER)
                 superGp.Bind(wx.EVT_TEXT_ENTER,OnSuperGp)                        
             modSizer.Add(superGp,0,WACV)
-            modSizer.Add(wx.StaticText(General,label=' Max index: '),0,WACV)
-            indChoice = ['1','2','3','4','5','6','7']
-            Max = wx.ComboBox(General,-1,value='%d'%(generalData['SuperVec'][2]),choices=indChoice,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            Max.Bind(wx.EVT_COMBOBOX,OnMax)        
-            modSizer.Add(Max,0,WACV)
+            if PWDR:
+                modSizer.Add(wx.StaticText(General,label=' Max index: '),0,WACV)
+                indChoice = ['1','2','3','4','5','6','7']
+                Max = wx.ComboBox(General,-1,value='%d'%(generalData['SuperVec'][2]),choices=indChoice,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                Max.Bind(wx.EVT_COMBOBOX,OnMax)        
+                modSizer.Add(Max,0,WACV)
             ssSizer.Add(modSizer,0,WACV)
             vecSizer = wx.FlexGridSizer(1,5,5,5)
             vecSizer.Add(wx.StaticText(General,label=' Modulation vector: '),0,WACV)
@@ -795,10 +796,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         size=wx.Size(50,20),style=wx.TE_READONLY)
                     modVal.SetBackgroundColour(VERY_LIGHT_GREY)
                     vecSizer.Add(modVal,0,WACV)
-            Ref = wx.CheckBox(General,label='Refine?')
-            Ref.SetValue(generalData['SuperVec'][1])
-            Ref.Bind(wx.EVT_CHECKBOX, OnVecRef)
-            vecSizer.Add(Ref,0,WACV)
+            if PWDR:
+                Ref = wx.CheckBox(General,label='Refine?')
+                Ref.SetValue(generalData['SuperVec'][1])
+                Ref.Bind(wx.EVT_CHECKBOX, OnVecRef)
+                vecSizer.Add(Ref,0,WACV)
             ssSizer.Add(vecSizer)
             return ssSizer
             
@@ -817,7 +819,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         return
                 finally:
                     dlg.Destroy()
-                wx.CallAfter(UpdateGeneral)                
+                wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))                
                 
             def OnResVal(event):
                 try:
@@ -888,7 +890,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         return
                 finally:
                     dlg.Destroy()
-                wx.CallAfter(UpdateGeneral)                
+                wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))                
                 
             def OnNormElem(event):
                 PE = G2elemGUI.PickElement(G2frame,ifNone=True)
@@ -980,7 +982,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                
             def OnAlist(event):
                 MCSAdata['Algorithm'] = Alist.GetValue()
-                wx.CallAfter(UpdateGeneral)
+                wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))
                 
             def OnSlope(event):
                 try:
@@ -1170,7 +1172,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2G.HorizontalLine(mainSizer,General)
             mainSizer.Add(MCSASizer())
         G2frame.dataFrame.SetStatusText('')
-        SetPhaseWindow(G2frame.dataFrame,General,mainSizer)
+        SetPhaseWindow(G2frame.dataFrame,General,mainSizer,Scroll)
 
 ################################################################################
 #####  Atom routines
@@ -2335,7 +2337,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #### Wave Data page
 ################################################################################
 
-    def UpdateWavesData():
+    def UpdateWavesData(Scroll=0):
         
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
@@ -2345,7 +2347,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnWaveType(event):
                 atom[-1][SS]['waveType']=waveType.GetValue()
                 atom[-1][SS]['Spos'] = []
-                UpdateWavesData()                
+                UpdateWavesData(G2frame.waveData.GetScrollPos(wx.VERTICAL))                
                 
             def OnShowWave(event):
                 Obj = event.GetEventObject()
@@ -2379,7 +2381,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if not len(atomData[iatm][-1][SS][item]) and waveType in ['ZigZag','Block'] and Stype == 'Spos':
                     nt = numVals[waveType]
                 atomData[iatm][-1][SS][item].append([[0.0 for i in range(nt)],False])
-                UpdateWavesData()
+                UpdateWavesData(G2frame.waveData.GetScrollPos(wx.VERTICAL))
                 
             def OnWaveVal(event):
                 Obj = event.GetEventObject()
@@ -2405,7 +2407,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Obj = event.GetEventObject()
                 iatm,item,iwave = Indx[Obj.GetId()]
                 del atomData[iatm][-1][SS][item][iwave]
-                UpdateWavesData()                
+                UpdateWavesData(G2frame.waveData.GetScrollPos(wx.VERTICAL))                
             
             waveSizer = wx.BoxSizer(wx.VERTICAL)
             waveHead = wx.BoxSizer(wx.HORIZONTAL)
@@ -2508,26 +2510,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if generalData['Type'] != 'magnetic' and Stype == 'Smag':
                             break
                         mainSizer.Add(WaveSizer(atm[-1][SS]['waveType'],atm[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype]))                        
-        SetPhaseWindow(G2frame.dataFrame,waveData,mainSizer)
-                       
-    def On4DMapCompute(event):
-        generalData = data['General']
-        mapData = generalData['4DmapData']
-        reflNames = mapData['RefList']
-        generalData['Map']['Flip'] = False
-        if not len(reflNames):
-            G2frame.ErrorDialog('Fourier map error','No reflections defined for Fourier map')
-            return
-        phaseName = generalData['Name']
-        ReflData = GetReflData(G2frame,phaseName,reflNames)
-        if ReflData == None: return
-        G2mth.Fourier4DMap(data,ReflData)
-        data['Drawing']['contourLevel'] = 1.
-        data['Drawing']['mapSize'] = 10.
-        mapSig = np.std(mapData['rho'])
-        print '4D '+mapData['MapType']+' computed: rhomax = %.3f rhomin = %.3f sigma = %.3f'%(np.max(mapData['rho']),np.min(mapData['rho']),mapSig)
-        wx.CallAfter(UpdateWavesData)
-            
+        
+        SetPhaseWindow(G2frame.dataFrame,G2frame.waveData,mainSizer,Scroll)
+
 ################################################################################
 #### Structure drawing GUI stuff                
 ################################################################################
@@ -4084,7 +4069,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             H = list(ref[:3])
             ref[4] = np.sqrt(1./G2lat.calc_rDsq2(H,G))
             iabsnt,ref[3],Uniq,phi = G2spc.GenHKLf(H,SGData)
-        #G2frame.PatternTree.SetItemPyData(Id,[refDict,reflData]) #removed by BHT -- not needed!
         
     def OnDataCopy(event):
         UseList = data['Histograms']

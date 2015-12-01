@@ -3114,6 +3114,8 @@ class GSASII(wx.Frame):
         
     def OnFileExit(self, event):
         '''Called in response to the File/Quit menu button'''
+        if self.G2plotNB:
+            self.G2plotNB.Destroy()
         if self.dataFrame:
             self.dataFrame.Clear() 
             self.dataFrame.Destroy()

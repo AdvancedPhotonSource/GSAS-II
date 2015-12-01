@@ -969,15 +969,18 @@ def SSGPrint(SGData,SSGData):
         SSGTable.append('(%2d) %s'%(i+1,SSMT2text(Opr)))
     return SSGText,SSGTable
     
-def SSGModCheck(Vec,modSymb):
+def SSGModCheck(Vec,modSymb,newMod=True):
     ''' Checks modulation vector compatibility with supersymmetry space group symbol. 
-    Superspace group symbol takes precidence & the vector will be modified accordingly
+    if newMod: Superspace group symbol takes precidence & the vector will be modified accordingly
     '''
     Fracs = {'1/2':0.5,'1/3':1./3,'1':1.0,'0':0.,'a':0.,'b':0.,'g':0.}
     modQ = [Fracs[mod] for mod in modSymb]
-    Vec = [0.1 if (vec == 0.0 and mod in ['a','b','g']) else vec for [vec,mod] in zip(Vec,modSymb)]
-    return [Q if mod not in ['a','b','g'] and vec != Q else vec for [vec,mod,Q] in zip(Vec,modSymb,modQ)],  \
-        [True if mod in ['a','b','g'] else False for mod in modSymb]
+    if newMod:
+        newVec = [0.1 if (vec == 0.0 and mod in ['a','b','g']) else vec for [vec,mod] in zip(Vec,modSymb)]
+        return [Q if mod not in ['a','b','g'] and vec != Q else vec for [vec,mod,Q] in zip(newVec,modSymb,modQ)],  \
+            [True if mod in ['a','b','g'] else False for mod in modSymb]
+    else:
+        return Vec,[True if mod in ['a','b','g'] else False for mod in modSymb]
 
 def SSMT2text(Opr):
     "From superspace group matrix/translation operator returns text version"

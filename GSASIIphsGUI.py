@@ -2341,139 +2341,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
         generalData = data['General']
         cx,ct,cs,cia = generalData['AtomPtrs']
-        
-        def AtomSizer(SS,atom):
-            
-            def OnWaveType(event):
-                atom[-1][SS]['waveType']=waveType.GetValue()
-                atom[-1][SS]['Spos'] = []
-                UpdateWavesData(G2frame.waveData.GetScrollPos(wx.VERTICAL))                
-                
-            def OnShowWave(event):
-                Obj = event.GetEventObject()
-                atom = Indx[Obj.GetId()]               
-                Ax = Obj.GetValue()
-                G2plt.ModulationPlot(G2frame,data,atom,Ax)
-                
-            atomSizer = wx.BoxSizer(wx.HORIZONTAL)
-            atomSizer.Add(wx.StaticText(waveData,label=
-            ' Modulation data for atom: %s  Site sym: %s  WaveType: '%(atom[0],atom[cs].strip())),0,WACV)            
-            waveType = wx.ComboBox(waveData,value=atom[-1][SS]['waveType'],choices=waveTypes,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
-            atomSizer.Add(waveType,0,WACV)
-            axchoice = ['x','y','z']
-            if len(D4Map['rho']):
-                atomSizer.Add(wx.StaticText(waveData,label=' Show contour map for axis: '),0,WACV)
-                mapSel = wx.ComboBox(waveData,value=' ',choices=axchoice,
-                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
-                mapSel.Bind(wx.EVT_COMBOBOX,OnShowWave)
-                Indx[mapSel.GetId()] = atom
-                atomSizer.Add(mapSel,0,WACV)
-            return atomSizer
-            
-        def WaveSizer(waveType,waveBlk,Stype,typeName,Names):
-            
-            def OnAddWave(event):
-                Obj = event.GetEventObject()
-                iatm,item = Indx[Obj.GetId()]
-                nt = numVals[Stype]
-                if not len(atomData[iatm][-1][SS][item]) and waveType in ['ZigZag','Block'] and Stype == 'Spos':
-                    nt = numVals[waveType]
-                atomData[iatm][-1][SS][item].append([[0.0 for i in range(nt)],False])
-                UpdateWavesData(G2frame.waveData.GetScrollPos(wx.VERTICAL))
-                
-            def OnWaveVal(event):
-                Obj = event.GetEventObject()
-                iatm,item,iwave,ival = Indx[Obj.GetId()]
-                try:
-                    val = float(Obj.GetValue())
-                    if waveType in ['ZigZag','Block'] and Stype == 'Spos' and ival < 2 and not iwave:
-                        if ival == 1: #Tmax
-                            val = min(1.0,max(0.0,val))
-                        elif ival == 0: #Tmin
-                            val = max(-1.,min(val,atomData[iatm][-1][SS][item][iwave][0][1]))
-                except ValueError:
-                    val = atomData[iatm][-1][SS][item][iwave][0][ival]
-                Obj.SetValue('%.5f'%val)
-                atomData[iatm][-1][SS][item][iwave][0][ival] = val
-                
-            def OnRefWave(event):
-                Obj = event.GetEventObject()
-                iatm,item,iwave = Indx[Obj.GetId()]
-                atomData[iatm][-1][SS][item][iwave][1] = not atomData[iatm][-1][SS][item][iwave][1]
-                
-            def OnDelWave(event):
-                Obj = event.GetEventObject()
-                iatm,item,iwave = Indx[Obj.GetId()]
-                del atomData[iatm][-1][SS][item][iwave]
-                UpdateWavesData(G2frame.waveData.GetScrollPos(wx.VERTICAL))                
-            
-            waveSizer = wx.BoxSizer(wx.VERTICAL)
-            waveHead = wx.BoxSizer(wx.HORIZONTAL)
-            waveHead.Add(wx.StaticText(waveData,label=typeName+' modulation parameters: '),0,WACV)
-            waveAdd = wx.CheckBox(waveData,label='Add wave?')
-            waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
-            Indx[waveAdd.GetId()] = [iatm,Stype]
-            waveHead.Add(waveAdd,0,WACV)
-            waveSizer.Add(waveHead)
-            if len(waveBlk):
-                nx = 0
-                for iwave,wave in enumerate(waveBlk):
-                    if not iwave:
-                        if waveType in ['ZigZag','Block']:
-                            nx = 1
-                        CSI = G2spc.GetSSfxuinel(waveType,1,xyz,SGData,SSGData)
-                    else:
-                        CSI = G2spc.GetSSfxuinel('Fourier',iwave+1-nx,xyz,SGData,SSGData)
-                    waveName = 'Fourier'
-                    if Stype == 'Sfrac':
-                        if 'Crenel' in waveType and not iwave:
-                            waveName = 'Crenel'
-                            names = Names[2:]
-                        else:
-                            names = Names[:2]
-                        Waves = wx.FlexGridSizer(0,4,5,5)
-                    elif Stype == 'Spos':
-                        if waveType in ['ZigZag','Block'] and not iwave:
-                            names = Names[6:]
-                            Waves = wx.FlexGridSizer(0,7,5,5)
-                            waveName = waveType
-                        else:
-                            names = Names[:6]
-                            Waves = wx.FlexGridSizer(0,8,5,5)
-                    else:
-                        names = Names
-                        Waves = wx.FlexGridSizer(0,8,5,5)
-                    waveSizer.Add(wx.StaticText(waveData,label=' %s  parameters: %s'%(waveName,str(names).rstrip(']').lstrip('[').replace("'",''))),0,WACV)
-                    for ival,val in enumerate(wave[0]):
-                        if np.any(CSI[Stype][0][ival]):
-                            waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_PROCESS_ENTER)
-                            waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
-                            waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
-                            Indx[waveVal.GetId()] = [iatm,Stype,iwave,ival]
-                        else:
-                            waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_READONLY)
-                            waveVal.SetBackgroundColour(VERY_LIGHT_GREY)
-                        Waves.Add(waveVal,0,WACV)
-                        if len(wave[0]) > 6 and ival == 5:
-                            Waves.Add((5,5),0)
-                            Waves.Add((5,5),0)
-                    waveRef = wx.CheckBox(waveData,label='Refine?')
-                    waveRef.SetValue(wave[1])
-                    Indx[waveRef.GetId()] = [iatm,Stype,iwave]
-                    waveRef.Bind(wx.EVT_CHECKBOX, OnRefWave)
-                    Waves.Add(waveRef,0,WACV)
-                    if iwave < len(waveBlk)-1:
-                        Waves.Add((5,5),0)                
-                    else:
-                        waveDel = wx.CheckBox(waveData,label='Delete?')
-                        Indx[waveDel.GetId()] = [iatm,Stype,iwave]
-                        waveDel.Bind(wx.EVT_CHECKBOX, OnDelWave)
-                        Waves.Add(waveDel,0,WACV)
-                    waveSizer.Add(Waves)                    
-            return waveSizer
-            
+        typeNames = {'Sfrac':' Site fraction','Spos':' Position','Sadp':' Thermal motion','Smag':' Magnetic moment'}
+        numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6,'ZigZag':5,'Block':5}
+        posNames = ['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tmin','Tmax','Xmax','Ymax','Zmax']
+        adpNames = ['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin',
+            'U11cos','U22cos','U33cos','U12cos','U13cos','U23cos']
+        magNames = ['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']
+        fracNames = ['Fsin','Fcos','Fzero','Fwid']
+        waveTypes = ['Fourier','ZigZag','Block','Crenel/Fourier']
+        Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
         Indx = {}
         waveData = G2frame.waveData
         G2frame.dataFrame.SetStatusText('')
@@ -2487,29 +2363,188 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if waveData.GetSizer():
             waveData.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        typeNames = {'Sfrac':' Site fraction','Spos':' Position','Sadp':' Thermal motion','Smag':' Magnetic moment'}
-        numVals = {'Sfrac':2,'Spos':6,'Sadp':12,'Smag':6,'ZigZag':5,'Block':5}
-        posNames = ['Xsin','Ysin','Zsin','Xcos','Ycos','Zcos','Tmin','Tmax','Xmax','Ymax','Zmax']
-        adpNames = ['U11sin','U22sin','U33sin','U12sin','U13sin','U23sin',
-            'U11cos','U22cos','U33cos','U12cos','U13cos','U23cos']
-        magNames = ['MXsin','MYsin','MZsin','MXcos','MYcos','MZcos']
-        fracNames = ['Fsin','Fcos','Fzero','Fwid']
-        waveTypes = ['Fourier','ZigZag','Block','Crenel/Fourier']
-        Labels = {'Spos':posNames,'Sfrac':fracNames,'Sadp':adpNames,'Smag':magNames}
-        mainSizer.Add(wx.StaticText(waveData,label=' Incommensurate propagation wave data:'),0,WACV)
-        if generalData['Type'] in ['modulated','magnetic']:
-            for iatm,atm in enumerate(atomData):
-                xyz = atm[cx:cx+3]
-                uij = atm[cia+2:cia+8]
-                for SS in ['SS1',]:  #future SS2 & SS3 - I doubt it!
-                    G2G.HorizontalLine(mainSizer,waveData)
-                    mainSizer.Add(AtomSizer(SS,atm))
-                    for Stype in ['Sfrac','Spos','Sadp','Smag']:
-                        if atm[cia] != 'A' and Stype == 'Sadp':    #Uiso can't have modulations! (why not?)
-                            continue
-                        if generalData['Type'] != 'magnetic' and Stype == 'Smag':
-                            break
-                        mainSizer.Add(WaveSizer(atm[-1][SS]['waveType'],atm[-1][SS][Stype],Stype,typeNames[Stype],Labels[Stype]))                        
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)   
+        topSizer.Add(wx.StaticText(waveData,label=' Incommensurate propagation wave data: Select atom to edit: '),0,WACV)
+        atNames = []
+        for atm in atomData:
+            atNames.append(atm[ct-1])
+        if G2frame.atmSel not in atNames:
+            G2frame.atmSel = atNames[0]
+        
+        def OnAtmSel(event):
+            Obj = event.GetEventObject()
+            G2frame.atmSel = Obj.GetValue()
+            RepaintAtomInfo()
+            
+        def RepaintAtomInfo(Scroll=0):
+#            mainSizer.Detach(G2frame.bottomSizer)
+            G2frame.bottomSizer.Clear(True)
+            G2frame.bottomSizer = ShowAtomInfo()
+            mainSizer.Add(G2frame.bottomSizer)
+            Indx = {}
+            mainSizer.Layout()
+            G2frame.dataFrame.Refresh()
+            waveData.SetVirtualSize(mainSizer.GetMinSize())
+            waveData.Scroll(0,Scroll)
+            G2frame.dataFrame.SendSizeEvent()
+            
+        def ShowAtomInfo():
+            
+            def AtomSizer(atom):
+                
+                def OnWaveType(event):
+                    atom[-1]['SS1']['waveType'] = waveType.GetValue()
+                    atom[-1]['SS1']['Spos'] = []
+                    RepaintAtomInfo(G2frame.waveData.GetScrollPos(wx.VERTICAL))                
+                    
+                def OnShowWave(event):
+                    Obj = event.GetEventObject()
+                    atom = Indx[Obj.GetId()]               
+                    Ax = Obj.GetValue()
+                    G2plt.ModulationPlot(G2frame,data,atom,Ax)
+                    
+                atomSizer = wx.BoxSizer(wx.HORIZONTAL)
+                atomSizer.Add(wx.StaticText(waveData,label=
+                ' Modulation data for atom: %s  Site sym: %s  WaveType: '%(atom[0],atom[cs].strip())),0,WACV)            
+                waveType = wx.ComboBox(waveData,value=atom[-1]['SS1']['waveType'],choices=waveTypes,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                waveType.Bind(wx.EVT_COMBOBOX,OnWaveType)
+                atomSizer.Add(waveType,0,WACV)
+                axchoice = ['x','y','z']
+                if len(D4Map['rho']):
+                    atomSizer.Add(wx.StaticText(waveData,label=' Show contour map for axis: '),0,WACV)
+                    mapSel = wx.ComboBox(waveData,value=' ',choices=axchoice,
+                        style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                    mapSel.Bind(wx.EVT_COMBOBOX,OnShowWave)
+                    Indx[mapSel.GetId()] = atom
+                    atomSizer.Add(mapSel,0,WACV)
+                return atomSizer
+                
+            def WaveSizer(iatm,waveType,waveBlk,Stype,typeName,Names):
+                
+                def OnAddWave(event):
+                    Obj = event.GetEventObject()
+                    iatm,item = Indx[Obj.GetId()]
+                    nt = numVals[Stype]
+                    if not len(atomData[iatm][-1]['SS1'][item]) and waveType in ['ZigZag','Block'] and Stype == 'Spos':
+                        nt = numVals[waveType]
+                    atomData[iatm][-1]['SS1'][item].append([[0.0 for i in range(nt)],False])
+                    RepaintAtomInfo(G2frame.waveData.GetScrollPos(wx.VERTICAL))
+                    
+                def OnWaveVal(event):
+                    Obj = event.GetEventObject()
+                    iatm,item,iwave,ival = Indx[Obj.GetId()]
+                    try:
+                        val = float(Obj.GetValue())
+                        if waveType in ['ZigZag','Block'] and Stype == 'Spos' and ival < 2 and not iwave:
+                            if ival == 1: #Tmax
+                                val = min(1.0,max(0.0,val))
+                            elif ival == 0: #Tmin
+                                val = max(-1.,min(val,atomData[iatm][-1]['SS1'][item][iwave][0][1]))
+                    except ValueError:
+                        val = atomData[iatm][-1]['SS1'][item][iwave][0][ival]
+                    Obj.SetValue('%.5f'%val)
+                    atomData[iatm][-1]['SS1'][item][iwave][0][ival] = val
+                    
+                def OnRefWave(event):
+                    Obj = event.GetEventObject()
+                    iatm,item,iwave = Indx[Obj.GetId()]
+                    atomData[iatm][-1]['SS1'][item][iwave][1] = not atomData[iatm][-1]['SS1'][item][iwave][1]
+                    
+                def OnDelWave(event):
+                    Obj = event.GetEventObject()
+                    iatm,item,iwave = Indx[Obj.GetId()]
+                    del atomData[iatm][-1]['SS1'][item][iwave]
+                    RepaintAtomInfo(G2frame.waveData.GetScrollPos(wx.VERTICAL))                
+                
+                waveSizer = wx.BoxSizer(wx.VERTICAL)
+                waveHead = wx.BoxSizer(wx.HORIZONTAL)
+                waveHead.Add(wx.StaticText(waveData,label=typeName+' modulation parameters: '),0,WACV)
+                waveAdd = wx.CheckBox(waveData,label='Add wave?')
+                waveAdd.Bind(wx.EVT_CHECKBOX, OnAddWave)
+                Indx[waveAdd.GetId()] = [iatm,Stype]
+                waveHead.Add(waveAdd,0,WACV)
+                waveSizer.Add(waveHead)
+                if len(waveBlk):
+                    nx = 0
+                    for iwave,wave in enumerate(waveBlk):
+                        if not iwave:
+                            if waveType in ['ZigZag','Block']:
+                                nx = 1
+                            CSI = G2spc.GetSSfxuinel(waveType,1,xyz,SGData,SSGData)
+                        else:
+                            CSI = G2spc.GetSSfxuinel('Fourier',iwave+1-nx,xyz,SGData,SSGData)
+                        waveName = 'Fourier'
+                        if Stype == 'Sfrac':
+                            if 'Crenel' in waveType and not iwave:
+                                waveName = 'Crenel'
+                                names = Names[2:]
+                            else:
+                                names = Names[:2]
+                            Waves = wx.FlexGridSizer(0,4,5,5)
+                        elif Stype == 'Spos':
+                            if waveType in ['ZigZag','Block'] and not iwave:
+                                names = Names[6:]
+                                Waves = wx.FlexGridSizer(0,7,5,5)
+                                waveName = waveType
+                            else:
+                                names = Names[:6]
+                                Waves = wx.FlexGridSizer(0,8,5,5)
+                        else:
+                            names = Names
+                            Waves = wx.FlexGridSizer(0,8,5,5)
+                        waveSizer.Add(wx.StaticText(waveData,label=' %s  parameters: %s'%(waveName,str(names).rstrip(']').lstrip('[').replace("'",''))),0,WACV)
+                        for ival,val in enumerate(wave[0]):
+                            if np.any(CSI[Stype][0][ival]):
+                                waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_PROCESS_ENTER)
+                                waveVal.Bind(wx.EVT_TEXT_ENTER,OnWaveVal)
+                                waveVal.Bind(wx.EVT_KILL_FOCUS,OnWaveVal)
+                                Indx[waveVal.GetId()] = [iatm,Stype,iwave,ival]
+                            else:
+                                waveVal = wx.TextCtrl(waveData,value='%.5f'%(val),style=wx.TE_READONLY)
+                                waveVal.SetBackgroundColour(VERY_LIGHT_GREY)
+                            Waves.Add(waveVal,0,WACV)
+                            if len(wave[0]) > 6 and ival == 5:
+                                Waves.Add((5,5),0)
+                                Waves.Add((5,5),0)
+                        waveRef = wx.CheckBox(waveData,label='Refine?')
+                        waveRef.SetValue(wave[1])
+                        Indx[waveRef.GetId()] = [iatm,Stype,iwave]
+                        waveRef.Bind(wx.EVT_CHECKBOX, OnRefWave)
+                        Waves.Add(waveRef,0,WACV)
+                        if iwave < len(waveBlk)-1:
+                            Waves.Add((5,5),0)                
+                        else:
+                            waveDel = wx.CheckBox(waveData,label='Delete?')
+                            Indx[waveDel.GetId()] = [iatm,Stype,iwave]
+                            waveDel.Bind(wx.EVT_CHECKBOX, OnDelWave)
+                            Waves.Add(waveDel,0,WACV)
+                        waveSizer.Add(Waves)                    
+                return waveSizer
+
+            iatm = atNames.index(G2frame.atmSel)
+            atm = atomData[iatm]
+            xyz = atm[cx:cx+3]
+            uij = atm[cia+2:cia+8]
+            atomSizer = wx.BoxSizer(wx.VERTICAL)
+            G2G.HorizontalLine(atomSizer,waveData)
+            atomSizer.Add(AtomSizer(atm))
+            for Stype in ['Sfrac','Spos','Sadp','Smag']:
+                if atm[cia] != 'A' and Stype == 'Sadp':    #Uiso can't have modulations! (why not?)
+                    continue
+                if generalData['Type'] != 'magnetic' and Stype == 'Smag':
+                    break
+                atomSizer.Add(WaveSizer(iatm,atm[-1]['SS1']['waveType'],atm[-1]['SS1'][Stype],Stype,typeNames[Stype],Labels[Stype]))                        
+            return atomSizer
+                
+
+        atms = wx.ComboBox(waveData,value=G2frame.atmSel,choices=atNames,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        atms.Bind(wx.EVT_COMBOBOX,OnAtmSel)
+        topSizer.Add(atms,0,WACV)
+        mainSizer.Add(topSizer,0,WACV)
+        G2frame.bottomSizer = ShowAtomInfo()
+        mainSizer.Add(G2frame.bottomSizer)
         
         SetPhaseWindow(G2frame.dataFrame,G2frame.waveData,mainSizer,Scroll)
 

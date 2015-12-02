@@ -2227,6 +2227,7 @@ class GSASII(wx.Frame):
         self.Weight = False
         self.IfPlot = False
         self.DDShowAll = False
+        self.atmSel = ''
         self.PatternId = 0
         self.PickId = 0
         self.PickIdText = None

@@ -1022,7 +1022,7 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
     Mast: array orthogonalization matrix for Uij
     '''
     glTau,glWt = pwd.pygauleg(0.,1.,ngl)         #get Gauss-Legendre intervals & weights
-    dT = 1./ngl
+    dT = 2./ngl
     dX = 0.0001
     waveShapes = [FSSdata.T.shape,XSSdata.T.shape,USSdata.T.shape]
     Af = np.array(FSSdata[0]).T    #sin frac mods x waves x atoms

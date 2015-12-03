@@ -269,6 +269,98 @@ class SHELX5_ReaderClass(G2IO.ImportStructFactor):
             traceback.print_exc(file=sys.stdout)
             return False
 
+class SHELX6_ReaderClass(G2IO.ImportStructFactor):
+    'Routines to import F**2, sig(F**2) twin/incommensurate reflections from a fixed format SHELX HKLF6 file'
+    def __init__(self):
+        if 'linux' in sys.platform:  # wx 3.0.0.0 on gtk does not like Unicode in menus
+            formatName = 'Shelx HKLF 6 F2 Tw/Incom'
+            longFormatName = 'Shelx HKLF 6 [hklm, Fo2, sig(Fo2), Tind] Twin/incommensurate structure factor text file'
+        else:
+            formatName = u'Shelx HKLF 6 F\u00b2 Tw/Incom'
+            longFormatName = u'Shelx HKLF 6 [hklm, Fo\u00b2, sig(Fo\u00b2), Tind] Twin/incommensurate structure factor text file'        
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.hk6','.HK6'),
+            strictExtension=False,
+            formatName=formatName,
+            longFormatName=longFormatName)
+        self.Super = 0
+
+    def ContentsValidator(self, filepointer):
+        '''Discover how many columns before F^2 are in the SHELX HKL5 file 
+        - could be 3-6 depending on satellites'''
+        numCols = 0
+        for i,line in enumerate(filepointer):
+            for j,item in enumerate(line.split()):  #find 1st col with '.'; has F^2
+                if '.' in item:
+                    numCols = max(numCols,j)
+                    break
+            if i > 20:
+                break
+        if numCols != 6:
+            self.warnings += '\nInvalid hk6 file; wrong number of columns'
+            raise self.ImportException('Invalid hk6 file; wrong number of columns')
+        self.Super = 1
+        return True
+
+    def Reader(self,filename,filepointer, ParentFrame=None, **unused):
+        'Read the file'
+        TwDict = {}
+        TwSet = {}
+        TwMax = [-1,[]]
+        first = True
+        try:
+            for line,S in enumerate(filepointer):
+                self.errors = '  Error reading line '+str(line+1)
+                h,k,l,m1,m2,m3,Fo,sigFo,Tw = S[:4],S[4:8],S[8:12],S[12:16],S[16:20],S[20:24],S[24:32],S[32:40],S[40:44]
+                h,k,l,m1,m2,m3 = [int(h),int(k),int(l),int(m1),int(m2),int(m3)]
+                if m2 or m3:
+                    self.warnings += '\n(3+2) & (3+3) Supersymmetry not allowed in GSAS-II. Reformulate as twinned (3+1) supersymmetry'
+                    raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")                                
+                Tw = Tw.strip()
+                if Tw in ['','0']:
+                    Tw = '1'
+                if not any([h,k,l]):    #look for 0 0 0 or blank line
+                    break
+                if '-' in Tw:
+                    if Tw == '-1':  #fix reversed twin ids
+                        Tw = '-2'
+                        if first:
+                            self.warnings += '\nPrimary twin id changed to 1'
+                            first = False
+                    TwId = -int(Tw)-1
+                    TwSet[TwId] = np.array([h,k,l])
+                    if TwId not in TwMax[1]:
+                        TwMax[1].append(TwId)
+                else:
+                    if Tw != '1':  #fix reversed twin ids
+                        if first:
+                            self.warnings += '\nPrimary twin id changed to 1\nNB: multiple primary twins not working'
+                            first = False
+                        Tw = '1'
+                    TwId = int(Tw)-1
+                    if TwSet:
+                        TwDict[len(self.RefDict['RefList'])] = TwSet
+                        TwSet = {}    
+                    Fo = float(Fo)
+                    sigFo = float(sigFo)
+                    # h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,...
+                    self.RefDict['RefList'].append([h,k,l,m1,int(Tw),0,Fo,sigFo,0,Fo,0,0,0])
+                TwMax[0] = max(TwMax[0],TwId)
+            self.errors = 'Error after reading reflections (unexpected!)'
+            self.RefDict['RefList'] = np.array(self.RefDict['RefList'])
+            self.RefDict['Type'] = 'SXC'
+            self.RefDict['Super'] = self.Super
+            self.RefDict['TwDict'] = TwDict
+            self.RefDict['TwMax'] = TwMax
+            self.UpdateParameters(Type='SXC',Wave=None) # histogram type
+            return True
+        except Exception as detail:
+            self.errors += '\n  '+str(detail)
+            print '\n\n'+self.formatName+' read error: '+str(detail) # for testing
+            import traceback
+            traceback.print_exc(file=sys.stdout)
+            return False
+
 class M90_ReaderClass(G2IO.ImportStructFactor):
     'Routines to import F**2, sig(F**2) reflections from a JANA M90 file'
     def __init__(self):

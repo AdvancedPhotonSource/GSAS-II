@@ -5150,7 +5150,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             rho = np.roll(np.roll(np.roll(rho,Vsteps[0],axis=0),Vsteps[1],axis=1),Vsteps[2],axis=2)
             indx = np.array(ma.nonzero(rho)).T
             rhoXYZ = indx*steps+VP-incre
-            Nc = len(rhoXYZ)
+            Nc = max(len(rhoXYZ),1)
             rcube = 2000.*Vol/(ForthirdPI*Nc)
             rmax = math.exp(math.log(rcube)/3.)**2
             radius = min(drawingData.get('mapSize',10.)**2,rmax)

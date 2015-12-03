@@ -2986,6 +2986,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             sumwYo = 0
             sumFo = 0
             sumFo2 = 0
+            sumFc2 = 0
             sumdF = 0
             sumdF2 = 0
             if im:
@@ -3012,6 +3013,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                             Fo = np.sqrt(ref[5+im])
                             sumFo += Fo
                             sumFo2 += ref[5+im]
+                            sumFc2 += ref[7+im]
                             sumdF += abs(Fo-np.sqrt(ref[7+im]))
                             sumdF2 += abs(ref[5+im]-ref[7+im])
                             nobs += 1
@@ -3046,6 +3048,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                             ref[3+im] = abs(ref[3+im])      #mark as allowed
                             sumFo += Fo
                             sumFo2 += ref[5+im]
+                            sumFc2 += ref[7+im]
                             sumdF += abs(Fo-Fc)
                             sumdF2 += abs(ref[5+im]-ref[7+im])
                             nobs += 1
@@ -3067,6 +3070,11 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
                                 nrej += 1
                             else:   #sp.gp.extinct
                                 next += 1
+            Scale = sumFo2/sumFc2
+            if (Scale < 0.8 or Scale > 1.2) and phfx+'Scale' in varylist:
+                print 'New scale:',Scale*parmDict[phfx+'Scale']
+                indx = varylist.index(phfx+'Scale')
+                values[indx] = Scale*parmDict[phfx+'Scale']              
             Histogram['Residuals']['Nobs'] = nobs
             Histogram['Residuals']['sumwYo'] = sumwYo
             SumwYo += sumwYo

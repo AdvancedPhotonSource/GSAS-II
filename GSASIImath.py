@@ -2778,7 +2778,7 @@ def SSChargeFlip(data,reflDict,pgbar):
     time0 = time.time()
     for iref,ref in enumerate(reflDict['RefList']):
         dsp = ref[5]
-        if dsp > 2*dmin:
+        if dsp > dmin:
             ff = 0.1*Vol    #est. no. atoms for ~10A**3/atom
             if FFtable:
                 SQ = 0.25/dsp**2

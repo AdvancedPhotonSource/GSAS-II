@@ -35,6 +35,7 @@ import GSASIIspc as G2spc
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
 import GSASIIpwdGUI as G2pdG
+import GSASIIimgGUI as G2imG
 import GSASIIimage as G2img
 import GSASIIElem as G2el
 import GSASIIstrIO as G2stIO
@@ -505,6 +506,47 @@ def ReadImages(G2frame,imagefile):
         print('Error messages(s)\n'+errorReport)
         return []
         #raise Exception('No image read')    
+
+def SaveMultipleImg(G2frame):
+    if not G2frame.PatternTree.GetCount():
+        print 'no images!'
+        return
+    choices = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+    if len(choices) == 1:
+        names = choices
+    else:
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Stress/Strain fitting','Select images to fit:',choices)
+        dlg.SetSelections([])
+        names = []
+        if dlg.ShowModal() == wx.ID_OK:
+            names = [choices[sel] for sel in dlg.GetSelections()]
+        dlg.Destroy()
+    if not names: return
+    for name in names:
+        Id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
+        Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Id)
+        imroot = os.path.splitext(imagefile)[0]
+        if imagetag:
+            imroot += '_' + str(imagetag)
+        Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Image Controls'))
+        print('Writing '+imroot+'.imctrl')
+        File = open(imroot+'.imctrl','w')
+        keys = ['type','wavelength','calibrant','distance','center',
+                    'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
+                    'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
+                    'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
+                    'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
+        for key in keys:
+            if key not in Data: continue    #uncalibrated!
+            File.write(key+':'+str(Data[key])+'\n')
+        File.close()
+        mask = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Masks'))
+        G2imG.CleanupMasks(mask)
+        print('Writing '+imroot+'.immask')
+        File = open(imroot+'.immask','w')
+        for key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds']:
+            File.write(key+':'+str(mask[key])+'\n')
+        File.close()
         
 def PutG2Image(filename,Comments,Data,Npix,image):
     'Write an image as a python pickle - might be better as an .edf file?'

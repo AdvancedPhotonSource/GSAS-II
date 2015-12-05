@@ -72,6 +72,7 @@ import GSASIIplot as G2plt
 import GSASIIpwd as G2pwd
 import GSASIIpwdGUI as G2pdG
 import GSASIIphsGUI as G2phsG
+import GSASIIimgGUI as G2imG
 import GSASIIspc as G2spc
 import GSASIIstrMain as G2stMn
 import GSASIIstrIO as G2stIO
@@ -2026,8 +2027,12 @@ class GSASII(wx.Frame):
                     text=obj.formatName)
                 self.Bind(wx.EVT_MENU, obj.Exporter, id=item.GetId())
                 self.ExportLookup[item.GetId()] = typ # lookup table for submenu item
-                
-        #code to debug an Exporter. hard-coded the routine below, to allow a reload before use
+        item = imagemenu.Append(wx.ID_ANY,
+                        help='Export image controls and masks for multiple images',
+                        kind=wx.ITEM_NORMAL,
+                        text='Multiple image controls and masks')
+        self.Bind(wx.EVT_MENU, self.OnSaveMultipleImg, id=item.GetId())
+        #code to debug an Exporter. hard-code the routine below, to allow a reload before use
         # def DebugExport(event):
         #      print 'start reload'
         #      reload(G2IO)
@@ -3677,7 +3682,12 @@ class GSASII(wx.Frame):
         finally:
             dlg.Destroy()
         return result
-
+    
+    def OnSaveMultipleImg(self,event):
+        '''Select and save multiple image parameter and mask files
+        '''
+        G2IO.SaveMultipleImg(self)
+        
 class GSASIImain(wx.App):
     '''Defines a wxApp for GSAS-II
 

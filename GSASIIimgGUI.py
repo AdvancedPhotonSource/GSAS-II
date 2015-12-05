@@ -303,7 +303,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 # make sure extension is .imctrl
                 filename = os.path.splitext(filename)[0]+'.imctrl'
                 File = open(filename,'w')
-                save = {}
                 keys = ['type','wavelength','calibrant','distance','center',
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
                     'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
@@ -1189,7 +1188,6 @@ def UpdateMasks(G2frame,data):
                 filename = dlg.GetPath()
                 filename = os.path.splitext(filename)[0]+'.immask'
                 File = open(filename,'w')
-                save = {}
                 keys = ['Points','Rings','Arcs','Polygons','Frames','Thresholds']
                 for key in keys:
                     File.write(key+':'+str(data[key])+'\n')

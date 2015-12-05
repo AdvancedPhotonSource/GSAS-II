@@ -1,17 +1,117 @@
 import os
-import wx
+import sys
 import copy
 import glob
 import re
+import bisect
+import numpy as np
+import wx
+import wx.lib.mixins.listctrl  as  listmix
 import GSASIIpath
 import GSASIIIO as G2IO
 import GSASIIctrls as G2G
 import GSASIIgrid as G2gd
 import GSASIIimgGUI as G2imG
-'''
-Define a class to be used for Andrey's AutoIntegration process
-'''
+import GSASIIpy3 as G2py3
 
+print 'loading autoint'
+
+def ReadMask(filename):
+    'Read a mask (.immask) file'
+    File = open(filename,'r')
+    save = {}
+    S = File.readline()
+    while S:
+        if S[0] == '#':
+            S = File.readline()
+            continue
+        [key,val] = S[:-1].split(':')
+        if key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds']:
+            save[key] = eval(val)
+        S = File.readline()
+    File.close()
+    G2imG.CleanupMasks(save)
+    return save
+
+def ReadControls(filename):
+    'read an image controls (.imctrl) file'
+    cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type',
+            'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
+            'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
+            'PolaVal','SampleAbs','dark image','background image']
+    File = open(filename,'r')
+    save = {}
+    S = File.readline()
+    while S:
+        if S[0] == '#':
+            S = File.readline()
+            continue
+        [key,val] = S[:-1].split(':')
+        if key in ['type','calibrant','binType','SampleShape',]:    #strings
+            save[key] = val
+        elif key in ['rotation']:
+            save[key] = float(val)
+        elif key in ['center',]:
+            if ',' in val:
+                save[key] = eval(val)
+            else:
+                vals = val.strip('[] ').split()
+                save[key] = [float(vals[0]),float(vals[1])] 
+        elif key in cntlList:
+            save[key] = eval(val)
+        S = File.readline()
+    File.close()
+    return save
+
+def Read_imctrl(imctrl_file):
+    '''Read an image control file and record control parms into a dict, with some simple
+    type conversions
+    '''
+    file_opt = options = {}
+    save = {'filename':imctrl_file}
+    immask_file = os.path.splitext(imctrl_file)[0]+'.immask'
+    if os.path.exists(immask_file):
+        save['maskfile'] = immask_file
+    else:
+        save['maskfile'] = '(none)'
+    cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type',
+                        'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
+                        'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
+                        'PolaVal','SampleAbs','dark image','background image']
+    File = open(imctrl_file,'r')
+    fullIntegrate = False
+    try:
+        S = File.readline()
+        while S:
+            if S[0] == '#':
+                S = File.readline()
+                continue
+            [key,val] = S[:-1].split(':')
+            if key in ['type','calibrant','binType','SampleShape',]:    #strings
+                save[key] = val
+            elif key == 'rotation':
+                save[key] = float(val)
+            elif key == 'fullIntegrate':
+                fullIntegrate = eval(val)
+            elif key == 'LRazimuth':
+                save['LRazimuth_min'],save['LRazimuth_max'] = eval(val)[0:2]
+            elif key == 'IOtth':
+                save['IOtth_min'],save['IOtth_max'] = eval(val)[0:2]
+            elif key == 'center':
+                if ',' in val:
+                    vals = eval(val)
+                else:
+                    vals = val.strip('[] ').split()
+                    vals = [float(vals[0]),float(vals[1])] 
+                save['center_x'],save['center_y'] = vals[0:2]
+            elif key in cntlList:
+                save[key] = eval(val)
+            S = File.readline()
+    finally:
+        File.close()
+        if fullIntegrate: save['LRazimuth_min'],save['LRazimuth_max'] = 0,0
+    return save
+    
 class AutoIntFrame(wx.Frame):
     '''Creates a wx.Frame window for the Image AutoIntegration.
     The intent is that this will be used as a non-modal dialog window.
@@ -47,13 +147,32 @@ class AutoIntFrame(wx.Frame):
         for newImage in self.currImageList:
             if newImage in imageFileList: continue # already read
             for imgId in G2IO.ReadImages(G2frame,newImage):
-                # update controls from master
                 controlsDict = G2frame.PatternTree.GetItemPyData(
                     G2gd.GetPatternTreeItemId(G2frame,imgId, 'Image Controls'))
-                controlsDict.update(self.ImageControls)
-                # update masks from master
                 ImageMasks = G2frame.PatternTree.GetItemPyData(
                     G2gd.GetPatternTreeItemId(G2frame,imgId, 'Masks'))
+                if self.params['Mode'] == 'table':
+                    dist = controlsDict['distance']
+                    interpDict,imgctrl,immask = self.Evaluator(dist) # interpolated calibration values
+                    self.ImageControls = ReadControls(imgctrl)
+                    self.ImageControls.update(interpDict)
+                    self.ImageControls['showLines'] = True
+                    self.ImageControls['ring'] = []
+                    self.ImageControls['rings'] = []
+                    self.ImageControls['ellipses'] = []
+                    self.ImageControls['setDefault'] = False
+                    for i in 'range','size','GonioAngles':
+                        if i in self.ImageControls:
+                            del self.ImageControls[i]
+                    # load copy of Image Masks
+                    if immask:
+                        self.ImageMasks = ReadMask(immask)
+                        del self.Thresholds['Thresholds']
+                    else:
+                        self.ImageMasks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[]}
+                # update controls from master
+                controlsDict.update(self.ImageControls)
+                # update masks from master w/o Thresholds
                 ImageMasks.update(self.ImageMasks)
         # now integrate the images that have not already been processed before
         for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
@@ -116,10 +235,7 @@ class AutoIntFrame(wx.Frame):
         G2frame = self.G2frame
         # show current IMG base
         self.ControlBaseLbl.SetLabel(G2frame.PatternTree.GetItemText(G2frame.Image))
-        if self.params['Mode'] == 'file':
-            'get file info'
-            GSASIIpath.IPyBreak()
-        else:
+        if self.params['Mode'] != 'table':
             # load copy of Image Controls from current image and clean up
             # items that should not be copied
             self.ImageControls = copy.deepcopy(
@@ -178,22 +294,13 @@ class AutoIntFrame(wx.Frame):
             When either Start or Resume is pressed, the processing loop
             is started. When Pause is pressed, the loop is stopped. 
             '''
-            #print self.params # for debug
-
-            # check inputs before starting
-            err = ''
+            # check inputs for errors before starting
+            #err = ''
             #if not any([self.params[fmt] for fmt in self.fmtlist]):
             #    err += '\nPlease select at least one output format\n'
-            if (self.params['Mode'] == 'file' and not
-                    os.path.exists(self.params['IMGfile'])):
-                err += '\nThe image controls file could not be found\n'
-            if (self.params['Mode'] == 'file' and
-                not self.params['IgnoreMask']
-                ) and not os.path.exists(self.params['MaskFile']): 
-                err += '\nThe mask file could not be found\n'
-            if err:
-                G2G.G2MessageBox(self,err)
-                return
+            #if err:
+            #    G2G.G2MessageBox(self,err)
+            #    return
             # change button label
             if btnstart.GetLabel() != 'Pause':
                 btnstart.SetLabel('Pause')
@@ -243,60 +350,29 @@ class AutoIntFrame(wx.Frame):
                 finally:
                     dlg.Destroy()
                 return
-            if btn1 == event.GetEventObject():
-                ext = '.imctrl'
-                title = 'Image control'
-            else:
-                ext = '.immask'
-                title = 'Image masks'                
-            dlg = wx.FileDialog(
-                self, 'Select name for '+title+' file to read',
-                '.', '',
-                title+'file (*'+ext+')|*'+ext,
-                wx.OPEN|wx.CHANGE_DIR)
-            dlg.CenterOnParent()
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    filename = dlg.GetPath()
-                    # make sure extension is correct
-                    #filename = os.path.splitext(filename)[0]+ext
-                    if btn1 == event.GetEventObject():
-                        fInp1.SetValue(filename)
-                    else:
-                        fInp2.SetValue(filename)
-                else:
-                    filename = None
-            finally:
-                dlg.Destroy()
                 
         def OnRadioSelect(event):
-            '''Respond to a radiobutton selection and enable or
-            disable widgets accordingly. Also gets called when the
-            "Don't Use" flag for Mask use is called. 
+            '''Respond to a radiobutton selection and when in table
+            mode, get parameters from user. 
             '''
-            lbl1.Disable()
-            fInp1.Disable()
-            btn1.Disable()
-            lbl2.Disable()
-            fInp2.Disable()
-            ign2.Disable()
-            btn2.Disable()
+            self.Evaluator = None
             if r2.GetValue():
-                self.params['Mode'] = 'file'
-                fInp1.Enable()
-                btn1.Enable()
-                lbl1.Enable()
-                ign2.Enable()
-                if not self.params['IgnoreMask']:
-                    fInp2.Enable()
-                    btn2.Enable()
-                    lbl2.Enable()
+                self.params['Mode'] = 'table'
+                try:
+                    dlg = IntegParmTable(self.G2frame) # create the dialog
+                    if dlg.ShowModal() == wx.ID_OK:
+                        self.Evaluator = DefineEvaluator(dlg)
+                    else:
+                        r1.SetValue(True)
+                finally:
+                    dlg.Destroy()
             else:
                 self.params['Mode'] = 'active'
         ##################################################
         # beginning of __init__ processing
         ##################################################
         self.G2frame = G2frame
+        self.Evaluator = None
         self.params = {}
         self.Reset = False
         self.params['IMGfile'] = ''
@@ -336,37 +412,9 @@ class AutoIntFrame(wx.Frame):
         r1.Bind(wx.EVT_RADIOBUTTON, OnRadioSelect)
         lblsizr.Add(r1)
         r1.SetValue(True)
-        r2 = wx.RadioButton(mnpnl, wx.ID_ANY, "Use from file(s)")
+        r2 = wx.RadioButton(mnpnl, wx.ID_ANY, "Use from table")
         lblsizr.Add(r2)
         r2.Bind(wx.EVT_RADIOBUTTON, OnRadioSelect)
-        r2.Disable()         # deactivate this until implemented
-        # Image controls file
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add((20,-1))
-        lbl1 = wx.StaticText(mnpnl, wx.ID_ANY,'IMG control file: ')
-        sizer.Add(lbl1)
-        fInp1 = G2G.ValidatedTxtCtrl(mnpnl,self.params,'IMGfile',
-                                       notBlank=False,size=(300,-1))
-        sizer.Add(fInp1)
-        btn1 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
-        btn1.Bind(wx.EVT_BUTTON, OnBrowse)
-        sizer.Add(btn1)
-        lblsizr.Add(sizer)
-        # Masks input file
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add((20,-1))
-        lbl2 = wx.StaticText(mnpnl, wx.ID_ANY,'Mask file: ')
-        sizer.Add(lbl2)
-        fInp2 = G2G.ValidatedTxtCtrl(mnpnl,self.params,'MaskFile',
-                                       notBlank=False,size=(300,-1))
-        sizer.Add(fInp2)
-        ign2 = G2G.G2CheckBox(mnpnl,"Don't use",self.params,'IgnoreMask',
-                              OnChange=OnRadioSelect)
-        sizer.Add(ign2)
-        btn2 = wx.Button(mnpnl,  wx.ID_ANY, "Browse")
-        btn2.Bind(wx.EVT_BUTTON, OnBrowse)
-        sizer.Add(btn2)
-        lblsizr.Add(sizer)
         mnsizer.Add(lblsizr)
 
         # box for output selections
@@ -419,7 +467,284 @@ class AutoIntFrame(wx.Frame):
         OnRadioSelect(None) # disable widgets
         mnsizer.Fit(self)
         self.CenterOnParent()
-        self.Show()  
+        self.Show()
+
+def DefineEvaluator(dlg):
+    '''Creates a function that provides interpolated values for a given distance value
+    '''
+    def Evaluator(dist):
+        '''Interpolate image parameters for a supplied distance value
+
+        :param float dist: distance to use for interpolation
+        :returns: a list with 3 items:
+
+          * a dict with parameter values,
+          * the closest imctrl and
+          * the closest maskfile (or None)
+        '''            
+        x = np.array([float(i) for i in parms[0]])
+        closest = abs(x-dist).argmin()
+        closeX = x[closest]
+        D = {'distance':dist}
+        imctfile = IMfileList[closest]
+        if parms[-1][closest].lower() != '(none)':
+            maskfile = parms[-1][closest]
+        else:
+            maskfile = None
+        for c in range(1,cols-1):
+            lbl = ParmList[c]
+            if lbl in nonInterpVars:
+                D[lbl] = float(parms[c][closest])
+            else:
+                y = np.array([float(i) for i in parms[c]])
+                D[lbl] = np.interp(dist,x,y)
+        # full integration when angular range is 0
+        D['fullIntegrate'] = (D['LRazimuth_min'] == D['LRazimuth_max'])
+        # conversion for paired values
+        for a,b in ('center_x','center_y'),('LRazimuth_min','LRazimuth_max'),('IOtth_min','IOtth_max'):
+            r = a.split('_')[0]
+            D[r] = [D[a],D[b]]
+            del D[a]
+            del D[b]
+        return D,imctfile,maskfile
+    # save local copies of values needed in Evaluator
+    parms = dlg.ReadImageParmTable()
+    IMfileList = dlg.IMfileList
+    cols = dlg.list.GetColumnCount()
+    ParmList = dlg.ParmList
+    nonInterpVars = dlg.nonInterpVars
+    return Evaluator
+
+class IntegParmTable(wx.Dialog):
+    '''Creates a dialog window with a table of integration parameters.
+    :meth:`ShowModal` will return wx.ID_OK if the process has been successful.
+    In this case, :func:`DefineEvaluator` should be called to obtain a function that
+    creates a dictionary with interpolated parameter values.
+    '''
+    ParmList = ('distance','center_x','center_y','wavelength','tilt','rotation','DetDepth',
+            'LRazimuth_min','LRazimuth_max','IOtth_min','IOtth_max','outChannels',
+            'maskfile',
+            )
+    nonInterpVars = ('tilt','rotation','LRazimuth_min','LRazimuth_max','IOtth_min','IOtth_max',
+                     'outChannels')  # values in this list are taken from nearest rather than interpolated
+    HeaderList = ('Det Dist','X cntr','Y cntr','wavelength','tilt','rotation','DetDepth',
+            'Azimuth min','Azimuth max','2Th min','2Th max','Int. pts',
+            'Mask File',
+            )
+    def __init__(self,G2frame):
+        self.G2frame = G2frame
+        self.parms = [] # list of values by column
+        self.IMfileList = [] # list of .imctrl file names for each entry in table
+        wx.Dialog.__init__(self,G2frame,style=wx.RESIZE_BORDER|wx.DEFAULT_DIALOG_STYLE)
+        files = []
+        try:
+            dlg = wx.FileDialog(self, 'Select image control files or previous table', 
+                                style=wx.OPEN| wx.MULTIPLE,
+                                wildcard='image control files (.imctrl)|*.imctrl|Integration table (*.imtbl)|*.imtbl')
+            if dlg.ShowModal() == wx.ID_OK:
+                files = dlg.GetPaths()
+                self.parms,self.IMfileList = self.ReadFiles(files)
+        finally:
+            dlg.Destroy()
+        if not files:
+            wx.CallAfter(self.EndModal,wx.ID_CANCEL)
+            return
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        self.list = ImgIntLstCtrl(self, wx.ID_ANY,
+                      style=wx.LC_REPORT 
+                          | wx.BORDER_SUNKEN
+                         #| wx.BORDER_NONE
+                         )
+        mainSizer.Add(self.list,1,wx.EXPAND,1)
+        btnsizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn = wx.Button(self, wx.ID_OK)
+        btnsizer.Add(btn)
+        btn = wx.Button(self, wx.ID_ANY,'Save')
+        btn.Bind(wx.EVT_BUTTON,self._onSave)
+        btnsizer.Add(btn)
+        btn = wx.Button(self, wx.ID_CLOSE,'Quit')
+        btn.Bind(wx.EVT_BUTTON,self._onClose)
+        btnsizer.Add(btn)
+        mainSizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)    
+        self.SetSizer(mainSizer)
+        self.list.FillList(self.parms)
+        mainSizer.Layout()
+        mainSizer.Fit(self)
+        
+    def ReadFiles(self,files):
+        '''Reads a list of .imctrl files or a single .imtbl file
+        '''
+        tmpDict = {}
+        if not files: return
+        # option 1, a dump from a previous save
+        if os.path.splitext(files[0])[1] == '.imtbl':
+            fp = open(files[0],'r')
+            S = fp.readline()
+            while S:
+                if S[0] != '#':
+                    [key,val] = S[:-1].split(':')
+                    tmpDict[key] = eval(val)
+                S = fp.readline()
+            fp.close()
+            # delete entries
+            m1 = [i for i,f in enumerate(tmpDict['filenames']) if not os.path.exists(f)]
+            if m1:
+                print('\nimctrl file not found:')
+                for i in m1: print('\t#'+str(i)+': '+tmpDict['filenames'][i])
+            m2 = [i for i,f in enumerate(tmpDict['maskfile']) if not (os.path.exists(f) or f.startswith('('))]
+            if m2:
+                print('\nmask file not found')
+                for i in m2: print('\t#'+str(i)+': '+tmpDict['maskfile'][i])
+            m3 = [i for i,d in enumerate(tmpDict['distance']) if d < 0]
+            if m3:
+                print('\nDropping entries due to negative distance: '+str(m3))
+            m = sorted(set(m1 + m2 + m3))
+            m.reverse()
+            for c in m:
+                for key in tmpDict:
+                    del tmpDict[key][c]
+            fileList = tmpDict.get('filenames','[]')
+            parms = []
+            for key in self.ParmList:
+                try:
+                    float(tmpDict[key][0])
+                    parms.append([str(G2py3.FormatSigFigs(val,sigfigs=5)) for val in tmpDict[key]])
+                except ValueError:
+                    parms.append(tmpDict[key])
+            return parms,fileList
+        # option 2, read in a list of files
+        for file in files: # read all files; place in dict by distance
+            imgDict = Read_imctrl(file)
+            tmpDict[imgDict.get('distance')] = imgDict
+        parms = [[] for key in self.ParmList]
+        fileList = []
+        for d in sorted(tmpDict):
+            fileList.append(tmpDict[d].get('filename'))
+            if d is None: continue
+            if d < 0: continue
+            for i,key in enumerate(self.ParmList):
+                val = tmpDict[d].get(key)
+                try:
+                    val = str(G2py3.FormatSigFigs(val,sigfigs=5))
+                except:
+                    val = str(val)
+                parms[i].append(val)
+        return parms,fileList
+    
+    def ReadImageParmTable(self):
+        '''Reads possibly edited values from the ListCtrl table and returns a list
+        of values for each column.
+        '''
+        rows = self.list.GetItemCount()
+        cols = self.list.GetColumnCount()
+        parms = []
+        for c in range(cols):
+            lbl = self.ParmList[c]
+            parms.append([])
+            for r in range(rows):
+                parms[c].append(self.list.GetItem(r,c).GetText())
+        return parms
+
+    def _onClose(self,event):
+        'Called when Cancel button is pressed'
+        self.EndModal(wx.ID_CANCEL)
+        
+    def _onSave(self,event):
+        'Called when save button is pressed; creates a .imtbl file'
+        fil = ''
+        if self.G2frame.GSASprojectfile:
+            fil = os.path.splitext(self.G2frame.GSASprojectfile)[0]+'.imtbl'
+        dir,f = os.path.split(fil)
+        try:
+            dlg = wx.FileDialog(self, 'Save table data as',
+                        defaultDir=dir, defaultFile=f, style=wx.SAVE)
+            if dlg.ShowModal() != wx.ID_OK: return
+            fil = dlg.GetPath()
+            fil = os.path.splitext(fil)[0]+'.imtbl'
+        finally:
+            dlg.Destroy()        
+        parms = self.ReadImageParmTable()
+        print('Writing image parameter table as '+fil)
+        fp = open(fil,'w')
+        for c in range(len(parms)-1):
+            lbl = self.ParmList[c]
+            fp.write(lbl+': '+str([eval(i) for i in parms[c]])+'\n')
+        lbl = self.ParmList[c+1]
+        fp.write(lbl+': '+str(parms[c+1])+'\n')
+        lbl = 'filenames'
+        fp.write(lbl+': '+str(self.IMfileList)+'\n')
+        fp.close()
+    
+class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEditMixin):
+    '''Creates a custom ListCtrl for editing Image Integration parameters
+    '''
+    def __init__(self, parent, ID, pos=wx.DefaultPosition,
+                 size=(1000,200), style=0):
+        self.parent=parent
+        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        listmix.ListCtrlAutoWidthMixin.__init__(self)
+        listmix.TextEditMixin.__init__(self)
+        self.Bind(wx.EVT_LEFT_DCLICK, self.OnDouble)
+        #self.Bind(wx.EVT_LIST_COL_CLICK, self.OnColClick)
+    def FillList(self,parms):
+        'Places the current parms into the table'
+        self.ClearAll()
+        self.rowlen = len(self.parent.ParmList)
+        for i,lbl in enumerate(self.parent.HeaderList):
+            self.InsertColumn(i, lbl)
+        for r,d in enumerate(parms[0]):
+            if float(d) < 0: continue
+            index = self.InsertStringItem(sys.maxint, d)
+            for j in range(1,len(parms)):
+                self.SetStringItem(index, j, parms[j][r])
+        for i,lbl in enumerate(self.parent.ParmList):
+            self.SetColumnWidth(i, wx.LIST_AUTOSIZE)
+
+    def OnDouble(self,evt):
+        'respond to a double-click'
+        self.CloseEditor()
+        fil = '(none)'
+        try:
+            dlg = wx.FileDialog(G2frame, 'Select mask or control file to add (Press cancel if none)', 
+                                style=wx.OPEN,
+                                wildcard='Add GSAS-II mask file (.immask)|*.immask|add image control file (.imctrl)|*.imctrl')
+            if dlg.ShowModal() == wx.ID_OK:
+                fil = dlg.GetPath()
+        finally:
+            dlg.Destroy()
+        if os.path.splitext(fil)[1] != '.imctrl':
+            self.SetStringItem(self.curRow, self.rowlen-1, fil)
+            self.SetColumnWidth(self.rowlen-1, wx.LIST_AUTOSIZE)
+        else:
+            # insert or overwrite an instrument parameter set
+            if not os.path.exists(fil):
+                print('Does not exist: '+fil)
+                return
+            imgDict = Read_imctrl(fil)
+            dist = imgDict['distance']
+            parms = self.parent.ReadImageParmTable()
+            x = np.array([float(i) for i in parms[0]])
+            closest = abs(x-dist).argmin()
+            closeX = x[closest]
+            # fix IMfileList
+            for c,lbl in enumerate(self.parent.ParmList):
+                try:
+                    vali = G2py3.FormatSigFigs(float(imgDict[lbl]),sigfigs=5)
+                except ValueError:
+                    vali = imgDict[lbl]
+                if abs(closeX-dist) < 1.: # distance is within 1 mm, replace
+                    parms[c][closest] = vali
+                elif dist > closeX: # insert after
+                    parms[c].insert(closest+1,vali)
+                else:
+                    parms[c].insert(closest,vali)
+            if abs(closeX-dist) < 1.: # distance is within 1 mm, replace
+                self.parent.IMfileList[closest] = fil
+            elif dist > closeX: # insert after
+                self.parent.IMfileList.insert(closest+1,fil)
+            else:
+                self.parent.IMfileList.insert(closest,fil)
+            self.FillList(parms)
 
 if __name__ == '__main__':
     app = wx.PySimpleApp()

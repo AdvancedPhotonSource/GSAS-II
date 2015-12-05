@@ -1109,10 +1109,8 @@ class DataFrame(wx.Frame):
             id=wxID_IMSAVECONTROLS, kind=wx.ITEM_NORMAL,text='Save Controls')
         self.ImageEdit.Append(help='Load image controls from file', 
             id=wxID_IMLOADCONTROLS, kind=wx.ITEM_NORMAL,text='Load Controls')
-        if GSASIIpath.GetConfigValue('debug'):
-            import autoint
-            self.ImageEdit.Append(help='Open Auto-integration window to integrate a series of images', 
-                id=wxID_IMAUTOINTEG, kind=wx.ITEM_NORMAL,text='Auto Integrate')
+        self.ImageEdit.Append(help='Open Auto-integration window to integrate a series of images', 
+            id=wxID_IMAUTOINTEG, kind=wx.ITEM_NORMAL,text='Auto Integrate')
         self.PostfillDataMenu()
             
         # IMG / Masks

@@ -178,12 +178,12 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     def OnIntegrateAll(event):
         print 'integrate all'
         TextList = [[False,'All IMG',0]]
-        Names = []
+#        Names = []
         if G2frame.PatternTree.GetCount():
             id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while id:
                 name = G2frame.PatternTree.GetItemText(id)
-                Names.append(name)
+#                Names.append(name)
                 if 'IMG' in name:
                     TextList.append([False,name,id])
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
@@ -250,12 +250,12 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         
     def OnCopyControls(event):
         TextList = [[False,'All IMG',0]]
-        Names = []
+#        Names = []
         if G2frame.PatternTree.GetCount():
             id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while id:
                 name = G2frame.PatternTree.GetItemText(id)
-                Names.append(name)
+#                Names.append(name)
                 if 'IMG' in name:
                     if id == G2frame.Image:
                         Source = name
@@ -1143,12 +1143,12 @@ def UpdateMasks(G2frame,data):
 
     def OnCopyMask(event):
         TextList = [[False,'All IMG',0]]
-        Names = []
+#        Names = []
         if G2frame.PatternTree.GetCount():
             id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while id:
                 name = G2frame.PatternTree.GetItemText(id)
-                Names.append(name)
+#                Names.append(name)
                 if 'IMG' in name:
                     if id == G2frame.Image:
                         Source = name
@@ -1462,12 +1462,12 @@ def UpdateStressStrain(G2frame,data):
             
     def OnCopyStrSta(event):
         TextList = [[False,'All IMG',0,0]]
-        Names = []
+#        Names = []
         if G2frame.PatternTree.GetCount():
             id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while id:
                 name = G2frame.PatternTree.GetItemText(id)
-                Names.append(name)
+#                Names.append(name)
                 if 'IMG' in name:
                     Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'))
                     if id == G2frame.Image:
@@ -1618,7 +1618,7 @@ def UpdateStressStrain(G2frame,data):
         
     def OnFitAllStrSta(event):
         TextList = [[False,'All IMG',0]]
-        Names = []
+#        Names = []
         if G2frame.PatternTree.GetCount():
             choices = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
             if len(choices) == 1:

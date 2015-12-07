@@ -414,7 +414,7 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
     
     def getTransMat(RXYZ,OXYZ,TXYZ,Amat):
         Vec = np.inner(Amat,np.array([OXYZ-TXYZ[0],RXYZ-TXYZ[0]])).T            
-        Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,np.newaxis]
+        Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,nxs]
         Mat2 = np.cross(Vec[0],Vec[1])      #UxV
         Mat2 /= np.sqrt(np.sum(Mat2**2))
         Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
@@ -446,7 +446,7 @@ def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
         elif AddHydId[-1] == 2:
             Vec = np.inner(Amat,TXYZ-OXYZ).T
             Vec[0] += Vec[1]            #U - along bisector
-            Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,np.newaxis]
+            Vec /= np.sqrt(np.sum(Vec**2,axis=1))[:,nxs]
             Mat2 = np.cross(Vec[0],Vec[1])      #UxV
             Mat2 /= np.sqrt(np.sum(Mat2**2))
             Mat3 = np.cross(Mat2,Vec[0])        #(UxV)xU
@@ -995,7 +995,6 @@ def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     glTau,glWt: arrays Gauss-Lorentzian pos & wts
     '''
     
-    nxs = np.newaxis
     if nWaves[2]:
         if len(HP.shape) > 2:
             HbH = np.exp(-np.sum(HP[:,:,nxs,nxs,:]*np.inner(HP,Umod),axis=-1)) # refBlk x ops x atoms x ngl add Overhauser corr.?
@@ -1049,13 +1048,15 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
                 Zm = posZigZag(glTau,Tmm,XYZmax).T
                 Tmm[i] += dT
                 ZtauXt[iatm][i] = (Zp-Zm)[i]/(2.*dT)
-            for i in range(3):
-                XYZmax[i] += dX
-                Zp = posZigZag(glTau,Tmm,XYZmax).T
-                XYZmax[i] -= 2.*dX
-                Zm = posZigZag(glTau,Tmm,XYZmax).T
-                XYZmax[i] += dX
-                ZtauXx[iatm][i] = (Zp-Zm)[i]/(2.*dX)
+#            for i in range(3):
+#                XYZmax[i] += dX
+#                Zp = posZigZag(glTau,Tmm,XYZmax).T
+#                XYZmax[i] -= 2.*dX
+#                Zm = posZigZag(glTau,Tmm,XYZmax).T
+#                XYZmax[i] += dX
+#                ZtauXx[iatm][i] = (Zp-Zm)[i]/(2.*dX)
+            dAdX = posZigZagDerv(glTau,Tmm,XYZmax)
+            ZtauXx[iatm] = dAdX
         elif 'Block' in waveTypes[iatm]:
             nx = 1
             Tmm = Ax[iatm][0][:2]                        
@@ -1067,13 +1068,13 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
                 Zm = posBlock(glTau,Tmm,XYZmax).T
                 Tmm[i] += dT
                 ZtauXt[iatm][i] = (Zp-Zm)[i]/(2.*dT)
-            for i in range(3):
-                XYZmax[i] += dX
-                Zp = posBlock(glTau,Tmm,XYZmax).T
-                XYZmax[i] -= 2.*dX
-                Zm = posBlock(glTau,Tmm,XYZmax).T
-                XYZmax[i] += dX
-                ZtauXx[iatm][i] = (Zp-Zm)[i]/(2.*dX)
+#            for i in range(3):
+#                XYZmax[i] += dX
+#                Zp = posBlock(glTau,Tmm,XYZmax).T
+#                XYZmax[i] -= 2.*dX
+#                Zm = posBlock(glTau,Tmm,XYZmax).T
+#                XYZmax[i] += dX
+            ZtauXx[iatm] = posBlockDerv(glTau,Tmm,XYZmax)
         tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x ngl
         if nx:    
             StauX[iatm][:-nx] = np.ones_like(Ax)[iatm,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X 3(xyz) X ngl
@@ -1164,25 +1165,32 @@ def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCt
     return [dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS],[dGdMzC,dGdMzS]
     
 def posFourier(tau,psin,pcos):
-    A = np.array([ps[:,np.newaxis]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])
-    B = np.array([pc[:,np.newaxis]*np.cos(2*np.pi*(i+1)*tau) for i,pc in enumerate(pcos)])
+    A = np.array([ps[:,nxs]*np.sin(2*np.pi*(i+1)*tau) for i,ps in enumerate(psin)])
+    B = np.array([pc[:,nxs]*np.cos(2*np.pi*(i+1)*tau) for i,pc in enumerate(pcos)])
     return np.sum(A,axis=0)+np.sum(B,axis=0)
     
-#def posSawtooth(tau,Toff,slopes):
-#    Tau = (tau-Toff)%1.
-#    A = slopes[:,np.newaxis]*Tau
-#    return A
-#
 def posZigZag(tau,Tmm,XYZmax):
     DT = Tmm[1]-Tmm[0]
     slopeUp = 2.*XYZmax/DT
     slopeDn = 2.*XYZmax/(1.-DT)
     A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in tau])
     return A
+    
+def posZigZagDerv(tau,Tmm,XYZmax):
+    DT = Tmm[1]-Tmm[0]
+    slopeUp = 2.*XYZmax/DT
+    slopeDn = 2.*XYZmax/(1.-DT)
+    dAdX = np.ones(3)[:,nxs]*np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-1+2*(t-Tmm[0])%1./DT,1-2*(t-Tmm[1])%1./DT) for t in tau])
+    return dAdX
+    
 
 def posBlock(tau,Tmm,XYZmax):
     A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax,XYZmax) for t in tau])
     return A
+    
+def posBlockDerv(tau,Tmm,XYZmax):
+    dAdX = np.ones(3)[:,nxs]*np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-1.,1.) for t in tau])
+    return dAdX
     
 def fracCrenel(tau,Toff,Twid):
     Tau = (tau-Toff)%1.
@@ -1190,8 +1198,8 @@ def fracCrenel(tau,Toff,Twid):
     return A
     
 def fracFourier(tau,fsin,fcos):
-    A = np.array([fs[:,np.newaxis]*np.sin(2.*np.pi*(i+1)*tau) for i,fs in enumerate(fsin)])
-    B = np.array([fc[:,np.newaxis]*np.cos(2.*np.pi*(i+1)*tau) for i,fc in enumerate(fcos)])
+    A = np.array([fs[:,nxs]*np.sin(2.*np.pi*(i+1)*tau) for i,fs in enumerate(fsin)])
+    B = np.array([fc[:,nxs]*np.cos(2.*np.pi*(i+1)*tau) for i,fc in enumerate(fcos)])
     return np.sum(A,axis=0)+np.sum(B,axis=0)
     
 def ApplyModulation(data,tau):

@@ -302,6 +302,8 @@ def UpdateConstraints(G2frame,data):
             namelist = ['dAx','dAy','dAz']
         elif 'AU' in name:
             namelist = ['AUiso','AU11','AU22','AU33','AU12','AU13','AU23']
+        elif 'Tm' in name:
+            namelist = ['Tmin','Tmax']
         elif 'RB' in name:
             rbfx = 'RB'+items[2][2]
             if 'T' in name and 'Tr' not in name:

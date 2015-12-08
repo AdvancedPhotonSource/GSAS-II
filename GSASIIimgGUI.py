@@ -2016,8 +2016,8 @@ class AutoIntFrame(wx.Frame):
                 if self.params['Mode'] == 'table':
                     dist = controlsDict['distance']
                     interpDict,imgctrl,immask = self.Evaluator(dist) # interpolated calibration values
-                    if GSASIIpath.GetConfigValue('debug'):
-                        print 'interpolated: ',interpDict
+                    #if GSASIIpath.GetConfigValue('debug'):
+                    print 'interpolated: ',interpDict
                     self.ImageControls = ReadControls(imgctrl)
                     self.ImageControls.update(interpDict)
                     self.ImageControls['showLines'] = True
@@ -2569,7 +2569,7 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
         self.CloseEditor()
         fil = '(none)'
         try:
-            dlg = wx.FileDialog(G2frame, 'Select mask or control file to add (Press cancel if none)', 
+            dlg = wx.FileDialog(self, 'Select mask or control file to add (Press cancel if none)', 
                                 style=wx.OPEN,
                                 wildcard='Add GSAS-II mask file (.immask)|*.immask|add image control file (.imctrl)|*.imctrl')
             if dlg.ShowModal() == wx.ID_OK:

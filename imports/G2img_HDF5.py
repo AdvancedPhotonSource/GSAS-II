@@ -16,12 +16,11 @@ more than a single image.
 '''
 
 import numpy as np
-import h5py
 import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: $")
 
-class Hdf5_Reader(G2IO.ImportImage):
+class HDF5_Reader(G2IO.ImportImage):
     '''Routine to read a HD5 image, typically from APS Sector 6.
     B. Frosik/SDM. Initial version.
         
@@ -29,7 +28,12 @@ class Hdf5_Reader(G2IO.ImportImage):
     dsetlist = []
 
     def __init__(self):
-        print 'start'
+        # check if HDF5 library is present, if not importer cannot be used
+        try:
+            import h5py
+        except:
+            self.UseReader = False
+            print 'HDF5 Reader skipped because h5py library not installed'
         super(self.__class__,self).__init__( # fancy way to self-reference
                                              extensionlist=('.hdf5','.hd5','.h5','.hdf'),
                                              strictExtension=True,
@@ -38,8 +42,9 @@ class Hdf5_Reader(G2IO.ImportImage):
                                              )
 
     def ContentsValidator(self, filepointer):
-        '''no test at this time
-        '''
+        '''test by using the HDF5 open
+        ''' 
+        import h5py
         try:
             # the following does not work, filepointer is not a filename
             f = h5py.File(filepointer.name, 'r')
@@ -51,6 +56,7 @@ class Hdf5_Reader(G2IO.ImportImage):
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
         '''Read using HDF5 file reader, :func:`ReadData`
         '''
+        import h5py
         imagenum = kwarg.get('blocknum')
         if imagenum is None: imagenum = 1
         f = None
@@ -72,6 +78,7 @@ class Hdf5_Reader(G2IO.ImportImage):
                f.close()
             
     def visit(self, f):         
+        import h5py
         def func(name, dset):
             datakeyword = 'data'
             if isinstance(dset, h5py.Dataset):

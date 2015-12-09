@@ -59,7 +59,16 @@ The first line in the ``__init__`` method calls the parent class
     It is a very good idea to supply  a :ref:`ContentsValidator <ContentsValidator>`
     method when ``strictExtension`` is False.
   * ``formatName``: a string to be used in the menu. Should be short. 
-  * ``longFormatName``: a longer string to be used to describe the format in help. 
+  * ``longFormatName``: a longer string to be used to describe the
+    format in help. 
+
+Note that if an importer detects a condition which prevents its use,
+for example because a required Python package is not present, it can
+set the value of ``self.UseReader`` to False. Another possible use for
+this would be an importer that requires a network connection to a
+remote site. Setting ``self.UseReader`` to False must be done in the 
+``__init__`` method and will prevent the
+importer from being used or included in the expected menu. 
 
 Reader()
 ~~~~~~~~~~~~~~

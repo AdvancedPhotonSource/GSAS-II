@@ -1330,7 +1330,8 @@ class ImportBaseclass(object):
         tells the user some information about what is wrong with their file.         
         '''
         pass
-
+    
+    UseReader = True  # in __init__ set value of self.UseReader to False to skip use of current importer
     def __init__(self,
                  formatName,
                  longFormatName=None,

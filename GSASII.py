@@ -284,7 +284,8 @@ class GSASII(wx.Frame):
                             if not callable(getattr(clss[1],m)): break
                         else:
                             reader = clss[1]() # create an import instance
-                            readerlist.append(reader)
+                            if reader.UseReader:
+                                readerlist.append(reader)
             except AttributeError:
                 print 'Import_'+errprefix+': Attribute Error '+str(filename)
             #except ImportError:

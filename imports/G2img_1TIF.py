@@ -95,13 +95,17 @@ def GetTifData(filename):
         head = Meta.readlines()
         for line in head:
             line = line.strip()
-            if '=' not in line: continue
-            if 'dataType' in line:
-                dataType = int(line.split('=')[1])
-            elif 'wavelength' in line.lower():
-                wavelength = float(line.split('=')[1])
-            elif 'distance' in line.lower():
-                distance = float(line.split('=')[1])
+            try:
+                if '=' not in line: continue
+                keyword = line.split('=')[0].strip()
+                if 'dataType' == keyword:
+                    dataType = int(line.split('=')[1])
+                elif 'wavelength' == keyword.lower():
+                    wavelength = float(line.split('=')[1])
+                elif 'distance' == keyword.lower():
+                    distance = float(line.split('=')[1])
+            except:
+                print('error reading metadata: '+line)
         Meta.close()
     except IOError:
         print 'no metadata file found - will try to read file anyway'

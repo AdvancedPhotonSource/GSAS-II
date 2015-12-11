@@ -1033,7 +1033,7 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
     nWaves = [Af.shape[1],Ax.shape[1],Au.shape[1]] 
     StauX = np.zeros((Ax.shape[0],Ax.shape[1],3,ngl))    #atoms x waves x 3 x ngl
     CtauX = np.zeros((Ax.shape[0],Ax.shape[1],3,ngl))
-    ZtauXt = np.zeros((Ax.shape[0],2,ngl))               #atoms x Tminmax x ngl
+    ZtauXt = np.zeros((Ax.shape[0],2,3,ngl))               #atoms x Tminmax x 3 x ngl
     ZtauXx = np.zeros((Ax.shape[0],3,ngl))               #atoms x XYZmax x ngl
     for iatm in range(Ax.shape[0]):
         nx = 0
@@ -1041,40 +1041,12 @@ def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
             nx = 1
             Tmm = Ax[iatm][0][:2]                        
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])            
-            for i in range(2):
-                Tmm[i] += dT
-                Zp = posZigZag(glTau,Tmm,XYZmax).T
-                Tmm[i] -= 2.*dT
-                Zm = posZigZag(glTau,Tmm,XYZmax).T
-                Tmm[i] += dT
-                ZtauXt[iatm][i] = (Zp-Zm)[i]/(2.*dT)
-#            for i in range(3):
-#                XYZmax[i] += dX
-#                Zp = posZigZag(glTau,Tmm,XYZmax).T
-#                XYZmax[i] -= 2.*dX
-#                Zm = posZigZag(glTau,Tmm,XYZmax).T
-#                XYZmax[i] += dX
-#                ZtauXx[iatm][i] = (Zp-Zm)[i]/(2.*dX)
-            dAdX = posZigZagDerv(glTau,Tmm,XYZmax)
-            ZtauXx[iatm] = dAdX
+            ZtauXt[iatm],ZtauXx[iatm] = posZigZagDerv(glTau,Tmm,XYZmax)
         elif 'Block' in waveTypes[iatm]:
             nx = 1
             Tmm = Ax[iatm][0][:2]                        
             XYZmax = np.array([Ax[iatm][0][2],Bx[iatm][0][0],Bx[iatm][0][1]])            
-            for i in range(2):
-                Tmm[i] += dT
-                Zp = posBlock(glTau,Tmm,XYZmax).T
-                Tmm[i] -= 2.*dT
-                Zm = posBlock(glTau,Tmm,XYZmax).T
-                Tmm[i] += dT
-                ZtauXt[iatm][i] = (Zp-Zm)[i]/(2.*dT)
-#            for i in range(3):
-#                XYZmax[i] += dX
-#                Zp = posBlock(glTau,Tmm,XYZmax).T
-#                XYZmax[i] -= 2.*dX
-#                Zm = posBlock(glTau,Tmm,XYZmax).T
-#                XYZmax[i] += dX
-            ZtauXx[iatm] = posBlockDerv(glTau,Tmm,XYZmax)
+            ZtauXt[iatm],ZtauXx[iatm] = posBlockDerv(glTau,Tmm,XYZmax)
         tauX = np.arange(1.,nWaves[1]+1-nx)[:,nxs]*glTau  #Xwaves x ngl
         if nx:    
             StauX[iatm][:-nx] = np.ones_like(Ax)[iatm,nx:,:,nxs]*np.sin(twopi*tauX)[nxs,:,nxs,:]   #atoms X waves X 3(xyz) X ngl
@@ -1144,24 +1116,24 @@ def ModulationDerv(H,HP,Hij,nWaves,waveShapes,Fmod,Xmod,UmodAB,SCtauF,SCtauX,SCt
         HbH = np.ones_like(HdotX)
     dHdXA = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(SCtauX[0],-1,-2)[nxs,:,:,:,:]    #ops x atoms x sine waves x ngl x xyz
     dHdXB = twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(SCtauX[1],-1,-2)[nxs,:,:,:,:]    #ditto - cos waves
+# ops x atoms x waves x 2xyz - real part - good
     dGdMxCa = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxCb = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMxC = np.concatenate((dGdMxCa,dGdMxCb),axis=-1)
-# ops x atoms x waves x 2xyz - real part - good
+# ops x atoms x waves x 2xyz - imag part - good
     dGdMxSa = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXA*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
     dGdMxSb = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXB*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)    
     dGdMxS = np.concatenate((dGdMxSa,dGdMxSb),axis=-1)
-# ZigZag/Block waves
-    dHdXZt = twopi*np.ones(HP.shape[0])[:,nxs,nxs,nxs]*np.swapaxes(SCtauX[2],-1,-2)[nxs,:,:,:]          #??ops x atoms x ngl x 3(ZigZag/Block Tminmax)
+# ZigZag/Block waves - problems here?
+    dHdXZt = -twopi*HP[:,nxs,nxs,nxs,:]*np.swapaxes(SCtauX[2],-1,-2)[nxs,:,:,:,:]          #ops x atoms x ngl x 2(ZigZag/Block Tminmax)
     dHdXZx = twopi*HP[:,nxs,nxs,:]*np.swapaxes(SCtauX[3],-1,-2)[nxs,:,:,:]          #ops x atoms x ngl x 3(ZigZag/Block XYZmax)
-    dGdMzCt = -np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZt*np.sin(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
+    dGdMzCt = -np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXZt*np.sin(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMzCx = -np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZx*np.sin(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
-    dGdMzC = np.concatenate((dGdMzCt,dGdMzCx),axis=-1)
-    dGdMzSt = np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZt*np.cos(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
+    dGdMzC = np.concatenate((np.sum(dGdMzCt,axis=-1),dGdMzCx),axis=-1)
+    dGdMzSt = np.sum((Fmod*HbH)[:,:,nxs,:,nxs]*(dHdXZt*np.cos(HdotXD)[:,:,nxs,:,nxs])*glWt[nxs,nxs,nxs,:,nxs],axis=-2)
     dGdMzSx = np.sum((Fmod*HbH)[:,:,:,nxs]*(dHdXZx*np.cos(HdotXD)[:,:,:,nxs])*glWt[nxs,nxs,:,nxs],axis=-2)
-    dGdMzS = np.concatenate((dGdMzSt,dGdMzSx),axis=-1)
+    dGdMzS = np.concatenate((np.sum(dGdMzSt,axis=-1),dGdMzSx),axis=-1)
 #    GSASIIpath.IPyBreak()
-# ops x atoms x waves x 2xyz - imaginary part - good
     return [dGdMfC,dGdMfS],[dGdMxC,dGdMxS],[dGdMuC,dGdMuS],[dGdMzC,dGdMzS]
     
 def posFourier(tau,psin,pcos):
@@ -1169,28 +1141,34 @@ def posFourier(tau,psin,pcos):
     B = np.array([pc[:,nxs]*np.cos(2*np.pi*(i+1)*tau) for i,pc in enumerate(pcos)])
     return np.sum(A,axis=0)+np.sum(B,axis=0)
     
-def posZigZag(tau,Tmm,XYZmax):
+def posZigZag(T,Tmm,Xmax):
     DT = Tmm[1]-Tmm[0]
-    slopeUp = 2.*XYZmax/DT
-    slopeDn = 2.*XYZmax/(1.-DT)
-    A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax+slopeUp*((t-Tmm[0])%1.),XYZmax-slopeDn*((t-Tmm[1])%1.)) for t in tau])
+    Su = 2.*Xmax/DT
+    Sd = 2.*Xmax/(1.-DT)
+    A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-Xmax+Su*((t-Tmm[0])%1.),Xmax-Sd*((t-Tmm[1])%1.)) for t in T])
     return A
     
-def posZigZagDerv(tau,Tmm,XYZmax):
+def posZigZagDerv(T,Tmm,Xmax):
     DT = Tmm[1]-Tmm[0]
-    slopeUp = 2.*XYZmax/DT
-    slopeDn = 2.*XYZmax/(1.-DT)
-    dAdX = np.ones(3)[:,nxs]*np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-1+2*(t-Tmm[0])%1./DT,1-2*(t-Tmm[1])%1./DT) for t in tau])
-    return dAdX
-    
+    Su = 2.*Xmax/DT
+    Sd = 2.*Xmax/(1.-DT)
+    dAdT = np.zeros((2,3,len(T)))
+    dAdT[0] = np.array([np.where(Tmm[0] < t <= Tmm[1],Su*(t-Tmm[0]-1)/DT,-Sd*(t-Tmm[1])/(1.-DT)) for t in T]).T
+    dAdT[1] = np.array([np.where(Tmm[0] < t <= Tmm[1],-Su*(t-Tmm[0])/DT,Sd*(t-Tmm[1])/(1.-DT)) for t in T]).T
+    dAdX = np.ones(3)[:,nxs]*np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-1.+2.*(t-Tmm[0])/DT,1.-2.*(t-Tmm[1])%1./DT) for t in T])
+    return dAdT,dAdX
 
-def posBlock(tau,Tmm,XYZmax):
-    A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-XYZmax,XYZmax) for t in tau])
+def posBlock(T,Tmm,Xmax):
+    A = np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-Xmax,Xmax) for t in T])
     return A
     
-def posBlockDerv(tau,Tmm,XYZmax):
-    dAdX = np.ones(3)[:,nxs]*np.array([np.where(Tmm[0] < t%1. <= Tmm[1],-1.,1.) for t in tau])
-    return dAdX
+def posBlockDerv(T,Tmm,Xmax):
+    dAdT = np.zeros((2,3,len(T)))
+    ind = np.searchsorted(T,Tmm)
+    dAdT[0,:,ind[0]] = -Xmax/len(T)
+    dAdT[1,:,ind[1]] = Xmax/len(T)
+    dAdX = np.ones(3)[:,nxs]*np.array([np.where(Tmm[0] < t <= Tmm[1],-1.,1.) for t in T])  #OK
+    return dAdT,dAdX
     
 def fracCrenel(tau,Toff,Twid):
     Tau = (tau-Toff)%1.

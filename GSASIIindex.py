@@ -869,6 +869,7 @@ def DoIndexPeaks(peaks,controls,bravais,ifX20=True):
     print "%s %8.3f %8.3f" % ('lattice parameter range = ',amin,amax)
     print "%s %.4f %s %d %s %d" % ('Zero =',zero,'Nc/No max =',ncno,' Max Nc =',ncno*Nobs)
     cells = []
+    lastcell = np.zeros(7)
     for ibrav in range(14):
         begin = time.time()
         if bravais[ibrav]:
@@ -916,8 +917,13 @@ def DoIndexPeaks(peaks,controls,bravais,ifX20=True):
                                     a,b,c,alp,bet,gam = G2lat.A2cell(A)
                                     V = G2lat.calc_V(A)
                                     if M20 >= 2.0:
-                                        print "%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f" % (M20,X20,Nc,a,b,c,alp,bet,gam,V,V1)
-                                        cells.append([M20,X20,ibrav,a,b,c,alp,bet,gam,V,False,False])
+                                        cell = [M20,X20,ibrav,a,b,c,alp,bet,gam,V,False,False]
+                                        newcell = np.array(cell[3:10])
+                                        if not np.allclose(newcell,lastcell):
+                                            print "%10.3f %3d %3d %10.5f %10.5f %10.5f %10.3f %10.3f %10.3f %10.2f %10.2f"  \
+                                                %(M20,X20,Nc,a,b,c,alp,bet,gam,V,V1)
+                                            cells.append(cell)
+                                        lastcell = np.array(cell[3:10])
                             if not GoOn:
                                 break
                             N2 += 1

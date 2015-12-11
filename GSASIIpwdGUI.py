@@ -2793,7 +2793,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                     cells[i][-2] = False
                     UnitCellsTable.SetValue(i,c,False)
                 UnitCellsTable.SetValue(r,c,True)
-                gridDisplay.Refresh()
+                gridDisplay.ForceRefresh()
                 cells[r][-2] = True
                 ibrav = cells[r][2]
                 A = G2lat.cell2A(cells[r][3:9])

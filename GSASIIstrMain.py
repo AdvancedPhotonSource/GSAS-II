@@ -397,8 +397,7 @@ def SeqRefine(GPXfile,dlg):
             sigDict.update(G2mv.ComputeDepESD(covMatrix,varyList,parmDict))
     
             # a dict with values & esds for dependent (constrained) parameters
-            depParmDict = {i:(parmDict[i],sigDict[i]) for i in varyListStart
-                           if i not in varyList}
+            depParmDict = {i:(parmDict[i],sigDict[i]) for i in varyListStart if i not in varyList}
             newCellDict = copy.deepcopy(G2stMth.GetNewCellParms(parmDict,varyList))
             newAtomDict = copy.deepcopy(G2stMth.ApplyXYZshifts(parmDict,varyList))
             histRefData = {

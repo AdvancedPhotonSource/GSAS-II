@@ -1481,7 +1481,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
 #            GSASIIpath.IPyBreak()
             if Id:     
                 Phases = G2frame.PatternTree.GetItemPyData(Id)
-                pick = str(G2frame.itemPicked).split('(')[1].strip(')')
+                pick = str(G2frame.itemPicked).split('(',1)[1][:-1]
                 if 'line' not in pick:       #avoid data points, etc.
                     data = G2frame.PatternTree.GetItemPyData(PatternId)
                     num = Phases.keys().index(pick)

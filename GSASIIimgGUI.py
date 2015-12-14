@@ -176,7 +176,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         for item in G2frame.MakePDF: item.Enable(True)
         
     def OnIntegrateAll(event):
-        print 'integrate all'
         TextList = [[False,'All IMG',0]]
 #        Names = []
         if G2frame.PatternTree.GetCount():
@@ -1986,170 +1985,6 @@ class AutoIntFrame(wx.Frame):
     :param float PollTime: frequency in seconds to repeat calling the
       processing loop. (Default is 3.0 seconds.)
     '''
-    def OnTimerLoop(self,event):
-        '''A method that is called every :meth:`PollTime` seconds that is
-        used to check for new files and process them. This is called only
-        after the "Start" button is pressed (when its label reads "Pause").
-        '''
-        G2frame = self.G2frame
-        try:
-            self.currImageList = sorted(
-                glob.glob(os.path.join(self.imagedir,self.params['filter'])))
-        except IndexError:
-            self.currImageList = []
-            return
-
-        # Create a list of image files that have already been read
-        imageFileList = []
-        for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
-            imgId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
-            size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(imgId)
-            if imagefile not in imageFileList: imageFileList.append(imagefile)
-        # loop over image files matching glob, reading in new ones
-        for newImage in self.currImageList:
-            if newImage in imageFileList: continue # already read
-            for imgId in G2IO.ReadImages(G2frame,newImage):
-                controlsDict = G2frame.PatternTree.GetItemPyData(
-                    G2gd.GetPatternTreeItemId(G2frame,imgId, 'Image Controls'))
-                ImageMasks = G2frame.PatternTree.GetItemPyData(
-                    G2gd.GetPatternTreeItemId(G2frame,imgId, 'Masks'))
-                if self.params['Mode'] == 'table':
-                    dist = controlsDict['distance']
-                    interpDict,imgctrl,immask = self.Evaluator(dist) # interpolated calibration values
-                    #if GSASIIpath.GetConfigValue('debug'):
-                    print 'interpolated: ',interpDict
-                    self.ImageControls = ReadControls(imgctrl)
-                    self.ImageControls.update(interpDict)
-                    self.ImageControls['showLines'] = True
-                    self.ImageControls['ring'] = []
-                    self.ImageControls['rings'] = []
-                    self.ImageControls['ellipses'] = []
-                    self.ImageControls['setDefault'] = False
-                    for i in 'range','size','GonioAngles':
-                        if i in self.ImageControls:
-                            del self.ImageControls[i]
-                    # load copy of Image Masks
-                    if immask:
-                        self.ImageMasks = ReadMask(immask)
-                        del self.Thresholds['Thresholds']
-                    else:
-                        self.ImageMasks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[]}
-                # update controls from master
-                controlsDict.update(self.ImageControls)
-                # update masks from master w/o Thresholds
-                ImageMasks.update(self.ImageMasks)
-        # now integrate the images that have not already been processed before
-        for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
-            if img in G2frame.IntegratedList: continue
-            G2frame.IntegratedList.append(img)
-            imgId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
-            G2frame.Image = imgId
-            G2frame.PickId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls')
-            #  integrate in this entry
-            size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(imgId)
-            G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,True,imagetag)
-            masks = G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
-            data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
-            self.oldImagefile = '' # mark image as changed; reread as needed
-            # simulate a Image Controls press, since that is where the
-            # integration is hidden
-            UpdateImageControls(G2frame,data,masks,IntegrateOnly=True)
-            # split name and control number
-            s = re.split(r'(\d+)\Z',os.path.split(os.path.splitext(imagefile)[0])[1])
-            namepre = s[0]
-            if len(s) > 1:
-                namenum = s[1]
-            else:
-                namenum = ''
-            # write out the images in the selected formats and save the names,
-            # reset will delete them
-            for Id in G2frame.IntgOutList:
-                treename = G2frame.PatternTree.GetItemText(Id)
-                G2frame.AutointPWDRnames.append(treename)
-                Sdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Sample Parameters'))
-                # determine the name for the current file
-                fileroot = namepre
-                if len(G2frame.IntgOutList) > 1:
-                    fileroot += "_AZM"
-                    if 'Azimuth' in Sdata:
-                        fileroot += str(int(10*Sdata['Azimuth']))
-                    fileroot += "_" 
-                fileroot += namenum
-                # loop over selected formats
-                for dfmt in self.fmtlist:
-                    if not self.params[dfmt[1:]]: continue
-                    if self.params['SeparateDir']:
-                        subdir = dfmt[1:]
-                    else:
-                        subdir = ''
-                    fil = os.path.join(self.params['outdir'],subdir,fileroot)
-                    print('writing file '+fil+dfmt)
-                    G2IO.ExportPowder(G2frame,treename,fil,dfmt)
-        
-        if GSASIIpath.GetConfigValue('debug'):
-            import datetime
-            print ("Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
-
-    def StartLoop(self):
-        '''Save current Image params for use in future integrations
-        also label the window so users understand whatis being used
-        '''
-        print '\nStarting new autointegration\n'
-        G2frame = self.G2frame
-        # show current IMG base
-        self.ControlBaseLbl.SetLabel(G2frame.PatternTree.GetItemText(G2frame.Image))
-        if self.params['Mode'] != 'table':
-            # load copy of Image Controls from current image and clean up
-            # items that should not be copied
-            self.ImageControls = copy.deepcopy(
-                G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
-                    G2frame,G2frame.Image, 'Image Controls')))
-            self.ImageControls['showLines'] = True
-            self.ImageControls['ring'] = []
-            self.ImageControls['rings'] = []
-            self.ImageControls['ellipses'] = []
-            self.ImageControls['setDefault'] = False
-            del self.ImageControls['range']
-            del self.ImageControls['size']
-            del self.ImageControls['GonioAngles']
-            # load copy of Image Masks, keep thresholds
-            self.ImageMasks = copy.deepcopy(
-                G2frame.PatternTree.GetItemPyData(
-                    G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks')))
-            self.Thresholds = self.ImageMasks['Thresholds'][:]
-        # make sure all output directories exist
-        if self.params['SeparateDir']:
-            for dfmt in self.fmtlist:
-                if not self.params[dfmt[1:]]: continue
-                dir = os.path.join(self.params['outdir'],dfmt[1:])
-                if not os.path.exists(dir): os.makedirs(dir)
-        else:
-            if not os.path.exists(self.params['outdir']):
-                os.makedirs(self.params['outdir'])
-        if self.Reset: # special things to do after Reset has been pressed
-            # reset controls and masks for all IMG items in tree to master
-            for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
-                # update controls from master
-                controlsDict = G2frame.PatternTree.GetItemPyData(
-                    G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
-                controlsDict.update(self.ImageControls)
-                # update masks from master
-                ImageMasks = G2frame.PatternTree.GetItemPyData(
-                    G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
-                ImageMasks.update(self.ImageMasks)
-            # delete all PWDR items created after last Start was pressed 
-            idlist = []
-            item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-            while item:
-                itemName = G2frame.PatternTree.GetItemText(item)
-                if itemName in G2frame.AutointPWDRnames:
-                    idlist.append(item)
-                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            for item in idlist:
-                G2frame.PatternTree.Delete(item)
-            self.Reset = False
-        G2frame.AutointPWDRnames = [] # list of created PWDR tree item names
 
     def __init__(self,G2frame,PollTime=60.0):
         def OnStart(event):
@@ -2165,10 +2000,12 @@ class AutoIntFrame(wx.Frame):
             #if err:
             #    G2G.G2MessageBox(self,err)
             #    return
+            self.Pause = False
             # change button label
             if btnstart.GetLabel() != 'Pause':
                 btnstart.SetLabel('Pause')
                 if self.timer.IsRunning(): self.timer.Stop()
+                self.PreventReEntryTimer = False
                 self.StartLoop()
                 self.OnTimerLoop(None) # run once immediately and again after delay
                 self.timer.Start(int(1000*PollTime),oneShot=False)
@@ -2178,6 +2015,7 @@ class AutoIntFrame(wx.Frame):
                 if self.timer.IsRunning(): self.timer.Stop()
                 print('\nPausing autointegration\n')
                 self.Status.SetStatusText('Press Resume to continue integration or Reset to prepare to reintegrate all images')
+                self.Pause = True
 
         def OnReset(event):
             '''Called when Reset button is pressed. This stops the
@@ -2188,7 +2026,7 @@ class AutoIntFrame(wx.Frame):
             self.Status.SetStatusText('Press Restart to reload and re-integrate images matching filter')
             if self.timer.IsRunning(): self.timer.Stop()
             self.Reset = True
-            self.G2frame.IntegratedList = []
+            self.Pause = True
             
         def OnQuit(event):
             '''Stop the processing loop and close the Frame
@@ -2221,17 +2059,21 @@ class AutoIntFrame(wx.Frame):
             '''
             self.Evaluator = None
             if r2.GetValue():
-                self.params['Mode'] = 'table'
                 try:
                     dlg = IntegParmTable(self.G2frame) # create the dialog
                     if dlg.ShowModal() == wx.ID_OK:
                         self.Evaluator = DefineEvaluator(dlg)
+                        self.params['Mode'] = 'table'
                     else:
-                        r1.SetValue(True)
+                        self.useActive.SetValue(True)
                 finally:
                     dlg.Destroy()
-            else:
+            if self.useActive.GetValue():
                 self.params['Mode'] = 'active'
+                self.imageBase = G2frame.Image
+                self.useActive.SetLabel("Active Image: "+
+                        G2frame.PatternTree.GetItemText(self.imageBase))
+
         ##################################################
         # beginning of __init__ processing
         ##################################################
@@ -2239,15 +2081,19 @@ class AutoIntFrame(wx.Frame):
         self.Evaluator = None
         self.params = {}
         self.Reset = False
+        self.Pause = False
+        self.PreventReEntryShowMatch = False
+        self.PreventReEntryTimer = False
         self.params['IMGfile'] = ''
         self.params['MaskFile'] = ''
         self.params['IgnoreMask'] = True
         self.fmtlist = G2IO.ExportPowderList(G2frame)
         self.timer = wx.Timer()
         self.timer.Bind(wx.EVT_TIMER,self.OnTimerLoop)
+        self.imageBase = G2frame.Image
 
         controlsId = G2frame.PatternTree.GetSelection()
-        size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)        
+        size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(self.imageBase)        
         self.imagedir,fileroot = os.path.split(imagefile)
         self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
         self.params['outdir'] = os.path.abspath(self.imagedir)
@@ -2256,31 +2102,32 @@ class AutoIntFrame(wx.Frame):
         self.Status.SetStatusText('Press Start to load and integrate images matching filter')
         mnpnl = wx.Panel(self)
         mnsizer = wx.BoxSizer(wx.VERTICAL)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Integration based on: '))
-        self.ControlBaseLbl = wx.StaticText(mnpnl, wx.ID_ANY,'?')
-        self.ControlBaseLbl.SetLabel(G2frame.PatternTree.GetItemText(G2frame.Image))
-        sizer.Add(self.ControlBaseLbl)
-        mnsizer.Add(sizer,0,wx.ALIGN_LEFT,1)
+        # box for integration controls & masks input
+        lbl = wx.StaticBox(mnpnl, wx.ID_ANY, "Integration Control")
+        lblsizr = wx.StaticBoxSizer(lbl, wx.VERTICAL)
+        lblsizr.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Use integration parameters from:'))
+        self.useActive = wx.RadioButton(mnpnl, wx.ID_ANY, 
+                            style = wx.RB_GROUP)
+        self.useActive.Bind(wx.EVT_RADIOBUTTON, OnRadioSelect)
+        self.useActive.SetLabel("Active Image: "+
+                                G2frame.PatternTree.GetItemText(self.imageBase))
+        lblsizr.Add(self.useActive,1,wx.EXPAND,1)
+        self.useActive.SetValue(True)
+        r2 = wx.RadioButton(mnpnl, wx.ID_ANY, "From look-up table")
+        lblsizr.Add(r2,1,wx.EXPAND,1)
+        r2.Bind(wx.EVT_RADIOBUTTON, OnRadioSelect)
+        mnsizer.Add(lblsizr,1,wx.EXPAND,1)
+
         # file filter stuff
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'Image filter'))
-        flterInp = G2G.ValidatedTxtCtrl(mnpnl,self.params,'filter')
+        flterInp = G2G.ValidatedTxtCtrl(mnpnl,self.params,'filter',
+                                        OnLeave=self.ShowMatchingFiles)
         sizer.Add(flterInp)
         mnsizer.Add(sizer,0,wx.ALIGN_RIGHT,1)
-        # box for integration controls & masks input
-        lbl = wx.StaticBox(mnpnl, wx.ID_ANY, "Integration Controls/Masks source")
-        lblsizr = wx.StaticBoxSizer(lbl, wx.VERTICAL)
-        r1 = wx.RadioButton(mnpnl, wx.ID_ANY, "Use Active Image",
-                            style = wx.RB_GROUP)
-        r1.Bind(wx.EVT_RADIOBUTTON, OnRadioSelect)
-        lblsizr.Add(r1)
-        r1.SetValue(True)
-        r2 = wx.RadioButton(mnpnl, wx.ID_ANY, "Use from table")
-        lblsizr.Add(r2)
-        r2.Bind(wx.EVT_RADIOBUTTON, OnRadioSelect)
-        mnsizer.Add(lblsizr)
-
+        self.ListBox = wx.ListBox(mnpnl,size=(-1,100))
+        mnsizer.Add(self.ListBox,0,wx.EXPAND,1)
+        self.ShowMatchingFiles(self.params['filter'])
         # box for output selections
         lbl = wx.StaticBox(mnpnl, wx.ID_ANY, "Output settings")
         lblsizr = wx.StaticBoxSizer(lbl, wx.VERTICAL)
@@ -2332,6 +2179,249 @@ class AutoIntFrame(wx.Frame):
         mnsizer.Fit(self)
         self.CenterOnParent()
         self.Show()
+
+    def ShowMatchingFiles(self,value,invalid=False,**kwargs):
+        G2frame = self.G2frame
+        if invalid: return
+        if self.PreventReEntryShowMatch: return
+        self.PreventReEntryShowMatch = True
+        imageFileList = []
+        for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
+            imgId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
+            size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(imgId)
+            if imagefile not in imageFileList: imageFileList.append(imagefile)
+        try:
+            imageList = sorted(
+                glob.glob(os.path.join(self.imagedir,value)))
+            if not imageList:
+                #title = 'Warning'
+                msg = 'Warning: No files match search string '+os.path.join(self.imagedir,value)
+            else:
+                #title='Matched files'
+                msg = ''
+                for fil in imageList:
+                    if fil not in imageFileList: msg += '\n  '+fil
+                if msg:
+                    msg = 'Files to process from '+os.path.join(self.imagedir,value)+msg
+                else:
+                    msg = 'All files processed'
+        except IndexError:
+            #title = 'Error'
+            msg = 'Error searching for files named '+os.path.join(self.imagedir,value)
+            #print(msg)
+        self.ListBox.Clear()
+        self.ListBox.AppendItems(msg.split('\n'))
+        self.PreventReEntryShowMatch = False
+        return
+        
+    def IntegrateImage(self,img):
+        '''Integrates a single image'''
+        G2frame = self.G2frame
+        imgId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
+        G2frame.Image = imgId
+        G2frame.PickId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls')
+        # do integration
+        size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(imgId)
+        G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,True,imagetag)
+        masks = G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
+        data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
+        # simulate a Image Controls press, since that is where the
+        # integration is hidden
+        UpdateImageControls(G2frame,data,masks,IntegrateOnly=True)
+        G2frame.IntegratedList.append(img) # note this as integrated
+        # split name and control number
+        s = re.split(r'(\d+)\Z',os.path.split(os.path.splitext(imagefile)[0])[1])
+        namepre = s[0]
+        if len(s) > 1:
+            namenum = s[1]
+        else:
+            namenum = ''
+        for Id in G2frame.IntgOutList: # loop over newly created PDWR entry(ies)
+            # save the created PWDR tree names so that a reset can delete them
+            treename = G2frame.PatternTree.GetItemText(Id)
+            G2frame.AutointPWDRnames.append(treename)
+            # write out the images in the selected formats
+            Sdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Sample Parameters'))
+            # determine the name for the current file
+            fileroot = namepre
+            if len(G2frame.IntgOutList) > 1:
+                fileroot += "_AZM"
+                if 'Azimuth' in Sdata:
+                    fileroot += str(int(10*Sdata['Azimuth']))
+                fileroot += "_" 
+            fileroot += namenum
+            # loop over selected formats
+            for dfmt in self.fmtlist:
+                if not self.params[dfmt[1:]]: continue
+                if self.params['SeparateDir']:
+                    subdir = dfmt[1:]
+                else:
+                    subdir = ''
+                fil = os.path.join(self.params['outdir'],subdir,fileroot)
+                print('writing file '+fil+dfmt)
+                G2IO.ExportPowder(G2frame,treename,fil,dfmt)
+                
+    def ResetFromTable(self):
+        '''Sets integration parameters based on values from
+        the lookup table
+        '''
+        dist = controlsDict['distance']
+        interpDict,imgctrl,immask = self.Evaluator(dist) # interpolated calibration values
+        #if GSASIIpath.GetConfigValue('debug'):
+        if GSASIIpath.GetConfigValue('debug'):
+            print 'interpolated values: ',interpDict
+        self.ImageControls = ReadControls(imgctrl)
+        self.ImageControls.update(interpDict)
+        self.ImageControls['showLines'] = True
+        self.ImageControls['ring'] = []
+        self.ImageControls['rings'] = []
+        self.ImageControls['ellipses'] = []
+        self.ImageControls['setDefault'] = False
+        for i in 'range','size','GonioAngles':
+            if i in self.ImageControls:
+                del self.ImageControls[i]
+        # load copy of Image Masks
+        if immask:
+            self.ImageMasks = ReadMask(immask)
+            del self.Thresholds['Thresholds']
+        else:
+            self.ImageMasks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[]}
+        
+    def StartLoop(self):
+        '''Save current Image params for use in future integrations
+        also label the window so users understand what is being used
+        '''
+        print '\nStarting new autointegration\n'
+        G2frame = self.G2frame
+        # show current IMG base
+        if self.params['Mode'] != 'table':
+            self.useActive.SetLabel("Active Image: "+
+                                    G2frame.PatternTree.GetItemText(self.imageBase))
+            # load copy of Image Controls from current image and clean up
+            # items that should not be copied
+            self.ImageControls = copy.deepcopy(
+                G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                    G2frame,self.imageBase, 'Image Controls')))
+            self.ImageControls['showLines'] = True
+            self.ImageControls['ring'] = []
+            self.ImageControls['rings'] = []
+            self.ImageControls['ellipses'] = []
+            self.ImageControls['setDefault'] = False
+            del self.ImageControls['range']
+            del self.ImageControls['size']
+            del self.ImageControls['GonioAngles']
+            # load copy of Image Masks, keep thresholds
+            self.ImageMasks = copy.deepcopy(
+                G2frame.PatternTree.GetItemPyData(
+                    G2gd.GetPatternTreeItemId(G2frame,self.imageBase, 'Masks')))
+            self.Thresholds = self.ImageMasks['Thresholds'][:]
+        # make sure all output directories exist
+        if self.params['SeparateDir']:
+            for dfmt in self.fmtlist:
+                if not self.params[dfmt[1:]]: continue
+                dir = os.path.join(self.params['outdir'],dfmt[1:])
+                if not os.path.exists(dir): os.makedirs(dir)
+        else:
+            if not os.path.exists(self.params['outdir']):
+                os.makedirs(self.params['outdir'])
+        if self.Reset: # special things to do after Reset has been pressed
+            self.G2frame.IntegratedList = []
+            
+            if self.params['Mode'] != 'table': # reset controls and masks for all IMG items in tree to master
+                for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
+                    # update controls from master
+                    controlsDict = G2frame.PatternTree.GetItemPyData(
+                        G2gd.GetPatternTreeItemId(G2frame,self.imageBase, 'Image Controls'))
+                    controlsDict.update(self.ImageControls)
+                    # update masks from master
+                    ImageMasks = G2frame.PatternTree.GetItemPyData(
+                        G2gd.GetPatternTreeItemId(G2frame,self.imageBase, 'Masks'))
+                    ImageMasks.update(self.ImageMasks)
+            # delete all PWDR items created after last Start was pressed 
+            idlist = []
+            item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+            while item:
+                itemName = G2frame.PatternTree.GetItemText(item)
+                if itemName in G2frame.AutointPWDRnames:
+                    idlist.append(item)
+                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            for item in idlist:
+                G2frame.PatternTree.Delete(item)
+            wx.Yield()
+            self.Reset = False
+        G2frame.AutointPWDRnames = [] # list of created PWDR tree item names
+
+    def OnTimerLoop(self,event):
+        '''A method that is called every :meth:`PollTime` seconds that is
+        used to check for new files and process them. This is called only
+        after the "Start" button is pressed (when its label reads "Pause").
+        '''
+        G2frame = self.G2frame
+        try:
+            self.currImageList = sorted(
+                glob.glob(os.path.join(self.imagedir,self.params['filter'])))
+            self.ShowMatchingFiles(self.params['filter'])
+        except IndexError:
+            self.currImageList = []
+            return
+
+        if self.PreventReEntryTimer: return
+        self.PreventReEntryTimer = True
+        imageFileList = []
+        # integrate the images that have already been read in, but
+        # have not yet been processed
+        for img in G2gd.GetPatternTreeDataNames(G2frame,['IMG ']):
+            imgId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
+            size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(imgId)
+            # Create a list of image files that have been read in
+            if imagefile not in imageFileList: imageFileList.append(imagefile)
+            # skip if already integrated
+            if img in G2frame.IntegratedList: continue
+            if self.params['Mode'] == 'table': # look up parameter values from table
+                controlsDict = G2frame.PatternTree.GetItemPyData(
+                    G2gd.GetPatternTreeItemId(G2frame,imgId, 'Image Controls'))
+                ImageMasks = G2frame.PatternTree.GetItemPyData(
+                    G2gd.GetPatternTreeItemId(G2frame,imgId, 'Masks'))
+                self.ResetFromTable()
+                # update controls from master
+                controlsDict.update(self.ImageControls)
+                # update masks from master w/o Thresholds
+                ImageMasks.update(self.ImageMasks)
+            self.IntegrateImage(img)
+            self.G2frame.oldImagefile = '' # mark image as changed; reread as needed
+            wx.Yield()
+            self.ShowMatchingFiles(self.params['filter'])
+            wx.Yield()
+            if self.Pause: return
+
+        # loop over image files matching glob, reading in any new ones
+        for newImage in self.currImageList:
+            if newImage in imageFileList: continue # already read?
+            for imgId in G2IO.ReadImages(G2frame,newImage):
+                controlsDict = G2frame.PatternTree.GetItemPyData(
+                    G2gd.GetPatternTreeItemId(G2frame,imgId, 'Image Controls'))
+                ImageMasks = G2frame.PatternTree.GetItemPyData(
+                    G2gd.GetPatternTreeItemId(G2frame,imgId, 'Masks'))
+                if self.params['Mode'] == 'table': # look up parameter values from table
+                    self.ResetFromTable()
+                # update controls from master
+                controlsDict.update(self.ImageControls)
+                # update masks from master w/o Thresholds
+                ImageMasks.update(self.ImageMasks)
+                # now integrate the image
+                img = G2frame.PatternTree.GetItemText(imgId)
+                self.IntegrateImage(img)
+                self.G2frame.oldImagefile = '' # mark image as changed; reread as needed
+                wx.Yield()
+                self.ShowMatchingFiles(self.params['filter'])
+                wx.Yield()
+            if self.Pause: return
+        
+        if GSASIIpath.GetConfigValue('debug'):
+            import datetime
+            print ("Timer tick at {:%d %b %Y %H:%M:%S}\n".format(datetime.datetime.now()))
+        self.PreventReEntryTimer = False
 
 def DefineEvaluator(dlg):
     '''Creates a function that provides interpolated values for a given distance value

@@ -136,6 +136,9 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         G2plt.PlotExposedImage(G2frame,event=event)
             
     def OnIntegrate(event):
+        '''Integrate image in response to a menu event or from the AutoIntegrate
+        dialog. In the latter case, event=None. 
+        '''
         CleanupMasks(masks)
         blkSize = 128   #this seems to be optimal; will break in polymask if >1024
         Nx,Ny = data['size']
@@ -167,7 +170,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 sumImg += backImage*backScale
             G2frame.Integrate = G2img.ImageIntegrate(sumImg-data['Flat Bkg'],data,masks,blkSize,dlg)
 #            G2plt.PlotIntegration(G2frame,newPlot=True)
-            Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data)
+            Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
             G2frame.PatternId = Id
             G2frame.PatternTree.SelectItem(Id)
             G2frame.PatternTree.Expand(Id)
@@ -2183,6 +2186,7 @@ class AutoIntFrame(wx.Frame):
     def ShowMatchingFiles(self,value,invalid=False,**kwargs):
         G2frame = self.G2frame
         if invalid: return
+        msg = ''
         if self.PreventReEntryShowMatch: return
         self.PreventReEntryShowMatch = True
         imageFileList = []
@@ -2190,25 +2194,25 @@ class AutoIntFrame(wx.Frame):
             imgId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
             size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(imgId)
             if imagefile not in imageFileList: imageFileList.append(imagefile)
+            if img not in G2frame.IntegratedList:
+                if msg: msg += '\n'
+                msg += '  ' + img
+        if msg: msg = "Loaded images to integrate:\n" + msg + "\n"
+        msg1 = ""
         try:
             imageList = sorted(
                 glob.glob(os.path.join(self.imagedir,value)))
             if not imageList:
-                #title = 'Warning'
-                msg = 'Warning: No files match search string '+os.path.join(self.imagedir,value)
+                msg1 = 'Warning: No files match search string '+os.path.join(self.imagedir,value)
             else:
-                #title='Matched files'
-                msg = ''
                 for fil in imageList:
-                    if fil not in imageFileList: msg += '\n  '+fil
-                if msg:
-                    msg = 'Files to process from '+os.path.join(self.imagedir,value)+msg
+                    if fil not in imageFileList: msg1 += '\n  '+fil
+                if msg1:
+                    msg += 'Files to integrate from '+os.path.join(self.imagedir,value)+msg1
                 else:
-                    msg = 'All files processed'
+                    msg += 'All files integrated'
         except IndexError:
-            #title = 'Error'
-            msg = 'Error searching for files named '+os.path.join(self.imagedir,value)
-            #print(msg)
+            msg += 'Error searching for files named '+os.path.join(self.imagedir,value)
         self.ListBox.Clear()
         self.ListBox.AppendItems(msg.split('\n'))
         self.PreventReEntryShowMatch = False

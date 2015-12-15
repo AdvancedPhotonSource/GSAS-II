@@ -870,7 +870,7 @@ def ProjFileSave(G2frame):
             wx.EndBusyCursor()
         print('project save successful')
 
-def SaveIntegration(G2frame,PickId,data):
+def SaveIntegration(G2frame,PickId,data,Overwrite=False):
     'Save image integration results as powder pattern(s)'
     azms = G2frame.Integrate[1]
     X = G2frame.Integrate[2][:-1]
@@ -903,14 +903,20 @@ def SaveIntegration(G2frame,PickId,data):
     for i,azm in enumerate(azms[:-1]):
         Aname = name+" Azm= %.2f"%((azm+dazm)%360.)
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-        nOcc = 0
-        while item:
-            Name = G2frame.PatternTree.GetItemText(item)
-            if Aname in Name:
-                nOcc += 1
-            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-        if nOcc:
-            Aname += '(%d)'%(nOcc)
+        # if Overwrite delete any duplicate
+        if Overwrite and G2gd.GetPatternTreeItemId(G2frame,G2frame.root,Aname):
+            print('Replacing '+Aname)
+            item = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,Aname)
+            G2frame.PatternTree.Delete(item)
+        else:
+            nOcc = 0
+            while item:
+                Name = G2frame.PatternTree.GetItemText(item)
+                if Aname in Name:
+                    nOcc += 1
+                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            if nOcc:
+                Aname += '(%d)'%(nOcc)
         Sample = G2pdG.SetDefaultSample()
         Sample['Gonio. radius'] = data['distance']
         Sample['Omega'] = data['GonioAngles'][0]

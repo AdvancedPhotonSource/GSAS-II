@@ -874,7 +874,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             # array(2,nAtom,3) & array(2,nAtom,6)
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ,axis=-2)        #Fdata != 0 avoids /0. problem
-            dfbdba = np.sum(-sinp*Tcorr[:,nxs],axis=1)
+            dfadba /= 2.
+            dfbdba = np.sum(-sinp*Tcorr[:,nxs],axis=1)/2.
             dfbdui = np.sum(-SQfactor*fb,axis=-2)
             if len(TwinLaw) > 1:
                 dfbdx = np.array([np.sum(twopi*Uniq[it]*np.swapaxes(fbx,-2,-1)[:,it,:,:,nxs],axis=2) for it in range(nTwin)])           
@@ -918,8 +919,8 @@ def StructureFactorDerv(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 dFdui[iref] = 2.*SA*(dfadui[0]+dfadui[1])+2.*SB*(dfbdui[0]+dfbdui[1])
                 dFdua[iref] = 2.*SA*(dfadua[0]+dfadua[1])+2.*SB*(dfbdua[0]+dfbdua[1])
                 dFdfl[iref] = -SA*dfadfl-SB*dfbdfl  #array(nRef,)
-        dFdbab[iref] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
-            2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
+        dFdbab[iref] = fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
+            fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
 #        GSASIIpath.IPyBreak()
         if not iref%100 :
             print ' %d derivative time %.4f\r'%(iref,time.time()-time0),
@@ -1045,7 +1046,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Uniq = np.inner(H,SGMT)             # array(nSGOp,3) or (nTwin,nSGOp,3)
         Phi = np.inner(H,SGT)
         phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T).T+Phi.T).T
-        sinp = np.sin(phase)
+        sinp = np.sin(phase)        #refBlk x nOps x nAtoms
         cosp = np.cos(phase)
         occ = Mdata*Fdata/len(SGT)
         biso = -SQfactor*Uisodata[:,nxs]
@@ -1073,7 +1074,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         fbx = np.array([fot*cosp,-fotp*sinp])
         #sum below is over Uniq 
         dfadfr = np.sum(fa/occ,axis=-2)        #array(2,refBlk,ntwin,nAtom) Fdata != 0 avoids /0. problem 
-        dfadba = np.sum(-cosp*Tcorr[:,nxs],axis=-2)  #array(refBlk,nTwin,nOps,nAtom)
+        dfadba = np.sum(-cosp*Tcorr,axis=-2)  #array(refBlk,nAtom)
         if nTwin > 1:
             dfadfr = np.swapaxes(dfadfr,0,1)
             dfadx = np.swapaxes(np.array([np.sum(twopi*Uniq[it,nxs,:,nxs,:,:]*np.swapaxes(fax,-2,-1)[it,:,:,:,:,nxs],axis=-2) for it in range(nTwin)]),0,1)
@@ -1087,7 +1088,7 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
             # array(2,refBlk,nAtom,3) & array(2,refBlk,nAtom,6)
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ,axis=-2)        #Fdata != 0 avoids /0. problem
-            dfbdba = np.sum(-sinp*Tcorr[:,nxs],axis=-2)
+            dfbdba = np.sum(-sinp*Tcorr,axis=-2)
             if len(TwinLaw) > 1:
                 dfbdfr = np.swapaxes(dfbdfr,0,1)
                 dfbdx = np.swapaxes(np.array([np.sum(twopi*Uniq[it,nxs,:,nxs,:,:]*np.swapaxes(fbx,-2,-1)[it,:,:,:,:,nxs],axis=-2) for it in range(nTwin)]),0,1)          
@@ -1137,8 +1138,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
                 dFdui[iBeg:iFin] = 2.*SA[:,nxs]*(dfadui[0]+dfadui[1])+2.*SB[:,nxs]*(dfbdui[0]+dfbdui[1])
                 dFdua[iBeg:iFin] = 2.*SA[:,nxs,nxs]*(dfadua[0]+dfadua[1])+2.*SB[:,nxs,nxs]*(dfbdua[0]+dfbdua[1])
                 dFdfl[iBeg:iFin] = -SA*dfadfl-SB*dfbdfl  #array(nRef,)
-#        dFdbab[iBeg:iFin] = 2.*fas[0]*np.array([np.sum(dfadba*dBabdA),np.sum(-dfadba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T+ \
-#            2.*fbs[0]*np.array([np.sum(dfbdba*dBabdA),np.sum(-dfbdba*parmDict[phfx+'BabA']*SQfactor*dBabdA)]).T
+        dFdbab[iBeg:iFin] = 2.*(fas[0,nxs]*np.array([np.sum(dfadba.T*dBabdA,axis=0),np.sum(-dfadba.T*parmDict[phfx+'BabA']*SQfactor*dBabdA,axis=0)])+ \
+                            fbs[0,nxs]*np.array([np.sum(dfbdba.T*dBabdA,axis=0),np.sum(-dfbdba.T*parmDict[phfx+'BabA']*SQfactor*dBabdA,axis=0)])).T
 #        GSASIIpath.IPyBreak()
         iBeg += blkSize
     print ' %d derivative time %.4f\r'%(nRef,time.time()-time0)
@@ -2979,9 +2980,9 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
                             depDerivDict[phfx+item][iref] = w*dervDict[phfx+item]/ref[11+im]
                     for item in ['BabA','BabU']:
                         if phfx+item in varylist:
-                            dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*ref[11+im]
+                            dMdvh[varylist.index(phfx+item)][iref] = w*dFdvDict[phfx+item][iref]*parmDict[phfx+'Scale']*ref[11+im]
                         elif phfx+item in dependentVars:
-                            depDerivDict[phfx+item][iref] = w*dFdvDict[pfx+item][iref]*parmDict[phfx+'Scale']*ref[11+im]
+                            depDerivDict[phfx+item][iref] = w*dFdvDict[phfx+item][iref]*parmDict[phfx+'Scale']*ref[11+im]
     return dMdvh,depDerivDict,wdf
     
 

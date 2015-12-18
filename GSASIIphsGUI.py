@@ -1391,9 +1391,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         atomData[r][c] = PE.Elem.strip()
                         name = atomData[r][c]
                         if len(name) in [2,4]:
-                            atomData[r][c-1] = name[:2]+'(%d)'%(r+1)
+                            atomData[r][c-1] = name[:2]+'%d'%(r+1)
                         else:
-                            atomData[r][c-1] = name[:1]+'(%d)'%(r+1)
+                            atomData[r][c-1] = name[:1]+'%d'%(r+1)
                 PE.Destroy()
                 SetupGeneral()
                 wx.CallAfter(Paint)
@@ -2052,6 +2052,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2frame.ErrorDialog('Assemble molecule',result)
             else:   
                 data['Atoms'] = result
+            Atoms.ClearSelection()
+            data['Drawing']['Atoms'] = []
             OnReloadDrawAtoms(event)            
             FillAtomsGrid(Atoms)
             
@@ -2063,8 +2065,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 
     def OnDistAnglePrt(event):
         'save distances and angles to a file'    
-        fp = file(os.path.abspath(os.path.splitext(G2frame.GSASprojectfile
-                                                   )[0]+'.disagl'),'w')
+        fp = file(os.path.abspath(os.path.splitext(G2frame.GSASprojectfile)[0]+'.disagl'),'w')
         OnDistAngle(event,fp=fp)
         fp.close()
     

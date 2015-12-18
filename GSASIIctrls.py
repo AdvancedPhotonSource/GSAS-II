@@ -3599,7 +3599,9 @@ tutorialCatalog = (
         'Sequential refinement of multiple datasets'],
     ['SeqParametric', 'SeqParametric', 'ParametricFitting.htm',
         'Parametric Fitting and Pseudo Variables for Sequential Fits'],
-       
+        
+    ['CFXraySingleCrystal','CFXraySingleCrystal','CFSingleCrystal.htm',
+        'Charge Flipping structure solution with Xray single crystal data'],       
     ['CFjadarite', 'CFjadarite', 'Charge Flipping in GSAS.htm',
         'Charge Flipping structure solution for jadarite'],
     ['CFsucrose', 'CFsucrose', 'Charge Flipping - sucrose.htm',

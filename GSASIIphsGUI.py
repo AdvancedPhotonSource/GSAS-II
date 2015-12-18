@@ -1826,7 +1826,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         Ncol = Atoms.GetNumberCols()
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
-        Sytsym,Mult = G2spc.SytSym([0,0,0],SGData)
+        Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)
         atId = ran.randint(0,sys.maxint)
         if generalData['Type'] == 'macromolecular':
             atomData.insert(indx,[0,Name,'',Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])

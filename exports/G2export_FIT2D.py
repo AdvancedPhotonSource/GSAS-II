@@ -64,5 +64,7 @@ class ExportPowderCHI(G2IO.ExportBaseclass):
             ): return
         filenamelist = []
         for hist in self.histnam:
+            fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(self.histnam[0]),filenamelist)
+            self.filename = os.path.join(self.dirname,fileroot + self.extension)
             self.Writer(hist)
             print('Histogram '+str(hist)+' written to file '+str(self.fullpath))

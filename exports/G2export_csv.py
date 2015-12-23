@@ -195,7 +195,7 @@ class ExportMultiPowderCSV(G2IO.ExportBaseclass):
         headList = ["x",]
         digitList = []
         fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(self.histnam[0]),filenamelist)
-        # create an instrument parameter file
+        # create a file
         self.filename = os.path.join(self.dirname,fileroot + self.extension)
         for ihst,hist in enumerate(self.histnam):
             histblk = self.Histograms[hist]

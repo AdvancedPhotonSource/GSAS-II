@@ -2615,7 +2615,8 @@ class IntegParmTable(wx.Dialog):
         dir,f = os.path.split(fil)
         try:
             dlg = wx.FileDialog(self, 'Save table data as',
-                        defaultDir=dir, defaultFile=f, style=wx.SAVE)
+                        defaultDir=dir, defaultFile=f, style=wx.SAVE,
+                        wildcard='G2 Image Param Table file (*.imtbl)|*.imtbl')
             if dlg.ShowModal() != wx.ID_OK: return
             fil = dlg.GetPath()
             fil = os.path.splitext(fil)[0]+'.imtbl'

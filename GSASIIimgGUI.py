@@ -2058,16 +2058,19 @@ class AutoIntFrame(wx.Frame):
                 
         def OnRadioSelect(event):
             '''Respond to a radiobutton selection and when in table
-            mode, get parameters from user. 
+            mode, get distance-dependent parameters from user. 
             '''
             self.Evaluator = None
             if r2.GetValue():
                 try:
                     dlg = IntegParmTable(self.G2frame) # create the dialog
+                    dlg.CenterOnParent()
                     if dlg.ShowModal() == wx.ID_OK:
+                        self.ImgTblParms = dlg.parms
+                        self.IMfileList = dlg.IMfileList
                         self.Evaluator = DefineEvaluator(dlg)
                         self.params['Mode'] = 'table'
-			r2E.Enable(True)
+                        r2E.Enable(True)
                     else:
                         self.useActive.SetValue(True)
                 finally:
@@ -2077,14 +2080,37 @@ class AutoIntFrame(wx.Frame):
                 self.imageBase = G2frame.Image
                 self.useActive.SetLabel("Active Image: "+
                         G2frame.PatternTree.GetItemText(self.imageBase))
+                r2E.Enable(False)
 
-	def OnEditTable(event): 
-	    raise Exception
+        def OnEditTable(event):
+            '''Called to edit the distance-dependent parameter look-up table.
+            Should be called only when table is defined and active.
+            '''
+            try:
+                dlg = IntegParmTable(self.G2frame,self.ImgTblParms,self.IMfileList)
+                dlg.CenterOnParent()
+                if dlg.ShowModal() == wx.ID_OK:
+                    self.ImgTblParms = dlg.parms
+                    self.IMfileList = dlg.IMfileList
+                    self.Evaluator = DefineEvaluator(dlg)
+                    self.params['Mode'] = 'table'
+                    r2E.Enable(True)
+                else:
+                    self.useActive.SetValue(True)
+                    self.params['Mode'] = 'active'
+                    self.imageBase = G2frame.Image
+                    self.useActive.SetLabel("Active Image: "+
+                            G2frame.PatternTree.GetItemText(self.imageBase))
+                    r2E.Enable(False)
+            finally:
+                dlg.Destroy()
 
         ##################################################
         # beginning of __init__ processing
         ##################################################
         self.G2frame = G2frame
+        self.ImgTblParms = None
+        self.IMfileList = None
         self.Evaluator = None
         self.params = {}
         self.Reset = False
@@ -2120,15 +2146,15 @@ class AutoIntFrame(wx.Frame):
                                 G2frame.PatternTree.GetItemText(self.imageBase))
         lblsizr.Add(self.useActive,1,wx.EXPAND,1)
         self.useActive.SetValue(True)
-	minisizer = wx.BoxSizer(wx.HORIZONTAL)
-        r2 = wx.RadioButton(mnpnl, wx.ID_ANY, "From look-up table")
-        minisizer.Add(r2,1,wx.ALIGN_LEFT,1)
+        minisizer = wx.BoxSizer(wx.HORIZONTAL)
+        r2 = wx.RadioButton(mnpnl, wx.ID_ANY, "From distance look-up table")
+        minisizer.Add(r2,0,wx.ALIGN_LEFT|wx.ALL,1)
         r2.Bind(wx.EVT_RADIOBUTTON, OnRadioSelect)
-	r2E = wx.Button(mnpnl,  wx.ID_ANY, "Edit table")
-        minisizer.Add(r2E,1,wx.ALIGN_LEFT,1)
-	r2E.Enable(False)
-	r2E.Bind(wx.EVT_BUTTON, OnEditTable)
-	# bind button and deactivate be default
+        r2E = wx.Button(mnpnl,  wx.ID_ANY, "Edit table")
+        minisizer.Add(r2E,0,wx.ALIGN_LEFT,10)
+        r2E.Enable(False)
+        r2E.Bind(wx.EVT_BUTTON, OnEditTable)
+        # bind button and deactivate be default
         lblsizr.Add(minisizer)
         mnsizer.Add(lblsizr,1,wx.EXPAND,1)
 
@@ -2500,24 +2526,29 @@ class IntegParmTable(wx.Dialog):
             'Azimuth min','Azimuth max','2Th min','2Th max','Int. pts',
             'Mask File',
             )
-    def __init__(self,G2frame):
+    def __init__(self,G2frame,parms=None,IMfileList=None):
         self.G2frame = G2frame
-        self.parms = [] # list of values by column
-        self.IMfileList = [] # list of .imctrl file names for each entry in table
         wx.Dialog.__init__(self,G2frame,style=wx.RESIZE_BORDER|wx.DEFAULT_DIALOG_STYLE)
-        files = []
-        try:
-            dlg = wx.FileDialog(self, 'Select image control files or previous table', 
-                                style=wx.OPEN| wx.MULTIPLE,
-                                wildcard='image control files (.imctrl)|*.imctrl|Integration table (*.imtbl)|*.imtbl')
-            if dlg.ShowModal() == wx.ID_OK:
-                files = dlg.GetPaths()
-                self.parms,self.IMfileList = self.ReadFiles(files)
-        finally:
-            dlg.Destroy()
-        if not files:
-            wx.CallAfter(self.EndModal,wx.ID_CANCEL)
-            return
+        if parms:
+            self.parms = parms # list of values by column
+            self.IMfileList = IMfileList # list of .imctrl file names for each entry in table
+        else:
+            self.parms = [] # list of values by column
+            self.IMfileList = [] # list of .imctrl file names for each entry in table
+            files = []
+            try:
+                dlg = wx.FileDialog(self, 'Select image control files or previous table', 
+                                    style=wx.OPEN| wx.MULTIPLE,
+                                    wildcard='image control files (.imctrl)|*.imctrl|Integration table (*.imtbl)|*.imtbl')
+                dlg.CenterOnParent()
+                if dlg.ShowModal() == wx.ID_OK:
+                    files = dlg.GetPaths()
+                    self.parms,self.IMfileList = self.ReadFiles(files)
+            finally:
+                dlg.Destroy()
+            if not files:
+                wx.CallAfter(self.EndModal,wx.ID_CANCEL)
+                return
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         self.list = ImgIntLstCtrl(self, wx.ID_ANY,
                       style=wx.LC_REPORT 
@@ -2528,7 +2559,7 @@ class IntegParmTable(wx.Dialog):
         btnsizer = wx.BoxSizer(wx.HORIZONTAL)
         btn = wx.Button(self, wx.ID_OK)
         btnsizer.Add(btn)
-        btn = wx.Button(self, wx.ID_ANY,'Save')
+        btn = wx.Button(self, wx.ID_ANY,'Save as file')
         btn.Bind(wx.EVT_BUTTON,self._onSave)
         btnsizer.Add(btn)
         btn = wx.Button(self, wx.ID_CLOSE,'Quit')
@@ -2628,6 +2659,7 @@ class IntegParmTable(wx.Dialog):
             dlg = wx.FileDialog(self, 'Save table data as',
                         defaultDir=dir, defaultFile=f, style=wx.SAVE,
                         wildcard='G2 Image Param Table file (*.imtbl)|*.imtbl')
+            dlg.CenterOnParent()
             if dlg.ShowModal() != wx.ID_OK: return
             fil = dlg.GetPath()
             fil = os.path.splitext(fil)[0]+'.imtbl'
@@ -2678,6 +2710,7 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
             dlg = wx.FileDialog(self, 'Select mask or control file to add (Press cancel if none)', 
                                 style=wx.OPEN,
                                 wildcard='Add GSAS-II mask file (.immask)|*.immask|add image control file (.imctrl)|*.imctrl')
+            dlg.CenterOnParent()
             if dlg.ShowModal() == wx.ID_OK:
                 fil = dlg.GetPath()
         finally:

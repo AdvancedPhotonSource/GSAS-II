@@ -2067,6 +2067,7 @@ class AutoIntFrame(wx.Frame):
                     if dlg.ShowModal() == wx.ID_OK:
                         self.Evaluator = DefineEvaluator(dlg)
                         self.params['Mode'] = 'table'
+			r2E.Enable(True)
                     else:
                         self.useActive.SetValue(True)
                 finally:
@@ -2076,6 +2077,9 @@ class AutoIntFrame(wx.Frame):
                 self.imageBase = G2frame.Image
                 self.useActive.SetLabel("Active Image: "+
                         G2frame.PatternTree.GetItemText(self.imageBase))
+
+	def OnEditTable(event): 
+	    raise Exception
 
         ##################################################
         # beginning of __init__ processing
@@ -2116,9 +2120,16 @@ class AutoIntFrame(wx.Frame):
                                 G2frame.PatternTree.GetItemText(self.imageBase))
         lblsizr.Add(self.useActive,1,wx.EXPAND,1)
         self.useActive.SetValue(True)
+	minisizer = wx.BoxSizer(wx.HORIZONTAL)
         r2 = wx.RadioButton(mnpnl, wx.ID_ANY, "From look-up table")
-        lblsizr.Add(r2,1,wx.EXPAND,1)
+        minisizer.Add(r2,1,wx.ALIGN_LEFT,1)
         r2.Bind(wx.EVT_RADIOBUTTON, OnRadioSelect)
+	r2E = wx.Button(mnpnl,  wx.ID_ANY, "Edit table")
+        minisizer.Add(r2E,1,wx.ALIGN_LEFT,1)
+	r2E.Enable(False)
+	r2E.Bind(wx.EVT_BUTTON, OnEditTable)
+	# bind button and deactivate be default
+        lblsizr.Add(minisizer)
         mnsizer.Add(lblsizr,1,wx.EXPAND,1)
 
         # file filter stuff
@@ -2266,11 +2277,11 @@ class AutoIntFrame(wx.Frame):
                 print('writing file '+fil+dfmt)
                 G2IO.ExportPowder(G2frame,treename,fil,dfmt)
                 
-    def ResetFromTable(self):
+    def ResetFromTable(self,dist):
         '''Sets integration parameters based on values from
         the lookup table
         '''
-        dist = controlsDict['distance']
+        #dist = self.controlsDict['distance']
         interpDict,imgctrl,immask = self.Evaluator(dist) # interpolated calibration values
         #if GSASIIpath.GetConfigValue('debug'):
         if GSASIIpath.GetConfigValue('debug'):
@@ -2387,7 +2398,7 @@ class AutoIntFrame(wx.Frame):
                     G2gd.GetPatternTreeItemId(G2frame,imgId, 'Image Controls'))
                 ImageMasks = G2frame.PatternTree.GetItemPyData(
                     G2gd.GetPatternTreeItemId(G2frame,imgId, 'Masks'))
-                self.ResetFromTable()
+                self.ResetFromTable(controlsDict['distance'])
                 # update controls from master
                 controlsDict.update(self.ImageControls)
                 # update masks from master w/o Thresholds
@@ -2408,7 +2419,7 @@ class AutoIntFrame(wx.Frame):
                 ImageMasks = G2frame.PatternTree.GetItemPyData(
                     G2gd.GetPatternTreeItemId(G2frame,imgId, 'Masks'))
                 if self.params['Mode'] == 'table': # look up parameter values from table
-                    self.ResetFromTable()
+                    self.ResetFromTable(controlsDict['distance'])
                 # update controls from master
                 controlsDict.update(self.ImageControls)
                 # update masks from master w/o Thresholds
@@ -2540,7 +2551,7 @@ class IntegParmTable(wx.Dialog):
             S = fp.readline()
             while S:
                 if S[0] != '#':
-                    [key,val] = S[:-1].split(':')
+                    [key,val] = S[:-1].split(':',1)
                     tmpDict[key] = eval(val)
                 S = fp.readline()
             fp.close()

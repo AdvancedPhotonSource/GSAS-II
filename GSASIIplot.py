@@ -1926,7 +1926,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     break
             Plot.plot(x,y,'rD',clip_on=False,picker=3.)
     if not newPlot:
+        # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
         Page.toolbar.push_current()
+        if G2frame.Contour: # for contour plots expand y-axis to include all histograms
+            G2frame.xylim = (G2frame.xylim[0], (0.,len(PlotList)-1.))
         Plot.set_xlim(G2frame.xylim[0])
         Plot.set_ylim(G2frame.xylim[1])
 #        xylim = []
@@ -3906,6 +3909,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             PlotImage(G2frame,newImage=True)
             G2frame.itemPicked = None
             
+    # PlotImage execution starts here        
+    xylim = []
     try:
         plotNum = G2frame.G2plotNB.plotList.index('2D Powder Image')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -3969,8 +3974,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             G2frame.ImageZ += dark[1]*darkImg
         G2frame.oldImagefile = imagefile # save name of the last image file read
         G2frame.oldImageTag = imagetag   # save tag of the last image file read
-    else:
-        if GSASIIpath.GetConfigValue('debug'): print('Skipping image reread')
+    #else:
+    #    if GSASIIpath.GetConfigValue('debug'): print('Skipping image reread')
 
     imScale = 1
     if len(G2frame.ImageZ) > 1024:

@@ -350,13 +350,12 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                         save[key] = eval(val)
                     S = File.readline()
                 data.update(save)
-                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(data))
-                wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
-                G2plt.PlotExposedImage(G2frame,event=event)
-                
+                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(data))                
                 File.close()
         finally:
             dlg.Destroy()
+        G2plt.PlotExposedImage(G2frame,event=event)
+        wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
             
 # Sizers
                                         
@@ -2130,7 +2129,8 @@ class AutoIntFrame(wx.Frame):
         self.imagedir,fileroot = os.path.split(imagefile)
         self.params['filter'] = '*'+os.path.splitext(fileroot)[1]
         self.params['outdir'] = os.path.abspath(self.imagedir)
-        wx.Frame.__init__(self, G2frame,title='Automatic Integration')
+        wx.Frame.__init__(self, G2frame, title='Automatic Integration',
+                          style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
         self.Status = self.CreateStatusBar()
         self.Status.SetStatusText('Press Start to load and integrate images matching filter')
         mnpnl = wx.Panel(self)

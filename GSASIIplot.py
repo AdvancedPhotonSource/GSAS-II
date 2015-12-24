@@ -3566,7 +3566,7 @@ def OnStartMask(G2frame):
     '''Initiate the start of a Frame or Polygon map
 
     :param wx.Frame G2frame: The main GSAS-II tree "window"
-    :param str eventkey: a single letter ('f' or 'p') that
+    :param str eventkey: a single letter ('f' or 'p', etc.) that
       determines what type of mask is created.    
     '''
     Masks = G2frame.PatternTree.GetItemPyData(
@@ -3599,6 +3599,11 @@ def OnStartNewDzero(G2frame):
 def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     '''Plot of 2D detector images as contoured plot. Also plot calibration ellipses,
     masks, etc.
+
+    :param wx.Frame G2frame: main GSAS-II frame
+    :param bool newPlot: if newPlot is True, the plot is reset (zoomed out, etc.)
+    :param event: matplotlib mouse event (or None)
+    :param bool newImage: If True, the Figure is cleared and redrawn
     '''
     from matplotlib.patches import Ellipse,Arc,Circle,Polygon
     import numpy.ma as ma
@@ -3669,13 +3674,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             if event.key in ['l','p','f','s','a','r']:
                 G2frame.MaskKey = event.key
                 OnStartMask(G2frame)
-                PlotImage(G2frame,newPlot=False)
+                wx.CallAfter(PlotImage,G2frame,newImage=False)
                 
         elif PickName == 'Stress/Strain':
             if event.key in ['a',]:
                 G2frame.StrainKey = event.key
                 StrSta = OnStartNewDzero(G2frame)
-                PlotImage(G2frame,newPlot=False)
+                wx.CallAfter(PlotImage,G2frame,newImage=False)
                 
         elif PickName == 'Image Controls':
             if event.key in ['c',]:
@@ -3690,7 +3695,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                         print 'move center to: ',Xpos,Ypos
                         Data['center'] = [Xpos,Ypos]
                         G2imG.UpdateImageControls(G2frame,Data,Masks)
-                        PlotImage(G2frame,newPlot=False)
+                        wx.CallAfter(PlotImage,G2frame,newPlot=False)
                 finally:
                     dlg.Destroy()
                 return
@@ -3700,7 +3705,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 Data['invert_x'] = not Data['invert_x']
             elif event.key in ['y',]:
                 Data['invert_y'] = not Data['invert_y']
-            PlotImage(G2frame,newPlot=True)
+            wx.CallAfter(PlotImage,G2frame,newPlot=True)
             
     def OnKeyBox(event):
         if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index('2D Powder Image'):
@@ -3757,7 +3762,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     G2frame.ifGetRing = False
                     G2imG.UpdateImageControls(G2frame,Data,Masks)
                     return
-                PlotImage(G2frame,newImage=False)
+                wx.CallAfter(PlotImage,G2frame,newImage=False)
             return
         elif G2frame.MaskKey and PickName == 'Masks':
             Xpos,Ypos = [event.xdata,event.ydata]
@@ -3796,7 +3801,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     G2frame.G2plotNB.status.SetFields(['','New frame point: %.1f,%.1f'%(Xpos,Ypos)])
                     frame.append([Xpos,Ypos])
             G2imG.UpdateMasks(G2frame,Masks)
-            PlotImage(G2frame,newImage=False)
+            wx.CallAfter(PlotImage,G2frame,newImage=False)
         elif PickName == 'Stress/Strain' and G2frame.StrainKey:
             Xpos,Ypos = [event.xdata,event.ydata]
             if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
@@ -3812,7 +3817,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             G2frame.StrainKey = ''
             G2imG.UpdateStressStrain(G2frame,StrSta)
             PlotStrain(G2frame,StrSta)
-            PlotImage(G2frame,newPlot=False)            
+            wx.CallAfter(PlotImage,G2frame,newPlot=False)            
         else:
             Xpos,Ypos = [event.xdata,event.ydata]
             if not Xpos or not Ypos or Page.toolbar._active:  #got point out of frame or zoom/pan selected
@@ -3906,7 +3911,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                     G2imG.UpdateMasks(G2frame,Masks)
 #                else:                  #keep for future debugging
 #                    print str(G2frame.itemPicked),event.xdata,event.ydata,event.button
-            PlotImage(G2frame,newImage=True)
+            wx.CallAfter(PlotImage,G2frame,newImage=True)
             G2frame.itemPicked = None
             
     # PlotImage execution starts here        
@@ -3998,7 +4003,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     FlatBkg = Data.get('Flat Bkg',0.0)
     wx.BeginBusyCursor()
     try:
-            
         if newImage:                    
             Imin,Imax = Data['range'][1]
             MA = ma.masked_greater(ma.masked_less(G2frame.ImageZ,Zlim[0]+FlatBkg),Zlim[1]+FlatBkg)

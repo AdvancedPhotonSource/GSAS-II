@@ -1127,7 +1127,8 @@ def UpdateMasks(G2frame,data):
         Obj.SetToolTipString('Drag this mask on 2D Powder Image with mouse to change ')
 
     def Replot(*args,**kwargs):
-        G2plt.PlotExposedImage(G2frame,newPlot=True)        
+        #G2plt.PlotExposedImage(G2frame,newPlot=True)        
+        G2plt.PlotExposedImage(G2frame) # remove newPlot=True to prevent zoom-out
 
     def onDeleteMask(event):
         Obj = event.GetEventObject()

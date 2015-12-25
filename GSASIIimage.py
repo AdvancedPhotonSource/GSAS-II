@@ -501,7 +501,9 @@ def MakeFrameMask(data,frame):
     return tam.T
     
 def ImageRecalibrate(G2frame,data,masks):
-    'Needs a doc string'
+    '''Called to repeat the calibration on an image, usually called after
+    calibration is done initially to improve the fit.
+    '''
     import ImageCalibrants as calFile
     print 'Image recalibration:'
     time0 = time.time()
@@ -580,7 +582,9 @@ def ImageRecalibrate(G2frame,data,masks):
     return True
             
 def ImageCalibrate(G2frame,data):
-    'Needs a doc string'
+    '''Called to perform an initial image calibration after points have been
+    selected for the inner ring.
+    '''
     import copy
     import ImageCalibrants as calFile
     print 'Image calibration:'

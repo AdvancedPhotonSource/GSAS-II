@@ -119,8 +119,9 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
 
 # Menu items
             
-    def OnCalibrate(event):        
-        G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=True)    
+    def OnCalibrate(event):
+        if not data.get('calibrant'):
+            G2G.G2MessageBox(G2frame,'A calibrant must first be selected')
         G2frame.dataFrame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick, RB on point to delete else RB to finish')
         G2frame.ifGetRing = True
                 
@@ -132,7 +133,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         data['ring'] = []
         data['rings'] = []
         data['ellipses'] = []
-#        G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)    
         G2plt.PlotExposedImage(G2frame,event=event)
             
     def OnIntegrate(event):
@@ -350,7 +350,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                         save[key] = eval(val)
                     S = File.readline()
                 data.update(save)
-                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(data))                
+                # next line removed. Previous updates tree contents. The next
+                # makes a copy of data, puts it into tree and "disconnects" data
+                # from tree contents (later changes to data are lost!)
+                #G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'),copy.deepcopy(data))
                 File.close()
         finally:
             dlg.Destroy()
@@ -1058,8 +1061,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=G2gd.wxID_IMCALIBRATE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnRecalibrate, id=G2gd.wxID_IMRECALIBRATE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=G2gd.wxID_IMCLEARCALIB)
-    if 'chisq' not in data:
-        G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)    
+    if data.get('calibrant'):
+        G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=True)
+    else:
+        G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=G2gd.wxID_IMINTEGRATE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnIntegrateAll, id=G2gd.wxID_INTEGRATEALL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyControls, id=G2gd.wxID_IMCOPYCONTROLS)

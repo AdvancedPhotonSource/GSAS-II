@@ -3608,7 +3608,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     from matplotlib.patches import Ellipse,Arc,Circle,Polygon
     import numpy.ma as ma
     Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
-    global Data,Masks,StrSta
+    #global Data,Masks,StrSta  # BHT: I don't see why these need to be globals. Where are they accessed? 
     colors=['b','g','r','c','m','k']
     Data = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
@@ -3914,7 +3914,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             wx.CallAfter(PlotImage,G2frame,newImage=True)
             G2frame.itemPicked = None
             
-    # PlotImage execution starts here        
+    # PlotImage execution starts here
     xylim = []
     try:
         plotNum = G2frame.G2plotNB.plotList.index('2D Powder Image')
@@ -4071,7 +4071,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 for ring in Data['rings']:
                     xring,yring = np.array(ring).T[:2]
                     Plot.plot(xring,yring,'.',color=colors[N%6])
-                    N += 1            
+                    N += 1
             for ellipse in Data['ellipses']:      #what about hyperbola?
                 cent,phi,[width,height],col = ellipse
                 if width > 0:       #ellipses

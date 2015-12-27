@@ -1966,10 +1966,11 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             wild = 'CSV output file (*.csv)|*.csv'
         else:
             wild = 'Text output file (*.txt)|*.txt'
+        pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(
             G2frame,
-            'Choose text output file for your selection', '.', '', 
-            wild,wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+            'Choose text output file for your selection', pth, '', 
+            wild,wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 SeqTextFile = dlg.GetPath()

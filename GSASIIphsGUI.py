@@ -3760,8 +3760,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             SHCoef = textureData['SH Coeff'][1]
             ODFln = G2lat.Flnh(True,SHCoef,phi,beta,SGData)
             pfName = PhaseName+'%d%d%d.gpf'%(PH[0],PH[1],PH[2])
-            dlg = wx.FileDialog(G2frame, 'Choose popLA pole figure file name', '.', pfName, 
-                'popLA file (*.gpf)|*.gpf',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+            pth = G2G.GetExportPath(G2frame)
+            dlg = wx.FileDialog(G2frame, 'Choose popLA pole figure file name', pth, pfName, 
+                'popLA file (*.gpf)|*.gpf',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     pfFile = dlg.GetPath()
@@ -3800,16 +3801,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 psi = asind(xy/xyz)
                 IODFln = G2lat.Glnh(True,SHCoef,psi,gam,SamSym[textureData['Model']])
                 pfName = PhaseName+'%d%d%dIPF.csv'%(int(PX[0]),int(PX[1]),int(PX[2]))
-                dlg = wx.FileDialog(G2frame, 'Choose CSV inverse pole figure file name', '.', pfName, 
-                    'CSV file (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                pth = G2G.GetExportPath(G2frame)
+                dlg = wx.FileDialog(G2frame, 'Choose CSV inverse pole figure file name', pth, pfName, 
+                    'CSV file (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
             else:    
                 PH = np.array(textureData['PFhkl'])
                 phi,beta = G2lat.CrsAng(PH,cell,SGData)
                 SHCoef = textureData['SH Coeff'][1]
                 ODFln = G2lat.Flnh(True,SHCoef,phi,beta,SGData)
                 pfName = PhaseName+'%d%d%dPF.csv'%(PH[0],PH[1],PH[2])
-                dlg = wx.FileDialog(G2frame, 'Choose CSV pole figure file name', '.', pfName, 
-                    'CSV file (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                pth = G2G.GetExportPath(G2frame)
+                dlg = wx.FileDialog(G2frame, 'Choose CSV pole figure file name', pth, pfName, 
+                    'CSV file (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     pfFile = dlg.GetPath()

@@ -152,6 +152,13 @@ class GSASII(wx.Frame):
             help='Create empty new project, saving current is optional', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='&New project')
         self.Bind(wx.EVT_MENU, self.OnFileClose, id=item.GetId())
+        item = parent.Append(wx.ID_PREFERENCES, text = "&Preferences")
+        self.Bind(wx.EVT_MENU, self.OnPreferences, item)
+        if GSASIIpath.GetConfigValue('debug'):
+            def OnIPython(event):
+                GSASIIpath.IPyBreak()
+            item = parent.Append(wx.ID_ANY, text = "IPython Console")
+            self.Bind(wx.EVT_MENU, OnIPython, item)
         item = parent.Append(
             help='Exit from GSAS-II', id=wx.ID_ANY,
             kind=wx.ITEM_NORMAL,text='&Exit')
@@ -411,12 +418,12 @@ class GSASII(wx.Frame):
             choices += "|zip archive (.zip)|*.zip"
             if not reader.strictExtension:
                 choices += "|any file (*.*)|*.*"
-        # get the file(s) (probably should remove wx.CHANGE_DIR here)
+        # get the file(s)
         if multiple:
-            mode = style=wx.OPEN | wx.CHANGE_DIR | wx.MULTIPLE
+            mode = style=wx.OPEN | wx.MULTIPLE
         else:
-            mode = style=wx.OPEN | wx.CHANGE_DIR
-        filelist = self.GetImportFile(message="Choose "+label+" input file",
+            mode = style=wx.OPEN
+        filelist = G2G.GetImportFile(self,message="Choose "+label+" input file",
                     defaultFile="",wildcard=choices, style=mode)
         rd_list = []
         filelist1 = []
@@ -548,39 +555,6 @@ class GSASII(wx.Frame):
                               kind=wx.ITEM_NORMAL,
                               text='guess format from file')
         self.Bind(wx.EVT_MENU, self.OnImportPhase, id=item.GetId())
-
-    def GetImportFile(self, message, defaultDir="", defaultFile="", style=wx.OPEN,
-                      *args, **kwargs):
-        '''Defines a customized dialog that gets gets files from the appropriate
-        Import directory (unless overridden with defaultDir). The default
-        import directory is found in self.ImportDir, which will be set to
-        the location of the (first) file entered in this dialog.
-           
-        :returns: a list of files or an empty list
-        '''
-        dlg = wx.FileDialog(self, message, defaultDir, defaultFile, *args,
-                            style=style, **kwargs)
-        if not defaultDir and self.ImportDir:
-            dlg.SetDirectory(self.ImportDir)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                if style & wx.MULTIPLE:
-                    filelist = dlg.GetPaths()
-                    if len(filelist) == 0: return []
-                else:
-                    filelist = [dlg.GetPath(),]
-                # not sure if we want to do this (why use wx.CHANGE_DIR?)
-                if style & wx.CHANGE_DIR: # to get Mac/Linux to change directory like windows!
-                    os.chdir(dlg.GetDirectory())
-                if not defaultDir and self.ImportDir: # if we are using a default and
-                    # user moved, save the new location
-                    self.ImportDir = os.path.split(filelist[0])[0]
-                    #print 'default moved to',self.ImportDir               
-            else: # cancel was pressed
-                return []
-        finally:
-            dlg.Destroy()
-        return filelist            
         
     def OnImportPhase(self,event):
         '''Called in response to an Import/Phase/... menu item
@@ -1313,16 +1287,15 @@ class GSASII(wx.Frame):
 
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
+            pth = G2G.GetImportPath(self)
+            if not pth: pth = '.'
             dlg = wx.FileDialog(
                 self,
-                'Choose inst. param file for "'
-                +rd.idstring
-                +'" (or Cancel for default)',
-                '.', '',
+                'Choose inst. param file for "'+rd.idstring+'" (or Cancel for default)',
+                pth, '',
                 'GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins|'
                 'GSAS-II iparm file (*.instprm)|*.instprm|'
-                'All files (*.*)|*.*', 
-                wx.OPEN|wx.CHANGE_DIR)
+                'All files (*.*)|*.*', wx.OPEN)
             if os.path.exists(lastIparmfile):
                 dlg.SetFilename(lastIparmfile)
             if dlg.ShowModal() == wx.ID_OK:
@@ -1875,7 +1848,7 @@ class GSASII(wx.Frame):
             dlg = wx.FileDialog(self,
                 'Choose an file to save past actions', '.', defnam, 
                 'GSAS-II cmd output (*.gcmd)|*.gcmd',
-                wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
             dlg.CenterOnParent()
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -1906,7 +1879,7 @@ class GSASII(wx.Frame):
             dlg = wx.FileDialog(self,
                 'Choose an file to read saved actions', '.', defnam, 
                 'GSAS-II cmd output (*.gcmd)|*.gcmd',
-                wx.OPEN|wx.CHANGE_DIR)
+                wx.OPEN)
             dlg.CenterOnParent()
             try:
                 if dlg.ShowModal() == wx.ID_OK:
@@ -2104,8 +2077,6 @@ class GSASII(wx.Frame):
         self._Add_ImportMenu_powder(Import)
         self._Add_ImportMenu_Sfact(Import)
         self._Add_ImportMenu_smallangle(Import)
-        item = File.Append(wx.ID_PREFERENCES, text = "&Preferences")
-        self.Bind(wx.EVT_MENU, self.OnPreferences, item)
 
         #======================================================================
         # Code to help develop/debug an importer, much is hard-coded below
@@ -2155,7 +2126,7 @@ class GSASII(wx.Frame):
                            ('&Tutorials','Tutorials'), 
                            ])
         menubar.Append(menu=HelpMenu,title='&Help')
-
+            
     def _init_ctrls(self, parent):
         wx.Frame.__init__(self, name='GSASII', parent=parent,
             size=wx.Size(400, 250),style=wx.DEFAULT_FRAME_STYLE, title='GSAS-II data tree')
@@ -2228,8 +2199,6 @@ class GSASII(wx.Frame):
         # various defaults
         self.oldFocus = None
         self.GSASprojectfile = ''
-        self.dirname = os.path.expanduser('~')       #start in the users home directory by default; may be meaningless
-        self.exportDir = None  # the last directory used for exports, if any.
         self.undofile = ''
         self.TreeItemDelete = False
         self.plotStyle = {'qPlot':False,'dPlot':False,'sqrtPlot':False}
@@ -2281,12 +2250,12 @@ class GSASII(wx.Frame):
         self.StrainKey = ''         #ditto for new strain d-zeros
         self.EnablePlot = True
         self.hist = ''              # selected histogram in Phase/Data tab
-        if GSASIIpath.GetConfigValue('Starting_directory'):
-            try: 
-                os.chdir(GSASIIpath.GetConfigValue('Starting_directory'))
-            except:
-                print('Ignoring Config Starting_directory value: '+
-                      GSASIIpath.GetConfigValue('Starting_directory'))
+        self.dirname = os.path.expanduser('~')       #start in the users home directory by default; may be meaningless
+        self.TutorialImportDir = None  # location to read tutorial files, set when a tutorial is viewed
+        self.LastImportDir = None # last-used directory where an import was done
+        self.LastGPXdir = None    # directory where a GPX file was last read
+        self.LastExportDir = None  # the last directory used for exports, if any.
+        
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
             self.GSASprojectfile = os.path.splitext(arg[1])[0]+'.gpx'
@@ -2294,15 +2263,22 @@ class GSASII(wx.Frame):
             if self.dirname: os.chdir(self.dirname)
             try:
                 self.StartProject()         #open the file if possible
+                return
             except Exception:
                 print 'Error opening or reading file',arg[1]
                 import traceback
                 print traceback.format_exc()
-              
-        self.ImportDir = os.path.normpath(os.getcwd()) # specifies a default path to be used for imports
-        if GSASIIpath.GetConfigValue('Import_directory'):
-            self.ImportDir = GSASIIpath.GetConfigValue('Import_directory')
-            
+                
+        if GSASIIpath.GetConfigValue('Starting_directory'):
+            try:
+                pth = GSASIIpath.GetConfigValue('Starting_directory')
+                pth = os.path.expanduser(pth) 
+                os.chdir(pth)
+                self.LastGPXdir = pth
+            except:
+                print('Ignoring Config Starting_directory value: '+
+                      GSASIIpath.GetConfigValue('Starting_directory'))
+
     def GetTreeItemsList(self,item):
         return self.PatternTree._getTreeItemsList(item)
 
@@ -2418,8 +2394,10 @@ class GSASII(wx.Frame):
         'Bound to menu Data/Read Powder Peaks'
         Cuka = 1.54052
         self.CheckNotebook()
-        dlg = wx.FileDialog(self, 'Choose file with peak list', '.', '', 
-            'peak files (*.txt)|*.txt|All files (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
+        pth = G2G.GetImportPath(self)
+        if not pth: pth = '.'
+        dlg = wx.FileDialog(self, 'Choose file with peak list', pth, '', 
+            'peak files (*.txt)|*.txt|All files (*.*)|*.*',wx.OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.HKL = []
@@ -2461,7 +2439,7 @@ class GSASII(wx.Frame):
             'Portable Network Graphics image (*.png)|*.png|'
             'Zip archive (*.zip)|*.zip|'
             'All files (*.*)|*.*',
-            wx.OPEN | wx.MULTIPLE|wx.CHANGE_DIR)
+            wx.OPEN | wx.MULTIPLE)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 imagefiles = dlg.GetPaths()
@@ -2794,9 +2772,10 @@ class GSASII(wx.Frame):
                     else:
                         Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
-                        dlg = wx.FileDialog(self, 'Choose sum image filename', '.', '', 
+                        pth = G2G.GetExportPath(self)
+                        dlg = wx.FileDialog(self, 'Choose sum image filename', pth, '', 
                             'G2img files (*.G2img)|*.G2img', 
-                            wx.SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+                            wx.SAVE|wx.FD_OVERWRITE_PROMPT)
                         if dlg.ShowModal() == wx.ID_OK:
                             newimagefile = dlg.GetPath()
                             newimagefile = G2IO.FileDlgFixExt(dlg,newimagefile)
@@ -2999,8 +2978,8 @@ class GSASII(wx.Frame):
                 self.dataFrame.Clear() 
             dlg = wx.MessageDialog(
                 self,
-                'Do you want to overwrite the current project? '
-                'Any unsaved changes will be lost. Press OK to continue.',
+                'Do you want to overwrite the current project? '+
+                'Any unsaved changes in current project will be lost. Press OK to continue.',
                 'Overwrite?',  wx.OK | wx.CANCEL)
             try:
                 result = dlg.ShowModal()
@@ -3016,8 +2995,12 @@ class GSASII(wx.Frame):
 
         if not filename:
             if self.dataDisplay: self.dataDisplay.Destroy()
-            dlg = wx.FileDialog(self, 'Choose GSAS-II project file', '.', '', 
-                'GSAS-II project file (*.gpx)|*.gpx',wx.OPEN|wx.CHANGE_DIR)
+            if self.LastGPXdir:
+                pth = self.LastGPXdir
+            else:
+                pth = '.'
+            dlg = wx.FileDialog(self, 'Choose GSAS-II project file', pth, 
+                wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.OPEN)
             try:
                 if dlg.ShowModal() != wx.ID_OK: return
                 self.GSASprojectfile = dlg.GetPath()
@@ -3062,6 +3045,9 @@ class GSASII(wx.Frame):
             self.PatternTree.SelectItem(Id)
         self.CheckNotebook()
         if self.dirname: os.chdir(self.dirname)           # to get Mac/Linux to change directory!
+        pth = os.path.split(os.path.abspath(self.GSASprojectfile))[0]
+        if GSASIIpath.GetConfigValue('Save_paths'): G2G.SaveGPXdirectory(pth)
+        self.LastGPXdir = pth
 
     def OnFileClose(self, event):
         '''Clears the data tree in response to the
@@ -3102,8 +3088,15 @@ class GSASII(wx.Frame):
         '''Save the current project in response to the
         File/Save as menu button
         '''
-        dlg = wx.FileDialog(self, 'Choose GSAS-II project file name', '.', '', 
-            'GSAS-II project file (*.gpx)|*.gpx',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        if GSASIIpath.GetConfigValue('Starting_directory'):
+            pth = GSASIIpath.GetConfigValue('Starting_directory')
+            pth = os.path.expanduser(pth) 
+        elif self.LastGPXdir:
+            pth = self.LastGPXdir
+        else:
+            pth = '.'
+        dlg = wx.FileDialog(self, 'Choose GSAS-II project file name', pth, '', 
+            'GSAS-II project file (*.gpx)|*.gpx',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.GSASprojectfile = dlg.GetPath()
@@ -3132,8 +3125,9 @@ class GSASII(wx.Frame):
         self.Close()
         
     def OnExportPeakList(self,event):
-        dlg = wx.FileDialog(self, 'Choose output peak list file name', '.', '', 
-            '(*.*)|*.*',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        pth = G2G.GetExportPath(self)
+        dlg = wx.FileDialog(self, 'Choose output peak list file name', pth, '', 
+            '(*.*)|*.*',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.peaklistfile = dlg.GetPath()
@@ -3178,8 +3172,9 @@ class GSASII(wx.Frame):
             dlg.Destroy()
         
     def OnExportHKL(self,event):
-        dlg = wx.FileDialog(self, 'Choose output reflection list file name', '.', '', 
-            '(*.*)|*.*',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        pth = G2G.GetExportPath(self)
+        dlg = wx.FileDialog(self, 'Choose output reflection list file name', pth, '', 
+            '(*.*)|*.*',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 self.peaklistfile = dlg.GetPath()
@@ -3728,23 +3723,6 @@ class GSASIImain(wx.App):
                 pass
         self.main.PackageVersions.append([' Platform',sys.platform+' '+platform.architecture()[0]+' '+platform.machine()])
         
-#        self.main.PackageVersions = {}
-#        self.main.PackageVersions['Python'] = sys.version.split()[0]
-#        for p in (wx,mpl,np,sp,ogl):
-#            self.main.PackageVersions[p.__name__] = p.__version__
-#        try:
-#            self.main.PackageVersions[Image.__name__] = Image.VERSION
-#        except:
-#            try:
-#                from PIL import PILLOW_VERSION
-#                self.main.PackageVersions[Image.__name__] = PILLOW_VERSION
-#            except:
-#                pass
-#        self.main.PackageVersions[' Platform'] = sys.platform+' '+platform.architecture()[0]+' '+platform.machine()
-        # DEBUG: jump to sequential results
-        #Id = G2gd.GetPatternTreeItemId(self.main,self.main.root,'Sequential results')
-        #self.main.PatternTree.SelectItem(Id)
-        # end DEBUG
         return True
     # def MacOpenFile(self, filename):
     #     '''Called on Mac every time a file is dropped on the app when it is running,

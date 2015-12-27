@@ -1254,8 +1254,10 @@ def UpdateInstrumentGrid(G2frame,data):
         
         Note that similar code is found in ReadPowderInstprm (GSASII.py)
         '''
-        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', '.', '', 
-            'instrument parameter files (*.instprm)|*.instprm',wx.OPEN|wx.CHANGE_DIR)
+        pth = G2G.GetImportPath(G2frame)
+        if not pth: pth = '.'
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', pth, '', 
+            'instrument parameter files (*.instprm)|*.instprm',wx.OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1290,8 +1292,9 @@ def UpdateInstrumentGrid(G2frame,data):
         '''Respond to the Instrument Parameters Operations/Save Profile menu
         item: writes current parameters to a .instprm file
         '''
-        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', '.', '', 
-            'instrument parameter files (*.instprm)|*.instprm',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', pth, '', 
+            'instrument parameter files (*.instprm)|*.instprm',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1749,8 +1752,9 @@ def UpdateSampleGrid(G2frame,data):
         '''Respond to the Sample Parameters Operations/Save menu
         item: writes current parameters to a .samprm file
         '''
-        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II sample parameters file', '.', '', 
-            'sample parameter files (*.samprm)|*.samprm',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II sample parameters file', pth, '', 
+            'sample parameter files (*.samprm)|*.samprm',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1772,8 +1776,10 @@ def UpdateSampleGrid(G2frame,data):
         
         Note that similar code is found in ReadPowderInstprm (GSASII.py)
         '''
-        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II sample parameters file', '.', '', 
-            'sample parameter files (*.samprm)|*.samprm',wx.OPEN|wx.CHANGE_DIR)
+        pth = G2G.GetImportPath(G2frame)
+        if not pth: pth = '.'
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II sample parameters file', pth, '', 
+            'sample parameter files (*.samprm)|*.samprm',wx.OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1796,8 +1802,10 @@ def UpdateSampleGrid(G2frame,data):
             
     def OnAllSampleLoad(event):
         filename = ''
-        dlg = wx.FileDialog(G2frame, 'Choose multihistogram metadata text file', '.', '', 
-            'metadata file (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
+        pth = G2G.GetImportPath(G2frame)
+        if not pth: pth = '.'
+        dlg = wx.FileDialog(G2frame, 'Choose multihistogram metadata text file', pth, '', 
+            'metadata file (*.*)|*.*',wx.OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -2558,8 +2566,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         OnHklShow(event)
         
     def OnExportCells(event):
-        dlg = wx.FileDialog(G2frame, 'Choose Indexing Result csv file', '.', '', 
-            'indexing result file (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose Indexing Result csv file', pth, '', 
+            'indexing result file (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()

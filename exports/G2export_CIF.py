@@ -2234,13 +2234,13 @@ class EditCIFtemplate(wx.Dialog):
         return (self.ShowModal() == wx.ID_OK)
     def _onSave(self,event):
         'Save CIF entries in a template file'
+        pth = G2G.GetExportPath(self.G2frame)
         dlg = wx.FileDialog(
             self, message="Save as CIF template",
-            defaultDir=os.getcwd(),
+            defaultDir=pth,
             defaultFile=self.defaultname,
             wildcard="CIF (*.cif)|*.cif",
-            style=wx.SAVE | wx.CHANGE_DIR
-            )
+            style=wx.SAVE)
         val = (dlg.ShowModal() == wx.ID_OK)
         fil = dlg.GetPath()
         dlg.Destroy()
@@ -2549,13 +2549,14 @@ class CIFtemplateSelect(wx.BoxSizer):
         self.Add(hbox)
     def _onGetTemplateFile(self,event):
         'select a template file'
+        pth = G2G.GetImportPath(self.G2frame)
+        if not pth: pth = '.'
         dlg = wx.FileDialog(
             self.cifdefs, message="Read CIF template file",
-            defaultDir=os.getcwd(),
+            defaultDir=pth,
             defaultFile=self.defaultname,
             wildcard="CIF (*.cif)|*.cif",
-            style=wx.OPEN | wx.CHANGE_DIR
-            )
+            style=wx.OPEN)
         ret = dlg.ShowModal()
         fil = dlg.GetPath()
         dlg.Destroy()

@@ -187,16 +187,11 @@ def CheckImageFile(G2frame,imagefile):
         #GSASIIpath.IPyBreak()
 
     if not os.path.exists(imagefile):
-        dlg = wx.FileDialog(G2frame, 'Previous image file not found; open here', '.', '',\
-        'Any image file (*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.cor;*.stl)\
-        |*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.cor;*.stl|\
-        European detector file (*.edf)|*.edf|\
-        Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|\
-        MAR file (*.mar*)|*.mar*|\
-        GE Image (*.ge*;*.avg;*.sum;*.cor)|*.ge*;*.avg;*.sum;*.cor|\
-        ADSC Image (*.img)|*.img|\
-        Rigaku-Axis4 (*.stl)|*.stl|\
-        All files (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
+        prevnam = os.path.split(imagefile)[1]
+        prevext = os.path.splitext(imagefile)[1]
+        wildcard = 'Image format (*'+prevext+')|*'+prevext
+        dlg = wx.FileDialog(G2frame, 'Previous image file ('+prevnam+') not found; open here', '.', prevnam,
+                            wildcard,wx.OPEN)
         try:
             dlg.SetFilename(''+ospath.split(imagefile)[1])
             if dlg.ShowModal() == wx.ID_OK:
@@ -866,6 +861,9 @@ def ProjFileSave(G2frame):
                 item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                            
                 cPickle.dump(data,file,1)
             file.close()
+            pth = os.path.split(os.path.abspath(G2frame.GSASprojectfile))[0]
+            if GSASIIpath.GetConfigValue('Save_paths'): G2G.SaveGPXdirectory(pth)
+            G2frame.LastGPXdir = pth
         finally:
             wx.EndBusyCursor()
         print('project save successful')
@@ -2190,19 +2188,21 @@ class ExportBaseclass(object):
 
         :returns: a file name (str) or None if Cancel is pressed
         '''
+        
+        pth = G2G.GetExportPath(self.G2frame)
         defnam = os.path.splitext(
             os.path.split(self.G2frame.GSASprojectfile)[1]
             )[0]+self.extension
         dlg = wx.FileDialog(
-            self.G2frame, 'Input name for file to write', '.', defnam,
+            self.G2frame, 'Input name for file to write', pth, defnam,
             self.longFormatName+' (*'+self.extension+')|*'+self.extension,
-            wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+            wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         dlg.CenterOnParent()
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
-                # make sure extension is correct
-                filename = os.path.splitext(filename)[0]+self.extension
+                self.G2frame.LastExportDir = os.path.split(filename)[0]
+                filename = os.path.splitext(filename)[0]+self.extension # make sure extension is correct
             else:
                 filename = None
         finally:
@@ -2215,22 +2215,15 @@ class ExportBaseclass(object):
 
         :returns: a directory name (str) or None if Cancel is pressed
         '''
-        if self.G2frame.exportDir:
-            startdir = self.G2frame.exportDir
-        elif self.G2frame.GSASprojectfile:
-            startdir = os.path.split(self.G2frame.GSASprojectfile)[0]
-        elif self.G2frame.dirname:
-            startdir = self.G2frame.dirname
-        else:
-            startdir = ''
+        pth = G2G.GetExportPath(self.G2frame)
         dlg = wx.DirDialog(
-            self.G2frame, 'Input directory where file(s) will be written', startdir,
+            self.G2frame, 'Input directory where file(s) will be written', pth,
             wx.DD_DEFAULT_STYLE)
         dlg.CenterOnParent()
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
-                self.G2frame.exportDir = filename
+                self.G2frame.LastExportDir = filename
             else:
                 filename = None
         finally:

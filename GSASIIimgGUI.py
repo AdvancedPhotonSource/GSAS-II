@@ -297,8 +297,9 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 G2frame.PatternTree.SelectItem(G2frame.PickId)
                 
     def OnSaveControls(event):
-        dlg = wx.FileDialog(G2frame, 'Choose image controls file', '.', '', 
-            'image control files (*.imctrl)|*.imctrl',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose image controls file', pth, '', 
+            'image control files (*.imctrl)|*.imctrl',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -323,8 +324,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
             'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
             'PolaVal','SampleAbs','dark image','background image']
-        dlg = wx.FileDialog(G2frame, 'Choose image controls file', '.', '', 
-            'image control files (*.imctrl)|*.imctrl',wx.OPEN|wx.CHANGE_DIR)
+        pth = G2G.GetImportPath(G2frame)
+        if not pth: pth = '.'
+        dlg = wx.FileDialog(G2frame, 'Choose image controls file', pth, '', 
+            'image control files (*.imctrl)|*.imctrl',wx.OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1188,8 +1191,9 @@ def UpdateMasks(G2frame,data):
                 
     def OnSaveMask(event):
         CleanupMasks(data)
-        dlg = wx.FileDialog(G2frame, 'Choose image mask file', '.', '', 
-            'image mask files (*.immask)|*.immask',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose image mask file', pth, '', 
+            'image mask files (*.immask)|*.immask',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1207,8 +1211,10 @@ def UpdateMasks(G2frame,data):
             ignoreThreshold = True
         else:
             ignoreThreshold = False
-        dlg = wx.FileDialog(G2frame, 'Choose image mask file', '.', '', 
-            'image mask files (*.immask)|*.immask',wx.OPEN|wx.CHANGE_DIR)
+        pth = G2G.GetImportPath(G2frame)
+        if not pth: pth = '.'
+        dlg = wx.FileDialog(G2frame, 'Choose image mask file', pth, '', 
+            'image mask files (*.immask)|*.immask',wx.OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1502,8 +1508,10 @@ def UpdateStressStrain(G2frame,data):
                 dlg.Destroy()
 
     def OnLoadStrSta(event):
-        dlg = wx.FileDialog(G2frame, 'Choose stress/strain file', '.', '', 
-            'image control files (*.strsta)|*.strsta',wx.OPEN|wx.CHANGE_DIR)
+        pth = G2G.GetImportPath(G2frame)
+        if not pth: pth = '.'
+        dlg = wx.FileDialog(G2frame, 'Choose stress/strain file', pth, '', 
+            'image control files (*.strsta)|*.strsta',wx.OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1521,8 +1529,9 @@ def UpdateStressStrain(G2frame,data):
             dlg.Destroy()
 
     def OnSaveStrSta(event):
-        dlg = wx.FileDialog(G2frame, 'Choose stress/strain file', '.', '', 
-            'image control files (*.strsta)|*.strsta',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT|wx.CHANGE_DIR)
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose stress/strain file', pth, '', 
+            'image control files (*.strsta)|*.strsta',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -1549,8 +1558,10 @@ def UpdateStressStrain(G2frame,data):
             
     def OnStrStaSample(event):
         filename = ''
-        dlg = wx.FileDialog(G2frame, 'Choose multihistogram metadata text file', '.', '', 
-            'metadata file (*.*)|*.*',wx.OPEN|wx.CHANGE_DIR)
+        pth = G2G.GetImportPath(G2frame)
+        if not pth: pth = '.'
+        dlg = wx.FileDialog(G2frame, 'Choose multihistogram metadata text file', pth, '', 
+            'metadata file (*.*)|*.*',wx.OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -2543,7 +2554,9 @@ class IntegParmTable(wx.Dialog):
             self.IMfileList = [] # list of .imctrl file names for each entry in table
             files = []
             try:
-                dlg = wx.FileDialog(self, 'Select image control files or previous table', 
+                pth = G2G.GetImportPath(G2frame)
+                if not pth: pth = '.'
+                dlg = wx.FileDialog(self, 'Select image control files or previous table', pth,
                                     style=wx.OPEN| wx.MULTIPLE,
                                     wildcard='image control files (.imctrl)|*.imctrl|Integration table (*.imtbl)|*.imtbl')
                 dlg.CenterOnParent()
@@ -2661,9 +2674,10 @@ class IntegParmTable(wx.Dialog):
         if self.G2frame.GSASprojectfile:
             fil = os.path.splitext(self.G2frame.GSASprojectfile)[0]+'.imtbl'
         dir,f = os.path.split(fil)
+        pth = G2G.GetExportPath(self.G2frame)
         try:
             dlg = wx.FileDialog(self, 'Save table data as',
-                        defaultDir=dir, defaultFile=f, style=wx.SAVE,
+                        defaultDir=pth, defaultFile=f, style=wx.SAVE,
                         wildcard='G2 Image Param Table file (*.imtbl)|*.imtbl')
             dlg.CenterOnParent()
             if dlg.ShowModal() != wx.ID_OK: return
@@ -2712,8 +2726,10 @@ class ImgIntLstCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin,listmix.TextEdit
         'respond to a double-click'
         self.CloseEditor()
         fil = '(none)'
+        pth = G2G.GetImportPath(self.parent.G2frame)
+        if not pth: pth = '.'
         try:
-            dlg = wx.FileDialog(self, 'Select mask or control file to add (Press cancel if none)', 
+            dlg = wx.FileDialog(self, 'Select mask or control file to add (Press cancel if none)', pth,
                                 style=wx.OPEN,
                                 wildcard='Add GSAS-II mask file (.immask)|*.immask|add image control file (.imctrl)|*.imctrl')
             dlg.CenterOnParent()

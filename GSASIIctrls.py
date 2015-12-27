@@ -2403,6 +2403,88 @@ class OrderBox(wxscroll.ScrolledPanel):
         self.FitInside()
 
 ################################################################################
+def GetImportFile(G2frame, message, defaultDir="", defaultFile="", style=wx.OPEN,
+                  *args, **kwargs):
+    '''Uses a customized dialog that gets files from the appropriate import directory. 
+    Arguments are used the same as in :func:`wx.FileDialog`. Selection of
+    multiple files is allowed if argument style includes wx.MULTIPLE.
+
+    The default initial directory (unless overridden with argument defaultDir)
+    is found in G2frame.TutorialImportDir, config setting Import_directory or
+    G2frame.LastImportDir, see :func:`GetImportPath`.
+
+    The path of the first file entered is used to set G2frame.LastImportDir
+    and optionally config setting Import_directory.
+
+    :returns: a list of files or an empty list
+    '''
+    dlg = wx.FileDialog(G2frame, message, defaultDir, defaultFile, *args,
+                        style=style, **kwargs)
+    pth = GetImportPath(G2frame)
+    if not defaultDir and pth: dlg.SetDirectory(pth)
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            if style & wx.MULTIPLE:
+                filelist = dlg.GetPaths()
+                if len(filelist) == 0: return []
+            else:
+                filelist = [dlg.GetPath(),]
+            # not sure if we want to do this (why use wx.CHANGE_DIR?)
+            if style & wx.CHANGE_DIR: # to get Mac/Linux to change directory like windows!
+                os.chdir(dlg.GetDirectory())
+        else: # cancel was pressed
+            return []
+    finally:
+        dlg.Destroy()
+    # save the path of the first file and reset the TutorialImportDir variable
+    pth = os.path.split(os.path.abspath(filelist[0]))[0]
+    if GSASIIpath.GetConfigValue('Save_paths'): G2G.SaveImportDirectory(pth)
+    G2frame.LastImportDir = pth
+    G2frame.TutorialImportDir = None
+    return filelist
+
+def GetImportPath(G2frame):
+    '''Determines the default location to use for importing files. Tries sequentially
+    G2frame.TutorialImportDir, config var Import_directory and G2frame.LastImportDir.
+    
+    :returns: a string containing the path to be used when reading files or None
+      if none of the above are specified.
+    '''
+    if G2frame.TutorialImportDir:
+        if os.path.exists(G2frame.TutorialImportDir):
+            return G2frame.TutorialImportDir
+        elif GSASIIpath.GetConfigValue('debug'):
+            print('Tutorial location (TutorialImportDir) not found: '+G2frame.TutorialImportDir)
+    pth = GSASIIpath.GetConfigValue('Import_directory')
+    if pth:
+        pth = os.path.expanduser(pth)
+        if os.path.exists(pth):
+            return pth
+        elif GSASIIpath.GetConfigValue('debug'):
+            print('Ignoring Config Import_directory value: '+
+                      GSASIIpath.GetConfigValue('Import_directory'))
+    if G2frame.LastImportDir:
+        if os.path.exists(G2frame.LastImportDir):
+            return G2frame.LastImportDir
+        elif GSASIIpath.GetConfigValue('debug'):
+            print('Warning: G2frame.LastImportDir not found = '+G2frame.LastImportDir)
+    return None
+
+def GetExportPath(G2frame):
+    '''Determines the default location to use for writing files. Tries sequentially
+    G2frame.LastExportDir and G2frame.LastGPXdir.
+    
+    :returns: a string containing the path to be used when writing files or '.'
+      if none of the above are specified.
+    '''
+    if G2frame.LastExportDir:
+        return G2frame.LastExportDir
+    elif G2frame.LastGPXdir:
+        return G2frame.LastGPXdir
+    else:
+        return '.'
+
+################################################################################
 #####  Customized Grid Support
 ################################################################################           
 class GSGrid(wg.Grid):
@@ -3149,15 +3231,134 @@ def StripIndents(msg):
     return msg.replace('\n\t','\n')
         
 ################################################################################
+# configuration routines (for editing config.py)
+def SaveGPXdirectory(path):
+    import config_example
+    vars = GetConfigValsDocs()
+    try:
+        vars['Starting_directory'][1] = path
+        if GSASIIpath.GetConfigValue('debug'): print('Saving GPX path: '+path)
+        SaveConfigVars(vars)
+    except KeyError:
+        pass
+
+def SaveImportDirectory(path):
+    import config_example
+    vars = GetConfigValsDocs()
+    try:
+        vars['Import_directory'][1] = path
+        if GSASIIpath.GetConfigValue('debug'): print('Saving Import path: '+path)
+        SaveConfigVars(vars)
+    except KeyError:
+        pass
+
+def GetConfigValsDocs():
+    '''Reads the module referenced in fname (often <module>.__file__) and
+    return a dict with names of global variables as keys.
+    For each global variable, the value contains four items:
+
+    :returns: a dict where keys are names defined in module config_example.py
+      where the value is a list of four items, as follows:
+
+         * item 0: the default value
+         * item 1: the current value
+         * item 2: the initial value (starts same as item 1)
+         * item 3: the "docstring" that follows variable definition
+
+    '''
+    import config_example
+    import ast
+    fname = os.path.splitext(config_example.__file__)[0]+'.py' # convert .pyc to .py
+    with open(fname, 'r') as f:
+        fstr = f.read()
+    fstr = fstr.replace('\r\n', '\n').replace('\r', '\n')
+    if not fstr.endswith('\n'):
+        fstr += '\n'
+    tree = ast.parse(fstr)
+    d = {}
+    key = None
+    for node in ast.walk(tree):
+        if isinstance(node,ast.Assign):
+            key = node.targets[0].id
+            d[key] = [config_example.__dict__.get(key),
+                      GSASIIpath.configDict.get(key),
+                      GSASIIpath.configDict.get(key),'']
+        elif isinstance(node,ast.Expr) and key:
+            d[key][3] = node.value.s.strip()
+        else:
+            key = None
+    return d
+
+def SaveConfigVars(vars,parent=None):
+    '''Write the current config variable values to config.py
+
+    :params dict vars: a dictionary of variable settings and meanings as
+      created in :func:`GetConfigValsDocs`.
+    :param parent: wx.Frame object or None (default) for parent
+      of error message if no file can be written.
+    :returns: True if unable to write the file, None otherwise
+    '''
+    # try to write to where an old config file is located
+    try:
+        import config
+        savefile = config.__file__
+    except ImportError: # no config.py file yet
+        savefile = os.path.join(GSASIIpath.path2GSAS2,'config.py')
+    # try to open file for write
+    try:
+        savefile = os.path.splitext(savefile)[0]+'.py' # convert .pyc to .py
+        fp = open(savefile,'w')
+    except IOError:  # can't write there, write in local mods directory
+        # create a local mods directory, if needed
+        if not os.path.exists(os.path.expanduser('~/.G2local/')):
+            print('Creating directory '+os.path.expanduser('~/.G2local/'))
+            os.mkdir(os.path.expanduser('~/.G2local/'))
+            sys.path.insert(0,os.path.expanduser('~/.G2local/'))
+        savefile = os.path.join(os.path.expanduser('~/.G2local/'),'config.py')
+        try:
+            fp = open(savefile,'w')
+        except IOError:
+            if parent:
+                G2MessageBox(parent,
+                             'Error trying to write configuration to '+savefile,
+                             'Unable to save')
+            else:
+                print('Error trying to write configuration to '+savefile)
+            return True
+    import datetime
+    fp.write("'''\n")
+    fp.write("*config.py: Configuration options*\n----------------------------------\n")
+    fp.write("This file created in SelectConfigSetting on {:%d %b %Y %H:%M}\n".
+             format(datetime.datetime.now()))
+    fp.write("'''\n\n")
+    fp.write("import os.path\n")
+    fp.write("import GSASIIpath\n\n")
+    for var in sorted(vars.keys(),key=lambda s: s.lower()):
+        if vars[var][1] is None: continue
+        if vars[var][1] == '': continue
+        if vars[var][0] == vars[var][1]: continue
+        try:
+            float(vars[var][1]) # test for number
+            fp.write(var + ' = ' + str(vars[var][1])+'\n')
+        except:
+            try:
+                eval(vars[var][1]) # test for an expression
+                fp.write(var + ' = ' + str(vars[var][1])+'\n')
+            except: # must be a string
+                fp.write(var + ' = "' + str(vars[var][1])+'"\n')
+        if vars[var][3]:
+            fp.write("'''" + str(vars[var][3]) + "\n'''\n\n")
+    fp.close()
+    print('wrote file '+savefile)
+
 class SelectConfigSetting(wx.Dialog):
     '''Dialog to select configuration variables and set associated values.
     '''
     def __init__(self,parent=None):
-        import config_example
         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, wx.ID_ANY, 'Set Config Variable', style=style)
         self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.vars = self.GetVarDocs(config_example.__file__)
+        self.vars = GetConfigValsDocs()
         
         label = wx.StaticText(
             self,  wx.ID_ANY,
@@ -3197,42 +3398,6 @@ class SelectConfigSetting(wx.Dialog):
         self.sizer.Fit(self)
         self.CenterOnParent()
 
-    def GetVarDocs(self,fname):
-        '''Read the module referenced in fname (often <module>.__file__) and
-        return a dict with names of global variables as keys.
-        For each global variable, the value contains four items:
-        
-          item 0: the default value
-          
-          item 1: the current value
-          
-          item 2: the initial value (starts same as item 1)
-          
-          item 3: the "docstring" that follows variable definition
-        '''
-        import config_example
-        import ast
-        fname = os.path.splitext(fname)[0]+'.py' # convert .pyc to .py
-        with open(fname, 'r') as f:
-            fstr = f.read()
-        fstr = fstr.replace('\r\n', '\n').replace('\r', '\n')
-        if not fstr.endswith('\n'):
-            fstr += '\n'
-        tree = ast.parse(fstr)
-        d = {}
-        key = None
-        for node in ast.walk(tree):
-            if isinstance(node,ast.Assign):
-                key = node.targets[0].id
-                d[key] = [config_example.__dict__.get(key),
-                          GSASIIpath.configDict.get(key),
-                          GSASIIpath.configDict.get(key),'']
-            elif isinstance(node,ast.Expr) and key:
-                d[key][3] = node.value.s.strip()
-            else:
-                key = None
-        return d
-    
     def OnChange(self,event=None):
         ''' Check if anything been changed. Turn the save button on/off.
         '''
@@ -3262,58 +3427,9 @@ class SelectConfigSetting(wx.Dialog):
         '''Write the config variables to config.py and then set them
         as the current settings
         '''
-        # try to write to where an old config file is located
-        try:
-            import config
-            savefile = config.__file__
-        except ImportError: # no config.py file yet
-            savefile = os.path.join(GSASIIpath.path2GSAS2,'config.py')
-        # try to open file for write
-        try:
-            savefile = os.path.splitext(savefile)[0]+'.py' # convert .pyc to .py
-            fp = open(savefile,'w')
-        except IOError:  # can't write there, write in local mods directory
-            # create a local mods directory, if needed
-            if not os.path.exists(os.path.expanduser('~/.G2local/')):
-                print('Creating directory '+os.path.expanduser('~/.G2local/'))
-                os.mkdir(os.path.expanduser('~/.G2local/'))
-                sys.path.insert(0,os.path.expanduser('~/.G2local/'))
-            savefile = os.path.join(os.path.expanduser('~/.G2local/'),'config.py')
-            try:
-                fp = open(savefile,'w')
-            except IOError:
-                G2MessageBox(self,
-                                 'Error trying to write configuration to '+savefile,
-                                 'Unable to save')
-                return
-        import datetime
-        fp.write("'''\n")
-        fp.write("*config.py: Configuration options*\n----------------------------------\n")
-        fp.write("This file created in SelectConfigSetting on {:%d %b %Y %H:%M}\n".
-                 format(datetime.datetime.now()))
-        fp.write("'''\n\n")
-        fp.write("import os.path\n")
-        fp.write("import GSASIIpath\n\n")
-        for var in sorted(self.vars.keys(),key=lambda s: s.lower()):
-            if self.vars[var][1] is None: continue
-            if self.vars[var][1] == '': continue
-            if self.vars[var][0] == self.vars[var][1]: continue
-            try:
-                float(self.vars[var][1]) # test for number
-                fp.write(var + ' = ' + str(self.vars[var][1])+'\n')
-            except:
-                try:
-                    eval(self.vars[var][1]) # test for an expression
-                    fp.write(var + ' = ' + str(self.vars[var][1])+'\n')
-                except: # must be a string
-                    fp.write(var + ' = "' + str(self.vars[var][1])+'"\n')
-            if self.vars[var][3]:
-                fp.write("'''" + str(self.vars[var][3]) + "\n'''\n\n")
-        fp.close()
-        print('wrote file '+savefile)
-        # force a reload of the config settings
-        self.OnApplyChanges()
-        self.EndModal(wx.ID_OK)
+        if not SaveConfigVars(self.vars,parent=self):
+            self.OnApplyChanges() # force a reload of the config settings
+            self.EndModal(wx.ID_OK)
 
     def OnBoolSelect(self,event):
         'Respond to a change in a True/False variable'
@@ -3637,7 +3753,7 @@ tutorialCatalog = (
     #['TOF Sequential Single Peak Fit', 'TOF Sequential Single Peak Fit', '', ''],
     )
 if GSASIIpath.GetConfigValue('Tutorial_location'):
-    tutorialPath = GSASIIpath.GetConfigValue('Tutorial_location')
+    tutorialPath = os.path.abspath(GSASIIpath.GetConfigValue('Tutorial_location'))
 else:
     # pick a default directory in a logical place
     if sys.platform.lower().startswith('win') and os.path.exists(os.path.abspath(os.path.expanduser('~/My Documents'))):
@@ -3785,13 +3901,13 @@ class OpenTutorial(wx.Dialog):
             self.LoadTutorial(tutdir,tutorialPath,G2BaseURL)
             self.LoadExercise(exedir,tutorialPath,G2BaseURL)
             URL = os.path.join(tutorialPath,'help',tutdir,htmlname)
-            self.frame.ImportDir = os.path.join(tutorialPath,'Exercises',exedir)
+            self.frame.TutorialImportDir = os.path.join(tutorialPath,'Exercises',exedir)
             ShowWebPage(URL,self.frame)
         elif self.BrowseMode == 1:
             # xfer data locally, open web page remotely
             self.LoadExercise(exedir,tutorialPath,G2BaseURL)
             URL = os.path.join(G2BaseURL,'Tutorials',tutdir,htmlname)
-            self.frame.ImportDir = os.path.join(tutorialPath,'Exercises',exedir)
+            self.frame.TutorialImportDir = os.path.join(tutorialPath,'Exercises',exedir)
             ShowWebPage(URL,self.frame)
         elif self.BrowseMode == 2:
             # open web page remotely, don't worry about data
@@ -3800,7 +3916,7 @@ class OpenTutorial(wx.Dialog):
         elif self.BrowseMode == 3:
             # open web page that has already been transferred
             URL = os.path.join(tutorialPath,'help',tutdir,htmlname)
-            self.frame.ImportDir = os.path.join(tutorialPath,'Exercises',exedir)
+            self.frame.TutorialImportDir = os.path.join(tutorialPath,'Exercises',exedir)
             ShowWebPage(URL,self.frame)
         else:
             wx.EndBusyCursor()

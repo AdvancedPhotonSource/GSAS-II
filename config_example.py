@@ -67,19 +67,33 @@ GSAS-II is installed, use this::
 
 As another example, to use ~/.G2tutorials do this::
 
-    Tutorial_location = os.path.expanduser('~/.G2tutorials')
+    Tutorial_location = '~/.G2tutorials'
 
-Note that os.path and GSASIIpath are imported inside config.py; other imports will
-require manual editing of the file.
+Note that os.path.expanduser is run on Tutorial_location before it is used.
+Also note that GSASIIpath is imported inside config.py; other imports should be
+avoided.
+'''
+
+Save_paths=False
+'''When set to True, the last-used path for saving of .gpx and for
+importing of input files is saved in the configuration file.
+Note that since this causes the config.py file to be updated whenever files are
+saved/imported, any temporary config settings can be saved to disk at that
+point.
 '''
 
 Starting_directory=None
-'''Specifies a default location for starting GSAS-II
+'''Specifies a default location for starting GSAS-II and where .gpx files
+should be read from. Will be updated if Save_paths is True.
+Note that os.path.expanduser is run on this before it is used, so the user's
+home directory can be specified with a '~'.
 '''
 
 Import_directory=None
-'''Specifies a default location for finding exercise files used for
-Tutorials.
+'''Specifies a default location for importing (reading) input files. Will be
+updated if Save_paths is True.
+Note that os.path.expanduser is run on this before it is used, so the user's
+home directory can be specified with a '~'.
 '''
 
 wxInspector = False

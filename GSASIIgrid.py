@@ -67,7 +67,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
     wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_MAKEMOLECULE,
     wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL, wxID_ISODISP,wxID_ADDHATOM,wxID_UPDATEHATOM,
-] = [wx.NewId() for item in range(17)]
+    wxID_WAVEVARY,
+] = [wx.NewId() for item in range(18)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -1291,11 +1292,14 @@ class DataFrame(wx.Frame):
             help='Compute values of ISODISTORT modes from atom parameters')
         self.PostfillDataMenu()
         
-        # Phase / Imcommensurate "waves" tab
+        # Phase / Imcommensurate "waves" tab 
         self.WavesData = wx.MenuBar()
         self.PrefillDataMenu(self.WavesData,helpType='Wave Data', helpLbl='Imcommensurate wave data')
         self.WavesData.Append(menu=wx.Menu(title=''),title='Select tab')
-        self.WavesDataCompute = wx.Menu(title='')
+        self.WavesDataEdit = wx.Menu(title='')
+        self.WavesData.Append(menu=self.WavesDataEdit, title='Edit')
+        self.WavesDataEdit.Append(id=wxID_WAVEVARY, kind=wx.ITEM_NORMAL,text='Global wave vary',
+            help='Global setting of wave vary flags')
         self.PostfillDataMenu()
                  
         # Phase / Draw Options tab

@@ -2546,8 +2546,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add(topSizer,0,WACV)
         G2frame.bottomSizer = ShowAtomInfo()
         mainSizer.Add(G2frame.bottomSizer)
-        
+        #wxID_WAVEVARY
         SetPhaseWindow(G2frame.dataFrame,G2frame.waveData,mainSizer,Scroll)
+    
+    def OnWaveVary(event):
+        print 'set vary flags for all waves - TBD'
 
 ################################################################################
 #### Structure drawing GUI stuff                
@@ -6396,6 +6399,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         # Wave Data
         if data['General']['Type'] in ['modulated','magnetic']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.WavesData)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnWaveVary, id=G2gd.wxID_WAVEVARY)            
         # Draw Options
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataDrawOptions)
         # Draw Atoms

@@ -2406,10 +2406,10 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
             sigstr = ' sig   :'
             for i,name in enumerate(Snames):
                 ptlbls += '%12s' % (name)
-                ptstr += '%12.6f' % (hapData[4][i])
+                ptstr += '%12.1f' % (hapData[4][i])
                 if mustrainSig[1][i]:
                     refine = True
-                    sigstr += '%12.6f' % (mustrainSig[1][i])
+                    sigstr += '%12.1f' % (mustrainSig[1][i])
                 else:
                     sigstr += 12*' '
             if refine:

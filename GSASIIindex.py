@@ -312,7 +312,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
     ranges = []    
     for v,r in zip(ssopt['ModVec'],Vref):
         if r:
-            ranges += [slice(0.05,1.98,.05),]
+            ranges += [slice(0.02,0.98,.02),]
             values += [v,]
     dmin = getDmin(peaks)-0.005
     Peaks = np.copy(np.array(peaks).T)

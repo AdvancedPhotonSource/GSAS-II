@@ -2469,7 +2469,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         ObjId = Obj.GetId()
         Id = Indx[ObjId]
         try:
-            value = min(1.0,max(-1.0,float(Obj.GetValue())))
+            value = min(0.98,max(-0.98,float(Obj.GetValue())))
         except ValueError:
             value = ssopt['ModVec'][Id]
         Obj.SetValue('%.4f'%(value))
@@ -2480,9 +2480,9 @@ def UpdateUnitCellsGrid(G2frame, data):
         Obj = event.GetEventObject()
         ObjId = Obj.GetId()
         Id,valObj = Indx[ObjId]
-        move = Obj.GetValue()*0.001
+        move = Obj.GetValue()*0.01
         Obj.SetValue(0)
-        value = min(1.0,max(-1.0,float(valObj.GetValue())+move))
+        value = min(0.98,max(-0.98,float(valObj.GetValue())+move))
         valObj.SetValue('%.4f'%(value)) 
         ssopt['ModVec'][Id] = value
         OnHklShow(event)

@@ -1690,7 +1690,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 nextneigh = []
                 if nextName:
                     nextneigh = G2mth.FindNeighbors(data,nextName,AtNames,notName=neigh[0])
-                    neigh[1][1].append(nextneigh[1][1][0])
+                    if nextneigh[0]:
+                        neigh[1][1].append(nextneigh[1][1][0])
                 neigh[2] = max(0,nH)  #set expected no. H's needed
                 if len(neigh[1][0]):
                     AddHydIds.append(neigh[1][1])

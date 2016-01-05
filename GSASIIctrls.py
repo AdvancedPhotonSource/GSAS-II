@@ -42,6 +42,7 @@ GSASIIpath.SetVersionNumber("$Revision: 1614 $")
 import GSASIIpwdGUI as G2pdG
 # import GSASIIimgGUI as G2imG
 # import GSASIIphsGUI as G2phG
+import GSASIIctrls as G2G
 # import GSASIIspc as G2spc
 # import GSASIImapvars as G2mv
 # import GSASIIconstrGUI as G2cnstG

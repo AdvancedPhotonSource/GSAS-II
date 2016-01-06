@@ -2538,7 +2538,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     break
                 atomSizer.Add(WaveSizer(iatm,atm[-1]['SS1']['waveType'],atm[-1]['SS1'][Stype],Stype,typeNames[Stype],Labels[Stype]))                        
             return atomSizer
-                
 
         atms = wx.ComboBox(waveData,value=G2frame.atmSel,choices=atNames,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -2547,11 +2546,34 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add(topSizer,0,WACV)
         G2frame.bottomSizer = ShowAtomInfo()
         mainSizer.Add(G2frame.bottomSizer)
-        #wxID_WAVEVARY
         SetPhaseWindow(G2frame.dataFrame,G2frame.waveData,mainSizer,Scroll)
     
     def OnWaveVary(event):
-        print 'set vary flags for all waves - TBD'
+        generalData = data['General']
+        cx,ct,cs,cia = generalData['AtomPtrs']
+        atomData = data['Atoms']
+        atNames = []
+        names = ['Sfrac','Spos','Sadp','Smag']
+        flags = dict(zip(names,[[],[],[],[]]))
+        for atom in atomData:
+            atNames.append(atom[ct-1])
+            waves = atom[-1]['SS1']
+            for name in names:
+                if waves[name]:
+                    flags[name].append(True)
+                else:
+                    flags[name].append(False)
+        dlg = G2G.FlagSetDialog(G2frame,'Wave refinement flags',['Atom',]+names,atNames,flags)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                flags = dlg.GetSelection()
+                for ia,atom in enumerate(atomData):
+                    for name in names:
+                        for wave in atom[-1]['SS1'][name]:
+                            wave[1] = flags[name][ia]
+        finally:
+            dlg.Destroy()
+        UpdateWavesData()
 
 ################################################################################
 #### Structure drawing GUI stuff                

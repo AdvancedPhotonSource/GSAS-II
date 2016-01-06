@@ -1730,8 +1730,77 @@ class G2SingleChoiceDialog(wx.Dialog):
         self.OKbtn.Enable(True)
     def onDoubleClick(self,event):
         self.EndModal(wx.ID_OK)
-
+        
 ################################################################################
+class FlagSetDialog(wx.Dialog):
+    ''' Creates popup with table of variables to be checked for e.g. refinement flags
+    '''
+    def __init__(self,parent,title,colnames,rownames,flags):
+        wx.Dialog.__init__(self,parent,-1,title,
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.colnames = colnames
+        self.rownames = rownames
+        self.flags = flags
+        self.newflags = copy.copy(flags)
+        self.Draw()
+        
+    def Draw(self):
+        Indx = {}
+        
+        def OnSelection(event):
+            Obj = event.GetEventObject()
+            [name,ia] = Indx[Obj.GetId()]
+            self.newflags[name][ia] = Obj.GetValue()
+            
+        self.panel.DestroyChildren()
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        flagSizer = wx.FlexGridSizer(0,len(self.colnames),5,5)
+        for item in self.colnames:
+            flagSizer.Add(wx.StaticText(self.panel,label=item),0,WACV)
+        for ia,atm in enumerate(self.rownames):
+            flagSizer.Add(wx.StaticText(self.panel,label=atm),0,WACV)
+            for name in self.colnames[1:]:
+                if self.flags[name][ia]:
+                    self.newflags[name][ia] = False     #default is off
+                    flg = wx.CheckBox(self.panel,-1,label='')
+                    flg.Bind(wx.EVT_CHECKBOX,OnSelection)
+                    Indx[flg.GetId()] = [name,ia]
+                    flagSizer.Add(flg,0,WACV)
+                else:
+                    flagSizer.Add(wx.StaticText(self.panel,label='na'),0,WACV)
+            
+        mainSizer.Add(flagSizer,0)
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add(CancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        return self.newflags
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+        
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+
+###################################################################,#############
 def G2MessageBox(parent,msg,title='Error'):
     '''Simple code to display a error or warning message
     '''
@@ -2439,7 +2508,7 @@ def GetImportFile(G2frame, message, defaultDir="", defaultFile="", style=wx.OPEN
         dlg.Destroy()
     # save the path of the first file and reset the TutorialImportDir variable
     pth = os.path.split(os.path.abspath(filelist[0]))[0]
-    if GSASIIpath.GetConfigValue('Save_paths'): G2G.SaveImportDirectory(pth)
+    if GSASIIpath.GetConfigValue('Save_paths'): SaveImportDirectory(pth)
     G2frame.LastImportDir = pth
     G2frame.TutorialImportDir = None
     return filelist

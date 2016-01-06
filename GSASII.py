@@ -3111,6 +3111,11 @@ class GSASII(wx.Frame):
 
     def ExitMain(self, event):
         '''Called if the main window is closed'''
+        if self.G2plotNB:
+            self.G2plotNB.Destroy()
+        if self.dataFrame:
+            self.dataFrame.Clear() 
+            self.dataFrame.Destroy()
         if self.undofile:
             os.remove(self.undofile)
         sys.exit()

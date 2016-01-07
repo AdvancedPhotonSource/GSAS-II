@@ -1013,6 +1013,34 @@ def Modulation(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
     sinHA = np.sum(Fmod*HbH*np.sin(HdotXD)*glWt,axis=-1)       #imag part; ditto
     return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
     
+def ModulationTw(H,HP,nWaves,Fmod,Xmod,Umod,glTau,glWt):
+    '''
+    H: array nRefBlk x tw x ops X hklt
+    HP: array nRefBlk x tw x ops X hklt proj to hkl
+    Fmod: array 2 x atoms x waves    (sin,cos terms)
+    Xmod: array atoms X ngl X 3
+    Umod: array atoms x ngl x 3x3
+    glTau,glWt: arrays Gauss-Lorentzian pos & wts
+    '''
+    
+    if nWaves[2]:
+        if len(HP.shape) > 3:   #Blocks of reflections
+            HbH = np.exp(-np.sum(HP[:,:,nxs,nxs,:]*np.inner(HP,Umod),axis=-1)) # refBlk x ops x atoms x ngl add Overhauser corr.?
+        else:   #single reflections
+            HbH = np.exp(-np.sum(HP[:,nxs,nxs,:]*np.inner(HP,Umod),axis=-1)) # refBlk x ops x atoms x ngl add Overhauser corr.?
+    else:
+        HbH = 1.0
+    HdotX = np.inner(HP,Xmod)                   #refBlk x tw x ops x atoms X ngl
+    if len(H.shape) > 3:
+        D = glTau*H[:,:,:,3:,nxs]              #m*e*tau; refBlk x tw x ops X ngl
+        HdotXD = twopi*(HdotX+D[:,:,:,nxs,:])
+    else:
+        D = H*glTau[nxs,:]              #m*e*tau; refBlk x ops X ngl
+        HdotXD = twopi*(HdotX+D[:,nxs,:])
+    cosHA = np.sum(Fmod*HbH*np.cos(HdotXD)*glWt,axis=-1)       #real part; refBlk X ops x atoms; sum for G-L integration
+    sinHA = np.sum(Fmod*HbH*np.sin(HdotXD)*glWt,axis=-1)       #imag part; ditto
+    return np.array([cosHA,sinHA])             # 2 x refBlk x SGops x atoms
+    
 def makeWavesDerv(ngl,waveTypes,FSSdata,XSSdata,USSdata,Mast):
     '''
     FSSdata: array 2 x atoms x waves    (sin,cos terms)

@@ -1173,6 +1173,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(MCSASizer())
         G2frame.dataFrame.SetStatusText('')
         SetPhaseWindow(G2frame.dataFrame,General,mainSizer,Scroll)
+        
+    def OnTransform(event):
+        '''What is needed here? Get user to refer to Intl. Tables 1A (or Bilbao server) & use new
+        space group, cell transformation & origin displacement (if needed) given therein.
+        Do this in popup dialog box with OK, Cancel buttons; if OK
+        apply to lattice parameters & atom position/Uij parameters
+        need to start with full unit cell contents, transform & then filter out symm. equiv.
+        '''
+        print 'Transform crystal structure - TBD'
+        
+                    
 
 ################################################################################
 #####  Atom routines
@@ -5699,7 +5710,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def OnClearResults(event):
         data['MCSA']['Results'] = []
         UpdateMCSA()
-                    
+        
 ################################################################################
 ##### Pawley routines
 ################################################################################
@@ -6387,6 +6398,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnFourClear, id=G2gd.wxID_FOURCLEAR)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunSingleMCSA, id=G2gd.wxID_SINGLEMCSA)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnRunMultiMCSA, id=G2gd.wxID_MULTIMCSA)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnTransform, id=G2gd.wxID_TRANSFORMSTRUCTURE)
         # Data
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataMenu)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataCopy, id=G2gd.wxID_DATACOPY)

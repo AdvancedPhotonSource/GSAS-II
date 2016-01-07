@@ -412,7 +412,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
                 
             elif 'spgroup' in S:
                 if 'X' in S:
-                    raise self.ImportException("Supersymmetry "+S+" too high; GSAS-II limited to (3+1) supersymmetry")            
+                    raise self.ImportException("Ad hoc Supersymmetry centering "+S+" not allowed in GSAS-II")            
                 SpGrp = S.split()[1]
                 SuperSg = ''
                 if '(' in SpGrp:    #supercell symmetry - split in 2

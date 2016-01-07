@@ -56,8 +56,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_FOURCALC, wxID_FOURSEARCH, wxID_FOURCLEAR, wxID_PEAKSMOVE, wxID_PEAKSCLEAR, 
     wxID_CHARGEFLIP, wxID_PEAKSUNIQUE, wxID_PEAKSDELETE, wxID_PEAKSDA,
     wxID_PEAKSDISTVP, wxID_PEAKSVIEWPT, wxID_FINDEQVPEAKS,wxID_SHOWBONDS,wxID_MULTIMCSA,
-    wxID_SINGLEMCSA,wxID_4DCHARGEFLIP,
-] = [wx.NewId() for item in range(16)]
+    wxID_SINGLEMCSA,wxID_4DCHARGEFLIP,wxID_TRANSFORMSTRUCTURE,
+] = [wx.NewId() for item in range(17)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_PWDANALYSIS, wxID_PWDCOPY, wxID_PLOTCTRLCOPY, 
     wxID_DATADELETE,wxID_DATACOPY,wxID_DATACOPYFLAGS,wxID_DATASELCOPY,
@@ -1209,6 +1209,8 @@ class DataFrame(wx.Frame):
             text='MC/SA')
         self.GeneralCalc.Append(help='Run Monte Carlo - Simulated Annealing on multiprocessors',id=wxID_MULTIMCSA, kind=wx.ITEM_NORMAL,
             text='Multi MC/SA')            #currently not useful
+        self.GeneralCalc.Append(help='Transform crystal structure',id=wxID_TRANSFORMSTRUCTURE, kind=wx.ITEM_NORMAL,
+            text='Transform')
         self.PostfillDataMenu()
         
         # Phase / Data tab

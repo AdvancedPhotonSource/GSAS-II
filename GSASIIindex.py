@@ -13,14 +13,10 @@
 ===================================
 
 Cell indexing program: variation on that of A. Coehlo
-includes cell refinement from peak positions (not zero as yet)
-
-This needs a bit of refactoring to remove the little bit of GUI
-code referencing wx
+includes cell refinement from peak positions
 '''
 
 import math
-import wx
 import time
 import numpy as np
 import numpy.linalg as nl
@@ -774,13 +770,14 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
     amax = 5.*getDmax(peaks)
     Asave = []
     GoOn = True
+    Skip = False
     if A:
         HKL = G2lat.GenHBravais(dmin,ibrav,A[:])
         if len(HKL) > mHKL[ibrav]:
             peaks = IndexPeaks(peaks,HKL)[1]
             Asave.append([calc_M20(peaks,HKL,ifX20),A[:]])
     tries = 0
-    while tries < Ntries:
+    while tries < Ntries and GoOn:
         if A:
             Abeg = ranAbyR(ibrav,A,tries+1,Ntries,ran2axis)
             if ibrav in [11,12,13]:         #monoclinic & triclinic
@@ -788,6 +785,15 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
         else:
             Abeg = ranAbyV(ibrav,amin,amax,V1)
         HKL = G2lat.GenHBravais(dmin,ibrav,Abeg)
+        Nc = len(HKL)
+        if Nc >= ncMax:
+            GoOn = False
+        else:
+            if dlg:
+                GoOn,Skip = dlg.Update(100*Nc/ncMax)
+                if Skip or not GoOn:
+                    GoOn = False
+                    break
         
         if IndexPeaks(peaks,HKL)[0] and len(HKL) > mHKL[ibrav]:
             Lhkl,M20,X20,Aref = refinePeaks(peaks,ibrav,Abeg,ifX20)
@@ -808,20 +814,13 @@ def findBestCell(dlg,ncMax,A,Ntries,ibrav,peaks,V1,ifX20=True):
         else:
             break
         Nc = len(HKL)
-        if Nc >= ncMax:
-            GoOn = False
-        elif dlg:
-            GoOn = dlg.Update(Nc)[0]
-            if not GoOn:
-                break
         tries += 1
     X = sortM20(Asave)
     if X:
         Lhkl,M20,X20,A = refinePeaks(peaks,ibrav,X[0][1],ifX20)
-        return GoOn,Lhkl,M20,X20,A
-        
+        return GoOn,Skip,Lhkl,M20,X20,A        
     else:
-        return GoOn,0,0,0,0
+        return GoOn,Skip,0,0,0,0
         
 def monoCellReduce(ibrav,A):
     'needs a doc string'
@@ -845,7 +844,7 @@ def monoCellReduce(ibrav,A):
             A = G2lat.cell2A([a,b,cnew,90,beta,90])
     return A
 
-def DoIndexPeaks(peaks,controls,bravais,ifX20=True):
+def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
     'needs a doc string'
     
     delt = 0.005                                     #lowest d-spacing cushion - can be fixed?
@@ -880,11 +879,7 @@ def DoIndexPeaks(peaks,controls,bravais,ifX20=True):
             topM20 = 0
             cycle = 0
             while cycle < 5:
-                dlg = wx.ProgressDialog("Generated reflections",tries[cycle]+" cell search for "+bravaisNames[ibrav],ncMax, 
-                    style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
-                screenSize = wx.ClientDisplayRect()
-                Size = dlg.GetSize()
-                dlg.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
+                dlg.Update(0,newmsg=tries[cycle]+" cell search for "+bravaisNames[ibrav])
                 try:
                     GoOn = True
                     while GoOn:                                                 #Loop over increment of volume
@@ -893,12 +888,16 @@ def DoIndexPeaks(peaks,controls,bravais,ifX20=True):
                             if ibrav > 2:
                                 if not N2:
                                     A = []
-                                    GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,A,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1,ifX20)
+                                    GoOn,Skip,Nc,M20,X20,A = findBestCell(dlg,ncMax,A,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1,ifX20)
+                                    if Skip:
+                                        break
                                 if A:
-                                    GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,A[:],N1s[ibrav],ibrav,peaks,0,ifX20)
+                                    GoOn,Skip,Nc,M20,X20,A = findBestCell(dlg,ncMax,A[:],N1s[ibrav],ibrav,peaks,0,ifX20)
                             else:
-                                GoOn,Nc,M20,X20,A = findBestCell(dlg,ncMax,0,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1,ifX20)
-                            if Nc >= ncMax:
+                                GoOn,Skip,Nc,M20,X20,A = findBestCell(dlg,ncMax,0,Nm[ibrav]*N1s[ibrav],ibrav,peaks,V1,ifX20)
+                            if Skip:
+                                break
+                            elif Nc >= ncMax:
                                 GoOn = False
                                 break
                             elif 3*Nc < Nobs:
@@ -927,6 +926,10 @@ def DoIndexPeaks(peaks,controls,bravais,ifX20=True):
                             if not GoOn:
                                 break
                             N2 += 1
+                        if Skip:
+                            cycle = 10
+                            GoOn = False
+                            break
                         if ibrav < 11:
                             V1 *= 1.1
                         elif ibrav in range(11,14):
@@ -945,7 +948,7 @@ def DoIndexPeaks(peaks,controls,bravais,ifX20=True):
                                 cycle = 10
                 finally:
                     pass
-                dlg.Destroy()
+#                dlg.Destroy()
             print '%s%s%s%s'%('finished cell search for ',bravaisNames[ibrav], \
                 ', elapsed time = ',G2lat.sec2HMS(time.time()-begin))
             

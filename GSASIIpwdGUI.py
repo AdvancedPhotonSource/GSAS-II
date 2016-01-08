@@ -2769,7 +2769,10 @@ def UpdateUnitCellsGrid(G2frame, data):
             return
         G2frame.dataFrame.CopyCell.Enable(False)
         G2frame.dataFrame.RefineCell.Enable(False)
-        OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais,G2frame.ifX20)
+        dlg = wx.ProgressDialog("Generated reflections",'0 '+" cell search for "+bravaisNames[ibrav],101, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_SKIP|wx.PD_CAN_ABORT)
+        OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais,dlg,G2frame.ifX20)
+        dlg.Destroy()
         cells = keepcells+newcells
         cells = G2indx.sortM20(cells)
         if OK:

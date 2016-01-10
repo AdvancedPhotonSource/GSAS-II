@@ -613,7 +613,7 @@ def dervFitT(values,ibrav,d,H,tof,difC,Z,Zref):
         derv = [H[0]*H[0],H[1]*H[1],H[2]*H[2],H[0]*H[1],H[0]*H[2],H[1]*H[2]]
     if Zref:
         derv.append(np.ones_like(d)/difC)
-    derv = -np.array(derv)
+    derv = np.array(derv)
     return derv.T
     
 def FitHKLT(difC,ibrav,peaks,A,Z,Zref):
@@ -663,7 +663,7 @@ def dervFitTSS(values,ibrav,d,H,tof,difC,vec,Vref,Z,Zref):
         derv.append(2.*A[2]*HM[2]*H[3]+A[4]*HM[1]*H[3]+A[5]*HM[0]*H[3])    
     if Zref:
         derv.append(np.ones_like(d)/difC)
-    derv = -np.array(derv)
+    derv = np.array(derv)
     return derv.T
     
 def FitHKLTSS(difC,ibrav,peaks,A,V,Vref,Z,Zref):

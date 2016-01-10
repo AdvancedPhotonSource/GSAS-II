@@ -2706,9 +2706,17 @@ def UpdateUnitCellsGrid(G2frame, data):
                 peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
                 Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks[0],wave,ibrav,A,controls[1],controls[0])
         else:   #'T'OF - doesn't seem to work
-            G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
-            peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
-            Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])            
+            if ssopt.get('Use',False):
+                vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
+                SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
+                G2frame.HKL = G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,ssopt['ModVec'],ssopt['maxH'],A)
+                peaks = [G2indx.IndexSSPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
+                Lhkl,M20,X20,Aref,Vec,Zero = \
+                    G2indx.refinePeaksTSS(peaks[0],difC,Inst,SGData,SSGData,ssopt['maxH'],ibrav,A,ssopt['ModVec'],vecFlags,controls[1],controls[0])
+            else:
+                G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
+                peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
+                Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksT(peaks[0],difC,ibrav,A,controls[1],controls[0])            
         G2frame.HKL = np.array(G2frame.HKL)
         controls[1] = Zero
         controls[6:12] = G2lat.A2cell(Aref)

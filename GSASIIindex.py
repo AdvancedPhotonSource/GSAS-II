@@ -630,6 +630,60 @@ def FitHKLT(difC,ibrav,peaks,A,Z,Zref):
         Z = result[0][-1]
     chisq = np.sum(errFitT(result[0],ibrav,Peaks[7],Peaks[4:7],Peaks[0],difC,Z,Zref)**2)
     return True,chisq,A,Z,result
+    
+def errFitTSS(values,ibrav,d,H,tof,difC,vec,Vref,Z,Zref):
+    Zero = Z
+    if Zref:    
+        Zero = values[-1]
+    A = Values2A(ibrav,values)
+    Vec = Values2Vec(ibrav,vec,Vref,values)
+    Qo = 1./d**2
+    Qc = G2lat.calc_rDsqTSS(H,A,Vec,Zero,tof,difC)
+    return (Qo-Qc)
+    
+def dervFitTSS(values,ibrav,d,H,tof,difC,vec,Vref,Z,Zref):
+    A = Values2A(ibrav,values)
+    Vec = Values2Vec(ibrav,vec,Vref,values)
+    HM = H[:3]+(H[3][:,np.newaxis]*Vec).T
+    if ibrav in [3,4,]:
+        derv = [HM[0]*HM[0]+HM[1]*HM[1]+HM[0]*HM[1],HM[2]*HM[2]]
+    elif ibrav in [5,6]:
+        derv = [HM[0]*HM[0]+HM[1]*HM[1],HM[2]*HM[2]]
+    elif ibrav in [7,8,9,10]:
+        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2]]
+    elif ibrav in [11,12]:
+        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[2]]
+    else:
+        derv = [HM[0]*HM[0],HM[1]*HM[1],HM[2]*HM[2],HM[0]*HM[1],HM[0]*HM[2],HM[1]*HM[2]]
+    if Vref[0]:
+        derv.append(2.*A[0]*HM[0]*H[3]+A[3]*HM[1]*H[3]+A[4]*HM[2]*H[3])
+    if Vref[1]:
+        derv.append(2.*A[1]*HM[1]*H[3]+A[3]*HM[0]*H[3]+A[5]*HM[2]*H[3])
+    if Vref[2]:
+        derv.append(2.*A[2]*HM[2]*H[3]+A[4]*HM[1]*H[3]+A[5]*HM[0]*H[3])    
+    if Zref:
+        derv.append(np.ones_like(d)/difC)
+    derv = -np.array(derv)
+    return derv.T
+    
+def FitHKLTSS(difC,ibrav,peaks,A,V,Vref,Z,Zref):
+    'needs a doc string'
+    
+    Peaks = np.array(peaks).T    
+    values = A2values(ibrav,A)
+    for v,r in zip(V,Vref):
+        if r:
+            values.append(v)
+    if Zref:
+        values.append(Z)
+    result = so.leastsq(errFitTSS,values,Dfun=dervFitTSS,full_output=True,ftol=0.0001,
+        args=(ibrav,Peaks[8],Peaks[4:8],Peaks[0],difC,V,Vref,Z,Zref))
+    A = Values2A(ibrav,result[0])
+    Vec = Values2Vec(ibrav,V,Vref,result[0])
+    if Zref:
+        Z = result[0][-1]
+    chisq = np.sum(errFitTSS(result[0],ibrav,Peaks[8],Peaks[4:8],Peaks[0],difC,V,Vref,Z,Zref)**2)
+    return True,chisq,A,Vec,Z,result
                
 def rotOrthoA(A):
     'needs a doc string'
@@ -689,6 +743,18 @@ def refinePeaksZ(peaks,wave,ibrav,A,Zero,ZeroRef):
     M20,X20 = calc_M20(peaks,HKL)
     return len(HKL),M20,X20,Aref,Z
     
+def refinePeaksT(peaks,difC,ibrav,A,Zero,ZeroRef):
+    'needs a doc string'
+    dmin = getDmin(peaks)
+    OK,smin,Aref,Z,result = FitHKLT(difC,ibrav,peaks,A,Zero,ZeroRef)
+    Peaks = np.array(peaks).T
+    H = Peaks[4:7]
+    Peaks[8] = 1./np.sqrt(G2lat.calc_rDsqT(H,Aref,Z,Peaks[0],difC))
+    peaks = Peaks.T    
+    HKL = G2lat.GenHBravais(dmin,ibrav,A)
+    M20,X20 = calc_M20(peaks,HKL)
+    return len(HKL),M20,X20,Aref,Z
+    
 def refinePeaksZSS(peaks,wave,Inst,SGData,SSGData,maxH,ibrav,A,vec,vecRef,Zero,ZeroRef):
     'needs a doc string'
     dmin = getDmin(peaks)
@@ -701,17 +767,18 @@ def refinePeaksZSS(peaks,wave,Inst,SGData,SSGData,maxH,ibrav,A,vec,vecRef,Zero,Z
     M20,X20 = calc_M20SS(peaks,HKL)
     return len(HKL),M20,X20,Aref,Vref,Z
     
-def refinePeaksT(peaks,difC,ibrav,A,Zero,ZeroRef):
+def refinePeaksTSS(peaks,difC,Inst,SGData,SSGData,maxH,ibrav,A,vec,vecRef,Zero,ZeroRef):
     'needs a doc string'
     dmin = getDmin(peaks)
-    OK,smin,Aref,Z,result = FitHKLT(difC,ibrav,peaks,A,Zero,ZeroRef)
+    OK,smin,Aref,Vref,Z,result = FitHKLTSS(difC,ibrav,peaks,A,vec,vecRef,Zero,ZeroRef)
     Peaks = np.array(peaks).T
-    H = Peaks[4:7]
-    Peaks[8] = 1./np.sqrt(G2lat.calc_rDsqT(H,Aref,Z,Peaks[0],difC))
+    H = Peaks[4:8]
+    Peaks[9] = 1./np.sqrt(G2lat.calc_rDsqTSS(H,Aref,Vref,Z,Peaks[0],difC))
     peaks = Peaks.T    
+    HKL =  G2pwd.getHKLMpeak(dmin,Inst,SGData,SSGData,Vref,maxH,Aref)
     HKL = G2lat.GenHBravais(dmin,ibrav,A)
-    M20,X20 = calc_M20(peaks,HKL)
-    return len(HKL),M20,X20,Aref,Z
+    M20,X20 = calc_M20SS(peaks,HKL)
+    return len(HKL),M20,X20,Aref,Vref,Z
     
 def refinePeaks(peaks,ibrav,A,ifX20=True):
     'needs a doc string'

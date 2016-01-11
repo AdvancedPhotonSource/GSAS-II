@@ -1043,7 +1043,8 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Bab = np.repeat(parmDict[phfx+'BabA']*np.exp(-parmDict[phfx+'BabU']*SQfactor),len(SGT))
         Tindx = np.array([refDict['FF']['El'].index(El) for El in Tdata])
         FF = np.repeat(refDict['FF']['FF'][iBeg:iFin].T[Tindx].T,len(SGT),axis=0)
-        Uniq = np.inner(H.T,SGMT)             # array(nSGOp,3) or (nTwin,nSGOp,3)
+#        GSASIIpath.IPyBreak()
+        Uniq = np.inner(H.T,SGMT)             # array(nSGOp,3)
         Phi = np.inner(H.T,SGT)
         phase = twopi*(np.inner(Uniq,(dXdata+Xdata).T).T+Phi.T).T
         sinp = np.sin(phase)        #refBlk x nOps x nAtoms
@@ -1057,30 +1058,32 @@ def StructureFactorDerv2(refDict,G,hfx,pfx,SGData,calcControls,parmDict):
         Hij = np.array([Mast*np.multiply.outer(U,U) for U in np.reshape(Uniq,(-1,3))])
         Hij = np.reshape(np.array([G2lat.UijtoU6(Uij) for Uij in Hij]),(-1,len(SGT),6))
         fot = np.reshape(((FF+FP).T-Bab).T,cosp.shape)*Tcorr
-        fotp = FPP*Tcorr        
+        if len(FPP.shape) > 1:
+            fotp = np.reshape(FPP,cosp.shape)*Tcorr
+        else:
+            fotp = FPP*Tcorr     
         if 'T' in calcControls[hfx+'histType']:
             fa = np.array([fot*cosp,-np.reshape(Flack*FPP,sinp.shape)*sinp*Tcorr])
             fb = np.array([fot*sinp,np.reshape(Flack*FPP,cosp.shape)*cosp*Tcorr])
         else:
             fa = np.array([fot*cosp,-Flack*FPP*sinp*Tcorr])
             fb = np.array([fot*sinp,Flack*FPP*cosp*Tcorr])
-#        GSASIIpath.IPyBreak()
         fas = np.sum(np.sum(fa,axis=-1),axis=-1)      #real sum over atoms & unique hkl array(2,refBlk,nTwins)
         fbs = np.sum(np.sum(fb,axis=-1),axis=-1)      #imag sum over atoms & uniq hkl
-        fax = np.array([-fot*sinp,-fotp*cosp])   #positions array(2,refBlk,ntwi,nEqv,nAtoms)
+        fax = np.array([-fot*sinp,-fotp*cosp])   #positions array(2,refBlk,nEqv,nAtoms)
         fbx = np.array([fot*cosp,-fotp*sinp])
         #sum below is over Uniq 
-        dfadfr = np.sum(fa/occ,axis=-2)        #array(2,refBlk,ntwin,nAtom) Fdata != 0 avoids /0. problem 
+        dfadfr = np.sum(fa/occ,axis=-2)        #array(2,refBlk,nAtom) Fdata != 0 avoids /0. problem 
         dfadba = np.sum(-cosp*Tcorr,axis=-2)  #array(refBlk,nAtom)
         dfadx = np.sum(twopi*Uniq[nxs,:,nxs,:,:]*np.swapaxes(fax,-2,-1)[:,:,:,:,nxs],axis=-2)
-        dfadui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fa,axis=-2) #array(Ops,refBlk,nTw,nAtoms)
+        dfadui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fa,axis=-2) #array(Ops,refBlk,nAtoms)
         dfadua = np.sum(-Hij[nxs,:,nxs,:,:]*np.swapaxes(fa,-2,-1)[:,:,:,:,nxs],axis=-2)
         # array(2,refBlk,nAtom,3) & array(2,refBlk,nAtom,6)
         if not SGData['SGInv']:
             dfbdfr = np.sum(fb/occ,axis=-2)        #Fdata != 0 avoids /0. problem
             dfbdba = np.sum(-sinp*Tcorr,axis=-2)
-            dfadfl = np.sum(np.sum(-FPP*Tcorr*sinp,axis=-1),axis=-1)
-            dfbdfl = np.sum(np.sum(FPP*Tcorr*cosp,axis=-1),axis=-1)
+            dfadfl = np.sum(np.sum(-fotp*sinp,axis=-1),axis=-1)
+            dfbdfl = np.sum(np.sum(fotp*cosp,axis=-1),axis=-1)
             dfbdx = np.sum(twopi*Uniq[nxs,:,nxs,:,:]*np.swapaxes(fbx,-2,-1)[:,:,:,:,nxs],axis=-2)           
             dfbdui = np.sum(-SQfactor[nxs,:,nxs,nxs]*fb,axis=-2)
             dfbdua = np.sum(-Hij[nxs,:,nxs,:,:]*np.swapaxes(fb,-2,-1)[:,:,:,:,nxs],axis=-2)

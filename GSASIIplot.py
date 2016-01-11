@@ -2370,6 +2370,67 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title=''):
         Page.toolbar.draw()
     else:
         Page.canvas.draw()
+        
+def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
+    '''simple contour plot of xyz data, used for diagnostic purposes
+    '''
+    def OnMotion(event):
+        xpos = event.xdata
+        if xpos:                                        #avoid out of frame mouse position
+            ypos = event.ydata
+            Page.canvas.SetCursor(wx.CROSS_CURSOR)
+            ix = int(Nxy[0]*(xpos-Xmin)+0.5)
+            iy = int(Nxy[1]*(ypos-Ymin)+0.5)
+            try:
+                G2frame.G2plotNB.status.SetStatusText('%s =%9.3f %s =%9.3f val =%9.3f'% \
+                    (labelX,xpos,labelY,ypos,Z[ix,iy]),1)                   
+            except TypeError:
+                G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
+
+    try:
+        plotNum = G2frame.G2plotNB.plotList.index(Title)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        if not newPlot:
+            Plot = Page.figure.gca()
+            xylim = Plot.get_xlim(),Plot.get_ylim()
+        Page.figure.clf()
+        Plot = Page.figure.gca()
+    except ValueError:
+        newPlot = True
+        Plot = G2frame.G2plotNB.addMpl(Title).gca()
+        plotNum = G2frame.G2plotNB.plotList.index(Title)
+        Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+    
+    Page.Choice = None
+    Page.SetFocus()
+    G2frame.G2plotNB.status.DestroyChildren()
+    Nxy = Z.shape
+    Xmin = np.min(XY[0])
+    Xmax = np.max(XY[0])
+    Ymin = np.min(XY.T[0])
+    Ymax = np.max(XY.T[0])
+    Plot.set_title(Title)
+    if labelX:
+        Plot.set_xlabel(r''+labelX,fontsize=14)
+    else:
+        Plot.set_xlabel(r'X',fontsize=14)
+    if labelY:
+        Plot.set_ylabel(r''+labelY,fontsize=14)
+    else:
+        Plot.set_ylabel(r'Y',fontsize=14)
+    Img = Plot.imshow(Z.T,cmap='Paired',interpolation='nearest',origin='lower', \
+        aspect='auto',extent=[Xmin,Xmax,Ymin,Ymax])
+    Page.figure.colorbar(Img)
+    if not newPlot:
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
+        xylim = []
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
+    else:
+        Page.canvas.draw()
 
 ################################################################################
 ##### PlotStrain

@@ -448,11 +448,15 @@ def TOF2dsp(Inst,Pos):
     def func(d,pos,Inst):        
         return (pos-Inst['difA'][1]*d**2-Inst['Zero'][1]-Inst['difB'][1]/d)/Inst['difC'][1]
     dsp0 = np.ones_like(Pos)
+    N = 0
     while True:      #successive approximations
         dsp = func(dsp0,Pos,Inst)
         if np.allclose(dsp,dsp0,atol=0.000001):
             return dsp
         dsp0 = dsp
+        N += 1
+        if N > 10:
+            return dsp
     
 def Dsp2pos(Inst,dsp):
     ''' convert d-spacing to powder pattern position (2-theta or TOF, musec)

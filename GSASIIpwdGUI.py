@@ -2494,11 +2494,14 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def OnFindMV(event):
         Peaks = np.copy(peaks[0])
-        print ' Trying: ',controls[13],ssopt['ssSymb'], 'maxH:',ssopt['maxH']
+        print ' Trying: ',controls[13],ssopt['ssSymb'], 'maxH:',1
         dlg = wx.ProgressDialog('Elapsed time','Modulation vector search',
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         try:
-            ssopt['ModVec'] = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
+            ssopt['ModVec'],result = G2indx.findMV(Peaks,controls,ssopt,Inst,dlg)
+            if len(result[0]) == 2:
+                G2plt.PlotXYZ(G2frame,result[2],1./result[3],labelX='a',labelY='g',
+                    newPlot=True,Title='Modulation vector search')
         finally:
             dlg.Destroy()
         OnHklShow(event)
@@ -3047,7 +3050,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             choices=indChoice,style=wx.CB_READONLY|wx.CB_DROPDOWN)
         maxMH.Bind(wx.EVT_COMBOBOX, OnMaxMH)
         ssSizer.Add(maxMH,0,WACV)
-        findMV = wx.wx.Button(G2frame.dataDisplay,label="Find mod. vec.?")
+        findMV = wx.Button(G2frame.dataDisplay,label="Find mod. vec.?")
         findMV.Bind(wx.EVT_BUTTON,OnFindMV)
         ssSizer.Add(findMV,0,WACV)
         mainSizer.Add(ssSizer,0)

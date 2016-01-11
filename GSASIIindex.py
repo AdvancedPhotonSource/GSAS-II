@@ -313,12 +313,12 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
     dmin = getDmin(peaks)-0.005
     Peaks = np.copy(np.array(peaks).T)
     if 'T' in Inst['Type'][0]:    
-        result = so.brute(TSSfunc,ranges,finish=so.fmin_cg,
-            args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,ssopt['maxH'],A,difC,Z,dlg))
+        result = so.brute(TSSfunc,ranges,finish=so.fmin_cg,full_output=True,
+            args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,1,A,difC,Z,dlg))
     else:
-        result = so.brute(ZSSfunc,ranges,finish=so.fmin_cg,
-            args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,ssopt['maxH'],A,wave,Z,dlg))
-    return Val2Vec(ssopt['ModVec'],Vref,result)
+        result = so.brute(ZSSfunc,ranges,finish=so.fmin_cg,full_output=True,
+            args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,1,A,wave,Z,dlg))
+    return Val2Vec(ssopt['ModVec'],Vref,result[0]),result
                 
 def IndexPeaks(peaks,HKL):
     'needs a doc string'

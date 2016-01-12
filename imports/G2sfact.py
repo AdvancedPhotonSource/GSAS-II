@@ -286,7 +286,7 @@ class SHELX6_ReaderClass(G2IO.ImportStructFactor):
         self.Super = 0
 
     def ContentsValidator(self, filepointer):
-        '''Discover how many columns before F^2 are in the SHELX HKL5 file 
+        '''Discover how many columns before F^2 are in the SHELX HKL6 file 
         - could be 3-6 depending on satellites'''
         numCols = 0
         for i,line in enumerate(filepointer):

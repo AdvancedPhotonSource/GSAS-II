@@ -2290,6 +2290,9 @@ def UpdateIndexPeaksGrid(G2frame, data):
                         for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[0][row][col]=True
                     elif key == 78:  #'N'
                         for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[0][row][col]=False
+                    elif key == 83: # 'S'
+                        for row in range(G2frame.IndexPeaksTable.GetNumberRows()): data[0][row][col] = not data[0][row][col]
+                        
             
     if G2frame.dataDisplay:
         G2frame.dataFrame.Clear()
@@ -2751,7 +2754,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             G2plt.PlotPatterns(G2frame)
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
-    def IndexPeaks(event):
+    def OnIndexPeaks(event):
         PatternId = G2frame.PatternId    
         print 'Peak Indexing'
         keepcells = []
@@ -2868,7 +2871,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.IndexMenu)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
-    G2frame.Bind(wx.EVT_MENU, IndexPeaks, id=G2gd.wxID_INDEXPEAKS)
+    G2frame.Bind(wx.EVT_MENU, OnIndexPeaks, id=G2gd.wxID_INDEXPEAKS)
     G2frame.Bind(wx.EVT_MENU, CopyUnitCell, id=G2gd.wxID_COPYCELL)
     G2frame.Bind(wx.EVT_MENU, RefineCell, id=G2gd.wxID_REFINECELL)
     G2frame.Bind(wx.EVT_MENU, MakeNewPhase, id=G2gd.wxID_MAKENEWPHASE)

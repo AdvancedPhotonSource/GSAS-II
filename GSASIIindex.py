@@ -267,7 +267,7 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
                 if values.size > 1:
                     Vec.append(max(-1.,min(1.0,values[i])))
                 else:
-                    Vec.append(max(0.0,min(2.0,values)))                    
+                    Vec.append(max(0.0,min(1.0,values)))                    
                 i += 1
             else:
                 Vec.append(vec[j])
@@ -305,13 +305,13 @@ def findMV(peaks,controls,ssopt,Inst,dlg):
     Z = controls[1]
     Vref = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
     values = []
-    ranges = []    
+    ranges = []
+    dT = 0.02       #seems to be a good choice
     for v,r in zip(ssopt['ModVec'],Vref):
         if r:
-            ranges += [slice(0.02,0.98,.02),]
+            ranges += [slice(dT,1.-dT,dT),] #NB: unique part for (00g) & (a0g); (abg)?
             values += [v,]
     dmin = getDmin(peaks)-0.005
-    Peaks = np.copy(np.array(peaks).T)
     if 'T' in Inst['Type'][0]:    
         result = so.brute(TSSfunc,ranges,finish=so.fmin_cg,full_output=True,
             args=(peaks,dmin,Inst,SGData,SSGData,ssopt['ModVec'],Vref,1,A,difC,Z,dlg))
@@ -329,9 +329,9 @@ def IndexPeaks(peaks,HKL):
     hklds.sort()                                        # ascending sort - upper bound at end
     hklmax = [0,0,0]
     for ipk,peak in enumerate(peaks):
+        peak[4:7] = [0,0,0]                           #clear old indexing
+        peak[8] = 0.
         if peak[2]:
-            peak[4:7] = [0,0,0]                           #clear old indexing
-            peak[8] = 0.
             i = bisect.bisect_right(hklds,peak[7])          # find peak position in hkl list
             dm = peak[-2]-hklds[i-1]                         # peak to neighbor hkls in list
             dp = hklds[i]-peak[-2]
@@ -378,9 +378,9 @@ def IndexSSPeaks(peaks,HKL):
     hklds.sort()                                        # ascending sort - upper bound at end
     hklmax = [0,0,0,0]
     for ipk,peak in enumerate(Peaks):
+        peak[4:8] = [0,0,0,0]                           #clear old indexing
+        peak[9] = 0.
         if peak[2]: #Use
-            peak[4:8] = [0,0,0,0]                           #clear old indexing
-            peak[9] = 0.
             i = bisect.bisect_right(hklds,peak[8])          # find peak position in hkl list
             dm = peak[8]-hklds[i-1]                         # peak to neighbor hkls in list
             dp = hklds[i]-peak[8]
@@ -973,7 +973,7 @@ def DoIndexPeaks(peaks,controls,bravais,dlg,ifX20=True):
                             else:
                                 if not GoOn:
                                     break
-                                if M20 > 1.0:
+                                if 1.e6 > M20 > 1.0:    #exclude nonsense
                                     bestM20 = max(bestM20,M20)
                                     A = halfCell(ibrav,A[:],peaks)
                                     if ibrav in [12]:

@@ -609,6 +609,14 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             except ValueError:
                 pass
             obliqVal.SetValue('%.3f'%(data['Oblique'][0]))
+            
+        def OnSampleShape(event):
+            data['SampleShape'] = samShape.GetValue()
+            if 'Cylind' in data['SampleShape']:
+                data['SampleAbs'][0] = 0.0
+            elif 'Fixed' in data['SampleShape']:
+                data['SampleAbs'][0] = 1.0
+            wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
                            
         def OnSamAbs(event):
             if data['SampleAbs'][1]:
@@ -620,7 +628,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             try:
                 value = float(samabsVal.GetValue())
                 minmax = [0.,2.]
-                if 'SASD' in data['type']:
+                if 'Fixed' in data['SampleShape']:
                     minmax = [.05,1.0]
                 if minmax[0] <= value <= minmax[1]:
                     data['SampleAbs'][0] = value
@@ -741,20 +749,27 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         outAzim.Bind(wx.EVT_KILL_FOCUS,OnNumOutAzms)
         littleSizer.Add(outAzim,0,WACV)
         dataSizer.Add(littleSizer,0,)
+        samplechoice = ['Cylinder','Fixed flat plate',]
+        dataSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Select sample shape'),0,WACV)
+        samShape = wx.ComboBox(G2frame.dataDisplay,value=data['SampleShape'],choices=samplechoice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        samShape.Bind(wx.EVT_COMBOBOX,OnSampleShape)
+        dataSizer.Add(samShape,0,WACV)
+        #SampleShape - cylinder or flat plate choice?
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         samabs = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply sample absorption?')
         dataSizer.Add(samabs,0,WACV)
         samabs.Bind(wx.EVT_CHECKBOX, OnSamAbs)
         samabs.SetValue(data['SampleAbs'][1])
-        if 'PWDR' in data['type']:
-            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='mu/R (0.00-2.0) '),0,WACV)
-        elif 'SASD' in data['type']:
-            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='transmission '),0,WACV)
+        if 'Cylind' in data['SampleShape']: #cylinder mu*R; flat plate transmission
+            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='mu*R (0.00-2.0) '),0,WACV)
+        elif 'Fixed' in data['SampleShape']:
+            littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label='transmission '),0,WACV) #for flat plate
         samabsVal = wx.TextCtrl(parent=G2frame.dataDisplay,value='%.3f'%(data['SampleAbs'][0]),style=wx.TE_PROCESS_ENTER)            
         samabsVal.Bind(wx.EVT_TEXT_ENTER,OnSamAbsVal)
         samabsVal.Bind(wx.EVT_KILL_FOCUS,OnSamAbsVal)
         littleSizer.Add(samabsVal,0,WACV)
-        dataSizer.Add(littleSizer,0,)
+        dataSizer.Add(littleSizer,0,)        
         if 'PWDR' in data['type']:
             littleSizer = wx.BoxSizer(wx.HORIZONTAL)
             oblique = wx.CheckBox(parent=G2frame.dataDisplay,label='Apply detector absorption?')

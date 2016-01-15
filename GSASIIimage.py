@@ -909,10 +909,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if data['SampleAbs'][1]:
-                if 'PWDR' in data['type']:
-                    muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))
+                if 'Cylind' in data['SampleShape']:
+                    muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))      #adjust for additional thickness off sample normal
                     tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
-                elif 'SASD' in data['type']:    #assumes flat plate sample normal to beam
+                elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
                     tabs = G2pwd.Absorb('Fixed',muT,tay)
             if 'log(q)' in data['binType']:
                 tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])

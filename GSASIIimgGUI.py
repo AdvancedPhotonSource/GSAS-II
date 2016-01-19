@@ -1106,7 +1106,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     mainSizer.Add(MaxSizer(),0,wx.ALIGN_LEFT|wx.EXPAND)
     
     mainSizer.Add((5,5),0)
-    DataSizer = wx.FlexGridSizer(0,2,5,5)
+    DataSizer = wx.FlexGridSizer(0,2,5,0)
     DataSizer.Add(CalibCoeffSizer(),0)
     DataSizer.Add(IntegrateSizer(),0)        
     mainSizer.Add(DataSizer,0)

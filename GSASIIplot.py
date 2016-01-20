@@ -1144,8 +1144,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             G2frame.SinglePlot = not G2frame.SinglePlot                
             newPlot = True
         elif event.key in ['+','=']:
-            if G2frame.PickId:
-                G2frame.PickId = False
+            G2frame.plusPlot = not G2frame.plusPlot
         elif event.key == 'i' and G2frame.Contour:                  #for smoothing contour plot
             choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
                'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
@@ -1526,20 +1525,20 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press','n: log(I) off',
                         'c: contour on','q: toggle q plot','t: toggle d-spacing plot',
-                            'm: toggle multidata plot','w: toggle divide by sig','+: no selection')
+                            'm: toggle multidata plot','w: toggle divide by sig','+: toggle selection')
                 else:
                     Page.Choice = (' key press','n: log(I) off',
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
                         'c: contour on','q: toggle q plot','t: toggle d-spacing plot',
-                        'm: toggle multidata plot','w: toggle divide by sig','+: no selection')
+                        'm: toggle multidata plot','w: toggle divide by sig','+: toggle selection')
             elif 'SASD' in plottype:
                 if G2frame.SinglePlot:
                     Page.Choice = (' key press','b: toggle subtract background file','n: semilog on',
-                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
+                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: toggle selection')
                 else:
                     Page.Choice = (' key press','b: toggle subtract background file','n: semilog on',
                         'd: offset down','l: offset left','r: offset right','u: offset up','o: reset offset',
-                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: no selection')
+                        'q: toggle S(q) plot','m: toggle multidata plot','w: toggle (Io-Ic)/sig plot','+: toggle selection')
         else:
             if 'PWDR' in plottype:
                 if G2frame.SinglePlot:
@@ -1713,6 +1712,10 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
+            if G2frame.plusPlot:
+                pP = '+'
+            else:
+                pP = ''
             if 'SASD' in plottype and G2frame.logPlot:
                 X *= (1.01)**(offsetX*N)
             else:
@@ -1756,7 +1759,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
-                        Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
+                        Plot.plot(X,Y,colors[N%6]+pP,picker=3.,clip_on=False)
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
                         Plot.plot(X,W,colors[(N+2)%6],picker=False)     #background
                     elif 'SASD' in plottype:
@@ -1779,7 +1782,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                                     Plot.errorbar(X,YB,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
                                         ecolor=colors[N%6],picker=3.,clip_on=False)
                             else:
-                                Plot.plot(X,YB,colors[N%6]+'+',picker=3.,clip_on=False)
+                                Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=False)
                             Plot.plot(X,W,colors[(N+2)%6],picker=False)     #const. background
                             Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
                 elif G2frame.Weight and 'PWDR' in plottype:
@@ -1787,24 +1790,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Ymax = max(DY)
                     DZ = xye[3]*np.sqrt(xye[2])
                     DS = xye[5]*np.sqrt(xye[2])-Ymax*Pattern[0]['delOffset']
-                    ObsLine = Plot.plot(X,DY,colors[N%6]+'+',picker=3.,clip_on=False)         #Io/sig(Io)
+                    ObsLine = Plot.plot(X,DY,colors[N%6]+pP,picker=3.,clip_on=False)         #Io/sig(Io)
                     Plot.plot(X,DZ,colors[(N+1)%6],picker=False)                    #Ic/sig(Io)
                     DifLine = Plot.plot(X,DS,colors[(N+3)%6],picker=1.)                    #(Io-Ic)/sig(Io)
                     Plot.axhline(0.,color=wx.BLACK)
                 else:
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
-                            Plot.plot(Xum,Y-W,colors[N%6]+'+',picker=False,clip_on=False)  #Io-Ib
+                            Plot.plot(Xum,Y-W,colors[N%6]+pP,picker=False,clip_on=False)  #Io-Ib
                             Plot.plot(X,Z-W,colors[(N+1)%6],picker=False)               #Ic-Ib
                         else:
-                            Plot.plot(X,YB,colors[N%6]+'+',picker=3.,clip_on=False)
+                            Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=False)
                             Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
                     else:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y,colors[N%6]+'+',picker=3.,clip_on=False)    #Io
+                            ObsLine = Plot.plot(Xum,Y,colors[N%6]+pP,picker=3.,clip_on=False)    #Io
                             Plot.plot(X,Z,colors[(N+1)%6],picker=False)                 #Ic
                         else:
-                            Plot.plot(X,YB,colors[N%6]+'+',picker=3.,clip_on=False)
+                            Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=False)
                             Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
                     if 'PWDR' in plottype:
                         Plot.plot(X,W,colors[(N+2)%6],picker=False)                 #Ib
@@ -2660,7 +2663,7 @@ def PlotPeakWidths(G2frame):
             Z = np.ones_like(X)
             data = G2mth.setPeakparms(Parms,Parms2,X,Z)
             s = 1.17741*np.sqrt(data[4])*np.pi/18000.
-            g = data[6]*np.pi/18000.
+            g = data[6]*np.pi/36000.
             G = G2pwd.getgamFW(g,s)
             Y = s/nptand(X/2.)
             Z = g/nptand(X/2.)
@@ -2671,7 +2674,7 @@ def PlotPeakWidths(G2frame):
             
             fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
             sf = 1.17741*np.sqrt(fit[4])*np.pi/18000.
-            gf = fit[6]*np.pi/18000.
+            gf = fit[6]*np.pi/36000.
             Gf = G2pwd.getgamFW(gf,sf)
             Yf = sf/nptand(X/2.)
             Zf = gf/nptand(X/2.)
@@ -2691,7 +2694,7 @@ def PlotPeakWidths(G2frame):
                     s = 1.17741*math.sqrt(peak[4])*math.pi/18000.
                 except ValueError:
                     s = 0.01
-                g = peak[6]*math.pi/18000.
+                g = peak[6]*math.pi/36000.
                 G = G2pwd.getgamFW(g,s)
                 Y.append(s/tand(peak[0]/2.))
                 Z.append(g/tand(peak[0]/2.))

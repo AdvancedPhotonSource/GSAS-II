@@ -2222,6 +2222,7 @@ class GSASII(wx.Frame):
         self.RamaColor = 'Blues'
         self.Projection = 'equal area'
         self.logPlot = False
+        self.plusPlot = True
         self.sqPlot = False
         self.ErrorBars = False
         self.Contour = False

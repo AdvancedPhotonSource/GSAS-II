@@ -139,8 +139,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_MODELUNDO,wxID_MODELFITALL,wxID_MODELCOPYFLAGS,
 ] = [wx.NewId() for item in range(12)]
 
-[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,wxID_3DALLHKLPLOT,
-] = [wx.NewId() for item in range(4)]
+[ wxID_SELECTPHASE,wxID_PWDHKLPLOT,wxID_PWD3DHKLPLOT,wxID_3DALLHKLPLOT,wxID_MERGEHKL,
+] = [wx.NewId() for item in range(5)]
 
 [ wxID_PDFCOPYCONTROLS, wxID_PDFSAVECONTROLS, wxID_PDFLOADCONTROLS, 
     wxID_PDFCOMPUTE, wxID_PDFCOMPUTEALL, wxID_PDFADDELEMENT, wxID_PDFDELELEMENT,
@@ -316,6 +316,122 @@ class SymOpDialog(wx.Dialog):
         parent = self.GetParent()
         parent.Raise()
         self.EndModal(wx.ID_CANCEL)
+        
+################################################################################
+class MergeDialog(wx.Dialog):
+    ''' HKL transformation & merge dialog
+    
+    :param wx.Frame parent: reference to parent frame (or None)
+    :param data: HKLF data 
+    
+    '''        
+    def __init__(self,parent,data):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup HKLF merge', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.data = data
+        self.Super = data[1]['Super']
+        if self.Super:
+            self.Trans = np.eye(4)
+        else:
+            self.Trans = np.eye(3)
+        self.Cent = 'noncentrosymmetric'
+        self.Laue = '1'
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnMatValue(event):
+            Obj = event.GetEventObject()
+            ix,iy = Ind[Obj.GetId()]
+            self.Trans[ix,iy] = float(Obj.GetValue())
+                
+        def OnCent(event):
+            Obj = event.GetEventObject()
+            self.Cent = Obj.GetValue()
+            self.Laue = '-1'
+            if 'non' in self.Cent:
+                self.Laue = '1'
+            self.Draw()
+            
+        def OnLaue(event):
+            Obj = event.GetEventObject()
+            self.Laue = Obj.GetValue()
+            self.Draw()
+        
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        Ind = {}
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        MatSizer = wx.BoxSizer(wx.HORIZONTAL)
+        transSizer = wx.BoxSizer(wx.VERTICAL)
+        transSizer.Add(wx.StaticText(self.panel,label=' HKL Transformation matrix:'))
+        if self.Super:
+            Trmat = wx.FlexGridSizer(4,4,5,5)
+        else:
+            Trmat = wx.FlexGridSizer(3,3,5,5)
+        for iy,line in enumerate(self.Trans):
+            for ix,val in enumerate(line):
+                item = wx.TextCtrl(self.panel,value='%d'%(val),
+                    size=(50,25),style=wx.TE_PROCESS_ENTER)
+                Ind[item.GetId()] = [ix,iy]
+                item.Bind(wx.EVT_TEXT_ENTER,OnMatValue)
+                item.Bind(wx.EVT_KILL_FOCUS,OnMatValue)
+                Trmat.Add(item)
+        transSizer.Add(Trmat)
+        MatSizer.Add((10,0),0)
+        MatSizer.Add(transSizer)
+        mainSizer.Add(MatSizer)
+        centroLaue = ['-1','2/m','2/m(c)','2/m(a)','mmm','-3','3/m',    \
+            '4/m','4/mmm','6/m','6/mmm','m3','m3m']
+        noncentroLaue = ['1','2','2(a)','2(c)','m','m(a)','m(c)','222','mm2','m2m','2mm',   \
+            '3','32','3m','4','-4','422','-42m','42m','6','-6','622','-62m','62m','23','432','-432']
+        centChoice = ['noncentrosymmetric','centrosymmetric']
+        mainSizer.Add(wx.StaticText(self.panel,label=' Target Laue symmetry:'),0,WACV)
+        Cent = wx.ComboBox(self.panel,value=self.Cent,choices=centChoice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Cent.Bind(wx.EVT_COMBOBOX,OnCent)
+        mergeSizer = wx.BoxSizer(wx.HORIZONTAL)
+        mergeSizer.Add(Cent,0,WACV)
+        mergeSizer.Add((10,0),0)
+        Choice = centroLaue
+        if 'non' in self.Cent:
+            Choice = noncentroLaue
+        Laue = wx.ComboBox(self.panel,value=self.Laue,choices=Choice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Laue.Bind(wx.EVT_COMBOBOX,OnLaue)
+        mergeSizer.Add(Laue,0,WACV)
+        mainSizer.Add(mergeSizer)
+
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        return self.Trans,self.Cent,self.Laue
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+
         
 ################################################################################
 class AddHatomDialog(wx.Dialog):
@@ -869,6 +985,8 @@ class DataFrame(wx.Frame):
         self.HKLFMenu.Append(menu=self.ErrorAnal,title='Commands')
         self.ErrorAnal.Append(id=wxID_PWDANALYSIS,kind=wx.ITEM_NORMAL,text='Error Analysis',
             help='Error analysis on single crystal data')
+        self.ErrorAnal.Append(id=wxID_MERGEHKL,kind=wx.ITEM_NORMAL,text='Merge HKLs',
+            help='Transform & merge HKLF data to new histogram')
         self.ErrorAnal.Append(id=wxID_PWD3DHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot 3D HKLs',
             help='Plot HKLs from single crystal data in 3D')
         self.ErrorAnal.Append(id=wxID_3DALLHKLPLOT,kind=wx.ITEM_NORMAL,text='Plot all 3D HKLs',
@@ -2873,7 +2991,66 @@ def UpdatePWHKPlot(G2frame,kind,item):
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
         
+#    def OnMerge(self,event):
+#        if not len(self.HKL):
+#            print 'No data'
+#            return
+#        self.newHKL = np.copy(self.HKL)
+#        for H in self.newHKL:
+#            H[:4] = np.rint(np.inner(self.Trans,H[:4]))
+#        self.newHKL = np.asarray(self.newHKL)
+#        self.newHKL = G2lat.LaueUnique(self.Laue,self.newHKL)
+#        dlg = wx.ProgressDialog('Build HKL dictonary','',len(self.newHKL)+1, 
+#            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+#        HKLdict = {}
+#        for ih,hkl in enumerate(self.newHKL):
+#            if str(hkl[:4]) not in HKLdict:
+#                HKLdict[str(hkl[:4])] = [hkl[:4],[hkl[4:],]]
+#            else:
+#                HKLdict[str(hkl[:4])][1].append(hkl[4:])
+#            dlg.Update(ih)
+#        dlg.Destroy()
+#        self.newHKL = []
+#        dlg = wx.ProgressDialog('Processing merge','',len(HKLdict)+1, 
+#            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+#        sumDf = 0.
+#        sumFo = 0.
+#        for ih,hkl in enumerate(HKLdict):
+#            HKL = HKLdict[hkl]
+#            newHKL = list(HKL[0])
+#            if len(HKL[1]) > 1:
+#                fos = np.array(HKL[1])
+#                wFo = 1/fos[:,1]**2
+#                Fo = np.average(fos[:,0],weights=wFo)
+#                std = np.std(fos[:,0])
+#                sig = np.sqrt(np.mean(fos[:,1])**2+std**2)
+#                sumFo += np.sum(fos[:,0])
+#                sumDf += np.sum(np.abs(fos[:,0]-Fo))
+#                dlg.Update(ih)
+#            else:
+#                Fo = HKL[1][0][0]
+#                sig = HKL[1][0][1]
+#            newHKL += [Fo,sig]
+#            if Fo > 0.:
+#                self.newHKL.append(list(newHKL)) 
+#        dlg.Destroy()
+#        self.newHKL = np.array(self.newHKL)
+#        print 'merge R = %6.2f%s for %d reflections'%(100.*sumDf/sumFo,'%',self.newHKL.shape[0])
+#        self.newHKL = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(self.newHKL,3),2),1),0)
+           
+    def OnMergeHKL(event):
+        dlg = MergeDialog(G2frame,data)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                Trans,Cent,Laue = dlg.GetSelection()
+                print "do merge here: ",Cent,Laue
+            else:
+                return
+        finally:
+            dlg.Destroy()
         
+        print 'merge HKLF'
+            
     def OnErrorAnalysis(event):
         G2plt.PlotDeltSig(G2frame,kind)
         
@@ -2925,6 +3102,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
     elif kind in ['HKLF',]:
         SetDataMenuBar(G2frame,G2frame.dataFrame.HKLFMenu)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnErrorAnalysis, id=wxID_PWDANALYSIS)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnMergeHKL, id=wxID_MERGEHKL)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlot3DHKL, id=wxID_PWD3DHKLPLOT)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotAll3DHKL, id=wxID_3DALLHKLPLOT)
 #        G2frame.dataFrame.Bind(wx.EVT_MENU, onCopySelectedItems, id=wxID_PWDCOPY)

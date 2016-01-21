@@ -22,6 +22,7 @@ import copy
 import cPickle
 import sys
 import os
+import random as ran
 import numpy as np
 import numpy.ma as ma
 import scipy.optimize as so
@@ -2990,67 +2991,82 @@ def UpdatePWHKPlot(G2frame,kind,item):
             'backColor':[0,0,0],'depthFog':False,'Zclip':10.0,'cameraPos':10.,'Zstep':0.05,'viewUp':[0,1,0],
             'Scale':1.0,'oldxy':[],'viewDir':[1,0,0]},'Super':Super,'SuperVec':SuperVec}
         G2plt.Plot3DSngl(G2frame,newPlot=True,Data=controls,hklRef=refList,Title=phaseName)
-        
-#    def OnMerge(self,event):
-#        if not len(self.HKL):
-#            print 'No data'
-#            return
-#        self.newHKL = np.copy(self.HKL)
-#        for H in self.newHKL:
-#            H[:4] = np.rint(np.inner(self.Trans,H[:4]))
-#        self.newHKL = np.asarray(self.newHKL)
-#        self.newHKL = G2lat.LaueUnique(self.Laue,self.newHKL)
-#        dlg = wx.ProgressDialog('Build HKL dictonary','',len(self.newHKL)+1, 
-#            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-#        HKLdict = {}
-#        for ih,hkl in enumerate(self.newHKL):
-#            if str(hkl[:4]) not in HKLdict:
-#                HKLdict[str(hkl[:4])] = [hkl[:4],[hkl[4:],]]
-#            else:
-#                HKLdict[str(hkl[:4])][1].append(hkl[4:])
-#            dlg.Update(ih)
-#        dlg.Destroy()
-#        self.newHKL = []
-#        dlg = wx.ProgressDialog('Processing merge','',len(HKLdict)+1, 
-#            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-#        sumDf = 0.
-#        sumFo = 0.
-#        for ih,hkl in enumerate(HKLdict):
-#            HKL = HKLdict[hkl]
-#            newHKL = list(HKL[0])
-#            if len(HKL[1]) > 1:
-#                fos = np.array(HKL[1])
-#                wFo = 1/fos[:,1]**2
-#                Fo = np.average(fos[:,0],weights=wFo)
-#                std = np.std(fos[:,0])
-#                sig = np.sqrt(np.mean(fos[:,1])**2+std**2)
-#                sumFo += np.sum(fos[:,0])
-#                sumDf += np.sum(np.abs(fos[:,0]-Fo))
-#                dlg.Update(ih)
-#            else:
-#                Fo = HKL[1][0][0]
-#                sig = HKL[1][0][1]
-#            newHKL += [Fo,sig]
-#            if Fo > 0.:
-#                self.newHKL.append(list(newHKL)) 
-#        dlg.Destroy()
-#        self.newHKL = np.array(self.newHKL)
-#        print 'merge R = %6.2f%s for %d reflections'%(100.*sumDf/sumFo,'%',self.newHKL.shape[0])
-#        self.newHKL = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(self.newHKL,3),2),1),0)
-           
+                  
     def OnMergeHKL(event):
+        Name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        Inst = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,
+            G2frame.PatternId,'Instrument Parameters'))
+        refList = np.copy(data[1]['RefList'])
         dlg = MergeDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 Trans,Cent,Laue = dlg.GetSelection()
-                print "do merge here: ",Cent,Laue
             else:
                 return
         finally:
             dlg.Destroy()
-        
-        print 'merge HKLF'
-            
+        Super = data[1]['Super']
+        refList = G2lat.transposeHKLF(Trans,Super,refList)
+        refList = G2lat.LaueUnique(Laue,refList)
+        dlg = wx.ProgressDialog('Build HKL dictonary','',len(refList)+1, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        HKLdict = {}
+        for ih,hkl in enumerate(refList):
+            if str(hkl[:3+Super]) not in HKLdict:
+                HKLdict[str(hkl[:3+Super])] = [hkl[:3+Super],[hkl[3+Super:],]]
+            else:
+                HKLdict[str(hkl[:3+Super])][1].append(hkl[3+Super:])
+            dlg.Update(ih)
+        dlg.Destroy()
+        mergeRef = []
+        dlg = wx.ProgressDialog('Processing merge','',len(HKLdict)+1, 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        sumDf = 0.
+        sumFo = 0.
+        for ih,hkl in enumerate(HKLdict):
+            HKL = HKLdict[hkl]
+            newHKL = list(HKL[0])+list(HKL[1][0])
+            if len(HKL[1]) > 1:
+                fos = np.array(HKL[1])
+                wFo = 1/fos[:,3]**2
+                Fo = np.average(fos[:,2],weights=wFo)
+                std = np.std(fos[:,2])
+                sig = np.sqrt(np.mean(fos[:,3])**2+std**2)
+                sumFo += np.sum(fos[:,2])
+                sumDf += np.sum(np.abs(fos[:,2]-Fo))
+                dlg.Update(ih)
+                newHKL[5+Super] = Fo
+                newHKL[6+Super] = sig
+                newHKL[8+Super] = Fo
+            if newHKL[5+Super] > 0.:
+                mergeRef.append(list(newHKL)) 
+        dlg.Destroy()
+        if Super:
+            mergeRef = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(mergeRef,3),2),1),0)
+        else:
+            mergeRef = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(mergeRef,2),1),0)
+        mergeRef = np.array(mergeRef)
+        print 'merge R = %6.2f%s for %d reflections'%(100.*sumDf/sumFo,'%',mergeRef.shape[0])
+        HKLFlist = []
+        newName = Name+' '+Laue
+        if G2frame.PatternTree.GetCount():
+            item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+            while item:
+                name = G2frame.PatternTree.GetItemText(item)
+                if name.startswith('HKLF ') and name not in HKLFlist:
+                    HKLFlist.append(name)
+                item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+        newName = G2obj.MakeUniqueLabel(newName,HKLFlist)
+        newData = copy.deepcopy(data)
+        newData[0]['ranId'] = ran.randint(0,sys.maxint)
+        newData[1]['RefList'] = mergeRef
+        Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=newName)
+        G2frame.PatternTree.SetItemPyData(Id,newData)
+        G2frame.PatternTree.SetItemPyData(
+            G2frame.PatternTree.AppendItem(Id,text='Instrument Parameters'),Inst)
+        G2frame.PatternTree.SetItemPyData(
+            G2frame.PatternTree.AppendItem(Id,text='Reflection List'),{})  #dummy entry for GUI use
+                   
     def OnErrorAnalysis(event):
         G2plt.PlotDeltSig(G2frame,kind)
         

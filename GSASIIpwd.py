@@ -456,12 +456,12 @@ fcjde = fcjde_gen(name='fcjde',shapes='t,s,dx')
                 
 def getWidthsCW(pos,sig,gam,shl):
     '''Compute the peak widths used for computing the range of a peak
-    for constant wavelength data.
-    On low-angle side, 10 FWHM are used, on high-angle side 15 are used
+    for constant wavelength data. On low-angle side, 10 FWHM are used, 
+    on high-angle side 15 are used, low angle side extended by axial divergence
     (for peaks above 90 deg, these are reversed.)
     '''
-    widths = [np.sqrt(sig)/100.,gam/200.]
-    fwhm = 2.355*widths[0]+2.*widths[1]
+    widths = [np.sqrt(sig)/100.,gam/100.]
+    fwhm = 2.355*widths[0]+widths[1]
     fmin = 10.*(fwhm+shl*abs(npcosd(pos)))
     fmax = 15.0*fwhm
     if pos > 90:
@@ -469,7 +469,10 @@ def getWidthsCW(pos,sig,gam,shl):
     return widths,fmin,fmax
     
 def getWidthsTOF(pos,alp,bet,sig,gam):
-    'needs a doc string'
+    '''Compute the peak widths used for computing the range of a peak
+    for constant wavelength data. 10 FWHM are used on both sides each 
+    extended by exponential coeff.
+    '''
     lnf = 3.3      # =log(0.001/2)
     widths = [np.sqrt(sig),gam]
     fwhm = 2.355*widths[0]+2.*widths[1]
@@ -493,9 +496,15 @@ def getFWHM(pos,Inst):
     return getgamFW(g,s)
     
 def getgamFW(g,s):
-    'needs a doc string'
+    '''Compute total FWHM from Thompson, Cox & Hastings (1987), J. Appl. Cryst. 20, 79-83
+    
+    :param g: float Lorentzian FWHM
+    :param s: float Gaussian FWHM
+    
+    :returns float: total FWHM of pseudoVoigt
+    ''' 
     gamFW = lambda s,g: np.exp(np.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
-    return gamFW(g,s)
+    return gamFW(s,g)
                 
 def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    
     'needs a doc string'
@@ -900,7 +909,7 @@ def getPeakProfile(dataType,parmDict,xdata,varyList,bakType):
                     sig = parmDict[sigName]
                 else:
                     sig = G2mth.getCWsig(parmDict,tth)
-                sig = max(sig,0.001)          #avoid neg sigma
+                sig = max(sig,0.001)          #avoid neg sigma^2
                 gamName = 'gam'+str(iPeak)
                 if gamName in varyList:
                     gam = parmDict[gamName]

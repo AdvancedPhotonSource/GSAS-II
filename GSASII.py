@@ -704,7 +704,7 @@ class GSASII(wx.Frame):
                                 if not ref[2+Super]:
                                     ref[3+Super] = 0
                                 else:
-                                    ref[3+Super] = 1    #twin id?
+                                    ref[3+Super] = 1    #twin id
                             else:
                                 ref[3] = 0
                     UseList[histoName] = SetDefaultDData(reflData['Type'],histoName)
@@ -3165,11 +3165,15 @@ class GSASII(wx.Frame):
                         for peak in peaks:
                             dsp = G2lat.Pos2dsp(Inst,peak[0])
                             if 'T' in Type:  #TOF - more cols
-                                FWHM = 2.*G2pwd.getgamFW(peak[10],peak[8])      #to get delta-TOF from Gam(peak)
+                                sig = 2.35482*np.sqrt(peak[8])
+                                gam = peak[10]
+                                FWHM = 2.*G2pwd.getgamFW(gam,sig)      #to get delta-TOF from Gam(peak)
                                 file.write("%10.2f %10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
                                     (peak[0],dsp,peak[2],np.sqrt(max(0.0001,peak[4])),peak[6],peak[8],peak[10],FWHM))
                             else:               #CW
-                                FWHM = 2.*G2pwd.getgamFW(peak[6],peak[4])      #to get delta-2-theta in deg. from Gam(peak)
+                                sig = 2.35482*np.sqrt(peak[4])/100.
+                                gam = peak[6]/100.
+                                FWHM = 2.*G2pwd.getgamFW(gam,sig)      #to get delta-2-theta in deg. from Gam(peak)
                                 file.write("%10.3f %10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
                                     (peak[0],dsp,peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            
@@ -3204,11 +3208,16 @@ class GSASII(wx.Frame):
                                     else:                
                                         file.write('%s \n'%('   h   k   l   m    d-space   2-theta       wid        F**2'))
                                     for peak in peaks['RefList']:
-                                        FWHM = 2.*G2pwd.getgamFW(peak[7],peak[6])
                                         if 'T' in peaks.get('Type','PXC'):
+                                            sig = 2.35482*np.sqrt(peak[6])
+                                            gam = peak[7]
+                                            FWHM = 2.*G2pwd.getgamFW(gam,sig)
                                             file.write(" %3d %3d %3d %3d %10.5f %10.2f %10.5f %10.3f \n" % \
                                                 (int(peak[0]),int(peak[1]),int(peak[2]),int(peak[3]),peak[4],peak[5],FWHM,peak[8]))
                                         else:
+                                            sig = 2.35482*np.sqrt(peak[6])/100.
+                                            gam = peak[7]/100.
+                                            FWHM = 2.*G2pwd.getgamFW(gam,sig)
                                             file.write(" %3d %3d %3d %3d %10.5f %10.5f %10.5f %10.3f \n" % \
                                                 (int(peak[0]),int(peak[1]),int(peak[2]),int(peak[3]),peak[4],peak[5],FWHM/100.,peak[8]))
                             item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            

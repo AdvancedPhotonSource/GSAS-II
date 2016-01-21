@@ -3175,23 +3175,23 @@ def PeaksUnique(data,Ind):
 ################################################################################
 
 def getCWsig(ins,pos):
-    '''get CW peak profile sigma
+    '''get CW peak profile sigma^2
     
     :param dict ins: instrument parameters with at least 'U', 'V', & 'W' 
       as values only
     :param float pos: 2-theta of peak
-    :returns: float getCWsig: peak sigma
+    :returns: float getCWsig: peak sigma^2
     
     '''
     tp = tand(pos/2.0)
     return ins['U']*tp**2+ins['V']*tp+ins['W']
     
 def getCWsigDeriv(pos):
-    '''get derivatives of CW peak profile sigma wrt U,V, & W
+    '''get derivatives of CW peak profile sigma^2 wrt U,V, & W
     
     :param float pos: 2-theta of peak
     
-    :returns: list getCWsigDeriv: d(sig)/dU, d(sig)/dV & d(sig)/dW
+    :returns: list getCWsigDeriv: d(sig^2)/dU, d(sig)/dV & d(sig)/dW
     
     '''
     tp = tand(pos/2.0)
@@ -3219,19 +3219,19 @@ def getCWgamDeriv(pos):
     return 1./cosd(pos/2.0),tand(pos/2.0)
     
 def getTOFsig(ins,dsp):
-    '''get TOF peak profile sigma
+    '''get TOF peak profile sigma^2
     
     :param dict ins: instrument parameters with at least 'sig-0', 'sig-1' & 'sig-q'
       as values only
     :param float dsp: d-spacing of peak
     
-    :returns: float getTOFsig: peak sigma
+    :returns: float getTOFsig: peak sigma^2
     
     '''
     return ins['sig-0']+ins['sig-1']*dsp**2+ins['sig-2']*dsp**4+ins['sig-q']/dsp**2
     
 def getTOFsigDeriv(dsp):
-    '''get derivatives of TOF peak profile gamma wrt sig-0, sig-1, & sig-q
+    '''get derivatives of TOF peak profile sigma^2 wrt sig-0, sig-1, & sig-q
     
     :param float dsp: d-spacing of peak
     
@@ -4081,7 +4081,7 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         for ref in reflData:
             h,k,l,m,d,pos,sig,gam,f = ref[:9]
             if d >= MCSA['dmin']:
-                sig = G2pwd.getgamFW(sig,gam)/sq8ln2        #--> sig from FWHM
+                sig = G2pwd.getgamFW(gam,sig)/sq8ln2        #--> sig from FWHM
                 SQ = 0.25/d**2
                 allFF.append(allM*[G2el.getFFvalues(FFtables,SQ,True)[i] for i in allT]/np.max(allM))
                 refs.append([h,k,l,m,f*m,pos,sig])

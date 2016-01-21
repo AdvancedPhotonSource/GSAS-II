@@ -383,10 +383,11 @@ class MergeDialog(wx.Dialog):
         MatSizer.Add((10,0),0)
         MatSizer.Add(transSizer)
         mainSizer.Add(MatSizer)
-        centroLaue = ['-1','2/m','2/m(c)','2/m(a)','mmm','-3','3/m',    \
+        centroLaue = ['-1','2/m','2/m(c)','2/m(a)','mmm','-3','-3m1','-31m','-3m',    \
             '4/m','4/mmm','6/m','6/mmm','m3','m3m']
         noncentroLaue = ['1','2','2(a)','2(c)','m','m(a)','m(c)','222','mm2','m2m','2mm',   \
-            '3','32','3m','4','-4','422','-42m','42m','6','-6','622','-62m','62m','23','432','-432']
+            '3','312','321','32','3m1','31m','3m','4','-4','422','4mm','-42m','-4m2', \
+            '6','-6','622','6mm','-6m2','-62m','23','432','-43m']
         centChoice = ['noncentrosymmetric','centrosymmetric']
         mainSizer.Add(wx.StaticText(self.panel,label=' Target Laue symmetry:'),0,WACV)
         Cent = wx.ComboBox(self.panel,value=self.Cent,choices=centChoice,

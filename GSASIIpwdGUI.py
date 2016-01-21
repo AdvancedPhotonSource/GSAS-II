@@ -3239,21 +3239,24 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
 #                    else:
 #                        G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.WHITE)
                 else:   #PWDR
-                    if float(G2frame.refTable[phaseName].GetCellValue(r,12+im+it)) < 0.:
-                        G2frame.refTable[phaseName].SetCellBackgroundColour(r,12+im+it,wx.RED)
+                    if float(G2frame.refTable[phaseName].GetCellValue(r,12+im+itof)) < 0.:
+                        G2frame.refTable[phaseName].SetCellBackgroundColour(r,12+im+itof,wx.RED)
+                    if float(G2frame.refTable[phaseName].GetCellValue(r,3+im)) < 0:
+                        G2frame.refTable[phaseName].SetCellBackgroundColour(r,8+im,wx.RED)
+                        
                                                   
         G2frame.RefList = phaseName
         G2frame.dataFrame.SetLabel('Reflection List for '+phaseName)
         if HKLF:
             Status.SetStatusText('abs(DF)/sig > 10 red; > 3 yellow; twin < 0 (user rejected) red; twin=0 (sp. gp. absent) red')
         else:
-            Status.SetStatusText('Prfo < 0. in red')
-        it = 0
+            Status.SetStatusText('Prfo < 0. in red; if excluded Fosq in red & mul < 0')
+        itof = 0
         if HKLF:
             im = data[1].get('Super',0)
         else:
             if 'T' in data[phaseName].get('Type',''):
-                it = 3
+                itof = 3
             im = data[phaseName].get('Super',0)
         # has this table already been displayed?
         if G2frame.refTable[phaseName].GetTable() is None:
@@ -3262,7 +3265,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             G2frame.refTable[phaseName].EnableEditing(False)
             G2frame.refTable[phaseName].SetMargins(0,0)
             G2frame.refTable[phaseName].AutoSizeColumns(False)
-            setBackgroundColors(im,it)
+            setBackgroundColors(im,itof)
         # raise the tab (needed for 1st use and from OnSelectPhase)
         for PageNum in range(G2frame.dataDisplay.GetPageCount()):
             if phaseName == G2frame.dataDisplay.GetPageText(PageNum):

@@ -3101,6 +3101,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                     lamRatio = 360*(parmDict[hfx+'Lam2']-parmDict[hfx+'Lam1'])/(np.pi*parmDict[hfx+'Lam1'])
                     kRatio = parmDict[hfx+'I(L2)/I(L1)']
             x,y,w,yc,yb,yd = Histogram['Data']
+            xMask = ma.getmaskarray(x)
             xB = np.searchsorted(x,Limits[0])
             xF = np.searchsorted(x,Limits[1])
             ymb = np.array(y-yb)
@@ -3123,6 +3124,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                 sumFosq = 0.0
                 sumdFsq = 0.0
                 sumInt = 0.0
+                nExcl = 0
                 for refl in refDict['RefList']:
                     if 'C' in calcControls[hfx+'histType']:
                         yp = np.zeros_like(yb)
@@ -3131,6 +3133,10 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                         iFin = max(xB,min(np.searchsorted(x,refl[5+im]+fmax),xF))
                         iFin2 = iFin
                         if not iBeg+iFin:       #peak below low limit - skip peak
+                            continue
+                        if ma.all(xMask[iBeg:iFin]):    #peak entirely masked - skip peak
+                            refl[3+im] *= -1
+                            nExcl += 1
                             continue
                         elif not iBeg-iFin:     #peak above high limit - done
                             break
@@ -3152,6 +3158,14 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                         Wd,fmin,fmax = G2pwd.getWidthsTOF(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im])
                         iBeg = max(xB,np.searchsorted(x,refl[5+im]-fmin))
                         iFin = max(xB,min(np.searchsorted(x,refl[5+im]+fmax),xF))
+                        if not iBeg+iFin:       #peak below low limit - skip peak
+                            continue
+                        if ma.all(xMask[iBeg:iFin]):    #peak entirely masked - skip peak
+                            refl[3+im] *= -1
+                            nExcl += 1
+                            continue
+                        elif not iBeg-iFin:     #peak above high limit - done
+                            break
                         if iBeg < iFin:
                             yp[iBeg:iFin] = refl[11+im]*refl[9+im]*G2pwd.getEpsVoigt(refl[5+im],refl[12+im],refl[13+im],refl[6+im],refl[7+im],ma.getdata(x[iBeg:iFin]))  #>90% of time spent here
                             refl[8+im] = np.sum(np.where(ratio[iBeg:iFin]>0.,yp[iBeg:iFin]*ratio[iBeg:iFin]/refl[11+im],0.0))
@@ -3169,7 +3183,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                     Histogram['Residuals'][phfx+'Rf'] = 100.
                     Histogram['Residuals'][phfx+'Rf^2'] = 100.
                 Histogram['Residuals'][phfx+'sumInt'] = sumInt
-                Histogram['Residuals'][phfx+'Nref'] = len(refDict['RefList'])
+                Histogram['Residuals'][phfx+'Nref'] = len(refDict['RefList'])-nExcl
                 Histogram['Residuals']['hId'] = hId
         elif 'HKLF' in histogram[:4]:
             Histogram = Histograms[histogram]
@@ -3375,17 +3389,18 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
     hfx = ':%d:'%(hId)
     bakType = calcControls[hfx+'bakType']
     dMdv = np.zeros(shape=(len(varylist),len(x)))
+    dMdv = ma.array(dMdv,mask=np.outer(np.ones(len(varylist)),ma.getmaskarray(x)))      #x is a MaskedArray!
     dMdb,dMddb,dMdpk = G2pwd.getBackgroundDerv(hfx,parmDict,bakType,calcControls[hfx+'histType'],x)
     if hfx+'Back;0' in varylist: # for now assume that Back;x vars to not appear in constraints
-        bBpos =varylist.index(hfx+'Back;0')
-        dMdv[bBpos:bBpos+len(dMdb)] = dMdb
+        bBpos = varylist.index(hfx+'Back;0')
+        dMdv[bBpos:bBpos+len(dMdb)] += dMdb
     names = [hfx+'DebyeA',hfx+'DebyeR',hfx+'DebyeU']
     for name in varylist:
         if 'Debye' in name:
             id = int(name.split(';')[-1])
             parm = name[:int(name.rindex(';'))]
             ip = names.index(parm)
-            dMdv[varylist.index(name)] = dMddb[3*id+ip]
+            dMdv[varylist.index(name)] += dMddb[3*id+ip]
     names = [hfx+'BkPkpos',hfx+'BkPkint',hfx+'BkPksig',hfx+'BkPkgam']
     for name in varylist:
         if 'BkPk' in name:
@@ -3393,7 +3408,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
             id = int(id)
             if parm in names:
                 ip = names.index(parm)
-                dMdv[varylist.index(name)] = dMdpk[4*id+ip]
+                dMdv[varylist.index(name)] += dMdpk[4*id+ip]
     cw = np.diff(x)
     cw = np.append(cw,cw[-1])
     Ka2 = False #also for TOF!

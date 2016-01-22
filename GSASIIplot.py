@@ -770,11 +770,15 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         xy = [int(xy[0]),int(View[3]-xy[1])]
         for i,ref in enumerate(hklRef):
             h,k,l = ref[:3]
-            X,Y,Z = gluProject(h,k,l,Model,Proj,View)
-            XY = [int(X),int(Y)]
-            if np.allclose(xy,XY,atol=10) and Z < Zmax:
-                Zmax = Z
+            try:
+                X,Y,Z = gluProject(h,k,l,Model,Proj,View)
+                XY = [int(X),int(Y)]
+                if np.allclose(xy,XY,atol=10) and Z < Zmax:
+                    Zmax = Z
+                    return [int(h),int(k),int(l)]
+            except ValueError:
                 return [int(h),int(k),int(l)]
+                
                         
     def SetTranslation(newxy):
 #first get translation vector in screen coords.       
@@ -904,7 +908,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         glColor4ubv([0,0,0,0])
         glDisable(GL_COLOR_MATERIAL)
         
-    def RenderUnitVectors(x,y,z):
+    def RenderUnitVectors(x,y,z,labxyz=['','','']):
         xyz = np.array([x,y,z])
         glEnable(GL_COLOR_MATERIAL)
         glLineWidth(1)
@@ -917,6 +921,14 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
 #            glVertex3fv(-line[1])
             glVertex3fv(line[1])
         glEnd()
+        glRotate(180,1,0,0)             #fix to flip about x-axis
+        for ix,txt in enumerate(labxyz):
+            if txt:
+                pos = uEdges[ix][1]
+                glTranslate(pos[0],-1.5*pos[1],-pos[2])
+                text = gltext.TextElement(text=txt,font=Font)
+                text.draw_text(scale=0.05)
+                glTranslate(-pos[0],1.5*pos[1],pos[2])
         glPopMatrix()
         glColor4ubv([0,0,0,0])
         glDisable(GL_COLOR_MATERIAL)
@@ -983,7 +995,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             RenderBox(x,y,z)
         else:
             RenderUnitVectors(x,y,z)
-        RenderUnitVectors(0,0,0)
+        RenderUnitVectors(0,0,0,labxyz=['h','k','l'])
         RenderDots(HKL,RC)
         time0 = time.time()
         if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix

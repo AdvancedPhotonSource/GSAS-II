@@ -3171,8 +3171,8 @@ class GSASII(wx.Frame):
                                 file.write("%10.2f %10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
                                     (peak[0],dsp,peak[2],np.sqrt(max(0.0001,peak[4])),peak[6],peak[8],peak[10],FWHM))
                             else:               #CW
-                                sig = np.sqrt(peak[4])/100. #var -> sig in deg
-                                gam = peak[6]/100.  #-> gam in deg
+                                sig = np.sqrt(peak[4]) #var -> sig
+                                gam = peak[6]
                                 FWHM = G2pwd.getgamFW(gam,sig)      #to get delta-2-theta in deg. from Gam(peak)
                                 file.write("%10.3f %10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
                                     (peak[0],dsp,peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
@@ -3215,8 +3215,8 @@ class GSASII(wx.Frame):
                                             file.write(" %3d %3d %3d %3d %10.5f %10.2f %10.5f %10.3f \n" % \
                                                 (int(peak[0]),int(peak[1]),int(peak[2]),int(peak[3]),peak[4],peak[5],FWHM,peak[8]))
                                         else:
-                                            sig = np.sqrt(peak[6])/100.
-                                            gam = peak[7]/100.
+                                            sig = np.sqrt(peak[6])
+                                            gam = peak[7]
                                             FWHM = G2pwd.getgamFW(gam,sig)
                                             file.write(" %3d %3d %3d %3d %10.5f %10.5f %10.5f %10.3f \n" % \
                                                 (int(peak[0]),int(peak[1]),int(peak[2]),int(peak[3]),peak[4],peak[5],FWHM/100.,peak[8]))

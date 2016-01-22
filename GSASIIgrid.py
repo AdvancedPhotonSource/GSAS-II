@@ -338,6 +338,7 @@ class MergeDialog(wx.Dialog):
             self.Trans = np.eye(3)
         self.Cent = 'noncentrosymmetric'
         self.Laue = '1'
+        self.Class = 'triclinic'
         self.Draw()
         
     def Draw(self):
@@ -350,16 +351,20 @@ class MergeDialog(wx.Dialog):
         def OnCent(event):
             Obj = event.GetEventObject()
             self.Cent = Obj.GetValue()
-            self.Laue = '-1'
-            if 'non' in self.Cent:
-                self.Laue = '1'
+            self.Laue = ''
             self.Draw()
             
         def OnLaue(event):
             Obj = event.GetEventObject()
             self.Laue = Obj.GetValue()
             self.Draw()
-        
+            
+        def OnClass(event):
+            Obj = event.GetEventObject()
+            self.Class = Obj.GetValue()
+            self.Laue = ''
+            self.Draw()
+       
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         Ind = {}
@@ -383,12 +388,21 @@ class MergeDialog(wx.Dialog):
         MatSizer.Add((10,0),0)
         MatSizer.Add(transSizer)
         mainSizer.Add(MatSizer)
-        centroLaue = ['-1','2/m','2/m(c)','2/m(a)','mmm','-3','-3m1','-31m','-3m',    \
-            '4/m','4/mmm','6/m','6/mmm','m3','m3m']
-        noncentroLaue = ['1','2','2(a)','2(c)','m','m(a)','m(c)','222','mm2','m2m','2mm',   \
-            '3','312','321','32','3m1','31m','3m','4','-4','422','4mm','-42m','-4m2', \
-            '6','-6','622','6mm','-6m2','-62m','23','432','-43m']
+        laueClass = ['triclinic','monoclinic','orthorhombic','trigonal(H)','tetragonal','hexagonal','cubic']
+        centroLaue = {'triclinic':['-1',],'monoclinic':['2/m','2/m(c)','2/m(a)',],
+            'orthorhombic':['mmm',],'trigonal(H)':['-3','-3m1','-31m','-3m',],    \
+            'tetragonal':['4/m','4/mmm',],'hexagonal':['6/m','6/mmm',],'cubic':['m3','m3m']}
+        noncentroLaue = {'triclinic':['1',],'monoclinic':['2','2(a)','2(c)','m','m(a)','m(c)',],
+            'orthorhombic':['222','mm2','m2m','2mm',],
+            'trigonal(H)':['3','312','321','32','3m1','31m','3m',],
+            'tetragonal':['4','-4','422','4mm','-42m','-4m2',], \
+            'hexagonal':['6','-6','622','6mm','-6m2','-62m',],'cubic':['23','432','-43m']}
         centChoice = ['noncentrosymmetric','centrosymmetric']
+        mainSizer.Add(wx.StaticText(self.panel,label=' Select Laue class for new lattice:'),0,WACV)
+        Class = wx.ComboBox(self.panel,value=self.Class,choices=laueClass,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        Class.Bind(wx.EVT_COMBOBOX,OnClass)
+        mainSizer.Add(Class,0,WACV)
         mainSizer.Add(wx.StaticText(self.panel,label=' Target Laue symmetry:'),0,WACV)
         Cent = wx.ComboBox(self.panel,value=self.Cent,choices=centChoice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -396,9 +410,9 @@ class MergeDialog(wx.Dialog):
         mergeSizer = wx.BoxSizer(wx.HORIZONTAL)
         mergeSizer.Add(Cent,0,WACV)
         mergeSizer.Add((10,0),0)
-        Choice = centroLaue
+        Choice = centroLaue[self.Class]
         if 'non' in self.Cent:
-            Choice = noncentroLaue
+            Choice = noncentroLaue[self.Class]
         Laue = wx.ComboBox(self.panel,value=self.Laue,choices=Choice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         Laue.Bind(wx.EVT_COMBOBOX,OnLaue)
@@ -411,8 +425,9 @@ class MergeDialog(wx.Dialog):
         cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add((20,20),1)
-        btnSizer.Add(OkBtn)
-        btnSizer.Add((20,20),1)
+        if self.Laue:
+            btnSizer.Add(OkBtn)
+            btnSizer.Add((20,20),1)
         btnSizer.Add(cancelBtn)
         btnSizer.Add((20,20),1)
         

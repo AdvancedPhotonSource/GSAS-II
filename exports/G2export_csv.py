@@ -267,9 +267,10 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                         self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,i))
                     else:        #convert to deg        
                         h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,Prfo = refItem[:14]
-                        FWHM = G2pwd.getgamFW(gam,sig)
-                        self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,    \
-                            np.sqrt(max(sig,0.0001))/100.,gam/100.,FWHM/100.,i))
+                        s = np.sqrt(max(sig,0.0001))/100.   #var -> sig in deg
+                        g = gam/100.    #-> deg
+                        FWHM = G2pwd.getgamFW(g,s)
+                        self.Write(fmt.format(h,k,l,m,pos,Fobs,Fcalc,phase,mult,s,g,FWHM,i))
             else:
                 WriteList(self,("h","k","l",tname,"F_obs","F_calc","phase","mult","sig","gam","FWHM","Prfo","phase #"))
                 if 'T' in phasDict['Type']:
@@ -284,9 +285,10 @@ class ExportPowderReflCSV(G2IO.ExportBaseclass):
                         self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,Prfo,i))
                     else:        #convert to deg        
                         h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,Icorr,Prfo = refItem[:13]
-                        FWHM = G2pwd.getgamFW(gam,sig)
-                        self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,  \
-                            np.sqrt(max(sig,0.0001))/100.,gam/100.,FWHM/100.,Prfo,i))
+                        g = gam/100.
+                        s = np.sqrt(max(sig,0.0001))/100.
+                        FWHM = G2pwd.getgamFW(g,s)
+                        self.Write(fmt.format(h,k,l,pos,Fobs,Fcalc,phase,mult,s,g,FWHM,Prfo,i))
         self.CloseFile()
         print(str(hist)+'reflections written to file '+str(self.fullpath))
 

@@ -5843,7 +5843,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     pos -= const*(Sample['DisplaceX'][0]*cosd(pos)+Sample['DisplaceY'][0]*sind(pos))
                 indx = np.searchsorted(xdata[0],pos)
                 try:
-                    FWHM = max(0.001,G2pwd.getFWHM(pos,Inst))/100.0
+                    FWHM = max(0.001,G2pwd.getFWHM(pos,Inst))
                     # We want to estimate Pawley F^2 as a drop-in replacement for F^2 calculated by the structural 
                     # routines, which use Icorr * F^2 * peak profile, where peak profile has an area of 1.  So
                     # we multiply the observed peak height by sqrt(8 ln 2)/(FWHM*sqrt(pi)) to determine the value of Icorr*F^2 

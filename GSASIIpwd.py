@@ -481,30 +481,40 @@ def getWidthsTOF(pos,alp,bet,sig,gam):
     return widths,fmin,fmax
     
 def getFWHM(pos,Inst):
-    '1.17741*pi/180 = sqrt(8ln2)/(2pi/180)'
-    sig = lambda Th,U,V,W: 1.17741*np.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))*np.pi/180.
+    '''Compute total FWHM from Thompson, Cox & Hastings (1987), J. Appl. Cryst. 20, 79-83
+    via getgamFW(g,s).
+    
+    :param pos: float peak position in deg 2-theta or tof in musec
+    :param Inst: dict instrument parameters
+    
+    :returns float: total FWHM of pseudoVoigt in deg or musec
+    ''' 
+    
+    sig = lambda Th,U,V,W: np.sqrt(max(0.001,U*tand(Th)**2+V*tand(Th)+W))
     sigTOF = lambda dsp,S0,S1,S2,Sq:  S0+S1*dsp**2+S2*dsp**4+Sq/dsp**2
-    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/180.
+    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))
     gamTOF = lambda dsp,X,Y: X*dsp+Y*dsp**2
     if 'C' in Inst['Type'][0]:
-        s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])*100.
-        g = gam(pos/2.,Inst['X'][1],Inst['Y'][1])*100.
+        s = sig(pos/2.,Inst['U'][1],Inst['V'][1],Inst['W'][1])
+        g = gam(pos/2.,Inst['X'][1],Inst['Y'][1])
+        return getgamFW(g,s)/100.  #returns FWHM in deg
     else:
         dsp = pos/Inst['difC'][0]
         s = sigTOF(dsp,Inst['sig-0'][1],Inst['sig-1'][1],Inst['sig-2'][1],Inst['sig-q'][1])
         g = gamTOF(dsp,Inst['X'][1],Inst['Y'][1])
-    return getgamFW(g,s)
+        return getgamFW(g,s)
     
 def getgamFW(g,s):
     '''Compute total FWHM from Thompson, Cox & Hastings (1987), J. Appl. Cryst. 20, 79-83
+    lambda fxn needs FWHM for both Gaussian & Lorentzian components
     
-    :param g: float Lorentzian FWHM
-    :param s: float Gaussian FWHM
+    :param g: float Lorentzian gamma = FWHM(L)
+    :param s: float Gaussian sig
     
     :returns float: total FWHM of pseudoVoigt
     ''' 
     gamFW = lambda s,g: np.exp(np.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
-    return gamFW(s,g)
+    return gamFW(2.35482*s,g)   #sqrt(8ln2)*sig = FWHM(G)
                 
 def getFCJVoigt(pos,intens,sig,gam,shl,xdata):    
     'needs a doc string'

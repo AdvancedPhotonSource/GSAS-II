@@ -211,13 +211,14 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
                 for refItem in refList:
                     if 'T' in phasDict['Type']:
                         h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:17]
-                        FWHM = 2.*G2pwd.getgamFW(gam,sig)
+                        FWHM = G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(hklfmt.format(h,k,l,m),pos,Fobs,Fcalc,phase,mult,sig,gam,FWHM,prfo))
                     else:
                         h,k,l,m,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,prfo = refItem[:14]
-                        FWHM = 2.*G2pwd.getgamFW(gam,sig)
-                        self.Write(fmt.format(hklfmt.format(h,k,l,m),pos,Fobs,Fcalc,phase,mult, \
-                            np.sqrt(max(sig,0.0001))/100.,gam/100.,FWHM/100.,prfo))
+                        g = gam/100.    #centideg -> deg
+                        s = np.sqrt(max(sig,0.0001))/100.   #var -> sig in deg
+                        FWHM = G2pwd.getgamFW(g,s)  #FWHM
+                        self.Write(fmt.format(hklfmt.format(h,k,l,m),pos,Fobs,Fcalc,phase,mult,s,g,FWHM,prfo))
             else:
                 self.Write(94*'=')
                 hklfmt = "{:.0f},{:.0f},{:.0f}"
@@ -232,13 +233,15 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
                 for refItem in refList:
                     if 'T' in phasDict['Type']:
                         h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,x,x,x,prfo = refItem[:16]
-                        FWHM = 2.*G2pwd.getgamFW(gam,sig)
+                        FWHM = G2pwd.getgamFW(gam,sig)
                         self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult,np.sqrt(max(sig,0.0001)),gam,FWHM,prfo))
                     else:
                         h,k,l,mult,dsp,pos,sig,gam,Fobs,Fcalc,phase,x,prfo = refItem[:13]
-                        FWHM = 2.*G2pwd.getgamFW(gam,sig)
+                        g = gam/100.    #centideg -> deg
+                        s = np.sqrt(max(sig,0.0001))/100.   #var -> sig in deg
+                        FWHM = G2pwd.getgamFW(g,s)
                         self.Write(fmt.format(hklfmt.format(h,k,l),pos,Fobs,Fcalc,phase,mult,   \
-                            np.sqrt(max(sig,0.0001))/100.,gam/100.,FWHM/100.,prfo))
+                            s,g,FWHM,prfo))
         self.CloseFile()
         print(str(hist)+'reflections written to file '+str(self.fullpath))                        
 

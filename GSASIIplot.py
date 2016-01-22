@@ -2662,9 +2662,9 @@ def PlotPeakWidths(G2frame):
             Q = 4.*np.pi*npsind(X/2.)/lam
             Z = np.ones_like(X)
             data = G2mth.setPeakparms(Parms,Parms2,X,Z)
-            s = 1.17741*np.sqrt(data[4])*np.pi/18000.
-            g = data[6]*np.pi/36000.
-            G = G2pwd.getgamFW(g,s)
+            s = np.sqrt(data[4])*np.pi/18000.   #var -> sig(radians)
+            g = data[6]*np.pi/18000.    #centideg -> radians
+            G = G2pwd.getgamFW(g,s)/2.  #delt-theta
             Y = s/nptand(X/2.)
             Z = g/nptand(X/2.)
             W = G/nptand(X/2.)
@@ -2673,9 +2673,9 @@ def PlotPeakWidths(G2frame):
             Plot.plot(Q,W,color='b',label='G+L')
             
             fit = G2mth.setPeakparms(Parms,Parms2,X,Z,useFit=True)
-            sf = 1.17741*np.sqrt(fit[4])*np.pi/18000.
-            gf = fit[6]*np.pi/36000.
-            Gf = G2pwd.getgamFW(gf,sf)
+            sf = np.sqrt(fit[4])*np.pi/18000.
+            gf = fit[6]*np.pi/18000.
+            Gf = G2pwd.getgamFW(gf,sf)/2.
             Yf = sf/nptand(X/2.)
             Zf = gf/nptand(X/2.)
             Wf = Gf/nptand(X/2.)
@@ -2691,11 +2691,11 @@ def PlotPeakWidths(G2frame):
             for peak in peaks:
                 X.append(4.0*math.pi*sind(peak[0]/2.0)/lam)
                 try:
-                    s = 1.17741*math.sqrt(peak[4])*math.pi/18000.
+                    s = math.sqrt(peak[4])*math.pi/18000.
                 except ValueError:
                     s = 0.01
-                g = peak[6]*math.pi/36000.
-                G = G2pwd.getgamFW(g,s)
+                g = peak[6]*math.pi/18000.
+                G = G2pwd.getgamFW(g,s)/2.
                 Y.append(s/tand(peak[0]/2.))
                 Z.append(g/tand(peak[0]/2.))
                 W.append(G/tand(peak[0]/2.))

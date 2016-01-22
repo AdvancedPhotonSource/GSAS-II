@@ -4081,7 +4081,8 @@ def mcsaSearch(data,RBdata,reflType,reflData,covData,pgbar):
         for ref in reflData:
             h,k,l,m,d,pos,sig,gam,f = ref[:9]
             if d >= MCSA['dmin']:
-                sig = G2pwd.getgamFW(gam,sig)/sq8ln2        #--> sig from FWHM
+                sig = np.sqrt(sig)      #var -> sig in centideg
+                sig = G2pwd.getgamFW(gam,sig)/sq8ln2        #FWHM -> sig in centideg
                 SQ = 0.25/d**2
                 allFF.append(allM*[G2el.getFFvalues(FFtables,SQ,True)[i] for i in allT]/np.max(allM))
                 refs.append([h,k,l,m,f*m,pos,sig])

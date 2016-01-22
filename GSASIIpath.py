@@ -135,7 +135,10 @@ def SetVersionNumber(RevString):
 def GetVersionNumber():
     '''Return the maximum version number seen in :func:`SetVersionNumber`
     '''
-    return version
+    if version > 1000:
+        return version
+    else:
+        return "unknown"
 
 def LoadConfigFile(filename):
     '''Read a GSAS-II configuration file.

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2014-12-27 11:14:59 -0600 (Sat, 27 Dec 2014) $
-# $Author: $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2img_Rigaku: .stl image file*
@@ -16,7 +16,7 @@ import sys
 import os
 import GSASIIIO as G2IO
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: $")
+GSASIIpath.SetVersionNumber("$Revision$")
 class Rigaku_ReaderClass(G2IO.ImportImage):
     '''Routine to read a Rigaku R-Axis IV image file.
     '''

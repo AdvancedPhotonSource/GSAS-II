@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 #defaultIparms
 ########### SVN repository information ###################
-# $Date: 2014-09-26 10:52:52 -0500 (Fri, 26 Sep 2014) $
-# $Author: vondreele $
-# $Revision: 1507 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/defaultIparms.py $
-# $Id: GSASII.py 1507 2014-09-26 15:52:52Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *defaultIparms: Table of instrument parameters*

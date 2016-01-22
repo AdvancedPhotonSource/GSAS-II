@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2014-12-27 11:14:59 -0600 (Sat, 27 Dec 2014) $
-# $Author: $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2img_SumG2: Python pickled image*
@@ -17,7 +17,7 @@ import os
 import cPickle
 import GSASIIIO as G2IO
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: $")
+GSASIIpath.SetVersionNumber("$Revision$")
 class G2_ReaderClass(G2IO.ImportImage):
     '''Routine to read an image that has been pickled in Python. Images
     in this format are created by the "Sum image data" command. At least for

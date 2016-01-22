@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIctrls - Custom GSAS-II GUI controls
 ########### SVN repository information ###################
-# $Date: $
-# $Author: $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *GSASIIctrls: Custom GUI controls*
@@ -33,7 +33,7 @@ import wx.html        # could postpone this for quicker startup
 import webbrowser     # could postpone this for quicker startup
 
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 1614 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 # import GSASIImath as G2mth
 # import GSASIIIO as G2IO
 # import GSASIIstrIO as G2stIO

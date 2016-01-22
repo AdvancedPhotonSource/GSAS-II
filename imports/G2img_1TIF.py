@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2014-12-27 11:14:59 -0600 (Sat, 27 Dec 2014) $
-# $Author: $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2img_1TIF: Tagged-image File images*
@@ -25,7 +25,7 @@ import GSASIIIO as G2IO
 import GSASIIpath
 import numpy as np
 DEBUG = False
-GSASIIpath.SetVersionNumber("$Revision: $")
+GSASIIpath.SetVersionNumber("$Revision$")
 class TIF_ReaderClass(G2IO.ImportImage):
     '''Reads TIF files using a routine (:func:`GetTifData`) that looks
     for files that can be identified from known instruments and will

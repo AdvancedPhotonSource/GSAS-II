@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2014-12-27 11:14:59 -0600 (Sat, 27 Dec 2014) $
-# $Author: $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2img_png: png image file*
@@ -20,7 +20,7 @@ import sys
 import os
 import GSASIIIO as G2IO
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: $")
+GSASIIpath.SetVersionNumber("$Revision$")
 class png_ReaderClass(G2IO.ImportImage):
     '''Reads standard PNG images; parameters are set to those of the
     Mars Rover (CheMin) diffractometer.

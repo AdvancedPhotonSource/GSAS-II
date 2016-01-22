@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2014-12-27 11:14:59 -0600 (Sat, 27 Dec 2014) $
-# $Author: $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2img_MAR: MAR image files*
@@ -16,7 +16,7 @@ import sys
 import os
 import GSASIIIO as G2IO
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: $")
+GSASIIpath.SetVersionNumber("$Revision$")
 class MAR_ReaderClass(G2IO.ImportImage):
     '''Routine to read several MAR formats, .mar3450,.mar2300,.mar2560
     '''

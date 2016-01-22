@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #config.py - Variables used to set optional configuration options
 ########### SVN repository information ###################
-# $Date: $
-# $Author: toby $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *config_example.py: Configuration options*

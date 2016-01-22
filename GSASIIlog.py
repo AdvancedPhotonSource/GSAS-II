@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 #GSASIIlog - Routines used to track and replay "actions"
 ########### SVN repository information ###################
-# $Date: $
-# $Author: toby $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *GSASIIlog: Logging of "Actions"*

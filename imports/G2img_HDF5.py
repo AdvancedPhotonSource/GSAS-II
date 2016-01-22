@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2014-12-27 11:14:59 -0600 (Sat, 27 Dec 2014) $
-# $Author: $
-# $Revision: $
-# $URL: $
-# $Id: $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2img_HDF5: summed HDF5 image file*
@@ -20,7 +20,7 @@ except ImportError:
     h5py = None
 import GSASIIIO as G2IO
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: $")
+GSASIIpath.SetVersionNumber("$Revision$")
 
 class HDF5_Reader(G2IO.ImportImage):
     '''Routine to read a HD5 image, typically from APS Sector 6.

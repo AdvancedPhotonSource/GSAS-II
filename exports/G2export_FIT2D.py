@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ########### SVN repository information ###################
-# $Date: 2015-05-05 09:22:56 -0500 (Tue, 05 May 2015) $
-# $Author: vondreele $
-# $Revision: 1836 $
-# $URL: https://subversion.xray.aps.anl.gov/pyGSAS/trunk/exports/G2export_csv.py $
-# $Id: G2export_csv.py 1836 2015-05-05 14:22:56Z vondreele $
+# $Date$
+# $Author$
+# $Revision$
+# $URL$
+# $Id$
 ########### SVN repository information ###################
 '''
 *Module G2export_FIT2D: Fit2D "Chi" export*
@@ -17,7 +17,7 @@ Code to create .chi (Fit2D like) files for GSAS-II powder data export
 import os.path
 import numpy as np
 import GSASIIpath
-GSASIIpath.SetVersionNumber("$Revision: 1836 $")
+GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIIO as G2IO
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj

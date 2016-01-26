@@ -2784,7 +2784,8 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.dataFrame.CopyCell.Enable(False)
         G2frame.dataFrame.RefineCell.Enable(False)
         dlg = wx.ProgressDialog("Generated reflections",'0 '+" cell search for "+bravaisNames[ibrav],101, 
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_SKIP|wx.PD_CAN_ABORT)
+#            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_SKIP|wx.PD_CAN_ABORT) #desn't work in 32 bit versions
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)
         OK,dmin,newcells = G2indx.DoIndexPeaks(peaks[0],controls,bravais,dlg,G2frame.ifX20)
         dlg.Destroy()
         cells = keepcells+newcells
@@ -3110,6 +3111,8 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     '''respond to selection of PWDR Reflections data tree item by displaying
     a table of reflections in the data window.
     '''
+    Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
+    dMin = Controls['UsrReject'].get('MinD',0.05)
     def OnPlotHKL(event):
         '''Plots a layer of reflections
         '''
@@ -3151,6 +3154,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
             refList = data[1]['RefList']
         else:                           #powder data is a dict of dicts; each same structure as SC 2nd dict
             refList = np.array(data[phaseName]['RefList'])
+        refList.T[3+Super] = np.where(refList.T[4+Super]<dMin,-refList.T[3+Super],refList.T[3+Super])
         FoMax = np.max(refList.T[8+Super])
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
         Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
@@ -3217,6 +3221,7 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                 Types += 7*[wg.GRID_VALUE_FLOAT+':10,3',]
             if Super:
                 colLabels.insert(3,'M')
+        refs.T[3+Super] = np.where(refs.T[4+Super]<dMin,-refs.T[3+Super],refs.T[3+Super])
         return G2G.Table(refs,rowLabels=rowLabels,colLabels=colLabels,types=Types)
 
     def ShowReflTable(phaseName):
@@ -3338,9 +3343,10 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
 #        print phases
 #        raise Exception("how did we get a invalid phase name?")    
     ShowReflTable(phaseName)
-    G2frame.refTable[phaseName].Fit()
-    size = G2frame.refTable[phaseName].GetSize()
-    G2frame.dataFrame.setSizePosLeft([size[0]+32,350])        
+#    G2frame.refTable[phaseName].Fit()   #slow!!
+#    size = G2frame.refTable[phaseName].GetSize()
+#    G2frame.dataFrame.setSizePosLeft([size[0]+32,350])
+    G2frame.dataFrame.setSizePosLeft([550,350])
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     
 ################################################################################

@@ -1167,16 +1167,15 @@ def GenHKLf(HKL,SGData):
     '''
     hklf = list(HKL)+[0,]       #could be numpy array!
     Ops = SGData['SGOps']
-    OpM = np.array([op[0] for op in Ops])
+    OpM = np.array([op[0] for op in Ops],order='F')
     OpT = np.array([op[1] for op in Ops])
     Inv = SGData['SGInv']
-    Cen = np.array([cen for cen in SGData['SGCen']])
+    Cen = np.array([cen for cen in SGData['SGCen']],order='F')
     
     Nuniq,Uniq,iabsnt,mulp = pyspg.genhklpy(hklf,len(Ops),OpM,OpT,SGData['SGInv'],len(Cen),Cen)
     h,k,l,f = Uniq
     Uniq=np.array(zip(h[:Nuniq],k[:Nuniq],l[:Nuniq]))
     phi = f[:Nuniq]
-    
     return iabsnt,mulp,Uniq,phi
     
 def checkSSLaue(HKL,SGData,SSGData):

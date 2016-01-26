@@ -904,7 +904,6 @@ def GenPfHKLs(nMax,SGData,A):
     HKL = np.array(GenHLaue(1.0,SGData,A)).T[:3].T     #strip d-spacings
     N = min(nMax,len(HKL))
     return ['%d %d %d'%(h[0],h[1],h[2]) for h in HKL[:N]]        
-        
 
 def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
     'needs a doc string'
@@ -930,6 +929,20 @@ def GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A):
                         HKLs.append([h,k,l,dH,d])    
     return HKLs
     
+def LaueUnique2(SGData,refList):
+    ''' Impose Laue symmetry on hkl
+    :param SGData: space group data from 'P '+Laue
+    :param HKLF: np.array([[h,k,l,...]]) reflection set to be converted
+    
+    :return: HKLF new reflection array with imposed Laue symmetry
+    '''
+    for ref in refList:
+        H = ref[:3]
+        Uniq = G2spc.GenHKLf(H,SGData)[2]
+        Uniq = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(Uniq,2),1),0)
+        ref[:3] = Uniq[-1]
+    return refList
+    
 def LaueUnique(Laue,HKLF):
     ''' Impose Laue symmetry on hkl
     :param Laue: str Laue symbol
@@ -942,63 +955,70 @@ def LaueUnique(Laue,HKLF):
     
     :return: HKLF new reflection array with imposed Laue symmetry
     '''
+    
     HKLFT = HKLF.T
-    mat41 = np.array([[0,1,0],[-1,0,0],[0,0,1]])
-    mat43 = np.array([[0,-1,0],[1,0,0],[0,0,1]])
-    mat31 = np.array([[0,-1,0],[1,-1,0],[0,0,1]])
-    mat32 = np.array([[-1,1,0],[-1,0,0],[0,0,1]])
-    mat6 = np.array([[0,1,0],[-1,1,0],[0,0,1]])
+    mat41 = np.array([[0,1,0],[-1,0,0],[0,0,1]])    #hkl -> k,-h,l
+    mat43 = np.array([[0,-1,0],[1,0,0],[0,0,1]])    #hkl -> -k,h,l
+    mat4bar = np.array([[0,1,0],[-1,0,0],[0,0,-1]])  #hkl -> k,-h,-l
+    mat31 = np.array([[0,-1,0],[1,-1,0],[0,0,1]])   #hkl -> h-k,-k,l
+    mat32 = np.array([[-1,1,0],[-1,0,0],[0,0,1]])   #hkl -> k-h,-h,l
+    mat6 = np.array([[0,1,0],[-1,1,0],[0,0,1]])     #hkl -> k,k-h,l
+    matdm = np.array([[0,1,0],[1,0,0],[0,0,1]])     #hkl -> k,h,l
+    matd2 = np.array([[0,1,0],[1,0,0],[0,0,-1]])    #hkl -> k,h,-l
     #triclinic
     if Laue == '1': #ok
         pass
     elif Laue == '-1':  #ok
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]==0,np.where(HKLFT[1]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3]),HKLFT[:3])
-    #monoclinic - all 3 settings OK
-    #noncentrosymmetric
-    elif Laue == '2(a)':    #ok  
+    #monoclinic
+    #noncentrosymmetric - all OK
+    elif Laue == '2':  
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[2]==0,np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3]),HKLFT[:3])
-    elif Laue == '2':   #ok
+    elif Laue == '1 1 2':
         HKLFT[:3] = np.where(HKLFT[0]<=0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]==0,np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3]),HKLFT[:3])
-    elif Laue == '2(c)':   #ok    
+    elif Laue == '2 1 1':    
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]==0,np.where(HKLFT[2]<0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3]),HKLFT[:3])
-    elif Laue == 'm(a)':        #ok   
+    elif Laue == 'm 1 1':   
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
-    elif Laue == 'm':           #ok
+    elif Laue == 'm':
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
-    elif Laue == 'm(c)':        #ok 
+    elif Laue == '1 1 m': 
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
-    #centrosymmetric
-    elif Laue == '2/m(a)':       
+    #centrosymmetric - all OK
+    elif Laue == '2/m 1 1':       
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
-    elif Laue == '2/m': #ok
+        HKLFT[:3] = np.where(HKLFT[0]==0,np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3]),HKLFT[:3])
+    elif Laue == '2/m':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
-    elif Laue == '2/m(c)':
+        HKLFT[:3] = np.where(HKLFT[1]==0,np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3]),HKLFT[:3])
+    elif Laue == '1 1 2/m':
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
-    #orthorhombic - 3 settings all OK
-    #noncentrosymmetric
-    elif Laue == '222': #ok
+        HKLFT[:3] = np.where(HKLFT[2]==0,np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3]),HKLFT[:3])
+    #orthorhombic
+    #noncentrosymmetric - all OK
+    elif Laue == '2 2 2':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]==0,np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3]),HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]==0,np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3]),HKLFT[:3])
-    elif Laue == '2mm':    #ok   
+    elif Laue == '2 m m':  
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
-    elif Laue == 'm2m':       #ok
+    elif Laue == 'm 2 m':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
-    elif Laue == 'mm2':    #ok   
+    elif Laue == 'm m 2':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
-    #centrosymmetric
-    elif Laue == 'mmm': #ok
+    #centrosymmetric - all ok
+    elif Laue == 'm m m':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
@@ -1006,71 +1026,74 @@ def LaueUnique(Laue,HKLF):
     #noncentrosymmetric
     elif Laue == '3':
         HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '312':
+        HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat32[nxs,:,:])).T,HKLFT[:3])
+    elif Laue == '3 1 2':
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '321':
+    elif Laue == '3 2 1':
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '32':
-        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '31m':
+    elif Laue == '3 1 m':
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '3m1':
+    elif Laue == '3 m 1':
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([-1,1,-1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '3m':
-        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
     #centrosymmetric
     elif Laue == '-3':
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat3[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '-3m1':
+    elif Laue == '-3 m 1':
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat3[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '-31m':
-        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat3[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '-3m':
+    elif Laue == '-3 1 m':
         HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat3[nxs,:,:])).T,HKLFT[:3])
     #tetragonal 
-    #noncentrosymmetric
-    elif Laue == '4':   #OK
+    #noncentrosymmetric - all ok
+    elif Laue == '4':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat43[nxs,:,:])).T,HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]==0,np.where(HKLFT[1]>0,np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3]),HKLFT[:3])
     elif Laue == '-4':
-#        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
-#        HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[0]<0,np.where(HKLFT[1]>0,np.squeeze(np.inner(-HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3]),HKLFT[:3])        
-    elif Laue == '422':
+        HKLFT[:3] = np.where(HKLFT[0]<0,np.where(HKLFT[1]>0,np.squeeze(np.inner(-HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3]),HKLFT[:3])        
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat43[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '4mm':
+        HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(-HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])        
+        HKLFT[:3] = np.where(HKLFT[0]==0,np.squeeze(np.inner(HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])      
+    elif Laue == '4 2 2':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,-1])[:,nxs],HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat43[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '-42m':
-        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '-4m2':
-        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3])
-    #centrosymmetric
+        HKLFT[:3] = np.where(HKLFT[0]<HKLFT[1],np.squeeze(np.inner(HKLF[:,:3],matd2[nxs,:,:])).T,HKLFT[:3])
+    elif Laue == '4 m m':
+        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat43[nxs,:,:])).T,HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[0]<HKLFT[1],np.squeeze(np.inner(HKLF[:,:3],matdm[nxs,:,:])).T,HKLFT[:3])
+    elif Laue == '-4 2 m':
+        HKLFT[:3] = np.where(HKLFT[0]<0,np.where(HKLFT[1]>0,np.squeeze(np.inner(-HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3]),HKLFT[:3])        
+        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(-HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])        
+        HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],matdm[nxs,:,:])).T,HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[0]==0,np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3]),HKLFT[:3])     
+    elif Laue == '-4 m 2':
+        HKLFT[:3] = np.where(HKLFT[0]<0,np.where(HKLFT[1]>0,np.squeeze(np.inner(-HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3]),HKLFT[:3])        
+        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(-HKLF[:,:3],mat4bar[nxs,:,:])).T,HKLFT[:3])        
+        HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],matd2[nxs,:,:])).T,HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[0]==HKLFT[1],np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3]),HKLFT[:3])    
+    #centrosymmetric - all ok
     elif Laue == '4/m':
+        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat43[nxs,:,:])).T,HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[0]==0,np.where(HKLFT[1]>0,np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3]),HKLFT[:3])
+    elif Laue == '4/m m m':
+        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([1,1,-1])[:,nxs],HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,1])[:,nxs],HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[1]<0,np.squeeze(np.inner(HKLF[:,:3],mat43[nxs,:,:])).T,HKLFT[:3])       
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '4/mmm':
-        HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[2]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
-        HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3])
+        HKLFT[:3] = np.where(HKLFT[1]<0,HKLFT[:3]*np.array([1,-1,1])[:,nxs],HKLFT[:3])
     #hexagonal
     #noncentrosymmetric
     elif Laue == '6':
@@ -1079,38 +1102,38 @@ def LaueUnique(Laue,HKLF):
     elif Laue == '-6':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '622':
+    elif Laue == '6 2 2':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '-6m2':
+    elif Laue == '-6 m 2':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '-62m':
+    elif Laue == '-6 2 m':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
     #centrosymmetric
     elif Laue == '6/m':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '6/mmm':
+    elif Laue == '6/m m m':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat31[nxs,:,:])).T,HKLFT[:3])
     #cubic  
     #noncentrosymmetric
-    elif Laue == '23':
+    elif Laue == '2 3':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '432':
+    elif Laue == '4 3 2':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == '-43m':
+    elif Laue == '-4 3 m':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3])
     #centrosymmetric
-    elif Laue == 'm3':
+    elif Laue == 'm 3':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3])
-    elif Laue == 'm3m':
+    elif Laue == 'm 3 m':
         HKLFT[:3] = np.where(HKLFT[0]<0,HKLFT[:3]*np.array([-1,-1,-1])[:,nxs],HKLFT[:3])
         HKLFT[:3] = np.where(HKLFT[1]<HKLFT[0],np.squeeze(np.inner(HKLF[:,:3],mat41[nxs,:,:])).T,HKLFT[:3])
     return HKLFT.T

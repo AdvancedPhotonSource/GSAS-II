@@ -1207,7 +1207,7 @@ class ExportCIF(G2IO.ExportBaseclass):
             dmin = None
             refcount = len(histblk['Data']['RefList'])
             for ref in histblk['Data']['RefList']:
-                if ref[3] < 0:      #skip user rejected reflections (mul < 0)
+                if ref[3] <= 0:      #skip user rejected reflections (mul <= 0)
                     continue
                 s = "  "
                 if hklmin is None:

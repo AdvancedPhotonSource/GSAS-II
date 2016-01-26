@@ -352,18 +352,18 @@ class MergeDialog(wx.Dialog):
             Obj = event.GetEventObject()
             self.Cent = Obj.GetValue()
             self.Laue = ''
-            self.Draw()
+            wx.CallAfter(self.Draw)
             
         def OnLaue(event):
             Obj = event.GetEventObject()
             self.Laue = Obj.GetValue()
-            self.Draw()
+            wx.CallAfter(self.Draw)
             
         def OnClass(event):
             Obj = event.GetEventObject()
             self.Class = Obj.GetValue()
             self.Laue = ''
-            self.Draw()
+            wx.CallAfter(self.Draw)
        
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -389,14 +389,14 @@ class MergeDialog(wx.Dialog):
         MatSizer.Add(transSizer)
         mainSizer.Add(MatSizer)
         laueClass = ['triclinic','monoclinic','orthorhombic','trigonal(H)','tetragonal','hexagonal','cubic']
-        centroLaue = {'triclinic':['-1',],'monoclinic':['2/m','2/m(c)','2/m(a)',],
-            'orthorhombic':['mmm',],'trigonal(H)':['-3','-3m1','-31m','-3m',],    \
-            'tetragonal':['4/m','4/mmm',],'hexagonal':['6/m','6/mmm',],'cubic':['m3','m3m']}
-        noncentroLaue = {'triclinic':['1',],'monoclinic':['2','2(a)','2(c)','m','m(a)','m(c)',],
-            'orthorhombic':['222','mm2','m2m','2mm',],
-            'trigonal(H)':['3','312','321','32','3m1','31m','3m',],
-            'tetragonal':['4','-4','422','4mm','-42m','-4m2',], \
-            'hexagonal':['6','-6','622','6mm','-6m2','-62m',],'cubic':['23','432','-43m']}
+        centroLaue = {'triclinic':['-1',],'monoclinic':['2/m','1 1 2/m','2/m 1 1',],
+            'orthorhombic':['m m m',],'trigonal(H)':['-3','-3 m 1','-3 1 m',],    \
+            'tetragonal':['4/m','4/m m m',],'hexagonal':['6/m','6/m m m',],'cubic':['m 3','m 3 m']}
+        noncentroLaue = {'triclinic':['1',],'monoclinic':['2','2 1 1','1 1 2','m','m 1 1','1 1 m',],
+            'orthorhombic':['2 2 2','m m 2','m 2 m','2 m m',],
+            'trigonal(H)':['3','3 1 2','3 2 1','3 m 1','3 1 m',],
+            'tetragonal':['4','-4','4 2 2','4 m m','-4 2 m','-4 m 2',], \
+            'hexagonal':['6','-6','6 2 2','6 m m','-6 m 2','-6 2 m',],'cubic':['2 3','4 3 2','-4 3 m']}
         centChoice = ['noncentrosymmetric','centrosymmetric']
         mainSizer.Add(wx.StaticText(self.panel,label=' Select Laue class for new lattice:'),0,WACV)
         Class = wx.ComboBox(self.panel,value=self.Class,choices=laueClass,
@@ -1817,7 +1817,7 @@ def UpdateControls(G2frame,data):
             userReject = data['UsrReject']
             usrRej = {'minF/sig':[' Min obs/sig (0-5): ',[0,5], ],'MinExt':[' Min extinct. (0-.9): ',[0,.9],],
                 'MaxDF/F':[' Max delt-F/sig (3-1000): ',[3.,1000.],],'MaxD':[' Max d-spacing (3-500): ',[3,500],],
-                'MinD':[' Min d-spacing (0.1-1.0): ',[0.1,1.0],]}
+                'MinD':[' Min d-spacing (0.1-2.0): ',[0.1,2.0],]}
 
             fsqRef = wx.CheckBox(G2frame.dataDisplay,-1,label='Refine HKLF as F^2? ')
             fsqRef.SetValue(data['F**2'])
@@ -3023,6 +3023,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
             dlg.Destroy()
         Super = data[1]['Super']
         refList = G2lat.transposeHKLF(Trans,Super,refList)
+        SG = 'P '+Laue
+        SGData = G2spc.SpcGroup(SG)[1]
+#        refList = G2lat.LaueUnique2(SGData,refList)
         refList = G2lat.LaueUnique(Laue,refList)
         dlg = wx.ProgressDialog('Build HKL dictonary','',len(refList)+1, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
@@ -3062,7 +3065,10 @@ def UpdatePWHKPlot(G2frame,kind,item):
         else:
             mergeRef = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(mergeRef,2),1),0)
         mergeRef = np.array(mergeRef)
-        print 'merge R = %6.2f%s for %d reflections'%(100.*sumDf/sumFo,'%',mergeRef.shape[0])
+        if sumFo:
+            print 'merge R = %6.2f%s for %d reflections'%(100.*sumDf/sumFo,'%',mergeRef.shape[0])
+        else:
+            print 'nothing to merge for %s reflections'%(mergeRef.shape[0])
         HKLFlist = []
         newName = Name+' '+Laue
         if G2frame.PatternTree.GetCount():
@@ -3220,6 +3226,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             Super = 0
             SuperVec = []       
         refList = data[1]['RefList']
+#        GSASIIpath.IPyBreak()
         FoMax = np.max(refList.T[5+data[1].get('Super',0)])
         page = G2frame.G2plotNB.nb.GetSelection()
         tab = ''

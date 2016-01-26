@@ -263,7 +263,7 @@ class CIFhklReader(G2IO.ImportStructFactor):
                             HKL.append(int(item[num]))
                         except:
                             HKL.append('.')
-                    #h,k,l,m,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,Ext
+                    #h,k,l,tw,dsp,Fo2,sig,Fc2,Fot2,Fct2,phase,Ext
                     if im:
                         ref = HKL+[1,0,0,0,1, 0,0,0,0,0, 0,0] 
                     else:

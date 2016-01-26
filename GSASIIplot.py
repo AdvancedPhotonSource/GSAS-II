@@ -630,6 +630,8 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 A = np.arccos(np.sum(V*V0))
                 Q = G2mth.AV2Q(-A,viewChoice[key][2])
             drawingData['Quaternion'] = Q
+        elif key in 'O':
+            drawingData['viewPoint'][0] = [0,0,0]
         elif key in 'Z':
             Data['Zone'] = not Data['Zone']
         elif key in 'B':
@@ -1016,7 +1018,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Page.SetFocus()
     Page.Choice = None
     choice = [' save as/key:','jpeg','tiff','bmp','h: view down h','k: view down k','l: view down l',
-    'z: zero zone toggle','c: reset to default','b: toggle box ','+: increase scale','-: decrease scale',
+    'z: zero zone toggle','c: reset to default','o: set view point = 0,0,0','b: toggle box ','+: increase scale','-: decrease scale',
     'f: Fobs','s: Fobs**2','u: unit','d: Fo-Fc','w: DF/sig','i: toggle intensity scaling']
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)

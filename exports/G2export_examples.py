@@ -247,6 +247,7 @@ class ExportPowderReflText(G2IO.ExportBaseclass):
 
 class ExportSingleText(G2IO.ExportBaseclass):
     '''Used to create a text file with single crystal reflection data
+    skips user rejected & space group extinct reflections
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
@@ -277,12 +278,13 @@ class ExportSingleText(G2IO.ExportBaseclass):
         hfmt = "{:>10s} {:>8s} {:>12s} {:>12s} {:>12s} {:>7s} {:>6s}"
         fmt = "{:>10s} {:8.3f} {:12.2f} {:12.4f} {:12.2f} {:7.2f} {:6.0f}"
         self.Write(80*'=')
-        self.Write(hfmt.format("h,k,l","d-space","F_obs","sig(Fobs)","F_calc","phase","mult"))
+        self.Write(hfmt.format("h,k,l","d-space","F_obs","sig(Fobs)","F_calc","phase","twin"))
         self.Write(80*'=')
         for (
-            h,k,l,mult,dsp,Fobs,sigFobs,Fcalc,FobsT,FcalcT,phase,Icorr
+            h,k,l,twin,dsp,Fobs,sigFobs,Fcalc,FobsT,FcalcT,phase,Icorr
             ) in histblk['Data']['RefList']:
-            self.Write(fmt.format(hklfmt.format(h,k,l),dsp,Fobs,sigFobs,Fcalc,phase,mult))
+            if twin > 0:
+                self.Write(fmt.format(hklfmt.format(h,k,l),dsp,Fobs,sigFobs,Fcalc,phase,twin))
         self.CloseFile()
         print(str(hist)+' written to file '+str(self.fullpath))                        
 

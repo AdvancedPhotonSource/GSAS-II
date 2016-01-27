@@ -990,7 +990,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         matRot = G2mth.Q2Mat(Q)
         matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
         glMultMatrixf(matRot.T)
-        glMultMatrixf(B4mat.T)
+        glMultMatrixf(B4mat)
         glTranslate(-Tx,-Ty,-Tz)
         x,y,z = drawingData['viewPoint'][0]
         if ifBox:

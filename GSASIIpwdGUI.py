@@ -3112,7 +3112,9 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
     a table of reflections in the data window.
     '''
     Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root, 'Controls'))
-    dMin = Controls['UsrReject'].get('MinD',0.05)
+    dMin = 0.05
+    if 'UsrReject' in Controls:
+        dMin = Controls['UsrReject'].get('MinD',0.05)
     def OnPlotHKL(event):
         '''Plots a layer of reflections
         '''

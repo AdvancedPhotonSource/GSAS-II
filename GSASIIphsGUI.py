@@ -4133,6 +4133,26 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             data['Histograms'] = UseList
         wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
         wx.EndBusyCursor()
+        
+    def OnDataUse(event):
+        UseList = data['Histograms']
+        hist = G2frame.hist
+        useDict = {}
+        keyList = G2frame.GetHistogramNames(hist[:4])
+        if UseList:
+            dlg = G2G.G2MultiChoiceDialog(G2frame.dataFrame, 'Use histograms', 
+                'Use which histograms?',keyList)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    sel = dlg.GetSelections()
+                    for id,item in enumerate(keyList):
+                        if id in sel:
+                            UseList[item]['Use'] = True
+                        else:
+                            UseList[item]['Use'] = False                        
+            finally:
+                dlg.Destroy()
+        wx.CallAfter(G2ddG.UpdateDData,G2frame,DData,data)
                 
     def UpdateHKLFdata(histoName):
         generalData = data['General']
@@ -6401,6 +6421,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnTransform, id=G2gd.wxID_TRANSFORMSTRUCTURE)
         # Data
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataMenu)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataUse, id=G2gd.wxID_DATAUSE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataCopy, id=G2gd.wxID_DATACOPY)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDataCopyFlags, id=G2gd.wxID_DATACOPYFLAGS)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnSelDataCopy, id=G2gd.wxID_DATASELCOPY)

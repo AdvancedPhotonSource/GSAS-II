@@ -61,8 +61,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(17)]
 
 [ wxID_PWDRADD, wxID_HKLFADD, wxID_PWDANALYSIS, wxID_PWDCOPY, wxID_PLOTCTRLCOPY, 
-    wxID_DATADELETE,wxID_DATACOPY,wxID_DATACOPYFLAGS,wxID_DATASELCOPY,
-] = [wx.NewId() for item in range(9)]
+    wxID_DATADELETE,wxID_DATACOPY,wxID_DATACOPYFLAGS,wxID_DATASELCOPY,wxID_DATAUSE,
+] = [wx.NewId() for item in range(10)]
 
 [ wxID_ATOMSEDITADD, wxID_ATOMSEDITINSERT, wxID_ATOMSEDITDELETE, wxID_ATOMSREFINE, 
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
@@ -1360,6 +1360,8 @@ class DataFrame(wx.Frame):
             help='Copy phase data flags to other histograms')
         self.DataEdit.Append(id=wxID_DATASELCOPY, kind=wx.ITEM_NORMAL,text='Copy selected data',
             help='Copy selected phase data to other histograms')
+        self.DataEdit.Append(id=wxID_DATAUSE, kind=wx.ITEM_NORMAL,text='Select used data',
+            help='Select all histograms to use')
         self.DataEdit.Append(id=wxID_PWDRADD, kind=wx.ITEM_NORMAL,text='Add powder histograms',
             help='Select new powder histograms to be used for this phase')
         self.DataEdit.Append(id=wxID_HKLFADD, kind=wx.ITEM_NORMAL,text='Add single crystal histograms',

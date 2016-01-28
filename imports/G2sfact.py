@@ -144,7 +144,8 @@ class SHELX4_ReaderClass(G2IO.ImportStructFactor):
 
     def ContentsValidator(self, filepointer):
         'Make sure file contains the expected columns on numbers'
-        return ColumnValidator(self, filepointer)
+        return True
+#        return ColumnValidator(self, filepointer)
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read the file'
@@ -152,7 +153,9 @@ class SHELX4_ReaderClass(G2IO.ImportStructFactor):
             for line,S in enumerate(filepointer):
                 self.errors = '  Error reading line '+str(line+1)
                 if S[0] == '#': continue       #ignore comments, if any
-                h,k,l,Fo,sigFo = S[:4],S[4:8],S[8:12],S[12:20],S[20:28]
+                h,k,l = S[:12].split()
+                Fo,sigFo = S[12:].split()[:2]
+#                h,k,l,Fo,sigFo = S[:4],S[4:8],S[8:12],S[12:20],S[20:28]
                 h,k,l = [int(h),int(k),int(l)]
                 if not any([h,k,l]):
                     break

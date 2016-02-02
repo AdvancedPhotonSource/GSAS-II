@@ -3686,8 +3686,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     from matplotlib.patches import Ellipse,Arc,Circle,Polygon
     import numpy.ma as ma
     Dsp = lambda tth,wave: wave/(2.*npsind(tth/2.))
-    #global Data,Masks,StrSta  # BHT: I don't see why these need to be globals. Where are they accessed? 
-    colors=['b','g','r','c','m','k']
+    global Data,Masks,StrSta  # RVD: these are needed for multiple image controls/masks 
+    colors=['b','g','r','c','m','k'] 
     Data = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
 # patch

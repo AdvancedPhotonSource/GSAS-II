@@ -371,11 +371,11 @@ class MergeDialog(wx.Dialog):
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         MatSizer = wx.BoxSizer(wx.HORIZONTAL)
         transSizer = wx.BoxSizer(wx.VERTICAL)
-        transSizer.Add(wx.StaticText(self.panel,label=' HKL Transformation matrix:'))
+        transSizer.Add(wx.StaticText(self.panel,label=" HKL Transformation matrix: M*H = H'"))
         if self.Super:
-            Trmat = wx.FlexGridSizer(4,4,5,5)
+            Trmat = wx.FlexGridSizer(4,4,0,0)
         else:
-            Trmat = wx.FlexGridSizer(3,3,5,5)
+            Trmat = wx.FlexGridSizer(3,3,0,0)
         for iy,line in enumerate(self.Trans):
             for ix,val in enumerate(line):
                 item = wx.TextCtrl(self.panel,value='%d'%(val),

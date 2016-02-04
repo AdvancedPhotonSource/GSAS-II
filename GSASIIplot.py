@@ -961,7 +961,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         cPos = drawingData['cameraPos']
         Zclip = drawingData['Zclip']*cPos/20.
         if Data['Zone']:
-            Zclip = 0.1
+            Zclip = 0.01
         Q = drawingData['Quaternion']
         Tx,Ty,Tz = drawingData['viewPoint'][0][:3]
         G,g = G2lat.cell2Gmat(cell)

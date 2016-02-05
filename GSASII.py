@@ -3131,6 +3131,7 @@ class GSASII(wx.Frame):
         self.Close()
         
     def OnExportPeakList(self,event):
+        nptand = lambda x: np.tan(x*math.pi/180.)
         pth = G2G.GetExportPath(self)
         dlg = wx.FileDialog(self, 'Choose output peak list file name', pth, '', 
             '(*.*)|*.*',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
@@ -3153,29 +3154,40 @@ class GSASII(wx.Frame):
                                 if 'T' not in Type:
                                     wave = G2mth.getWave(Inst)
                             elif name2 == 'Peak List':
-                                peaks = self.PatternTree.GetItemPyData(item2)['peaks']
+                                pkdata = self.PatternTree.GetItemPyData(item2)
+                                peaks = pkdata['peaks']
+                                sigDict = pkdata['sigDict']
                             item2, cookie2 = self.PatternTree.GetNextChild(item, cookie2)                            
                         file.write("#%s \n" % (name+' Peak List'))
                         if wave:
                             file.write('#wavelength = %10.6f\n'%(wave))
                         if 'T' in Type:
-                            file.write('#%9s %10s %12s %10s %10s %10s %10s %10s\n'%('pos','dsp','int','alp','bet','sig','gam','FWHM'))                                    
+                            file.write('#%9s %10s %10s %12s %10s %10s %10s %10s %10s\n'%('pos','dsp','esd','int','alp','bet','sig','gam','FWHM'))                                    
                         else:
-                            file.write('#%9s %10s %12s %10s %10s %10s\n'%('pos','dsp','int','sig','gam','FWHM'))
-                        for peak in peaks:
+                            file.write('#%9s %10s %10s %12s %10s %10s %10s\n'%('pos','dsp','esd','int','sig','gam','FWHM'))
+                        for ip,peak in enumerate(peaks):
                             dsp = G2lat.Pos2dsp(Inst,peak[0])
                             if 'T' in Type:  #TOF - more cols
+                                esds = {'pos':0.,'int':0.,'alp':0.,'bet':0.,'sig':0.,'gam':0.}
+                                for name in esds.keys():
+                                    esds[name] = sigDict.get('%s%d'%(name,ip),0.)
                                 sig = np.sqrt(peak[8])
                                 gam = peak[10]
+                                esddsp = G2lat.Pos2dsp(Inst,esds['pos'])
                                 FWHM = G2pwd.getgamFW(gam,sig)      #to get delta-TOF from Gam(peak)
-                                file.write("%10.2f %10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
-                                    (peak[0],dsp,peak[2],np.sqrt(max(0.0001,peak[4])),peak[6],peak[8],peak[10],FWHM))
+                                file.write("%10.2f %10.5f %10.5f %12.2f %10.3f %10.3f %10.3f %10.3f %10.3f\n" % \
+                                    (peak[0],dsp,esddsp,peak[2],np.sqrt(max(0.0001,peak[4])),peak[6],peak[8],peak[10],FWHM))
                             else:               #CW
+                                #get esds from sigDict for each peak & put in output - esds for sig & gam from UVWXY?
+                                esds = {'pos':0.,'int':0.,'sig':0.,'gam':0.}
+                                for name in esds.keys():
+                                    esds[name] = sigDict.get('%s%d'%(name,ip),0.)
                                 sig = np.sqrt(peak[4]) #var -> sig
                                 gam = peak[6]
+                                esddsp = 0.5*esds['pos']*dsp/nptand(peak[0]/2.)
                                 FWHM = G2pwd.getgamFW(gam,sig)      #to get delta-2-theta in deg. from Gam(peak)
-                                file.write("%10.3f %10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
-                                    (peak[0],dsp,peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
+                                file.write("%10.4f %10.5f %10.5f %12.2f %10.5f %10.5f %10.5f \n" % \
+                                    (peak[0],dsp,esddsp,peak[2],np.sqrt(max(0.0001,peak[4]))/100.,peak[6]/100.,FWHM/100.)) #convert to deg
                     item, cookie = self.PatternTree.GetNextChild(self.root, cookie)                            
                 file.close()
         finally:

@@ -1151,7 +1151,8 @@ def UpdateMasks(G2frame,data):
 
     def Replot(*args,**kwargs):
         #G2plt.PlotExposedImage(G2frame,newPlot=True)        
-        G2plt.PlotExposedImage(G2frame) # remove newPlot=True to prevent zoom-out
+        #G2plt.PlotExposedImage(G2frame) # remove newPlot=True to prevent zoom-out
+        wx.CallAfter(G2plt.PlotExposedImage,G2frame)
 
     def onDeleteMask(event):
         Obj = event.GetEventObject()
@@ -2389,6 +2390,7 @@ class AutoIntFrame(wx.Frame):
                 G2frame.PatternTree.GetItemPyData(
                     G2gd.GetPatternTreeItemId(G2frame,self.imageBase, 'Masks')))
             self.Thresholds = self.ImageMasks['Thresholds'][:]
+            del self.ImageMasks['Thresholds']
         # make sure all output directories exist
         if self.params['SeparateDir']:
             for dfmt in self.fmtlist:

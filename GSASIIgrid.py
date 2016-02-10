@@ -3014,7 +3014,13 @@ def UpdatePWHKPlot(G2frame,kind,item):
         Name = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         Inst = G2frame.PatternTree.GetItemPyData(GetPatternTreeItemId(G2frame,
             G2frame.PatternId,'Instrument Parameters'))
+        CId = GetPatternTreeItemId(G2frame,G2frame.PatternId,'Comments')
+        if CId:
+            Comments = G2frame.PatternTree.GetItemPyData(CId)
+        else:
+            Comments = []
         refList = np.copy(data[1]['RefList'])
+        Comments.append(' Merging %d reflections from %s'%(len(refList),Name))
         dlg = MergeDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -3027,7 +3033,6 @@ def UpdatePWHKPlot(G2frame,kind,item):
         refList = G2lat.transposeHKLF(Trans,Super,refList)
         SG = 'P '+Laue
         SGData = G2spc.SpcGroup(SG)[1]
-#        refList = G2lat.LaueUnique2(SGData,refList)
         refList = G2lat.LaueUnique(Laue,refList)
         dlg = wx.ProgressDialog('Build HKL dictonary','',len(refList)+1, 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
@@ -3068,7 +3073,9 @@ def UpdatePWHKPlot(G2frame,kind,item):
             mergeRef = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(mergeRef,2),1),0)
         mergeRef = np.array(mergeRef)
         if sumFo:
-            print 'merge R = %6.2f%s for %d reflections in %s'%(100.*sumDf/sumFo,'%',mergeRef.shape[0],Laue)
+            mtext = ' merge R = %6.2f%s for %d reflections in %s'%(100.*sumDf/sumFo,'%',mergeRef.shape[0],Laue)
+            print mtext
+            Comments.append(mtext)
         else:
             print 'nothing to merge for %s reflections'%(mergeRef.shape[0])
         HKLFlist = []
@@ -3085,6 +3092,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
         newData[0]['ranId'] = ran.randint(0,sys.maxint)
         newData[1]['RefList'] = mergeRef
         Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text=newName)
+        G2frame.PatternTree.SetItemPyData(
+            G2frame.PatternTree.AppendItem(Id,text='Comments'),Comments)
         G2frame.PatternTree.SetItemPyData(Id,newData)
         G2frame.PatternTree.SetItemPyData(
             G2frame.PatternTree.AppendItem(Id,text='Instrument Parameters'),Inst)

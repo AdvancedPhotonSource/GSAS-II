@@ -3068,7 +3068,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
             mergeRef = G2mth.sortArray(G2mth.sortArray(G2mth.sortArray(mergeRef,2),1),0)
         mergeRef = np.array(mergeRef)
         if sumFo:
-            print 'merge R = %6.2f%s for %d reflections'%(100.*sumDf/sumFo,'%',mergeRef.shape[0])
+            print 'merge R = %6.2f%s for %d reflections in %s'%(100.*sumDf/sumFo,'%',mergeRef.shape[0],Laue)
         else:
             print 'nothing to merge for %s reflections'%(mergeRef.shape[0])
         HKLFlist = []

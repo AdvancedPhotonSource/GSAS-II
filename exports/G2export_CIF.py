@@ -573,9 +573,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             if naniso == 0: return
             # now loop over aniso atoms
             WriteCIFitem('\nloop_' + '\n   _atom_site_aniso_label' + 
-                         '\n   _atom_site_aniso_U_11' + '\n   _atom_site_aniso_U_12' +
-                         '\n   _atom_site_aniso_U_13' + '\n   _atom_site_aniso_U_22' +
-                         '\n   _atom_site_aniso_U_23' + '\n   _atom_site_aniso_U_33')
+                         '\n   _atom_site_aniso_U_11' + '\n   _atom_site_aniso_U_22' +
+                         '\n   _atom_site_aniso_U_33' + '\n   _atom_site_aniso_U_12' +
+                         '\n   _atom_site_aniso_U_13' + '\n   _atom_site_aniso_U_23')
             for i,at in enumerate(Atoms):
                 fval = self.parmDict.get(fpfx+str(i),at[cfrac])
                 if fval == 0.0: continue # ignore any atoms that have a occupancy set to 0 (exact)

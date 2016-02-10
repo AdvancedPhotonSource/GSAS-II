@@ -1150,8 +1150,6 @@ def UpdateMasks(G2frame,data):
         Obj.SetToolTipString('Drag this mask on 2D Powder Image with mouse to change ')
 
     def Replot(*args,**kwargs):
-        #G2plt.PlotExposedImage(G2frame,newPlot=True)        
-        #G2plt.PlotExposedImage(G2frame) # remove newPlot=True to prevent zoom-out
         wx.CallAfter(G2plt.PlotExposedImage,G2frame)
 
     def onDeleteMask(event):
@@ -2390,7 +2388,8 @@ class AutoIntFrame(wx.Frame):
                 G2frame.PatternTree.GetItemPyData(
                     G2gd.GetPatternTreeItemId(G2frame,self.imageBase, 'Masks')))
             self.Thresholds = self.ImageMasks['Thresholds'][:]
-            del self.ImageMasks['Thresholds']
+            if list(self.Thresholds[0]) == self.Thresholds[1]:     #avoid copy of unchanged thresholds
+                del self.ImageMasks['Thresholds']   
         # make sure all output directories exist
         if self.params['SeparateDir']:
             for dfmt in self.fmtlist:

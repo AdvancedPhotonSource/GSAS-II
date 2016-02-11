@@ -526,7 +526,10 @@ def MaxIndex(dmin,A):
 def transposeHKLF(transMat,Super,refList):
     newRefs = np.copy(refList)
     for H in newRefs:
-        H[:3+Super] = np.rint(np.inner(transMat,H[:3+Super]))
+        newH = np.inner(transMat,H[:3+Super])
+        H[:3+Super] = np.rint(newH)
+        if not np.allclose(newH,H[:3+Super],atol=0.01):
+            return []
     return newRefs
     
 def sortHKLd(HKLd,ifreverse,ifdup,ifSS=False):

@@ -343,6 +343,19 @@ class MergeDialog(wx.Dialog):
         
     def Draw(self):
         
+        commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1,0,0],[0,0,-1],[0,1,0]]),
+            'ba-c':np.array([[0,1,0],[1,0,0],[0,0,-1]]),'-cba':np.array([[0,0,-1],[0,1,0],[1,0,0]]),
+            'bca':np.array([[0,1,0],[0,0,1],[1,0,0]]),'cab':np.array([[0,0,1],[1,0,0],[0,1,0]]),
+            'P->R':np.array([[1,-1,0],[0,1,-1],[1,1,1]]),'R->P':np.array([[2./3,1./3,1./3],[-1./3,1./3,1./3],[-1./3,-2./3,1./3]]),
+            'P->A':np.array([[-1,0,0],[0,-1,1],[0,1,1]]),'R->O':np.array([[-1,0,0],[0,-1,0],[0,0,1]]),
+            'P->B':np.array([[-1,0,1],[0,-1,0],[1,0,1]]),'B->P':np.array([[-.5,0,.5],[0,-1,0],[.5,0,.5]]),
+            'P->C':np.array([[1,1,0],[1,-1,0],[0,0,-1]]),'C->P':np.array([[.5,.5,0],[.5,-.5,0],[0,0,-1]]),
+            'P->F':np.array([[-1,1,1],[1,-1,1],[1,1,-1]]),'F->P':np.array([[0,.5,.5],[.5,0,.5],[.5,.5,0]]),   
+            'P->I':np.array([[0,1,1],[1,0,1],[1,1,0]]),'I->P':np.array([[-.5,.5,.5],[.5,-.5,.5],[.5,.5,-.5]]),    
+            'A->P':np.array([[-1,0,0],[0,-.5,.5],[0,.5,.5]]),'O->R':np.array([[-1,0,0],[0,-1,0],[0,0,1]]), }
+        commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P',
+            'P->B','B->P','P->C','C->P','P->I','I->P','P->F','F->P','P->R','R->P','R->O','O->R']
+                
         def OnMatValue(event):
             Obj = event.GetEventObject()
             ix,iy = Ind[Obj.GetId()]
@@ -364,6 +377,11 @@ class MergeDialog(wx.Dialog):
             self.Class = Obj.GetValue()
             self.Laue = ''
             wx.CallAfter(self.Draw)
+            
+        def OnCommon(event):
+            Obj = event.GetEventObject()
+            self.Trans = commonTrans[Obj.GetValue()]
+            wx.CallAfter(self.Draw)
        
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -375,10 +393,17 @@ class MergeDialog(wx.Dialog):
         if self.Super:
             Trmat = wx.FlexGridSizer(4,4,0,0)
         else:
+            commonSizer = wx.BoxSizer(wx.HORIZONTAL)
+            commonSizer.Add(wx.StaticText(self.panel,label=' Common transformations: '),0,WACV)
+            common = wx.ComboBox(self.panel,value='abc',choices=commonNames,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            common.Bind(wx.EVT_COMBOBOX,OnCommon)
+            commonSizer.Add(common,0,WACV)
+            transSizer.Add(commonSizer)
             Trmat = wx.FlexGridSizer(3,3,0,0)
         for iy,line in enumerate(self.Trans):
             for ix,val in enumerate(line):
-                item = wx.TextCtrl(self.panel,value='%d'%(val),
+                item = wx.TextCtrl(self.panel,value='%5.3f'%(val),
                     size=(50,25),style=wx.TE_PROCESS_ENTER)
                 Ind[item.GetId()] = [ix,iy]
                 item.Bind(wx.EVT_TEXT_ENTER,OnMatValue)
@@ -3031,6 +3056,11 @@ def UpdatePWHKPlot(G2frame,kind,item):
             dlg.Destroy()
         Super = data[1]['Super']
         refList = G2lat.transposeHKLF(Trans,Super,refList)
+        if not len(refList):
+            G2frame.ErrorDialog('Failed transformation','Matrix yields fractional hkl indices')
+            return
+        Comments.append(" Transformation M*H = H' applied; M=")
+        Comments.append(str(Trans))
         SG = 'P '+Laue
         SGData = G2spc.SpcGroup(SG)[1]
         refList = G2lat.LaueUnique(Laue,refList)

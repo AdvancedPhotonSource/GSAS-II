@@ -955,7 +955,7 @@ class GSASII(wx.Frame):
         '''Read lines from a GSAS-II (new) instrument parameter file
         similar to G2pwdGUI.OnLoad
         If instprm file has multiple banks each with header #Bank n: ..., this 
-        finds matching bank no. to load - rejects nonmatches.
+        finds matching bank no. to load - problem with nonmatches?
 
         :param list instLines: strings from GSAS-II parameter file; can be concatenated with ';'
         :param int  bank: bank number to check when instprm file has '#BANK n:...' strings
@@ -963,14 +963,34 @@ class GSASII(wx.Frame):
             not present. NB: this kind of instprm file made by a Save all profile command in Instrument Parameters 
 
         '''
-        if not instLines[0].startswith('#GSAS-II'): # not a valid file
-            return None
+        if 'GSAS-II' not in instLines[0]: # not a valid file
+            return 'Not a valid GSAS-II instprm file'
         newItems = []
         newVals = []
         Found = False
-        for S in instLines:
+        il = 0
+        while il < len(instLines):
+            S = instLines[il]
             if S[0] == '#':
-                continue
+                if Found:
+                    break
+                if 'Bank' in S:
+                    if bank == int(S.split(':')[0].split()[1]):
+                        il += 1
+                        S = instLines[il]
+                    else:
+                        il += 1
+                        S = instLines[il]
+                        while il < len(instLines) and '#Bank' not in S:
+                            il += 1
+                            if il == len(instLines):
+                                return 'Bank %d not found in .instprm file'%(bank)
+                            S = instLines[il]
+                        continue
+                else:   #a non #Bank file
+                    il += 1
+                    S = instLines[il]
+            Found = True
             S = S.replace(' ','')
             SS = S[:-1].split(';')
             for s in SS:
@@ -979,7 +999,8 @@ class GSASII(wx.Frame):
                 try:
                     newVals.append(float(val))
                 except ValueError:
-                    newVals.append(val)                        
+                    newVals.append(val)
+            il += 1                        
         return G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,]),{}
         
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
@@ -1232,10 +1253,13 @@ class GSASII(wx.Frame):
                 instParmList = None
                 if Lines is not None:
                     instParmList = self.ReadPowderInstprm(Lines,bank)    #know Bank - see above
-                if instParmList is not None:
+                if 'list' in str(type(instParmList)):
                     rd.instfile = instfile
                     rd.instmsg = 'GSAS-II file '+instfile
                     return instParmList
+                else:
+                    rd.instmsg = instParmList   #an error message
+                    return None
                 Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
                 if Iparm:
                     #print 'debug: success'

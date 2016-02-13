@@ -106,8 +106,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(12)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
-    wxID_INSTSAVE, wxID_INST1VAL, wxID_INSTCALIB,
-] = [wx.NewId() for item in range(8)]
+    wxID_INSTSAVE, wxID_INST1VAL, wxID_INSTCALIB,wxID_INSTSAVEALL,
+] = [wx.NewId() for item in range(9)]
 
 [ wxID_UNDO,wxID_LSQPEAKFIT,wxID_LSQONECYCLE,wxID_RESETSIGGAM,wxID_CLEARPEAKS,wxID_AUTOSEARCH,
     wxID_PEAKSCOPY, wxID_SEQPEAKFIT,
@@ -152,20 +152,18 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 VERY_LIGHT_GREY = wx.Colour(235,235,235)
 
-# Aliases for Classes/Functions moved to GSASIIctrls, all should be tracked down but leaving as a reminder
-#SingleFloatDialog = G2G.SingleFloatDialog
-#SingleStringDialog = G2G.SingleStringDialog
-#MultiStringDialog = G2G.MultiStringDialog
-#G2ColumnIDDialog = G2G.G2ColumnIDDialog
-#ItemSelector = G2G.ItemSelector
-#HorizontalLine = G2G.HorizontalLine
-#G2LoggedButton = G2G.G2LoggedButton
-#EnumSelector = G2G.EnumSelector
-#G2ChoiceButton = G2G.G2ChoiceButton
-#GSGrid = G2G.GSGrid
-#Table = G2G.Table
-#GridFractionEditor = G2G.GridFractionEditor
-#GSNoteBook = G2G.GSNoteBook
+commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1,0,0],[0,0,-1],[0,1,0]]),
+    'ba-c':np.array([[0,1,0],[1,0,0],[0,0,-1]]),'-cba':np.array([[0,0,-1],[0,1,0],[1,0,0]]),
+    'bca':np.array([[0,1,0],[0,0,1],[1,0,0]]),'cab':np.array([[0,0,1],[1,0,0],[0,1,0]]),
+    'P->R':np.array([[1,-1,0],[0,1,-1],[1,1,1]]),'R->P':np.array([[2./3,1./3,1./3],[-1./3,1./3,1./3],[-1./3,-2./3,1./3]]),
+    'P->A':np.array([[-1,0,0],[0,-1,1],[0,1,1]]),'R->O':np.array([[-1,0,0],[0,-1,0],[0,0,1]]),
+    'P->B':np.array([[-1,0,1],[0,-1,0],[1,0,1]]),'B->P':np.array([[-.5,0,.5],[0,-1,0],[.5,0,.5]]),
+    'P->C':np.array([[1,1,0],[1,-1,0],[0,0,-1]]),'C->P':np.array([[.5,.5,0],[.5,-.5,0],[0,0,-1]]),
+    'P->F':np.array([[-1,1,1],[1,-1,1],[1,1,-1]]),'F->P':np.array([[0,.5,.5],[.5,0,.5],[.5,.5,0]]),   
+    'P->I':np.array([[0,1,1],[1,0,1],[1,1,0]]),'I->P':np.array([[-.5,.5,.5],[.5,-.5,.5],[.5,.5,-.5]]),    
+    'A->P':np.array([[-1,0,0],[0,-.5,.5],[0,.5,.5]]),'O->R':np.array([[-1,0,0],[0,-1,0],[0,0,1]]), }
+commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P',
+    'P->B','B->P','P->C','C->P','P->I','I->P','P->F','F->P','P->R','R->P','R->O','O->R']
 
 # Should SGMessageBox, SymOpDialog, DisAglDialog be moved? 
 
@@ -323,7 +321,9 @@ class MergeDialog(wx.Dialog):
     ''' HKL transformation & merge dialog
     
     :param wx.Frame parent: reference to parent frame (or None)
-    :param data: HKLF data 
+    :param data: HKLF data
+    
+    #NB: commonNames & commonTrans defined at top of this file 
     
     '''        
     def __init__(self,parent,data):
@@ -339,22 +339,10 @@ class MergeDialog(wx.Dialog):
         self.Cent = 'noncentrosymmetric'
         self.Laue = '1'
         self.Class = 'triclinic'
+        self.Common = 'abc'
         self.Draw()
         
     def Draw(self):
-        
-        commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1,0,0],[0,0,-1],[0,1,0]]),
-            'ba-c':np.array([[0,1,0],[1,0,0],[0,0,-1]]),'-cba':np.array([[0,0,-1],[0,1,0],[1,0,0]]),
-            'bca':np.array([[0,1,0],[0,0,1],[1,0,0]]),'cab':np.array([[0,0,1],[1,0,0],[0,1,0]]),
-            'P->R':np.array([[1,-1,0],[0,1,-1],[1,1,1]]),'R->P':np.array([[2./3,1./3,1./3],[-1./3,1./3,1./3],[-1./3,-2./3,1./3]]),
-            'P->A':np.array([[-1,0,0],[0,-1,1],[0,1,1]]),'R->O':np.array([[-1,0,0],[0,-1,0],[0,0,1]]),
-            'P->B':np.array([[-1,0,1],[0,-1,0],[1,0,1]]),'B->P':np.array([[-.5,0,.5],[0,-1,0],[.5,0,.5]]),
-            'P->C':np.array([[1,1,0],[1,-1,0],[0,0,-1]]),'C->P':np.array([[.5,.5,0],[.5,-.5,0],[0,0,-1]]),
-            'P->F':np.array([[-1,1,1],[1,-1,1],[1,1,-1]]),'F->P':np.array([[0,.5,.5],[.5,0,.5],[.5,.5,0]]),   
-            'P->I':np.array([[0,1,1],[1,0,1],[1,1,0]]),'I->P':np.array([[-.5,.5,.5],[.5,-.5,.5],[.5,.5,-.5]]),    
-            'A->P':np.array([[-1,0,0],[0,-.5,.5],[0,.5,.5]]),'O->R':np.array([[-1,0,0],[0,-1,0],[0,0,1]]), }
-        commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P',
-            'P->B','B->P','P->C','C->P','P->I','I->P','P->F','F->P','P->R','R->P','R->O','O->R']
                 
         def OnMatValue(event):
             Obj = event.GetEventObject()
@@ -380,7 +368,8 @@ class MergeDialog(wx.Dialog):
             
         def OnCommon(event):
             Obj = event.GetEventObject()
-            self.Trans = commonTrans[Obj.GetValue()]
+            self.Common = Obj.GetValue()
+            self.Trans = commonTrans[self.Common]
             wx.CallAfter(self.Draw)
        
         self.panel.Destroy()
@@ -395,7 +384,7 @@ class MergeDialog(wx.Dialog):
         else:
             commonSizer = wx.BoxSizer(wx.HORIZONTAL)
             commonSizer.Add(wx.StaticText(self.panel,label=' Common transformations: '),0,WACV)
-            common = wx.ComboBox(self.panel,value='abc',choices=commonNames,
+            common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             common.Bind(wx.EVT_COMBOBOX,OnCommon)
             commonSizer.Add(common,0,WACV)
@@ -1091,8 +1080,10 @@ class DataFrame(wx.Frame):
             id=wxID_INSTPRMRESET, kind=wx.ITEM_NORMAL,text='Reset profile')            
         self.InstEdit.Append(help='Load instrument profile parameters from file', 
             id=wxID_INSTLOAD, kind=wx.ITEM_NORMAL,text='Load profile...')            
+        self.InstEdit.Append(help='Save all instrument profile parameters to one file', 
+            id=wxID_INSTSAVE, kind=wx.ITEM_NORMAL,text='Save profile...')
         self.InstEdit.Append(help='Save instrument profile parameters to file', 
-            id=wxID_INSTSAVE, kind=wx.ITEM_NORMAL,text='Save profile...')            
+            id=wxID_INSTSAVEALL, kind=wx.ITEM_NORMAL,text='Save all profile...')            
         self.InstEdit.Append(help='Copy instrument profile parameters to other histograms', 
             id=wxID_INSTCOPY, kind=wx.ITEM_NORMAL,text='Copy')
         self.InstEdit.Append(id=wxID_INSTFLAGCOPY, kind=wx.ITEM_NORMAL,text='Copy flags',
@@ -3055,8 +3046,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
         finally:
             dlg.Destroy()
         Super = data[1]['Super']
-        refList = G2lat.transposeHKLF(Trans,Super,refList)
-        if not len(refList):
+        refList,badRefs = G2lat.transposeHKLF(Trans,Super,refList)
+        if len(badRefs):    #do I want to list badRefs?
             G2frame.ErrorDialog('Failed transformation','Matrix yields fractional hkl indices')
             return
         Comments.append(" Transformation M*H = H' applied; M=")

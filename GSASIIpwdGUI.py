@@ -1182,8 +1182,13 @@ def UpdateInstrumentGrid(G2frame,data):
     data tree item.
     '''
 #patch
-    if 'Bank' not in data:
-        data['Bank'] = [1,1,0]
+    if 'Bank' not in data:  #get it from name
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        if 'Bank' in hst:
+            bank = int(hst.split('Bank')[1])
+            data['Bank'] = [bank,bank,0]
+        else:
+            data['Bank'] = [1,1,0]
 #end patch    
     def keycheck(keys):
         good = []
@@ -1251,9 +1256,14 @@ def UpdateInstrumentGrid(G2frame,data):
     def OnLoad(event):
         '''Loads instrument parameters from a G2 .instprm file
         in response to the Instrument Parameters-Operations/Load Profile menu
+        If instprm file has multiple banks each with header #Bank n: ..., this 
+        finds matching bank no. to load - rejects nonmatches.
         
         Note that similar code is found in ReadPowderInstprm (GSASII.py)
         '''
+        data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
+            G2frame.PatternId,'Instrument Parameters'))[0]
+        bank = data['Bank'][0]
         pth = G2G.GetImportPath(G2frame)
         if not pth: pth = '.'
         dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', pth, '', 
@@ -1265,10 +1275,24 @@ def UpdateInstrumentGrid(G2frame,data):
                 S = File.readline()
                 newItems = []
                 newVals = []
+                Found = False
                 while S:
                     if S[0] == '#':
-                        S = File.readline()
-                        continue
+                        if Found:
+                            break
+                        if 'Bank' in S:
+                            if bank == int(S.split(':')[0].split()[1]):
+                                S = File.readline()
+                                continue
+                            else:
+                                S = File.readline()
+                                while S and '#Bank' not in S:
+                                    S = File.readline()
+                                continue
+                        else:   #a non #Bank file
+                            S = File.readline()
+                            continue
+                    Found = True
                     [item,val] = S[:-1].split(':')
                     newItems.append(item)
                     try:
@@ -1277,12 +1301,15 @@ def UpdateInstrumentGrid(G2frame,data):
                         newVals.append(val)                        
                     S = File.readline()                
                 File.close()
-                Inst,Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'))
-                if 'Bank' not in Inst:  #patch for old .instprm files - may cause faults for TOF data
-                    Inst['Bank'] = [1,1,0]
-                data = G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,])
-                G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'),[data,Inst2])
-                RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
+                if Found:
+                    Inst,Inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'))
+                    if 'Bank' not in Inst:  #patch for old .instprm files - may cause faults for TOF data
+                        Inst['Bank'] = [1,1,0]
+                    data = G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,])
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId,'Instrument Parameters'),[data,Inst2])
+                    RefreshInstrumentGrid(event,doAnyway=True)          #to get peaks updated
+                else:
+                    G2frame.ErrorDialog('No match','Bank %d not in %s'%(bank,filename),G2frame.dataFrame)
                 UpdateInstrumentGrid(G2frame,data)
                 G2plt.PlotPeakWidths(G2frame)
         finally:
@@ -1291,6 +1318,7 @@ def UpdateInstrumentGrid(G2frame,data):
     def OnSave(event):
         '''Respond to the Instrument Parameters Operations/Save Profile menu
         item: writes current parameters to a .instprm file
+        It does not write Bank n: on # line & thus can be used any time w/o clash of bank nos.
         '''
         pth = G2G.GetExportPath(G2frame)
         dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', pth, '', 
@@ -1304,6 +1332,51 @@ def UpdateInstrumentGrid(G2frame,data):
                 File.write("#GSAS-II instrument parameter file; do not add/delete items!\n")
                 for item in data:
                     File.write(item+':'+str(data[item][1])+'\n')
+                File.close()
+        finally:
+            dlg.Destroy()
+            
+    def OnSaveAll(event):
+        '''Respond to the Instrument Parameters Operations/Save all Profile menu & writes 
+        selected inst parms. across multiple banks into a single file
+        Each block starts with #Bank n: GSAS-II instrument... where n is bank no.
+        item: writes parameters from selected PWDR entries to a .instprm file
+        '''
+        hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
+        histList = GetHistsLikeSelected(G2frame)
+        histList.insert(0,hst)
+        saveList = []
+        dlg = G2G.G2MultiChoiceDialog(
+            G2frame.dataFrame, 
+            'Save instrument parameters from',
+            'Save instrument parameters', histList)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                for i in dlg.GetSelections():
+                    saveList.append(histList[i])
+        finally:
+            dlg.Destroy()
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II instrument parameters file', pth, '', 
+            'instrument parameter files (*.instprm)|*.instprm',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                filename = dlg.GetPath()
+                # make sure extension is .instprm
+                filename = os.path.splitext(filename)[0]+'.instprm'
+                File = open(filename,'w')
+                for hist in saveList:
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
+                    inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+                    if 'Bank' not in inst:  #patch
+                        bank = 1
+                        if 'Bank' in hist:
+                            bank = int(hist.split('Bank')[1])
+                        inst['Bank'] = [bank,bank,0]
+                    bank = inst['Bank'][0]                
+                    File.write("#Bank %d: GSAS-II instrument parameter file; do not add/delete items!\n"%(bank))
+                    for item in inst:
+                        File.write(item+':'+str(inst[item][1])+'\n')                                    
                 File.close()
         finally:
             dlg.Destroy()
@@ -1726,13 +1799,14 @@ def UpdateInstrumentGrid(G2frame,data):
         G2frame.Bind(wx.EVT_MENU,OnCalibrate,id=G2gd.wxID_INSTCALIB)
         G2frame.Bind(wx.EVT_MENU,OnLoad,id=G2gd.wxID_INSTLOAD)
         G2frame.Bind(wx.EVT_MENU,OnSave,id=G2gd.wxID_INSTSAVE)
+        G2frame.Bind(wx.EVT_MENU,OnSaveAll,id=G2gd.wxID_INSTSAVEALL)
         G2frame.Bind(wx.EVT_MENU,OnReset,id=G2gd.wxID_INSTPRMRESET)
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)
         G2frame.Bind(wx.EVT_MENU,OnInstFlagCopy,id=G2gd.wxID_INSTFLAGCOPY)
         #G2frame.Bind(wx.EVT_MENU,OnWaveChange,id=G2gd.wxID_CHANGEWAVETYPE)        
         G2frame.Bind(wx.EVT_MENU,OnCopy1Val,id=G2gd.wxID_INST1VAL)
     elif 'L' in insVal['Type']:                   #SASD data menu commands
-        G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.InstMenu)
+        G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.SASDInstMenu)
         if not G2frame.dataFrame.GetStatusBar():
             Status = G2frame.dataFrame.CreateStatusBar()
         G2frame.Bind(wx.EVT_MENU,OnInstCopy,id=G2gd.wxID_INSTCOPY)

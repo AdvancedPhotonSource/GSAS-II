@@ -524,13 +524,21 @@ def MaxIndex(dmin,A):
     return Hmax
     
 def transposeHKLF(transMat,Super,refList):
+    ''' Apply transformation matrix to hkl(m)
+    param: transmat: 3x3 or 4x4 array
+    param: Super: 0 or 1 for extra index
+    param: refList list of h,k,l,....
+    return: newRefs transformed list of h',k',l',,,
+    return: badRefs list of noninteger h',k',l'...
+    '''
     newRefs = np.copy(refList)
+    badRefs = []
     for H in newRefs:
         newH = np.inner(transMat,H[:3+Super])
         H[:3+Super] = np.rint(newH)
         if not np.allclose(newH,H[:3+Super],atol=0.01):
-            return []
-    return newRefs
+            badRefs.append(newH)
+    return newRefs,badRefs
     
 def sortHKLd(HKLd,ifreverse,ifdup,ifSS=False):
     '''sort reflection list on d-spacing; can sort in either order
@@ -538,6 +546,7 @@ def sortHKLd(HKLd,ifreverse,ifdup,ifSS=False):
     :param HKLd: a list of [h,k,l,d,...];
     :param ifreverse: True for largest d first
     :param ifdup: True if duplicate d-spacings allowed
+    :return sorted reflection list
     '''
     T = []
     N = 3

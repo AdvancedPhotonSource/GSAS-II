@@ -951,16 +951,23 @@ class GSASII(wx.Frame):
         File.close()
         return lines        
            
-    def ReadPowderInstprm(self,instLines):
+    def ReadPowderInstprm(self,instLines,bank):
         '''Read lines from a GSAS-II (new) instrument parameter file
+        similar to G2pwdGUI.OnLoad
+        If instprm file has multiple banks each with header #Bank n: ..., this 
+        finds matching bank no. to load - rejects nonmatches.
 
         :param list instLines: strings from GSAS-II parameter file; can be concatenated with ';'
+        :param int  bank: bank number to check when instprm file has '#BANK n:...' strings
+            when bank = n then use parameters; otherwise skip that set. Ignored if BANK n: 
+            not present. NB: this kind of instprm file made by a Save all profile command in Instrument Parameters 
 
         '''
         if not instLines[0].startswith('#GSAS-II'): # not a valid file
             return None
         newItems = []
         newVals = []
+        Found = False
         for S in instLines:
             if S[0] == '#':
                 continue
@@ -1147,6 +1154,9 @@ class GSASII(wx.Frame):
                         else:
                             s = Iparm['INS  1PRCF 2'].split()
                             data.extend([0.0,0.0,G2IO.sfloat(s[0]),G2IO.sfloat(s[1]),0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y                       
+                    elif abs(pfType) == 2:
+                        data.extend([G2IO.sfloat(s[1]),0.0,1./G2IO.sfloat(s[3])]) #alpha, beta-0, beta-1
+                        data.extend([0.0,0.0,G2IO.sfloat(s[1]),0.0,0.0,0.0,0.0,azm])    #beta-q, sig-0, sig-1, sig-2, sig-q, X, Y                            
                 else:
                     s = Iparm['INS  1PRCF1 '].split()
                     pfType = int(s[0])
@@ -1221,7 +1231,7 @@ class GSASII(wx.Frame):
                 Lines = self.OpenPowderInstprm(instfile)
                 instParmList = None
                 if Lines is not None:
-                    instParmList = self.ReadPowderInstprm(Lines)
+                    instParmList = self.ReadPowderInstprm(Lines,bank)    #know Bank - see above
                 if instParmList is not None:
                     rd.instfile = instfile
                     rd.instmsg = 'GSAS-II file '+instfile
@@ -1243,7 +1253,7 @@ class GSASII(wx.Frame):
             Lines = self.OpenPowderInstprm(instfile)
             instParmList = None
             if Lines is not None:
-                instParmList = self.ReadPowderInstprm(Lines)
+                instParmList = self.ReadPowderInstprm(Lines,bank)    #know Bank - see above
             if instParmList is not None:
                 rd.instfile = instfile
                 rd.instmsg = 'GSAS-II file '+instfile
@@ -1271,7 +1281,7 @@ class GSASII(wx.Frame):
                     Lines = self.OpenPowderInstprm(instfile)
                     instParmList = None
                     if Lines is not None:
-                        instParmList = self.ReadPowderInstprm(Lines)
+                        instParmList = self.ReadPowderInstprm(Lines,bank)    #know Bank - see above
                     if instParmList is not None:
                         rd.instfile = instfile
                         rd.instmsg = 'GSAS-II file '+instfile
@@ -1305,7 +1315,7 @@ class GSASII(wx.Frame):
             Lines = self.OpenPowderInstprm(instfile)
             instParmList = None
             if Lines is not None:
-                instParmList = self.ReadPowderInstprm(Lines)
+                instParmList = self.ReadPowderInstprm(Lines,bank)    #know Bank - see above
             if instParmList is not None:
                 rd.instfile = instfile
                 rd.instmsg = 'GSAS-II file '+instfile
@@ -1337,7 +1347,7 @@ class GSASII(wx.Frame):
             if res is None: continue
             rd.instfile = ''
             rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-            return self.ReadPowderInstprm(dI.defaultIparms[res])
+            return self.ReadPowderInstprm(dI.defaultIparms[res],bank)    #know Bank - see above
 
     def OnImportPowder(self,event):
         '''Called in response to an Import/Powder Data/... menu item

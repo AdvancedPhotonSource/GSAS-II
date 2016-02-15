@@ -942,10 +942,6 @@ class GSASII(wx.Frame):
         :param str instfile: name of instrument parameter file
 
         '''
-        if os.path.splitext(instfile)[1].lower() != '.instprm': # invalid file
-            return None            
-        if not os.path.exists(instfile): # no such file
-            return None
         File = open(instfile,'r')
         lines = File.readlines()
         File.close()
@@ -961,7 +957,8 @@ class GSASII(wx.Frame):
         :param int  bank: bank number to check when instprm file has '#BANK n:...' strings
             when bank = n then use parameters; otherwise skip that set. Ignored if BANK n: 
             not present. NB: this kind of instprm file made by a Save all profile command in Instrument Parameters 
-
+        :return dict: Inst  instrument parameter dict if OK, or
+                str: Error message if failed    
         '''
         if 'GSAS-II' not in instLines[0]: # not a valid file
             return 'Not a valid GSAS-II instprm file'
@@ -984,7 +981,7 @@ class GSASII(wx.Frame):
                         while il < len(instLines) and '#Bank' not in S:
                             il += 1
                             if il == len(instLines):
-                                return 'Bank %d not found in .instprm file'%(bank)
+                                return 'Bank %d not found in instprm file'%(bank)
                             S = instLines[il]
                         continue
                 else:   #a non #Bank file
@@ -1001,21 +998,18 @@ class GSASII(wx.Frame):
                 except ValueError:
                     newVals.append(val)
             il += 1                        
-        return G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,]),{}
+        return [G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,]),{}]
         
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
         '''Read a GSAS (old) instrument parameter file
 
         :param str instfile: name of instrument parameter file
-
         :param int bank: the bank number read in the raw data file
-
         :param int databanks: the number of banks in the raw data file.
           If the number of banks in the data and instrument parameter files
           agree, then the sets of banks are assumed to match up and bank
           is used to select the instrument parameter file. If not, the user
           is asked to make a selection.
-
         :param obj rd: the raw data (histogram) data object. This
           sets rd.instbank.
 
@@ -1232,84 +1226,115 @@ class GSASII(wx.Frame):
                         Inst2['Iesd'] = Iesd
                         Inst2['Icovar'] = Icovar
                 return [Inst1,Inst2]
+                
+        def GetDefaultParms(self,rd):
+            '''Solicits from user a default set of parameters & returns Inst parm dict
+            param: self: refers to the GSASII main class
+            param: rd: importer data structure
+            returns: dict: Instrument parameter dictionary
+            '''       
+            import defaultIparms as dI
+            while True: # loop until we get a choice
+                choices = []
+                head = 'Select from default instrument parameters for '+rd.idstring
+    
+                for l in dI.defaultIparm_lbl:
+                    choices.append('Defaults for '+l)
+                res = rd.BlockSelector(
+                    choices,
+                    ParentFrame=self,
+                    title=head,
+                    header='Select default inst parms',
+                    useCancel=False)
+                if res is None: continue
+                rd.instfile = ''
+                rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
+                return self.ReadPowderInstprm(dI.defaultIparms[res],bank)    #this is [Inst1,Inst2] a pair of dicts
 
         # stuff we might need from the reader
         filename = rd.powderentry[0]
         bank = rd.powderentry[2]
         numbanks = rd.numbanks
-        # is there an instrument parameter file defined for the current data set?
-        # or if this is a read on a set of set of files, use the last one again
-        #if rd.instparm or (lastdatafile == filename and lastIparmfile):
-        if rd.instparm or lastIparmfile:
-            if rd.instparm:
-                instfile = os.path.join(os.path.split(filename)[0],
-                                    rd.instparm)
-            else:
-                # for multiple reads of one data file, reuse the inst parm file
-                instfile = lastIparmfile
-            if os.path.exists(instfile):
-                #print 'debug: try read',instfile
+        #1st priority: is there an instrument parameter file matching the current file
+        # with extension .instprm, .prm, .inst, or .ins? If so read it
+        basename = os.path.splitext(filename)[0]
+        for ext in '.instprm','.prm','.inst','.ins':
+            instfile = basename + ext
+            if not os.path.exists(instfile):
+                continue
+            if 'instprm' in instfile:
                 Lines = self.OpenPowderInstprm(instfile)
-                instParmList = None
-                if Lines is not None:
-                    instParmList = self.ReadPowderInstprm(Lines,bank)    #know Bank - see above
+                instParmList = self.ReadPowderInstprm(Lines,bank)    #this is [Inst1,Inst2] a pair of dicts
                 if 'list' in str(type(instParmList)):
                     rd.instfile = instfile
                     rd.instmsg = 'GSAS-II file '+instfile
                     return instParmList
                 else:
-                    rd.instmsg = instParmList   #an error message
-                    return None
+                    #print 'debug: open/read failed',instfile
+                    pass # fail silently
+            else:
                 Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
                 if Iparm:
                     #print 'debug: success'
                     rd.instfile = instfile
                     rd.instmsg = instfile + ' bank ' + str(rd.instbank)
                     return SetPowderInstParms(Iparm,rd)
+                else:
+                    #print 'debug: open/read failed',instfile
+                    pass # fail silently
+
+        #2nd priority: is there an instrument parameter file defined for the current data set?
+        # or if this is a read on a set of set of files, use the last one again
+        #if rd.instparm or (lastdatafile == filename and lastIparmfile):
+        if rd.instparm or lastIparmfile:
+            if rd.instparm:
+                instfile = os.path.join(os.path.split(filename)[0],rd.instparm)
+            else:
+                # for multiple reads of one data file, reuse the inst parm file
+                instfile = lastIparmfile
+            if os.path.exists(instfile):
+                #print 'debug: try read',instfile
+                if 'instprm' in instfile:   #GSAS-II file must have .instprm as extension
+                    Lines = self.OpenPowderInstprm(instfile)
+                    if Lines is not None:
+                        instParmList = self.ReadPowderInstprm(Lines,bank)   #this is [Inst1,Inst2] a pair of dicts
+                else:   #old GSAS style iparm file - could be named anything!
+                    Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
+                    if Iparm:
+                        #print 'debug: success'
+                        rd.instfile = instfile
+                        rd.instmsg = instfile + ' bank ' + str(rd.instbank)
+                        instParmList = SetPowderInstParms(Iparm,rd)     #this is [Inst1,Inst2] a pair of dicts
+                if 'list' in str(type(instParmList)):   #record stuff & return stuff
+                    rd.instfile = instfile
+                    rd.instmsg = 'GSAS-II file '+instfile
+                    return instParmList
+                else:   #bad iparms - try default
+                    rd.instmsg = instParmList   #an error message
+                    return GetDefaultParms(self,rd)
             else:
                 self.ErrorDialog('Open Error','Error opening instrument parameter file '
                     +str(instfile)+' requested by file '+ filename)
-        # is there an instrument parameter file matching the current file
-        # with extension .inst or .prm? If so read it
-        basename = os.path.splitext(filename)[0]
-        for ext in '.instprm','.prm','.inst','.ins':
-            instfile = basename + ext
-            Lines = self.OpenPowderInstprm(instfile)
-            instParmList = None
-            if Lines is not None:
-                instParmList = self.ReadPowderInstprm(Lines,bank)    #know Bank - see above
-            if instParmList is not None:
-                rd.instfile = instfile
-                rd.instmsg = 'GSAS-II file '+instfile
-                return instParmList
-            Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
-            if Iparm:
-                #print 'debug: success'
-                rd.instfile = instfile
-                rd.instmsg = instfile + ' bank ' + str(rd.instbank)
-                return SetPowderInstParms(Iparm,rd)
-            else:
-                #print 'debug: open/read failed',instfile
-                pass # fail silently
-
         # did we read the data file from a zip? If so, look there for a
         # instrument parameter file
         if self.zipfile:
             for ext in '.instprm','.prm','.inst','.ins':
-                instfile = G2IO.ExtractFileFromZip(
-                    self.zipfile,
-                    selection=os.path.split(basename + ext)[1],
-                    parent=self)
+                instfile = G2IO.ExtractFileFromZip(self.zipfile,
+                    selection=os.path.split(basename + ext)[1],parent=self)
                 if instfile is not None and instfile != self.zipfile:
                     print 'debug:',instfile,'created from ',self.zipfile
                     Lines = self.OpenPowderInstprm(instfile)
                     instParmList = None
                     if Lines is not None:
-                        instParmList = self.ReadPowderInstprm(Lines,bank)    #know Bank - see above
-                    if instParmList is not None:
+                        instParmList = self.ReadPowderInstprm(Lines,bank)    #this is [Inst1,Inst2] a pair of dicts
+                    if 'dict' in str(type(instParmList)):
                         rd.instfile = instfile
                         rd.instmsg = 'GSAS-II file '+instfile
                         return instParmList
+                    else:
+                        rd.instmsg = instParmList   #an error message
+                        print 'three',instParmList
+                        return GetDefaultParms(self,rd)
                     Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
                     if Iparm:
                         rd.instfile = instfile
@@ -1335,44 +1360,31 @@ class GSASII(wx.Frame):
             if dlg.ShowModal() == wx.ID_OK:
                 instfile = dlg.GetPath()
             dlg.Destroy()
-            if not instfile: break
-            Lines = self.OpenPowderInstprm(instfile)
-            instParmList = None
-            if Lines is not None:
-                instParmList = self.ReadPowderInstprm(Lines,bank)    #know Bank - see above
-            if instParmList is not None:
-                rd.instfile = instfile
-                rd.instmsg = 'GSAS-II file '+instfile
-                return instParmList
-            Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
-            if Iparm:
-                #print 'debug: success with',instfile
-                rd.instfile = instfile
-                rd.instmsg = instfile + ' bank ' + str(rd.instbank)
-                return SetPowderInstParms(Iparm,rd)
+            if not instfile: 
+                return GetDefaultParms(self,rd) #on Cancel/break
+            if 'instprm' in instfile:
+                Lines = self.OpenPowderInstprm(instfile)
+                print instfile,bank
+                if Lines is not None:
+                    instParmList = self.ReadPowderInstprm(Lines,bank)    #this is [Inst1,Inst2] a pair of dicts
+                if 'list' in str(type(instParmList)):
+                    rd.instfile = instfile
+                    rd.instmsg = 'GSAS-II file '+instfile
+                    return instParmList
+                else:
+                    rd.instmsg = instParmList   #an error message
+                    return GetDefaultParms(self,rd)
             else:
-                self.ErrorDialog('Read Error',
-                                 'Error opening/reading file '+str(instfile))
+                Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
+                if Iparm:
+                    #print 'debug: success with',instfile
+                    rd.instfile = instfile
+                    rd.instmsg = instfile + ' bank ' + str(rd.instbank)
+                    return SetPowderInstParms(Iparm,rd)
+                else:
+                    self.ErrorDialog('Read Error',
+                                     'Error opening/reading file '+str(instfile))
         
-        # still no success: offer user choice of defaults
-        import defaultIparms as dI
-        while True: # loop until we get a choice
-            choices = []
-            head = 'Select from default instrument parameters for '+rd.idstring
-
-            for l in dI.defaultIparm_lbl:
-                choices.append('Defaults for '+l)
-            res = rd.BlockSelector(
-                choices,
-                ParentFrame=self,
-                title=head,
-                header='Select default inst parms',
-                useCancel=False)
-            if res is None: continue
-            rd.instfile = ''
-            rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-            return self.ReadPowderInstprm(dI.defaultIparms[res],bank)    #know Bank - see above
-
     def OnImportPowder(self,event):
         '''Called in response to an Import/Powder Data/... menu item
         to read a powder diffraction data set. 

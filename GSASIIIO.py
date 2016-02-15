@@ -1406,7 +1406,7 @@ class ImportBaseclass(object):
         '''
         dlg = wx.MultiChoiceDialog(ParentFrame,title, header,ChoiceList+['Select all'],
             wx.CHOICEDLG_STYLE)
-        dlg.CenterOnParent()
+        dlg.CenterOnScreen()
         if size: dlg.SetSize(size)
         if dlg.ShowModal() == wx.ID_OK:
             sel = dlg.GetSelections()

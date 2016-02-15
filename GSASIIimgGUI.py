@@ -2356,7 +2356,8 @@ class AutoIntFrame(wx.Frame):
         # load copy of Image Masks
         if immask:
             self.ImageMasks = ReadMask(immask)
-            del self.Thresholds['Thresholds']
+            if list(self.ImageMasks['Thresholds'][0]) == self.ImageMasks['Thresholds'][1]:     #avoid copy of unchanged thresholds
+                del self.ImageMasks['Thresholds']
         else:
             self.ImageMasks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[]}
         

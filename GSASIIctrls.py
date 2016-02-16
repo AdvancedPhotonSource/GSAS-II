@@ -1935,6 +1935,73 @@ class SingleFloatDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
 
 ################################################################################
+class MultiFloatDialog(wx.Dialog):
+    'Dialog to obtain a multi float value from user'
+    def __init__(self,parent,title,prompts,values,limits=[[0.,1.],],formats=['%.5g',]):
+        wx.Dialog.__init__(self,parent,-1,title, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.limits = limits
+        self.values = values
+        self.prompts = prompts
+        self.formats = formats
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnValItem(event):
+            Obj = event.GetEventObject()
+            id,limits,format = Indx[Obj]
+            try:
+                val = float(Obj.GetValue())
+                if val < limits[0] or val > limits[1]:
+                    raise ValueError
+            except ValueError:
+                val = self.values[id]
+            self.values[id] = val
+            Obj.SetValue(format%(val))
+            
+        Indx = {}
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        lineSizer = wx.FlexGridSizer(0,2,5,5)
+        for id,[prompt,value,limits,format] in enumerate(zip(self.prompts,self.values,self.limits,self.formats)):
+            lineSizer.Add(wx.StaticText(self.panel,label=prompt),0,wx.ALIGN_CENTER)
+            valItem = wx.TextCtrl(self.panel,value=format%(value),style=wx.TE_PROCESS_ENTER)
+            Indx[valItem] = [id,limits,format]
+            lineSizer.Add(valItem,0,wx.ALIGN_CENTER)
+            valItem.Bind(wx.EVT_TEXT_ENTER,OnValItem)
+            valItem.Bind(wx.EVT_KILL_FOCUS,OnValItem)
+        mainSizer.Add(lineSizer)
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        CancelBtn = wx.Button(self.panel,-1,'Cancel')
+        CancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add(CancelBtn)
+        btnSizer.Add((20,20),1)
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+
+    def GetValues(self):
+        return self.values
+        
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)              
+        
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+
+################################################################################
 class SingleStringDialog(wx.Dialog):
     '''Dialog to obtain a single string value from user
     

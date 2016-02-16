@@ -1181,15 +1181,14 @@ def UpdateInstrumentGrid(G2frame,data):
     '''respond to selection of PWDR/SASD Instrument Parameters
     data tree item.
     '''
-#patch
-    if 'Bank' not in data:  #get it from name
+    if 'Bank' not in data:  #get it from name; absent for default parms selection 
         hst = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         if 'Bank' in hst:
-            bank = int(hst.split('Bank')[1])
+            bank = int(hst.split('Bank')[1].split('_')[0])
             data['Bank'] = [bank,bank,0]
         else:
             data['Bank'] = [1,1,0]
-#end patch    
+
     def keycheck(keys):
         good = []
         for key in keys:

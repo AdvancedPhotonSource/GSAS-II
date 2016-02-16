@@ -102,3 +102,14 @@ defaultIparms.append([
     'sig-0:24.8202075678;sig-1:-82.07196132;sig-2:269.925504862;sig-q:0.0\n',
     'X:-1.80259010604;Y:4.47209435997\n',
 ])
+
+defaultIparm_lbl.append('Generic TOF')
+defaultIparms.append([
+    '#GSAS-II instrument parameter file for Generic TOF\n',
+    'Type:PNT;fltPath:25.0;2-theta:150.;Azimuth:0.0\n',
+    'Zero:0.;difC:9000.;difA:0.;difB:0.\n',
+    'alpha:1.0\n',
+    'beta-0:0.;beta-1:0.005;beta-q:0.0\n',
+    'sig-0:0.;sig-1:-50.;sig-2:0.;sig-q:0.0\n',
+    'X:0.;Y:0.\n',
+])

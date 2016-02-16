@@ -1233,6 +1233,8 @@ class GSASII(wx.Frame):
             param: rd: importer data structure
             returns: dict: Instrument parameter dictionary
             '''       
+            sind = lambda x: math.sin(x*math.pi/180.)
+            tand = lambda x: math.tan(x*math.pi/180.)
             import defaultIparms as dI
             while True: # loop until we get a choice
                 choices = []
@@ -1240,16 +1242,27 @@ class GSASII(wx.Frame):
     
                 for l in dI.defaultIparm_lbl:
                     choices.append('Defaults for '+l)
-                res = rd.BlockSelector(
-                    choices,
-                    ParentFrame=self,
-                    title=head,
-                    header='Select default inst parms',
-                    useCancel=False)
+                res = rd.BlockSelector(choices,ParentFrame=self,title=head,
+                    header='Select default inst parms',useCancel=False)
                 if res is None: continue
                 rd.instfile = ''
-                rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-                return self.ReadPowderInstprm(dI.defaultIparms[res],bank)    #this is [Inst1,Inst2] a pair of dicts
+                if 'Generic' in choices[res]:
+                    dlg = G2G.MultiFloatDialog(self,title='Generic TOF detector bank',
+                        prompts=['Total FP','2-theta',],values=[25.0,150.,],
+                            limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',])
+                    if dlg.ShowModal() == wx.ID_OK:
+                        FP,tth = dlg.GetValues()
+                        difC = 252.816*2.*FP*sind(tth/2.)
+                        sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
+                        rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
+                        Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank)
+                        Inst[0]['difC'] = [difC,difC,0]
+                        Inst[0]['sig-1'] = [sig1,sig1,0]
+                        return Inst    #this is [Inst1,Inst2] a pair of dicts
+                    dlg.Destroy()
+                else:
+                    rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
+                    return self.ReadPowderInstprm(dI.defaultIparms[res],bank)    #this is [Inst1,Inst2] a pair of dicts
 
         # stuff we might need from the reader
         filename = rd.powderentry[0]
@@ -1259,7 +1272,11 @@ class GSASII(wx.Frame):
         # with extension .instprm, .prm, .inst, or .ins? If so read it
         basename = os.path.splitext(filename)[0]
         for ext in '.instprm','.prm','.inst','.ins':
-            instfile = basename + ext
+            if self.zipfile:
+                instfile = G2IO.ExtractFileFromZip(self.zipfile,
+                    selection=os.path.split(basename + ext)[1],parent=self)
+            else:
+                instfile = basename + ext
             if not os.path.exists(instfile):
                 continue
             if 'instprm' in instfile:
@@ -1292,6 +1309,9 @@ class GSASII(wx.Frame):
             else:
                 # for multiple reads of one data file, reuse the inst parm file
                 instfile = lastIparmfile
+            if self.zipfile:
+                instfile = G2IO.ExtractFileFromZip(self.zipfile,
+                    selection=os.path.split(instfile)[1],parent=self)
             if os.path.exists(instfile):
                 #print 'debug: try read',instfile
                 if 'instprm' in instfile:   #GSAS-II file must have .instprm as extension
@@ -1315,41 +1335,41 @@ class GSASII(wx.Frame):
             else:
                 self.ErrorDialog('Open Error','Error opening instrument parameter file '
                     +str(instfile)+' requested by file '+ filename)
-        # did we read the data file from a zip? If so, look there for a
-        # instrument parameter file
-        if self.zipfile:
-            for ext in '.instprm','.prm','.inst','.ins':
-                instfile = G2IO.ExtractFileFromZip(self.zipfile,
-                    selection=os.path.split(basename + ext)[1],parent=self)
-                if instfile is not None and instfile != self.zipfile:
-                    print 'debug:',instfile,'created from ',self.zipfile
-                    Lines = self.OpenPowderInstprm(instfile)
-                    instParmList = None
-                    if Lines is not None:
-                        instParmList = self.ReadPowderInstprm(Lines,bank)    #this is [Inst1,Inst2] a pair of dicts
-                    if 'dict' in str(type(instParmList)):
-                        rd.instfile = instfile
-                        rd.instmsg = 'GSAS-II file '+instfile
-                        return instParmList
-                    else:
-                        rd.instmsg = instParmList   #an error message
-                        print 'three',instParmList
-                        return GetDefaultParms(self,rd)
-                    Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
-                    if Iparm:
-                        rd.instfile = instfile
-                        rd.instmsg = instfile + ' bank ' + str(rd.instbank)
-                        return SetPowderInstParms(Iparm,rd)
-                    else:
-                        #print 'debug: open/read for',instfile,'from',self.zipfile,'failed'
-                        pass # fail silently
-
+#        # did we read the data file from a zip? If so, look there for a
+#        # instrument parameter file
+#        if self.zipfile:
+#            for ext in '.instprm','.prm','.inst','.ins':
+#                instfile = G2IO.ExtractFileFromZip(self.zipfile,
+#                    selection=os.path.split(basename + ext)[1],parent=self)
+#                if instfile is not None and instfile != self.zipfile:
+#                    print 'debug:',instfile,'created from ',self.zipfile
+#                    Lines = self.OpenPowderInstprm(instfile)
+#                    instParmList = None
+#                    if Lines is not None:
+#                        instParmList = self.ReadPowderInstprm(Lines,bank)    #this is [Inst1,Inst2] a pair of dicts
+#                    if 'dict' in str(type(instParmList)):
+#                        rd.instfile = instfile
+#                        rd.instmsg = 'GSAS-II file '+instfile
+#                        return instParmList
+#                    else:
+#                        rd.instmsg = instParmList   #an error message
+#                        print 'three',instParmList
+#                        return GetDefaultParms(self,rd)
+#                    Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
+#                    if Iparm:
+#                        rd.instfile = instfile
+#                        rd.instmsg = instfile + ' bank ' + str(rd.instbank)
+#                        return SetPowderInstParms(Iparm,rd)
+#                    else:
+#                        #print 'debug: open/read for',instfile,'from',self.zipfile,'failed'
+#                        pass # fail silently
+#
+        #Finally - ask user for Instrument parametrs file - seems it can't be in a zip file
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''
             pth = G2G.GetImportPath(self)
             if not pth: pth = '.'
-            dlg = wx.FileDialog(
-                self,
+            dlg = wx.FileDialog(self,
                 'Choose inst. param file for "'+rd.idstring+'" (or Cancel for default)',
                 pth, '',
                 'GSAS iparm file (*.prm,*.inst,*.ins)|*.prm;*.inst;*.ins|'
@@ -1364,7 +1384,6 @@ class GSASII(wx.Frame):
                 return GetDefaultParms(self,rd) #on Cancel/break
             if 'instprm' in instfile:
                 Lines = self.OpenPowderInstprm(instfile)
-                print instfile,bank
                 if Lines is not None:
                     instParmList = self.ReadPowderInstprm(Lines,bank)    #this is [Inst1,Inst2] a pair of dicts
                 if 'list' in str(type(instParmList)):

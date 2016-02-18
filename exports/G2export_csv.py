@@ -126,6 +126,7 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
         self.multiple = True
 
     def Writer(self,TreeName,filename=None):
+        print filename
         self.OpenFile(filename)
         histblk = self.Histograms[TreeName]
         WriteList(self,("x","y_obs","weight","y_calc","y_bkg"))
@@ -156,11 +157,10 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
             ): return
         filenamelist = []
         for hist in self.histnam:
-            #if len(self.histnam) > 1:
-            #    # multiple files: create a unique name from the histogram
-            #    fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
-            #    # create an instrument parameter file
-            #    self.filename = os.path.join(self.dirname,fileroot + self.extension)
+            # multiple files: create a unique name from the histogram
+            fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
+            # create an instrument parameter file
+            self.filename = os.path.join(self.dirname,fileroot + self.extension)
             self.Writer(hist)
             print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
 

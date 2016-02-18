@@ -96,20 +96,14 @@ class ExportPowderFXYE(G2IO.ExportBaseclass):
             ): return
         filenamelist = []
         for hist in self.histnam:
-            if len(self.histnam) > 1:
-                # multiple files: create a unique name from the histogram
-                fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
-                # create an instrument parameter file
-                self.filename = os.path.join(self.dirname,fileroot + self.extension)
-            else:
-                # use the supplied name, but force the extension
-                self.filename= os.path.splitext(self.filename)[0] + self.extension
-
+            # multiple files: create a unique name from the histogram
+            fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
+            # create an instrument parameter file
+            self.filename = os.path.join(self.dirname,fileroot + self.extension)
             histblk = self.Histograms[hist]
             prmname = self.WriteInstFile(hist,histblk['Instrument Parameters'][0])
             self.Writer(hist,prmname=prmname)
             print('Histogram '+str(hist)+' written to file '+str(self.fullpath))
-
 
 class ExportPowderXYE(G2IO.ExportBaseclass):
     '''Used to create a Topas XYE file for a powder data set
@@ -156,14 +150,9 @@ class ExportPowderXYE(G2IO.ExportBaseclass):
             ): return
         filenamelist = []
         for hist in self.histnam:
-            if len(self.histnam) > 1:
-                # multiple files: create a unique name from the histogram
-                fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
-                # create an instrument parameter file
-                self.filename = os.path.join(self.dirname,fileroot + self.extension)
-            else:
-                # use the supplied name, but force the extension
-                self.filename= os.path.splitext(self.filename)[0] + self.extension
-
+            # multiple files: create a unique name from the histogram
+            fileroot = G2obj.MakeUniqueLabel(self.MakePWDRfilename(hist),filenamelist)
+            # create an instrument parameter file
+            self.filename = os.path.join(self.dirname,fileroot + self.extension)
             self.Writer(hist)
             print('Histogram '+str(hist)+' written to file '+str(self.fullpath))

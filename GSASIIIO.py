@@ -1321,6 +1321,7 @@ try:
 except: # errors on doc build
     SGData = None
 P1SGData = SGData
+######################################################################
 class ImportBaseclass(object):
     '''Defines a base class for the reading of input files (diffraction
     data, coordinates,...). See :ref:`Writing a Import Routine<Import_routines>`
@@ -1336,12 +1337,8 @@ class ImportBaseclass(object):
         pass
     
     UseReader = True  # in __init__ set value of self.UseReader to False to skip use of current importer
-    def __init__(self,
-                 formatName,
-                 longFormatName=None,
-                 extensionlist=[],
-                 strictExtension=False,
-                 ):
+    def __init__(self,formatName,longFormatName=None,
+                 extensionlist=[],strictExtension=False,):
         self.formatName = formatName # short string naming file type
         if longFormatName: # longer string naming file type
             self.longFormatName = longFormatName
@@ -1373,10 +1370,8 @@ class ImportBaseclass(object):
         self.repeatcount = 0
         self.readfilename = '?'
 
-    def BlockSelector(self, ChoiceList, ParentFrame=None,
-                      title='Select a block',
-                      size=None, header='Block Selector',
-                      useCancel=True):
+    def BlockSelector(self, ChoiceList, ParentFrame=None,title='Select a block',
+        size=None, header='Block Selector',useCancel=True):
         ''' Provide a wx dialog to select a block if the file contains more
         than one set of data and one must be selected
         '''
@@ -1507,6 +1502,7 @@ class ImportBaseclass(object):
                 self.errors += '        a data_ statement begins a block.'
                 return False 
 
+######################################################################
 class ImportPhase(ImportBaseclass):
     '''Defines a base class for the reading of files with coordinates
 
@@ -1532,6 +1528,7 @@ class ImportPhase(ImportBaseclass):
         return self.BlockSelector(ChoiceList,ParentFrame,title,
             size,header)
 
+######################################################################
 class ImportStructFactor(ImportBaseclass):
     '''Defines a base class for the reading of files with tables
     of structure factors.
@@ -1600,16 +1597,10 @@ class ImportPowderData(ImportBaseclass):
     See :ref:`Writing a Import Routine<Import_Routines>`
     for an explanation on how to use this class. 
     '''
-    def __init__(self,
-                 formatName,
-                 longFormatName=None,
-                 extensionlist=[],
-                 strictExtension=False,
-                 ):
-        ImportBaseclass.__init__(self,formatName,
-                                            longFormatName,
-                                            extensionlist,
-                                            strictExtension)
+    def __init__(self,formatName,longFormatName=None,
+        extensionlist=[],strictExtension=False,):
+        ImportBaseclass.__init__(self,formatName,longFormatName,
+            extensionlist,strictExtension)
         self.clockWd = None  # used in TOF
         self.ReInitialize()
         
@@ -1763,12 +1754,7 @@ class ExportBaseclass(object):
     Routines may also define a .Writer method, which is used to write a single
     file without invoking any GUI objects.
     '''
-    def __init__(self,
-                 G2frame,
-                 formatName,
-                 extension,
-                 longFormatName=None,
-                 ):
+    def __init__(self,G2frame,formatName,extension,longFormatName=None,):
         self.G2frame = G2frame
         self.formatName = formatName # short string naming file type
         self.extension = extension

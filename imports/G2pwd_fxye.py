@@ -24,7 +24,7 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
     'Routines to import powder data from a GSAS files'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.fxye','.raw','.gsas','.gda','gsa.','.RAW','.GSAS','.GDA','.GSA'),
+            extensionlist=('.fxye','.raw','.gsas','.gda','.gsa','.gss','.RAW','.GSAS','.GDA','.GSA'),
             strictExtension=False,
             formatName = 'GSAS powder data',
             longFormatName = 'GSAS powder data files (.fxye, .raw, .gsas...)'
@@ -257,9 +257,8 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
         rdbuffer = kwarg.get('buffer')
         title = ''
         comments = None
-#        selections = None
 
-        # reload previously saved values
+        # reload previously saved values - used for multibank reads
         if self.repeat and rdbuffer is not None:
             Banks = rdbuffer.get('Banks')
             Pos = rdbuffer.get('Pos')

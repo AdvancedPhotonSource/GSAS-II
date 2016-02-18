@@ -440,6 +440,7 @@ class GSASII(wx.Frame):
                     continue
             filelist1.append(filename)
         filelist = filelist1
+        Start = True    #1st time read - clear selections below
         for filename in filelist:
             # is this a zip file?
             if os.path.splitext(filename)[1].lower() == '.zip':
@@ -475,6 +476,9 @@ class GSASII(wx.Frame):
             # file's extension and later with ones that merely allow it
             errorReport = ''
             for rd in primaryReaders+secondaryReaders:
+                if Start:   #clear old bank selections to allow new ones to be selected by user
+                    rd.selections = []
+                    Start = False
                 rd.ReInitialize() # purge anything from a previous read
                 fp.seek(0)  # rewind
                 rd.errors = "" # clear out any old errors
@@ -947,7 +951,7 @@ class GSASII(wx.Frame):
         File.close()
         return lines        
            
-    def ReadPowderInstprm(self,instLines,bank):
+    def ReadPowderInstprm(self,instLines,bank,databanks,rd):
         '''Read lines from a GSAS-II (new) instrument parameter file
         similar to G2pwdGUI.OnLoad
         If instprm file has multiple banks each with header #Bank n: ..., this 
@@ -1148,6 +1152,8 @@ class GSASII(wx.Frame):
                     azm = float(Iparm['INS  1DETAZM'])
                 s = Iparm['INS   FPATH1'].split()
                 fltPath0 = G2IO.sfloat(s[0])
+                if 'INS  1BNKPAR' not in Iparm:     #bank missing from Iparm file
+                    return []
                 s = Iparm['INS  1BNKPAR'].split()
                 fltPath1 = G2IO.sfloat(s[0])
                 data.extend([fltPath0+fltPath1,])               #Flight path source-sample-detector
@@ -1250,14 +1256,16 @@ class GSASII(wx.Frame):
                     dlg = G2G.MultiFloatDialog(self,title='Generic TOF detector bank',
                         prompts=['Total FP','2-theta',],values=[25.0,150.,],
                             limits=[[6.,200.],[5.,175.],],formats=['%6.2f','%6.1f',])
-                    if dlg.ShowModal() == wx.ID_OK:
+                    if dlg.ShowModal() == wx.ID_OK: #strictly empirical approx.
                         FP,tth = dlg.GetValues()
-                        difC = 252.816*2.*FP*sind(tth/2.)
+                        difC = 505.632*FP*sind(tth/2.)
                         sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
+                        bet1 = .00226+7.76e+11/difC**4
                         rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
                         Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank)
                         Inst[0]['difC'] = [difC,difC,0]
                         Inst[0]['sig-1'] = [sig1,sig1,0]
+                        Inst[0]['beta-1'] = [bet1,bet1,0]
                         return Inst    #this is [Inst1,Inst2] a pair of dicts
                     dlg.Destroy()
                 else:
@@ -1281,7 +1289,7 @@ class GSASII(wx.Frame):
                 continue
             if 'instprm' in instfile:
                 Lines = self.OpenPowderInstprm(instfile)
-                instParmList = self.ReadPowderInstprm(Lines,bank)    #this is [Inst1,Inst2] a pair of dicts
+                instParmList = self.ReadPowderInstprm(Lines,bank,numbanks,rd)    #this is [Inst1,Inst2] a pair of dicts
                 if 'list' in str(type(instParmList)):
                     rd.instfile = instfile
                     rd.instmsg = 'GSAS-II file '+instfile
@@ -1302,7 +1310,7 @@ class GSASII(wx.Frame):
 
         #2nd priority: is there an instrument parameter file defined for the current data set?
         # or if this is a read on a set of set of files, use the last one again
-        #if rd.instparm or (lastdatafile == filename and lastIparmfile):
+        #if rd.instparm as found in data file header or (lastdatafile == filename and lastIparmfile):
         if rd.instparm or lastIparmfile:
             if rd.instparm:
                 instfile = os.path.join(os.path.split(filename)[0],rd.instparm)
@@ -1317,7 +1325,7 @@ class GSASII(wx.Frame):
                 if 'instprm' in instfile:   #GSAS-II file must have .instprm as extension
                     Lines = self.OpenPowderInstprm(instfile)
                     if Lines is not None:
-                        instParmList = self.ReadPowderInstprm(Lines,bank)   #this is [Inst1,Inst2] a pair of dicts
+                        instParmList = self.ReadPowderInstprm(Lines,bank,numbanks,rd)   #this is [Inst1,Inst2] a pair of dicts
                 else:   #old GSAS style iparm file - could be named anything!
                     Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
                     if Iparm:
@@ -1385,7 +1393,7 @@ class GSASII(wx.Frame):
             if 'instprm' in instfile:
                 Lines = self.OpenPowderInstprm(instfile)
                 if Lines is not None:
-                    instParmList = self.ReadPowderInstprm(Lines,bank)    #this is [Inst1,Inst2] a pair of dicts
+                    instParmList = self.ReadPowderInstprm(Lines,bank,numbanks,rd)    #this is [Inst1,Inst2] a pair of dicts
                 if 'list' in str(type(instParmList)):
                     rd.instfile = instfile
                     rd.instmsg = 'GSAS-II file '+instfile
@@ -1436,8 +1444,11 @@ class GSASII(wx.Frame):
         self.EnablePlot = False
         for rd in rdlist:
             if 'Instrument Parameters' not in rd.pwdparms:
-                # get instrument parameters for each dataset, unless already set 
-                Iparm1,Iparm2 = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
+                # get instrument parameters for each dataset, unless already set
+                Iparms = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
+                if not Iparms:
+                    continue
+                Iparm1,Iparm2 = Iparms
                 if rd.repeat_instparm: 
                     lastIparmfile = rd.instfile
                 # override any keys in read instrument parameters with ones set in import
@@ -1450,6 +1461,14 @@ class GSASII(wx.Frame):
             HistName = rd.idstring
             HistName = 'PWDR '+HistName
             # make new histogram names unique
+            if HistName in PWDRlist:
+                dlg = wx.MessageDialog(self,'Skip %s?'%(HistName),'Duplicate data name',wx.YES_NO)
+                try:
+                    if dlg.ShowModal() == wx.ID_YES:
+                        Id = 0
+                        continue
+                finally:
+                    dlg.Destroy()
             HistName = G2obj.MakeUniqueLabel(HistName,PWDRlist)
             print 'Read powder data '+str(HistName)+ \
                 ' from file '+str(rd.readfilename) + \
@@ -1527,11 +1546,13 @@ class GSASII(wx.Frame):
             Controls = self.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(self,self.root, 'Controls'))
             Controls.update(rd.Controls)
             newHistList.append(HistName)
+            rd.repeat_instparm = False  #clear the iparm reuse flag
         else:
             self.EnablePlot = True
-            self.PatternTree.Expand(Id)
-            self.PatternTree.SelectItem(Id)
-            
+            if Id:
+                self.PatternTree.Expand(Id)
+                self.PatternTree.SelectItem(Id)
+
         if not newHistList: return # somehow, no new histograms
         # make a list of phase names
         phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
@@ -2946,12 +2967,21 @@ class GSASII(wx.Frame):
         'Renames an existing phase. Called by Data/Rename Phase menu'
         name = self.PatternTree.GetItemText(self.PickId)      
         if 'PWDR' in name or 'HKLF' in name or 'IMG' in name:
-            dataType = name[:name.index(' ')+1]                 #includes the ' '
-            dlg = wx.TextEntryDialog(self,'Data name: '+dataType,'Change data name',
-                defaultValue=name[name.index(' ')+1:])
+            if 'Bank' in name:
+                names = name.split('Bank')
+                names[1] = ' Bank'+names[1]
+            elif 'Azm' in name:
+                names = name.split('Azm')
+                names[1] = ' Azm'+names[1]
+            else:
+                names = [name,'']
+            dataType = names[0][:names[0].index(' ')+1]                 #includes the ' '
+            dlg = wx.TextEntryDialog(self,'Data name: '+name,'Change data name',
+                defaultValue=names[0][names[0].index(' ')+1:])
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    self.PatternTree.SetItemText(self.PickId,dataType+dlg.GetValue())
+                    name = dataType+dlg.GetValue()+names[1]
+                    self.PatternTree.SetItemText(self.PickId,name)
             finally:
                 dlg.Destroy()
         

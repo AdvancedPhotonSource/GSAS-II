@@ -1733,7 +1733,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             if 'SASD' in plottype and G2frame.logPlot:
                 X *= (1.01)**(offsetX*N)
             else:
-                X += offsetX*.005*N
+                xlim = Plot.get_xlim()
+                DX = xlim[1]-xlim[0]
+                X += 0.002*offsetX*DX*N
             Xum = ma.getdata(X)
             DifLine = ['']
             if ifpicked:

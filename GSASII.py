@@ -1249,8 +1249,8 @@ class GSASII(wx.Frame):
                 for l in dI.defaultIparm_lbl:
                     choices.append('Defaults for '+l)
                 res = rd.BlockSelector(choices,ParentFrame=self,title=head,
-                    header='Select default inst parms',useCancel=False)
-                if res is None: continue
+                    header='Select default inst parms',useCancel=True)
+                if res is None: return None
                 rd.instfile = ''
                 if 'Generic' in choices[res]:
                     dlg = G2G.MultiFloatDialog(self,title='Generic TOF detector bank',
@@ -1262,7 +1262,7 @@ class GSASII(wx.Frame):
                         sig1 = 50.+2.5e-6*(difC/tand(tth/2.))**2
                         bet1 = .00226+7.76e+11/difC**4
                         rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-                        Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank)
+                        Inst = self.ReadPowderInstprm(dI.defaultIparms[res],bank,numbanks,rd)
                         Inst[0]['difC'] = [difC,difC,0]
                         Inst[0]['sig-1'] = [sig1,sig1,0]
                         Inst[0]['beta-1'] = [bet1,bet1,0]
@@ -1270,7 +1270,7 @@ class GSASII(wx.Frame):
                     dlg.Destroy()
                 else:
                     rd.instmsg = 'default: '+dI.defaultIparm_lbl[res]
-                    return self.ReadPowderInstprm(dI.defaultIparms[res],bank)    #this is [Inst1,Inst2] a pair of dicts
+                    return self.ReadPowderInstprm(dI.defaultIparms[res],bank,numbanks,rd)    #this is [Inst1,Inst2] a pair of dicts
 
         # stuff we might need from the reader
         filename = rd.powderentry[0]
@@ -1446,7 +1446,8 @@ class GSASII(wx.Frame):
             if 'Instrument Parameters' not in rd.pwdparms:
                 # get instrument parameters for each dataset, unless already set
                 Iparms = self.GetPowderIparm(rd, Iparm, lastIparmfile, lastdatafile)
-                if not Iparms:
+                if not Iparms:  #may have bailed out
+                    Id = 0
                     continue
                 Iparm1,Iparm2 = Iparms
                 if rd.repeat_instparm: 

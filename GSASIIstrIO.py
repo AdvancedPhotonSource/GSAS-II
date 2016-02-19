@@ -2545,7 +2545,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     pfx+'HStrain':{}})                  
                 for item in ['Mustrain','Size']:
                     hapData[item][1][2] = parmDict[pfx+item+';mx']
-                    hapData[item][1][2] = min(1.,max(0.,hapData[item][1][2]))
+#                    hapData[item][1][2] = min(1.,max(0.,hapData[item][1][2]))
                     if pfx+item+';mx' in sigDict:
                         SizeMuStrSig[pfx+item][0][2] = sigDict[pfx+item+';mx']
                     if hapData[item][0] in ['isotropic','uniaxial']:                    

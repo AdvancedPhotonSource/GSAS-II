@@ -317,14 +317,184 @@ class SymOpDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
         
 ################################################################################
+class TransformDialog(wx.Dialog):
+    ''' Phaae transformation
+    
+    :param wx.Frame parent: reference to parent frame (or None)
+    :param phase: phase data
+    
+    #NB: commonNames & commonTrans defined at top of this file 
+    '''
+    def __init__(self,parent,phase):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup phase transformation', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.Phase = copy.deepcopy(phase)   #will be a new phase!
+#        self.Super = phase['General']['Super']
+#        if self.Super:
+#            self.Trans = np.eye(4)
+#            self.Vec = np.zeros(4)
+#        else:
+        self.Trans = np.eye(3)
+        self.Vec = np.zeros(3)
+        self.SpGrp = phase['General']['SGData']['SpGrp']
+        self.oldCell = phase['General']['Cell'][1:8]
+        self.newCell = copy.copy(self.oldCell)
+        self.Common = 'abc'
+        self.Draw()
+
+    def Draw(self):
+                
+        def OnMatValue(event):
+            Obj = event.GetEventObject()
+            ix,iy = Ind[Obj.GetId()]
+            self.Trans[iy,ix] = float(Obj.GetValue())
+            Obj.SetValue('%5.3f'%(self.Trans[iy,ix]))
+            
+        def OnVecValue(event):
+            Obj = event.GetEventObject()
+            iy = Ind[Obj.GetId()]
+            self.Vec[iy] = float(Obj.GetValue())
+            Obj.SetValue('%5.3f'%(self.Vec[iy]))
+                
+        def OnCommon(event):
+            Obj = event.GetEventObject()
+            self.Common = Obj.GetValue()
+            self.Trans = commonTrans[self.Common]
+            OnTest(event)
+       
+        def OnSpaceGroup(event):
+            Flds = SGTxt.GetValue().split()
+            #get rid of extra spaces between fields first
+            for fld in Flds: fld = fld.strip()
+            SpcGp = ' '.join(Flds)
+            # try a lookup on the user-supplied name
+            SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
+            if SpGrpNorm:
+                SGErr,SGData = G2spc.SpcGroup(SpGrpNorm)
+            else:
+                SGErr,SGData = G2spc.SpcGroup(SpcGp)
+            if SGErr:
+                text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
+                SGTxt.SetValue(self.SpGrp)
+                msg = 'Space Group Error'
+                Style = wx.ICON_EXCLAMATION
+                Text = '\n'.join(text)
+                wx.MessageBox(Text,caption=msg,style=Style)
+            else:
+                text,table = G2spc.SGPrint(SGData)
+                self.Phase['General']['SGData'] = SGData
+                self.SpGrp = SpGrp
+                SGTxt.SetValue(self.Phase['General']['SGData']['SpGrp'])
+                msg = 'Space Group Information'
+                SGMessageBox(self.panel,msg,text,table).Show()
+#            if self.Phase['General']['Type'] in ['modulated',]:
+#                self.Phase['General']['SuperSg'] = SetDefaultSSsymbol()
+#                self.Phase['General']['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
+
+        def OnTest(event):
+            self.newCell = G2lat.TransformCell(self.oldCell[:6],self.Trans)
+            wx.CallAfter(self.Draw)
+
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        Ind = {}
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        MatSizer = wx.BoxSizer(wx.HORIZONTAL)
+        transSizer = wx.BoxSizer(wx.VERTICAL)
+        transSizer.Add(wx.StaticText(self.panel,label=" XYZ Transformation matrix & vector: M*X+V = X'"))
+#        if self.Super:
+#            Trmat = wx.FlexGridSizer(4,4,0,0)
+#        else:
+        commonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        commonSizer.Add(wx.StaticText(self.panel,label=' Common transformations: '),0,WACV)
+        common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        common.Bind(wx.EVT_COMBOBOX,OnCommon)
+        commonSizer.Add(common,0,WACV)
+        transSizer.Add(commonSizer)
+        Trmat = wx.FlexGridSizer(3,5,0,0)
+        for iy,line in enumerate(self.Trans):
+            for ix,val in enumerate(line):
+                item = wx.TextCtrl(self.panel,value='%5.3f'%(val),
+                    size=(50,25),style=wx.TE_PROCESS_ENTER)
+                Ind[item.GetId()] = [ix,iy]
+                item.Bind(wx.EVT_TEXT_ENTER,OnMatValue)
+                item.Bind(wx.EVT_KILL_FOCUS,OnMatValue)
+                Trmat.Add(item)
+            Trmat.Add((25,0),0)
+            vec = wx.TextCtrl(self.panel,value='%5.3f'%(self.Vec[iy]),
+                    size=(50,25),style=wx.TE_PROCESS_ENTER)
+            Ind[vec.GetId()] = [iy]       
+            vec.Bind(wx.EVT_TEXT_ENTER,OnVecValue)
+            vec.Bind(wx.EVT_KILL_FOCUS,OnVecValue)
+            Trmat.Add(vec)
+        transSizer.Add(Trmat)
+        MatSizer.Add((10,0),0)
+        MatSizer.Add(transSizer)
+        mainSizer.Add(MatSizer)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Old lattice parameters:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=
+            ' a = %.5f       b = %.5f      c = %.5f'%(self.oldCell[0],self.oldCell[1],self.oldCell[2])),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' alpha = %.3f beta = %.3f gamma = %.3f'%
+            (self.oldCell[3],self.oldCell[4],self.oldCell[5])),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' volume = %.3f'%(self.oldCell[6])),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' New lattice parameters:'),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=
+            ' a = %.5f       b = %.5f      c = %.5f'%(self.newCell[0],self.newCell[1],self.newCell[2])),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' alpha = %.3f beta = %.3f gamma = %.3f'%
+            (self.newCell[3],self.newCell[4],self.newCell[5])),0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' volume = %.3f'%(self.newCell[6])),0,WACV)
+        sgSizer = wx.BoxSizer(wx.HORIZONTAL)
+        sgSizer.Add(wx.StaticText(self.panel,label='  Space group: '),0,WACV)
+        SGTxt = wx.TextCtrl(self.panel,value=self.SpGrp,style=wx.TE_PROCESS_ENTER)
+        SGTxt.Bind(wx.EVT_TEXT_ENTER,OnSpaceGroup)
+        sgSizer.Add(SGTxt,0,WACV)
+        mainSizer.Add(sgSizer,0,WACV)
+
+        TestBtn = wx.Button(self.panel,-1,"Test")
+        TestBtn.Bind(wx.EVT_BUTTON, OnTest)
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(TestBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        self.Phase['General']['Name'] += ' %s'%(self.SpGrp)
+        self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans)            
+        return self.Phase,self.Trans,self.Vec
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)        
+        
+################################################################################
 class MergeDialog(wx.Dialog):
     ''' HKL transformation & merge dialog
     
     :param wx.Frame parent: reference to parent frame (or None)
     :param data: HKLF data
     
-    #NB: commonNames & commonTrans defined at top of this file 
-    
+    #NB: commonNames & commonTrans defined at top of this file     
     '''        
     def __init__(self,parent,data):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup HKLF merge', 

@@ -1181,9 +1181,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         apply to lattice parameters & atom position/Uij parameters
         need to start with full unit cell contents, transform & then filter out symm. equiv.
         '''
-        print 'Transform crystal structure - TBD'
-        
-                    
+        dlg = G2gd.TransformDialog(G2frame,data)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                newPhase,Trans,Vec = dlg.GetSelection()
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        phaseName = newPhase['General']['Name']
+        sub = G2frame.PatternTree.AppendItem(parent=
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=PhaseName)
+        G2frame.PatternTree.SetItemPyData(sub,newPhase)
 
 ################################################################################
 #####  Atom routines
@@ -2040,6 +2049,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 FillAtomsGrid(Atoms)
             else:
                 Atoms.ForceRefresh()
+        else:
+            print "select one or more rows of atoms"
+            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")            
                 
     def MakeMolecule(event):      
         indx = Atoms.GetSelectedRows()

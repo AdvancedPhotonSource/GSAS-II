@@ -158,10 +158,11 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         hist,name = Indx[Obj.GetId()]
         try:
             value = float(Obj.GetValue())
-            if 0 <= value <= 1:
-                UseList[G2frame.hist][name][1][2] = value
-            else:
-                raise ValueError
+            UseList[G2frame.hist][name][1][2] = value
+#            if 0 <= value <= 1:
+#                UseList[G2frame.hist][name][1][2] = value
+#            else:
+#                raise ValueError
         except ValueError:
             pass
         Obj.SetValue("%.4f"%(UseList[G2frame.hist][name][1][2]))          #reset in case of error
@@ -201,7 +202,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             except ValueError:
                 pass
             Obj.SetValue("%.5f"%(UseList[G2frame.hist]['Size'][1][pid]))          #reset in case of error
-        G2plt.PlotSizeStrainPO(G2frame,data,hist)
+        wx.CallAfter(G2plt.PlotSizeStrainPO,G2frame,data,hist)
         
     def OnStrainType(event):
         Obj = event.GetEventObject()
@@ -237,7 +238,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Mustrain'][4][pid]))          #reset in case of error
         else:
             Obj.SetValue("%.1f"%(UseList[G2frame.hist]['Mustrain'][1][pid]))          #reset in case of error
-        G2plt.PlotSizeStrainPO(G2frame,data,hist)
+        wx.CallAfter(G2plt.PlotSizeStrainPO,G2frame,data,hist)
         
     def OnStrainAxis(event):
         Obj = event.GetEventObject()

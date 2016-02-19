@@ -380,6 +380,13 @@ def GetAtomCoordsByID(pId,parmDict,AtLookup,indx):
         dnames = [dpfx[i]+str(AtLookup[ind]) for i in range(3)]
         XYZ.append([parmDict[name]+parmDict[dname] for name,dname in zip(names,dnames)])
     return XYZ
+    
+def TransformAtoms(Atoms,cx,cia,Trans,Vec):
+    for Atom in Atoms:
+        XYZ = Atom[cx:cx+3]
+        if 'A' in Atom[cia]:
+            U6 = Atom[cia+2:cia+8]
+    
 
 def FindNeighbors(phase,FrstName,AtNames,notName=''):
     General = phase['General']

@@ -192,7 +192,39 @@ def invcell2Gmat(invcell):
     G = fillgmat(invcell)
     g = nl.inv(G)
     return G,g
-        
+    
+def prodMGMT(G,Mat):
+    '''Transform metric tensor by matrix
+    
+    :param G: array metric tensor
+    :param Mat: array transformation matrix
+    :return: array new metric tensor
+    
+    '''
+    return np.inner(Mat,np.inner(G,Mat).T)
+    
+def TransformCell(cell,Trans):
+    '''Transform lattice parameters by matrix
+    
+    :param cell: list a,b,c,alpha,beta,gamma,(volume)
+    :param Trans: array transformation matrix
+    :return: array transformed a,b,c,alpha,beta,gamma,volume
+    
+    '''
+    newCell = np.zeros(7)
+    g = cell2Gmat(cell)[1]
+    newg = prodMGMT(g,Trans)
+    newCell[:6] = Gmat2cell(newg)
+    newCell[6] = calc_V(cell2A(newCell[:6]))
+    return newCell
+    
+def TransformXYZ(XYZ,Trans,Vec):
+    return np.inner(XYZ,Trans)+Vec
+    
+def TransformU6(U6,Trans):
+    Uij = np.inner(Trans,np.inner(U6toUij(U6),Trans))
+    return UijtoU6(Uij)
+           
 def calc_rVsq(A):
     """Compute the square of the reciprocal lattice volume (1/V**2) from A'
 

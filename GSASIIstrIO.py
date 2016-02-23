@@ -2163,7 +2163,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                                 pwrs.append([int(h),int(k),int(l)])
                             controlDict[pfx+'MuPwrs'] = pwrs
                         for i in range(Nterms):
-                            sfx = ':'+str(i)
+                            sfx = ';'+str(i)
                             hapDict[pfx+item+sfx] = hapData[item][4][i]
                             if hapData[item][5][i]:
                                 hapVary.append(pfx+item+sfx)

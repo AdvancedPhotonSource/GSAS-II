@@ -2764,7 +2764,7 @@ def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             Strms = G2spc.MustrainCoeff(refl[:3],SGData)
             Sum = 0
             for i,strm in enumerate(Strms):
-                Sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
+                Sum += parmDict[phfx+'Mustrain;'+str(i)]*strm
             Mgam = 0.018*refl[4+im]**2*tand(refl[5+im]/2.)*np.sqrt(Sum)/np.pi
     elif 'T' in calcControls[hfx+'histType']:       #All checked & OK
         #crystallite size
@@ -2795,7 +2795,7 @@ def GetSampleSigGam(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict):
             Strms = G2spc.MustrainCoeff(refl[:3],SGData)
             Sum = 0
             for i,strm in enumerate(Strms):
-                Sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
+                Sum += parmDict[phfx+'Mustrain;'+str(i)]*strm
             Mgam = 1.e-6*parmDict[hfx+'difC']*np.sqrt(Sum)*refl[4+im]**3
             
     gam = Sgam*parmDict[phfx+'Size;mx']+Mgam*parmDict[phfx+'Mustrain;mx']
@@ -2867,13 +2867,13 @@ def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
             Strms = G2spc.MustrainCoeff(refl[:3],SGData)
             Sum = 0
             for i,strm in enumerate(Strms):
-                Sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
-                gamDict[phfx+'Mustrain:'+str(i)] = strm*parmDict[phfx+'Mustrain;mx']/2.
-                sigDict[phfx+'Mustrain:'+str(i)] = strm*(1.-parmDict[phfx+'Mustrain;mx'])**2
+                Sum += parmDict[phfx+'Mustrain;'+str(i)]*strm
+                gamDict[phfx+'Mustrain;'+str(i)] = strm*parmDict[phfx+'Mustrain;mx']/2.
+                sigDict[phfx+'Mustrain;'+str(i)] = strm*(1.-parmDict[phfx+'Mustrain;mx'])**2
             Mgam = const*np.sqrt(Sum)
             for i in range(len(Strms)):
-                gamDict[phfx+'Mustrain:'+str(i)] *= Mgam/Sum
-                sigDict[phfx+'Mustrain:'+str(i)] *= const**2/ateln2
+                gamDict[phfx+'Mustrain;'+str(i)] *= Mgam/Sum
+                sigDict[phfx+'Mustrain;'+str(i)] *= const**2/ateln2
         gamDict[phfx+'Mustrain;mx'] = Mgam
         sigDict[phfx+'Mustrain;mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
     else:   #'T'OF - All checked & OK
@@ -2935,13 +2935,13 @@ def GetSampleSigGamDerv(refl,im,wave,G,GB,SGData,hfx,phfx,calcControls,parmDict)
             const = 1.e-6*parmDict[hfx+'difC']*refl[4+im]**3
             Sum = 0
             for i,strm in enumerate(Strms):
-                Sum += parmDict[phfx+'Mustrain:'+str(i)]*strm
-                gamDict[phfx+'Mustrain:'+str(i)] = strm*parmDict[phfx+'Mustrain;mx']/2.
-                sigDict[phfx+'Mustrain:'+str(i)] = strm*(1.-parmDict[phfx+'Mustrain;mx'])**2
+                Sum += parmDict[phfx+'Mustrain;'+str(i)]*strm
+                gamDict[phfx+'Mustrain;'+str(i)] = strm*parmDict[phfx+'Mustrain;mx']/2.
+                sigDict[phfx+'Mustrain;'+str(i)] = strm*(1.-parmDict[phfx+'Mustrain;mx'])**2
             Mgam = const*np.sqrt(Sum)
             for i in range(len(Strms)):
-                gamDict[phfx+'Mustrain:'+str(i)] *= Mgam/Sum
-                sigDict[phfx+'Mustrain:'+str(i)] *= const**2/ateln2        
+                gamDict[phfx+'Mustrain;'+str(i)] *= Mgam/Sum
+                sigDict[phfx+'Mustrain;'+str(i)] *= const**2/ateln2        
         gamDict[phfx+'Mustrain;mx'] = Mgam
         sigDict[phfx+'Mustrain;mx'] = -2.*Mgam**2*(1.-parmDict[phfx+'Mustrain;mx'])/ateln2
         

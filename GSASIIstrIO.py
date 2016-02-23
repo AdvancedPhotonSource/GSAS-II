@@ -2563,7 +2563,7 @@ def SetHistogramPhaseData(parmDict,sigDict,Phases,Histograms,FFtables,Print=True
                     else:       #generalized for mustrain or ellipsoidal for size
                         Nterms = len(hapData[item][4])
                         for i in range(Nterms):
-                            sfx = ':'+str(i)
+                            sfx = ';'+str(i)
                             hapData[item][4][i] = parmDict[pfx+item+sfx]
                             if pfx+item+sfx in sigDict:
                                 SizeMuStrSig[pfx+item][1][i] = sigDict[pfx+item+sfx]

@@ -100,11 +100,12 @@ def SetupSampleLabels(histName,dataType,histType):
         parms.append(['Gonio. radius','Goniometer radius (mm): ',[10,3]])
     if 'PWDR' in histName:
         if dataType == 'Debye-Scherrer':
-            parms += [['DisplaceX',u'Sample X displ. perp. to beam (\xb5m): ',[10,3]],
-                ['DisplaceY',u'Sample Y displ. || to beam (\xb5m): ',[10,3]],
-                ['Absorption',u'Sample absorption (\xb5\xb7r): ',[10,4]],]
             if 'T' in histType:
-                parms[-1] = ['Absorption',u'Sample absorption (\xb5\xb7r/l): ',[10,4]]
+                parms += [['Absorption',u'Sample absorption (\xb5\xb7r/l): ',[10,4]],]
+            else:
+                parms += [['DisplaceX',u'Sample X displ. perp. to beam (\xb5m): ',[10,3]],
+                    ['DisplaceY',u'Sample Y displ. || to beam (\xb5m): ',[10,3]],
+                    ['Absorption',u'Sample absorption (\xb5\xb7r): ',[10,4]],]
         elif dataType == 'Bragg-Brentano':
             parms += [['Shift',u'Sample displacement(\xb5m): ',[10,4]],
                 ['Transparency',u'Sample transparency(1/\xb5eff, cm): ',[10,3]],

@@ -1380,6 +1380,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     del backDict['FixedPoints'][G2frame.fixPtMarker]
                     wx.CallAfter(PlotPatterns,G2frame,plotType=plottype)
                 return
+                
     def OnRelease(event): # mouse release from item pick or background pt add/move/del
         plotNum = G2frame.G2plotNB.plotList.index('Powder Patterns')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -1496,7 +1497,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 Phases = G2frame.PatternTree.GetItemPyData(Id)
                 pick = str(G2frame.itemPicked).split('(',1)[1][:-1]
                 if 'line' not in pick:       #avoid data points, etc.
-                    data = G2frame.PatternTree.GetItemPyData(PatternId)
+                    data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
                     num = Phases.keys().index(pick)
                     if num:
                         data[0]['refDelt'] = -(event.ydata-Pattern[0]['refOffset'])/(num*Ymax)

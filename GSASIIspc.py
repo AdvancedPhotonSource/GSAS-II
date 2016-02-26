@@ -2224,6 +2224,7 @@ symbols with different settings. They are ordered by Laue group
 '''
 spglist = {
     'P1' : ('P 1','P -1',), # 1-2
+    'C1' : ('C 1','C -1',),
     'P2/m': ('P 2','P 21','P m','P a','P c','P n',
         'P 2/m','P 21/m','P 2/c','P 2/a','P 2/n','P 21/c','P 21/a','P 21/n',), #3-15
     'C2/m':('C 2','C m','C c','C n',
@@ -2310,6 +2311,7 @@ ssdict = {}
 ssdict = {
 #1,2
     'P 1':['(abg)',],'P -1':['(abg)',],
+    'C 1':['(abg)',],'C -1':['(abg)',],
 #monoclinic - done
 #3
     'P 2':['(a0g)','(a1/2g)','(0b0)','(0b0)s','(1/2b0)','(0b1/2)',],

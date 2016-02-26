@@ -2460,8 +2460,8 @@ def UpdateUnitCellsGrid(G2frame, data):
     '''
     UnitCellsId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Unit Cells List')
     SPGlist = G2spc.spglist
-    bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm',
-        'P4/mmm','Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
+    bravaisSymb = ['Fm3m','Im3m','Pm3m','R3-H','P6/mmm','I4/mmm','P4/mmm',
+        'Fmmm','Immm','Cmmm','Pmmm','C2/m','P2/m','P1']
     spaceGroups = ['F m 3 m','I m 3 m','P m 3 m','R 3 m','P 6/m m m','I 4/m m m',
         'P 4/m m m','F m m m','I m m m','C m m m','P m m m','C 2/m','P 2/m','P -1']
     Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
@@ -2475,17 +2475,17 @@ def UpdateUnitCellsGrid(G2frame, data):
     
     def SetLattice(controls):
         ibrav = bravaisSymb.index(controls[5])
-        if ibrav in [0,1,2]:
+        if controls[5] in ['Fm3m','Im3m','Pm3m']:
             controls[7] = controls[8] = controls[6]
             controls[9] = controls[10] = controls[11] = 90.
-        elif ibrav in [3,4,5,6]:
+        elif controls[5] in ['R 3 m','P 6/m m m','I 4/m m m','P 4/m m m']:
             controls[7] = controls[6]
             controls[9] = controls[10] = controls[11] = 90.
-            if ibrav in [3,4]:
+            if controls[5] in ['R3-H','P6/mmm']:
                 controls[11] = 120.
-        elif ibrav in [7,8,9,10]:
+        elif controls[5] in ['F m m m','I m m m','C m m m','P m m m']:
             controls[9] = controls[10] = controls[11] = 90.
-        elif ibrav in [11,12]:
+        elif controls[5] in ['C 2/m','P 2/m']:
             controls[9] = controls[11] = 90.  # b unique
         if len(controls) < 13: controls.append(0)
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
@@ -2597,11 +2597,11 @@ def UpdateUnitCellsGrid(G2frame, data):
         
     def SetCellValue(Obj,ObjId,value):
         ibrav = bravaisSymb.index(controls[5])
-        if ibrav in [0,1,2]:
+        if controls[5] in ['Fm3m','Im3m','Pm3m']:
             controls[6] = controls[7] = controls[8] = value
             controls[9] = controls[10] = controls[11] = 90.0
             Obj.SetValue("%.5f"%(controls[6]))
-        elif ibrav in [3,4,5,6]:
+        elif controls[5] in ['R3-H','P6/mmm','I4/mmm','P4/mmm']:
             if ObjId == 0:
                 controls[6] = controls[7] = value
                 Obj.SetValue("%.5f"%(controls[6]))
@@ -2609,13 +2609,13 @@ def UpdateUnitCellsGrid(G2frame, data):
                 controls[8] = value
                 Obj.SetValue("%.5f"%(controls[8]))
             controls[9] = controls[10] = controls[11] = 90.0
-            if ibrav in [3,4]:
+            if controls[5] in ['R3-H','P6/mmm']:
                 controls[11] = 120.
-        elif ibrav in [7,8,9,10]:
+        elif controls[5] in ['F m m m','I m m m','C m m m','P m m m']:
             controls[6+ObjId] = value
             Obj.SetValue("%.5f"%(controls[6+ObjId]))
             controls[9] = controls[10] = controls[11] = 90.0
-        elif ibrav in [11,12]:
+        elif controls[5] in ['C 2/m','P 2/m']:
             controls[9] = controls[11] = 90.0
             if ObjId != 3:
                 controls[6+ObjId] = value
@@ -2683,7 +2683,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         controls,bravais,cells,dminx,ssopt = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'))
         cell = controls[6:12]
         A = G2lat.cell2A(cell)
-        ibrav = bravaisSymb.index(controls[5])
+#        ibrav = bravaisSymb.index(controls[5])
         spc = controls[13]
         SGData = G2spc.SpcGroup(spc)[1]
         if ssopt.get('Use',False):
@@ -2746,13 +2746,13 @@ def UpdateUnitCellsGrid(G2frame, data):
         def cellPrint(ibrav,A):
             cell = G2lat.A2cell(A)
             Vol = G2lat.calc_V(A)
-            if ibrav in [0,1,2]:
+            if ibrav in ['Fm3m','Im3m','Pm3m']:
                 print " %s%10.6f" % ('a =',cell[0])
-            elif ibrav in [3,4,5,6]:
+            elif ibrav in ['R3-H','P6/mmm','I4/mmm','P4/mmm']:
                 print " %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],' c =',cell[2],' volume =',Vol)
-            elif ibrav in [7,8,9,10]:
+            elif ibrav in ['P 4/m m m','F m m m','I m m m','C m m m','P m m m']:
                 print " %s%10.6f %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],' volume =',Vol)
-            elif ibrav in [11,12]:
+            elif ibrav in ['C 2/m','P 2/m']:
                 print " %s%10.6f %s%10.6f %s%10.6f %s%8.3f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],'beta =',cell[4],' volume =',Vol)
             else:
                 print " %s%10.6f %s%10.6f %s%10.6f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2])
@@ -2785,7 +2785,7 @@ def UpdateUnitCellsGrid(G2frame, data):
                 G2frame.HKL = G2pwd.getHKLpeak(dmin,SGData,A,Inst)
                 peaks = [G2indx.IndexPeaks(peaks[0],G2frame.HKL)[1],peaks[1]]   #put peak fit esds back in peaks
                 Lhkl,M20,X20,Aref,Zero = G2indx.refinePeaksZ(peaks[0],wave,ibrav,A,controls[1],controls[0])
-        else:   #'T'OF - doesn't seem to work
+        else:   
             if ssopt.get('Use',False):
                 vecFlags = [True if x in ssopt['ssSymb'] else False for x in ['a','b','g']]
                 SSGData = G2spc.SSpcGroup(SGData,ssopt['ssSymb'])[1]
@@ -2814,7 +2814,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Unit Cells List'),data)
         print " %s%10.3f" % ('refinement M20 = ',M20)
         print ' unindexed lines = ',X20
-        cellPrint(ibrav,Aref)
+        cellPrint(controls[5],Aref)
         ip = 4
         if ssopt.get('Use',False):
             vecPrint(Vec)
@@ -3022,7 +3022,7 @@ def UpdateUnitCellsGrid(G2frame, data):
     mainSizer.Add(littleSizer,0)
     mainSizer.Add((5,5),0)
     
-    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Cell Refinement: '),0,WACV)
+    mainSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Cell Test & Refinement: '),0,WACV)
     mainSizer.Add((5,5),0)
     littleSizer = wx.BoxSizer(wx.HORIZONTAL)
     littleSizer.Add(wx.StaticText(G2frame.dataDisplay,label=" Bravais lattice "),0,WACV)

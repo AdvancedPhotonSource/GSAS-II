@@ -2371,7 +2371,7 @@ class GSASII(wx.Frame):
         return self.PatternTree._getTreeItemsList(item)
 
     def OnSize(self,event):
-        'Called when the main window is resized. Not sure why'
+        'Called to make PatternTree fill mainPanel'
         w,h = self.GetClientSizeTuple()
         self.mainPanel.SetSize(wx.Size(w,h))
         self.PatternTree.SetSize(wx.Size(w,h))

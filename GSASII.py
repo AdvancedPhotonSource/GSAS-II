@@ -1283,6 +1283,8 @@ class GSASII(wx.Frame):
             if self.zipfile:
                 instfile = G2IO.ExtractFileFromZip(self.zipfile,
                     selection=os.path.split(basename + ext)[1],parent=self)
+                if instfile == None:
+                    continue
             else:
                 instfile = basename + ext
             if not os.path.exists(instfile):
@@ -1320,7 +1322,7 @@ class GSASII(wx.Frame):
             if self.zipfile:
                 instfile = G2IO.ExtractFileFromZip(self.zipfile,
                     selection=os.path.split(instfile)[1],parent=self)
-            if os.path.exists(instfile):
+            if instfile != None and os.path.exists(instfile):
                 #print 'debug: try read',instfile
                 if 'instprm' in instfile:   #GSAS-II file must have .instprm as extension
                     Lines = self.OpenPowderInstprm(instfile)

@@ -2707,7 +2707,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 topLine.Add(seqType,0,WACV)
             stackSizer.Add(topLine,0,WACV)
             if Layers['Stacking'][1] == 'list':
-                stackSizer.Add(wx.StaticText(layerData,label=' Explicit layer sequence;'
+                stackSizer.Add(wx.StaticText(layerData,label=' Explicit layer sequence;'),0,WACV)
                 
             return stackSizer
             

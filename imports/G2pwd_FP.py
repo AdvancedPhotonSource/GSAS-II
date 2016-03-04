@@ -94,9 +94,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                         begin = False
                 # valid line to read
                 if not steps:
-                    print S
                     vals = S.split(None,4)
-                    print vals
                     if len(vals) >= 3:
                         steps = True
                         start = float(vals[0])

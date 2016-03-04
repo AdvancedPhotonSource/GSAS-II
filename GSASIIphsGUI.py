@@ -339,7 +339,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         #General.DestroyChildren() # bad, deletes scrollbars on Mac!
         if General.GetSizer():
             General.GetSizer().Clear(True)
-        phaseTypes = ['nuclear','modulated','magnetic','macromolecular']
+        phaseTypes = ['nuclear','modulated','magnetic','macromolecular','faulted']
         SetupGeneral()
         generalData = data['General']
         Map = generalData['Map']
@@ -399,11 +399,35 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if 'MC/SA' in pages:
                             pass
 #                            G2frame.dataDisplay.DeletePage(pages.index('MC/SA'))   #this crashes!!
+                        if 'Layers' in pages:
+                            pass
+#                            G2frame.dataDisplay.DeletePage(pages.index('Layers'))
                         if 'Wave Data' not in pages:
                             G2frame.waveData = wx.ScrolledWindow(G2frame.dataDisplay)
                             G2frame.dataDisplay.InsertPage(3,G2frame.waveData,'Wave Data')
                             Id = wx.NewId()
                             TabSelectionIdDict[Id] = 'Wave Data'
+                        wx.CallAfter(UpdateGeneral)
+                    elif generalData['Type'] == 'faulted':
+                        G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
+                        if 'Wave Data' in pages:
+                            pass
+#                            G2frame.dataDisplay.DeletePage(pages.index('Wave Data'))
+                        if 'MC/SA' in pages:
+                            pass
+#                            G2frame.dataDisplay.DeletePage(pages.index('MC/SA'))
+                        if 'RB Models' in pages:
+                            pass
+#                            G2frame.dataDisplay.DeletePage(pages.index('RB Models'))
+                        if 'Layers' not in pages:
+                            if 'Layers' not in data:
+                                data['Layers'] = {'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],
+                                    'Width':[[10.,10.],[False,False]],'Toler':0.01,
+                                    'Layers':[],'Stacking':[],'Transitions':[]}
+                            G2frame.layerData = wx.ScrolledWindow(G2frame.dataDisplay)
+                            G2frame.dataDisplay.InsertPage(3,G2frame.layerData,'Layers')
+                            Id = wx.NewId()
+                            TabSelectionIdDict[Id] = 'Layers'
                         wx.CallAfter(UpdateGeneral)
                     else:
                         if 'Wave Data' in pages:
@@ -2359,6 +2383,405 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         wx.CallAfter(FillAtomsGrid,Atoms)
         
 ################################################################################
+#### Layer Data page
+################################################################################
+        
+    def UpdateLayerData(Scroll=0):
+        
+        laueChoice = ['-1','2/m(ab)','2/m(c)','mmm','-3','-3m','4/m','4/mmm',
+            '6/m','6/mmm','axial','unknown']
+        colLabels = ['Name','Type','refine','x','y','z','frac','Uiso']
+        transLabels = ['Prob','Dx','Dy','Dz','refine','plot']
+        colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",]+ \
+            3*[wg.GRID_VALUE_FLOAT+':10,5',]+2*[wg.GRID_VALUE_FLOAT+':10,4',] #x,y,z,frac,Uiso
+        transTypes = [wg.GRID_VALUE_FLOAT+':10,3',]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
+            [wg.GRID_VALUE_CHOICE+": ,P,PX,PY,PZ,PXY,PXZ,PYZ,PXYZ,X,Y,Z,XY,XZ,YZ,XYZ",wg.GRID_VALUE_BOOL,]
+            
+        def OnLaue(event):
+            Obj = event.GetEventObject()
+            data['Layers']['Laue'] = Obj.GetValue()
+            UpdateLayerData()
+        
+        def OnToler(event): #used when Laue = unknown
+            try:
+                val = float(toler.GetValue())
+            except ValueError:
+                val = Layers['Toler']
+            Layers['Toler'] = val
+            toler.SetValue('%.3f'%(Layers['Toler']))
+            
+        def CellSizer():
+            
+            cellGUIlist = [
+                [['-3','-3m','6/m','6/mmm','4/m','4/mmm'],6,zip([" a = "," c = "],["%.5f","%.5f",],[True,True],[0,2])],
+                [['mmm'],8,zip([" a = "," b = "," c = "],["%.5f","%.5f","%.5f"],[True,True,True],[0,1,2,])],
+                [['2/m(ab)','2/m(c)','-1','axial','unknown'],10,zip([" a = "," b = "," c = "," gamma = "],
+                    ["%.5f","%.5f","%.5f","%.3f"],[True,True,True,True],[0,1,2,3])]]
+                
+            def OnCellRef(event):
+                data['Layers']['Cell'][0] = cellRef.GetValue()
+                
+            def OnCellChange(event):
+                laue = data['Layers']['Laue']
+                cell = data['Layers']['Cell']
+                Obj = event.GetEventObject()
+                ObjId = cellList.index(Obj.GetId())
+                try:
+                    value = max(1.0,float(Obj.GetValue()))
+                except ValueError:
+                    if ObjId < 3:               #bad cell edge - reset
+                        value = controls[6+ObjId]
+                    else:                       #bad angle
+                        value = 90.
+                if laue in ['-3','-3m','6/m','6/mmm','4/m','4/mmm']:                    
+                    cell[4] = cell[5] = 90.
+                    cell[6] = 120.
+                    if laue in ['4/m','4/mmm']:
+                        cell[6] = 90.
+                    if ObjId == 0:
+                        cell[1] = cell[2] = value
+                        Obj.SetValue("%.5f"%(cell[1]))
+                    else:
+                        cell[3] = value
+                        Obj.SetValue("%.5f"%(cell[3]))
+                elif laue in ['mmm']:
+                    cell[ObjId+1] = value
+                    cell[4] = cell[5] = cell[6] = 90.
+                    Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                elif laue in ['2/m']:
+                    cell[4] = cell[5] = 90.
+                    if ObjId != 3:
+                        cell[ObjId+1] = value
+                        Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                    else:
+                        cell[6] = value
+                        Obj.SetValue("%.3f"%(cell[6]))
+                else:
+                    cell[ObjId+1] = value
+                    if ObjId < 3:
+                        Obj.SetValue("%.5f"%(cell[1+ObjId]))
+                    else:
+                        Obj.SetValue("%.3f"%(cell[1+ObjId]))                        
+                cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
+                volVal.SetLabel(' Vol = %.3f'%(cell[7]))
+            
+            cell = data['Layers']['Cell']
+            laue = data['Layers']['Laue']
+            for cellGUI in cellGUIlist:
+                if laue in cellGUI[0]:
+                    useGUI = cellGUI
+            cellSizer = wx.FlexGridSizer(0,useGUI[1]+1,5,5)
+            cellRef = wx.CheckBox(layerData,-1,label='Refine unit cell:')
+            cellSizer.Add(cellRef,0,WACV)
+            cellRef.Bind(wx.EVT_CHECKBOX, OnCellRef)
+            cellRef.SetValue(cell[0])
+            cellList = []
+            for txt,fmt,ifEdit,Id in useGUI[2]:
+                cellSizer.Add(wx.StaticText(layerData,label=txt),0,WACV)
+                cellVal = wx.TextCtrl(layerData,value=(fmt%(cell[Id+1])),
+                    style=wx.TE_PROCESS_ENTER)
+                cellVal.Bind(wx.EVT_TEXT_ENTER,OnCellChange)        
+                cellVal.Bind(wx.EVT_KILL_FOCUS,OnCellChange)
+                cellSizer.Add(cellVal,0,WACV)
+                cellList.append(cellVal.GetId())
+            volVal = wx.StaticText(layerData,label=' Vol = %.3f'%(cell[7]))
+            cellSizer.Add(volVal,0,WACV)
+            return cellSizer
+            
+        def WidthSizer():
+            
+            def OnWidthChange(event):
+                Obj = event.GetEventObject()
+                id = Indx[Obj]
+                try:
+                    Layers['Width'][0][id] = float(Obj.GetValue())
+                except ValueError:
+                    pass
+                Obj.SetValue('%.3f'%(Layers['Width'][0][id]))
+                
+            def OnRefWidth(event):
+                id = Indx[event.GetEventObject()]
+                Layers['Width'][1][id] = not Layers['Width'][1][id]
+            
+            Labels = ['a','b']
+            widths = Layers['Width'][0]
+            flags = Layers['Width'][1]
+            Indx = {}
+            widthSizer = wx.BoxSizer(wx.HORIZONTAL)
+            for i in range(2):
+                widthSizer.Add(wx.StaticText(layerData,label=' layer width(%s): '%(Labels[i])),0,WACV)
+                widthVal = wx.TextCtrl(layerData,value='%.3f'%(widths[i]),style=wx.TE_PROCESS_ENTER)
+                widthVal.Bind(wx.EVT_TEXT_ENTER,OnWidthChange)        
+                widthVal.Bind(wx.EVT_KILL_FOCUS,OnWidthChange)
+                Indx[widthVal] = i
+                widthSizer.Add(widthVal,0,WACV)
+                widthRef = wx.CheckBox(layerData,label='Refine?')
+                widthRef.SetValue(flags[i])
+                Indx[widthRef] = i
+                widthRef.Bind(wx.EVT_CHECKBOX, OnRefWidth)
+                widthSizer.Add(widthRef,0,WACV)
+            return widthSizer
+            
+        def OnNewLayer(event):
+            data['Layers']['Layers'].append({'Name':'Unk','SameAs':'','Symm':'None','Atoms':[]})
+            #modify transition probability matrix as well - add new row/column
+            UpdateLayerData()
+            
+        def OnImportLayer(event):
+            #from where? DIFFaX files? other phases? NB: transformation issues
+            event.Skip()
+            
+        def LayerSizer(il,Layer):
+            
+            def OnNameChange(event):
+                Layer['Name'] = layerName.GetValue()                
+                UpdateLayerData()
+                
+            def OnAddAtom(event):
+                Layer['Atoms'].append(['Unk','Unk','',0.,0.,0.,1.,0.01])
+                UpdateLayerData()
+                
+            def OnSymm(event):
+                Layer['Symm'] = symm.GetValue()
+            
+            def AtomTypeSelect(event):
+                r,c =  event.GetRow(),event.GetCol()
+                if atomGrid.GetColLabelValue(c) == 'Type':
+                    PE = G2elemGUI.PickElement(G2frame)
+                    if PE.ShowModal() == wx.ID_OK:
+                        if PE.Elem != 'None':                        
+                            Layer['Atoms'][r][c] = PE.Elem.strip()
+                            name = Layer['Atoms'][r][c]
+                            if len(name) in [2,4]:
+                                Layer['Atoms'][r][c-1] = name[:2]+'%d'%(r+1)
+                            else:
+                                Layer['Atoms'][r][c-1] = name[:1]+'%d'%(r+1)
+                    PE.Destroy()
+                    UpdateLayerData()
+                else:
+                    event.Skip()
+                    
+            def OnDrawLayer(event):
+                drawLayer.SetValue(False)
+                pass
+                
+            def OnSameAs(event):
+                Layer['SameAs'] = sameas.GetValue()
+                wx.CallAfter(UpdateLayerData)
+                    
+            layerSizer = wx.BoxSizer(wx.VERTICAL)
+            nameSizer = wx.BoxSizer(wx.HORIZONTAL)            
+            nameSizer.Add(wx.StaticText(layerData,label=' Layer name: '),0,WACV)
+            layerName = wx.TextCtrl(layerData,value=Layer['Name'],style=wx.TE_PROCESS_ENTER)
+            layerName.Bind(wx.EVT_TEXT_ENTER,OnNameChange)        
+            layerName.Bind(wx.EVT_KILL_FOCUS,OnNameChange)
+            nameSizer.Add(layerName,0,WACV)
+            if il:
+                nameSizer.Add(wx.StaticText(layerData,label=' Same as: '),0,WACV)
+                sameas = wx.ComboBox(layerData,value=Layer['SameAs'],choices=['',]+layerNames[:-1],
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                sameas.Bind(wx.EVT_COMBOBOX, OnSameAs)
+                nameSizer.Add(sameas,0,WACV)
+                if Layer['SameAs']:
+                    indx = layerNames.index(Layer['SameAs'])
+                    if indx < il:    #previously used : same layer
+                        layerSizer.Add(nameSizer)
+                        return layerSizer
+            nameSizer.Add(wx.StaticText(layerData,label=' Layer symmetry: '),0,WACV)
+            symmChoice = ['-1','None']
+            symm = wx.ComboBox(layerData,value=Layer['Symm'],choices=symmChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            symm.Bind(wx.EVT_COMBOBOX,OnSymm)
+            nameSizer.Add(symm,0,WACV)
+            addAtom = wx.CheckBox(layerData,label=' Add atom? ')
+            addAtom.Bind(wx.EVT_CHECKBOX, OnAddAtom)
+            nameSizer.Add(addAtom,0,WACV)
+            drawLayer = wx.CheckBox(layerData,label=' Draw layer? ')
+            drawLayer.Bind(wx.EVT_CHECKBOX, OnDrawLayer)
+            nameSizer.Add(drawLayer,0,WACV)
+            layerSizer.Add(nameSizer)
+            table = []
+            rowLabels = []
+            for i,atom in enumerate(Layer['Atoms']):
+                table.append(atom)
+                rowLabels.append(str(i))
+            atomTable = G2G.Table(table,rowLabels=rowLabels,colLabels=colLabels,types=colTypes)
+            atomGrid = G2G.GSGrid(layerData)
+            atomGrid.SetTable(atomTable,True)
+            atomGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
+            for c in range(3,6):
+                attr = wx.grid.GridCellAttr()
+                attr.IncRef()               #fix from Jim Hester
+                attr.SetEditor(G2G.GridFractionEditor(atomGrid))
+                atomGrid.SetColAttr(c, attr)
+            atomGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, AtomTypeSelect)
+            atomGrid.AutoSizeColumns(True)
+            layerSizer.Add(atomGrid)
+            return layerSizer
+            
+        def TransSizer():
+            
+            def PlotSelect(event):
+                Obj = event.GetEventObject()
+                Yi = Indx[Obj.GetId()]               
+                Xi,c =  event.GetRow(),event.GetCol()
+                if Xi >= 0 and c == 5:   #plot column
+                    Obj.SetCellValue(Xi,5,'')
+                    print 'plot %s - %s'%(Names[Yi],Names[Xi])
+            
+            transSizer = wx.BoxSizer(wx.VERTICAL)
+            transSizer.Add(wx.StaticText(layerData,label=' Layer-Layer transition probabilities:'),0,WACV)
+            Names = [layer['Name'] for layer in Layers['Layers']]
+            transArray = Layers['Transitions']
+            Indx = {}
+            if not Names or not transArray:
+                return transSizer
+            for Yi,Yname in enumerate(Names):
+                transSizer.Add(wx.StaticText(layerData,label=' From %s to:'%(Yname)),0,WACV)
+                table = []
+                rowLabels = []
+                for Xi,Xname in enumerate(Names):
+                    table.append(transArray[Yi][Xi])
+                    rowLabels.append(Xname)
+                transTable = G2G.Table(table,rowLabels=rowLabels,colLabels=transLabels,types=transTypes)
+                transGrid = G2G.GSGrid(layerData)
+                transGrid.SetTable(transTable,True)
+                transGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
+                Indx[transGrid.GetId()] = Yi
+                for c in range(1,4):
+                    attr = wx.grid.GridCellAttr()
+                    attr.IncRef()               #fix from Jim Hester
+                    attr.SetEditor(G2G.GridFractionEditor(transGrid))
+                    transGrid.SetColAttr(c, attr)
+                transGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, PlotSelect)
+                transGrid.AutoSizeColumns(True)
+                transSizer.Add(transGrid)
+            return transSizer
+            
+        def StackSizer():
+            
+            def OnStackType(event):
+                Layers['Stacking'][0] = stackType.GetValue()
+                wx.CallAfter(UpdateLayerData)
+                
+            def OnNumLayers(event):
+                val = numLayers.GetValue()
+                if val == 'infinite':
+                    Layers['Stacking'][1] = val
+                else:
+                    if int(val) > 1032:
+                        Layers['Stacking'][1] = 'infinite'
+                    else:
+                        Layers['Stacking'][1] = val
+                numLayers.SetValue(val)
+                
+            def OnSeqType(event):
+                Layers['Stacking'][1] = seqType.GetValue()
+            
+            stackChoice = ['recursive','explicit',]
+            seqChoice = ['random','list',]
+            numChoice = [' ','infinite',]            
+            stackSizer = wx.BoxSizer(wx.VERTICAL)
+            stackSizer.Add(wx.StaticText(layerData,label=' Layer stacking parameters:'),0,WACV)
+            if not Layers['Stacking']:
+                return stackSizer
+            topLine = wx.BoxSizer(wx.HORIZONTAL)
+            topLine.Add(wx.StaticText(layerData,label=' Stacking type: '),0,WACV)
+            stackType = wx.ComboBox(layerData,value=Layers['Stacking'][0],choices=stackChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            stackType.Bind(wx.EVT_COMBOBOX,OnStackType)
+            topLine.Add(stackType,0,WACV)
+            if Layers['Stacking'][0] == 'recursive':
+                topLine.Add(wx.StaticText(layerData,label=' number of layers: '),0,WACV)
+                numLayers = wx.ComboBox(layerData,value=Layers['Stacking'][1],choices=numChoice,
+                    style=wx.CB_DROPDOWN)
+                stackType.Bind(wx.EVT_COMBOBOX,OnNumLayers)
+                stackType.Bind(wx.EVT_TEXT_ENTER,OnNumLayers)        
+                stackType.Bind(wx.EVT_KILL_FOCUS,OnNumLayers)
+                topLine.Add(numLayers,0,WACV)
+            elif Layers['Stacking'][0] == 'explicit':
+                topLine.Add(wx.StaticText(layerData,label=' layer sequence: '),0,WACV)
+                seqType = wx.ComboBox(layerData,value=Layers['Stacking'][1],choices=seqChoice,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                seqType.Bind(wx.EVT_COMBOBOX,OnSeqType)
+                topLine.Add(seqType,0,WACV)
+            stackSizer.Add(topLine,0,WACV)
+            if Layers['Stacking'][1] == 'list':
+                stackSizer.Add(wx.StaticText(layerData,label=' Explicit layer sequence;'
+                
+            return stackSizer
+            
+        generalData = data['General']
+        Layers = data['Layers']
+        layerNames = []
+        if len(Layers['Layers']):
+            layerNames = [layer['Name'] for layer in Layers['Layers']]
+        G2frame.dataFrame.SetStatusText('')
+        layerData = G2frame.layerData
+        SGData = generalData['SGData']
+        if layerData.GetSizer():
+            layerData.GetSizer().Clear(True)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        topSizer = wx.BoxSizer(wx.VERTICAL)   
+        bottomSizer = wx.BoxSizer(wx.VERTICAL)   
+        topSizer.Add(wx.StaticText(layerData,label=' Global layer description:'),0,WACV)
+        laueSizer = wx.BoxSizer(wx.HORIZONTAL)
+        laueSizer.Add(wx.StaticText(layerData,label=' Diffraction Laue symmetry:'),0,WACV)
+        laue = wx.ComboBox(layerData,value=Layers['Laue'],choices=laueChoice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        laue.Bind(wx.EVT_COMBOBOX,OnLaue)
+        laueSizer.Add(laue,0,WACV)
+        if Layers['Laue'] == 'unknown':
+            laueSizer.Add(wx.StaticText(layerData,label=' Diffraction symmetry tolerance: '),0,WACV)
+            toler = wx.TextCtrl(layerData,value='%.3f'%(Layers['Toler']),style=wx.TE_PROCESS_ENTER)
+            toler.Bind(wx.EVT_TEXT_ENTER,OnToler)        
+            toler.Bind(wx.EVT_KILL_FOCUS,OnToler)
+            laueSizer.Add(toler,0,WACV)
+        topSizer.Add(laueSizer,0,WACV)
+        topSizer.Add(wx.StaticText(layerData,label=' Reference unit cell for all layers:'),0,WACV)
+        topSizer.Add(CellSizer(),0,WACV)
+        topSizer.Add(WidthSizer())
+        G2G.HorizontalLine(topSizer,layerData)
+        titleSizer = wx.BoxSizer(wx.HORIZONTAL)
+        titleSizer.Add(wx.StaticText(layerData,label=' Layer descriptions: '),0,WACV)
+        newLayer = wx.CheckBox(layerData,label=' Add new layer?')
+        newLayer.Bind(wx.EVT_CHECKBOX, OnNewLayer)
+        titleSizer.Add(newLayer,0,WACV)
+        importLayer = wx.CheckBox(layerData,label=' Import new layer?')
+        importLayer.Bind(wx.EVT_CHECKBOX, OnImportLayer)
+        titleSizer.Add(importLayer,0,WACV)
+        topSizer.Add(titleSizer,0,WACV)
+        for il,layer in enumerate(Layers['Layers']):
+            topSizer.Add(LayerSizer(il,layer))
+        mainSizer.Add(topSizer)
+        G2G.HorizontalLine(bottomSizer,layerData)
+        bottomSizer.Add(TransSizer())
+        G2G.HorizontalLine(bottomSizer,layerData)
+        bottomSizer.Add(StackSizer())
+        mainSizer.Add(bottomSizer)
+        SetPhaseWindow(G2frame.dataFrame,G2frame.layerData,mainSizer,Scroll)
+        
+    def OnLoadDIFFaX(event):
+        if len(data['Layers']['Layers']):
+            dlg = wx.MessageDialog(G2frame,'Do you really want to replace the Layer data?','Load DIFFaX file', 
+                wx.YES_NO | wx.ICON_QUESTION)
+            try:
+                result = dlg.ShowModal()
+                if result == wx.ID_NO:
+                    return
+            finally:
+                dlg.Destroy()
+        dlg = wx.FileDialog(G2frame, 'Choose DIFFaX file name to read', '.', '',
+            'DIFFaX file (*.*)|*.*',style=wx.OPEN | wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                DIFFaXfile = dlg.GetPath()
+                data['Layers'] = G2IO.ReadDIFFaX(DIFFaXfile)
+        finally:
+            dlg.Destroy()
+        wx.CallAfter(UpdateLayerData)
+        
+################################################################################
 #### Wave Data page
 ################################################################################
 
@@ -2393,6 +2816,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         atNames = []
         for atm in atomData:
             atNames.append(atm[ct-1])
+        if not atNames:
+            return
         if G2frame.atmSel not in atNames:
             G2frame.atmSel = atNames[0]
         
@@ -4656,8 +5081,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         cx,ct,cs,cia = general['AtomPtrs']
         AtLookUp = G2mth.FillAtomLookUp(data['Atoms'],cia+8)
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
-        RBData = G2frame.PatternTree.GetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies')
+        if not Id:
+            return
+        RBData = G2frame.PatternTree.GetItemPyData(Id)
         Indx = {}
         atomStyle = 'balls & sticks'
         if 'macro' in general['Type']:
@@ -5525,8 +5952,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             SetupDrawingData()
         general = data['General']
         Amat,Bmat = G2lat.cell2AB(general['Cell'][1:7])
-        RBData = G2frame.PatternTree.GetItemPyData(   
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies'))
+        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Rigid bodies')
+        if not Id:
+            return
+        RBData = G2frame.PatternTree.GetItemPyData(Id)
         Indx = {}
         atomStyle = 'balls & sticks'
         if 'macro' in general['Type']:
@@ -6385,6 +6814,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Atoms':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.AtomsMenu)
             FillAtomsGrid(Atoms)
+        elif text == 'Layers':
+            G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LayerData)
+            UpdateLayerData()
         elif text == 'Wave Data' and data['General']['Type'] in ['modulated','magnetic']:
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.WavesData)
             UpdateWavesData()
@@ -6467,7 +6899,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         # Wave Data
         if data['General']['Type'] in ['modulated','magnetic']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.WavesData)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnWaveVary, id=G2gd.wxID_WAVEVARY)            
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnWaveVary, id=G2gd.wxID_WAVEVARY)
+        # Stacking faults
+        if data['General']['Type'] == 'faulted':
+            print 'set bind'
+            FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.LayerData)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
         # Draw Options
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataDrawOptions)
         # Draw Atoms
@@ -6563,7 +7000,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     if data['General']['Type'] in ['modulated','magnetic']:
         G2frame.waveData = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(G2frame.waveData,'Wave Data')
-        Pages.append('Wave Data')        
+        Pages.append('Wave Data') 
+    if data['General']['Type'] == 'faulted':
+        G2frame.layerData = wx.ScrolledWindow(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(G2frame.layerData,'Layers')
+        Pages.append('Layers')               
     drawOptions = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(drawOptions,'Draw Options')
     Pages.append('Draw Options')
@@ -6571,14 +7012,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.gridList.append(drawAtoms)
     G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
     Pages.append('Draw Atoms')
-    RigidBodies = wx.ScrolledWindow(G2frame.dataDisplay)
-    G2frame.dataDisplay.AddPage(RigidBodies,'RB Models')
-    Pages.append('RB Models')
+    if data['General']['Type'] not in ['modulated','magnetic','faulted',]:
+        RigidBodies = wx.ScrolledWindow(G2frame.dataDisplay)
+        G2frame.dataDisplay.AddPage(RigidBodies,'RB Models')
+        Pages.append('RB Models')
     MapPeaks = G2G.GSGrid(G2frame.dataDisplay)
     G2frame.dataDisplay.gridList.append(MapPeaks)    
     G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
     Pages.append('Map peaks')
-    if data['General']['Type'] not in ['modulated','magnetic']:
+    if data['General']['Type'] not in ['modulated','magnetic','faulted',]:
         G2frame.MCSA = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(G2frame.MCSA,'MC/SA')
         Pages.append('MC/SA')

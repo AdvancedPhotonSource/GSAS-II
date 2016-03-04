@@ -961,64 +961,6 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
                 [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
     return Id       #last powder pattern generated
             
-# def powderFxyeSave(G2frame,exports,powderfile):
-#     'Save a powder histogram as a GSAS FXYE file'
-#     head,tail = ospath.split(powderfile)
-#     name,ext = tail.split('.')
-#     for i,export in enumerate(exports):
-#         filename = ospath.join(head,name+'-%03d.'%(i)+ext)
-#         prmname = filename.strip(ext)+'prm'
-#         prm = open(prmname,'w')      #old style GSAS parm file
-#         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
-#         Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame, \
-#             PickId, 'Instrument Parameters'))[0]
-#         prm.write( '            123456789012345678901234567890123456789012345678901234567890        '+'\n')
-#         prm.write( 'INS   BANK      1                                                               '+'\n')
-#         prm.write(('INS   HTYPE   %sR                                                              '+'\n')%(Inst['Type'][0]))
-#         if 'Lam1' in Inst:              #Ka1 & Ka2
-#             prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam1'][0],Inst['Lam2'][0]))
-#         elif 'Lam' in Inst:             #single wavelength
-#             prm.write(('INS  1 ICONS%10.7f%10.7f    0.0000               0.990    0     0.500   '+'\n')%(Inst['Lam'][1],0.0))
-#         prm.write( 'INS  1 IRAD     0                                                               '+'\n')
-#         prm.write( 'INS  1I HEAD                                                                    '+'\n')
-#         prm.write( 'INS  1I ITYP    0    0.0000  180.0000         1                                 '+'\n')
-#         prm.write(('INS  1DETAZM%10.3f                                                          '+'\n')%(Inst['Azimuth'][0]))
-#         prm.write( 'INS  1PRCF1     3    8   0.00100                                                '+'\n')
-#         prm.write(('INS  1PRCF11     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['U'][1],Inst['V'][1],Inst['W'][1],0.0))
-#         prm.write(('INS  1PRCF12     %15.6g%15.6g%15.6g%15.6g   '+'\n')%(Inst['X'][1],Inst['Y'][1],Inst['SH/L'][1]/2.,Inst['SH/L'][1]/2.))
-#         prm.close()
-#         file = open(filename,'w')
-#         print 'save powder pattern to file: ',filename
-#         x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
-#         file.write(powderfile+'\n')
-#         file.write('Instrument parameter file:'+ospath.split(prmname)[1]+'\n')
-#         file.write('BANK 1 %d %d CONS %.2f %.2f 0 0 FXYE\n'%(len(x),len(x),\
-#             100.*x[0],100.*(x[1]-x[0])))
-#         s = list(np.sqrt(1./np.array(w)))        
-#         XYW = zip(x,y,s)
-#         for X,Y,S in XYW:
-#             file.write("%15.6g %15.6g %15.6g\n" % (100.*X,Y,max(S,1.0)))
-#         file.close()
-#         print 'powder pattern file '+filename+' written'
-        
-# def powderXyeSave(G2frame,exports,powderfile):
-#     'Save a powder histogram as a Topas XYE file'
-#     head,tail = ospath.split(powderfile)
-#     name,ext = tail.split('.')
-#     for i,export in enumerate(exports):
-#         filename = ospath.join(head,name+'-%03d.'%(i)+ext)
-#         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
-#         file = open(filename,'w')
-#         file.write('#%s\n'%(export))
-#         print 'save powder pattern to file: ',filename
-#         x,y,w,yc,yb,yd = G2frame.PatternTree.GetItemPyData(PickId)[1]
-#         s = list(np.sqrt(1./np.array(w)))        
-#         XYW = zip(x,y,s)
-#         for X,Y,W in XYW:
-#             file.write("%15.6g %15.6g %15.6g\n" % (X,Y,W))
-#         file.close()
-#         print 'powder pattern file '+filename+' written'
-        
 def PDFSave(G2frame,exports):
     'Save a PDF G(r) and S(Q) in column formats'
     for export in exports:
@@ -2370,6 +2312,132 @@ def ExportPowder(G2frame,TreeName,fileroot,extension):
                 print err
     else:
         print('No Export routine supports extension '+extension)
+        
+def ReadDIFFaX(DIFFaXfile):
+    print 'read ',DIFFaXfile
+    Layer = {'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],'Width':[[10.,10.],[False,False]],
+        'Layers':[],'Stacking':[],'Transitions':[],'Toler':0.01}
+    df = open(DIFFaXfile,'r')
+    lines = df.readlines()
+    df.close()
+    struct = False
+    Struct = []
+    stack = False
+    Stack = []
+    trans = False
+    Trans = []
+    instr = False
+    for diff in lines:
+        diff = diff[:-1].lower()
+        if '!'  in diff:
+            continue
+        while '}' in diff: #strip comments
+            iB = diff.index('{')
+            iF = diff.index('}')+1
+            if iB:
+                diff = diff[:iB]
+            else:
+                diff = diff[iF:]
+        if not diff:
+            continue
+        if diff.strip() == 'instrumental':
+            instr = True
+            continue
+        if diff.strip() == 'structural':
+            instr = False
+            struct = True
+            continue
+        elif diff.strip() == 'stacking':
+            struct = False
+            stack = True
+            continue
+        elif diff.strip() == 'transitions':
+            stack = False
+            trans = True
+            continue
+        diff = diff.strip()
+        if struct:
+            if diff:
+                Struct.append(diff)
+        elif stack:
+            if diff:
+                Stack.append(diff)
+        elif trans:
+            if diff:
+                Trans.append(diff)
+   
+#STRUCTURE records
+    laueRec = Struct[1].split()
+    Layer['Laue'] = laueRec[0]
+    if Layer['Laue'] == 'unknown' and len(laueRec) > 1:
+        Layer['Toler'] = float(laueRec[1])    #tolerance for 'unknown'?
+    if Layer['Laue'] == '2/m(1)': Layer['Laue'] = '2/m(c)'
+    if Layer['Laue'] == '2/m(2)': Layer['Laue'] = '2/m(ab)'
+    cell = Struct[0].split()
+    Layer['Cell'] = [False,float(cell[0]),float(cell[1]),float(cell[2]),90.,90.,float(cell[3]),1.0]
+    nLayers = int(Struct[2])
+    N = 3
+    if 'layer' not in Struct[3]:
+        N = 4
+        if Struct[3] != 'infinite':
+            width = Struct[3].split()
+            Layer['Width'][0] = [float(width[0]),float(width[1])]
+    for nL in range(nLayers):
+        if '=' in Struct[N]:
+            name = Struct[N].split('=')
+            sameas = int(name[1])-1
+            Layer['Layers'].append({'Name':name[0],'SameAs':Layer['Layers'][sameas]['Name'],'Symm':'None','Atoms':[]})
+            N += 1
+            continue
+        Symm = 'None'
+        if 'centro' in Struct[N+1]: Symm = '-1'
+        Layer['Layers'].append({'Name':Struct[N],'SameAs':'','Symm':Symm,'Atoms':[]})
+        N += 2
+        iatm = 0
+        while 'layer' not in Struct[N]:
+            atom = Struct[N][4:].split()
+            atomType = G2el.FixValence(Struct[N][:4]).strip().capitalize()
+            atomName = '%s(%s)'%(atomType,atom[0])
+            newVals = []
+            for val in atom[1:6]:
+                if '/' in val:
+                    newVals.append(eval(val+'.'))
+                else:
+                    newVals.append(float(val))                
+            atomRec = [atomName,atomType,'',newVals[0],newVals[1],newVals[2],newVals[4],newVals[3]/80.]
+            Layer['Layers'][-1]['Atoms'].append(atomRec)
+            N += 1
+            if N > len(Struct)-1:
+                break
+#TRANSITIONS records
+    transArray = []
+    N = 0
+    for i in range(nLayers):
+        transArray.append([])
+        for j in range(nLayers):
+            vals = Trans[N].split()
+            newVals = []
+            for val in vals[:4]:
+                if '/' in val:
+                    newVals.append(eval(val+'.'))
+                else:
+                    newVals.append(float(val))
+            transArray[-1].append(newVals+['',False])
+            N += 1
+    Layer['Transitions'] = transArray
+#STACKING records
+    Layer['Stacking'] = [Stack[0],'']
+    if Stack[0] == 'recursive':
+        Layer['Stacking'][1] = Stack[1]
+    elif Stack[0] == 'explicit':
+        if Stack[1] == 'random':
+            Layer['Stacking'][1] = Stack[1]
+        else:
+            Layer['Stacking'][1] = 'list'
+            Layer['Stacking'].append('')
+            for stack in Stack[2:]:
+                Layer['Stacking'][2] += ' '+stack
+    return Layer
 
 def ReadCIF(URLorFile):
     '''Open a CIF, which may be specified as a file name or as a URL using PyCifRW

@@ -86,6 +86,9 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
 ] = [wx.NewId() for item in range(2)]
 
+[ wxID_LOADDIFFAX,
+] = [wx.NewId() for item in range(1)]
+
 [ wxID_PAWLEYLOAD, wxID_PAWLEYESTIMATE, wxID_PAWLEYUPDATE,
 ] = [wx.NewId() for item in range(3)]
 
@@ -1625,6 +1628,16 @@ class DataFrame(wx.Frame):
         self.WavesData.Append(menu=self.WavesDataEdit, title='Edit')
         self.WavesDataEdit.Append(id=wxID_WAVEVARY, kind=wx.ITEM_NORMAL,text='Global wave vary',
             help='Global setting of wave vary flags')
+        self.PostfillDataMenu()
+        
+        # Phase / Layer tab 
+        self.LayerData = wx.MenuBar()
+        self.PrefillDataMenu(self.LayerData,helpType='Layer Data', helpLbl='Stacking fault layers')
+        self.LayerData.Append(menu=wx.Menu(title=''),title='Select tab')
+        self.LayerDataEdit = wx.Menu(title='')
+        self.LayerData.Append(menu=self.LayerDataEdit, title='Edit')
+        self.LayerDataEdit.Append(id=wxID_LOADDIFFAX, kind=wx.ITEM_NORMAL,text='Load from DIFFaX file',
+            help='Load layer info from DIFFaX file')
         self.PostfillDataMenu()
                  
         # Phase / Draw Options tab

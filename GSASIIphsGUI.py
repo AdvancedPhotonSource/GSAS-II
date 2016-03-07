@@ -422,7 +422,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if 'Layers' not in pages:
                             if 'Layers' not in data:
                                 data['Layers'] = {'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],
-                                    'Width':[[10.,10.],[False,False]],'Toler':0.01,
+                                    'Width':[[10.,10.],[False,False]],'Toler':0.01,'AtInfo':{},
                                     'Layers':[],'Stacking':[],'Transitions':[]}
                             G2frame.layerData = wx.ScrolledWindow(G2frame.dataDisplay)
                             G2frame.dataDisplay.InsertPage(3,G2frame.layerData,'Layers')
@@ -2396,7 +2396,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+2*[wg.GRID_VALUE_FLOAT+':10,4',] #x,y,z,frac,Uiso
         transTypes = [wg.GRID_VALUE_FLOAT+':10,3',]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
             [wg.GRID_VALUE_CHOICE+": ,P,PX,PY,PZ,PXY,PXZ,PYZ,PXYZ,X,Y,Z,XY,XZ,YZ,XYZ",wg.GRID_VALUE_BOOL,]
-            
+        plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],}
+
         def OnLaue(event):
             Obj = event.GetEventObject()
             data['Layers']['Laue'] = Obj.GetValue()
@@ -2509,7 +2510,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Indx = {}
             widthSizer = wx.BoxSizer(wx.HORIZONTAL)
             for i in range(2):
-                widthSizer.Add(wx.StaticText(layerData,label=' layer width(%s): '%(Labels[i])),0,WACV)
+                widthSizer.Add(wx.StaticText(layerData,label=' layer width(%s) \xb5m: '%(Labels[i])),0,WACV)
                 widthVal = wx.TextCtrl(layerData,value='%.3f'%(widths[i]),style=wx.TE_PROCESS_ENTER)
                 widthVal.Bind(wx.EVT_TEXT_ENTER,OnWidthChange)        
                 widthVal.Bind(wx.EVT_KILL_FOCUS,OnWidthChange)
@@ -2524,6 +2525,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         def OnNewLayer(event):
             data['Layers']['Layers'].append({'Name':'Unk','SameAs':'','Symm':'None','Atoms':[]})
+            Trans = data['Layers']['Transitions']
+            if len(Trans):
+                Trans.append([[0.,0.,0.,0.,''] for trans in Trans])
+                for trans in Trans:
+                    trans.append([0.,0.,0.,0.,''])
+            else:
+                Trans = [[1.,0.,0.,0.,''],]
             #modify transition probability matrix as well - add new row/column
             UpdateLayerData()
             
@@ -2549,13 +2557,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if atomGrid.GetColLabelValue(c) == 'Type':
                     PE = G2elemGUI.PickElement(G2frame)
                     if PE.ShowModal() == wx.ID_OK:
-                        if PE.Elem != 'None':                        
-                            Layer['Atoms'][r][c] = PE.Elem.strip()
+                        if PE.Elem != 'None':
+                            atType =                  PE.Elem.strip()       
+                            Layer['Atoms'][r][c] = atType
                             name = Layer['Atoms'][r][c]
                             if len(name) in [2,4]:
                                 Layer['Atoms'][r][c-1] = name[:2]+'%d'%(r+1)
                             else:
                                 Layer['Atoms'][r][c-1] = name[:1]+'%d'%(r+1)
+                            if atType not in data['Layers']['AtInfo']:
+                                data['Layers']['AtInfo'][atType] = G2elem.GetAtomInfo(atType)
                     PE.Destroy()
                     UpdateLayerData()
                 else:
@@ -2563,7 +2574,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     
             def OnDrawLayer(event):
                 drawLayer.SetValue(False)
-                pass
+                G2plt.PlotLayers(G2frame,Layers,[il,],plotDefaults)
                 
             def OnSameAs(event):
                 Layer['SameAs'] = sameas.GetValue()
@@ -2627,7 +2638,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Xi,c =  event.GetRow(),event.GetCol()
                 if Xi >= 0 and c == 5:   #plot column
                     Obj.SetCellValue(Xi,5,'')
-                    print 'plot %s - %s'%(Names[Yi],Names[Xi])
+                    G2plt.PlotLayers(G2frame,Layers,[Yi,Xi,],plotDefaults)
             
             transSizer = wx.BoxSizer(wx.VERTICAL)
             transSizer.Add(wx.StaticText(layerData,label=' Layer-Layer transition probabilities:'),0,WACV)
@@ -2658,6 +2669,32 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 transSizer.Add(transGrid)
             return transSizer
             
+        def PlotSizer():
+            
+            def OnPlotSeq(event):
+                vals = plotSeq.GetValue().split()
+                try:
+                    vals = [int(val)-1 for val in vals]
+                except ValueError:
+                    plotSeq.SetValue('Error in string '+vals)
+                plotSeq.SetValue('')
+                G2plt.PlotLayers(G2frame,Layers,vals,plotDefaults)
+            
+            Names = [' %s: %d,'%(layer['Name'],iL+1) for iL,layer in enumerate(Layers['Layers'])]
+            plotSizer = wx.BoxSizer(wx.VERTICAL)
+            Str = ' Using sequence nos. from:'
+            for name in Names:
+                Str += name
+            plotSizer.Add(wx.StaticText(layerData,label=Str[:-1]),0,WACV)
+            lineSizer = wx.BoxSizer(wx.HORIZONTAL)
+            lineSizer.Add(wx.StaticText(layerData,label=' Enter sequence of layers to plot:'),0,WACV)
+            plotSeq = wx.TextCtrl(layerData,value = '',style=wx.TE_PROCESS_ENTER)
+            plotSeq.Bind(wx.EVT_TEXT_ENTER,OnPlotSeq)        
+            plotSeq.Bind(wx.EVT_KILL_FOCUS,OnPlotSeq)
+            lineSizer.Add(plotSeq,0,WACV)
+            plotSizer.Add(lineSizer,0,WACV)
+            return plotSizer
+            
         def StackSizer():
             
             def OnStackType(event):
@@ -2677,6 +2714,29 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 
             def OnSeqType(event):
                 Layers['Stacking'][1] = seqType.GetValue()
+                
+            def OnStackList(event):
+                stack = stackList.GetValue()
+                stack = stack.replace('\n',' ').strip().strip('\n')
+                nstar = stack.count('*')
+                if nstar:
+                    try:
+                        newstack = ''
+                        Istar = 0
+                        for star in range(nstar):
+                            Istar = stack.index('*',Istar+1)
+                            iB = stack[:Istar].rfind(' ')
+                            if iB == -1:
+                                mult = int(stack[:Istar])
+                            else:
+                                mult = int(stack[iB:Istar])
+                            pattern = stack[Istar+2:stack.index(')',Istar)]+' '
+                            newstack += mult*pattern
+                        stack = newstack
+                    except ValueError:
+                        stack += ' Error in string'
+                Layers['Stacking'][2] = stack
+                stackList.SetValue(stack)
             
             stackChoice = ['recursive','explicit',]
             seqChoice = ['random','list',]
@@ -2707,18 +2767,27 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 topLine.Add(seqType,0,WACV)
             stackSizer.Add(topLine,0,WACV)
             if Layers['Stacking'][1] == 'list':
-                stackSizer.Add(wx.StaticText(layerData,label=' Explicit layer sequence;'),0,WACV)
-                
+                Names = [' %s: %d,'%(layer['Name'],iL+1) for iL,layer in enumerate(Layers['Layers'])]
+                stackSizer.Add(wx.StaticText(layerData,label=' Explicit layer sequence; enter space delimited list of numbers:'),0,WACV)
+                Str = ' Use sequence nos. from:'
+                for name in Names:
+                    Str += name
+                stackSizer.Add(wx.StaticText(layerData,label=Str[:-1]+' Repeat sequences can be used: e.g. 6*(1 2) '),0,WACV)
+                stackSizer.Add(wx.StaticText(layerData,label=' Zero probability sequences not allowed'),0,WACV)    
+                stackList = wx.TextCtrl(layerData,value=Layers['Stacking'][2],size=(600,-1),
+                    style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
+                stackList.SetValue(Layers['Stacking'][2])
+                stackList.Bind(wx.EVT_TEXT_ENTER,OnStackList)        
+                stackList.Bind(wx.EVT_KILL_FOCUS,OnStackList)
+                stackSizer.Add(stackList,0,wx.ALL|wx.EXPAND|WACV,8)
             return stackSizer
             
-        generalData = data['General']
         Layers = data['Layers']
         layerNames = []
         if len(Layers['Layers']):
             layerNames = [layer['Name'] for layer in Layers['Layers']]
         G2frame.dataFrame.SetStatusText('')
         layerData = G2frame.layerData
-        SGData = generalData['SGData']
         if layerData.GetSizer():
             layerData.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2753,9 +2822,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         topSizer.Add(titleSizer,0,WACV)
         for il,layer in enumerate(Layers['Layers']):
             topSizer.Add(LayerSizer(il,layer))
+        G2G.HorizontalLine(topSizer,layerData)
         mainSizer.Add(topSizer)
-        G2G.HorizontalLine(bottomSizer,layerData)
         bottomSizer.Add(TransSizer())
+        G2G.HorizontalLine(bottomSizer,layerData)
+        bottomSizer.Add(PlotSizer(),0,WACV)
         G2G.HorizontalLine(bottomSizer,layerData)
         bottomSizer.Add(StackSizer())
         mainSizer.Add(bottomSizer)
@@ -6902,7 +6973,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnWaveVary, id=G2gd.wxID_WAVEVARY)
         # Stacking faults
         if data['General']['Type'] == 'faulted':
-            print 'set bind'
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.LayerData)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
         # Draw Options

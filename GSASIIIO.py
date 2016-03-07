@@ -2316,7 +2316,7 @@ def ExportPowder(G2frame,TreeName,fileroot,extension):
 def ReadDIFFaX(DIFFaXfile):
     print 'read ',DIFFaXfile
     Layer = {'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],'Width':[[10.,10.],[False,False]],
-        'Layers':[],'Stacking':[],'Transitions':[],'Toler':0.01}
+        'Layers':[],'Stacking':[],'Transitions':[],'Toler':0.01,'AtInfo':{}}
     df = open(DIFFaXfile,'r')
     lines = df.readlines()
     df.close()
@@ -2396,7 +2396,9 @@ def ReadDIFFaX(DIFFaXfile):
         iatm = 0
         while 'layer' not in Struct[N]:
             atom = Struct[N][4:].split()
-            atomType = G2el.FixValence(Struct[N][:4]).strip().capitalize()
+            atomType = G2el.FixValence(Struct[N][:4].replace(' ','').strip().capitalize())
+            if atomType not in Layer['AtInfo']:
+                Layer['AtInfo'][atomType] = G2el.GetAtomInfo(atomType)
             atomName = '%s(%s)'%(atomType,atom[0])
             newVals = []
             for val in atom[1:6]:

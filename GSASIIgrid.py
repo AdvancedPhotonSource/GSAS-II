@@ -86,8 +86,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
 ] = [wx.NewId() for item in range(2)]
 
-[ wxID_LOADDIFFAX,
-] = [wx.NewId() for item in range(1)]
+[ wxID_LOADDIFFAX,wxID_LAYERSIMULATE,
+] = [wx.NewId() for item in range(2)]
 
 [ wxID_PAWLEYLOAD, wxID_PAWLEYESTIMATE, wxID_PAWLEYUPDATE,
 ] = [wx.NewId() for item in range(3)]
@@ -1638,6 +1638,8 @@ class DataFrame(wx.Frame):
         self.LayerData.Append(menu=self.LayerDataEdit, title='Edit')
         self.LayerDataEdit.Append(id=wxID_LOADDIFFAX, kind=wx.ITEM_NORMAL,text='Load from DIFFaX file',
             help='Load layer info from DIFFaX file')
+        self.LayerDataEdit.Append(id=wxID_LAYERSIMULATE, kind=wx.ITEM_NORMAL,text='Simulate PWDR pattern',
+            help='Simulate powder pattern from layer stacking')
         self.PostfillDataMenu()
                  
         # Phase / Draw Options tab

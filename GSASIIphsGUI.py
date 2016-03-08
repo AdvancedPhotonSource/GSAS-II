@@ -410,6 +410,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         wx.CallAfter(UpdateGeneral)
                     elif generalData['Type'] == 'faulted':
                         G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
+                        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSimulate, id=G2gd.wxID_LAYERSIMULATE)
                         if 'Wave Data' in pages:
                             pass
 #                            G2frame.dataDisplay.DeletePage(pages.index('Wave Data'))
@@ -2396,7 +2397,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+2*[wg.GRID_VALUE_FLOAT+':10,4',] #x,y,z,frac,Uiso
         transTypes = [wg.GRID_VALUE_FLOAT+':10,3',]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
             [wg.GRID_VALUE_CHOICE+": ,P,PX,PY,PZ,PXY,PXZ,PYZ,PXYZ,X,Y,Z,XY,XZ,YZ,XYZ",wg.GRID_VALUE_BOOL,]
-        plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],}
+        plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],
+            'viewPoint':[[0.,0.,0.],[]],}
 
         def OnLaue(event):
             Obj = event.GetEventObject()
@@ -2851,6 +2853,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         finally:
             dlg.Destroy()
         wx.CallAfter(UpdateLayerData)
+        
+    def OnSimulate(event):
+        print 'simulate PWDR pattern'
         
 ################################################################################
 #### Wave Data page
@@ -6971,10 +6976,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if data['General']['Type'] in ['modulated','magnetic']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.WavesData)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnWaveVary, id=G2gd.wxID_WAVEVARY)
-        # Stacking faults
+        # Stacking faults wxID_LAYERSIMULATE
         if data['General']['Type'] == 'faulted':
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.LayerData)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnSimulate, id=G2gd.wxID_LAYERSIMULATE)
         # Draw Options
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataDrawOptions)
         # Draw Atoms

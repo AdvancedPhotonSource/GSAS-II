@@ -65,6 +65,7 @@ npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda x,y: 180.*np.arctan2(x,y)/np.pi
 GkDelta = unichr(0x0394)
 Gkrho = unichr(0x03C1)
+nxs = np.newaxis
     
 class G2PlotMpl(wx.Panel):    
     'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
@@ -5802,23 +5803,30 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     uColors = [Rd,Gr,Bl]
     AtInfo = Layers['AtInfo']
     Names = [layer['Name'] for layer in Layers['Layers']]
-    atNames = []
-    atTypes = []
+    AtNames = []
+    AtTypes = []
     newXYZ = np.zeros((0,3))
     TX = np.zeros(3)
-    for il,layer in enumerate(laySeq):       
+    for il in range(len(laySeq)):
+        layer = laySeq[il]     
         if Layers['Layers'][layer]['SameAs']:
-            layer = Names.index(Layers['Layers'][layer]['SameAs'])
-        atNames += [atom[0] for atom in Layers['Layers'][layer]['Atoms']]
-        atTypes += [atom[1] for atom in Layers['Layers'][layer]['Atoms']]
-        XYZ = np.array([atom[3:6] for atom in Layers['Layers'][layer]['Atoms']])+TX
+            alayer = Names.index(Layers['Layers'][layer]['SameAs'])
+        atNames = [atom[0] for atom in Layers['Layers'][layer]['Atoms']]
+        atTypes = [atom[1] for atom in Layers['Layers'][layer]['Atoms']]
+        XYZ = np.array([atom[3:6] for atom in Layers['Layers'][layer]['Atoms']])
         if '-1' in Layers['Layers'][layer]['Symm']:
             atNames += atNames
             atTypes += atTypes
             XYZ = np.concatenate((XYZ,-XYZ))
         if il:
-            TX = np.array(Trans[laySeq[il-1]][layer][1:4])
-            XYZ += TX
+            TX += np.array(Trans[laySeq[il-1]][layer][1:4])
+        XYZ += TX
+        XYZT = XYZ.T
+        XYZT[0] = XYZT[0]%1.
+        XYZT[1] = XYZT[1]%1.
+        XYZ = XYZT.T
+        AtNames += atNames
+        AtTypes += atTypes
         newXYZ = np.concatenate((newXYZ,XYZ))
     XYZ = newXYZ
     na = int(8./cell[0])
@@ -5827,15 +5835,14 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     indA = range(-na,na)
     indB = range(-nb,nb)
     Units = np.array([[h,k,0] for h in indA for k in indB])
-    newXYZ = np.copy(XYZ)
+    newXYZ = np.zeros((0,3))
     for unit in Units:
-        if np.any(unit):
-            newXYZ = np.concatenate((newXYZ,unit+XYZ))
+        newXYZ = np.concatenate((newXYZ,unit+XYZ))
     if len(Units):
-        atNames *= len(Units)
-        atTypes *= len(Units)
+        AtNames *= len(Units)
+        AtTypes *= len(Units)
     XYZ = newXYZ
-    Bonds = FindBonds(atTypes,XYZ)
+    Bonds = FindBonds(AtTypes,XYZ)
             
     def OnMouseDown(event):
         xy = event.GetPosition()
@@ -5849,6 +5856,9 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
                 SetRotation(newxy)
                 Q = defaults['Quaternion']
                 G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
+            elif event.RightIsDown():
+                SetTranslation(newxy)
+                Tx,Ty,Tz = defaults['viewPoint'][0]
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
                 Q = defaults['Quaternion']
@@ -5874,6 +5884,22 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
         glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
+        
+    def SetTranslation(newxy):
+#first get translation vector in screen coords.       
+        oldxy = defaults['oldxy']
+        if not len(oldxy): oldxy = list(newxy)
+        dxy = newxy-oldxy
+        defaults['oldxy'] = list(newxy)
+        V = np.array([-dxy[0],dxy[1],0.])
+#then transform to rotated crystal coordinates & apply to view point        
+        Q = defaults['Quaternion']
+        V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
+        Tx,Ty,Tz = defaults['viewPoint'][0]
+        Tx += V[0]*0.1
+        Ty += V[1]*0.1
+        Tz += V[2]*0.1
+        defaults['viewPoint'][0] =  np.array([Tx,Ty,Tz])
         
     def SetRotation(newxy):
 #first get rotation vector in screen coords. & angle increment        
@@ -6006,11 +6032,11 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         radius = 0.2
         for iat,atom in enumerate(XYZ):
             x,y,z = atom
-            CL = AtInfo[atTypes[iat]]['Color']
+            CL = AtInfo[AtTypes[iat]]['Color']
             color = np.array(CL)/255.
             RenderSphere(x,y,z,radius,color)
             RenderBonds(x,y,z,Bonds[iat],0.05,color)
-            RenderLabel(x,y,z,'  '+atNames[iat],matRot)
+            RenderLabel(x,y,z,'  '+AtNames[iat],matRot)
         if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
         Page.canvas.SwapBuffers()
 

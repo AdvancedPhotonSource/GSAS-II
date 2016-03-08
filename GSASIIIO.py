@@ -728,6 +728,8 @@ def GetMAR345Data(filename,imageOnly=False):
             wave = float(line.split()[1])
         elif 'DISTANCE' in line:
             distance = float(line.split()[1])           #in mm
+            if not distance:
+                distance = 500.
         elif 'CENTER' in line:
             values = line.split()
             center = [float(values[2])/10.,float(values[4])/10.]    #make in mm from pixels

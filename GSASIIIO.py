@@ -2408,7 +2408,7 @@ def ReadDIFFaX(DIFFaXfile):
                     newVals.append(eval(val+'.'))
                 else:
                     newVals.append(float(val))                
-            atomRec = [atomName,atomType,'',newVals[0],newVals[1],newVals[2],newVals[4],newVals[3]/80.]
+            atomRec = [atomName,atomType,'',newVals[0],newVals[1],newVals[2],newVals[4],newVals[3]/78.9568]
             Layer['Layers'][-1]['Atoms'].append(atomRec)
             N += 1
             if N > len(Struct)-1:

@@ -825,6 +825,27 @@ def getWave(Parms):
     except KeyError:
         return Parms['Lam1'][1]
         
+def getMeanWave(Parms):
+    '''returns mean wavelength from Instrument parameters dictionary
+    
+    :param dict Parms: Instrument parameters;
+        must contain:
+        Lam: single wavelength
+        or
+        Lam1,Lam2: Ka1,Ka2 radiation wavelength
+        I(L2)/I(L1): Ka2/Ka1 ratio
+    
+    :returns: float wave: mean wavelength
+    
+    '''
+    try:
+        return Parms['Lam'][1]
+    except KeyError:
+        meanLam = (Parms['Lam1'][1]+Parms['I(L2)/I(L1)'][1]*Parms['Lam2'][1])/   \
+            (1.+Parms['I(L2)/I(L1)'][1])
+        return meanLam
+    
+        
 def El2Mass(Elements):
     '''compute molecular weight from Elements 
     

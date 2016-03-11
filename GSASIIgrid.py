@@ -1635,7 +1635,7 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.LayerData,helpType='Layer Data', helpLbl='Stacking fault layers')
         self.LayerData.Append(menu=wx.Menu(title=''),title='Select tab')
         self.LayerDataEdit = wx.Menu(title='')
-        self.LayerData.Append(menu=self.LayerDataEdit, title='Edit')
+        self.LayerData.Append(menu=self.LayerDataEdit, title='Operations')
         self.LayerDataEdit.Append(id=wxID_LOADDIFFAX, kind=wx.ITEM_NORMAL,text='Load from DIFFaX file',
             help='Load layer info from DIFFaX file')
         self.LayerDataEdit.Append(id=wxID_LAYERSIMULATE, kind=wx.ITEM_NORMAL,text='Simulate PWDR pattern',

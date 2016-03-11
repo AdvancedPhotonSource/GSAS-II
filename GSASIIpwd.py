@@ -15,6 +15,8 @@
 import sys
 import math
 import time
+import os
+import subprocess as subp
 
 import numpy as np
 import scipy as sp
@@ -324,8 +326,10 @@ def CalcPDF(data,inst,xydata):
     
         
     return auxPlot
-        
+
+################################################################################        
 #GSASII peak fitting routines: Finger, Cox & Jephcoat model        
+################################################################################
 
 def factorize(num):
     ''' Provide prime number factors for integer num
@@ -1727,6 +1731,131 @@ def calcIncident(Iparm,xdata):
     WYI = np.sum(M*DYI,axis=0)
     WYI = np.where(WYI>0.,WYI,0.)
     return YI,WYI
+    
+################################################################################
+# Stacking fault simulation codes
+################################################################################
+
+def StackSim(Layers,HistName,limits,inst,profile):
+    '''Simulate powder pattern from stacking faults using DIFFaX
+    
+    param: Layers dict: 'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],
+                        'Width':[[10.,10.],[False,False]],'Toler':0.01,'AtInfo':{},
+                        'Layers':[],'Stacking':[],'Transitions':[]}
+    param: HistName str: histogram name to simulate 'PWDR...'
+    param: limits list: min/max 2-theta to be calculated
+    param: inst dict: instrumnet parameters dictionary
+    param: profile list: powder pattern data
+    
+    all updated in place    
+    '''
+    import atmdata
+    path = sys.path
+    for name in path:
+        if 'bin' in name:
+            DIFFaX = name+'/DIFFaX.exe'
+            break
+    # make form factor file that DIFFaX wants - atom types are GSASII style
+    sf = open('data.sfc','w')
+    sf.write('GSASII special form factor file for DIFFaX\n\n')
+    atTypes = Layers['AtInfo'].keys()
+    if 'H' not in atTypes:
+        atTypes.insert(0,'H')
+    for atType in atTypes:
+        if atType == 'H': 
+            blen = -.3741
+        else:
+            blen = Layers['AtInfo'][atType]['Isotopes']['Nat. Abund.']['SL'][0]
+        Adat = atmdata.XrayFF[atType]
+        text = '%4s'%(atType.ljust(4))
+        for i in range(4):
+            text += '%11.6f%11.6f'%(Adat['fa'][i],Adat['fb'][i])
+        text += '%11.6f%11.6f'%(Adat['fc'],blen)
+        text += '%3d\n'%(Adat['Z'])
+        sf.write(text)
+    sf.close()
+    #make DIFFaX control.dif file - future use GUI to set some of these flags
+    x0 = profile[0]
+    iBeg = np.searchsorted(x0,limits[0])
+    iFin = np.searchsorted(x0,limits[1])
+    x = x0[iBeg:iFin]
+    dx = x0[iBeg+1]-x0[iBeg]
+    cf = open('control.dif','w')
+    cf.write('GSASII-DIFFaX.dat\n0\n0\n3\n')
+    cf.write('%.3f %.3f %.3f\n1\n1\nend\n'%(x0[iBeg],x0[iFin],dx))
+    cf.close()
+    #make DIFFaX data file
+    df = open('GSASII-DIFFaX.dat','w')
+    df.write('INSTRUMENTAL\n')
+    if 'X' in inst['Type'][0]:
+        df.write('X-RAY\n')
+    elif 'N' in inst['Type'][0]:
+        df.write('NEUTRON\n')
+    df.write('%.4f\n'%(G2mth.getMeanWave(inst)))
+#    df.write('GAUSSIAN 0.1 TRIM\n')     #fast option - might not really matter
+    df.write('PSEUDO-VOIGT 0.1 -0.036 0.009 0.6 TRIM\n')    #slow - make a GUI option?
+    df.write('STRUCTURAL\n')
+    a,b,c = Layers['Cell'][1:4]
+    gam = Layers['Cell'][6]
+    df.write('%.4f %.4f %.4f %.3f\n'%(a,b,c,gam))
+    if 'unknown' in Layers['Laue']:
+        df.write('%s %.3f\n'%(Layers['Laue'],Layers['Toler']))
+    else:    
+        df.write('%s\n'%(Layers['Laue']))
+    df.write('%d\n'%(len(Layers['Layers'])))
+    if Layers['Width'][0][0] < 1. or Layers['Width'][0][1] < 1.:
+        df.write('%.1f %.1f\n'%(Layers['Width'][0][0]*10000.,Layers['Width'][0][0]*10000.))    #mum to A
+    layerNames = []
+    for layer in Layers['Layers']:
+        layerNames.append(layer['Name'])
+    for il,layer in enumerate(Layers['Layers']):
+        if layer['SameAs']:
+            df.write('LAYER %d = %d\n'%(il+1,layerNames.index(layer['SameAs'])+1))
+            continue
+        df.write('LAYER %d\n'%(il+1))
+        if '-1' in layer['Symm']:
+            df.write('CENTROSYMMETRIC\n')
+        else:
+            df.write('NONE\n')
+        for ia,atom in enumerate(layer['Atoms']):
+            [name,atype,Q,x,y,z,frac,Uiso] = atom
+            if '-1' in layer['Symm'] and [x,y,z] == [0.,0.,0.]:
+                frac /= 2.
+            df.write('%4s %3d %.5f %.5f %.5f %.4f %.2f\n'%(atype.ljust(6),ia,x,y,z,78.9568*Uiso,frac))
+    df.write('STACKING\n')
+    df.write('%s\n'%(Layers['Stacking'][0]))
+    if 'recursive' in Layers['Stacking'][0]:
+        df.write('%s\n'%Layers['Stacking'][1])
+    else:
+        if 'list' in Layers['Stacking'][1]:
+            Slen = len(Layers['Stacking'][2])
+            iB = 0
+            iF = 0
+            while True:
+                iF += 68
+                if iF >= Slen:
+                    break
+                iF = min(iF,Slen)
+                df.write('%s\n'%(Layers['Stacking'][2][iB:iF]))
+                iB = iF
+        else:
+            df.write('%s\n'%Layers['Stacking'][1])    
+    df.write('TRANSITIONS\n')
+    for iY in range(len(Layers['Layers'])):
+        for iX in range(len(Layers['Layers'])):
+            p,dx,dy,dz = Layers['Transitions'][iY][iX][:4]
+            df.write('%.3f %.5f %.5f %.5f\n'%(p,dx,dy,dz))        
+    df.close()    
+    time0 = time.time()
+    subp.call(DIFFaX)
+    print 'DIFFaX time = %.2fs'%(time.time()-time0)
+    X = np.loadtxt('GSASII-DIFFaX.spc')
+    profile[3][:len(X.T[1])] = X.T[1]
+    #cleanup files..
+    os.remove('data.sfc')
+    os.remove('control.dif')
+    os.remove('GSASII-DIFFaX.dat')
+    os.remove('GSASII-DIFFaX.spc')
     
 #testing data
 NeedTestData = True

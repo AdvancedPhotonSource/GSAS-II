@@ -2699,23 +2699,28 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         def StackSizer():
             
+            stackChoice = ['recursive','explicit',]
+            seqChoice = ['random','list',]
+            numChoice = [' ','infinite',]  
+                      
             def OnStackType(event):
-                Layers['Stacking'][0] = stackType.GetValue()
+                data['Layers']['Stacking'][0] = stackType.GetValue()
                 wx.CallAfter(UpdateLayerData)
                 
             def OnNumLayers(event):
                 val = numLayers.GetValue()
                 if val == 'infinite':
-                    Layers['Stacking'][1] = val
+                    data['Layers']['Stacking'][1] = val
                 else:
                     if int(val) > 1032:
-                        Layers['Stacking'][1] = 'infinite'
+                        data['Layers']['Stacking'][1] = 'infinite'
                     else:
-                        Layers['Stacking'][1] = val
+                        data['Layers']['Stacking'][1] = val
                 numLayers.SetValue(val)
                 
             def OnSeqType(event):
-                Layers['Stacking'][1] = seqType.GetValue()
+                data['Layers']['Stacking'][1] = seqType.GetValue()
+                wx.CallAfter(UpdateLayerData)
                 
             def OnStackList(event):
                 stack = stackList.GetValue()
@@ -2737,12 +2742,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         stack = newstack
                     except ValueError:
                         stack += ' Error in string'
-                Layers['Stacking'][2] = stack
+                data['Layers']['Stacking'][2] = stack
                 stackList.SetValue(stack)
             
-            stackChoice = ['recursive','explicit',]
-            seqChoice = ['random','list',]
-            numChoice = [' ','infinite',]            
             stackSizer = wx.BoxSizer(wx.VERTICAL)
             stackSizer.Add(wx.StaticText(layerData,label=' Layer stacking parameters:'),0,WACV)
             if not Layers['Stacking']:
@@ -2855,7 +2857,34 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         wx.CallAfter(UpdateLayerData)
         
     def OnSimulate(event):
-        print 'simulate PWDR pattern'
+        UseList = []
+        for item in data['Histograms']:
+            if 'PWDR' in item:
+                UseList.append(item)
+        if not UseList:
+            wx.MessageBox('No PWDR data for this phase to simulate',caption='Data error',style=wx.ICON_EXCLAMATION)
+            return
+        dlg = wx.SingleChoiceDialog(G2frame,'Data to simulate','Select',UseList)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            HistName = UseList[sel]
+        else:
+            return
+        dlg.Destroy()
+        PWDR = data['Histograms'][HistName]
+        G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistName)
+        
+        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+            G2frame,G2frame.PatternId, 'Limits'))[1]
+        inst = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+        if 'T' in inst['Type'][0]:
+            wx.MessageBox("Can't simulate neutron TOF patterns yet",caption='Data error',style=wx.ICON_EXCLAMATION)
+            return            
+        profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
+            
+        G2pwd.StackSim(data['Layers'],HistName,limits,inst,profile)
+        G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
 ################################################################################
 #### Wave Data page

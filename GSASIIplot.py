@@ -5813,7 +5813,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             alayer = Names.index(Layers['Layers'][layer]['SameAs'])
         atNames = [atom[0] for atom in Layers['Layers'][layer]['Atoms']]
         atTypes = [atom[1] for atom in Layers['Layers'][layer]['Atoms']]
-        XYZ = np.array([atom[3:6] for atom in Layers['Layers'][layer]['Atoms']])
+        XYZ = np.array([atom[2:5] for atom in Layers['Layers'][layer]['Atoms']])
         if '-1' in Layers['Layers'][layer]['Symm']:
             atNames += atNames
             atTypes += atTypes
@@ -5843,6 +5843,38 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         AtTypes *= len(Units)
     XYZ = newXYZ
     Bonds = FindBonds(AtTypes,XYZ)
+    
+    def OnPlotKeyPress(event):
+        if event.GetKeyCode() > 255:
+            return
+        keyCode = chr(min(255,event.GetKeyCode()))
+        dx = 0.
+        dy = 0.
+        dz = 0.
+        if keyCode == 'L':
+            Page.labels = not Page.labels
+            Draw('labels')
+            return
+        if len(laySeq) != 2:
+            return
+        Trans = Layers['Transitions']
+        Yi,Xi = laySeq
+        if keyCode == 'X':
+            dx = 0.001
+            if event.shiftDown:
+                dx *= -1.
+        elif keyCode == 'Y':
+            dy = 0.001
+            if event.shiftDown:
+                dy *= -1.
+        elif keyCode == 'Z':
+            dz = 0.001
+            if event.shiftDown:
+                dz *= -1.
+        Trans[Yi][Xi][1] += dx
+        Trans[Yi][Xi][2] += dy
+        Trans[Yi][Xi][3] += dz
+        Draw('shift')
             
     def OnMouseDown(event):
         xy = event.GetPosition()
@@ -5896,9 +5928,10 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         Q = defaults['Quaternion']
         V = np.inner(Bmat,G2mth.prodQVQ(G2mth.invQ(Q),V))
         Tx,Ty,Tz = defaults['viewPoint'][0]
-        Tx += V[0]*0.1
-        Ty += V[1]*0.1
-        Tz += V[2]*0.1
+        delt = 0.01
+        Tx += V[0]*delt
+        Ty += V[1]*delt
+        Tz += V[2]*delt
         defaults['viewPoint'][0] =  np.array([Tx,Ty,Tz])
         
     def SetRotation(newxy):
@@ -6010,6 +6043,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])
         Zclip = 500.0
+        Tx,Ty,Tz = defaults['viewPoint'][0]
         Q = defaults['Quaternion']
         SetBackground()
         glInitNames()
@@ -6028,6 +6062,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         matRot = np.concatenate((np.concatenate((matRot,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
         glMultMatrixf(matRot.T)
         glMultMatrixf(A4mat.T)
+        glTranslate(-Tx,-Ty,-Tz)
         RenderUnitVectors(0.,0.,0.)
         radius = 0.2
         for iat,atom in enumerate(XYZ):
@@ -6036,8 +6071,9 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             color = np.array(CL)/255.
             RenderSphere(x,y,z,radius,color)
             RenderBonds(x,y,z,Bonds[iat],0.05,color)
-            RenderLabel(x,y,z,'  '+AtNames[iat],matRot)
-        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
+            if Page.labels:
+                RenderLabel(x,y,z,'  '+AtNames[iat],matRot)
+#        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
         Page.canvas.SwapBuffers()
 
     def OnSize(event):
@@ -6051,8 +6087,12 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         plotNum = G2frame.G2plotNB.plotList.index('Layer')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.views = False
+        Page.labels = False
         view = False
         altDown = False
+    Page.Choice = (' key press','l: shift left','r: shift right','d: shift down','u: shift up',
+            't: toggle labels',)
+    Page.keyPress = OnPlotKeyPress
     Page.SetFocus()
     Font = Page.GetFont()
     Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
@@ -6060,6 +6100,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_MIDDLE_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
+    Page.canvas.Bind(wx.wx.EVT_KEY_UP, OnPlotKeyPress)
     Page.canvas.Bind(wx.EVT_SIZE, OnSize)
     Page.camera['position'] = defaults['cameraPos']
     Page.camera['backColor'] = np.array([0,0,0,0])

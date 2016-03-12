@@ -1818,7 +1818,7 @@ def StackSim(Layers,HistName,limits,inst,profile):
         else:
             df.write('NONE\n')
         for ia,atom in enumerate(layer['Atoms']):
-            [name,atype,Q,x,y,z,frac,Uiso] = atom
+            [name,atype,x,y,z,frac,Uiso] = atom
             if '-1' in layer['Symm'] and [x,y,z] == [0.,0.,0.]:
                 frac /= 2.
             df.write('%4s %3d %.5f %.5f %.5f %.4f %.2f\n'%(atype.ljust(6),ia,x,y,z,78.9568*Uiso,frac))

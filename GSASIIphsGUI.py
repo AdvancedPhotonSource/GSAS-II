@@ -2391,12 +2391,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
         laueChoice = ['-1','2/m(ab)','2/m(c)','mmm','-3','-3m','4/m','4/mmm',
             '6/m','6/mmm','axial','unknown']
-        colLabels = ['Name','Type','refine','x','y','z','frac','Uiso']
+        colLabels = ['Name','Type','x','y','z','frac','Uiso']
         transLabels = ['Prob','Dx','Dy','Dz','refine','plot']
-        colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",]+ \
+        colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+ \
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+2*[wg.GRID_VALUE_FLOAT+':10,4',] #x,y,z,frac,Uiso
         transTypes = [wg.GRID_VALUE_FLOAT+':10,3',]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
-            [wg.GRID_VALUE_CHOICE+": ,P,PX,PY,PZ,PXY,PXZ,PYZ,PXYZ,X,Y,Z,XY,XZ,YZ,XYZ",wg.GRID_VALUE_BOOL,]
+            [wg.GRID_VALUE_CHOICE+": ,P",wg.GRID_VALUE_BOOL,]
         plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],
             'viewPoint':[[0.,0.,0.],[]],}
 
@@ -2529,12 +2529,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             data['Layers']['Layers'].append({'Name':'Unk','SameAs':'','Symm':'None','Atoms':[]})
             Trans = data['Layers']['Transitions']
             if len(Trans):
-                Trans.append([[0.,0.,0.,0.,''] for trans in Trans])
+                Trans.append([[0.,0.,0.,0.,'',False] for trans in Trans])
                 for trans in Trans:
-                    trans.append([0.,0.,0.,0.,''])
+                    trans.append([0.,0.,0.,0.,'',False])
             else:
-                Trans = [[1.,0.,0.,0.,''],]
-            #modify transition probability matrix as well - add new row/column
+                Trans = [[[1.,0.,0.,0.,'',False],],]
+            data['Layers']['Transitions'] = Trans
             UpdateLayerData()
             
         def OnImportLayer(event):
@@ -2548,7 +2548,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 UpdateLayerData()
                 
             def OnAddAtom(event):
-                Layer['Atoms'].append(['Unk','Unk','',0.,0.,0.,1.,0.01])
+                Layer['Atoms'].append(['Unk','Unk',0.,0.,0.,1.,0.01])
                 UpdateLayerData()
                 
             def OnSymm(event):
@@ -2576,6 +2576,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     
             def OnDrawLayer(event):
                 drawLayer.SetValue(False)
+                if len(Layers['Layers'][il]['Atoms']) == 0:
+                    wx.MessageBox('No atoms in this layer to plot',caption='Data error',style=wx.ICON_EXCLAMATION)
+                    return
                 G2plt.PlotLayers(G2frame,Layers,[il,],plotDefaults)
                 
             def OnSameAs(event):
@@ -2622,7 +2625,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomGrid = G2G.GSGrid(layerData)
             atomGrid.SetTable(atomTable,True)
             atomGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
-            for c in range(3,6):
+            for c in range(2,5):
                 attr = wx.grid.GridCellAttr()
                 attr.IncRef()               #fix from Jim Hester
                 attr.SetEditor(G2G.GridFractionEditor(atomGrid))
@@ -2637,8 +2640,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def PlotSelect(event):
                 Obj = event.GetEventObject()
                 Yi = Indx[Obj.GetId()]               
+                if len(Layers['Layers'][Yi]['Atoms']) == 0:
+                    wx.MessageBox('No atoms in this layer to plot',caption='Data error',style=wx.ICON_EXCLAMATION)
+                    return
                 Xi,c =  event.GetRow(),event.GetCol()
                 if Xi >= 0 and c == 5:   #plot column
+                    if len(Layers['Layers'][Xi]['Atoms']) == 0:
+                        wx.MessageBox('No atoms in this layer to plot',caption='Data error',style=wx.ICON_EXCLAMATION)
+                        return
                     Obj.SetCellValue(Xi,5,'')
                     G2plt.PlotLayers(G2frame,Layers,[Yi,Xi,],plotDefaults)
             
@@ -2677,9 +2686,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 vals = plotSeq.GetValue().split()
                 try:
                     vals = [int(val)-1 for val in vals]
+                    if not all([0 <= val < len(Names) for val in vals]):
+                        raise ValueError
                 except ValueError:
-                    plotSeq.SetValue('Error in string '+vals)
-                plotSeq.SetValue('')
+                    plotSeq.SetValue('Error in string '+plotSeq.GetValue())
+                    return
                 G2plt.PlotLayers(G2frame,Layers,vals,plotDefaults)
             
             Names = [' %s: %d,'%(layer['Name'],iL+1) for iL,layer in enumerate(Layers['Layers'])]

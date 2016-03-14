@@ -290,9 +290,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['AngleRadii'].append(Info['Arad'])
                 generalData['vdWRadii'].append(Info['Vdrad'])
                 if atom[ct] in generalData['Isotope']:
+                    if generalData['Isotope'][atom[ct]] not in generalData['Isotopes'][atom[ct]]:
+                        isotope = generalData['Isotopes'][atom[ct]].keys()[-1]
+                        generalData['Isotope'][atom[ct]] = isotope
                     generalData['AtomMass'].append(Info['Isotopes'][generalData['Isotope'][atom[ct]]]['Mass'])
                 else:
                     generalData['Isotope'][atom[ct]] = 'Nat. Abund.'
+                    if 'Nat. Abund.' not in generalData['Isotopes'][atom[ct]]:
+                        isotope = generalData['Isotopes'][atom[ct]].keys()[-1]
+                        generalData['Isotope'][atom[ct]] = isotope
                     generalData['AtomMass'].append(Info['Mass'])
                 generalData['NoAtoms'][atom[ct]] = atom[cs-1]*float(atom[cs+1])
                 generalData['Color'].append(Info['Color'])
@@ -623,7 +629,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
                 isotope = Obj.GetValue()
-                generalData['Isotope'][item] = isotope
+                data['General']['Isotope'][item] = isotope
                 indx = generalData['AtomTypes'].index(item)
                 data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope]['Mass']
                 density,mattCoeff = G2mth.getDensity(generalData)
@@ -676,6 +682,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 colorTxt = wx.TextCtrl(General,value='',style=wx.TE_READONLY)
                 colorTxt.SetBackgroundColour(wx.Colour(R,G,B))
                 elemSizer.Add(colorTxt,0,WACV)
+            
             return elemSizer
         
         def DenSizer():
@@ -2884,7 +2891,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         dlg.Destroy()
         PWDR = data['Histograms'][HistName]
         G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistName)
-        
+        sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+            G2frame,G2frame.PatternId, 'Sample Parameters'))
+        scale = sample['Scale'][0]
+        background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+            G2frame,G2frame.PatternId, 'Background'))        
         limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
             G2frame,G2frame.PatternId, 'Limits'))[1]
         inst = G2frame.PatternTree.GetItemPyData(
@@ -2892,9 +2903,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'T' in inst['Type'][0]:
             wx.MessageBox("Can't simulate neutron TOF patterns yet",caption='Data error',style=wx.ICON_EXCLAMATION)
             return            
-        profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
-            
-        G2pwd.StackSim(data['Layers'],HistName,limits,inst,profile)
+        profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]            
+        G2pwd.StackSim(data['Layers'],HistName,scale,background,limits,inst,profile)
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         
 ################################################################################

@@ -1736,13 +1736,15 @@ def calcIncident(Iparm,xdata):
 # Stacking fault simulation codes
 ################################################################################
 
-def StackSim(Layers,HistName,limits,inst,profile):
+def StackSim(Layers,HistName,scale,background,limits,inst,profile):
     '''Simulate powder pattern from stacking faults using DIFFaX
     
     param: Layers dict: 'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],
                         'Width':[[10.,10.],[False,False]],'Toler':0.01,'AtInfo':{},
                         'Layers':[],'Stacking':[],'Transitions':[]}
     param: HistName str: histogram name to simulate 'PWDR...'
+    param: scale float: scale factor
+    param: background dict: background parameters
     param: limits list: min/max 2-theta to be calculated
     param: inst dict: instrumnet parameters dictionary
     param: profile list: powder pattern data
@@ -1778,6 +1780,8 @@ def StackSim(Layers,HistName,limits,inst,profile):
     x0 = profile[0]
     iBeg = np.searchsorted(x0,limits[0])
     iFin = np.searchsorted(x0,limits[1])
+    if iFin-iBeg > 20000:
+        iFin = iBeg+19999
     x = x0[iBeg:iFin]
     dx = x0[iBeg+1]-x0[iBeg]
     cf = open('control.dif','w')
@@ -1850,7 +1854,25 @@ def StackSim(Layers,HistName,limits,inst,profile):
     subp.call(DIFFaX)
     print 'DIFFaX time = %.2fs'%(time.time()-time0)
     X = np.loadtxt('GSASII-DIFFaX.spc')
-    profile[3][:len(X.T[1])] = X.T[1]
+    bakType,backDict,backVary = SetBackgroundParms(background)
+    backDict['Lam1'] = G2mth.getWave(inst)
+#    GSASIIpath.IPyBreak()
+    iB = np.searchsorted(profile[0],X.T[0])[0]
+    iF = np.searchsorted(profile[0],X.T[-1])[0]
+    if not iF:
+        iF = -1
+    profile[4][iB:iF] = getBackground('',backDict,bakType,inst['Type'][0],X.T[0])[0]    
+    profile[3][iB:iF] = X.T[1]*scale+profile[4][iB:iF]
+    if not np.any(profile[1]):                   #fill dummy data x,y,w,yc,yb,yd
+        rv = st.poisson(profile[3][iB:iF])
+        profile[1][iB:iF] = rv.rvs()
+        Z = np.ones_like(profile[3][iB:iF])
+        Z[1::2] *= -1
+        profile[1][iB:iF] = profile[3][iB:iF]+np.abs(profile[1][iB:iF]-profile[3][iB:iF])*Z
+        profile[2][iB:iF] = np.where(profile[1][iB:iF]>0.,1./profile[1][iB:iF],1.0)
+    profile[5][iB:iF] = profile[1][iB:iF]-profile[3][iB:iF]
+
+
     #cleanup files..
     os.remove('data.sfc')
     os.remove('control.dif')

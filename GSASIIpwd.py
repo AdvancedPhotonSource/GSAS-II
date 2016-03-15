@@ -55,6 +55,7 @@ npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
+forln2 = 4.0*math.log(2.0)
     
 #GSASII pdf calculation routines
         
@@ -1746,7 +1747,7 @@ def StackSim(Layers,HistName,scale,background,limits,inst,profile):
     param: scale float: scale factor
     param: background dict: background parameters
     param: limits list: min/max 2-theta to be calculated
-    param: inst dict: instrumnet parameters dictionary
+    param: inst dict: instrument parameters dictionary
     param: profile list: powder pattern data
     
     all updated in place    
@@ -1781,12 +1782,11 @@ def StackSim(Layers,HistName,scale,background,limits,inst,profile):
     iBeg = np.searchsorted(x0,limits[0])
     iFin = np.searchsorted(x0,limits[1])
     if iFin-iBeg > 20000:
-        iFin = iBeg+19999
-    x = x0[iBeg:iFin]
-    dx = x0[iBeg+1]-x0[iBeg]
+        iFin = iBeg+20000
+    Dx = (x0[iFin]-x0[iBeg])/(iFin-iBeg)
     cf = open('control.dif','w')
     cf.write('GSASII-DIFFaX.dat\n0\n0\n3\n')
-    cf.write('%.3f %.3f %.3f\n1\n1\nend\n'%(x0[iBeg],x0[iFin],dx))
+    cf.write('%.6f %.6f %.6f\n1\n1\nend\n'%(x0[iBeg],x0[iFin],Dx))
     cf.close()
     #make DIFFaX data file
     df = open('GSASII-DIFFaX.dat','w')
@@ -1796,8 +1796,14 @@ def StackSim(Layers,HistName,scale,background,limits,inst,profile):
     elif 'N' in inst['Type'][0]:
         df.write('NEUTRON\n')
     df.write('%.4f\n'%(G2mth.getMeanWave(inst)))
-#    df.write('GAUSSIAN 0.1 TRIM\n')     #fast option - might not really matter
-    df.write('PSEUDO-VOIGT 0.1 -0.036 0.009 0.6 TRIM\n')    #slow - make a GUI option?
+    U = forln2*inst['U'][1]/10000.
+    V = forln2*inst['V'][1]/10000.
+    W = forln2*inst['W'][1]/10000.
+    HWHM = U*nptand(x0[iBeg:iFin]/2.)**2+V*nptand(x0[iBeg:iFin]/2.)+W
+    HW = np.mean(HWHM)
+#    df.write('PSEUDO-VOIGT 0.015 -0.0036 0.009 0.605 TRIM\n')
+#    df.write('GAUSSIAN %.6f TRIM\n'%(HW))     #fast option - might not really matter
+    df.write('GAUSSIAN %.6f %.6f %.6f TRIM\n'%(U,V,W))    #slow - make a GUI option?
     df.write('STRUCTURAL\n')
     a,b,c = Layers['Cell'][1:4]
     gam = Layers['Cell'][6]
@@ -1853,24 +1859,21 @@ def StackSim(Layers,HistName,scale,background,limits,inst,profile):
     time0 = time.time()
     subp.call(DIFFaX)
     print 'DIFFaX time = %.2fs'%(time.time()-time0)
-    X = np.loadtxt('GSASII-DIFFaX.spc')
+    Xpat = np.loadtxt('GSASII-DIFFaX.spc').T
+    iFin = iBeg+Xpat.shape[1]
     bakType,backDict,backVary = SetBackgroundParms(background)
     backDict['Lam1'] = G2mth.getWave(inst)
 #    GSASIIpath.IPyBreak()
-    iB = np.searchsorted(profile[0],X.T[0])[0]
-    iF = np.searchsorted(profile[0],X.T[-1])[0]
-    if not iF:
-        iF = -1
-    profile[4][iB:iF] = getBackground('',backDict,bakType,inst['Type'][0],X.T[0])[0]    
-    profile[3][iB:iF] = X.T[1]*scale+profile[4][iB:iF]
+    profile[4][iBeg:iFin] = getBackground('',backDict,bakType,inst['Type'][0],profile[0][iBeg:iFin])[0]    
+    profile[3][iBeg:iFin] = Xpat[2]*scale+profile[4][iBeg:iFin]
     if not np.any(profile[1]):                   #fill dummy data x,y,w,yc,yb,yd
-        rv = st.poisson(profile[3][iB:iF])
-        profile[1][iB:iF] = rv.rvs()
-        Z = np.ones_like(profile[3][iB:iF])
+        rv = st.poisson(profile[3][iBeg:iFin])
+        profile[1][iBeg:iFin] = rv.rvs()
+        Z = np.ones_like(profile[3][iBeg:iFin])
         Z[1::2] *= -1
-        profile[1][iB:iF] = profile[3][iB:iF]+np.abs(profile[1][iB:iF]-profile[3][iB:iF])*Z
-        profile[2][iB:iF] = np.where(profile[1][iB:iF]>0.,1./profile[1][iB:iF],1.0)
-    profile[5][iB:iF] = profile[1][iB:iF]-profile[3][iB:iF]
+        profile[1][iBeg:iFin] = profile[3][iBeg:iFin]+np.abs(profile[1][iBeg:iFin]-profile[3][iBeg:iFin])*Z
+        profile[2][iBeg:iFin] = np.where(profile[1][iBeg:iFin]>0.,1./profile[1][iBeg:iFin],1.0)
+    profile[5][iBeg:iFin] = profile[1][iBeg:iFin]-profile[3][iBeg:iFin]
 
 
     #cleanup files..

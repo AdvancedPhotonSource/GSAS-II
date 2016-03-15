@@ -581,6 +581,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
                 Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
                 im = Im.new("RGB", (size[0],size[1]))
             im.fromstring(Pix)
+            im = im.transpose(Im.FLIP_TOP_BOTTOM)
             im.save(Fname,mode)
             cb.SetValue(' save as/key:')
             G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
@@ -4522,6 +4523,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
                 im = Im.new("RGB", (size[0],size[1]))
             im.fromstring(Pix)
+            im = im.transpose(Im.FLIP_TOP_BOTTOM)
             im.save(Fname,mode)
             cb.SetValue(' save as/key:')
             G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
@@ -5771,6 +5773,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     '''Layer plotting package. Can show layer structures as balls & sticks
     '''
 
+    global AtNames,AtTypes,XYZ,Bonds
     def FindBonds(atTypes,XYZ):
         Radii = []
         for Atype in atTypes:
@@ -5788,6 +5791,49 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
                 Bonds[i].append(Dx[j]*Radii[i]/sumR[j])
                 Bonds[j].append(-Dx[j]*Radii[j]/sumR[j])
         return Bonds
+        
+    def getAtoms():
+        global AtNames,AtTypes,XYZ,Bonds
+        AtNames = []
+        AtTypes = []
+        newXYZ = np.zeros((0,3))
+        TX = np.zeros(3)
+        for il in range(len(laySeq)):
+            layer = laySeq[il]     
+            if Layers['Layers'][layer]['SameAs']:
+                layer = Names.index(Layers['Layers'][layer]['SameAs'])
+            atNames = [atom[0] for atom in Layers['Layers'][layer]['Atoms']]
+            atTypes = [atom[1] for atom in Layers['Layers'][layer]['Atoms']]
+            XYZ = np.array([atom[2:5] for atom in Layers['Layers'][layer]['Atoms']])
+            if '-1' in Layers['Layers'][layer]['Symm']:
+                atNames += atNames
+                atTypes += atTypes
+                XYZ = np.concatenate((XYZ,-XYZ))
+            if il:
+                TX += np.array(Trans[laySeq[il-1]][layer][1:4])
+            XYZ += TX
+            XYZT = XYZ.T
+            XYZT[0] = XYZT[0]%1.
+            XYZT[1] = XYZT[1]%1.
+            XYZ = XYZT.T
+            AtNames += atNames
+            AtTypes += atTypes
+            newXYZ = np.concatenate((newXYZ,XYZ))
+        XYZ = newXYZ
+        na = int(8./cell[0])
+        nb = int(8./cell[1])
+        nunit = [na,nb,0]
+        indA = range(-na,na)
+        indB = range(-nb,nb)
+        Units = np.array([[h,k,0] for h in indA for k in indB])
+        newXYZ = np.zeros((0,3))
+        for unit in Units:
+            newXYZ = np.concatenate((newXYZ,unit+XYZ))
+        if len(Units):
+            AtNames *= len(Units)
+            AtTypes *= len(Units)
+        XYZ = newXYZ
+        Bonds = FindBonds(AtTypes,XYZ)
                         
     cell = Layers['Cell'][1:7]
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
@@ -5803,48 +5849,37 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     uColors = [Rd,Gr,Bl]
     AtInfo = Layers['AtInfo']
     Names = [layer['Name'] for layer in Layers['Layers']]
-    AtNames = []
-    AtTypes = []
-    newXYZ = np.zeros((0,3))
-    TX = np.zeros(3)
-    for il in range(len(laySeq)):
-        layer = laySeq[il]     
-        if Layers['Layers'][layer]['SameAs']:
-            alayer = Names.index(Layers['Layers'][layer]['SameAs'])
-        atNames = [atom[0] for atom in Layers['Layers'][layer]['Atoms']]
-        atTypes = [atom[1] for atom in Layers['Layers'][layer]['Atoms']]
-        XYZ = np.array([atom[2:5] for atom in Layers['Layers'][layer]['Atoms']])
-        if '-1' in Layers['Layers'][layer]['Symm']:
-            atNames += atNames
-            atTypes += atTypes
-            XYZ = np.concatenate((XYZ,-XYZ))
-        if il:
-            TX += np.array(Trans[laySeq[il-1]][layer][1:4])
-        XYZ += TX
-        XYZT = XYZ.T
-        XYZT[0] = XYZT[0]%1.
-        XYZT[1] = XYZT[1]%1.
-        XYZ = XYZT.T
-        AtNames += atNames
-        AtTypes += atTypes
-        newXYZ = np.concatenate((newXYZ,XYZ))
-    XYZ = newXYZ
-    na = int(8./cell[0])
-    nb = int(8./cell[1])
-    nunit = [na,nb,0]
-    indA = range(-na,na)
-    indB = range(-nb,nb)
-    Units = np.array([[h,k,0] for h in indA for k in indB])
-    newXYZ = np.zeros((0,3))
-    for unit in Units:
-        newXYZ = np.concatenate((newXYZ,unit+XYZ))
-    if len(Units):
-        AtNames *= len(Units)
-        AtTypes *= len(Units)
-    XYZ = newXYZ
-    Bonds = FindBonds(AtTypes,XYZ)
+    getAtoms()
     
+    def OnKeyBox(event):
+        mode = cb.GetValue()
+        if mode in ['jpeg','bmp','tiff',]:
+            try:
+                import Image as Im
+            except ImportError:
+                try:
+                    from PIL import Image as Im
+                except ImportError:
+                    print "PIL/pillow Image module not present. Cannot save images without this"
+                    raise Exception("PIL/pillow Image module not found")
+            projFile = G2frame.GSASprojectfile
+            Fname = os.path.splitext(projFile)[0]+'.'+mode
+            size = Page.canvas.GetSize()
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            if mode in ['jpeg',]:
+                Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
+                im = Im.new("RGBA", (size[0],size[1]))
+            else:
+                Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
+                im = Im.new("RGB", (size[0],size[1]))
+            im.fromstring(Pix)
+            im = im.transpose(Im.FLIP_TOP_BOTTOM)
+            im.save(Fname,mode)
+            cb.SetValue(' save as:')
+            G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
+
     def OnPlotKeyPress(event):
+        global AtNames,AtTypes,XYZ,Bonds
         if event.GetKeyCode() > 255:
             return
         keyCode = chr(min(255,event.GetKeyCode()))
@@ -5859,22 +5894,33 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             return
         Trans = Layers['Transitions']
         Yi,Xi = laySeq
+        dxyz = 0.01
         if keyCode == 'X':
-            dx = 0.001
+            dx = dxyz
             if event.shiftDown:
                 dx *= -1.
+            Trans[Yi][Xi][1] += dx
+            SetTransText(Yi,Xi,Trans[Yi][Xi],1)
         elif keyCode == 'Y':
-            dy = 0.001
+            dy = dxyz
             if event.shiftDown:
                 dy *= -1.
+            Trans[Yi][Xi][2] += dy
+            SetTransText(Yi,Xi,Trans[Yi][Xi],2)
         elif keyCode == 'Z':
-            dz = 0.001
+            dz = dxyz
             if event.shiftDown:
                 dz *= -1.
-        Trans[Yi][Xi][1] += dx
-        Trans[Yi][Xi][2] += dy
-        Trans[Yi][Xi][3] += dz
+            Trans[Yi][Xi][3] += dz
+            SetTransText(Yi,Xi,Trans[Yi][Xi],3)
+        getAtoms()
         Draw('shift')
+        
+    def SetTransText(Yi,Xi,XYZ,id):
+        page = G2frame.dataDisplay.GetSelection()
+        if page:
+            if G2frame.dataDisplay.GetPageText(page) == 'Layers':
+                G2frame.dataDisplay.GetPage(page).transGrids[Yi].Refresh()
             
     def OnMouseDown(event):
         xy = event.GetPosition()
@@ -6039,6 +6085,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
 #        if caller:
 #            print caller
 # end of useful debug
+        global AtNames,AtTypes,XYZ,Bonds
         cPos = defaults['cameraPos']
         VS = np.array(Page.canvas.GetSize())
         aspect = float(VS[0])/float(VS[1])
@@ -6090,11 +6137,16 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         Page.labels = False
         view = False
         altDown = False
-    Page.Choice = (' key press','l: shift left','r: shift right','d: shift down','u: shift up',
-            't: toggle labels',)
+    choice = [' save as:','jpeg','tiff','bmp']
     Page.keyPress = OnPlotKeyPress
     Page.SetFocus()
     Font = Page.GetFont()
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
+    cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
+    if len(laySeq) == 2:
+        G2frame.G2plotNB.status.SetStatusText('Shift layer +/-XYZ key: X/shift-X, Y/shift-Y, Z/shift-Z; key: L - toggle atom labels',1)
+    else:
+        G2frame.G2plotNB.status.SetStatusText('L - toggle atom labels',1)
     Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)

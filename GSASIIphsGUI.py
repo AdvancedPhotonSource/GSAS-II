@@ -66,7 +66,7 @@ cosd = lambda x: np.cos(x*np.pi/180.)
 asind = lambda x: 180.*np.arcsin(x)/np.pi
 acosd = lambda x: 180.*np.arccos(x)/np.pi
 atan2d = lambda x,y: 180.*np.arctan2(y,x)/np.pi
-
+    
 def SetPhaseWindow(mainFrame,phasePage,mainSizer,Scroll=0):
     phasePage.SetSizer(mainSizer)
     Size = mainSizer.GetMinSize()
@@ -2583,9 +2583,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     
             def OnDrawLayer(event):
                 drawLayer.SetValue(False)
-                if len(Layers['Layers'][il]['Atoms']) == 0:
-                    wx.MessageBox('No atoms in this layer to plot',caption='Data error',style=wx.ICON_EXCLAMATION)
-                    return
                 G2plt.PlotLayers(G2frame,Layers,[il,],plotDefaults)
                 
             def OnSameAs(event):
@@ -2647,14 +2644,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def PlotSelect(event):
                 Obj = event.GetEventObject()
                 Yi = Indx[Obj.GetId()]               
-                if len(Layers['Layers'][Yi]['Atoms']) == 0:
-                    wx.MessageBox('No atoms in this layer to plot',caption='Data error',style=wx.ICON_EXCLAMATION)
-                    return
                 Xi,c =  event.GetRow(),event.GetCol()
                 if Xi >= 0 and c == 5:   #plot column
-                    if len(Layers['Layers'][Xi]['Atoms']) == 0:
-                        wx.MessageBox('No atoms in this layer to plot',caption='Data error',style=wx.ICON_EXCLAMATION)
-                        return
                     Obj.SetCellValue(Xi,5,'')
                     G2plt.PlotLayers(G2frame,Layers,[Yi,Xi,],plotDefaults)
             
@@ -2663,6 +2654,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Names = [layer['Name'] for layer in Layers['Layers']]
             transArray = Layers['Transitions']
             Indx = {}
+            layerData.transGrids = []
             if not Names or not transArray:
                 return transSizer
             for Yi,Yname in enumerate(Names):
@@ -2685,6 +2677,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 transGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, PlotSelect)
                 transGrid.AutoSizeColumns(True)
                 transSizer.Add(transGrid)
+                layerData.transGrids.append(transGrid)
             return transSizer
             
         def PlotSizer():
@@ -2903,7 +2896,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'T' in inst['Type'][0]:
             wx.MessageBox("Can't simulate neutron TOF patterns yet",caption='Data error',style=wx.ICON_EXCLAMATION)
             return            
-        profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]            
+        profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
+        ctrls = {}
+        dlg = G2gd.DIFFaXcontrols(G2frame,ctrls)
+        if dlg.ShowModal() == wx.ID_OK:
+            ctrls = dlg.GetSelection()
+        else:
+            return
+        dlg.Destroy()        
         G2pwd.StackSim(data['Layers'],HistName,scale,background,limits,inst,profile)
         G2plt.PlotPatterns(G2frame,plotType='PWDR')
         

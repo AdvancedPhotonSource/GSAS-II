@@ -488,7 +488,58 @@ class TransformDialog(wx.Dialog):
     def OnCancel(self,event):
         parent = self.GetParent()
         parent.Raise()
-        self.EndModal(wx.ID_CANCEL)        
+        self.EndModal(wx.ID_CANCEL)     
+        
+################################################################################
+class DIFFaXcontrols(wx.Dialog):
+    ''' Solicit items needed to prepare DIFFaX control.dif file
+    '''
+    def __init__(self,parent,ctrls):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'DIFFaX controls', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.ctrls = ctrls
+        self.Draw()
+        
+    def Draw(self):
+        
+        
+        
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Controls for DIFFaX'),0,WACV)
+        
+
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        return self.ctrls
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+           
         
 ################################################################################
 class MergeDialog(wx.Dialog):

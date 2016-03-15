@@ -5811,28 +5811,30 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
                 XYZ = np.concatenate((XYZ,-XYZ))
             if il:
                 TX += np.array(Trans[laySeq[il-1]][layer][1:4])
-            XYZ += TX
-            XYZT = XYZ.T
-            XYZT[0] = XYZT[0]%1.
-            XYZT[1] = XYZT[1]%1.
-            XYZ = XYZT.T
+                XYZ += TX
+                XYZT = XYZ.T
+                XYZT[0] = XYZT[0]%1.
+                XYZT[1] = XYZT[1]%1.
+                XYZ = XYZT.T
             AtNames += atNames
             AtTypes += atTypes
             newXYZ = np.concatenate((newXYZ,XYZ))
         XYZ = newXYZ
         na = int(8./cell[0])
         nb = int(8./cell[1])
-        nunit = [na,nb,0]
-        indA = range(-na,na)
-        indB = range(-nb,nb)
-        Units = np.array([[h,k,0] for h in indA for k in indB])
-        newXYZ = np.zeros((0,3))
-        for unit in Units:
-            newXYZ = np.concatenate((newXYZ,unit+XYZ))
-        if len(Units):
-            AtNames *= len(Units)
-            AtTypes *= len(Units)
-        XYZ = newXYZ
+        if any([na,nb]):
+            nunit = [na,nb,0]
+            indA = range(-na,na)
+            indB = range(-nb,nb)
+            Units = np.array([[h,k,0] for h in indA for k in indB])
+            newXYZ = np.zeros((0,3))
+            for unit in Units:
+                newXYZ = np.concatenate((newXYZ,unit+XYZ))
+            if len(Units):
+                AtNames *= len(Units)
+                AtTypes *= len(Units)
+            XYZ = newXYZ
+        
         Bonds = FindBonds(AtTypes,XYZ)
                         
     cell = Layers['Cell'][1:7]

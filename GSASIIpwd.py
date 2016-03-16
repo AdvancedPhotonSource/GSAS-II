@@ -1808,10 +1808,15 @@ def StackSim(Layers,HistName,scale,background,limits,inst,profile):
     a,b,c = Layers['Cell'][1:4]
     gam = Layers['Cell'][6]
     df.write('%.4f %.4f %.4f %.3f\n'%(a,b,c,gam))
+    laue = Layers['Laue']
+    if laue == '2/m(ab)':
+        laue = '2/m(1)'
+    elif laue == '2/m(c)':
+        laue = '2/m(2)'
     if 'unknown' in Layers['Laue']:
-        df.write('%s %.3f\n'%(Layers['Laue'],Layers['Toler']))
+        df.write('%s %.3f\n'%(laue,Layers['Toler']))
     else:    
-        df.write('%s\n'%(Layers['Laue']))
+        df.write('%s\n'%(laue))
     df.write('%d\n'%(len(Layers['Layers'])))
     if Layers['Width'][0][0] < 1. or Layers['Width'][0][1] < 1.:
         df.write('%.1f %.1f\n'%(Layers['Width'][0][0]*10000.,Layers['Width'][0][0]*10000.))    #mum to A
@@ -1852,35 +1857,44 @@ def StackSim(Layers,HistName,scale,background,limits,inst,profile):
             df.write('%s\n'%Layers['Stacking'][1])    
     df.write('TRANSITIONS\n')
     for iY in range(len(Layers['Layers'])):
+        sumPx = 0.
         for iX in range(len(Layers['Layers'])):
             p,dx,dy,dz = Layers['Transitions'][iY][iX][:4]
-            df.write('%.3f %.5f %.5f %.5f\n'%(p,dx,dy,dz))        
+            p = round(p,3)
+            df.write('%.3f %.5f %.5f %.5f\n'%(p,dx,dy,dz))
+            sumPx += p
+        if sumPx != 1.0:    #this has to be picky since DIFFaX is.
+            print 'ERROR - Layer probabilities sum to ',sumPx,' DIFFaX will insist it = 1.0'
+            df.close()
+            os.remove('data.sfc')
+            os.remove('control.dif')
+            os.remove('GSASII-DIFFaX.dat')
+            return       
     df.close()    
     time0 = time.time()
     subp.call(DIFFaX)
     print 'DIFFaX time = %.2fs'%(time.time()-time0)
-    Xpat = np.loadtxt('GSASII-DIFFaX.spc').T
-    iFin = iBeg+Xpat.shape[1]
-    bakType,backDict,backVary = SetBackgroundParms(background)
-    backDict['Lam1'] = G2mth.getWave(inst)
-#    GSASIIpath.IPyBreak()
-    profile[4][iBeg:iFin] = getBackground('',backDict,bakType,inst['Type'][0],profile[0][iBeg:iFin])[0]    
-    profile[3][iBeg:iFin] = Xpat[2]*scale+profile[4][iBeg:iFin]
-    if not np.any(profile[1]):                   #fill dummy data x,y,w,yc,yb,yd
-        rv = st.poisson(profile[3][iBeg:iFin])
-        profile[1][iBeg:iFin] = rv.rvs()
-        Z = np.ones_like(profile[3][iBeg:iFin])
-        Z[1::2] *= -1
-        profile[1][iBeg:iFin] = profile[3][iBeg:iFin]+np.abs(profile[1][iBeg:iFin]-profile[3][iBeg:iFin])*Z
-        profile[2][iBeg:iFin] = np.where(profile[1][iBeg:iFin]>0.,1./profile[1][iBeg:iFin],1.0)
-    profile[5][iBeg:iFin] = profile[1][iBeg:iFin]-profile[3][iBeg:iFin]
-
-
+    if os.path.exists('GSASII-DIFFaX.spc'):
+        Xpat = np.loadtxt('GSASII-DIFFaX.spc').T
+        iFin = iBeg+Xpat.shape[1]
+        bakType,backDict,backVary = SetBackgroundParms(background)
+        backDict['Lam1'] = G2mth.getWave(inst)
+    #    GSASIIpath.IPyBreak()
+        profile[4][iBeg:iFin] = getBackground('',backDict,bakType,inst['Type'][0],profile[0][iBeg:iFin])[0]    
+        profile[3][iBeg:iFin] = Xpat[2]*scale+profile[4][iBeg:iFin]
+        if not np.any(profile[1]):                   #fill dummy data x,y,w,yc,yb,yd
+            rv = st.poisson(profile[3][iBeg:iFin])
+            profile[1][iBeg:iFin] = rv.rvs()
+            Z = np.ones_like(profile[3][iBeg:iFin])
+            Z[1::2] *= -1
+            profile[1][iBeg:iFin] = profile[3][iBeg:iFin]+np.abs(profile[1][iBeg:iFin]-profile[3][iBeg:iFin])*Z
+            profile[2][iBeg:iFin] = np.where(profile[1][iBeg:iFin]>0.,1./profile[1][iBeg:iFin],1.0)
+        profile[5][iBeg:iFin] = profile[1][iBeg:iFin]-profile[3][iBeg:iFin]
     #cleanup files..
+        os.remove('GSASII-DIFFaX.spc')
     os.remove('data.sfc')
     os.remove('control.dif')
     os.remove('GSASII-DIFFaX.dat')
-    os.remove('GSASII-DIFFaX.spc')
     
 #testing data
 NeedTestData = True

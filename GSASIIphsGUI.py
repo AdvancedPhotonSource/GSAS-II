@@ -2410,7 +2410,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def OnLaue(event):
             Obj = event.GetEventObject()
             data['Layers']['Laue'] = Obj.GetValue()
-            UpdateLayerData()
+            wx.CallAfter(UpdateLayerData)
         
         def OnToler(event): #used when Laue = unknown
             try:
@@ -2426,7 +2426,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 [['-3','-3m','6/m','6/mmm','4/m','4/mmm'],6,zip([" a = "," c = "],["%.5f","%.5f",],[True,True],[0,2])],
                 [['mmm'],8,zip([" a = "," b = "," c = "],["%.5f","%.5f","%.5f"],[True,True,True],[0,1,2,])],
                 [['2/m(ab)','2/m(c)','-1','axial','unknown'],10,zip([" a = "," b = "," c = "," gamma = "],
-                    ["%.5f","%.5f","%.5f","%.3f"],[True,True,True,True],[0,1,2,3])]]
+                    ["%.5f","%.5f","%.5f","%.3f"],[True,True,True,True],[0,1,2,5])]]
                 
             def OnCellRef(event):
                 data['Layers']['Cell'][0] = cellRef.GetValue()
@@ -2458,7 +2458,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     cell[ObjId+1] = value
                     cell[4] = cell[5] = cell[6] = 90.
                     Obj.SetValue("%.5f"%(cell[ObjId+1]))
-                elif laue in ['2/m']:
+                elif laue in ['2/m','-1']:
                     cell[4] = cell[5] = 90.
                     if ObjId != 3:
                         cell[ObjId+1] = value
@@ -2466,12 +2466,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     else:
                         cell[6] = value
                         Obj.SetValue("%.3f"%(cell[6]))
-                else:
-                    cell[ObjId+1] = value
-                    if ObjId < 3:
-                        Obj.SetValue("%.5f"%(cell[1+ObjId]))
-                    else:
-                        Obj.SetValue("%.3f"%(cell[1+ObjId]))                        
                 cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
                 volVal.SetLabel(' Vol = %.3f'%(cell[7]))
             

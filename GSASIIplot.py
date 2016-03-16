@@ -4146,7 +4146,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 ind = np.searchsorted(Azm,cake)
                 Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
                     
-        if G2frame.PatternTree.GetItemText(G2frame.PickId) in 'Image Controls':
+        if G2frame.PickId and G2frame.PatternTree.GetItemText(G2frame.PickId) in 'Image Controls':
             for xring,yring in Data['ring']:
                 Plot.plot(xring,yring,'r+',picker=3)
             if Data['setRings']:
@@ -5812,10 +5812,6 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             if il:
                 TX += np.array(Trans[laySeq[il-1]][layer][1:4])
                 XYZ += TX
-                XYZT = XYZ.T
-                XYZT[0] = XYZT[0]%1.
-                XYZT[1] = XYZT[1]%1.
-                XYZ = XYZT.T
             AtNames += atNames
             AtTypes += atTypes
             newXYZ = np.concatenate((newXYZ,XYZ))
@@ -5838,6 +5834,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         Bonds = FindBonds(AtTypes,XYZ)
                         
     cell = Layers['Cell'][1:7]
+    print cell
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
     A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
@@ -6035,7 +6032,8 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         glBegin(GL_LINES)
         for line,color in zip(uEdges,uColors):
             glColor3ubv(color)
-            glVertex3fv(-line[1])
+            glVertex3fv([0,0,0])
+#            glVertex3fv(-line[1])
             glVertex3fv(line[1])
         glEnd()
         glPopMatrix()

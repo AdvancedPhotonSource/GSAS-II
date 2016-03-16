@@ -148,28 +148,27 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         try:
-            sumImg = G2frame.ImageZ
+            Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)
+            sumImg = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
             darkImg,darkScale = data['dark image']
+            backImg,backScale = data['background image']            
             if darkImg:
                 Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
                 Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
                 darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
                 sumImg += darkImage*darkScale
-            backImg,backScale = data['background image']            
             if backImg:     #ignores any transmission effect in the background image
                 Bid = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
                 Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Bid)
                 backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
                 Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Bid,'Image Controls'))
-                BdarkImg,BdarkScale = Bdata['dark image']
-                if BdarkImg:
-                    BDid = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,BdarkImg)
-                    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(BDid)
-                    BdarkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-                    backImage += BdarkImage*BdarkScale                
+                if darkImg:
+                    Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,darkImg)
+                    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
+                    darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+                    backImage += darkImage*darkScale                
                 sumImg += backImage*backScale
             G2frame.Integrate = G2img.ImageIntegrate(sumImg-data['Flat Bkg'],data,masks,blkSize,dlg)
-#            G2plt.PlotIntegration(G2frame,newPlot=True)
             Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
             G2frame.PatternId = Id
             G2frame.PatternTree.SelectItem(Id)
@@ -185,7 +184,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while id:
                 name = G2frame.PatternTree.GetItemText(id)
-#                Names.append(name)
                 if 'IMG' in name:
                     TextList.append([False,name,id])
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
@@ -213,31 +211,30 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                             dlgp = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
                                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
                             try:
-                                id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
                                 Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(id)
                                 image = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-                                backImage = []
-                                if Data['background image'][0]:
-                                    backImg = Data['background image'][0]
-                                    backScale = Data['background image'][1]
+                                darkImg,darkScale = data['dark image']
+                                backImg,backScale = data['background image']            
+                                if darkImg:
+                                    id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
+                                    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(id)
+                                    darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+                                    image += darkScale*darkImage
+                                if backImg:
                                     id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
                                     Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(id)
-                                    backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)*backScale
-                                FlatBkg = Data.get('Flat Bkg',0.0)
-                                try:
-                                    Masks = G2frame.PatternTree.GetItemPyData(
-                                        G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'))
-                                except TypeError:       #missing Masks
-                                    # I think the next line should be 'range'! (BHT)
-                                    Imin,Imax = Data['Range']
-                                    Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(Imin,Imax),[Imin,Imax]]}
-                                    G2frame.PatternTree.SetItemPyData(
-                                        G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'),Masks)
-                                CleanupMasks(Masks)
-                                if len(backImage):                                
-                                    G2frame.Integrate = G2img.ImageIntegrate(image+backImage-FlatBkg,Data,Masks,blkSize,dlgp)
-                                else:
-                                    G2frame.Integrate = G2img.ImageIntegrate(image-FlatBkg,Data,Masks,blkSize,dlgp)
+                                    backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+                                    Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'Image Controls'))
+                                    if darkImg:
+                                        id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,darkImg)
+                                        Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(id)
+                                        darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+                                        backImage += darkImage*darkScale                
+                                    image += backImage*backScale
+                                image -= Data['Flat Bkg']
+                                Masks = G2frame.PatternTree.GetItemPyData(
+                                    G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'))
+                                G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
                                 pId = G2IO.SaveIntegration(G2frame,Id,Data)
                             finally:
                                 dlgp.Destroy()

@@ -2420,6 +2420,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Layers['Toler'] = val
             toler.SetValue('%.3f'%(Layers['Toler']))
             
+        def OnSadpPlot(event):
+            sadpPlot.SetValue(False)
+            import pylab as pl
+            pl.clf()
+            pl.imshow(Layers['Sadp']['Img'],aspect='equal')
+            pl.title(Layers['Sadp']['Plane'])
+            pl.show()
+            
         def CellSizer():
             
             cellGUIlist = [
@@ -2815,6 +2823,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             toler.Bind(wx.EVT_TEXT_ENTER,OnToler)        
             toler.Bind(wx.EVT_KILL_FOCUS,OnToler)
             laueSizer.Add(toler,0,WACV)
+        if 'Sadp' in Layers:
+            sadpPlot = wx.CheckBox(layerData,label=' Plot selected area diffraction?')
+            sadpPlot.Bind(wx.EVT_CHECKBOX,OnSadpPlot)
+            laueSizer.Add(sadpPlot,0,WACV)
         topSizer.Add(laueSizer,0,WACV)
         topSizer.Add(wx.StaticText(layerData,label=' Reference unit cell for all layers:'),0,WACV)
         topSizer.Add(CellSizer(),0,WACV)
@@ -2862,44 +2874,50 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         wx.CallAfter(UpdateLayerData)
         
     def OnSimulate(event):
-        UseList = []
-        for item in data['Histograms']:
-            if 'PWDR' in item:
-                UseList.append(item)
-        if not UseList:
-            wx.MessageBox('No PWDR data for this phase to simulate',caption='Data error',style=wx.ICON_EXCLAMATION)
-            return
-        dlg = wx.SingleChoiceDialog(G2frame,'Data to simulate','Select',UseList)
-        if dlg.ShowModal() == wx.ID_OK:
-            sel = dlg.GetSelection()
-            HistName = UseList[sel]
-        else:
-            return
-        dlg.Destroy()
-        PWDR = data['Histograms'][HistName]
-        G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistName)
-        sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
-            G2frame,G2frame.PatternId, 'Sample Parameters'))
-        scale = sample['Scale'][0]
-        background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
-            G2frame,G2frame.PatternId, 'Background'))        
-        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
-            G2frame,G2frame.PatternId, 'Limits'))[1]
-        inst = G2frame.PatternTree.GetItemPyData(
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
-        if 'T' in inst['Type'][0]:
-            wx.MessageBox("Can't simulate neutron TOF patterns yet",caption='Data error',style=wx.ICON_EXCLAMATION)
-            return            
-        profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
-        ctrls = {}
+        ctrls = ''
         dlg = G2gd.DIFFaXcontrols(G2frame,ctrls)
         if dlg.ShowModal() == wx.ID_OK:
-            ctrls = dlg.GetSelection()
+            ctrls,plane = dlg.GetSelection()
+            data['Layers']['Sadp'] = {}
+            data['Layers']['Sadp']['Plane'] = plane
         else:
             return
-        dlg.Destroy()        
-        G2pwd.StackSim(data['Layers'],HistName,scale,background,limits,inst,profile)
-        G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        if ctrls == '0\n0\n3\n':    #powder pattern
+            UseList = []
+            for item in data['Histograms']:
+                if 'PWDR' in item:
+                    UseList.append(item)
+            if not UseList:
+                wx.MessageBox('No PWDR data for this phase to simulate',caption='Data error',style=wx.ICON_EXCLAMATION)
+                return
+            dlg = wx.SingleChoiceDialog(G2frame,'Data to simulate','Select',UseList)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                HistName = UseList[sel]
+            else:
+                return
+            dlg.Destroy()
+            PWDR = data['Histograms'][HistName]
+            G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistName)
+            sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                G2frame,G2frame.PatternId, 'Sample Parameters'))
+            scale = sample['Scale'][0]
+            background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                G2frame,G2frame.PatternId, 'Background'))        
+            limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                G2frame,G2frame.PatternId, 'Limits'))[1]
+            inst = G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+            if 'T' in inst['Type'][0]:
+                wx.MessageBox("Can't simulate neutron TOF patterns yet",caption='Data error',style=wx.ICON_EXCLAMATION)
+                return            
+            profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
+            dlg.Destroy()        
+            G2pwd.StackSim(data['Layers'],ctrls,HistName,scale,background,limits,inst,profile)
+            G2plt.PlotPatterns(G2frame,plotType='PWDR')
+        else:   #selected area
+            G2pwd.StackSim(data['Layers'],ctrls)
+        wx.CallAfter(UpdateLayerData)
         
 ################################################################################
 #### Wave Data page

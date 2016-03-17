@@ -1737,7 +1737,7 @@ def calcIncident(Iparm,xdata):
 # Stacking fault simulation codes
 ################################################################################
 
-def StackSim(Layers,HistName,scale,background,limits,inst,profile):
+def StackSim(Layers,ctrls,HistName='',scale=0.,background={},limits=[],inst={},profile=[]):
     '''Simulate powder pattern from stacking faults using DIFFaX
     
     param: Layers dict: 'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],
@@ -1778,15 +1778,19 @@ def StackSim(Layers,HistName,scale,background,limits,inst,profile):
         sf.write(text)
     sf.close()
     #make DIFFaX control.dif file - future use GUI to set some of these flags
-    x0 = profile[0]
-    iBeg = np.searchsorted(x0,limits[0])
-    iFin = np.searchsorted(x0,limits[1])
-    if iFin-iBeg > 20000:
-        iFin = iBeg+20000
-    Dx = (x0[iFin]-x0[iBeg])/(iFin-iBeg)
     cf = open('control.dif','w')
-    cf.write('GSASII-DIFFaX.dat\n0\n0\n3\n')
-    cf.write('%.6f %.6f %.6f\n1\n1\nend\n'%(x0[iBeg],x0[iFin],Dx))
+    if ctrls == '0\n0\n3\n': 
+        x0 = profile[0]
+        iBeg = np.searchsorted(x0,limits[0])
+        iFin = np.searchsorted(x0,limits[1])
+        if iFin-iBeg > 20000:
+            iFin = iBeg+20000
+        Dx = (x0[iFin]-x0[iBeg])/(iFin-iBeg)
+        cf.write('GSASII-DIFFaX.dat\n'+ctrls)
+        cf.write('%.6f %.6f %.6f\n1\n1\nend\n'%(x0[iBeg],x0[iFin],Dx))
+    else:
+        cf.write('GSASII-DIFFaX.dat\n'+ctrls)
+        inst = {'Type':['XSC','XSC',]}
     cf.close()
     #make DIFFaX data file
     df = open('GSASII-DIFFaX.dat','w')
@@ -1795,15 +1799,18 @@ def StackSim(Layers,HistName,scale,background,limits,inst,profile):
         df.write('X-RAY\n')
     elif 'N' in inst['Type'][0]:
         df.write('NEUTRON\n')
-    df.write('%.4f\n'%(G2mth.getMeanWave(inst)))
-    U = forln2*inst['U'][1]/10000.
-    V = forln2*inst['V'][1]/10000.
-    W = forln2*inst['W'][1]/10000.
-    HWHM = U*nptand(x0[iBeg:iFin]/2.)**2+V*nptand(x0[iBeg:iFin]/2.)+W
-    HW = np.mean(HWHM)
-#    df.write('PSEUDO-VOIGT 0.015 -0.0036 0.009 0.605 TRIM\n')
-#    df.write('GAUSSIAN %.6f TRIM\n'%(HW))     #fast option - might not really matter
-    df.write('GAUSSIAN %.6f %.6f %.6f TRIM\n'%(U,V,W))    #slow - make a GUI option?
+    if ctrls == '0\n0\n3\n': 
+        df.write('%.4f\n'%(G2mth.getMeanWave(inst)))
+        U = forln2*inst['U'][1]/10000.
+        V = forln2*inst['V'][1]/10000.
+        W = forln2*inst['W'][1]/10000.
+        HWHM = U*nptand(x0[iBeg:iFin]/2.)**2+V*nptand(x0[iBeg:iFin]/2.)+W
+        HW = np.mean(HWHM)
+    #    df.write('PSEUDO-VOIGT 0.015 -0.0036 0.009 0.605 TRIM\n')
+    #    df.write('GAUSSIAN %.6f TRIM\n'%(HW))     #fast option - might not really matter
+        df.write('GAUSSIAN %.6f %.6f %.6f TRIM\n'%(U,V,W))    #slow - make a GUI option?
+    else:
+        df.write('0.10\nNone\n')
     df.write('STRUCTURAL\n')
     a,b,c = Layers['Cell'][1:4]
     gam = Layers['Cell'][6]
@@ -1892,6 +1899,11 @@ def StackSim(Layers,HistName,scale,background,limits,inst,profile):
         profile[5][iBeg:iFin] = profile[1][iBeg:iFin]-profile[3][iBeg:iFin]
     #cleanup files..
         os.remove('GSASII-DIFFaX.spc')
+    elif os.path.exists('GSASII-DIFFaX.sadp'):
+        Sadp = np.fromfile('GSASII-DIFFaX.sadp','>u2')
+        Sadp = np.reshape(Sadp,(256,-1))
+        Layers['Sadp']['Img'] = Sadp
+        os.remove('GSASII-DIFFaX.sadp')
     os.remove('data.sfc')
     os.remove('control.dif')
     os.remove('GSASII-DIFFaX.dat')

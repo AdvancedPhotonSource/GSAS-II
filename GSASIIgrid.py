@@ -499,18 +499,62 @@ class DIFFaXcontrols(wx.Dialog):
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
         self.ctrls = ctrls
+        self.calcType = 'powder pattern'
+        self.plane = 'h0l'
+        self.planeChoice = ['h0l','0kl','hhl','h-hl',]
+        self.lmax = '2'
+        self.lmaxChoice = ['1','2','3','4','5',]
+        self.mult = '2'
+        self.multChoice = ['1','2','3','4','5','6','7','8','9',]
         self.Draw()
         
     def Draw(self):
         
-        
+        def OnCalcType(event):
+            self.calcType = calcType.GetValue()
+            self.Draw()
+            
+        def OnPlane(event):
+            self.plane = plane.GetValue()
+            
+        def OnMaxL(event):
+            self.lmax = lmax.GetValue()
+            
+        def OnMult(event):
+            self.mult = mult.GetValue()
         
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,label=' Controls for DIFFaX'),0,WACV)
-        
-
+        calcChoice = ['powder pattern','selected area']
+        calcSizer = wx.BoxSizer(wx.HORIZONTAL)
+        calcSizer.Add(wx.StaticText(self.panel,label=' Select calculation type: '),0,WACV)
+        calcType = wx.ComboBox(self.panel,value=self.calcType,choices=calcChoice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        calcType.Bind(wx.EVT_COMBOBOX,OnCalcType)
+        calcSizer.Add(calcType,0,WACV)
+        mainSizer.Add(calcSizer)
+        if 'selected' in self.calcType:
+            planeSizer = wx.BoxSizer(wx.HORIZONTAL)
+            planeSizer.Add(wx.StaticText(self.panel,label=' Select plane: '),0,WACV)
+            plane = wx.ComboBox(self.panel,value=self.plane,choices=self.planeChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            plane.Bind(wx.EVT_COMBOBOX,OnPlane)
+            planeSizer.Add(plane,0,WACV)
+            planeSizer.Add(wx.StaticText(self.panel,label=' Max. l index: '),0,WACV)
+            lmax = wx.ComboBox(self.panel,value=self.lmax,choices=self.lmaxChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            lmax.Bind(wx.EVT_COMBOBOX,OnMaxL)
+            planeSizer.Add(lmax,0,WACV)            
+            mainSizer.Add(planeSizer)
+            multSizer = wx.BoxSizer(wx.HORIZONTAL)
+            multSizer.Add(wx.StaticText(self.panel,label=' Image scale: '),0,WACV)
+            mult = wx.ComboBox(self.panel,value=self.mult,choices=self.multChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            mult.Bind(wx.EVT_COMBOBOX,OnMult)
+            multSizer.Add(mult,0,WACV)
+            mainSizer.Add(multSizer)
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
         cancelBtn = wx.Button(self.panel,-1,"Cancel")
@@ -528,7 +572,12 @@ class DIFFaXcontrols(wx.Dialog):
         self.Fit()
         
     def GetSelection(self):
-        return self.ctrls
+        if 'powder' in self.calcType:
+            return '0\n0\n3\n',''
+        elif 'selected' in self.calcType:
+            return '0\n0\n4\n1\n%d\n%d\n16\n1\n%d\n0\nend\n'%    \
+                (self.planeChoice.index(self.plane)+1,self.lmaxChoice.index(self.lmax)+1,
+                self.multChoice.index(self.mult)+1),self.plane
 
     def OnOk(self,event):
         parent = self.GetParent()
@@ -1689,8 +1738,8 @@ class DataFrame(wx.Frame):
         self.LayerData.Append(menu=self.LayerDataEdit, title='Operations')
         self.LayerDataEdit.Append(id=wxID_LOADDIFFAX, kind=wx.ITEM_NORMAL,text='Load from DIFFaX file',
             help='Load layer info from DIFFaX file')
-        self.LayerDataEdit.Append(id=wxID_LAYERSIMULATE, kind=wx.ITEM_NORMAL,text='Simulate PWDR pattern',
-            help='Simulate powder pattern from layer stacking')
+        self.LayerDataEdit.Append(id=wxID_LAYERSIMULATE, kind=wx.ITEM_NORMAL,text='Simulate pattern',
+            help='Simulate diffraction pattern from layer stacking')
         self.PostfillDataMenu()
                  
         # Phase / Draw Options tab

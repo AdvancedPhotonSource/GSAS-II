@@ -2423,8 +2423,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def OnSadpPlot(event):
             sadpPlot.SetValue(False)
             import pylab as pl
-            pl.clf()
+            labels = Layers['Sadp']['Plane']
             pl.imshow(Layers['Sadp']['Img'],aspect='equal')
+            pl.ylabel(labels[-1])
+            pl.xlabel(labels[:-1])
             pl.title(Layers['Sadp']['Plane'])
             pl.show()
             

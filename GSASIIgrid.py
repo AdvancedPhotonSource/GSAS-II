@@ -503,9 +503,9 @@ class DIFFaXcontrols(wx.Dialog):
         self.plane = 'h0l'
         self.planeChoice = ['h0l','0kl','hhl','h-hl',]
         self.lmax = '2'
-        self.lmaxChoice = ['1','2','3','4','5',]
+        self.lmaxChoice = [str(i+1) for i in range(6)]
         self.mult = '2'
-        self.multChoice = ['1','2','3','4','5','6','7','8','9',]
+        self.multChoice = [str(i+1) for i in range(15)]
         self.Draw()
         
     def Draw(self):
@@ -577,7 +577,7 @@ class DIFFaXcontrols(wx.Dialog):
         elif 'selected' in self.calcType:
             return '0\n0\n4\n1\n%d\n%d\n16\n1\n%d\n0\nend\n'%    \
                 (self.planeChoice.index(self.plane)+1,self.lmaxChoice.index(self.lmax)+1,
-                self.multChoice.index(self.mult)+1),self.plane
+                self.multChoice.index(self.mult)+1),self.plane,self.lmax
 
     def OnOk(self,event):
         parent = self.GetParent()

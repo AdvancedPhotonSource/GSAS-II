@@ -2424,7 +2424,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             sadpPlot.SetValue(False)
             import pylab as pl
             labels = Layers['Sadp']['Plane']
-            pl.imshow(Layers['Sadp']['Img'],aspect='equal')
+            lmax = float(Layers['Sadp']['Lmax'])
+            pl.imshow(Layers['Sadp']['Img'],aspect='auto',extent=[-lmax,lmax,-lmax,lmax])
             pl.ylabel(labels[-1])
             pl.xlabel(labels[:-1])
             pl.title(Layers['Sadp']['Plane'])
@@ -2879,9 +2880,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         ctrls = ''
         dlg = G2gd.DIFFaXcontrols(G2frame,ctrls)
         if dlg.ShowModal() == wx.ID_OK:
-            ctrls,plane = dlg.GetSelection()
+            ctrls,plane,lmax = dlg.GetSelection()
             data['Layers']['Sadp'] = {}
             data['Layers']['Sadp']['Plane'] = plane
+            data['Layers']['Sadp']['Lmax'] = lmax
         else:
             return
         if ctrls == '0\n0\n3\n':    #powder pattern

@@ -136,7 +136,7 @@ class G2PlotNoteBook(wx.Panel):
         self.nb.Bind(wx.EVT_KEY_UP,self.OnNotebookKey)
         
         self.plotList = []
-            
+        
     def OnNotebookKey(self,event):
         '''Called when a keystroke event gets picked up by the notebook window
         rather the child. This is not expected, but somehow it does sometimes
@@ -3681,7 +3681,7 @@ def OnStartNewDzero(G2frame):
 
 def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     '''Plot of 2D detector images as contoured plot. Also plot calibration ellipses,
-    masks, etc.
+    masks, etc. Plots whatever is in G2frame.ImageZ
 
     :param wx.Frame G2frame: main GSAS-II frame
     :param bool newPlot: if newPlot is True, the plot is reset (zoomed out, etc.)
@@ -3711,7 +3711,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     def OnImMotion(event):
         Page.canvas.SetToolTipString('')
         sizexy = Data['size']
-        FlatBkg = Data.get('Flat Bkg',0.)
         if event.xdata and event.ydata and len(G2frame.ImageZ):                 #avoid out of frame errors
             Page.canvas.SetToolTipString('%8.2f %8.2fmm'%(event.xdata,event.ydata))
             Page.canvas.SetCursor(wx.CROSS_CURSOR)
@@ -3738,15 +3737,16 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 ypix = ypos*scaley
                 Int = 0
                 if (0 <= xpix <= sizexy[0]) and (0 <= ypix <= sizexy[1]):
-                    Int = G2frame.ImageZ[ypix][xpix]-int(FlatBkg)
+                    Int = G2frame.ImageZ[ypix][xpix]
                 tth,azm,D,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
-                fields = ['','Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int)]
-                if G2frame.MaskKey in ['p','f']:
-                    fields[1] = 'Polygon/frame mask pick - LB next point, RB close polygon'
-                elif G2frame.StrainKey:
-                    fields[0] = 'd-zero pick active'
-                G2frame.G2plotNB.status.SetFields(fields)
+                if G2frame.StrainKey:
+                    G2frame.G2plotNB.status.SetStatusText('d-zero pick active',0)
+                elif G2frame.MaskKey in ['p','f']:
+                    G2frame.G2plotNB.status.SetStatusText('Polygon/frame mask pick - LB next point, RB close polygon',1)
+                else:
+                     G2frame.G2plotNB.status.SetStatusText( \
+                        'Detector 2-th =%9.3fdeg, dsp =%9.3fA, Q = %6.5fA-1, azm = %7.2fdeg, I = %6d'%(tth,dsp,Q,azm,Int),1)
 
     def OnImPlotKeyPress(event):
         try:
@@ -3813,7 +3813,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         if PickName not in ['Image Controls','Masks','Stress/Strain']:
             return
         pixelSize = Data['pixelSize']
-        FlatBkg = Data.get('Flat Bkg',0.)
         scalex = 1000./pixelSize[0]
         scaley = 1000./pixelSize[1]
 #        pixLimit = Data['pixLimit']    #can be too tight
@@ -3827,7 +3826,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if event.button == 1:
                     Xpix = Xpos*scalex
                     Ypix = Ypos*scaley
-                    xpos,ypos,I,J = G2img.ImageLocalMax(G2frame.ImageZ-FlatBkg,pixLimit,Xpix,Ypix)
+                    xpos,ypos,I,J = G2img.ImageLocalMax(G2frame.ImageZ,pixLimit,Xpix,Ypix)
                     if I and J:
                         xpos += .5                              #shift to pixel center
                         ypos += .5
@@ -3892,7 +3891,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             dsp = G2img.GetDsp(Xpos,Ypos,Data)
             StrSta['d-zero'].append({'Dset':dsp,'Dcalc':0.0,'pixLimit':10,'cutoff':0.5,
                 'ImxyObs':[[],[]],'ImtaObs':[[],[]],'ImtaCalc':[[],[]],'Emat':[1.0,1.0,1.0]})
-            R,r = G2img.MakeStrStaRing(StrSta['d-zero'][-1],G2frame.ImageZ-FlatBkg,Data)
+            R,r = G2img.MakeStrStaRing(StrSta['d-zero'][-1],G2frame.ImageZ,Data)
             if not len(R):
                 del StrSta['d-zero'][-1]
                 G2frame.ErrorDialog('Strain peak selection','WARNING - No points found for this ring selection')
@@ -3998,6 +3997,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             G2frame.itemPicked = None
             
     # PlotImage execution starts here
+    if not len(G2frame.ImageZ):
+        return
     xylim = []
     try:
         plotNum = G2frame.G2plotNB.plotList.index('2D Powder Image')
@@ -4043,27 +4044,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     except TypeError:
         pass
     size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)
-    dark = Data.get('dark image',[0,''])
-    if imagefile != G2frame.oldImagefile or G2frame.oldImageTag != imagetag or dark[0]: # always reread to apply dark correction
-        imagefile = G2IO.CheckImageFile(G2frame,imagefile)
-        if not imagefile:
-            G2frame.G2plotNB.Delete('2D Powder Image')
-            return
-        if imagetag:
-            G2frame.PatternTree.SetItemPyData(G2frame.Image,
-                                              [size,(imagefile,imagetag)])
-        else:
-            G2frame.PatternTree.SetItemPyData(G2frame.Image,[size,imagefile])          
-        G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,imageOnly=True,ImageTag=imagetag)
-        if dark[0]:
-            dsize,darkfile,darktag = G2frame.PatternTree.GetImageLoc(
-                G2gd.GetPatternTreeItemId(G2frame,G2frame.root,dark[0]))
-            darkImg = G2IO.GetImageData(G2frame,darkfile,imageOnly=True,ImageTag=darktag)
-            G2frame.ImageZ += dark[1]*darkImg
-        G2frame.oldImagefile = imagefile # save name of the last image file read
-        G2frame.oldImageTag = imagetag   # save tag of the last image file read
-    #else:
-    #    if GSASIIpath.GetConfigValue('debug'): print('Skipping image reread')
 
     imScale = 1
     if len(G2frame.ImageZ) > 1024:
@@ -4083,14 +4063,13 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     Plot.set_ylabel('Image y-axis, mm',fontsize=12)
     #do threshold mask - "real" mask - others are just bondaries
     Zlim = Masks['Thresholds'][1]
-    FlatBkg = Data.get('Flat Bkg',0.0)
     wx.BeginBusyCursor()
     try:
         if newImage:                    
             Imin,Imax = Data['range'][1]
-            MA = ma.masked_greater(ma.masked_less(G2frame.ImageZ,Zlim[0]+FlatBkg),Zlim[1]+FlatBkg)
+            MA = ma.masked_greater(ma.masked_less(G2frame.ImageZ,Zlim[0]),Zlim[1])
             MaskA = ma.getmaskarray(MA)
-            A = G2img.ImageCompress(MA,imScale)-FlatBkg
+            A = G2img.ImageCompress(MA,imScale)
             AM = G2img.ImageCompress(MaskA,imScale)
             if G2frame.logPlot:
                 A = np.where(A>Imin,np.where(A<Imax,A,0),0)

@@ -51,6 +51,38 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 ##### Image Data
 ################################################################################
 
+def GetImageZ(G2frame,data):
+    '''Gets image & applies dark, background & flat background corrections
+    '''
+    
+    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)
+    imagefile = G2IO.CheckImageFile(G2frame,imagefile)
+    sumImg = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+    darkImg,darkScale = data['dark image']
+    backImg,backScale = data['background image']            
+    if darkImg:
+        Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
+        Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
+        imagefile = G2IO.CheckImageFile(G2frame,imagefile)
+        darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+        sumImg += darkImage*darkScale
+    if backImg:     #ignores any transmission effect in the background image
+        Bid = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
+        Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Bid)
+        imagefile = G2IO.CheckImageFile(G2frame,imagefile)
+        backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+        Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Bid,'Image Controls'))
+        if darkImg:
+            Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,darkImg)
+            Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
+            imagefile = G2IO.CheckImageFile(G2frame,imagefile)
+            darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+            backImage += darkImage*darkScale                
+        sumImg += backImage*backScale
+    sumImg -= data['Flat Bkg']
+    return sumImg
+    
+
 def UpdateImageData(G2frame,data):
     
     def OnPixVal(event):
@@ -68,6 +100,7 @@ def UpdateImageData(G2frame,data):
     if not G2frame.dataFrame.GetStatusBar():
         G2frame.dataFrame.CreateStatusBar()
     G2frame.dataDisplay = wx.Panel(G2frame.dataFrame)
+    G2frame.ImageZ = GetImageZ(G2frame,data)
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add(wx.StaticText(G2frame.dataDisplay,
         label='Do not change anything here unless you are absolutely sure!'),0,WACV)
@@ -148,27 +181,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         try:
-            Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)
-            sumImg = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-            darkImg,darkScale = data['dark image']
-            backImg,backScale = data['background image']            
-            if darkImg:
-                Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
-                Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
-                darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-                sumImg += darkImage*darkScale
-            if backImg:     #ignores any transmission effect in the background image
-                Bid = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
-                Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Bid)
-                backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-                Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Bid,'Image Controls'))
-                if darkImg:
-                    Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,darkImg)
-                    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
-                    darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-                    backImage += darkImage*darkScale                
-                sumImg += backImage*backScale
-            G2frame.Integrate = G2img.ImageIntegrate(sumImg-data['Flat Bkg'],data,masks,blkSize,dlg)
+            sumImg = GetImageZ(G2frame,data)
+            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,dlg)
             Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
             G2frame.PatternId = Id
             G2frame.PatternTree.SelectItem(Id)
@@ -211,27 +225,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                             dlgp = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
                                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
                             try:
-                                Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(id)
-                                image = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-                                darkImg,darkScale = data['dark image']
-                                backImg,backScale = data['background image']            
-                                if darkImg:
-                                    id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
-                                    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(id)
-                                    darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-                                    image += darkScale*darkImage
-                                if backImg:
-                                    id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
-                                    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(id)
-                                    backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-                                    Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'Image Controls'))
-                                    if darkImg:
-                                        id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,darkImg)
-                                        Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(id)
-                                        darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-                                        backImage += darkImage*darkScale                
-                                    image += backImage*backScale
-                                image -= Data['Flat Bkg']
+                                image = GetImageZ(G2frame,Data)
                                 Masks = G2frame.PatternTree.GetItemPyData(
                                     G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'))
                                 G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
@@ -815,9 +809,12 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         
         def OnBackImage(event):
             data['background image'][0] = backImage.GetValue()
+            G2frame.ImageZ = GetImageZ(G2frame,data)
+            G2plt.PlotExposedImage(G2frame,event=event)
             
         def OnDarkImage(event):
             data['dark image'][0] = darkImage.GetValue()
+            G2frame.ImageZ = GetImageZ(G2frame,data)
             G2plt.PlotExposedImage(G2frame,event=event)
             
         def OnFlatBkg(event):
@@ -827,6 +824,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             except ValueError:
                 pass
             flatbkg.SetValue("%.0f"%(data['Flat Bkg']))    
+            G2frame.ImageZ = GetImageZ(G2frame,data)
             G2plt.PlotExposedImage(G2frame,event=event)
 
         def OnBackMult(event):
@@ -836,6 +834,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             except ValueError:
                 pass
             backMult.SetValue("%.3f" % (data['background image'][1]))          #reset in case of error 
+            G2frame.ImageZ = GetImageZ(G2frame,data)
+            G2plt.PlotExposedImage(G2frame,event=event)
         
         def OnDarkMult(event):
             try:
@@ -844,6 +844,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             except ValueError:
                 pass
             darkMult.SetValue("%.3f" % (data['dark image'][1]))          #reset in case of error 
+            G2frame.ImageZ = GetImageZ(G2frame,data)
             G2plt.PlotExposedImage(G2frame,event=event)
         
         backSizer = wx.FlexGridSizer(0,6,5,5)
@@ -2291,7 +2292,7 @@ class AutoIntFrame(wx.Frame):
         G2frame.PickId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls')
         # do integration
         size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(imgId)
-        G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,True,imagetag)
+#        G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,True,imagetag)     #pointless since done in OnIntegrate?
         masks = G2frame.PatternTree.GetItemPyData(
                 G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
         data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)

@@ -866,14 +866,14 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
     numChans = data['outChannels']
     azmOff = data['azmthOff']
     Dazm = (LRazm[1]-LRazm[0])/numAzms
-    if 'log(q)' in data['binType']:
-        lutth = np.log(4.*np.pi*npsind(LUtth/2.)/data['wavelength'])
+    if '2-theta' in data.get('binType','2-theta'):
+        lutth = LUtth                
     elif 'Q' == data['binType']:
         lutth = 4.*np.pi*npsind(LUtth/2.)/data['wavelength']
-    elif '2-theta' in data['binType']:
-        lutth = LUtth                
+    elif 'log(q)' in data['binType']:
+        lutth = np.log(4.*np.pi*npsind(LUtth/2.)/data['wavelength'])
     dtth = (lutth[1]-lutth[0])/numChans
-    muT = data['SampleAbs'][0]
+    muT = data.get('SampleAbs',[0.0,''])[0]
     if 'SASD' in data['type']:
         muT = -np.log(muT)/2.       #Transmission to 1/2 thickness muT
     NST = np.zeros(shape=(numAzms,numChans),order='F',dtype=np.float32)
@@ -908,15 +908,15 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
                 dlg.Update(Nup)
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
-            if data['SampleAbs'][1]:
+            if data.get('SampleAbs',[0.0,''])[1]:
                 if 'Cylind' in data['SampleShape']:
                     muR = muT*(1.+npsind(tax)**2/2.)/(npcosd(tay))      #adjust for additional thickness off sample normal
                     tabs = G2pwd.Absorb(data['SampleShape'],muR,tay)
                 elif 'Fixed' in data['SampleShape']:    #assumes flat plate sample normal to beam
                     tabs = G2pwd.Absorb('Fixed',muT,tay)
-            if 'log(q)' in data['binType']:
+            if 'log(q)' in data.get('binType',''):
                 tay = np.log(4.*np.pi*npsind(tay/2.)/data['wavelength'])
-            elif 'Q' == data['binType']:
+            elif 'Q' == data.get('binType',''):
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
             t0 = time.time()
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
@@ -931,9 +931,9 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
     H0 = np.divide(H0,NST)
     H0 = np.nan_to_num(H0)
     H2 = np.array([tth for tth in np.linspace(lutth[0],lutth[1],numChans+1)])
-    if 'log(q)' in data['binType']:
+    if 'log(q)' in data.get('binType',''):
         H2 = 2.*npasind(np.exp(H2)*data['wavelength']/(4.*np.pi))
-    elif 'Q' == data['binType']:
+    elif 'Q' == data.get('binType',''):
         H2 = 2.*npasind(H2*data['wavelength']/(4.*np.pi))
     if Dazm:        
         H1 = np.array([azm for azm in np.linspace(LRazm[0],LRazm[1],numAzms+1)])

@@ -58,14 +58,18 @@ def GetImageZ(G2frame,data):
     Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)
     imagefile = G2IO.CheckImageFile(G2frame,imagefile)
     sumImg = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+    if not 'dark image' in data:
+        return sumImg
     darkImg,darkScale = data['dark image']
-    backImg,backScale = data['background image']            
     if darkImg:
         Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
         Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
         imagefile = G2IO.CheckImageFile(G2frame,imagefile)
         darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
         sumImg += darkImage*darkScale
+    if not 'background image' in data:
+        return sumImg
+    backImg,backScale = data['background image']            
     if backImg:     #ignores any transmission effect in the background image
         Bid = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
         Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Bid)
@@ -214,6 +218,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     G2frame.EnablePlot = False
                     for item in result:
                         ifintegrate,name,id = item
+                        G2frame.Image = id
                         if ifintegrate:
                             Id = G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')
                             Data = G2frame.PatternTree.GetItemPyData(Id)
@@ -225,6 +230,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                             dlgp = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
                                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
                             try:
+#                                GSASIIpath.IPyBreak()
                                 image = GetImageZ(G2frame,Data)
                                 Masks = G2frame.PatternTree.GetItemPyData(
                                     G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'))
@@ -818,13 +824,14 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             G2plt.PlotExposedImage(G2frame,event=event)
             
         def OnFlatBkg(event):
+            oldFlat = data.get('Flat Bkg',0.)
             try:
                 value = float(flatbkg.GetValue())
                 data['Flat Bkg'] = value
             except ValueError:
                 pass
             flatbkg.SetValue("%.0f"%(data['Flat Bkg']))    
-            G2frame.ImageZ = GetImageZ(G2frame,data)
+            G2frame.ImageZ += (oldFlat-data['Flat Bkg'])
             G2plt.PlotExposedImage(G2frame,event=event)
 
         def OnBackMult(event):
@@ -2309,6 +2316,7 @@ class AutoIntFrame(wx.Frame):
             namenum = ''
         for Id in G2frame.IntgOutList: # loop over newly created PDWR entry(ies)
             # save the created PWDR tree names so that a reset can delete them
+            G2frame.Image = Id
             treename = G2frame.PatternTree.GetItemText(Id)
             G2frame.AutointPWDRnames.append(treename)
             # write out the images in the selected formats

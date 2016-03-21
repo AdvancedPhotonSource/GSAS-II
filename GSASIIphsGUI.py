@@ -2669,6 +2669,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 for Xi,Xname in enumerate(Names):
                     table.append(transArray[Yi][Xi])
                     rowLabels.append(Xname)
+                    if transArray[Yi][Xi][0] > 0.:
+                        allowedTrans.append([str(Yi+1),str(Xi+1)])
                 transTable = G2G.Table(table,rowLabels=rowLabels,colLabels=transLabels,types=transTypes)
                 transGrid = G2G.GSGrid(layerData)
                 transGrid.SetTable(transTable,True)
@@ -2717,10 +2719,28 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
             stackChoice = ['recursive','explicit',]
             seqChoice = ['random','list',]
-            numChoice = [' ','infinite',]  
                       
             def OnStackType(event):
-                data['Layers']['Stacking'][0] = stackType.GetValue()
+                newType = stackType.GetValue()
+                if newType == data['Layers']['Stacking'][0]:
+                    return                    
+                data['Layers']['Stacking'][0] = newType
+                if newType == 'recursive':
+                    data['Layers']['Stacking'][1] = 'infinite'
+                else:  #explicit
+                    data['Layers']['Stacking'][1] = 'random'
+                    data['Layers']['Stacking'][2] = '250'
+                wx.CallAfter(UpdateLayerData)
+                
+            def OnSeqType(event):
+                newType = seqType.GetValue()
+                if newType == data['Layers']['Stacking'][1]:
+                    return
+                data['Layers']['Stacking'][1] = newType
+                if newType == 'random':
+                    data['Layers']['Stacking'][2] = '250'
+                else: #List
+                    data['Layers']['Stacking'][2] = ''
                 wx.CallAfter(UpdateLayerData)
                 
             def OnNumLayers(event):
@@ -2728,15 +2748,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if val == 'infinite':
                     data['Layers']['Stacking'][1] = val
                 else:
-                    if int(val) > 1032:
-                        data['Layers']['Stacking'][1] = 'infinite'
-                    else:
-                        data['Layers']['Stacking'][1] = val
-                numLayers.SetValue(val)
+                    try:
+                        if 0 < int(val) < 1023:
+                            data['Layers']['Stacking'][1] = val
+                        else:
+                            data['Layers']['Stacking'][1] = 'infinite'
+                    except ValueError:
+                        pass
+                numLayers.SetValue(data['Layers']['Stacking'][1])
                 
-            def OnSeqType(event):
-                data['Layers']['Stacking'][1] = seqType.GetValue()
-                wx.CallAfter(UpdateLayerData)
+            def OnNumRan(event):
+                val = numRan.GetValue()
+                try:
+                    if 0 > int(val) > 1022:
+                        raise ValueError
+                    else:
+                        data['Layers']['Stacking'][2] = val
+                except ValueError:
+                    val = data['Layers']['Stacking'][2]
+                numRan.SetValue(val)
                 
             def OnStackList(event):
                 stack = stackList.GetValue()
@@ -2758,7 +2788,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         stack = newstack
                     except ValueError:
                         stack += ' Error in string'
-                data['Layers']['Stacking'][2] = stack
+                Slist = stack.split()
+                if len(Slist) < 2:
+                    stack = 'Error in sequence - too short!'
+                OKlist = [Slist[i:i+2] in allowedTrans for i in range(len(Slist[:-1]))]
+                if all(OKlist):
+                    data['Layers']['Stacking'][2] = stack
+                else:
+                    stack = 'Improbable sequence or bad string'
                 stackList.SetValue(stack)
             
             stackSizer = wx.BoxSizer(wx.VERTICAL)
@@ -2772,38 +2809,43 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             stackType.Bind(wx.EVT_COMBOBOX,OnStackType)
             topLine.Add(stackType,0,WACV)
             if Layers['Stacking'][0] == 'recursive':
-                topLine.Add(wx.StaticText(layerData,label=' number of layers: '),0,WACV)
-                numLayers = wx.ComboBox(layerData,value=Layers['Stacking'][1],choices=numChoice,
-                    style=wx.CB_DROPDOWN)
-                stackType.Bind(wx.EVT_COMBOBOX,OnNumLayers)
-                stackType.Bind(wx.EVT_TEXT_ENTER,OnNumLayers)        
-                stackType.Bind(wx.EVT_KILL_FOCUS,OnNumLayers)
+                topLine.Add(wx.StaticText(layerData,label=' number of layers (<1022 or "infinite"): '),0,WACV)
+                numLayers = wx.TextCtrl(layerData,value=data['Layers']['Stacking'][1],style=wx.TE_PROCESS_ENTER)
+                numLayers.Bind(wx.EVT_TEXT_ENTER,OnNumLayers)        
+                numLayers.Bind(wx.EVT_KILL_FOCUS,OnNumLayers)
                 topLine.Add(numLayers,0,WACV)
             elif Layers['Stacking'][0] == 'explicit':
                 topLine.Add(wx.StaticText(layerData,label=' layer sequence: '),0,WACV)
-                seqType = wx.ComboBox(layerData,value=Layers['Stacking'][1],choices=seqChoice,
+                seqType = wx.ComboBox(layerData,value=data['Layers']['Stacking'][1],choices=seqChoice,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)
                 seqType.Bind(wx.EVT_COMBOBOX,OnSeqType)
                 topLine.Add(seqType,0,WACV)
-            stackSizer.Add(topLine,0,WACV)
-            if Layers['Stacking'][1] == 'list':
-                Names = [' %s: %d,'%(layer['Name'],iL+1) for iL,layer in enumerate(Layers['Layers'])]
-                stackSizer.Add(wx.StaticText(layerData,label=' Explicit layer sequence; enter space delimited list of numbers:'),0,WACV)
-                Str = ' Use sequence nos. from:'
-                for name in Names:
-                    Str += name
-                stackSizer.Add(wx.StaticText(layerData,label=Str[:-1]+' Repeat sequences can be used: e.g. 6*(1 2) '),0,WACV)
-                stackSizer.Add(wx.StaticText(layerData,label=' Zero probability sequences not allowed'),0,WACV)    
-                stackList = wx.TextCtrl(layerData,value=Layers['Stacking'][2],size=(600,-1),
-                    style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
-                stackList.SetValue(Layers['Stacking'][2])
-                stackList.Bind(wx.EVT_TEXT_ENTER,OnStackList)        
-                stackList.Bind(wx.EVT_KILL_FOCUS,OnStackList)
-                stackSizer.Add(stackList,0,wx.ALL|wx.EXPAND|WACV,8)
+                if Layers['Stacking'][1] == 'list':
+                    stackSizer.Add(topLine,0,WACV)
+                    Names = [' %s: %d,'%(layer['Name'],iL+1) for iL,layer in enumerate(Layers['Layers'])]
+                    stackSizer.Add(wx.StaticText(layerData,label=' Explicit layer sequence; enter space delimited list of numbers:'),0,WACV)
+                    Str = ' Use sequence nos. from:'
+                    for name in Names:
+                        Str += name
+                    stackSizer.Add(wx.StaticText(layerData,label=Str[:-1]+' Repeat sequences can be used: e.g. 6*(1 2) '),0,WACV)
+                    stackSizer.Add(wx.StaticText(layerData,label=' Zero probability sequences not allowed'),0,WACV)    
+                    stackList = wx.TextCtrl(layerData,value=Layers['Stacking'][2],size=(600,-1),
+                        style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
+                    stackList.Bind(wx.EVT_TEXT_ENTER,OnStackList)        
+                    stackList.Bind(wx.EVT_KILL_FOCUS,OnStackList)
+                    stackSizer.Add(stackList,0,wx.ALL|wx.EXPAND|WACV,8)
+                else:   #random
+                    topLine.Add(wx.StaticText(layerData,label=' Length of random sequence: '),0,WACV)
+                    numRan = wx.TextCtrl(layerData,value=Layers['Stacking'][2],style=wx.TE_PROCESS_ENTER)
+                    numRan.Bind(wx.EVT_TEXT_ENTER,OnNumRan)        
+                    numRan.Bind(wx.EVT_KILL_FOCUS,OnNumRan)
+                    topLine.Add(numRan,0,WACV)
+                    stackSizer.Add(topLine,0,WACV)
             return stackSizer
             
         Layers = data['Layers']
         layerNames = []
+        allowedTrans = []
         if len(Layers['Layers']):
             layerNames = [layer['Name'] for layer in Layers['Layers']]
         G2frame.dataFrame.SetStatusText('')

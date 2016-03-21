@@ -5813,7 +5813,6 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         Bonds = FindBonds(AtTypes,XYZ)
                         
     cell = Layers['Cell'][1:7]
-    print cell
     Amat,Bmat = G2lat.cell2AB(cell)         #Amat - crystal to cartesian, Bmat - inverse
     A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)

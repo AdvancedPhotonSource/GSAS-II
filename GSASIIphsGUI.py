@@ -429,7 +429,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         if 'Layers' not in pages:
                             if 'Layers' not in data:
                                 data['Layers'] = {'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],
-                                    'Width':[[10.,10.],[False,False]],'Toler':0.01,'AtInfo':{},
+                                    'Width':[[1.,1.],[False,False]],'Toler':0.01,'AtInfo':{},
                                     'Layers':[],'Stacking':[],'Transitions':[]}
                             G2frame.layerData = wx.ScrolledWindow(G2frame.dataDisplay)
                             G2frame.dataDisplay.InsertPage(3,G2frame.layerData,'Layers')
@@ -2509,7 +2509,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Obj = event.GetEventObject()
                 id = Indx[Obj]
                 try:
-                    Layers['Width'][0][id] = float(Obj.GetValue())
+                    Layers['Width'][0][id] = max(0.005,min(1.0,float(Obj.GetValue())))
                 except ValueError:
                     pass
                 Obj.SetValue('%.3f'%(Layers['Width'][0][id]))
@@ -2524,7 +2524,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Indx = {}
             widthSizer = wx.BoxSizer(wx.HORIZONTAL)
             for i in range(2):
-                widthSizer.Add(wx.StaticText(layerData,label=' layer width(%s) \xb5m: '%(Labels[i])),0,WACV)
+                widthSizer.Add(wx.StaticText(layerData,label=' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
                 widthVal = wx.TextCtrl(layerData,value='%.3f'%(widths[i]),style=wx.TE_PROCESS_ENTER)
                 widthVal.Bind(wx.EVT_TEXT_ENTER,OnWidthChange)        
                 widthVal.Bind(wx.EVT_KILL_FOCUS,OnWidthChange)
@@ -2550,6 +2550,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             UpdateLayerData()
             
         def OnImportLayer(event):
+            print 'Import atoms for a layer - TBD'
             #from where? DIFFaX files? other phases? NB: transformation issues
             event.Skip()
             
@@ -2670,7 +2671,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     table.append(transArray[Yi][Xi])
                     rowLabels.append(Xname)
                     if transArray[Yi][Xi][0] > 0.:
-                        allowedTrans.append([str(Yi+1),str(Xi+1)])
+                        Layers['allowedTrans'].append([str(Yi+1),str(Xi+1)])
                 transTable = G2G.Table(table,rowLabels=rowLabels,colLabels=transLabels,types=transTypes)
                 transGrid = G2G.GSGrid(layerData)
                 transGrid.SetTable(transTable,True)
@@ -2791,7 +2792,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Slist = stack.split()
                 if len(Slist) < 2:
                     stack = 'Error in sequence - too short!'
-                OKlist = [Slist[i:i+2] in allowedTrans for i in range(len(Slist[:-1]))]
+                OKlist = [Slist[i:i+2] in Layers['allowedTrans'] for i in range(len(Slist[:-1]))]
                 if all(OKlist):
                     data['Layers']['Stacking'][2] = stack
                 else:
@@ -2814,6 +2815,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 numLayers.Bind(wx.EVT_TEXT_ENTER,OnNumLayers)        
                 numLayers.Bind(wx.EVT_KILL_FOCUS,OnNumLayers)
                 topLine.Add(numLayers,0,WACV)
+                stackSizer.Add(topLine)
             elif Layers['Stacking'][0] == 'explicit':
                 topLine.Add(wx.StaticText(layerData,label=' layer sequence: '),0,WACV)
                 seqType = wx.ComboBox(layerData,value=data['Layers']['Stacking'][1],choices=seqChoice,
@@ -2845,7 +2847,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         Layers = data['Layers']
         layerNames = []
-        allowedTrans = []
+        Layers['allowedTrans'] = []
         if len(Layers['Layers']):
             layerNames = [layer['Name'] for layer in Layers['Layers']]
         G2frame.dataFrame.SetStatusText('')
@@ -2963,6 +2965,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
         else:   #selected area
             G2pwd.StackSim(data['Layers'],ctrls)
+#            G2pwd.CalcStackingSADP(data['Layers'])
         wx.CallAfter(UpdateLayerData)
         
 ################################################################################

@@ -440,7 +440,11 @@ def meanAzm(a,b):
     return azm      
        
 def ImageCompress(image,scale):
-    'Needs a doc string'
+    ''' Reduces size of image by selecting every n'th point
+    param: image array: original image
+    param: scale int: intervsl between selected points 
+    returns: array: reduced size image
+    '''
     if scale == 1:
         return image
     else:

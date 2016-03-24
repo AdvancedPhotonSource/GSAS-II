@@ -1737,6 +1737,30 @@ def calcIncident(Iparm,xdata):
 # Stacking fault simulation codes
 ################################################################################
 
+def GetStackParms(Layers):
+    
+    Parms = []
+#cell parms
+    cell = Layers['Cell'] 
+    if Layers['Laue'] in ['-3','-3m','4/m','4/mmm','6/m','6/mmm']:
+        Parms.append('cellA')
+        Parms.append('cellC')
+    else:
+        Parms.append('cellA')
+        Parms.append('cellB')
+        Parms.append('cellC')
+        if Layers['Laue'] != 'mmm':
+            Parms.append('cellG')
+#Transition parms
+    Trans = Layers['Transitions']
+    for iY in range(len(Layers['Layers'])):
+        for iX in range(len(Layers['Layers'])):
+            Parms.append('TransP;%d;%d'%(iY,iX))
+            Parms.append('TransX;%d;%d'%(iY,iX))
+            Parms.append('TransY;%d;%d'%(iY,iX))
+            Parms.append('TransZ;%d;%d'%(iY,iX))
+    return Parms
+
 def StackSim(Layers,ctrls,HistName='',scale=0.,background={},limits=[],inst={},profile=[]):
     '''Simulate powder or selected area diffraction pattern from stacking faults using DIFFaX
     

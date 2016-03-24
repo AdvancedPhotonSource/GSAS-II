@@ -86,8 +86,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
 ] = [wx.NewId() for item in range(2)]
 
-[ wxID_LOADDIFFAX,wxID_LAYERSIMULATE,
-] = [wx.NewId() for item in range(2)]
+[ wxID_LOADDIFFAX,wxID_LAYERSIMULATE,wxID_SEQUENCESIMULATE,
+] = [wx.NewId() for item in range(3)]
 
 [ wxID_PAWLEYLOAD, wxID_PAWLEYESTIMATE, wxID_PAWLEYUPDATE,
 ] = [wx.NewId() for item in range(3)]
@@ -452,6 +452,7 @@ class TransformDialog(wx.Dialog):
         sgSizer.Add(wx.StaticText(self.panel,label='  Space group: '),0,WACV)
         SGTxt = wx.TextCtrl(self.panel,value=self.SpGrp,style=wx.TE_PROCESS_ENTER)
         SGTxt.Bind(wx.EVT_TEXT_ENTER,OnSpaceGroup)
+        SGTxt.Bind(wx.EVT_KILL_FOCUS,OnSpaceGroup)
         sgSizer.Add(SGTxt,0,WACV)
         mainSizer.Add(sgSizer,0,WACV)
 
@@ -494,7 +495,7 @@ class TransformDialog(wx.Dialog):
 class DIFFaXcontrols(wx.Dialog):
     ''' Solicit items needed to prepare DIFFaX control.dif file
     '''
-    def __init__(self,parent,ctrls):
+    def __init__(self,parent,ctrls,parms=None):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,'DIFFaX controls', 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
@@ -506,13 +507,19 @@ class DIFFaXcontrols(wx.Dialog):
         self.lmaxChoice = [str(i+1) for i in range(6)]
         self.mult = '1'
         self.multChoice = [str(2**i) for i in range(10)]
+        self.Parms = parms
+        self.Parm = None
+        if self.Parms != None:
+            self.Parm = self.Parms[0]
+        self.parmRange = [0.,1.]
+        self.parmStep = 2
         self.Draw()
         
     def Draw(self):
         
         def OnCalcType(event):
             self.calcType = calcType.GetValue()
-            self.Draw()
+            wx.CallAfter(self.Draw)
             
         def OnPlane(event):
             self.plane = plane.GetValue()
@@ -522,6 +529,21 @@ class DIFFaXcontrols(wx.Dialog):
             
         def OnMult(event):
             self.mult = mult.GetValue()
+            
+        def OnParmSel(event):
+            self.Parm = parmsel.GetValue()
+            
+        def OnNumStep(event):
+            self.parmStep = int(numStep.GetValue())
+            
+        def OnParmRange(event):
+            vals = parmrange.GetValue().split()
+            try:
+                vals = [float(vals[0]),float(vals[1])]
+            except ValueError:
+                vals = self.parmRange
+            parmrange.SetValue('%.3f %.3f'%(vals[0],vals[1]))
+            self.parmRange = vals
         
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -535,6 +557,27 @@ class DIFFaXcontrols(wx.Dialog):
         calcType.Bind(wx.EVT_COMBOBOX,OnCalcType)
         calcSizer.Add(calcType,0,WACV)
         mainSizer.Add(calcSizer)
+        if self.Parms:
+            parmSel = wx.BoxSizer(wx.HORIZONTAL)
+            parmSel.Add(wx.StaticText(self.panel,label=' Select parameter to vary: '),0,WACV)
+            parmsel = wx.ComboBox(self.panel,value=self.Parm,choices=self.Parms,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            parmsel.Bind(wx.EVT_COMBOBOX,OnParmSel)
+            parmSel.Add(parmsel,0,WACV)
+            mainSizer.Add(parmSel)
+            mainSizer.Add(wx.StaticText(self.panel,label=' Enter parameter range & no. steps: '),0,WACV)
+            parmRange =  wx.BoxSizer(wx.HORIZONTAL)
+            numChoice = [str(i+1) for i in range(10)]
+            parmrange = wx.TextCtrl(self.panel,value='%.3f %.3f'%(self.parmRange[0],self.parmRange[1]),
+                style=wx.TE_PROCESS_ENTER)
+            parmrange.Bind(wx.EVT_TEXT_ENTER,OnParmRange)
+            parmrange.Bind(wx.EVT_KILL_FOCUS,OnParmRange)
+            parmRange.Add(parmrange,0,WACV)
+            numStep = wx.ComboBox(self.panel,value=str(self.parmStep),choices=numChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            numStep.Bind(wx.EVT_COMBOBOX,OnNumStep)
+            parmRange.Add(numStep,0,WACV)
+            mainSizer.Add(parmRange)            
         if 'selected' in self.calcType:
             planeSizer = wx.BoxSizer(wx.HORIZONTAL)
             planeSizer.Add(wx.StaticText(self.panel,label=' Select plane: '),0,WACV)
@@ -573,11 +616,12 @@ class DIFFaXcontrols(wx.Dialog):
         
     def GetSelection(self):
         if 'powder' in self.calcType:
-            return '0\n0\n3\n','',''
+            return '0\n0\n3\n','','',self.Parm,self.parmRange,self.parmStep
         elif 'selected' in self.calcType:
             return '0\n0\n4\n1\n%d\n%d\n16\n1\n%d\n0\nend\n'%    \
-                (self.planeChoice.index(self.plane)+1,self.lmaxChoice.index(self.lmax)+1,
-                self.multChoice.index(self.mult)+1),self.plane,self.lmax
+                (self.planeChoice.index(self.plane)+1,self.lmaxChoice.index(self.lmax)+1,   \
+                self.multChoice.index(self.mult)+1),self.plane,self.lmax,       \
+                self.Parm,self.parmRange,self.parmStep
 
     def OnOk(self,event):
         parent = self.GetParent()
@@ -1740,6 +1784,8 @@ class DataFrame(wx.Frame):
             help='Load layer info from DIFFaX file')
         self.LayerDataEdit.Append(id=wxID_LAYERSIMULATE, kind=wx.ITEM_NORMAL,text='Simulate pattern',
             help='Simulate diffraction pattern from layer stacking')
+        self.LayerDataEdit.Append(id=wxID_SEQUENCESIMULATE, kind=wx.ITEM_NORMAL,text='Sequence simulations',
+            help='Sequence simulation changing one parameter')
         self.PostfillDataMenu()
                  
         # Phase / Draw Options tab

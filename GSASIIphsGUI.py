@@ -417,6 +417,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     elif generalData['Type'] == 'faulted':
                         G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
                         G2frame.dataFrame.Bind(wx.EVT_MENU, OnSimulate, id=G2gd.wxID_LAYERSIMULATE)
+                        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSeqSimulate, id=G2gd.wxID_SEQUENCESIMULATE)
                         if 'Wave Data' in pages:
                             pass
 #                            G2frame.dataDisplay.DeletePage(pages.index('Wave Data'))
@@ -625,13 +626,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         def ElemSizer():
             
-            def OnIsotope(event):   #how can I update Atom weight on isotope change?
+            def OnIsotope(event):
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
                 isotope = Obj.GetValue()
+                nCols = len(generalData['AtomTypes'])+1
                 data['General']['Isotope'][item] = isotope
                 indx = generalData['AtomTypes'].index(item)
-                data['General']['AtomMass'][indx] = generalData['Isotopes'][item][isotope]['Mass']
+                wt = generalData['Isotopes'][item][isotope]['Mass']
+                elemSizer.GetChildren()[indx+3*nCols+1].Window.SetValue('%.3f'%(wt))    #tricky
+                data['General']['AtomMass'][indx] = wt
                 density,mattCoeff = G2mth.getDensity(generalData)
                 denSizer[1].SetValue('%.3f'%(density))
                 if denSizer[2]:
@@ -2924,7 +2928,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         ctrls = ''
         dlg = G2gd.DIFFaXcontrols(G2frame,ctrls)
         if dlg.ShowModal() == wx.ID_OK:
-            ctrls,plane,lmax = dlg.GetSelection()
+            ctrls,plane,lmax,x,x,x = dlg.GetSelection()
             data['Layers']['Sadp'] = {}
             data['Layers']['Sadp']['Plane'] = plane
             data['Layers']['Sadp']['Lmax'] = lmax
@@ -2965,8 +2969,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
         else:   #selected area
             G2pwd.StackSim(data['Layers'],ctrls)
-#            G2pwd.CalcStackingSADP(data['Layers'])
+#            if GSASIIpath.GetConfigValue('debug'):
+#                G2pwd.CalcStackingSADP(data['Layers'])
         wx.CallAfter(UpdateLayerData)
+        
+    def OnSeqSimulate(event):
+        
+        ctrls = ''
+        Parms = G2pwd.GetStackParms(data['Layers'])
+        dlg = G2gd.DIFFaXcontrols(G2frame,ctrls,Parms)
+        if dlg.ShowModal() == wx.ID_OK:
+            ctrls,plane,lmax,parm,parmRange,parmStep = dlg.GetSelection()
+            data['Layers']['Sadp'] = {}
+            data['Layers']['Sadp']['Plane'] = plane
+            data['Layers']['Sadp']['Lmax'] = lmax
+            data['Layers']['Multi'] = [parm,parmRange,parmStep]
+        else:
+            return
+        print 'do sequence of simulations on...',parm,parmRange,parmStep
         
 ################################################################################
 #### Wave Data page
@@ -7087,11 +7107,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if data['General']['Type'] in ['modulated','magnetic']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.WavesData)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnWaveVary, id=G2gd.wxID_WAVEVARY)
-        # Stacking faults wxID_LAYERSIMULATE
+        # Stacking faults 
         if data['General']['Type'] == 'faulted':
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.LayerData)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnSimulate, id=G2gd.wxID_LAYERSIMULATE)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnSeqSimulate, id=G2gd.wxID_SEQUENCESIMULATE)
         # Draw Options
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataDrawOptions)
         # Draw Atoms

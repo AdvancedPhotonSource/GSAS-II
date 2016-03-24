@@ -813,14 +813,24 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         
     def BackSizer():
         
+        def ResetThresholds():
+            Imin = max(0.,np.min(G2frame.ImageZ))
+            Imax = np.max(G2frame.ImageZ)
+            data['range'] = [(Imin,Imax),[Imin,Imax]]
+            masks['Thresholds'] = [(Imin,Imax),[Imin,Imax]]
+            MaxSizer.GetChildren()[2].Window.SetValue(str(int(Imax)))   #tricky 
+            MaxSizer.GetChildren()[5].Window.SetValue(str(int(Imin)))   #tricky 
+        
         def OnBackImage(event):
             data['background image'][0] = backImage.GetValue()
             G2frame.ImageZ = GetImageZ(G2frame,data)
+            ResetThresholds()
             G2plt.PlotExposedImage(G2frame,event=event)
             
         def OnDarkImage(event):
             data['dark image'][0] = darkImage.GetValue()
             G2frame.ImageZ = GetImageZ(G2frame,data)
+            ResetThresholds()
             G2plt.PlotExposedImage(G2frame,event=event)
             
         def OnFlatBkg(event):
@@ -832,6 +842,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 pass
             flatbkg.SetValue("%.0f"%(data['Flat Bkg']))    
             G2frame.ImageZ += (oldFlat-data['Flat Bkg'])
+            ResetThresholds()
             G2plt.PlotExposedImage(G2frame,event=event)
 
         def OnBackMult(event):
@@ -842,6 +853,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 pass
             backMult.SetValue("%.3f" % (data['background image'][1]))          #reset in case of error 
             G2frame.ImageZ = GetImageZ(G2frame,data)
+            ResetThresholds()
             G2plt.PlotExposedImage(G2frame,event=event)
         
         def OnDarkMult(event):
@@ -852,6 +864,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 pass
             darkMult.SetValue("%.3f" % (data['dark image'][1]))          #reset in case of error 
             G2frame.ImageZ = GetImageZ(G2frame,data)
+            ResetThresholds()
             G2plt.PlotExposedImage(G2frame,event=event)
         
         backSizer = wx.FlexGridSizer(0,6,5,5)
@@ -1107,8 +1120,9 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     mainSizer = wx.BoxSizer(wx.VERTICAL)
     mainSizer.Add((5,10),0)    
     mainSizer.Add(ComboSizer(),0,wx.ALIGN_LEFT)
-    mainSizer.Add((5,5),0)            
-    mainSizer.Add(MaxSizer(),0,wx.ALIGN_LEFT|wx.EXPAND)
+    mainSizer.Add((5,5),0)
+    MaxSizer = MaxSizer()               #keep this so it can be changed in BackSizer   
+    mainSizer.Add(MaxSizer,0,wx.ALIGN_LEFT|wx.EXPAND)
     
     mainSizer.Add((5,5),0)
     DataSizer = wx.FlexGridSizer(0,2,5,0)

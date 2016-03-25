@@ -1935,74 +1935,60 @@ def StackSim(Layers,ctrls,HistName='',scale=0.,background={},limits=[],inst={},p
     
 def CalcStackingSADP(Layers):
     
-    def getXY_HK(hk,Layers):
-        XY_HK = {}
-        for layer in Layers['Layers']:
-            if not layer['SameAs']:     #a real layer
-                XY_HK[layer['Name']] = np.inner(hk,np.array([atom[2:4] for atom in layer['Atoms']]))*2.*np.pi
-        return XY_HK
-        
-    def getDXY_HK(hk,Trans,detune):
-        N = Trans.shape[0]
-        DXY_HK = np.zeros((N,N),dtype='cfloat')
-        Lphi = np.zeros((N,N),dtype='cfloat')
-        for iY in range(N):
-            for iX in range(N):
-                if [str(iY+1),str(iX+1)] in Layers['allowedTrans']:
-                    dot = 2.*np.pi*np.inner(hk,Trans[iY,iX,1:3])
-                    Lphi[iY,iX] = complex(np.cos(dot),np.sin(dot))
-                    DXY_HK[iY][iX] = detune*Trans[iY,iX,0]*Lphi[iY,iX]
-        return DXY_HK,Lphi
-                    
-                    
-    
-    sadpSize = 256
-    G,g = G2lat.cell2Gmat(Layers['Cell'][1:7])  #recip/real met. tensors
-    A = G2lat.Gmat2A(G)
-    lmax = float(Layers['Sadp']['Lmax'])
-    Smax = G2lat.calc_rDsq([0.,0.,lmax],A)
-    plane = Layers['Sadp']['Plane']
-    if plane == 'h0l':
-        hkmax = int(lmax*np.sqrt(A[2]/A[0]))
-    elif plane == '0kl':
-        hkmax = int(lmax*np.sqrt(A[2]/A[1]))
-    elif plane == 'hhl':
-        hkmax = int(lmax*np.sqrt(A[2]/(A[0]+A[1]+A[5])))
-    elif plane == 'h-hl':
-        hkmax = int(lmax*np.sqrt(A[2]/(A[0]+A[1]-A[5])))
-    dl = 2.*lmax/sadpSize
-    Trans = []
-    for Ytrans in Layers['Transitions']:
-        Trans.append([trans[:4] for trans in Ytrans])   #get just the numbers
-    Trans = np.array(Trans,dtype='float')
-    N = np.sqrt(Trans.shape[0])
-    lmax -= 0.5*dl  #shift lmax to avoid l=0
-    lmin = -lmax
-    sadpBlock = sadpSize
-    if Layers['Laue'] not in ['-1','2/m(c)','-3','-3m','axial']:
-        lmin = -0.5*dl
-        sadpBlock /= 2
-#start
-    cnt = 0
-    Names = [layer['Name'] for layer in Layers['Layers']]
-    Nlayers = len(Names)
-    detune = 1.0-0.001
-    for i in range(hkmax+1):
-        if plane == 'h0l':
-            hk = np.array([i,0])
-        elif plane == '0kl':
-            hk = np.array([0,i])
-        elif lane == 'hhl':
-            hk = np.array([i,i])
+    atTypes = Layers['AtInfo'].keys()
+    Adat = []
+    for atType in atTypes:
+        if atType == 'H': 
+            blen = -.3741
         else:
-            hk = np.array([i,-i])
-        print ' h = %d k = %d'%(hk[0],hk[1])
-        XY_HK = getXY_HK(hk,Layers)                 #good
-        DXY_HK,Lphi = getDXY_HK(hk,Trans,detune)    #good
-             
+            blen = Layers['AtInfo'][atType]['Isotopes']['Nat. Abund.']['SL'][0]
+        Adat.append([[Adat['fa'][i],Adat['fb'][i]] for i in range(4)]+[Adat['fc'],])
+    Adat = np.array(Adat).flatten()
+    AtomXOU = []
+    AtomTp = []
+    AtomNL = []
+    LayerSymm = []
+    LayerNum = []
+    layerNames = []
+    Natm = 1
+    Nuniq = 0
+    for layer in Layers['Layers']:
+        layerNames.append(layer['Name'])
+    for il,layer in enumerate(Layers['Layers']):
+        if layer['SameAs']:
+            LayerNum.append(layerNames.index(layer['SameAs'])+1)
+            continue
+        else:
+            LayerNum.append(il)
+            Nuniq += 1
+        if '-1' in layer['Symm']:
+            LayerSymm.append(1)
+        else:
+            LayerSymm.append(0)
+        AtomNL.append(Natm)
+        for ia,atom in enumerate(layer['Atoms']):
+            [name,atype,x,y,z,frac,Uiso] = atom
+            Natm += 1
+            AtomTp.append(atype)
+            AtomXOU.append([x,y,z,frac,Uiso*78.9568])
+    TransX = []
+    TransP = []
+    for Ytrans in Layers['Transitions']:
+        TransP.append([trans[0] for trans in Ytrans])   #get just the numbers
+        TransX.append([trans[1:4] for trans in Ytrans])   #get just the numbers
+    TransP = np.array(Trans,dtype='float')
+    TransX = np.array(Trans,dtype='float')
+    Nlayers = np.sqrt(TransP.shape[0])
+    Cell = Layers['Cell'][1:4]+Layers['Cell'][6:7]
         
+    laueId = ['-1','2/m(ab)','2/m(c)','mmm','-3','-3m','4/m','4/mmm',
+        '6/m','6/mmm','axial','unknown'].index(Layers['Laue'])
+    planeId = ['h0l','0kl','hhl','h-hl'],index(Layers['Sadp']['Plane'])+1
+    lmax = float(Layers['Sadp']['Lmax'])
+    controls = [laueId,planeId,lmax,Nuniq,]
         
-    
+    Sadp = np.array(256**2)    
+    Sadp = pygetsadp(controls,len(AtTypes),AtTypes,Adat,Cell,Natm,AtomTp,AtomXOU,Nlayers,TransP,TransX,stackseq,Sadp)
     
     
 #testing data

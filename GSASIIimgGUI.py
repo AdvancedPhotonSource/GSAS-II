@@ -361,7 +361,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
             
 # Sizers
-                                        
+    Indx = {}                                    
     def ComboSizer():
 
         def OnDataType(event):
@@ -524,7 +524,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             'det-Y':['Beam center Y','%.3f',data['center'][1]],'tilt':['Tilt angle','%.3f',data['tilt']],
             'phi':['Tilt rotation','%.2f',data['rotation']],'dep':['Penetration','%.2f',data['DetDepth']],
             'wave':['Wavelength','%.6f',data['wavelength']]}
-        Indx = {}
+#        Indx = {}
         for name in Names:
             calSel = wx.CheckBox(parent=G2frame.dataDisplay,label=Parms[name][0])
             calibSizer.Add(calSel,0,WACV)

@@ -1204,7 +1204,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2G.HorizontalLine(mainSizer,General)
         
         mainSizer.Add(FlipSizer())
-        if generalData['Type'] in ['nuclear','macromolecular']:
+        if generalData['Type'] in ['nuclear','macromolecular','faulted',]:
             G2G.HorizontalLine(mainSizer,General)
             mainSizer.Add(MCSASizer())
         G2frame.dataFrame.SetStatusText('')
@@ -1248,7 +1248,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 noSkip = True
                 if Atoms.GetColLabelValue(c) == 'refine':
                     Type = generalData['Type']
-                    if Type in ['nuclear','macromolecular','modulated']:
+                    if Type in ['nuclear','macromolecular','modulated','faulted',]:
                         choice = ['F - site fraction','X - coordinates','U - thermal parameters']
                     elif Type in ['magnetic',]:
                         choice = ['F - site fraction','X - coordinates','U - thermal parameters','M - magnetic moment']
@@ -1668,9 +1668,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)
         if generalData['Type'] == 'macromolecular':
             atomData.append([0,Name,'',Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
-        elif generalData['Type'] == 'nuclear':
+        elif generalData['Type'] in ['nuclear','faulted',]:
             atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
-        elif generalData['Type'] in ['modulated','magnetic']:
+        elif generalData['Type'] in ['modulated','magnetic',]:
             atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
                 {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
         SetupGeneral()
@@ -1852,7 +1852,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
         generalData = data['General']
         SGData = generalData['SGData']
-        if generalData['Type'] in ['nuclear','modulated',]:
+        if generalData['Type'] in ['nuclear','modulated','faulted',]:
             if oldatom:
                 opr = oldatom[5]
                 if atom[9] == 'A':                    
@@ -1887,7 +1887,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         atId = ran.randint(0,sys.maxint)
         if generalData['Type'] == 'macromolecular':
             atomData.insert(indx,[0,Name,'',Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
-        elif generalData['Type'] == 'nuclear':
+        elif generalData['Type'] in ['nuclear','faulted',]:
             atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['modulated','magnetic']:
             atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],
@@ -2410,6 +2410,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             [wg.GRID_VALUE_CHOICE+": ,P",wg.GRID_VALUE_BOOL,]
         plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],
             'viewPoint':[[0.,0.,0.],[]],}
+        Indx = {}
 
         def OnLaue(event):
             Obj = event.GetEventObject()
@@ -2525,7 +2526,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Labels = ['a','b']
             widths = Layers['Width'][0]
             flags = Layers['Width'][1]
-            Indx = {}
             widthSizer = wx.BoxSizer(wx.HORIZONTAL)
             for i in range(2):
                 widthSizer.Add(wx.StaticText(layerData,label=' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
@@ -2663,7 +2663,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             transSizer.Add(wx.StaticText(layerData,label=' Layer-Layer transition probabilities:'),0,WACV)
             Names = [layer['Name'] for layer in Layers['Layers']]
             transArray = Layers['Transitions']
-            Indx = {}
             layerData.transGrids = []
             if not Names or not transArray:
                 return transSizer
@@ -3271,7 +3270,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'showRigidBodies' not in drawingData:
             drawingData['showRigidBodies'] = True
         cx,ct,cs,ci = [0,0,0,0]
-        if generalData['Type'] in ['nuclear','modulated']:
+        if generalData['Type'] in ['nuclear','modulated','faulted',]:
             cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index
         elif generalData['Type'] == 'macromolecular':
             cx,ct,cs,ci = [5,4,9,20]         #x, type, style & index
@@ -4314,7 +4313,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         SetupDrawingData()
         drawingData = data['Drawing']
-        if generalData['Type'] == 'nuclear':
+        if generalData['Type'] in ['nuclear','faulted',]:
             pickChoice = ['Atoms','Bonds','Torsions','Planes']
         elif generalData['Type'] == 'macromolecular':
             pickChoice = ['Atoms','Residues','Chains','Bonds','Torsions','Planes','phi/psi']

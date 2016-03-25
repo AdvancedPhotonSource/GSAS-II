@@ -888,7 +888,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
         if General['Type'] == 'macromolecular':
             line = ' res no residue chain'+line
         print >>pFile,line
-        if General['Type'] in ['nuclear','modulated','magnetic']:
+        if General['Type'] in ['nuclear','modulated','magnetic','faulted',]:
             print >>pFile,135*'-'
             for i,at in enumerate(Atoms):
                 line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cx])+'%10.5f'%(at[cx+1])+ \

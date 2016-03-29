@@ -1279,7 +1279,7 @@ class GSASII(wx.Frame):
         #1st priority: is there an instrument parameter file matching the current file
         # with extension .instprm, .prm, .inst, or .ins? If so read it
         basename = os.path.splitext(filename)[0]
-        for ext in '.instprm','.prm','.inst','.ins':
+        for ext in '.prm','.inst','.ins','.instprm':
             if self.zipfile:
                 instfile = G2IO.ExtractFileFromZip(self.zipfile,
                     selection=os.path.split(basename + ext)[1],parent=self)
@@ -1319,9 +1319,9 @@ class GSASII(wx.Frame):
             else:
                 # for multiple reads of one data file, reuse the inst parm file
                 instfile = lastIparmfile
-            if self.zipfile:
-                instfile = G2IO.ExtractFileFromZip(self.zipfile,
-                    selection=os.path.split(instfile)[1],parent=self)
+#            if self.zipfile:
+#                instfile = G2IO.ExtractFileFromZip(self.zipfile,
+#                    selection=os.path.split(instfile)[1],parent=self)
             if instfile != None and os.path.exists(instfile):
                 #print 'debug: try read',instfile
                 if 'instprm' in instfile:   #GSAS-II file must have .instprm as extension

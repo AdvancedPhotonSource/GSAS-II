@@ -2478,14 +2478,14 @@ def UpdateUnitCellsGrid(G2frame, data):
         if controls[5] in ['Fm3m','Im3m','Pm3m']:
             controls[7] = controls[8] = controls[6]
             controls[9] = controls[10] = controls[11] = 90.
-        elif controls[5] in ['R 3 m','P 6/m m m','I 4/m m m','P 4/m m m']:
+        elif controls[5] in ['R3m','P6/mmm','I4/mmm','P4/mmm']:
             controls[7] = controls[6]
             controls[9] = controls[10] = controls[11] = 90.
             if controls[5] in ['R3-H','P6/mmm']:
                 controls[11] = 120.
-        elif controls[5] in ['F m m m','I m m m','C m m m','P m m m']:
+        elif controls[5] in ['Fmmm','Immm','Cmmm','Pmmm']:
             controls[9] = controls[10] = controls[11] = 90.
-        elif controls[5] in ['C 2/m','P 2/m']:
+        elif controls[5] in ['C2/m','P2/m']:
             controls[9] = controls[11] = 90.  # b unique
         if len(controls) < 13: controls.append(0)
         controls[12] = G2lat.calc_V(G2lat.cell2A(controls[6:12]))
@@ -2611,11 +2611,11 @@ def UpdateUnitCellsGrid(G2frame, data):
             controls[9] = controls[10] = controls[11] = 90.0
             if controls[5] in ['R3-H','P6/mmm']:
                 controls[11] = 120.
-        elif controls[5] in ['F m m m','I m m m','C m m m','P m m m']:
+        elif controls[5] in ['Fmmm','Immm','Cmmm','Pmmm']:
             controls[6+ObjId] = value
             Obj.SetValue("%.5f"%(controls[6+ObjId]))
             controls[9] = controls[10] = controls[11] = 90.0
-        elif controls[5] in ['C 2/m','P 2/m']:
+        elif controls[5] in ['C2/m','P2/m']:
             controls[9] = controls[11] = 90.0
             if ObjId != 3:
                 controls[6+ObjId] = value
@@ -2674,6 +2674,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             else:                       #bad angle
                 value = 90.
         SetCellValue(Obj,ObjId/2,value)
+        wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnHklShow(event):
         PatternId = G2frame.PatternId
@@ -2750,9 +2751,9 @@ def UpdateUnitCellsGrid(G2frame, data):
                 print " %s%10.6f" % ('a =',cell[0])
             elif ibrav in ['R3-H','P6/mmm','I4/mmm','P4/mmm']:
                 print " %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],' c =',cell[2],' volume =',Vol)
-            elif ibrav in ['P 4/m m m','F m m m','I m m m','C m m m','P m m m']:
+            elif ibrav in ['P4/mmm','Fmmm','Immm','Cmmm','Pmmm']:
                 print " %s%10.6f %s%10.6f %s%10.6f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],' volume =',Vol)
-            elif ibrav in ['C 2/m','P 2/m']:
+            elif ibrav in ['C2/m','P2/m']:
                 print " %s%10.6f %s%10.6f %s%10.6f %s%8.3f %s%12.3f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2],'beta =',cell[4],' volume =',Vol)
             else:
                 print " %s%10.6f %s%10.6f %s%10.6f" % ('a =',cell[0],'b =',cell[1],'c =',cell[2])

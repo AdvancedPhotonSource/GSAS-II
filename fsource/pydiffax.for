@@ -1,3 +1,72 @@
+      SUBROUTINE PYGETSADP(CNTRLS,NSADP,SADP,HKLIM,INCR)
+        
+Cf2py intent(in) CNTRLS
+Cf2py intent(in) NSADP
+Cf2py intent(in/out) SADP
+Cf2py depend(NSADP) SADP
+Cf2py intent(out) HKLIM
+Cf2py intent(out) INCR
+    
+      INCLUDE 'DIFFaXsubs/DIFFaX.par'
+      INCLUDE 'DIFFaXsubs/DIFFaX.inc'
+
+      EXTERNAL GET_G,AGLQ16,GET_SYM                  
+      INTEGER*4 CNTRLS(7),NSADP,GET_SYM,i_plane,hk_lim,i,j,k
+      INTEGER*4 HKLIM
+      REAL*8 SADP(NSADP),AGLQ16,l_upper,INCR
+      LOGICAL ok,GET_G
+        
+                    
+      i_plane = CNTRLS(2)
+      l_upper = CNTRLS(3)
+C      print *,n_actual,(l_n_atoms(i),i=1,n_actual)
+C      do j=1,n_actual
+C        do i=1,l_n_atoms(j)
+C          print *,a_name(i,j),(a_pos(k,i,j),k=1,3)
+C        end do
+C      end do
+C      print *, recrsv,inf_thick,xplcit,rndm,l_cnt,has_l_mirror
+C      do i=1,n_layers
+C      print *,' layer',i
+C         do j=1,n_layers
+C            print *,'layer',j,l_alpha(i,j),(l_r(k,i,j),k=1,3)
+C         end do
+C      end do
+      ok = .TRUE.
+        
+C      print *,cell_a,cell_b,cell_c,cell_gamma,pnt_grp,SymGrpNo
+c      DoSymDump = .TRUE.
+      CALL SPHCST()
+      CALL DETUN()
+      ok = GET_G()
+      CALL OPTIMZ('GSAS-II',ok)
+C      print *,lambda,max_angle,h_bnd,k_bnd,l_bnd,no_trials,
+C     1  rad_type,X_RAY,n_atoms
+C      print *,(l_g(j),j=1,n_layers)
+C      do j=1,n_layers
+C        print *,(hx_ky(i,j),i=1,l_n_atoms(j))
+C        print *,(mat(i,j),i=1,n_layers)
+C        print *,(mat1(i,j),i=1,n_layers)
+C        print *,(l_phi(i,j),i=1,n_layers)
+C      end do
+      CALL GETSAD(AGLQ16,i_plane,l_upper,hk_lim,'GSAS-II',ok)
+      HKLIM = hk_lim+1
+      INCR = dble(SADSIZE/2)/l_upper
+      if (i_plane.eq.1) then
+        INCR = INCR*sqrt(a0/c0)
+      else if (i_plane.eq.2) then
+        INCR = INCR*sqrt(b0/c0)
+      else if (i_plane.eq.3) then
+        INCR = INCR*sqrt((a0+b0+d0)/c0)
+      else if (i_plane.eq.4) then
+        INCR = INCR*sqrt((a0+b0-d0)/c0)
+      end if
+      do I=1,NSADP
+        SADP(i) = spec(i)
+      end do
+      RETURN
+      END
+
       SUBROUTINE PYLOADSCF(NATP,ATYPES,SFDAT)
         
 Cf2py intent(in) NATP
@@ -182,71 +251,3 @@ C fill common transitions stuff
       END
         
             
-      SUBROUTINE PYGETSADP(CNTRLS,NSADP,SADP,HKLIM,INCR)
-        
-Cf2py intent(in) CNTRLS
-Cf2py intent(in) NSADP
-Cf2py intent(in/out) SADP
-Cf2py depend(NSADP) SADP
-Cf2py intent(out) HKLIM
-Cf2py intent(out) INCR
-    
-      INCLUDE 'DIFFaXsubs/DIFFaX.par'
-      INCLUDE 'DIFFaXsubs/DIFFaX.inc'
-
-      INTEGER*4 CNTRLS(7),NSADP,GET_SYM,i_plane,hk_lim,i,j,k
-      INTEGER*4 HKLIM
-      REAL*8 SADP(NSADP),AGLQ16,l_upper,INCR
-      LOGICAL ok,GET_G
-        
-      EXTERNAL AGLQ16,GET_SYM,GET_G                  
-                    
-      i_plane = CNTRLS(2)
-      l_upper = CNTRLS(3)
-C      print *,n_actual,(l_n_atoms(i),i=1,n_actual)
-C      do j=1,n_actual
-C        do i=1,l_n_atoms(j)
-C          print *,a_name(i,j),(a_pos(k,i,j),k=1,3)
-C        end do
-C      end do
-C      print *, recrsv,inf_thick,xplcit,rndm,l_cnt,has_l_mirror
-C      do i=1,n_layers
-C      print *,' layer',i
-C         do j=1,n_layers
-C            print *,'layer',j,l_alpha(i,j),(l_r(k,i,j),k=1,3)
-C         end do
-C      end do
-      ok = .TRUE.
-        
-C      print *,cell_a,cell_b,cell_c,cell_gamma,pnt_grp,SymGrpNo
-c      DoSymDump = .TRUE.
-      CALL SPHCST()
-      CALL DETUN()
-      ok = GET_G()
-      CALL OPTIMZ('GSAS-II',ok)
-C      print *,lambda,max_angle,h_bnd,k_bnd,l_bnd,no_trials,
-C     1  rad_type,X_RAY,n_atoms
-C      print *,(l_g(j),j=1,n_layers)
-C      do j=1,n_layers
-C        print *,(hx_ky(i,j),i=1,l_n_atoms(j))
-C        print *,(mat(i,j),i=1,n_layers)
-C        print *,(mat1(i,j),i=1,n_layers)
-C        print *,(l_phi(i,j),i=1,n_layers)
-C      end do
-      CALL GETSAD(AGLQ16,i_plane,l_upper,hk_lim,'GSAS-II',ok)
-      HKLIM = hk_lim+1
-      INCR = dble(SADSIZE/2)/l_upper
-      if (i_plane.eq.1) then
-        INCR = INCR*sqrt(a0/c0)
-      else if (i_plane.eq.2) then
-        INCR = INCR*sqrt(b0/c0)
-      else if (i_plane.eq.3) then
-        INCR = INCR*sqrt((a0+b0+d0)/c0)
-      else if (i_plane.eq.4) then
-        INCR = INCR*sqrt((a0+b0-d0)/c0)
-      end if
-      do I=1,NSADP
-        SADP(i) = spec(i)
-      end do
-      RETURN
-      END

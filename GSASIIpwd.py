@@ -36,7 +36,7 @@ import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
 import GSASIImath as G2mth
 import pypowder as pyd
-import pydiffax as pyx
+#import pydiffax as pyx
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)

@@ -1,0 +1,95 @@
+************************************************************************
+*                                                                      *
+*     Copyright 1987-1990 Michael M. J. Treacy and Michael W. Deem     *
+*                                                                      *
+************************************************************************
+*******************      Source file DIFFaX.par       ******************
+************************************************************************
+* Note that arrays are defined so that the most changed subscript is   *
+* first. This usually means that the order is (column, row).           *
+*                                                                      *
+************************************************************************
+**************      Description of DIFFaX parameters       *************
+************************************************************************
+*    MAX_L        -  the maximum number of layer types allowed         *
+*    MAX_A        -  the maximum number of atoms per layer             *
+*    MAX_TA       -  the maximum number of different atom types        *
+*    MAX_SP       -  the maximum number of points in the spectrum      *
+*    SADSIZE      -  the array size for the selected area diffraction  *
+*                    pattern.                                          *
+*    XP_MAX       -  the maximum number of layers that can be          *
+*                    explicitly sequenced non-recursively.             *
+*    RCSV_MAX     -  the maximum number of layers that can be          *
+*                    explicitly sequenced recursively. RCSV_MAX should *
+*                    not exceed 2**MAX_BIN - 2                         *
+*    MAX_NAM      -  the maximum allowable number of characters in a   *
+*                    filename                                          *
+*    MAX_BIN      -  Maximum number of 'bits' to be used in binary     *
+*                    representation of RCRSV_MAX+2                     *
+*    FFACT_SIZE   -  Array size for pre-computed Lorentzian used for   *
+*                    computing the lateral (a-b) size broadening.      *
+*    N_SIGMAS     -  Number of half-widths to compute Lorentzian. The  *
+*                    remainder of the array goes linearly to zero.     *
+*    inf_width    -  Layer width in Angstroms that DIFFaX considers to *
+*                    be infinite, with no detectable size broadening.  *
+*    ip           -  standard input device number                      *
+*    op           -  standard output device number                     *
+*    df           -  unit that the structure data file will be         *
+*                    read from.                                        *
+*    sf           -  unit that the standard scattering factor data     *
+*                    will be read from.                                *
+*    dp           -  unit that the structure data dump will be         *
+*                    written to.                                       *
+*    sy           -  unit that the symmetry evaluation data will       *
+*                    be written to.                                    *
+*    sk           -  unit that the streak data will be written to.     *
+*    sp           -  unit that the spectrum data will be written to.   *
+*    sa           -  unit that the 8-bit binary formatted selected     *
+*                    area diffraction pattern data will be written to. *
+*    scrtch       -  unit that the scratch file will be used on.       *
+*    CLIP         -  allowed length of filename appendages.            *
+*    UNKNOWN      -  flag indicating whether or not the symmetry       *
+*                    point-group has been defined by the user          *
+*                                                                      *
+************************************************************************
+******************      Declaration of parameters      *****************
+************************************************************************
+*
+      implicit none
+      integer*4 MAX_L, MAX_A, MAX_TA, MAX_SP, SADSIZE
+      parameter (MAX_L=20,MAX_A=200,MAX_TA=20,MAX_SP=20001,SADSIZE=256)
+      integer*4 XP_MAX, RCSV_MAX, MAX_NAM, MAX_BIN
+      parameter (XP_MAX=5000, RCSV_MAX=1022, MAX_NAM=31, MAX_BIN=10)
+      integer*4 FFACT_SIZE, N_SIGMAS
+      parameter (FFACT_SIZE=201, N_SIGMAS=7)
+      real*8    inf_width
+      parameter (inf_width=1.0D4)
+      integer*4 ip, op, df, sf, dp, sy, sp, sk, sa
+      parameter (ip=5,op=6,df=2,sf=4,dp=10,sy=11,sp=12,sk=13,sa=14)
+      integer*4 scrtch
+      parameter (scrtch = 3)
+      integer*4 CLIP
+      parameter (CLIP = 14)
+      integer*4 UNKNOWN
+      parameter (UNKNOWN = -1)
+* define some useful numerical constants
+      complex*16 C_ZERO, C_ONE
+      parameter (C_ZERO = (0.0D0,0.0D0), C_ONE = (1.0D0,0.0D0))
+      real*8 ZERO, QUARTER, HALF, ONE, TWO, THREE, FOUR, FIVE,
+     |       SIX, EIGHT, TEN, TWELVE, TWENTY, FIFTY, HUNDRED,
+     |       ONE_EIGHTY
+      parameter (ZERO = 0.0D0, QUARTER = 0.25D0, HALF = 0.5D0,
+     |       ONE = 1.0D0, TWO = 2.0D0, THREE = 3.0D0, FOUR = 4.0D0,
+     |       FIVE = 5.0D0, SIX = 6.0D0, EIGHT = 8.0D0, TEN = 10.0D0,
+     |       TWELVE = 12.0D0, TWENTY = 20.0D0, FIFTY = 50.0D0,
+     |       HUNDRED = 100.0D0, ONE_EIGHTY = 180.0D0)
+      real*8 eps1, eps2, eps3, eps4, eps5, eps6, eps7, eps8, eps9,
+     |       eps10, eps14
+      parameter (eps1 = 1.0D-1, eps2 = 1.0D-2, eps3 = 1.0D-3,
+     |           eps4 = 1.0D-4, eps5 = 1.0D-5, eps6 = 1.0D-6,
+     |           eps7 = 1.0D-7, eps8 = 1.0D-8, eps9 = 1.0D-9,
+     |           eps10 = 1.0D-10, eps14 = 1.0D-14)
+      real*8 EIGHTBITS, FIFTEENBITS, SIXTEENBITS
+	parameter (EIGHTBITS = 256.0D0, FIFTEENBITS = 32768.0D0,
+     |       SIXTEENBITS = 65536.0D0)
+*

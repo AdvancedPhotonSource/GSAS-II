@@ -21,6 +21,7 @@ import subprocess as subp
 import numpy as np
 import scipy as sp
 import numpy.linalg as nl
+import random as rand
 from numpy.fft import ifft, fft, fftshift
 import scipy.interpolate as si
 import scipy.stats as st
@@ -35,6 +36,7 @@ import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
 import GSASIImath as G2mth
 import pypowder as pyd
+import pydiffax as pyx
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -1911,7 +1913,6 @@ def StackSim(Layers,ctrls,HistName='',scale=0.,background={},limits=[],inst={},p
         iFin = iBeg+Xpat.shape[1]
         bakType,backDict,backVary = SetBackgroundParms(background)
         backDict['Lam1'] = G2mth.getWave(inst)
-    #    GSASIIpath.IPyBreak()
         profile[4][iBeg:iFin] = getBackground('',backDict,bakType,inst['Type'][0],profile[0][iBeg:iFin])[0]    
         profile[3][iBeg:iFin] = Xpat[2]*scale+profile[4][iBeg:iFin]
         if not np.any(profile[1]):                   #fill dummy data x,y,w,yc,yb,yd
@@ -1935,22 +1936,64 @@ def StackSim(Layers,ctrls,HistName='',scale=0.,background={},limits=[],inst={},p
     
 def CalcStackingSADP(Layers):
     
+    rand.seed()
+    ranSeed = rand.randint(1,2**16-1)
+# Scattering factors
+    import atmdata
     atTypes = Layers['AtInfo'].keys()
-    Adat = []
+    aTypes = []
+    for atype in atTypes:
+        aTypes.append('%4s'%(atype.ljust(4)))
+    SFdat = []
     for atType in atTypes:
         if atType == 'H': 
             blen = -.3741
         else:
             blen = Layers['AtInfo'][atType]['Isotopes']['Nat. Abund.']['SL'][0]
-        Adat.append([[Adat['fa'][i],Adat['fb'][i]] for i in range(4)]+[Adat['fc'],])
-    Adat = np.array(Adat).flatten()
+        Adat = atmdata.XrayFF[atType]
+        SF = np.zeros(9)
+        SF[:8:2] = Adat['fa']
+        SF[1:8:2] = Adat['fb']
+        SF[8] = Adat['fc']
+        SFdat.append(SF)
+    SFdat = np.array(SFdat)
+    pyx.pyloadscf(len(atTypes),aTypes,SFdat.T)
+# Controls
+    try:    
+        laueId = ['-1','2/m(ab)','2/m(c)','mmm','-3','-3m','4/m','4/mmm',
+            '6/m','6/mmm'].index(Layers['Laue'])+1
+    except ValueError:
+        laueId = -1
+    planeId = ['h0l','0kl','hhl','h-hl'].index(Layers['Sadp']['Plane'])+1
+    lmax = int(Layers['Sadp']['Lmax'])
+    mult = int(Layers['Sadp']['Mult'])
+# Sequences
+    StkType = ['recursive','explicit'].index(Layers['Stacking'][0])
+    try:
+        StkParm = ['infinite','random','list'].index(Layers['Stacking'][1])
+    except ValueError:
+        StkParm = -1
+    if StkParm == 2:    #list
+        StkSeq = [int(val) for val in Layers['Stacking'][2].split()]
+        Nstk = len(StkSeq)
+    else:
+        Nstk = 1
+        StkSeq = [0,]
+    if StkParm == -1:
+        StkParm = int(Layers['Stacking'][1])
+    Wdth = Layers['Width'][0]
+    controls = [laueId,planeId,lmax,mult,StkType,StkParm,ranSeed]
+    LaueSym = Layers['Laue'].ljust(12)
+    pyx.pygetclay(controls,LaueSym,Wdth,Nstk,StkSeq)
+    
+    Cell = Layers['Cell'][1:4]+Layers['Cell'][6:7]
+# atoms in layers
     AtomXOU = []
     AtomTp = []
-    AtomNL = []
     LayerSymm = []
     LayerNum = []
     layerNames = []
-    Natm = 1
+    Natm = 0
     Nuniq = 0
     for layer in Layers['Layers']:
         layerNames.append(layer['Name'])
@@ -1959,37 +2002,55 @@ def CalcStackingSADP(Layers):
             LayerNum.append(layerNames.index(layer['SameAs'])+1)
             continue
         else:
-            LayerNum.append(il)
+            LayerNum.append(il+1)
             Nuniq += 1
         if '-1' in layer['Symm']:
             LayerSymm.append(1)
         else:
             LayerSymm.append(0)
-        AtomNL.append(Natm)
         for ia,atom in enumerate(layer['Atoms']):
             [name,atype,x,y,z,frac,Uiso] = atom
             Natm += 1
-            AtomTp.append(atype)
-            AtomXOU.append([x,y,z,frac,Uiso*78.9568])
+            AtomTp.append('%4s'%(atype.ljust(4)))
+            Ta = atTypes.index(atype)+1
+            AtomXOU.append([float(Nuniq),float(ia+1),float(Ta),x,y,z,frac,Uiso*78.9568])
+    AtomXOU = np.array(AtomXOU)
+    Nlayers = len(layerNames)
+    pyx.pycellayer(Cell,Natm,AtomTp,AtomXOU.T,Nuniq,LayerSymm,Nlayers,LayerNum)
+# Transitions
     TransX = []
     TransP = []
     for Ytrans in Layers['Transitions']:
         TransP.append([trans[0] for trans in Ytrans])   #get just the numbers
         TransX.append([trans[1:4] for trans in Ytrans])   #get just the numbers
-    TransP = np.array(Trans,dtype='float')
-    TransX = np.array(Trans,dtype='float')
-    Nlayers = np.sqrt(TransP.shape[0])
-    Cell = Layers['Cell'][1:4]+Layers['Cell'][6:7]
-        
-    laueId = ['-1','2/m(ab)','2/m(c)','mmm','-3','-3m','4/m','4/mmm',
-        '6/m','6/mmm','axial','unknown'].index(Layers['Laue'])
-    planeId = ['h0l','0kl','hhl','h-hl'],index(Layers['Sadp']['Plane'])+1
-    lmax = float(Layers['Sadp']['Lmax'])
-    controls = [laueId,planeId,lmax,Nuniq,]
-        
-    Sadp = np.array(256**2)    
-    Sadp = pygetsadp(controls,len(AtTypes),AtTypes,Adat,Cell,Natm,AtomTp,AtomXOU,Nlayers,TransP,TransX,stackseq,Sadp)
-    
+    TransP = np.array(TransP,dtype='float')
+    TransX = np.array(TransX,dtype='float')
+    pyx.pygettrans(Nlayers,TransP,TransX)
+# result as Sadp
+    mirror = laueId in [2,3,4,7,8,9,10]
+    Nspec = 20001       
+    spec = np.zeros(Nspec,dtype='double')    
+    time0 = time.time()
+    hkLim,Incr = pyx.pygetsadp(controls,Nspec,spec)
+#    GSASIIpath.IPyBreak()
+    Sapd = np.zeros((256,256))
+    maxInt = np.max(spec[1:])
+    Scale = mult*32767./maxInt
+    iB = 0
+    for i in range(hkLim):
+        iF = iB+128
+        p1 = 128+int(i*Incr)
+        Sapd[:128,p1] = spec[iB:iF]
+        Sapd[128:,p1] = spec[iF:iB:-1]
+        if mirror:
+            p2 = 128-int(i*Incr)
+            Sapd[:128,p2] = spec[iB:iF]
+            Sapd[128:,p2] = spec[iF:iB:-1]
+        iB += 128
+    Sapd *= Scale
+    Sapd = np.where(Sapd<32767.,Sapd,32767.)
+    Layers['Sadp']['Img'] = Sapd
+    print 'GETSAD time = %.2fs'%(time.time()-time0)
     
 #testing data
 NeedTestData = True

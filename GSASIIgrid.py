@@ -620,7 +620,7 @@ class DIFFaXcontrols(wx.Dialog):
         elif 'selected' in self.calcType:
             return '0\n0\n4\n1\n%d\n%d\n16\n1\n%d\n0\nend\n'%    \
                 (self.planeChoice.index(self.plane)+1,self.lmaxChoice.index(self.lmax)+1,   \
-                self.multChoice.index(self.mult)+1),self.plane,self.lmax,       \
+                self.multChoice.index(self.mult)+1),self.plane,self.lmax,self.mult,       \
                 self.Parm,self.parmRange,self.parmStep
 
     def OnOk(self,event):

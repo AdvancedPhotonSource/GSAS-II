@@ -2396,19 +2396,54 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title=''):
 def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
     '''simple contour plot of xyz data, used for diagnostic purposes
     '''
+    def OnKeyPress(event):
+        if event.key == 'u':
+            G2frame.Cmax = min(1.0,G2frame.Cmax*1.2) 
+        elif event.key == 'd':
+            G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
+        elif event.key == 'o':
+            G2frame.Cmax = 1.0
+            
+        elif event.key == 'i':
+            choice = ['nearest','bilinear','bicubic','spline16','spline36','hanning',
+               'hamming','hermite','kaiser','quadric','catrom','gaussian','bessel',
+               'mitchell','sinc','lanczos']
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Interpolation',choice)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                G2frame.Interpolate = choice[sel]
+            else:
+                G2frame.Interpolate = 'nearest'
+            dlg.Destroy()
+            
+        elif event.key == 's':
+            choice = [m for m in mpl.cm.datad.keys() if not m.endswith("_r")]
+            choice.sort()
+            dlg = wx.SingleChoiceDialog(G2frame,'Select','Color scheme',choice)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                G2frame.ContourColor = choice[sel]
+            else:
+                G2frame.ContourColor = 'Paired'
+            dlg.Destroy()
+        wx.CallAfter(PlotXYZ,G2frame,XY,Z,labelX,labelY,False,Title)
+    
     def OnMotion(event):
         xpos = event.xdata
-        if xpos:                                        #avoid out of frame mouse position
+        if Xmin<xpos<Xmax:                                        #avoid out of frame mouse position
             ypos = event.ydata
-            Page.canvas.SetCursor(wx.CROSS_CURSOR)
-            ix = int(Nxy[0]*(xpos-Xmin)+0.5)
-            iy = int(Nxy[1]*(ypos-Ymin)+0.5)
-            try:
-                G2frame.G2plotNB.status.SetStatusText('%s =%9.3f %s =%9.3f val =%9.3f'% \
-                    (labelX,xpos,labelY,ypos,Z[ix,iy]),1)                   
-            except TypeError:
-                G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
-
+            if Ymin<ypos<Ymax:
+                Xwd = Xmax-Xmin
+                Ywd = Ymax-Ymin
+                Page.canvas.SetCursor(wx.CROSS_CURSOR)
+                ix = int(Nxy[0]*(xpos-Xmin)/Xwd)
+                iy = int(Nxy[1]*(ypos-Ymin)/Ywd)
+                try:
+                    G2frame.G2plotNB.status.SetStatusText('%s =%9.3f %s =%9.3f val =%9.3f'% \
+                        (labelX,xpos,labelY,ypos,Z[ix,iy]),1)                   
+                except TypeError:
+                    G2frame.G2plotNB.status.SetStatusText('Select '+Title+' pattern first',1)
+                    
     try:
         plotNum = G2frame.G2plotNB.plotList.index(Title)
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -2423,11 +2458,14 @@ def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
         plotNum = G2frame.G2plotNB.plotList.index(Title)
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
     
-    Page.Choice = None
+    Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
+        'i: interpolation method','s: color scheme')
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     Nxy = Z.shape
+    Zmax = np.max(Z)
     Xmin = np.min(XY[0])
     Xmax = np.max(XY[0])
     Ymin = np.min(XY.T[0])
@@ -2441,8 +2479,9 @@ def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
         Plot.set_ylabel(r''+labelY,fontsize=14)
     else:
         Plot.set_ylabel(r'Y',fontsize=14)
-    Img = Plot.imshow(Z.T,cmap='Paired',interpolation='nearest',origin='lower', \
-        aspect='auto',extent=[Xmin,Xmax,Ymin,Ymax])
+    acolor = mpl.cm.get_cmap(G2frame.ContourColor)
+    Img = Plot.imshow(Z.T,cmap=acolor,interpolation=G2frame.Interpolate,origin='lower', \
+        aspect='auto',extent=[Xmin,Xmax,Ymin,Ymax],vmin=0,vmax=Zmax*G2frame.Cmax)
     Page.figure.colorbar(Img)
     if not newPlot:
         Page.toolbar.push_current()

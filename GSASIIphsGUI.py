@@ -2401,7 +2401,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     def UpdateLayerData(Scroll=0):
         
         laueChoice = ['-1','2/m(ab)','2/m(c)','mmm','-3','-3m','4/m','4/mmm',
-            '6/m','6/mmm','axial','unknown']
+            '6/m','6/mmm','unknown']
         colLabels = ['Name','Type','x','y','z','frac','Uiso']
         transLabels = ['Prob','Dx','Dy','Dz','refine','plot']
         colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+ \
@@ -2427,14 +2427,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             
         def OnSadpPlot(event):
             sadpPlot.SetValue(False)
-            import pylab as pl
             labels = Layers['Sadp']['Plane']
             lmax = float(Layers['Sadp']['Lmax'])
-            pl.imshow(Layers['Sadp']['Img'],aspect='auto',extent=[-lmax,lmax,-lmax,lmax])
-            pl.ylabel(labels[-1])
-            pl.xlabel(labels[:-1])
-            pl.title(Layers['Sadp']['Plane'])
-            pl.show()
+            XY = 2*lmax*np.mgrid[0:256:256j,0:256:256j]/256.-lmax
+            G2plt.PlotXYZ(G2frame,XY,Layers['Sadp']['Img'].T,labelX=labels[:-1],
+                labelY=labels[-1],newPlot=False,Title=Layers['Sadp']['Plane'])
             
         def CellSizer():
             
@@ -2528,7 +2525,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             flags = Layers['Width'][1]
             widthSizer = wx.BoxSizer(wx.HORIZONTAL)
             for i in range(2):
-                widthSizer.Add(wx.StaticText(layerData,label=' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
+                widthSizer.Add(wx.StaticText(layerData,label=u' layer width(%s) (<= 1\xb5m): '%(Labels[i])),0,WACV)
                 widthVal = wx.TextCtrl(layerData,value='%.3f'%(widths[i]),style=wx.TE_PROCESS_ENTER)
                 widthVal.Bind(wx.EVT_TEXT_ENTER,OnWidthChange)        
                 widthVal.Bind(wx.EVT_KILL_FOCUS,OnWidthChange)
@@ -2927,10 +2924,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         ctrls = ''
         dlg = G2gd.DIFFaXcontrols(G2frame,ctrls)
         if dlg.ShowModal() == wx.ID_OK:
-            ctrls,plane,lmax,x,x,x = dlg.GetSelection()
+            ctrls,plane,lmax,mult,x,x,x = dlg.GetSelection()
             data['Layers']['Sadp'] = {}
             data['Layers']['Sadp']['Plane'] = plane
             data['Layers']['Sadp']['Lmax'] = lmax
+            data['Layers']['Sadp']['Mult'] = mult
         else:
             return
         if ctrls == '0\n0\n3\n':    #powder pattern
@@ -2968,8 +2966,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
         else:   #selected area
             G2pwd.StackSim(data['Layers'],ctrls)
-#            if GSASIIpath.GetConfigValue('debug'):
-#                G2pwd.CalcStackingSADP(data['Layers'])
+#            G2pwd.CalcStackingSADP(data['Layers'])
         wx.CallAfter(UpdateLayerData)
         
     def OnSeqSimulate(event):
@@ -2978,10 +2975,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Parms = G2pwd.GetStackParms(data['Layers'])
         dlg = G2gd.DIFFaXcontrols(G2frame,ctrls,Parms)
         if dlg.ShowModal() == wx.ID_OK:
-            ctrls,plane,lmax,parm,parmRange,parmStep = dlg.GetSelection()
+            ctrls,plane,lmax,mult,parm,parmRange,parmStep = dlg.GetSelection()
             data['Layers']['Sadp'] = {}
             data['Layers']['Sadp']['Plane'] = plane
             data['Layers']['Sadp']['Lmax'] = lmax
+            data['Layers']['Sadp']['Mult'] = mult
             data['Layers']['Multi'] = [parm,parmRange,parmStep]
         else:
             return

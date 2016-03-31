@@ -3084,7 +3084,13 @@ Operator of Argonne National Laboratory.''')
 Robert B. Von Dreele and Brian H. Toby
 
 Please cite as:
-B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) '''
+B.H. Toby & R.B. Von Dreele, J. Appl. Cryst. 46, 544-549 (2013) 
+For small angle use cite: 
+R.B. Von Dreele, J. Appl. Cryst. 47, 1748-9 (2014)
+For DIFFaX use cite: 
+M.M.J. Treacy, J.M. Newsam & M.W. Deem, 
+       Proc. Roy. Soc. Lond. A 433, 499-520 (1991)
+'''
 
         info.WebSite = ("https://subversion.xray.aps.anl.gov/trac/pyGSAS","GSAS-II home page")
         wx.AboutBox(info)

@@ -52,6 +52,7 @@
 *                    to test against. If the user's choice is          *
 *                    incompatible with the input data, then this       *
 *                    will be reset to FALSE.                           *
+*    debug        -  TRUE for printouts to appear on screen (RVD)      *
 *    DoDatdump    -  TRUE if the user wants a dump of the data file    *
 *    DoSymDump    -  TRUE if the user wants to dump the output of      *
 *                    the symmetry tests                                *
@@ -381,7 +382,7 @@
      |        DoDatdump, DoSymDump, intp_F, trim_origin, recrsv,
      |        xplcit, rndm, inf_thick, has_l_mirror, h_mirror,
      |        k_mirror, hk_mirror, check_sym, same_rz, any_sharp,
-     |        same_layer, finite_width
+     |        same_layer, finite_width,debug
 *
       integer*4 l_seq(XP_MAX), pow(MAX_BIN), a_type(MAX_A,MAX_L),
      |          l_n_atoms(MAX_L), l_symmetry(MAX_L), l_actual(MAX_L),
@@ -421,7 +422,8 @@
      |                DoDatdump, DoSymDump, intp_F, trim_origin,
      |                recrsv, xplcit, rndm, inf_thick, has_l_mirror,
      |                h_mirror, k_mirror, hk_mirror, check_sym,
-     |                same_rz, any_sharp, same_layer, finite_width
+     |                same_rz, any_sharp, same_layer, finite_width,
+     |                debug
 *
       common /integ1/ l_seq, pow, a_type, l_n_atoms, l_symmetry,
      |                l_actual, a_number, e_sf

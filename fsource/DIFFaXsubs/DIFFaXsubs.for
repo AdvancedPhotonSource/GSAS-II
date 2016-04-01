@@ -2351,7 +2351,7 @@ C  401 format(1x, g12.5)
         endif
 *
 * write progress to screen
-        write(op,102) h, k, infile(1:LENGTH(infile))
+        if (debug) write(op,102) h, k, infile(1:LENGTH(infile))
 *
         call XYPHSE(h, k)
         call PRE_MAT(h, k)
@@ -2384,7 +2384,7 @@ C  401 format(1x, g12.5)
 * make sure we do not overflow
           if(cnt.gt.MAX_SP) goto 998
           spec(cnt) = x
-          if(mod(info,info_step).eq.0) then
+          if(mod(info,info_step).eq.0 .and. debug) then
             if(loglin.eq.0) then
               if(ONE+x.gt.ZERO) then
 * write out log(1+x), since x may get to be quite small

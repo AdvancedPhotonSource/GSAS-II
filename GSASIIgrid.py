@@ -616,7 +616,7 @@ class DIFFaXcontrols(wx.Dialog):
         
     def GetSelection(self):
         if 'powder' in self.calcType:
-            return '0\n0\n3\n','','',self.Parm,self.parmRange,self.parmStep
+            return '0\n0\n3\n','','','',self.Parm,self.parmRange,self.parmStep
         elif 'selected' in self.calcType:
             return '0\n0\n4\n1\n%d\n%d\n16\n1\n%d\n0\nend\n'%    \
                 (self.planeChoice.index(self.plane)+1,self.lmaxChoice.index(self.lmax)+1,   \

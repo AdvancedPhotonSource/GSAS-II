@@ -1934,6 +1934,9 @@ def StackSim(Layers,ctrls,HistName='',scale=0.,background={},limits=[],inst={},p
     os.remove('control.dif')
     os.remove('GSASII-DIFFaX.dat')
     
+def CalcStackingPWDR(Layers,HistName,scale,background,limits,inst,profile):
+    pass
+    
 def CalcStackingSADP(Layers):
     
     rand.seed()
@@ -1962,7 +1965,7 @@ def CalcStackingSADP(Layers):
     try:    
         laueId = ['-1','2/m(ab)','2/m(c)','mmm','-3','-3m','4/m','4/mmm',
             '6/m','6/mmm'].index(Layers['Laue'])+1
-    except ValueError:
+    except ValueError:  #for 'unknown'
         laueId = -1
     planeId = ['h0l','0kl','hhl','h-hl'].index(Layers['Sadp']['Plane'])+1
     lmax = int(Layers['Sadp']['Lmax'])
@@ -2027,30 +2030,35 @@ def CalcStackingSADP(Layers):
     TransX = np.array(TransX,dtype='float')
     pyx.pygettrans(Nlayers,TransP,TransX)
 # result as Sadp
-    mirror = laueId in [2,3,4,7,8,9,10]
+    mirror = laueId in [-1,2,3,7,8,9,10]
     Nspec = 20001       
     spec = np.zeros(Nspec,dtype='double')    
     time0 = time.time()
-    hkLim,Incr = pyx.pygetsadp(controls,Nspec,spec)
-#    GSASIIpath.IPyBreak()
+    hkLim,Incr,Nblk = pyx.pygetsadp(controls,Nspec,spec)
     Sapd = np.zeros((256,256))
     maxInt = np.max(spec[1:])
     Scale = mult*32767./maxInt
     iB = 0
     for i in range(hkLim):
-        iF = iB+128
-        p1 = 128+int(i*Incr)
-        Sapd[128:,p1] = spec[iB:iF]
-        Sapd[:128,p1] = spec[iF:iB:-1]
-        if mirror:
-            p2 = 128-int(i*Incr)
+        iF = iB+Nblk
+        p1 = 127+int(i*Incr)
+        p2 = 128-int(i*Incr)
+        if Nblk == 128:
+            if i:
+                Sapd[128:,p1] = spec[iB:iF]
+                Sapd[:128,p1] = spec[iF:iB:-1]
             Sapd[128:,p2] = spec[iB:iF]
             Sapd[:128,p2] = spec[iF:iB:-1]
-        iB += 128
+        else:
+            if i:
+                Sapd[:,p1] = spec[iB:iF]
+            Sapd[:,p2] = spec[iB:iF]
+        iB += Nblk
     Sapd *= Scale
     Sapd = np.where(Sapd<32767.,Sapd,32767.)
     Layers['Sadp']['Img'] = Sapd
     print 'GETSAD time = %.2fs'%(time.time()-time0)
+#    GSASIIpath.IPyBreak()
     
 #testing data
 NeedTestData = True

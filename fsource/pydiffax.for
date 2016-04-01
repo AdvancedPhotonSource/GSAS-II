@@ -1,71 +1,3 @@
-      SUBROUTINE PYGETSADP(CNTRLS,NSADP,SADP,HKLIM,INCR)
-        
-Cf2py intent(in) CNTRLS
-Cf2py intent(in) NSADP
-Cf2py intent(in/out) SADP
-Cf2py depend(NSADP) SADP
-Cf2py intent(out) HKLIM
-Cf2py intent(out) INCR
-    
-      INCLUDE 'DIFFaXsubs/DIFFaX.par'
-      INCLUDE 'DIFFaXsubs/DIFFaX.inc'
-
-      INTEGER*4 CNTRLS(7),NSADP,GET_SYM,i_plane,hk_lim,i,j,k
-      INTEGER*4 HKLIM
-      REAL*8 SADP(NSADP),AGLQ16,l_upper,INCR
-      LOGICAL ok
-        
-      EXTERNAL AGLQ16,GET_SYM                  
-                    
-      i_plane = CNTRLS(2)
-      l_upper = CNTRLS(3)
-C      print *,n_actual,(l_n_atoms(i),i=1,n_actual)
-C      do j=1,n_actual
-C        do i=1,l_n_atoms(j)
-C          print *,a_name(i,j),(a_pos(k,i,j),k=1,3)
-C        end do
-C      end do
-C      print *, recrsv,inf_thick,xplcit,rndm,l_cnt,has_l_mirror
-C      do i=1,n_layers
-C      print *,' layer',i
-C         do j=1,n_layers
-C            print *,'layer',j,l_alpha(i,j),(l_r(k,i,j),k=1,3)
-C         end do
-C      end do
-      ok = .TRUE.
-        
-C      print *,cell_a,cell_b,cell_c,cell_gamma,pnt_grp,SymGrpNo
-c      DoSymDump = .TRUE.
-      CALL SPHCST()
-      CALL DETUN()
-      CALL OPTIMZ('GSAS-II',ok)
-C      print *,lambda,max_angle,h_bnd,k_bnd,l_bnd,no_trials,
-C     1  rad_type,X_RAY,n_atoms
-C      print *,(l_g(j),j=1,n_layers)
-C      do j=1,n_layers
-C        print *,(hx_ky(i,j),i=1,l_n_atoms(j))
-C        print *,(mat(i,j),i=1,n_layers)
-C        print *,(mat1(i,j),i=1,n_layers)
-C        print *,(l_phi(i,j),i=1,n_layers)
-C      end do
-      CALL GETSAD(AGLQ16,i_plane,l_upper,hk_lim,'GSAS-II',ok)
-      HKLIM = hk_lim+1
-      INCR = dble(SADSIZE/2)/l_upper
-      if (i_plane.eq.1) then
-        INCR = INCR*sqrt(a0/c0)
-      else if (i_plane.eq.2) then
-        INCR = INCR*sqrt(b0/c0)
-      else if (i_plane.eq.3) then
-        INCR = INCR*sqrt((a0+b0+d0)/c0)
-      else if (i_plane.eq.4) then
-        INCR = INCR*sqrt((a0+b0-d0)/c0)
-      end if
-      do I=1,NSADP
-        SADP(i) = spec(i)
-      end do
-      RETURN
-      END
-
       SUBROUTINE PYLOADSCF(NATP,ATYPES,SFDAT)
         
 Cf2py intent(in) NATP
@@ -81,12 +13,13 @@ cf2py depend(NATP) ATYPES,SFDAT
       REAL*4  SFDAT(9,NATP)
                 
 C fill common x-ray scattering factors
+      debug = .FALSE.
       DO J=1,NATP
         WRITE(atom_l(J),'(A4)') ATYPES(J)
         DO I=1,9
           x_sf(I,J) = SFDAT(I,J)
         END DO
-C        print *,ATYPES(J),(x_sf(I,J),I=1,9)
+        if (debug) print '(1x,a4,9f10.6)',ATYPES(J),(x_sf(I,J),I=1,9)
       END DO
       intp_F = .TRUE.
       n_atoms = NATP
@@ -149,7 +82,7 @@ C fill in stacking seq stuff
         recrsv = .TRUE.
         xplcit = .FALSE.
         IF (CNTRLS(6).NE.0) THEN
-            l_cnt = CNTRLS(7)
+            l_cnt = CNTRLS(6)
             inf_thick = .FALSE.
         ELSE
             inf_thick = .TRUE.
@@ -187,12 +120,10 @@ C fill Common - cell stuff & finish symmetry stuff
       cell_c = CELL(3)
       cell_gamma = CELL(4)*DEG2RAD
 C fill common layer stuff - atoms & symm
-C      print *,NL,LNUM,NU,LSYM
       DO I=1,NATM
         IL = NINT(ATMXOU(1,I))
         IA = NINT(ATMXOU(2,I))        
         a_type(IA,IL) = NINT(ATMXOU(3,I))
-C        print *,ATMTP(I),IL,IA,a_type(IA,IL),(ATMXOU(j,I),j=4,6)
         a_number(IA,IL) = IA
         WRITE(a_name(IA,IL),'(A4)') ATMTP(I)
         DO K=1,3
@@ -209,7 +140,6 @@ C        print *,ATMTP(I),IL,IA,a_type(IA,IL),(ATMXOU(j,I),j=4,6)
         l_n_atoms(IL) = IA
         l_symmetry(IL) = LSYM(IL)
       END DO
-C      print *,IL,high_atom(IL),low_atom(IL)
       n_actual = IL
       n_layers = NL
       DO I=1,NL
@@ -249,4 +179,74 @@ C fill common transitions stuff
       RETURN
       END
         
+      SUBROUTINE PYGETSADP(CNTRLS,NSADP,SADP,HKLIM,INCR,NBLK)
+        
+Cf2py intent(in) CNTRLS
+Cf2py intent(in) NSADP
+Cf2py intent(in/out) SADP
+Cf2py depend(NSADP) SADP
+Cf2py intent(out) HKLIM
+Cf2py intent(out) INCR
+Cf2py intent(out) NBLK
+    
+      INCLUDE 'DIFFaXsubs/DIFFaX.par'
+      INCLUDE 'DIFFaXsubs/DIFFaX.inc'
+
+      INTEGER*4 CNTRLS(7),NSADP,GET_SYM,i_plane,hk_lim,i,j,k
+      INTEGER*4 HKLIM,NBLK
+      REAL*8 SADP(NSADP),AGLQ16,l_upper,INCR
+      LOGICAL ok
+        
+      EXTERNAL AGLQ16,GET_SYM                  
+                    
+      i_plane = CNTRLS(2)
+      l_upper = CNTRLS(3)
+C      print *,n_actual,(l_n_atoms(i),i=1,n_actual)
+C      do j=1,n_actual
+C        do i=1,l_n_atoms(j)
+C          print *,a_name(i,j),(a_pos(k,i,j),k=1,3)
+C        end do
+C      end do
+c      print *, recrsv,inf_thick,xplcit,rndm,l_cnt,has_l_mirror
+C      do i=1,n_layers
+C      print *,' layer',i
+C         do j=1,n_layers
+C            print *,'layer',j,l_alpha(i,j),(l_r(k,i,j),k=1,3)
+C         end do
+C      end do
+      ok = .TRUE.
+        
+c      print *,cell_a,cell_b,cell_c,cell_gamma,pnt_grp,SymGrpNo
+c      DoSymDump = .TRUE.
+      CALL SPHCST()
+      CALL DETUN()
+      CALL OPTIMZ('GSAS-II',ok)
+C      print *,lambda,max_angle,h_bnd,k_bnd,l_bnd,no_trials,
+C     1  rad_type,X_RAY,n_atoms
+C      print *,(l_g(j),j=1,n_layers)
+C      do j=1,n_layers
+C        print *,(hx_ky(i,j),i=1,l_n_atoms(j))
+C        print *,(mat(i,j),i=1,n_layers)
+C        print *,(mat1(i,j),i=1,n_layers)
+C        print *,(l_phi(i,j),i=1,n_layers)
+C      end do
+      CALL GETSAD(AGLQ16,i_plane,l_upper,hk_lim,'GSAS-II',ok)
+      NBLK = sadblock
+      HKLIM = hk_lim+1
+      INCR = dble(SADSIZE/2)/l_upper
+      if (i_plane.eq.1) then
+        INCR = INCR*sqrt(a0/c0)
+      else if (i_plane.eq.2) then
+        INCR = INCR*sqrt(b0/c0)
+      else if (i_plane.eq.3) then
+        INCR = INCR*sqrt((a0+b0+d0)/c0)
+      else if (i_plane.eq.4) then
+        INCR = INCR*sqrt((a0+b0-d0)/c0)
+      end if
+      do I=1,NSADP
+        SADP(i) = spec(i)
+      end do
+      RETURN
+      END
+
             

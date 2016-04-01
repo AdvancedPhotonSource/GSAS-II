@@ -2963,10 +2963,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
             dlg.Destroy()        
             G2pwd.StackSim(data['Layers'],ctrls,HistName,scale,background,limits,inst,profile)
+            G2pwd.CalcStackingPWDR(data['Layers'],HistName,scale,background,limits,inst,profile)
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
         else:   #selected area
-            G2pwd.StackSim(data['Layers'],ctrls)
-#            G2pwd.CalcStackingSADP(data['Layers'])
+#            G2pwd.StackSim(data['Layers'],ctrls)
+            G2pwd.CalcStackingSADP(data['Layers'])
         wx.CallAfter(UpdateLayerData)
         
     def OnSeqSimulate(event):

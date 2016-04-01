@@ -130,7 +130,7 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
     :param float Psi: flat plate tilt axis - future
     '''
     
-    def muRunder3(Sth2):
+    def muRunder3(MuR,Sth2):
         T0 = 16.0/(3.*np.pi)
         T1 = (25.99978-0.01911*Sth2**0.25)*np.exp(-0.024551*Sth2)+ \
             0.109561*np.sqrt(Sth2)-26.04556
@@ -140,7 +140,7 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
         Trns = -T0*MuR-T1*MuR**2-T2*MuR**3-T3*MuR**4
         return np.exp(Trns)
     
-    def muRover3(Sth2):
+    def muRover3(MuR,Sth2):
         T1 = 1.433902+11.07504*Sth2-8.77629*Sth2*Sth2+ \
             10.02088*Sth2**3-3.36778*Sth2**4
         T2 = (0.013869-0.01249*Sth2)*np.exp(3.27094*Sth2)+ \
@@ -154,10 +154,15 @@ def Absorb(Geometry,MuR,Tth,Phi=0,Psi=0):
     Sth2 = npsind(Tth/2.0)**2
     Cth2 = 1.-Sth2
     if 'Cylinder' in Geometry:      #Lobanov & Alte da Veiga for 2-theta = 0; beam fully illuminates sample
-        if MuR <= 3.0:
-            return muRunder3(Sth2)
+        if 'array' in str(type(MuR)):
+            MuRSTh2 = np.concatenate((MuR,Sth2))
+            AbsCr = np.where(MuRSTh2[0]<=3.0,muRunder3(MuRSTh2[0],MuRSTh2[1]),muRover3(MuRSTh2[0],MuRSTh2[1]))
+            return AbsCr
         else:
-            return muRover3(Sth2)
+            if MuR <= 3.0:
+                return muRunder3(MuR,Sth2)
+            else:
+                return muRover3(MuR,Sth2)
     elif 'Bragg' in Geometry:
         return 1.0
     elif 'Fixed' in Geometry: #assumes sample plane is perpendicular to incident beam

@@ -83,7 +83,7 @@ def GetImageZ(G2frame,data):
             darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
             backImage += darkImage*darkScale                
         sumImg += backImage*backScale
-    sumImg -= data['Flat Bkg']
+    sumImg -= data.get('Flat Bkg',0.)
     return sumImg
     
 

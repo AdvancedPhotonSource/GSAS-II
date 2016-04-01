@@ -10,12 +10,12 @@ Cf2py intent(out) INCR
       INCLUDE 'DIFFaXsubs/DIFFaX.par'
       INCLUDE 'DIFFaXsubs/DIFFaX.inc'
 
-      EXTERNAL GET_G,AGLQ16,GET_SYM                  
       INTEGER*4 CNTRLS(7),NSADP,GET_SYM,i_plane,hk_lim,i,j,k
       INTEGER*4 HKLIM
       REAL*8 SADP(NSADP),AGLQ16,l_upper,INCR
-      LOGICAL ok,GET_G
+      LOGICAL ok
         
+      EXTERNAL AGLQ16,GET_SYM                  
                     
       i_plane = CNTRLS(2)
       l_upper = CNTRLS(3)
@@ -38,7 +38,6 @@ C      print *,cell_a,cell_b,cell_c,cell_gamma,pnt_grp,SymGrpNo
 c      DoSymDump = .TRUE.
       CALL SPHCST()
       CALL DETUN()
-      ok = GET_G()
       CALL OPTIMZ('GSAS-II',ok)
 C      print *,lambda,max_angle,h_bnd,k_bnd,l_bnd,no_trials,
 C     1  rad_type,X_RAY,n_atoms

@@ -5637,14 +5637,14 @@ C  401 format(1x, g12.5)
       logical ok
 *
       character*31 sym_fnam
-      logical EQUALB, BINPOW
+      logical EQUALB, BINPOW, GET_G
       integer*4 GET_SYM, i, j, j2, m, n, LENGTH
       real*8 HKANGL, h_val, k_val
       real*8 x, error, tmp, incr, z, old_lambda
       logical did_it(MAX_L,MAX_L)
 *
 * external functions
-      external GET_SYM, LENGTH, EQUALB, BINPOW
+      external GET_SYM, LENGTH, EQUALB, BINPOW, GET_G
 * external subroutines (Some compilers need them declared external)
 *      external GETFNM, GET_BDS, CHK_SYM, NMCOOR, OVERLP
 *
@@ -5669,6 +5669,7 @@ C  401 format(1x, g12.5)
 * If calculation is to be recursive for a finite number of layers,
 * then store the binary form of l_cnt+1 in an array for efficient
 * matrix multiplication.
+      ok = GET_G()
       if(recrsv .and. .not.inf_thick) then
         ok = BINPOW(l_cnt+1)
         if(.not.ok) then

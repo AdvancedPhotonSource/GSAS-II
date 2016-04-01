@@ -36,7 +36,7 @@ import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
 import GSASIImath as G2mth
 import pypowder as pyd
-#import pydiffax as pyx
+import pydiffax as pyx
 
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
@@ -2040,12 +2040,12 @@ def CalcStackingSADP(Layers):
     for i in range(hkLim):
         iF = iB+128
         p1 = 128+int(i*Incr)
-        Sapd[:128,p1] = spec[iB:iF]
-        Sapd[128:,p1] = spec[iF:iB:-1]
+        Sapd[128:,p1] = spec[iB:iF]
+        Sapd[:128,p1] = spec[iF:iB:-1]
         if mirror:
             p2 = 128-int(i*Incr)
-            Sapd[:128,p2] = spec[iB:iF]
-            Sapd[128:,p2] = spec[iF:iB:-1]
+            Sapd[128:,p2] = spec[iB:iF]
+            Sapd[:128,p2] = spec[iF:iB:-1]
         iB += 128
     Sapd *= Scale
     Sapd = np.where(Sapd<32767.,Sapd,32767.)

@@ -2470,6 +2470,8 @@ def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
     Xmax = np.max(XY[0])
     Ymin = np.min(XY.T[0])
     Ymax = np.max(XY.T[0])
+    Dx = 0.5*(Xmax-Xmin)/Nxy[0]
+    Dy = 0.5*(Ymax-Ymin)/Nxy[1]
     Plot.set_title(Title)
     if labelX:
         Plot.set_xlabel(r''+labelX,fontsize=14)
@@ -2481,7 +2483,7 @@ def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
         Plot.set_ylabel(r'Y',fontsize=14)
     acolor = mpl.cm.get_cmap(G2frame.ContourColor)
     Img = Plot.imshow(Z.T,cmap=acolor,interpolation=G2frame.Interpolate,origin='lower', \
-        aspect='auto',extent=[Xmin,Xmax,Ymin,Ymax],vmin=0,vmax=Zmax*G2frame.Cmax)
+        aspect='auto',extent=[Xmin-Dx,Xmax-Dx,Ymin+Dy,Ymax+Dy],vmin=0,vmax=Zmax*G2frame.Cmax)
     Page.figure.colorbar(Img)
     if not newPlot:
         Page.toolbar.push_current()

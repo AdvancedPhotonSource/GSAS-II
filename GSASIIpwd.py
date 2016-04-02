@@ -36,8 +36,12 @@ import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
 import GSASIImath as G2mth
 import pypowder as pyd
-import pydiffax as pyx
+try:
+    import pydiffax as pyx
+except ImportError:
+    print 'the pydiffax library could not be loaded'
 
+    
 # trig functions in degrees
 sind = lambda x: math.sin(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi

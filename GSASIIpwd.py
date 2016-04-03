@@ -39,7 +39,7 @@ import pypowder as pyd
 try:
     import pydiffax as pyx
 except ImportError:
-    print 'the pydiffax library could not be loaded'
+    print 'pydiffax is not available for this platform - under develpment'
 
     
 # trig functions in degrees
@@ -1915,7 +1915,10 @@ def StackSim(Layers,ctrls,HistName='',scale=0.,background={},limits=[],inst={},p
             return       
     df.close()    
     time0 = time.time()
-    subp.call(DIFFaX)
+    try:
+        subp.call(DIFFaX)
+    except OSError:
+        print 'DIFFax.exe is not available for this platform - under development'
     print 'DIFFaX time = %.2fs'%(time.time()-time0)
     if os.path.exists('GSASII-DIFFaX.spc'):
         Xpat = np.loadtxt('GSASII-DIFFaX.spc').T
@@ -1978,7 +1981,7 @@ def CalcStackingSADP(Layers):
         laueId = -1
     planeId = ['h0l','0kl','hhl','h-hl'].index(Layers['Sadp']['Plane'])+1
     lmax = int(Layers['Sadp']['Lmax'])
-    mult = int(Layers['Sadp']['Mult'])
+    mult = 1
 # Sequences
     StkType = ['recursive','explicit'].index(Layers['Stacking'][0])
     try:
@@ -2045,8 +2048,6 @@ def CalcStackingSADP(Layers):
     time0 = time.time()
     hkLim,Incr,Nblk = pyx.pygetsadp(controls,Nspec,spec)
     Sapd = np.zeros((256,256))
-    maxInt = np.max(spec[1:])
-    Scale = mult*32767./maxInt
     iB = 0
     for i in range(hkLim):
         iF = iB+Nblk
@@ -2063,8 +2064,6 @@ def CalcStackingSADP(Layers):
                 Sapd[:,p1] = spec[iB:iF]
             Sapd[:,p2] = spec[iB:iF]
         iB += Nblk
-    Sapd *= Scale
-    Sapd = np.where(Sapd<32767.,Sapd,32767.)
     Layers['Sadp']['Img'] = Sapd
     print 'GETSAD time = %.2fs'%(time.time()-time0)
 #    GSASIIpath.IPyBreak()

@@ -505,8 +505,6 @@ class DIFFaXcontrols(wx.Dialog):
         self.planeChoice = ['h0l','0kl','hhl','h-hl',]
         self.lmax = '2'
         self.lmaxChoice = [str(i+1) for i in range(6)]
-        self.mult = '1'
-        self.multChoice = [str(2**i) for i in range(10)]
         self.Parms = parms
         self.Parm = None
         if self.Parms != None:
@@ -526,9 +524,6 @@ class DIFFaXcontrols(wx.Dialog):
             
         def OnMaxL(event):
             self.lmax = lmax.GetValue()
-            
-        def OnMult(event):
-            self.mult = mult.GetValue()
             
         def OnParmSel(event):
             self.Parm = parmsel.GetValue()
@@ -591,13 +586,6 @@ class DIFFaXcontrols(wx.Dialog):
             lmax.Bind(wx.EVT_COMBOBOX,OnMaxL)
             planeSizer.Add(lmax,0,WACV)            
             mainSizer.Add(planeSizer)
-            multSizer = wx.BoxSizer(wx.HORIZONTAL)
-            multSizer.Add(wx.StaticText(self.panel,label=' Image scale: '),0,WACV)
-            mult = wx.ComboBox(self.panel,value=self.mult,choices=self.multChoice,
-                style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            mult.Bind(wx.EVT_COMBOBOX,OnMult)
-            multSizer.Add(mult,0,WACV)
-            mainSizer.Add(multSizer)
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
         cancelBtn = wx.Button(self.panel,-1,"Cancel")
@@ -616,12 +604,11 @@ class DIFFaXcontrols(wx.Dialog):
         
     def GetSelection(self):
         if 'powder' in self.calcType:
-            return '0\n0\n3\n','','','',self.Parm,self.parmRange,self.parmStep
+            return '0\n0\n3\n','','',self.Parm,self.parmRange,self.parmStep
         elif 'selected' in self.calcType:
-            return '0\n0\n4\n1\n%d\n%d\n16\n1\n%d\n0\nend\n'%    \
-                (self.planeChoice.index(self.plane)+1,self.lmaxChoice.index(self.lmax)+1,   \
-                self.multChoice.index(self.mult)+1),self.plane,self.lmax,self.mult,       \
-                self.Parm,self.parmRange,self.parmStep
+            return '0\n0\n4\n1\n%d\n1\n16\n1\n%d\n0\nend\n'%    \
+                (self.planeChoice.index(self.plane)+1,self.lmaxChoice.index(self.lmax)+1),   \
+                self.plane,self.lmax,self.Parm,self.parmRange,self.parmStep
 
     def OnOk(self,event):
         parent = self.GetParent()

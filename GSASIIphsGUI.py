@@ -2430,6 +2430,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             labels = Layers['Sadp']['Plane']
             lmax = float(Layers['Sadp']['Lmax'])
             XY = 2*lmax*np.mgrid[0:256:256j,0:256:256j]/256.-lmax
+            G2frame.Cmax = 1.0
             G2plt.PlotXYZ(G2frame,XY,Layers['Sadp']['Img'].T,labelX=labels[:-1],
                 labelY=labels[-1],newPlot=False,Title=Layers['Sadp']['Plane'])
             
@@ -2924,11 +2925,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         ctrls = ''
         dlg = G2gd.DIFFaXcontrols(G2frame,ctrls)
         if dlg.ShowModal() == wx.ID_OK:
-            ctrls,plane,lmax,mult,x,x,x = dlg.GetSelection()
+            ctrls,plane,lmax,x,x,x = dlg.GetSelection()
             data['Layers']['Sadp'] = {}
             data['Layers']['Sadp']['Plane'] = plane
             data['Layers']['Sadp']['Lmax'] = lmax
-            data['Layers']['Sadp']['Mult'] = mult
         else:
             return
         if ctrls == '0\n0\n3\n':    #powder pattern
@@ -2980,7 +2980,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             data['Layers']['Sadp'] = {}
             data['Layers']['Sadp']['Plane'] = plane
             data['Layers']['Sadp']['Lmax'] = lmax
-            data['Layers']['Sadp']['Mult'] = mult
             data['Layers']['Multi'] = [parm,parmRange,parmStep]
         else:
             return

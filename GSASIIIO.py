@@ -761,7 +761,7 @@ def GetMAR345Data(filename,imageOnly=False):
     else:
         return head,data,Npix,image
         
-def ProjFileOpen(G2frame):
+def ProjFileOpen(G2frame,showProvenance=True):
     'Read a GSAS-II project file and load into the G2 data tree'
     if not os.path.exists(G2frame.GSASprojectfile):
         print ('\n*** Error attempt to open project file that does not exist:\n   '+
@@ -769,7 +769,7 @@ def ProjFileOpen(G2frame):
         return
     LastSavedUsing = None
     file = open(G2frame.GSASprojectfile,'rb')
-    print 'load from file: ',G2frame.GSASprojectfile
+    if showProvenance: print 'loading from file: ',G2frame.GSASprojectfile
     G2frame.SetTitle("GSAS-II data tree: "+
                      os.path.split(G2frame.GSASprojectfile)[1])
     wx.BeginBusyCursor()
@@ -794,7 +794,7 @@ def ProjFileOpen(G2frame):
                 G2frame.PatternTree.SetItemPyData(Id,datum[1])             
                 if datum[0] == 'Controls' and 'LastSavedUsing' in datum[1]:
                     LastSavedUsing = datum[1]['LastSavedUsing']
-                if datum[0] == 'Controls' and 'PythonVersions' in datum[1] and GSASIIpath.GetConfigValue('debug'):
+                if datum[0] == 'Controls' and 'PythonVersions' in datum[1] and GSASIIpath.GetConfigValue('debug') and showProvenance:
                     print('Packages used to create .GPX file:')
                     if 'dict' in str(type(datum[1]['PythonVersions'])):  #patch
                         for p in sorted(datum[1]['PythonVersions'],key=lambda s: s.lower()):

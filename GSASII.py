@@ -3722,9 +3722,10 @@ class GSASII(wx.Frame):
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     Id = 0
+                    self.G2plotNB.setReplotFlags() # mark all plots as old
                     self.PatternTree.DeleteChildren(self.root)
                     self.HKL = []
-                    G2IO.ProjFileOpen(self)
+                    G2IO.ProjFileOpen(self,False)
                     Id =  self.root
                     txt = None
                     for txt in oldPath:
@@ -3733,6 +3734,7 @@ class GSASII(wx.Frame):
                     self.PickId = Id
                     self.PatternTree.SelectItem(Id)
                     G2gd.MovePatternTreeToGrid(self,Id)
+                    self.G2plotNB.replotAll() # refresh any plots not yet updated
             finally:
                 dlg2.Destroy()
         else:
@@ -3779,15 +3781,16 @@ class GSASII(wx.Frame):
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     Id = 0
+                    self.G2plotNB.setReplotFlags() # mark all plots as old
                     self.PickIdText = None  #force reload of PickId contents
                     self.PatternTree.DeleteChildren(self.root)
                     if len(self.HKL): self.HKL = []
                     if self.G2plotNB.plotList:
                         self.G2plotNB.clear()
-                    G2IO.ProjFileOpen(self)
+                    G2IO.ProjFileOpen(self,False)
                     Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
                     self.PatternTree.SelectItem(Id)
-    
+                    self.G2plotNB.replotAll() # refresh any plots not yet updated
             finally:
                 dlg.Destroy()
         else:

@@ -2656,9 +2656,28 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if Xi >= 0 and c == 5:   #plot column
                     Obj.SetCellValue(Xi,5,'')
                     G2plt.PlotLayers(G2frame,Layers,[Yi,Xi,],plotDefaults)
+                else:
+                    event.Skip()
+                    
+            def OnNormProb(event):
+                for Yi,Yname in enumerate(Names):
+                    Psum = 0.
+                    for Xi,Xname in enumerate(Names):
+                        Psum += transArray[Yi][Xi][0]
+                    if not Psum:
+                        transArray[Yi][0][0] = 1.0
+                        Psum = 1.0
+                    for Xi,Xname in enumerate(Names):
+                        transArray[Yi][Xi][0] /= Psum
+                wx.CallAfter(UpdateLayerData)
             
             transSizer = wx.BoxSizer(wx.VERTICAL)
-            transSizer.Add(wx.StaticText(layerData,label=' Layer-Layer transition probabilities:'),0,WACV)
+            topSizer = wx.BoxSizer(wx.HORIZONTAL)
+            topSizer.Add(wx.StaticText(layerData,label=' Layer-Layer transition probabilities: '),0,WACV)
+            normprob = wx.CheckBox(layerData,label=' Normalize probabilities?')
+            normprob.Bind(wx.EVT_CHECKBOX,OnNormProb)
+            topSizer.Add(normprob,0,WACV)
+            transSizer.Add(topSizer,0,WACV)
             Names = [layer['Name'] for layer in Layers['Layers']]
             transArray = Layers['Transitions']
             layerData.transGrids = []
@@ -2683,7 +2702,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     attr.IncRef()               #fix from Jim Hester
                     attr.SetEditor(G2G.GridFractionEditor(transGrid))
                     transGrid.SetColAttr(c, attr)
-                transGrid.Bind(wg.EVT_GRID_CELL_LEFT_DCLICK, PlotSelect)
+                transGrid.Bind(wg.EVT_GRID_CELL_LEFT_CLICK, PlotSelect)
                 transGrid.AutoSizeColumns(True)
                 transSizer.Add(transGrid)
                 layerData.transGrids.append(transGrid)
@@ -2925,13 +2944,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         ctrls = ''
         dlg = G2gd.DIFFaXcontrols(G2frame,ctrls)
         if dlg.ShowModal() == wx.ID_OK:
-            ctrls,plane,lmax,x,x,x = dlg.GetSelection()
-            data['Layers']['Sadp'] = {}
-            data['Layers']['Sadp']['Plane'] = plane
-            data['Layers']['Sadp']['Lmax'] = lmax
+            simCodes = dlg.GetSelection()
         else:
             return
-        if ctrls == '0\n0\n3\n':    #powder pattern
+        if 'PWDR' in  simCodes[0]:    #powder pattern
+            data['Layers']['selInst'] = simCodes[1]
             UseList = []
             for item in data['Histograms']:
                 if 'PWDR' in item:
@@ -2962,10 +2979,23 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 return            
             profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
             dlg.Destroy()        
-            G2pwd.StackSim(data['Layers'],ctrls,HistName,scale,background,limits,inst,profile)
-            G2pwd.CalcStackingPWDR(data['Layers'],HistName,scale,background,limits,inst,profile)
+            ctrls = '0\n0\n3\n'
+            G2pwd.StackSim(data['Layers'],ctrls,scale,background,limits,inst,profile)
+            test1 = np.copy(profile[3])
+            test1 = np.where(test1,test1,1.0)
+            G2pwd.CalcStackingPWDR(data['Layers'],scale,background,limits,inst,profile)
+            test2 = np.copy(profile[3])
+            rat = (test1-test2)/test1
+#            GSASIIpath.IPyBreak()
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
         else:   #selected area
+            data['Layers']['Sadp'] = {}
+            data['Layers']['Sadp']['Plane'] = simCodes[1]
+            data['Layers']['Sadp']['Lmax'] = simCodes[2]
+#            planeChoice = ['h0l','0kl','hhl','h-hl',]
+#            lmaxChoice = [str(i+1) for i in range(6)]
+#            ctrls = '0\n0\n4\n1\n%d\n1\n16\n1\n%d\n0\nend\n'%    \
+#                (planeChoice.index(simCodes[1])+1,lmaxChoice.index(simCodes[2])+1)
 #            G2pwd.StackSim(data['Layers'],ctrls)
             G2pwd.CalcStackingSADP(data['Layers'])
         wx.CallAfter(UpdateLayerData)
@@ -2976,11 +3006,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Parms = G2pwd.GetStackParms(data['Layers'])
         dlg = G2gd.DIFFaXcontrols(G2frame,ctrls,Parms)
         if dlg.ShowModal() == wx.ID_OK:
-            ctrls,plane,lmax,mult,parm,parmRange,parmStep = dlg.GetSelection()
-            data['Layers']['Sadp'] = {}
-            data['Layers']['Sadp']['Plane'] = plane
-            data['Layers']['Sadp']['Lmax'] = lmax
-            data['Layers']['Multi'] = [parm,parmRange,parmStep]
+            simCodes = dlg.GetSelection()
+            data['Layers']['Multi'] = [simCodes[2:5]]
         else:
             return
         print 'do sequence of simulations on...',parm,parmRange,parmStep

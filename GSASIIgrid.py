@@ -511,6 +511,7 @@ class DIFFaXcontrols(wx.Dialog):
             self.Parm = self.Parms[0]
         self.parmRange = [0.,1.]
         self.parmStep = 2
+        self.Inst = 'None'
         self.Draw()
         
     def Draw(self):
@@ -539,19 +540,25 @@ class DIFFaXcontrols(wx.Dialog):
                 vals = self.parmRange
             parmrange.SetValue('%.3f %.3f'%(vals[0],vals[1]))
             self.parmRange = vals
+            
+        def OnInstSel(event):
+            self.Inst = instsel.GetValue()
         
         self.panel.Destroy()
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,label=' Controls for DIFFaX'),0,WACV)
-        calcChoice = ['powder pattern','selected area']
-        calcSizer = wx.BoxSizer(wx.HORIZONTAL)
-        calcSizer.Add(wx.StaticText(self.panel,label=' Select calculation type: '),0,WACV)
-        calcType = wx.ComboBox(self.panel,value=self.calcType,choices=calcChoice,
-            style=wx.CB_READONLY|wx.CB_DROPDOWN)
-        calcType.Bind(wx.EVT_COMBOBOX,OnCalcType)
-        calcSizer.Add(calcType,0,WACV)
-        mainSizer.Add(calcSizer)
+        if self.Parms:
+            mainSizer.Add(wx.StaticText(self.panel,label=' Sequential powder pattern simulation'),0,WACV)
+        else:
+            calcChoice = ['powder pattern','selected area']
+            calcSizer = wx.BoxSizer(wx.HORIZONTAL)
+            calcSizer.Add(wx.StaticText(self.panel,label=' Select calculation type: '),0,WACV)
+            calcType = wx.ComboBox(self.panel,value=self.calcType,choices=calcChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            calcType.Bind(wx.EVT_COMBOBOX,OnCalcType)
+            calcSizer.Add(calcType,0,WACV)
+            mainSizer.Add(calcSizer)
         if self.Parms:
             parmSel = wx.BoxSizer(wx.HORIZONTAL)
             parmSel.Add(wx.StaticText(self.panel,label=' Select parameter to vary: '),0,WACV)
@@ -586,6 +593,15 @@ class DIFFaXcontrols(wx.Dialog):
             lmax.Bind(wx.EVT_COMBOBOX,OnMaxL)
             planeSizer.Add(lmax,0,WACV)            
             mainSizer.Add(planeSizer)
+        else:
+            instChoice = ['None','Mean Gaussian','Gaussian',]
+            instSizer = wx.BoxSizer(wx.HORIZONTAL)
+            instSizer.Add(wx.StaticText(self.panel,label=' Select instrument broadening: '),0,WACV)
+            instsel = wx.ComboBox(self.panel,value=self.Inst,choices=instChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            instsel.Bind(wx.EVT_COMBOBOX,OnInstSel)
+            instSizer.Add(instsel,0,WACV)
+            mainSizer.Add(instSizer)
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
         cancelBtn = wx.Button(self.panel,-1,"Cancel")
@@ -604,11 +620,9 @@ class DIFFaXcontrols(wx.Dialog):
         
     def GetSelection(self):
         if 'powder' in self.calcType:
-            return '0\n0\n3\n','','',self.Parm,self.parmRange,self.parmStep
+            return 'PWDR',self.Inst,self.Parm,self.parmRange,self.parmStep
         elif 'selected' in self.calcType:
-            return '0\n0\n4\n1\n%d\n1\n16\n1\n%d\n0\nend\n'%    \
-                (self.planeChoice.index(self.plane)+1,self.lmaxChoice.index(self.lmax)+1),   \
-                self.plane,self.lmax,self.Parm,self.parmRange,self.parmStep
+            return 'SADP',self.plane,self.lmax
 
     def OnOk(self,event):
         parent = self.GetParent()

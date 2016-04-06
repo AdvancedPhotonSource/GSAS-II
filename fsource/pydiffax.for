@@ -26,6 +26,26 @@ C fill common x-ray scattering factors
       RETURN
       END
         
+      SUBROUTINE PYGETINST(LAMB,TTHMIN,TTHMAX,DELTTH)
+        
+Cf2py intent(in) LAMB
+Cf2py intent(in) TTHMIN
+Cf2py intent(in) TTHMAX
+Cf2py intent(in) DELTTH
+    
+      INCLUDE 'DIFFaXsubs/DIFFaX.par'
+      INCLUDE 'DIFFaXsubs/DIFFaX.inc'
+
+      REAL*8 LAMB,TTHMIN,TTHMAX,DELTTH
+        
+      lambda = lamb
+      th2_min = TTHMIN*DEG2RAD
+      th2_max = TTHMAX*DEG2RAD
+      d_theta = DELTTH*HALF*DEG2RAD
+        
+      RETURN
+      END
+        
       SUBROUTINE PYGETCLAY(CNTRLS,LAUESYM,WDTH,NST,STSEQ)
         
 Cf2py intent(in) CNTRLS
@@ -61,6 +81,8 @@ cf2py depend(NST) STSEQ
       WRITE(pnt_grp,'(A12)') LAUESYM
       SymGrpNo = CNTRLS(1)
       check_sym = .TRUE.
+      full_shrp = 1
+      full_brd = 1
 C CNTRLS = [laueId,planeId,lmax,mult,StkType,StkParm,ranSeed]
       bitdepth = 16
       ok = .TRUE.
@@ -179,6 +201,96 @@ C fill common transitions stuff
       RETURN
       END
         
+      SUBROUTINE PYGETSPC(CNTRLS,NSADP,SADP)
+        
+Cf2py intent(in) CNTRLS
+Cf2py intent(in) NSADP
+Cf2py intent(in/out) SADP
+Cf2py depend(NSADP) SADP
+            
+      INCLUDE 'DIFFaXsubs/DIFFaX.par'
+      INCLUDE 'DIFFaXsubs/DIFFaX.inc'
+
+      INTEGER*4 CNTRLS(7),NSADP,I,j,k
+      REAL*8 SADP(NSADP),AGLQ16
+      LOGICAL GETSPC,ok
+        
+      EXTERNAL AGLQ16,GETSPC
+
+
+C      print *,n_actual,(l_n_atoms(i),i=1,n_actual)
+C      do j=1,n_actual
+C        do i=1,l_n_atoms(j)
+C          print *,a_name(i,j),(a_pos(k,i,j),k=1,3)
+C        end do
+C      end do
+c      print *, recrsv,inf_thick,xplcit,rndm,l_cnt,has_l_mirror
+C      do i=1,n_layers
+C      print *,' layer',i
+C         do j=1,n_layers
+C            print *,'layer',j,l_alpha(i,j),(l_r(k,i,j),k=1,3)
+C         end do
+C      end do
+c      print *,cell_a,cell_b,cell_c,cell_gamma,pnt_grp,SymGrpNo
+c      DoSymDump = .TRUE.
+    
+      ok = .TRUE.
+      CALL SPHCST()
+      CALL DETUN()
+      CALL OPTIMZ('GSAS-II',ok)
+        
+C      print *,lambda,max_angle,h_bnd,k_bnd,l_bnd,no_trials,
+C     1  rad_type,X_RAY,n_atoms
+C      print *,(l_g(j),j=1,n_layers)
+C      do j=1,n_layers
+C        print *,(hx_ky(i,j),i=1,l_n_atoms(j))
+C        print *,(mat(i,j),i=1,n_layers)
+C        print *,(mat1(i,j),i=1,n_layers)
+C        print *,(l_phi(i,j),i=1,n_layers)
+C      end do
+        
+      ok = GETSPC(AGLQ16,'GSAS-II')              
+      DO I=1,NSADP
+        SADP(I) = spec(I)
+      END DO
+      RETURN
+      END
+        
+      SUBROUTINE PYPROFILE(U,V,W,HW,BLUR,NBRD,BRDSPC)
+        
+Cf2py intent(in) U
+Cf2py intent(in) V
+Cf2py intent(in) W
+Cf2py intent(in) HW
+Cf2py intent(in) NBRD
+Cf2py intent(in/out) BRDSPC
+Cf2py depend(NBRD) BRDSPC
+                
+      INCLUDE 'DIFFaXsubs/DIFFaX.par'
+      INCLUDE 'DIFFaXsubs/DIFFaX.inc'
+        
+      INTEGER*4 BLUR,i,NBRD    
+      REAL*8 U,V,W,HW,BRDSPC(NBRD),tth_min
+        
+      tth_min = ZERO
+            
+      if (blur.eq.GAUSS) then
+        FWHM = HW
+        call GAUSSN(tth_min)
+      else if (blur.eq.PV_GSS) then
+        pv_u = U
+        pv_v = V
+        pv_w = W
+        pv_gamma = ZERO
+        call PV(tth_min)
+      end if
+      do i=1,NBRD
+        BRDSPC(i) = brd_spc(i)
+      end do
+        
+      RETURN
+      END
+        
       SUBROUTINE PYGETSADP(CNTRLS,NSADP,SADP,HKLIM,INCR,NBLK)
         
 Cf2py intent(in) CNTRLS
@@ -192,12 +304,12 @@ Cf2py intent(out) NBLK
       INCLUDE 'DIFFaXsubs/DIFFaX.par'
       INCLUDE 'DIFFaXsubs/DIFFaX.inc'
 
-      INTEGER*4 CNTRLS(7),NSADP,GET_SYM,i_plane,hk_lim,i,j,k
+      INTEGER*4 CNTRLS(7),NSADP,i_plane,hk_lim,i,j,k
       INTEGER*4 HKLIM,NBLK
       REAL*8 SADP(NSADP),AGLQ16,l_upper,INCR
       LOGICAL ok
         
-      EXTERNAL AGLQ16,GET_SYM                  
+      EXTERNAL AGLQ16                 
                     
       i_plane = CNTRLS(2)
       l_upper = CNTRLS(3)

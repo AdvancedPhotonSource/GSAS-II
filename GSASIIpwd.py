@@ -61,7 +61,7 @@ npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
 npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
 npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
-forln2 = 4.0*math.log(2.0)
+ateln2 = 8.0*math.log(2.0)
     
 #GSASII pdf calculation routines
         
@@ -1772,13 +1772,13 @@ def GetStackParms(Layers):
             Parms.append('TransZ;%d;%d'%(iY,iX))
     return Parms
 
-def StackSim(Layers,ctrls,HistName='',scale=0.,background={},limits=[],inst={},profile=[]):
+def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     '''Simulate powder or selected area diffraction pattern from stacking faults using DIFFaX
     
     param: Layers dict: 'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],
                         'Width':[[10.,10.],[False,False]],'Toler':0.01,'AtInfo':{},
                         'Layers':[],'Stacking':[],'Transitions':[]}
-    param: HistName str: histogram name to simulate 'PWDR...'
+    param: ctrls string: controls string to be written on DIFFaX controls.dif file
     param: scale float: scale factor
     param: background dict: background parameters
     param: limits list: min/max 2-theta to be calculated
@@ -1837,14 +1837,18 @@ def StackSim(Layers,ctrls,HistName='',scale=0.,background={},limits=[],inst={},p
         df.write('NEUTRON\n')
     if ctrls == '0\n0\n3\n': 
         df.write('%.4f\n'%(G2mth.getMeanWave(inst)))
-        U = forln2*inst['U'][1]/10000.
-        V = forln2*inst['V'][1]/10000.
-        W = forln2*inst['W'][1]/10000.
+        U = ateln2*inst['U'][1]/10000.
+        V = ateln2*inst['V'][1]/10000.
+        W = ateln2*inst['W'][1]/10000.
         HWHM = U*nptand(x0[iBeg:iFin]/2.)**2+V*nptand(x0[iBeg:iFin]/2.)+W
-        HW = np.mean(HWHM)
+        HW = np.sqrt(np.mean(HWHM))
     #    df.write('PSEUDO-VOIGT 0.015 -0.0036 0.009 0.605 TRIM\n')
-    #    df.write('GAUSSIAN %.6f TRIM\n'%(HW))     #fast option - might not really matter
-        df.write('GAUSSIAN %.6f %.6f %.6f TRIM\n'%(U,V,W))    #slow - make a GUI option?
+        if 'Mean' in Layers['selInst']:
+            df.write('GAUSSIAN %.6f TRIM\n'%(HW))     #fast option - might not really matter
+        elif 'Gaussian' in Layers['selInst']:
+            df.write('GAUSSIAN %.6f %.6f %.6f TRIM\n'%(U,V,W))    #slow - make a GUI option?
+        else:
+            df.write('None\n')
     else:
         df.write('0.10\nNone\n')
     df.write('STRUCTURAL\n')
@@ -1918,15 +1922,15 @@ def StackSim(Layers,ctrls,HistName='',scale=0.,background={},limits=[],inst={},p
     try:
         subp.call(DIFFaX)
     except OSError:
-        print 'DIFFax.exe is not available for this platform - under development'
-    print 'DIFFaX time = %.2fs'%(time.time()-time0)
+        print ' DIFFax.exe is not available for this platform - under development'
+    print ' DIFFaX time = %.2fs'%(time.time()-time0)
     if os.path.exists('GSASII-DIFFaX.spc'):
         Xpat = np.loadtxt('GSASII-DIFFaX.spc').T
         iFin = iBeg+Xpat.shape[1]
         bakType,backDict,backVary = SetBackgroundParms(background)
         backDict['Lam1'] = G2mth.getWave(inst)
         profile[4][iBeg:iFin] = getBackground('',backDict,bakType,inst['Type'][0],profile[0][iBeg:iFin])[0]    
-        profile[3][iBeg:iFin] = Xpat[2]*scale+profile[4][iBeg:iFin]
+        profile[3][iBeg:iFin] = Xpat[-1]*scale+profile[4][iBeg:iFin]
         if not np.any(profile[1]):                   #fill dummy data x,y,w,yc,yb,yd
             rv = st.poisson(profile[3][iBeg:iFin])
             profile[1][iBeg:iFin] = rv.rvs()
@@ -1946,14 +1950,20 @@ def StackSim(Layers,ctrls,HistName='',scale=0.,background={},limits=[],inst={},p
     os.remove('control.dif')
     os.remove('GSASII-DIFFaX.dat')
     
-def CalcStackingPWDR(Layers,HistName,scale,background,limits,inst,profile):
-    pass
+def SetPWDRscan(inst,limits,profile):
     
-def CalcStackingSADP(Layers):
-    
-    rand.seed()
-    ranSeed = rand.randint(1,2**16-1)
-# Scattering factors
+    wave = G2mth.getMeanWave(inst)
+    x0 = profile[0]
+    iBeg = np.searchsorted(x0,limits[0])
+    iFin = np.searchsorted(x0,limits[1])
+    if iFin-iBeg > 20000:
+        iFin = iBeg+20000
+    Dx = (x0[iFin]-x0[iBeg])/(iFin-iBeg)
+    pyx.pygetinst(wave,x0[iBeg],x0[iFin],Dx)
+    return iFin-iBeg
+       
+def SetStackingSF(Layers):
+# Load scattering factors into DIFFaX arrays
     import atmdata
     atTypes = Layers['AtInfo'].keys()
     aTypes = []
@@ -1973,15 +1983,22 @@ def CalcStackingSADP(Layers):
         SFdat.append(SF)
     SFdat = np.array(SFdat)
     pyx.pyloadscf(len(atTypes),aTypes,SFdat.T)
+    
+def SetStackingClay(Layers,Type):
 # Controls
+    rand.seed()
+    ranSeed = rand.randint(1,2**16-1)
     try:    
         laueId = ['-1','2/m(ab)','2/m(c)','mmm','-3','-3m','4/m','4/mmm',
             '6/m','6/mmm'].index(Layers['Laue'])+1
     except ValueError:  #for 'unknown'
         laueId = -1
-    planeId = ['h0l','0kl','hhl','h-hl'].index(Layers['Sadp']['Plane'])+1
-    lmax = int(Layers['Sadp']['Lmax'])
-    mult = 1
+    if 'SADP' in Type:
+        planeId = ['h0l','0kl','hhl','h-hl'].index(Layers['Sadp']['Plane'])+1
+        lmax = int(Layers['Sadp']['Lmax'])
+    else:
+        planeId = 0
+        lmax = 0
 # Sequences
     StkType = ['recursive','explicit'].index(Layers['Stacking'][0])
     try:
@@ -1997,12 +2014,16 @@ def CalcStackingSADP(Layers):
     if StkParm == -1:
         StkParm = int(Layers['Stacking'][1])
     Wdth = Layers['Width'][0]
+    mult = 1
     controls = [laueId,planeId,lmax,mult,StkType,StkParm,ranSeed]
     LaueSym = Layers['Laue'].ljust(12)
     pyx.pygetclay(controls,LaueSym,Wdth,Nstk,StkSeq)
+    return laueId,controls
     
+def SetCellAtoms(Layers):
     Cell = Layers['Cell'][1:4]+Layers['Cell'][6:7]
 # atoms in layers
+    atTypes = Layers['AtInfo'].keys()
     AtomXOU = []
     AtomTp = []
     LayerSymm = []
@@ -2032,6 +2053,9 @@ def CalcStackingSADP(Layers):
     AtomXOU = np.array(AtomXOU)
     Nlayers = len(layerNames)
     pyx.pycellayer(Cell,Natm,AtomTp,AtomXOU.T,Nuniq,LayerSymm,Nlayers,LayerNum)
+    return Nlayers
+    
+def SetStackingTrans(Layers,Nlayers):
 # Transitions
     TransX = []
     TransP = []
@@ -2041,6 +2065,70 @@ def CalcStackingSADP(Layers):
     TransP = np.array(TransP,dtype='float')
     TransX = np.array(TransX,dtype='float')
     pyx.pygettrans(Nlayers,TransP,TransX)
+    
+def CalcStackingPWDR(Layers,scale,background,limits,inst,profile):
+# Scattering factors
+    SetStackingSF(Layers)
+# Controls & sequences
+    laueId,controls = SetStackingClay(Layers,'PWDR')
+# cell & atoms
+    Nlayers = SetCellAtoms(Layers)    
+# Transitions
+    SetStackingTrans(Layers,Nlayers)
+# PWDR scan
+    Nsteps = SetPWDRscan(inst,limits,profile)
+# result as Spec
+    x0 = profile[0]
+    iBeg = np.searchsorted(x0,limits[0])
+    iFin = np.searchsorted(x0,limits[1])
+    if iFin-iBeg > 20000:
+        iFin = iBeg+20000
+    Nspec = 20001       
+    spec = np.zeros(Nspec,dtype='double')    
+    time0 = time.time()
+    pyx.pygetspc(controls,Nspec,spec)
+    print ' GETSPC time = %.2fs'%(time.time()-time0)
+    time0 = time.time()
+    U = ateln2*inst['U'][1]/10000.
+    V = ateln2*inst['V'][1]/10000.
+    W = ateln2*inst['W'][1]/10000.
+    HWHM = U*nptand(x0[iBeg:iFin]/2.)**2+V*nptand(x0[iBeg:iFin]/2.)+W
+    HW = np.mean(HWHM)
+    BrdSpec = np.zeros(Nsteps)
+    if 'Mean' in Layers['selInst']:
+        pyx.pyprofile(U,V,W,HW,1,Nsteps,BrdSpec)
+    elif 'Gaussian' in Layers['selInst']:
+        pyx.pyprofile(U,V,W,HW,4,Nsteps,BrdSpec)
+    else:
+        BrdSpec = spec[:Nsteps]
+    iFin = iBeg+Nsteps
+    bakType,backDict,backVary = SetBackgroundParms(background)
+    backDict['Lam1'] = G2mth.getWave(inst)
+    profile[4][iBeg:iFin] = getBackground('',backDict,bakType,inst['Type'][0],profile[0][iBeg:iFin])[0]    
+    profile[3][iBeg:iFin] = BrdSpec*scale+profile[4][iBeg:iFin]
+    if not np.any(profile[1]):                   #fill dummy data x,y,w,yc,yb,yd
+        rv = st.poisson(profile[3][iBeg:iFin])
+        profile[1][iBeg:iFin] = rv.rvs()
+        Z = np.ones_like(profile[3][iBeg:iFin])
+        Z[1::2] *= -1
+        profile[1][iBeg:iFin] = profile[3][iBeg:iFin]+np.abs(profile[1][iBeg:iFin]-profile[3][iBeg:iFin])*Z
+        profile[2][iBeg:iFin] = np.where(profile[1][iBeg:iFin]>0.,1./profile[1][iBeg:iFin],1.0)
+    profile[5][iBeg:iFin] = profile[1][iBeg:iFin]-profile[3][iBeg:iFin]
+    print ' Broadening time = %.2fs'%(time.time()-time0)
+    
+    
+#    GSASIIpath.IPyBreak()
+    
+def CalcStackingSADP(Layers):
+    
+# Scattering factors
+    SetStackingSF(Layers)
+# Controls & sequences
+    laueId,controls = SetStackingClay(Layers,'SADP')
+# cell & atoms
+    Nlayers = SetCellAtoms(Layers)    
+# Transitions
+    SetStackingTrans(Layers,Nlayers)
 # result as Sadp
     mirror = laueId in [-1,2,3,7,8,9,10]
     Nspec = 20001       
@@ -2065,7 +2153,7 @@ def CalcStackingSADP(Layers):
             Sapd[:,p2] = spec[iB:iF]
         iB += Nblk
     Layers['Sadp']['Img'] = Sapd
-    print 'GETSAD time = %.2fs'%(time.time()-time0)
+    print ' GETSAD time = %.2fs'%(time.time()-time0)
 #    GSASIIpath.IPyBreak()
     
 #testing data

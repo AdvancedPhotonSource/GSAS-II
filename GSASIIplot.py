@@ -312,9 +312,9 @@ class G2PlotNoteBook(wx.Panel):
             self.skipPageChange = False
             return
 #        print 'OnPageChanged'
-        self.status.DestroyChildren()                           #get rid of special stuff on status bar
+        self.status.DestroyChildren()    #get rid of special stuff on status bar
         self.status.SetStatusText('',1)  # clear old status message
-        page = self.nb.GetCurrentPage()
+        page = self.panelList[self.nb.GetSelection()]   #GetCurrentPage() not in wx 2.7
         page.needsUpdate = True
         if page.Refresh():  # refresh plot, if possible
             pass
@@ -2525,6 +2525,10 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title=''):
     else:
         Page.canvas.draw()
         
+################################################################################
+##### PlotXYZ
+################################################################################
+            
 def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
     '''simple contour plot of xyz data, used for diagnostic purposes
     '''
@@ -2560,6 +2564,13 @@ def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
             dlg.Destroy()
         wx.CallAfter(PlotXYZ,G2frame,XY,Z,labelX,labelY,False,Title)
     
+    def OnKeyBox(event):
+        if G2frame.G2plotNB.nb.GetSelection() == G2frame.G2plotNB.plotList.index(type):
+            event.key = cb.GetValue()[0]
+            cb.SetValue(' key press')
+            wx.CallAfter(OnKeyPress,event)
+        Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
+
     def OnMotion(event):
         xpos = event.xdata
         if Xmin<xpos<Xmax:                                        #avoid out of frame mouse position
@@ -2596,6 +2607,8 @@ def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
     Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
         'i: interpolation method','s: color scheme')
 #    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    Page.keyPress = OnKeyPress
+    Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
     Nxy = Z.shape
     Zmax = np.max(Z)
@@ -2850,7 +2863,7 @@ def PlotPeakWidths(G2frame,TreeItemText=None):
     G2frame.G2plotNB.status.SetStatusText('histogram: '+TreeItemText,1)
     G2frame.G2plotNB.clearReplotFlag('Peak Widths')    
     Page.Choice = None
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     
     Page.canvas.SetToolTipString('')
     colors=['b','g','r','c','m','k']
@@ -2969,7 +2982,6 @@ def PlotPeakWidths(G2frame,TreeItemText=None):
         Plot.plot(Q,G,'+',color='m',label='Lorentzian peak')
         Plot.legend(loc='best')
         Page.canvas.draw()
-
     
 ################################################################################
 ##### PlotSizeStrainPO
@@ -3364,7 +3376,8 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
     
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.status.DestroyChildren()
     General = data['General']
     cx,ct,cs,cia = General['AtomPtrs']
     mapData = General['Map']
@@ -3452,6 +3465,7 @@ def PlotCovariance(G2frame,Data):
     title = ' for\n'+Data['title']
     newAtomDict = Data.get('newAtomDict',{})
     G2frame.G2plotNB.Delete('Covariance')
+    G2frame.G2plotNB.status.DestroyChildren()
     
 
     def OnPlotKeyPress(event):
@@ -3505,7 +3519,7 @@ def PlotCovariance(G2frame,Data):
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
     Page.Choice = ['s: to change colors']
     Page.keyPress = OnPlotKeyPress
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.SetFields(['',''])    
     acolor = mpl.cm.get_cmap(G2frame.VcovColor)
     Img = Plot.imshow(covArray,aspect='equal',cmap=acolor,interpolation='nearest',origin='lower',
@@ -3574,7 +3588,7 @@ def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.SetFields(['','Use mouse LB to identify torsion atoms'])
     Plot.plot(X,torsion,'b+')
     if len(Coeff):
@@ -3661,7 +3675,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
 
     Page.Choice = ['s: to change colors']
     Page.keyPress = OnPlotKeyPress
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.SetFields(['','Use mouse LB to identify phi/psi atoms'])
     acolor = mpl.cm.get_cmap(G2frame.RamaColor)
     if RamaName == 'All' or '-1' in RamaName:
@@ -4921,7 +4935,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             if G2frame.dataDisplay.GetPageText(page) == 'Draw Options':
                 G2frame.dataDisplay.cameraPosTxt.SetLabel('Camera Position: '+'%.2f'%(drawingData['cameraPos']))
                 G2frame.dataDisplay.cameraSlider.SetValue(drawingData['cameraPos'])
-            Draw('wheel')
+        Draw('wheel')
         
     def getSelection():
         try:
@@ -5627,7 +5641,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         view = False
         altDown = False
     Font = Page.GetFont()
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     Page.Choice = None
     if mapData.get('Flip',False):
         choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2',
@@ -5644,13 +5658,13 @@ def PlotStructure(G2frame,data,firstCall=False):
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
     cb.SetValue(' save as/key:')
-    Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_MIDDLE_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_KEY_UP, OnKey)
     Page.canvas.Bind(wx.EVT_KEY_DOWN,OnKeyPressed)
     Page.canvas.Bind(wx.EVT_MOTION, OnMouseMove)
+    Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
     Page.canvas.Bind(wx.EVT_SIZE, OnSize)
     Page.canvas.Bind(wx.EVT_SET_FOCUS, OnFocus)
     Page.camera['position'] = drawingData['cameraPos']
@@ -6296,7 +6310,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             RenderBonds(x,y,z,Bonds[iat],0.05,color)
             if Page.labels:
                 RenderLabel(x,y,z,'  '+AtNames[iat],matRot)
-#        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
+        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
         Page.canvas.SwapBuffers()
 
     def OnSize(event):
@@ -6316,7 +6330,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         altDown = False
     choice = [' save as:','jpeg','tiff','bmp']
     Page.keyPress = OnPlotKeyPress
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     Font = Page.GetFont()
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)

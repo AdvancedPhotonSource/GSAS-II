@@ -2571,19 +2571,19 @@ C  401 format(1x, g12.5)
       min_th = HALF * th2_min
       max_th = HALF * th2_max
       max_indx = int((max_th - min_th) / d_theta + 1)
-      if(max_indx.gt.MAX_SP) then
-        d_theta = (max_th - min_th) / (MAX_SP - 1)
-        max_indx = int((max_th - min_th) / d_theta + 1)
-        write(op,300) ''
-        write(op,250) 'd_theta is too small and has been adjusted to ',
-     |                   TWO*d_theta*RAD2DEG
-      endif
+*      if(max_indx.gt.MAX_SP) then
+*        d_theta = (max_th - min_th) / (MAX_SP - 1)
+*        max_indx = int((max_th - min_th) / d_theta + 1)
+*        write(op,300) ''
+*        write(op,250) 'd_theta is too small and has been adjusted to ',
+*     |                   TWO*d_theta*RAD2DEG
+*      endif
 *
- 1234 write(op,300)
-     | 'Enter 1 for adaptive quadrature over all l values'
-      write(op,300) 'on rows with "sharp" spots'
-      read(cntrl,*,err=1234) full_shrp
-      if(CFile) write(op,400) full_shrp
+* 1234 write(op,300)
+*     | 'Enter 1 for adaptive quadrature over all l values'
+*      write(op,300) 'on rows with "sharp" spots'
+*      read(cntrl,*,err=1234) full_shrp
+*      if(CFile) write(op,400) full_shrp
 * zero out spectra
       do 10 i = 1, MAX_SP
         spec(i) = ZERO
@@ -2625,8 +2625,8 @@ C  401 format(1x, g12.5)
             if(rot_only .and. (theta2-hk_th).le.eps3 .and.
      |            SymGrpNo.ne.1) goto 30
             if(SymGrpNo.eq.11 .and. .not.l_axis) goto 30
-            write(op,200) 'Integrating along l at ',h,k,
-     |            '''',infile(1:LENGTH(infile)),''''
+*            write(op,200) 'Integrating along l at ',h,k,
+*     |            '''',infile(1:LENGTH(infile)),''''
             on_bndry = abs(hk_th-theta1).le.eps3 .or.
      |                 abs(hk_th-theta2).le.eps3
 * set up the phases in the structure factors and stacking vectors
@@ -2664,8 +2664,8 @@ C  401 format(1x, g12.5)
             m = int((tmp - min_th) / d_theta) + 1
             if(.not.shrp .or. full_shrp.eq.1) then
 * broad streak or full adaptive integration over sharp spots
-              if(full_shrp.eq.1 .or. full_brd.eq.1)
-     |                write(op,300) 'Full adaptive integration'
+*              if(full_shrp.eq.1 .or. full_brd.eq.1)
+*     |                write(op,300) 'Full adaptive integration'
 * integrate each d_theta's range of reciprocal space
               do 40 theta = tmp, max_th-eps10, d_theta
                 l0 = l1

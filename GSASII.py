@@ -2324,10 +2324,7 @@ class GSASII(wx.Frame):
         self.Image = 0
         self.oldImagefile = '' # the name of the last image file read
         self.oldImageTag = None # the name of the tag for multi-image files
-        self.ImageZ = []  # this contains the image plotted 
-        # self.ImageZ and self.oldImagefile are set in GSASIIplot.PlotImage
-        # and GSASIIIO.GetImageData
-        # any changes to self.ImageZ should initialize self.oldImagefile to force a reread
+        self.ImageZ = []
         self.Integrate = 0
         self.imageDefault = {}
         self.IntgOutList = [] # list of integration tree item Ids created in G2IO.SaveIntegration

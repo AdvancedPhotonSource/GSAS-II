@@ -307,13 +307,14 @@ class G2PlotNoteBook(wx.Panel):
         .SetFocus(). The self.skipPageChange is used variable is set to suppress
         repeated replotting.
         '''
+        self.status.DestroyChildren()    #get rid of special stuff on status bar
+        self.status.SetFields(['',''])  # clear old status message
+        G2frame.G2plotNB.status.SetStatusWidths([150,-1])
         if self.skipPageChange:
 #            print 'skipping OnPageChanged'
             self.skipPageChange = False
             return
 #        print 'OnPageChanged'
-        self.status.DestroyChildren()    #get rid of special stuff on status bar
-        self.status.SetStatusText('',1)  # clear old status message
         page = self.panelList[self.nb.GetSelection()]   #GetCurrentPage() not in wx 2.7
         page.needsUpdate = True
         if page.Refresh():  # refresh plot, if possible
@@ -516,7 +517,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('Structure Factors').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Structure Factors')
@@ -532,7 +533,7 @@ def PlotSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=''):
             '+: increase index','-: decrease index','0: zero layer',)
         if 'HKLF' in Name:
             Page.Choice += ('w: select |DFsq|/sig','1: select |DFsq|>sig','3: select |DFsq|>3sig',)
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     Plot.set_aspect(aspect='equal')
     
     Type = Data['Type']            
@@ -1118,7 +1119,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     try:
         plotNum = G2frame.G2plotNB.plotList.index('3D Structure Factors')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)        
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addOgl('3D Structure Factors')
         plotNum = G2frame.G2plotNB.plotList.index('3D Structure Factors')
@@ -1127,7 +1128,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         view = False
         altDown = False
     Font = Page.GetFont()
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     Page.Choice = None
     choice = [' save as/key:','jpeg','tiff','bmp','h: view down h','k: view down k','l: view down l',
     'z: zero zone toggle','c: reset to default','o: set view point = 0,0,0','b: toggle box ','+: increase scale','-: decrease scale',
@@ -1636,7 +1637,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',TreeItemText=None):
         G2frame.xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         if plottype == 'SASD':
             G2frame.logPlot = True
@@ -2103,7 +2104,7 @@ def PlotDeltSig(G2frame,kind):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         newPlot = True
         G2frame.Cmax = 1.0
@@ -2250,7 +2251,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         newPlot = True
         G2frame.Cmax = 1.0
@@ -2260,7 +2261,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.Contour:
         Page.Choice = (' key press','d: lower contour max','u: raise contour max',
@@ -2406,7 +2407,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         newPlot = True
         Plot = G2frame.G2plotNB.addMpl(Title).gca()
@@ -2415,7 +2416,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     
     Page.Choice = None
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.DestroyChildren()
     Plot.set_title(Title)
     Plot.set_xlabel(r'd-spacing',fontsize=14)
@@ -2487,7 +2488,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title=''):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         newPlot = True
         Plot = G2frame.G2plotNB.addMpl(Title).gca()
@@ -2496,7 +2497,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title=''):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     
     Page.Choice = None
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.DestroyChildren()
     Plot.set_title(Title)
     if labelX:
@@ -2595,7 +2596,7 @@ def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca() 
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         newPlot = True
         Plot = G2frame.G2plotNB.addMpl(Title).gca()
@@ -2606,7 +2607,7 @@ def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
     
     Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
         'i: interpolation method','s: color scheme')
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     Page.keyPress = OnKeyPress
     Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
@@ -2666,7 +2667,7 @@ def PlotStrain(G2frame,data,newPlot=False):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         newPlot = True
         Plot = G2frame.G2plotNB.addMpl('Strain').gca()
@@ -2675,7 +2676,7 @@ def PlotStrain(G2frame,data,newPlot=False):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     
     Page.Choice = None
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.DestroyChildren()
     Plot.set_title('Strain')
     Plot.set_ylabel(r'd-spacing',fontsize=14)
@@ -2724,7 +2725,7 @@ def PlotSASDSizeDist(G2frame):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         newPlot = True
         Plot = G2frame.G2plotNB.addMpl('Size Distribution').gca()
@@ -2733,7 +2734,7 @@ def PlotSASDSizeDist(G2frame):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     Page.Choice = None
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     PatternId = G2frame.PatternId
     data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Models'))
     Bins,Dbins,BinMag = data['Size']['Distribution']
@@ -2781,7 +2782,7 @@ def PlotPowderLines(G2frame):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = Page.figure.gca()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('Powder Lines').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Powder Lines')
@@ -2789,7 +2790,7 @@ def PlotPowderLines(G2frame):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         
     Page.Choice = None
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     Plot.set_title('Powder Pattern Lines')
     Plot.set_xlabel(r'$\mathsf{2\theta}$',fontsize=14)
     PickId = G2frame.PickId
@@ -2852,7 +2853,7 @@ def PlotPeakWidths(G2frame,TreeItemText=None):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.figure.clf()
         Plot = Page.figure.gca()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('Peak Widths').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Peak Widths')
@@ -3190,7 +3191,7 @@ def PlotTexture(G2frame,data,Start=False):
                     
                     G2frame.G2plotNB.status.SetFields(['',
                         'psi =%9.3f, beta =%9.3f, MRD =%9.3f hkl=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z)])
-                    G2frame.G2plotNB.status.SetStatusWidths([150,-1])
+                    #G2frame.G2plotNB.status.SetStatusWidths([150,-1])
                 
             elif 'Axial' in SHData['PlotType']:
                 pass
@@ -3205,7 +3206,7 @@ def PlotTexture(G2frame,data,Start=False):
                         r,p = 2.*npatand(z),npatan2d(ypos,xpos)
                     pf = G2lat.polfcal(ODFln,SamSym[textureData['Model']],np.array([r,]),np.array([p,]))
                     G2frame.G2plotNB.status.SetFields(['','phi =%9.3f, gam =%9.3f, MRD =%9.3f'%(r,p,pf)])
-                    G2frame.G2plotNB.status.SetStatusWidths([150,-1])
+                    #G2frame.G2plotNB.status.SetStatusWidths([150,-1])
 
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Texture')
@@ -3214,7 +3215,7 @@ def PlotTexture(G2frame,data,Start=False):
         Plot = Page.figure.gca()
         if not Page.IsShown():
             Page.Show()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         if '3D' in SHData['PlotType']:
             Plot = mp3d.Axes3D(G2frame.G2plotNB.add3D('Texture'))
@@ -3370,7 +3371,7 @@ def ModulationPlot(G2frame,data,atom,ax,off=0):
         Plot = Page.figure.gca()
         if not Page.IsShown():
             Page.Show()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('Modulation').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Modulation')
@@ -3505,7 +3506,7 @@ def PlotCovariance(G2frame,Data):
                 Page.canvas.SetToolTipString(msg)
                 G2frame.G2plotNB.status.SetFields(['',msg])
                 #for some reason this needs to be here - otherwise in later wx's width gets changed
-                G2frame.G2plotNB.status.SetStatusWidths([150,-1])   
+                #G2frame.G2plotNB.status.SetStatusWidths([150,-1])   
                 
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Covariance')
@@ -3514,7 +3515,7 @@ def PlotCovariance(G2frame,Data):
         Plot = Page.figure.gca()
         if not Page.IsShown():
             Page.Show()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('Covariance').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Covariance')
@@ -3584,7 +3585,7 @@ def PlotTorsion(G2frame,phaseName,Torsion,TorName,Names=[],Angles=[],Coeff=[]):
         Plot = Page.figure.gca()
         if not Page.IsShown():
             Page.Show()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('Torsion').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Torsion')
@@ -3668,7 +3669,7 @@ def PlotRama(G2frame,phaseName,Rama,RamaName,Names=[],PhiPsi=[],Coeff=[]):
         Plot = Page.figure.gca()
         if not Page.IsShown():
             Page.Show()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('Ramachandran').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Ramachandran')
@@ -4219,8 +4220,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         if newImage:
             Page.figure.clf()
             Plot = Page.figure.gca()          #get a fresh plot after clf()
-        if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
-            G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+#        if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
+#            G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('2D Powder Image').gca()
         plotNum = G2frame.G2plotNB.plotList.index('2D Powder Image')
@@ -4231,8 +4232,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         Page.canvas.mpl_connect('button_release_event', OnImRelease)
         xylim = []
     Page.Choice = None
-#    if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
-#        G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
+        G2frame.G2plotNB.RaisePageNoRefresh(Page)
     Title = G2frame.PatternTree.GetItemText(G2frame.Image)[4:]
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.logPlot:
@@ -4462,8 +4463,8 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
-        if not event:
-            G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+#        if not event:
+#            G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
         
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('2D Integration').gca()
@@ -4473,8 +4474,8 @@ def PlotIntegration(G2frame,newPlot=False,event=None):
         Page.views = False
         view = False
     Page.Choice = None
-#    if not event:
-#        G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    if not event:
+        G2frame.G2plotNB.RaisePageNoRefresh(Page)
         
     Data = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
@@ -4530,7 +4531,7 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
             xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
         
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('2D Transformed Powder Image').gca()
@@ -4540,7 +4541,7 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
         Page.views = False
         view = False
     Page.Choice = None
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
         
     Data = G2frame.PatternTree.GetItemPyData(
         G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
@@ -5636,7 +5637,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     try:
         plotNum = G2frame.G2plotNB.plotList.index(generalData['Name'])
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addOgl(generalData['Name'])
         plotNum = G2frame.G2plotNB.plotList.index(generalData['Name'])
@@ -5939,7 +5940,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Rigid body')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)        
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addOgl('Rigid body')
         plotNum = G2frame.G2plotNB.plotList.index('Rigid body')
@@ -5947,7 +5948,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         Page.views = False
         view = False
         altDown = False
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     Font = Page.GetFont()
     Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
@@ -6323,7 +6324,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Layer')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)        
-        G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
+        #G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addOgl('Layer')
         plotNum = G2frame.G2plotNB.plotList.index('Layer')

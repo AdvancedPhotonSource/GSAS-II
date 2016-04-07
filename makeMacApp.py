@@ -139,7 +139,7 @@ if __name__ == '__main__':
         if os.path.exists(pythonapp): break
         pythonpath,top = os.path.split(pythonpath)
     else:
-        print("\nSorry, failed to find a Resources directory associated with "+str(sys.executable))
+        #print("\nSorry, failed to find a Resources directory associated with "+str(sys.executable))
         pythonapp = sys.executable
     
     # create a link to the python app, but named to match the project

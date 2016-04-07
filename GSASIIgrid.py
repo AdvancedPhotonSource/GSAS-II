@@ -3573,9 +3573,8 @@ def UpdatePWHKPlot(G2frame,kind,item):
     G2frame.PatternTree.SetItemPyData(item,data)
     if kind in ['PWDR','SASD']:
         NewPlot = True
-#        if 'xylim' in dir(G2frame):
-#            NewPlot = False
-#
+        if 'xylim' in dir(G2frame):
+            NewPlot = False
         G2plt.PlotPatterns(G2frame,plotType=kind,newPlot=NewPlot)
     elif kind == 'HKLF':
         Name = G2frame.PatternTree.GetItemText(item)

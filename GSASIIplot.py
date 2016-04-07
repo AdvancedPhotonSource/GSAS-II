@@ -3464,7 +3464,7 @@ def PlotCovariance(G2frame,Data):
     covArray = np.divide(np.divide(covMatrix,xvar),xvar.T)
     title = ' for\n'+Data['title']
     newAtomDict = Data.get('newAtomDict',{})
-    G2frame.G2plotNB.Delete('Covariance')
+#    G2frame.G2plotNB.Delete('Covariance')
     G2frame.G2plotNB.status.DestroyChildren()
     
 
@@ -3502,6 +3502,8 @@ def PlotCovariance(G2frame,Data):
                     msg = '%s - %s: %5.3f'%(varyList[xpos],varyList[ypos],covArray[xpos][ypos])
                 Page.canvas.SetToolTipString(msg)
                 G2frame.G2plotNB.status.SetFields(['',msg])
+                #for some reason this needs to be here - otherwise in later wx's width gets changed
+                G2frame.G2plotNB.status.SetStatusWidths([150,-1])   
                 
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Covariance')

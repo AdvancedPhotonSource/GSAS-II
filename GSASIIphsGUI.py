@@ -2822,7 +2822,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             stackSizer = wx.BoxSizer(wx.VERTICAL)
             stackSizer.Add(wx.StaticText(layerData,label=' Layer stacking parameters:'),0,WACV)
             if not Layers['Stacking']:
-                return stackSizer
+                Layers['Stacking'] = ['recursive','infinite','']
             topLine = wx.BoxSizer(wx.HORIZONTAL)
             topLine.Add(wx.StaticText(layerData,label=' Stacking type: '),0,WACV)
             stackType = wx.ComboBox(layerData,value=Layers['Stacking'][0],choices=stackChoice,

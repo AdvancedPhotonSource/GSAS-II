@@ -309,7 +309,7 @@ class G2PlotNoteBook(wx.Panel):
         '''
         self.status.DestroyChildren()    #get rid of special stuff on status bar
         self.status.SetFields(['',''])  # clear old status message
-        G2frame.G2plotNB.status.SetStatusWidths([150,-1])
+        self.status.SetStatusWidths([150,-1])
         if self.skipPageChange:
 #            print 'skipping OnPageChanged'
             self.skipPageChange = False

@@ -1087,7 +1087,9 @@ def UpdateBackground(G2frame,data):
     mainSizer.Add(PeaksSizer())
     mainSizer.Layout()    
     G2frame.dataDisplay.SetSizer(mainSizer)
-    G2frame.dataFrame.setSizePosLeft(mainSizer.Fit(G2frame.dataFrame))
+    Size = mainSizer.Fit(G2frame.dataFrame)
+    G2frame.dataDisplay.SetSize(Size)
+    G2frame.dataFrame.setSizePosLeft(Size)
         
 ################################################################################
 #####  Limits

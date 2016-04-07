@@ -2130,7 +2130,7 @@ def PlotDeltSig(G2frame,kind):
         for ref in refl:
             if ref[6+im] > 0.:
                 DS.append((ref[5+im]-ref[7+im])/ref[6+im])
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.DestroyChildren()
     DS.sort()
     EDS = np.zeros_like(DS)
@@ -3190,7 +3190,8 @@ def PlotTexture(G2frame,data,Start=False):
                     
                     G2frame.G2plotNB.status.SetFields(['',
                         'psi =%9.3f, beta =%9.3f, MRD =%9.3f hkl=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z)])
-                                    
+                    G2frame.G2plotNB.status.SetStatusWidths([150,-1])
+                
             elif 'Axial' in SHData['PlotType']:
                 pass
                 
@@ -3204,7 +3205,8 @@ def PlotTexture(G2frame,data,Start=False):
                         r,p = 2.*npatand(z),npatan2d(ypos,xpos)
                     pf = G2lat.polfcal(ODFln,SamSym[textureData['Model']],np.array([r,]),np.array([p,]))
                     G2frame.G2plotNB.status.SetFields(['','phi =%9.3f, gam =%9.3f, MRD =%9.3f'%(r,p,pf)])
-    
+                    G2frame.G2plotNB.status.SetStatusWidths([150,-1])
+
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Texture')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -3223,7 +3225,7 @@ def PlotTexture(G2frame,data,Start=False):
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
 
     Page.Choice = None
-#    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.SetFields(['',''])    
     PH = np.array(SHData['PFhkl'])
     phi,beta = G2lat.CrsAng(PH,cell,SGData)

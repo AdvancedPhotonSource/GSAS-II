@@ -2411,6 +2411,32 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],
             'viewPoint':[[0.,0.,0.],[]],}
         Indx = {}
+        
+        def SetCell(laue,cell):
+            if laue in ['-3','-3m','6/m','6/mmm','4/m','4/mmm']:                    
+                cell[4] = cell[5] = 90.
+                cell[6] = 120.
+                if laue in ['4/m','4/mmm']:
+                    cell[6] = 90.
+                if ObjId == 0:
+                    cell[1] = cell[2] = value
+                    Obj.SetValue("%.5f"%(cell[1]))
+                else:
+                    cell[3] = value
+                    Obj.SetValue("%.5f"%(cell[3]))
+            elif laue in ['mmm']:
+                cell[ObjId+1] = value
+                cell[4] = cell[5] = cell[6] = 90.
+                Obj.SetValue("%.5f"%(cell[ObjId+1]))
+            elif laue in ['2/m','-1']:
+                cell[4] = cell[5] = 90.
+                if ObjId != 3:
+                    cell[ObjId+1] = value
+                    Obj.SetValue("%.5f"%(cell[ObjId+1]))
+                else:
+                    cell[6] = value
+                    Obj.SetValue("%.3f"%(cell[6]))
+            cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
 
         def OnLaue(event):
             Obj = event.GetEventObject()
@@ -2433,6 +2459,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.Cmax = 1.0
             G2plt.PlotXYZ(G2frame,XY,Layers['Sadp']['Img'].T,labelX=labels[:-1],
                 labelY=labels[-1],newPlot=False,Title=Layers['Sadp']['Plane'])
+                
+        def OnSeqPlot(event):
+            seqPlot.SetValue(False)
+            resultXY,resultXY2 = Layers['seqResults']
+            pName = Layers['seqCodes'][0]
+            G2plt.PlotXY(G2frame,resultXY,XY2=resultXY2,labelX=r'$\mathsf{2\theta}$',
+            labelY='Intensity',newPlot=True,Title='Sequential simulations on '+pName,lines=False)
             
         def CellSizer():
             
@@ -2894,6 +2927,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             sadpPlot = wx.CheckBox(layerData,label=' Plot selected area diffraction?')
             sadpPlot.Bind(wx.EVT_CHECKBOX,OnSadpPlot)
             laueSizer.Add(sadpPlot,0,WACV)
+        if 'seqResults' in Layers:
+            seqPlot = wx.CheckBox(layerData,label=' Plot sequential result?')
+            seqPlot.Bind(wx.EVT_CHECKBOX,OnSeqPlot)
+            laueSizer.Add(seqPlot,0,WACV)
         topSizer.Add(laueSizer,0,WACV)
         topSizer.Add(wx.StaticText(layerData,label=' Reference unit cell for all layers:'),0,WACV)
         topSizer.Add(CellSizer(),0,WACV)
@@ -2978,7 +3015,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.MessageBox("Can't simulate neutron TOF patterns yet",caption='Data error',style=wx.ICON_EXCLAMATION)
                 return            
             profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
-            dlg.Destroy()        
             ctrls = '0\n0\n3\n'
             G2pwd.StackSim(data['Layers'],ctrls,scale,background,limits,inst,profile)
             test1 = np.copy(profile[3])
@@ -2986,31 +3022,102 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2pwd.CalcStackingPWDR(data['Layers'],scale,background,limits,inst,profile)
             test2 = np.copy(profile[3])
             rat = (test1-test2)/test1
+            XY = np.vstack((profile[0],rat))
+            G2plt.PlotXY(G2frame,[XY,],XY2=[],labelX=r'$\mathsf{2\theta}$',
+                labelY='ratio',newPlot=True,Title='DIFFaX vs GSASII',lines=True)
 #            GSASIIpath.IPyBreak()
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
         else:   #selected area
             data['Layers']['Sadp'] = {}
             data['Layers']['Sadp']['Plane'] = simCodes[1]
             data['Layers']['Sadp']['Lmax'] = simCodes[2]
-#            planeChoice = ['h0l','0kl','hhl','h-hl',]
-#            lmaxChoice = [str(i+1) for i in range(6)]
-#            ctrls = '0\n0\n4\n1\n%d\n1\n16\n1\n%d\n0\nend\n'%    \
-#                (planeChoice.index(simCodes[1])+1,lmaxChoice.index(simCodes[2])+1)
-#            G2pwd.StackSim(data['Layers'],ctrls)
+            planeChoice = ['h0l','0kl','hhl','h-hl',]
+            lmaxChoice = [str(i+1) for i in range(6)]
+            ctrls = '0\n0\n4\n1\n%d\n1\n16\n1\n%d\n0\nend\n'%    \
+                (planeChoice.index(simCodes[1])+1,lmaxChoice.index(simCodes[2])+1)
+            G2pwd.StackSim(data['Layers'],ctrls)
             G2pwd.CalcStackingSADP(data['Layers'])
         wx.CallAfter(UpdateLayerData)
         
     def OnSeqSimulate(event):
         
+        cellSel = ['cellA','cellB','cellC','cellG']
+        transSel = ['TransP','TransX','TransY','TransZ']
         ctrls = ''
+        data['Layers']['seqResults'] = []
+        data['Layers']['seqCodes'] = []
         Parms = G2pwd.GetStackParms(data['Layers'])
         dlg = G2gd.DIFFaXcontrols(G2frame,ctrls,Parms)
         if dlg.ShowModal() == wx.ID_OK:
             simCodes = dlg.GetSelection()
-            data['Layers']['Multi'] = [simCodes[2:5]]
         else:
             return
-        print 'do sequence of simulations on...',parm,parmRange,parmStep
+        UseList = []
+        for item in data['Histograms']:
+            if 'PWDR' in item:
+                UseList.append(item)
+        if not UseList:
+            wx.MessageBox('No PWDR data for this phase to simulate',caption='Data error',style=wx.ICON_EXCLAMATION)
+            return
+        dlg = wx.SingleChoiceDialog(G2frame,'Data to simulate','Select',UseList)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            HistName = UseList[sel]
+        else:
+            return
+        dlg.Destroy()
+        PWDR = data['Histograms'][HistName]
+        G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistName)
+        sample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+            G2frame,G2frame.PatternId, 'Sample Parameters'))
+        scale = sample['Scale'][0]
+        background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+            G2frame,G2frame.PatternId, 'Background'))        
+        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+            G2frame,G2frame.PatternId, 'Limits'))[1]
+        inst = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Instrument Parameters'))[0]
+        if 'T' in inst['Type'][0]:
+            wx.MessageBox("Can't simulate neutron TOF patterns yet",caption='Data error',style=wx.ICON_EXCLAMATION)
+            return            
+        profile = np.copy(G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1])
+        resultXY2 = []
+        resultXY = [np.vstack((profile[0],profile[1])),]
+        data['Layers']['selInst'] = simCodes[1]
+        data['Layers']['seqCodes'] = simCodes[2:]
+        Layers = copy.deepcopy(data['Layers'])
+        pName = simCodes[2]
+        BegFin = simCodes[3]
+        nSteps = simCodes[4]
+        laue = Layers['Laue']
+        dStep = (BegFin[1]-BegFin[0])/nSteps
+        vals = np.linspace(BegFin[0],BegFin[1],nSteps+1,True)
+        for val in vals:
+            if 'cell' in pName:
+                cellId = cellSel.index(pName)
+                cell = Layers['Cell']
+                cell[cellId+1] = val
+                if laue in ['-3','-3m','6/m','6/mmm','4/m','4/mmm']:                    
+                    cell[2] = cell[1]
+                cell[7] = G2lat.calc_V(G2lat.cell2A(cell[1:7]))
+                Layers['Cell'] = cell
+            elif 'Trans' in pName:
+                names = pName.split(';')
+                transId = transSel.index(names[0])
+                iY = int(names[1])
+                iX = int(names[2])
+                Trans = Layers['Transitions'][iY]
+                if not transId:     #i.e. probability
+                    osum = 1.-Trans[iX][0]
+                    nsum = 1.-val
+                    for i in range(len(Trans)):
+                        if i != iX:
+                            Trans[i][0] *= (nsum/osum)
+                Trans[iX][transId] = val
+            G2pwd.CalcStackingPWDR(Layers,scale,background,limits,inst,profile)
+            resultXY2.append([np.vstack((profile[0],profile[3])),][0])
+        data['Layers']['seqResults'] = [resultXY,resultXY2]
+        wx.CallAfter(UpdateLayerData)
         
 ################################################################################
 #### Wave Data page

@@ -374,7 +374,7 @@
 *
       character*4 a_name(MAX_A,MAX_L), atom_l(MAX_TA)
       character*12 pnt_grp
-      character*16 sfname, cfname
+*      character*16 sfname, cfname
 *
       logical one_B(MAX_L), one_occup(MAX_L), Bs_zero(MAX_L, MAX_L),
      |        there(MAX_L,MAX_L)
@@ -415,7 +415,7 @@
 *
       common /chars1/ a_name, atom_l
       common /chars2/ pnt_grp
-      common /chars3/ sfname, cfname
+*      common /chars3/ sfname, cfname
 *
       common /logic1/ one_B, one_occup, Bs_zero, there
       common /logic2/ only_real, same_Bs, all_Bs_zero, rot_only, CFile,

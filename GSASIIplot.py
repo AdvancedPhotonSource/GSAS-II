@@ -2467,7 +2467,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
 ##### PlotXY
 ################################################################################
             
-def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title=''):
+def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title='',lines=False):
     '''simple plot of xy data, used for diagnostic purposes
     '''
     def OnMotion(event):
@@ -2510,11 +2510,14 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title=''):
         Plot.set_ylabel(r'Y',fontsize=14)
     colors=['b','g','r','c','m','k']
     for ixy,xy in enumerate(XY):
-        X,Y = xy
-        Plot.plot(X,Y,colors[ixy%6]+'+',picker=False)
+        X,Y = XY[ixy]
+        if lines:
+            Plot.plot(X,Y,colors[ixy%6],picker=False)
+        else:
+            Plot.plot(X,Y,colors[ixy%6]+'+',picker=False)
     if len(XY2):
         for ixy,xy in enumerate(XY2):
-            X,Y = xy
+            X,Y = XY2[ixy]
             Plot.plot(X,Y,colors[ixy%6],picker=False)
     if not newPlot:
         Page.toolbar.push_current()

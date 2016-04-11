@@ -1815,7 +1815,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
     sf.close()
     #make DIFFaX control.dif file - future use GUI to set some of these flags
     cf = open('control.dif','w')
-    if ctrls == '0\n0\n3\n': 
+    if ctrls == '0\n0\n3\n' or ctrls == '0\n1\n3\n': 
         x0 = profile[0]
         iBeg = np.searchsorted(x0,limits[0])
         iFin = np.searchsorted(x0,limits[1])
@@ -1835,7 +1835,7 @@ def StackSim(Layers,ctrls,scale=0.,background={},limits=[],inst={},profile=[]):
         df.write('X-RAY\n')
     elif 'N' in inst['Type'][0]:
         df.write('NEUTRON\n')
-    if ctrls == '0\n0\n3\n': 
+    if ctrls == '0\n0\n3\n' or ctrls == '0\n1\n3\n': 
         df.write('%.4f\n'%(G2mth.getMeanWave(inst)))
         U = ateln2*inst['U'][1]/10000.
         V = ateln2*inst['V'][1]/10000.
@@ -1962,7 +1962,7 @@ def SetPWDRscan(inst,limits,profile):
     pyx.pygetinst(wave,x0[iBeg],x0[iFin],Dx)
     return iFin-iBeg
        
-def SetStackingSF(Layers):
+def SetStackingSF(Layers,debug):
 # Load scattering factors into DIFFaX arrays
     import atmdata
     atTypes = Layers['AtInfo'].keys()
@@ -1982,7 +1982,7 @@ def SetStackingSF(Layers):
         SF[8] = Adat['fc']
         SFdat.append(SF)
     SFdat = np.array(SFdat)
-    pyx.pyloadscf(len(atTypes),aTypes,SFdat.T)
+    pyx.pyloadscf(len(atTypes),aTypes,SFdat.T,debug)
     
 def SetStackingClay(Layers,Type):
 # Controls
@@ -2062,13 +2062,14 @@ def SetStackingTrans(Layers,Nlayers):
     for Ytrans in Layers['Transitions']:
         TransP.append([trans[0] for trans in Ytrans])   #get just the numbers
         TransX.append([trans[1:4] for trans in Ytrans])   #get just the numbers
-    TransP = np.array(TransP,dtype='float')
+    TransP = np.array(TransP,dtype='float').T
     TransX = np.array(TransX,dtype='float')
+#    GSASIIpath.IPyBreak()
     pyx.pygettrans(Nlayers,TransP,TransX)
     
-def CalcStackingPWDR(Layers,scale,background,limits,inst,profile):
+def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
 # Scattering factors
-    SetStackingSF(Layers)
+    SetStackingSF(Layers,debug)
 # Controls & sequences
     laueId,controls = SetStackingClay(Layers,'PWDR')
 # cell & atoms
@@ -2093,7 +2094,7 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile):
     V = ateln2*inst['V'][1]/10000.
     W = ateln2*inst['W'][1]/10000.
     HWHM = U*nptand(x0[iBeg:iFin]/2.)**2+V*nptand(x0[iBeg:iFin]/2.)+W
-    HW = np.mean(HWHM)
+    HW = np.sqrt(np.mean(HWHM))
     BrdSpec = np.zeros(Nsteps)
     if 'Mean' in Layers['selInst']:
         pyx.pyprofile(U,V,W,HW,1,Nsteps,BrdSpec)
@@ -2116,13 +2117,10 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile):
     profile[5][iBeg:iFin] = profile[1][iBeg:iFin]-profile[3][iBeg:iFin]
     print ' Broadening time = %.2fs'%(time.time()-time0)
     
-    
-#    GSASIIpath.IPyBreak()
-    
-def CalcStackingSADP(Layers):
+def CalcStackingSADP(Layers,debug):
     
 # Scattering factors
-    SetStackingSF(Layers)
+    SetStackingSF(Layers,debug)
 # Controls & sequences
     laueId,controls = SetStackingClay(Layers,'SADP')
 # cell & atoms

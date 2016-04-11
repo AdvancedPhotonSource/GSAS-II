@@ -1,9 +1,10 @@
-      SUBROUTINE PYLOADSCF(NATP,ATYPES,SFDAT)
+      SUBROUTINE PYLOADSCF(NATP,ATYPES,SFDAT,DEBG)
         
 Cf2py intent(in) NATP
 Cf2py intent(in) ATYPES
 Cf2py intent(in) SFDAT
 cf2py depend(NATP) ATYPES,SFDAT
+cf2py intent(in) DEBG
             
       INCLUDE 'DIFFaXsubs/DIFFaX.par'
       INCLUDE 'DIFFaXsubs/DIFFaX.inc'
@@ -11,9 +12,10 @@ cf2py depend(NATP) ATYPES,SFDAT
       INTEGER*4 NATP,I,J
       CHARACTER*4 ATYPES(NATP)
       REAL*4  SFDAT(9,NATP)
+      LOGICAL DEBG
                 
 C fill common x-ray scattering factors
-      debug = .FALSE.
+      debug = DEBG
       DO J=1,NATP
         WRITE(atom_l(J),'(A4)') ATYPES(J)
         DO I=1,9
@@ -194,7 +196,7 @@ C fill common transitions stuff
         DO I=1,NL
           l_alpha(J,I) = TRP(I,J)
           DO K=1,3
-            l_r(K,J,I) = TRX(I,J,K)
+            l_r(K,J,I) = TRX(J,I,K)
           END DO
         END DO
       END DO
@@ -217,27 +219,29 @@ Cf2py depend(NSADP) SADP
         
       EXTERNAL AGLQ16,GETSPC
 
-
-C      print *,n_actual,(l_n_atoms(i),i=1,n_actual)
-C      do j=1,n_actual
-C        do i=1,l_n_atoms(j)
-C          print *,a_name(i,j),(a_pos(k,i,j),k=1,3)
-C        end do
-C      end do
-c      print *, recrsv,inf_thick,xplcit,rndm,l_cnt,has_l_mirror
-C      do i=1,n_layers
-C      print *,' layer',i
-C         do j=1,n_layers
-C            print *,'layer',j,l_alpha(i,j),(l_r(k,i,j),k=1,3)
-C         end do
-C      end do
-c      print *,cell_a,cell_b,cell_c,cell_gamma,pnt_grp,SymGrpNo
-c      DoSymDump = .TRUE.
+      DoSymDump = .FALSE.
     
       ok = .TRUE.
       CALL SPHCST()
       CALL DETUN()
       CALL OPTIMZ('GSAS-II',ok)
+      If (debug) then
+        print *,cell_a,cell_b,cell_c,cell_gamma,pnt_grp,SymGrpNo
+        DoSymDump = .TRUE.
+        print *,n_actual,(l_n_atoms(i),i=1,n_actual)
+        do j=1,n_actual
+          do i=1,l_n_atoms(j)
+            print *,a_name(i,j),(a_pos(k,i,j),k=1,3)
+          end do
+        end do
+        do i=1,n_layers
+        print *,' layer',i
+           do j=1,n_layers
+              print *,'layer',j,l_alpha(i,j),(l_r(k,i,j),k=1,3)
+           end do
+        end do
+        print *, recrsv,inf_thick,xplcit,rndm,l_cnt,has_l_mirror
+      end if
         
 C      print *,lambda,max_angle,h_bnd,k_bnd,l_bnd,no_trials,
 C     1  rad_type,X_RAY,n_atoms
@@ -313,23 +317,27 @@ Cf2py intent(out) NBLK
                     
       i_plane = CNTRLS(2)
       l_upper = CNTRLS(3)
-C      print *,n_actual,(l_n_atoms(i),i=1,n_actual)
-C      do j=1,n_actual
-C        do i=1,l_n_atoms(j)
-C          print *,a_name(i,j),(a_pos(k,i,j),k=1,3)
-C        end do
-C      end do
-c      print *, recrsv,inf_thick,xplcit,rndm,l_cnt,has_l_mirror
-C      do i=1,n_layers
-C      print *,' layer',i
-C         do j=1,n_layers
-C            print *,'layer',j,l_alpha(i,j),(l_r(k,i,j),k=1,3)
-C         end do
-C      end do
+      DoSymDump = .FALSE.
+      if (debug) then
+          print *,cell_a,cell_b,cell_c,cell_gamma
+          print *,pnt_grp,SymGrpNo
+          DoSymDump = .TRUE.
+          print *,n_actual,(l_n_atoms(i),i=1,n_actual)
+          do j=1,n_actual
+            do i=1,l_n_atoms(j)
+              print *,a_name(i,j),(a_pos(k,i,j),k=1,3)
+            end do
+          end do
+          do i=1,n_layers
+          print *,' layer',i
+             do j=1,n_layers
+                print *,'layer',j,l_alpha(i,j),(l_r(k,i,j),k=1,3)
+             end do
+          end do
+          print *, recrsv,inf_thick,xplcit,rndm,l_cnt,has_l_mirror
+      end if
       ok = .TRUE.
         
-c      print *,cell_a,cell_b,cell_c,cell_gamma,pnt_grp,SymGrpNo
-c      DoSymDump = .TRUE.
       CALL SPHCST()
       CALL DETUN()
       CALL OPTIMZ('GSAS-II',ok)

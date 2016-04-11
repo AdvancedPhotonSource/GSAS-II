@@ -1112,7 +1112,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         RenderUnitVectors(0,0,0,labxyz=['h','k','l'])
         RenderDots(HKL,RC)
         time0 = time.time()
-        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
+#        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
         Page.canvas.SwapBuffers()
 
     # PlotStructure execution starts here (N.B. initialization above)
@@ -5624,7 +5624,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Backbone = Backbones[chain]
                 RenderBackbone(Backbone,BackboneColor,bondR)
 #        print time.time()-time0
-        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
+#        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
         Page.canvas.SwapBuffers()
         
     def OnSize(event):
@@ -5931,7 +5931,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             RenderSphere(x,y,z,radius,color)
             RenderBonds(x,y,z,Bonds[iat],0.05,color)
             RenderLabel(x,y,z,'  '+atNames[iat],matRot)
-        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
+#        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
         Page.canvas.SwapBuffers()
 
     def OnSize(event):
@@ -6315,7 +6315,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             RenderBonds(x,y,z,Bonds[iat],0.05,color)
             if Page.labels:
                 RenderLabel(x,y,z,'  '+AtNames[iat],matRot)
-        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
+#        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
         Page.canvas.SwapBuffers()
 
     def OnSize(event):

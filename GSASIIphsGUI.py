@@ -2978,6 +2978,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         wx.CallAfter(UpdateLayerData)
         
     def OnSimulate(event):
+        debug = False
+        idebug = 0
+        if debug: idebug = 1
         ctrls = ''
         dlg = G2gd.DIFFaXcontrols(G2frame,ctrls)
         if dlg.ShowModal() == wx.ID_OK:
@@ -3015,16 +3018,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.MessageBox("Can't simulate neutron TOF patterns yet",caption='Data error',style=wx.ICON_EXCLAMATION)
                 return            
             profile = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1]
-            ctrls = '0\n0\n3\n'
-            G2pwd.StackSim(data['Layers'],ctrls,scale,background,limits,inst,profile)
-            test1 = np.copy(profile[3])
-            test1 = np.where(test1,test1,1.0)
-            G2pwd.CalcStackingPWDR(data['Layers'],scale,background,limits,inst,profile)
-            test2 = np.copy(profile[3])
-            rat = (test1-test2)/test1
-            XY = np.vstack((profile[0],rat))
-            G2plt.PlotXY(G2frame,[XY,],XY2=[],labelX=r'$\mathsf{2\theta}$',
-                labelY='ratio',newPlot=True,Title='DIFFaX vs GSASII',lines=True)
+            G2pwd.CalcStackingPWDR(data['Layers'],scale,background,limits,inst,profile,debug)
+            if debug:
+                ctrls = '0\n%d\n3\n'%(idebug)
+                G2pwd.StackSim(data['Layers'],ctrls,scale,background,limits,inst,profile)
+                test1 = np.copy(profile[3])
+                test1 = np.where(test1,test1,1.0)
+                G2pwd.CalcStackingPWDR(data['Layers'],scale,background,limits,inst,profile,debug)
+                test2 = np.copy(profile[3])
+                rat = test1-test2
+                XY = np.vstack((profile[0],rat))
+                G2plt.PlotXY(G2frame,[XY,],XY2=[],labelX=r'$\mathsf{2\theta}$',
+                    labelY='ratio',newPlot=True,Title='DIFFaX vs GSASII',lines=True)
 #            GSASIIpath.IPyBreak()
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
         else:   #selected area
@@ -3033,10 +3038,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             data['Layers']['Sadp']['Lmax'] = simCodes[2]
             planeChoice = ['h0l','0kl','hhl','h-hl',]
             lmaxChoice = [str(i+1) for i in range(6)]
-            ctrls = '0\n0\n4\n1\n%d\n1\n16\n1\n%d\n0\nend\n'%    \
-                (planeChoice.index(simCodes[1])+1,lmaxChoice.index(simCodes[2])+1)
+            ctrls = '0\n%d\n4\n1\n%d\n%d\n16\n1\n1\n0\nend\n'%    \
+                (idebug,planeChoice.index(simCodes[1])+1,lmaxChoice.index(simCodes[2])+1)
             G2pwd.StackSim(data['Layers'],ctrls)
-            G2pwd.CalcStackingSADP(data['Layers'])
+            G2pwd.CalcStackingSADP(data['Layers'],debug)
         wx.CallAfter(UpdateLayerData)
         
     def OnSeqSimulate(event):

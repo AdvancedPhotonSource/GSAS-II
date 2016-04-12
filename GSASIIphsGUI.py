@@ -2978,7 +2978,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         wx.CallAfter(UpdateLayerData)
         
     def OnSimulate(event):
-        debug = False
+        debug = False       #set True to run DIFFax to compare/debug (must be in bin)
         idebug = 0
         if debug: idebug = 1
         ctrls = ''
@@ -3036,11 +3036,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             data['Layers']['Sadp'] = {}
             data['Layers']['Sadp']['Plane'] = simCodes[1]
             data['Layers']['Sadp']['Lmax'] = simCodes[2]
-            planeChoice = ['h0l','0kl','hhl','h-hl',]
-            lmaxChoice = [str(i+1) for i in range(6)]
-            ctrls = '0\n%d\n4\n1\n%d\n%d\n16\n1\n1\n0\nend\n'%    \
-                (idebug,planeChoice.index(simCodes[1])+1,lmaxChoice.index(simCodes[2])+1)
-            G2pwd.StackSim(data['Layers'],ctrls)
+            if debug:
+                planeChoice = ['h0l','0kl','hhl','h-hl',]
+                lmaxChoice = [str(i+1) for i in range(6)]
+                ctrls = '0\n%d\n4\n1\n%d\n%d\n16\n1\n1\n0\nend\n'%    \
+                    (idebug,planeChoice.index(simCodes[1])+1,lmaxChoice.index(simCodes[2])+1)
+                G2pwd.StackSim(data['Layers'],ctrls)
             G2pwd.CalcStackingSADP(data['Layers'],debug)
         wx.CallAfter(UpdateLayerData)
         

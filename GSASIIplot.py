@@ -2470,6 +2470,25 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
 def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title='',lines=False):
     '''simple plot of xy data, used for diagnostic purposes
     '''
+    def OnKeyPress(event):
+        if event.key == 'u':
+            if Page.Offset[1] < 100.:
+                Page.Offset[1] += 1.
+        elif event.key == 'd':
+            if Page.Offset[1] > 0.:
+                Page.Offset[1] -= 1.
+        elif event.key == 'l':
+            Page.Offset[0] -= 1.
+        elif event.key == 'r':
+            Page.Offset[0] += 1.
+        elif event.key == 'o':
+            Page.Offset = [0,0]
+        else:
+#            print 'no binding for key',event.key
+            #GSASIIpath.IPyBreak()
+            return
+        wx.CallAfter(PlotXY,G2frame,XY,XY2,labelX,labelY,False,Title,False)
+
     def OnMotion(event):
         xpos = event.xdata
         if xpos:                                        #avoid out of frame mouse position
@@ -2494,9 +2513,15 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title='',li
         Plot = G2frame.G2plotNB.addMpl(Title).gca()
         plotNum = G2frame.G2plotNB.plotList.index(Title)
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('key_press_event', OnKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.Offset = [0,0]
     
-    Page.Choice = None
+    if len(XY2) > 1:
+        Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
+            'u: offset up','o: reset offset',)
+    else:
+        Page.Choice = None
     G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.DestroyChildren()
     Plot.set_title(Title)
@@ -2509,8 +2534,13 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title='',li
     else:
         Plot.set_ylabel(r'Y',fontsize=14)
     colors=['b','g','r','c','m','k']
+    Page.keyPress = OnKeyPress
+    Xmax = 0.
+    Ymax = 0.    
     for ixy,xy in enumerate(XY):
         X,Y = XY[ixy]
+        Xmax = max(Xmax,max(X))
+        Ymax = max(Ymax,max(Y))
         if lines:
             Plot.plot(X,Y,colors[ixy%6],picker=False)
         else:
@@ -2518,7 +2548,9 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title='',li
     if len(XY2):
         for ixy,xy in enumerate(XY2):
             X,Y = XY2[ixy]
-            Plot.plot(X,Y,colors[ixy%6],picker=False)
+            dX = Page.Offset[0]*(ixy+1)*Xmax/500.
+            dY = Page.Offset[1]*(ixy+1)*Ymax/100.
+            Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])
@@ -6007,6 +6039,8 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
                 XYZ = np.concatenate((XYZ,-XYZ))
             if il:
                 TX += np.array(Trans[laySeq[il-1]][laySeq[il]][1:4])
+#                TX[0] %= 1.
+#                TX[1] %= 1.
                 XYZ += TX
             AtNames += atNames
             AtTypes += atTypes
@@ -6353,4 +6387,4 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     Page.camera['position'] = defaults['cameraPos']
     Page.camera['backColor'] = np.array([0,0,0,0])
     Page.canvas.SetCurrent()
-    Draw('main')
+    wx.CallAfter(Draw,'main')

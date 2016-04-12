@@ -2703,13 +2703,32 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     for Xi,Xname in enumerate(Names):
                         transArray[Yi][Xi][0] /= Psum
                 wx.CallAfter(UpdateLayerData)
+                
+            def OnSymProb(event):
+                if symprob.GetValue():
+                    Nx = len(Names)-1
+                    Layers['SymTrans'] = True
+                    for Yi,Yname in enumerate(Names):
+                        for Xi,Xname in enumerate(Names):
+                            if transArray[Nx-Yi][Nx-Xi][0] != transArray[Yi][Xi][0]:
+                                Layers['SymTrans'] = False
+                                symprob.SetValue(False)
+                                wx.MessageBox('%s-%s not equal %s-%s'%(Yname,Xname,Xname,Yname),
+                                    caption='Probability symmetry error',style=wx.ICON_EXCLAMATION)
+                                break
+                else:
+                    Layers['SymTrans'] = False
             
             transSizer = wx.BoxSizer(wx.VERTICAL)
+            transSizer.Add(wx.StaticText(layerData,label=' Layer-Layer transition probabilities: '),0,WACV)
             topSizer = wx.BoxSizer(wx.HORIZONTAL)
-            topSizer.Add(wx.StaticText(layerData,label=' Layer-Layer transition probabilities: '),0,WACV)
             normprob = wx.CheckBox(layerData,label=' Normalize probabilities?')
             normprob.Bind(wx.EVT_CHECKBOX,OnNormProb)
             topSizer.Add(normprob,0,WACV)
+            symprob = wx.CheckBox(layerData,label=' Symmetric probabilities?')
+            symprob.SetValue(Layers.get('SymTrans',False))
+            symprob.Bind(wx.EVT_CHECKBOX,OnSymProb)
+            topSizer.Add(symprob,0,WACV)
             transSizer.Add(topSizer,0,WACV)
             Names = [layer['Name'] for layer in Layers['Layers']]
             transArray = Layers['Transitions']
@@ -2909,8 +2928,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             layerData.GetSizer().Clear(True)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         topSizer = wx.BoxSizer(wx.VERTICAL)   
-        bottomSizer = wx.BoxSizer(wx.VERTICAL)   
-        topSizer.Add(wx.StaticText(layerData,label=' Global layer description:'),0,WACV)
+        bottomSizer = wx.BoxSizer(wx.VERTICAL)
+        headSizer = wx.BoxSizer(wx.HORIZONTAL)  
+        headSizer.Add(wx.StaticText(layerData,label=' Global layer description:  '),0,WACV)
+        if 'Sadp' in Layers:
+            sadpPlot = wx.CheckBox(layerData,label=' Plot selected area diffraction?')
+            sadpPlot.Bind(wx.EVT_CHECKBOX,OnSadpPlot)
+            headSizer.Add(sadpPlot,0,WACV)
+        if 'seqResults' in Layers:
+            seqPlot = wx.CheckBox(layerData,label=' Plot sequential result?')
+            seqPlot.Bind(wx.EVT_CHECKBOX,OnSeqPlot)
+            headSizer.Add(seqPlot,0,WACV)
+        topSizer.Add(headSizer)
         laueSizer = wx.BoxSizer(wx.HORIZONTAL)
         laueSizer.Add(wx.StaticText(layerData,label=' Diffraction Laue symmetry:'),0,WACV)
         laue = wx.ComboBox(layerData,value=Layers['Laue'],choices=laueChoice,
@@ -2923,14 +2952,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             toler.Bind(wx.EVT_TEXT_ENTER,OnToler)        
             toler.Bind(wx.EVT_KILL_FOCUS,OnToler)
             laueSizer.Add(toler,0,WACV)
-        if 'Sadp' in Layers:
-            sadpPlot = wx.CheckBox(layerData,label=' Plot selected area diffraction?')
-            sadpPlot.Bind(wx.EVT_CHECKBOX,OnSadpPlot)
-            laueSizer.Add(sadpPlot,0,WACV)
-        if 'seqResults' in Layers:
-            seqPlot = wx.CheckBox(layerData,label=' Plot sequential result?')
-            seqPlot.Bind(wx.EVT_CHECKBOX,OnSeqPlot)
-            laueSizer.Add(seqPlot,0,WACV)
         topSizer.Add(laueSizer,0,WACV)
         topSizer.Add(wx.StaticText(layerData,label=' Reference unit cell for all layers:'),0,WACV)
         topSizer.Add(CellSizer(),0,WACV)
@@ -3029,7 +3050,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 rat = test1-test2
                 XY = np.vstack((profile[0],rat))
                 G2plt.PlotXY(G2frame,[XY,],XY2=[],labelX=r'$\mathsf{2\theta}$',
-                    labelY='ratio',newPlot=True,Title='DIFFaX vs GSASII',lines=True)
+                    labelY='difference',newPlot=True,Title='DIFFaX vs GSASII',lines=True)
 #            GSASIIpath.IPyBreak()
             G2plt.PlotPatterns(G2frame,plotType='PWDR')
         else:   #selected area
@@ -3050,6 +3071,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         cellSel = ['cellA','cellB','cellC','cellG']
         transSel = ['TransP','TransX','TransY','TransZ']
         ctrls = ''
+        cell = data['Layers']['Cell']
         data['Layers']['seqResults'] = []
         data['Layers']['seqCodes'] = []
         Parms = G2pwd.GetStackParms(data['Layers'])
@@ -3113,14 +3135,21 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 iY = int(names[1])
                 iX = int(names[2])
                 Trans = Layers['Transitions'][iY]
+                Nx = len(Trans)-1
                 if not transId:     #i.e. probability
                     osum = 1.-Trans[iX][0]
                     nsum = 1.-val
-                    for i in range(len(Trans)):
+                    for i in range(Nx+1):
                         if i != iX:
                             Trans[i][0] *= (nsum/osum)
-                Trans[iX][transId] = val
-            G2pwd.CalcStackingPWDR(Layers,scale,background,limits,inst,profile)
+                    Trans[iX][0] = val
+                    if Layers.get('SymTrans',False):
+                        Layers['Transitions'][Nx-iX][Nx-iY][0] = val
+                        for i in range(Nx+1):
+                            Layers['Transitions'][Nx-iY][Nx-i][0] = Layers['Transitions'][iY][i][0]
+                else:
+                    Trans[iX][transId] = val
+            G2pwd.CalcStackingPWDR(Layers,scale,background,limits,inst,profile,False)
             resultXY2.append([np.vstack((profile[0],profile[3])),][0])
         data['Layers']['seqResults'] = [resultXY,resultXY2]
         wx.CallAfter(UpdateLayerData)

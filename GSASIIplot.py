@@ -6006,7 +6006,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
                 atTypes += atTypes
                 XYZ = np.concatenate((XYZ,-XYZ))
             if il:
-                TX += np.array(Trans[laySeq[il-1]][layer][1:4])
+                TX += np.array(Trans[laySeq[il-1]][laySeq[il]][1:4])
                 XYZ += TX
             AtNames += atNames
             AtTypes += atTypes

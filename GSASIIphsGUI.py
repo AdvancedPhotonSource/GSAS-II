@@ -3064,6 +3064,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     (idebug,planeChoice.index(simCodes[1])+1,lmaxChoice.index(simCodes[2])+1)
                 G2pwd.StackSim(data['Layers'],ctrls)
             G2pwd.CalcStackingSADP(data['Layers'],debug)
+        wx.MessageBox('Simulation finished',caption='Stacking fault simulation',style=wx.ICON_EXCLAMATION)
         wx.CallAfter(UpdateLayerData)
         
     def OnSeqSimulate(event):
@@ -3152,6 +3153,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2pwd.CalcStackingPWDR(Layers,scale,background,limits,inst,profile,False)
             resultXY2.append([np.vstack((profile[0],profile[3])),][0])
         data['Layers']['seqResults'] = [resultXY,resultXY2]
+        wx.MessageBox('Sequential simulation finished',caption='Stacking fault simulation',style=wx.ICON_EXCLAMATION)
         wx.CallAfter(UpdateLayerData)
         
 ################################################################################

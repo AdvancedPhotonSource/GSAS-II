@@ -164,9 +164,10 @@ commonTrans = {'abc':np.eye(3),'a-cb':np.array([[1,0,0],[0,0,-1],[0,1,0]]),
     'P->C':np.array([[1,1,0],[1,-1,0],[0,0,-1]]),'C->P':np.array([[.5,.5,0],[.5,-.5,0],[0,0,-1]]),
     'P->F':np.array([[-1,1,1],[1,-1,1],[1,1,-1]]),'F->P':np.array([[0,.5,.5],[.5,0,.5],[.5,.5,0]]),   
     'P->I':np.array([[0,1,1],[1,0,1],[1,1,0]]),'I->P':np.array([[-.5,.5,.5],[.5,-.5,.5],[.5,.5,-.5]]),    
-    'A->P':np.array([[-1,0,0],[0,-.5,.5],[0,.5,.5]]),'O->R':np.array([[-1,0,0],[0,-1,0],[0,0,1]]), }
-commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P',
-    'P->B','B->P','P->C','C->P','P->I','I->P','P->F','F->P','P->R','R->P','R->O','O->R']
+    'A->P':np.array([[-1,0,0],[0,-.5,.5],[0,.5,.5]]),'O->R':np.array([[-1,0,0],[0,-1,0],[0,0,1]]), 
+    'abc*':np.eye(3), }
+commonNames = ['abc','bca','cab','a-cb','ba-c','-cba','P->A','A->P','P->B','B->P','P->C','C->P',
+    'P->I','I->P','P->F','F->P','P->R','R->P','R->O','O->R','abc*',]
 
 # Should SGMessageBox, SymOpDialog, DisAglDialog be moved? 
 
@@ -371,6 +372,8 @@ class TransformDialog(wx.Dialog):
             #get rid of extra spaces between fields first
             for fld in Flds: fld = fld.strip()
             SpcGp = ' '.join(Flds)
+            if SpcGp == self.SpGrp: #didn't change it!
+                return
             # try a lookup on the user-supplied name
             SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
             if SpGrpNorm:
@@ -387,7 +390,7 @@ class TransformDialog(wx.Dialog):
             else:
                 text,table = G2spc.SGPrint(SGData)
                 self.Phase['General']['SGData'] = SGData
-                self.SpGrp = SpGrp
+                self.SpGrp = SpcGp
                 SGTxt.SetValue(self.Phase['General']['SGData']['SpGrp'])
                 msg = 'Space Group Information'
                 SGMessageBox(self.panel,msg,text,table).Show()
@@ -477,7 +480,7 @@ class TransformDialog(wx.Dialog):
         self.Fit()
         
     def GetSelection(self):
-        self.Phase['General']['Name'] += ' %s'%(self.SpGrp)
+        self.Phase['General']['Name'] += ' %s'%(self.Common)
         self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans)            
         return self.Phase,self.Trans,self.Vec
 
@@ -702,7 +705,7 @@ class MergeDialog(wx.Dialog):
         else:
             commonSizer = wx.BoxSizer(wx.HORIZONTAL)
             commonSizer.Add(wx.StaticText(self.panel,label=' Common transformations: '),0,WACV)
-            common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames,
+            common = wx.ComboBox(self.panel,value=self.Common,choices=commonNames[:-1], #not the last one!
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
             common.Bind(wx.EVT_COMBOBOX,OnCommon)
             commonSizer.Add(common,0,WACV)

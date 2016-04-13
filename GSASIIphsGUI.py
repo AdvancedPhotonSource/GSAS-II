@@ -1226,8 +1226,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         finally:
             dlg.Destroy()
         phaseName = newPhase['General']['Name']
+        print phaseName
         sub = G2frame.PatternTree.AppendItem(parent=
-            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=PhaseName)
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.PatternTree.SetItemPyData(sub,newPhase)
 
 ################################################################################

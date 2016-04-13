@@ -3208,7 +3208,11 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if 'list' in str(type(data)):   #single crystal data is 2 dict in list
             refList = data[1]['RefList']
         else:                           #powder data is a dict of dicts; each same structure as SC 2nd dict
-            refList = np.array(data[phaseName]['RefList'])
+            if 'RefList' in data[phaseName]:
+                refList = np.array(data[phaseName]['RefList'])
+            else:
+                wx.MessageBox('No reflection list - do Refine first',caption='Reflection plotting')
+                return
         FoMax = np.max(refList.T[8+Super])
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])
         Hmax = np.array([int(np.max(refList.T[0])),int(np.max(refList.T[1])),int(np.max(refList.T[2]))])
@@ -3232,7 +3236,11 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
         if 'list' in str(type(data)):   #single crystal data is 2 dict in list
             refList = data[1]['RefList']
         else:                           #powder data is a dict of dicts; each same structure as SC 2nd dict
-            refList = np.array(data[phaseName]['RefList'])
+            if 'RefList' in data[phaseName]:
+                refList = np.array(data[phaseName]['RefList'])
+            else:
+                wx.MessageBox('No reflection list - do Refine first',caption='Reflection plotting')
+                return
         refList.T[3+Super] = np.where(refList.T[4+Super]<dMin,-refList.T[3+Super],refList.T[3+Super])
         FoMax = np.max(refList.T[8+Super])
         Hmin = np.array([int(np.min(refList.T[0])),int(np.min(refList.T[1])),int(np.min(refList.T[2]))])

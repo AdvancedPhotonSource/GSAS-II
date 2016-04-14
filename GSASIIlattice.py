@@ -30,6 +30,9 @@ The "*A* tensor" terms are defined as
 # $Id$
 ########### SVN repository information ###################
 import math
+import copy
+import sys
+import random as ran
 import numpy as np
 import numpy.linalg as nl
 import GSASIIpath
@@ -224,7 +227,87 @@ def TransformXYZ(XYZ,Trans,Vec):
 def TransformU6(U6,Trans):
     Uij = np.inner(Trans,np.inner(U6toUij(U6),Trans))
     return UijtoU6(Uij)
-           
+    
+def TransformPhase(oldPhase,newPhase,Trans,Vec):
+    '''Transform atoms from oldPhase to newPhase by Trans & Vec
+    
+    :param oldPhase: dict G2 phase info for old phase
+    :param newPhase: dict G2 phase info for new phase; with new cell & space group
+            atoms are from oldPhase & will be transformed
+    :param Trans: array transformation matrix
+    :param Vec: array transformation vector
+    '''
+    
+    cx,ct,cs,cia = oldPhase['General']['AtomPtrs']
+    SGData = newPhase['General']['SGData']
+    invTrans = nl.inv(Trans)
+    newAtoms = FillUnitCell(oldPhase)
+    for atom in newAtoms:
+        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3],invTrans.T,Vec)
+        if atom[cia] == 'A':
+            atom[cia+2:cia+8] = TransformU6(atom[cia+2:cia+8],invTrans)
+        atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)
+        atom[cia+8] = ran.randint(0,sys.maxint)
+    newPhase['Atoms'] = newAtoms
+#   GetUnique(newPhase)
+    return newPhase
+    
+    
+def FillUnitCell(Phase):
+    atomData = copy.deepcopy(Phase['Atoms'])
+    nAtoms = len(atomData)
+    SGData = Phase['General']['SGData']
+    cx,ct,cs,cia = Phase['General']['AtomPtrs']
+    for atom in atomData[:nAtoms]:
+        XYZ = np.array(atom[cx:cx+3])
+        if atom[cia] == 'A':
+            Uij = atom[cia+2:cia+8]
+            result = G2spc.GenAtom(XYZ,SGData,False,Uij,True)
+            for item in result:
+                atom[cx:cx+3] = item[0]
+                atom[cia+2:cia+8] = item[1]
+                atomData.append(atom[:cia+9])  #not SS stuff
+        else:
+            result = G2spc.GenAtom(XYZ,SGData,False,Move=True)
+            for item in result:
+                atom[cx:cx+3] = item[0]
+                atomData.append(atom[:cia+9])  #not SS stuff
+    return atomData
+       
+def GetUnique(Phase):
+    pass
+#    def noDuplicate(xyz,peaks,Amat):
+#        if True in [np.allclose(np.inner(Amat,xyz),np.inner(Amat,peak),atol=0.5) for peak in peaks]:
+#            return False
+#        return True
+#                            
+#    generalData = data['General']
+#    cell = generalData['Cell'][1:7]
+#    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+#    A = G2lat.cell2A(cell)
+#    SGData = generalData['SGData']
+#    mapPeaks = data['Map Peaks']
+#    Indx = {}
+#    XYZ = {}
+#    for ind in Ind:
+#        XYZ[ind] = np.array(mapPeaks[ind][1:4])
+#        Indx[ind] = True
+#    for ind in Ind:
+#        if Indx[ind]:
+#            xyz = XYZ[ind]
+#            for jnd in Ind:
+#                if ind != jnd and Indx[jnd]:                        
+#                    Equiv = G2spc.GenAtom(XYZ[jnd],SGData,Move=True)
+#                    xyzs = np.array([equiv[0] for equiv in Equiv])
+#                    Indx[jnd] = noDuplicate(xyz,xyzs,Amat)
+#    Ind = []
+#    for ind in Indx:
+#        if Indx[ind]:
+#            Ind.append(ind)
+#    return Ind
+
+
+            
 def calc_rVsq(A):
     """Compute the square of the reciprocal lattice volume (1/V**2) from A'
 

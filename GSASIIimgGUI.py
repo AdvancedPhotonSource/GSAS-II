@@ -21,7 +21,6 @@ import re
 import bisect
 import math
 import time
-import copy
 import sys
 import wx
 import wx.lib.scrolledpanel as wxscroll
@@ -172,6 +171,14 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         data['ellipses'] = []
         G2plt.PlotExposedImage(G2frame,event=event)
             
+    def ResetThresholds():
+        Imin = max(0.,np.min(G2frame.ImageZ))
+        Imax = np.max(G2frame.ImageZ)
+        data['range'] = [(Imin,Imax),[Imin,Imax]]
+        masks['Thresholds'] = [(Imin,Imax),[Imin,Imax]]
+        MaxSizer.GetChildren()[2].Window.SetValue(str(int(Imax)))   #tricky 
+        MaxSizer.GetChildren()[5].Window.SetValue(str(int(Imin)))   #tricky
+         
     def OnIntegrate(event):
         '''Integrate image in response to a menu event or from the AutoIntegrate
         dialog. In the latter case, event=None. 
@@ -357,6 +364,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 File.close()
         finally:
             dlg.Destroy()
+        G2frame.ImageZ = GetImageZ(G2frame,data)
+        ResetThresholds()
         G2plt.PlotExposedImage(G2frame,event=event)
         wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
             
@@ -812,14 +821,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         return dataSizer
         
     def BackSizer():
-        
-        def ResetThresholds():
-            Imin = max(0.,np.min(G2frame.ImageZ))
-            Imax = np.max(G2frame.ImageZ)
-            data['range'] = [(Imin,Imax),[Imin,Imax]]
-            masks['Thresholds'] = [(Imin,Imax),[Imin,Imax]]
-            MaxSizer.GetChildren()[2].Window.SetValue(str(int(Imax)))   #tricky 
-            MaxSizer.GetChildren()[5].Window.SetValue(str(int(Imin)))   #tricky 
         
         def OnBackImage(event):
             data['background image'][0] = backImage.GetValue()

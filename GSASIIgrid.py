@@ -341,9 +341,11 @@ class TransformDialog(wx.Dialog):
 #        else:
         self.Trans = np.eye(3)
         self.Vec = np.zeros(3)
-        self.SpGrp = phase['General']['SGData']['SpGrp']
+        self.oldSpGrp = phase['General']['SGData']['SpGrp']
+        self.oldSGdata = phase['General']['SGData']
+        self.newSpGrp = self.Phase['General']['SGData']['SpGrp']
         self.oldCell = phase['General']['Cell'][1:8]
-        self.newCell = copy.copy(self.oldCell)
+        self.newCell = self.Phase['General']['Cell'][1:8]
         self.Common = 'abc'
         self.Draw()
 
@@ -364,7 +366,16 @@ class TransformDialog(wx.Dialog):
         def OnCommon(event):
             Obj = event.GetEventObject()
             self.Common = Obj.GetValue()
-            self.Trans = commonTrans[self.Common]
+            if '*' in self.Common:
+                A,B = G2lat.cell2AB(self.oldCell[:6])
+                self.newCell[2:5] = [A[2,2],90.,90.]
+                a,b = G2lat.cell2AB(self.newCell[:6])
+                self.Trans = np.inner(a.T,B)    #correct!
+                self.newSpGrp = 'P 1'
+                SGErr,SGData = G2spc.SpcGroup(self.newSpGrp)
+                self.Phase['General']['SGData'] = SGData
+            else:
+                self.Trans = commonTrans[self.Common]
             OnTest(event)
        
         def OnSpaceGroup(event):
@@ -372,7 +383,7 @@ class TransformDialog(wx.Dialog):
             #get rid of extra spaces between fields first
             for fld in Flds: fld = fld.strip()
             SpcGp = ' '.join(Flds)
-            if SpcGp == self.SpGrp: #didn't change it!
+            if SpcGp == self.newSpGrp: #didn't change it!
                 return
             # try a lookup on the user-supplied name
             SpGrpNorm = G2spc.StandardizeSpcName(SpcGp)
@@ -382,7 +393,7 @@ class TransformDialog(wx.Dialog):
                 SGErr,SGData = G2spc.SpcGroup(SpcGp)
             if SGErr:
                 text = [G2spc.SGErrors(SGErr)+'\nSpace Group set to previous']
-                SGTxt.SetValue(self.SpGrp)
+                SGTxt.SetValue(self.newSpGrp)
                 msg = 'Space Group Error'
                 Style = wx.ICON_EXCLAMATION
                 Text = '\n'.join(text)
@@ -390,7 +401,7 @@ class TransformDialog(wx.Dialog):
             else:
                 text,table = G2spc.SGPrint(SGData)
                 self.Phase['General']['SGData'] = SGData
-                self.SpGrp = SpcGp
+                self.newSpGrp = SpcGp
                 SGTxt.SetValue(self.Phase['General']['SGData']['SpGrp'])
                 msg = 'Space Group Information'
                 SGMessageBox(self.panel,msg,text,table).Show()
@@ -453,7 +464,7 @@ class TransformDialog(wx.Dialog):
         mainSizer.Add(wx.StaticText(self.panel,label=' volume = %.3f'%(self.newCell[6])),0,WACV)
         sgSizer = wx.BoxSizer(wx.HORIZONTAL)
         sgSizer.Add(wx.StaticText(self.panel,label='  Space group: '),0,WACV)
-        SGTxt = wx.TextCtrl(self.panel,value=self.SpGrp,style=wx.TE_PROCESS_ENTER)
+        SGTxt = wx.TextCtrl(self.panel,value=self.newSpGrp,style=wx.TE_PROCESS_ENTER)
         SGTxt.Bind(wx.EVT_TEXT_ENTER,OnSpaceGroup)
         SGTxt.Bind(wx.EVT_KILL_FOCUS,OnSpaceGroup)
         sgSizer.Add(SGTxt,0,WACV)

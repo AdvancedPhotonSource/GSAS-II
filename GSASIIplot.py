@@ -125,7 +125,7 @@ class G2PlotOgl(_tabPlotWin):
         else:                               #fix from Jim Hester for X systems
             attribs = (wx.glcanvas.WX_GL_DOUBLEBUFFER,)
             self.canvas = wx.glcanvas.GLCanvas(self,-1,attribList=attribs,**kwargs)
-        # create GL context for wx > 2.8
+        # create GL context
         i,j= wx.__version__.split('.')[0:2]
         if int(i)+int(j)/10. > 2.8:
             self.context = wx.glcanvas.GLContext(self.canvas)
@@ -1112,7 +1112,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
         RenderUnitVectors(0,0,0,labxyz=['h','k','l'])
         RenderDots(HKL,RC)
         time0 = time.time()
-        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
+        if Page.context: Page.canvas.SetCurrent(Page.context)
         Page.canvas.SwapBuffers()
 
     # PlotStructure execution starts here (N.B. initialization above)
@@ -5655,7 +5655,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Backbone = Backbones[chain]
                 RenderBackbone(Backbone,BackboneColor,bondR)
 #        print time.time()-time0
-        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
+        if Page.context: Page.canvas.SetCurrent(Page.context)
         Page.canvas.SwapBuffers()
         
     def OnSize(event):
@@ -5962,7 +5962,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
             RenderSphere(x,y,z,radius,color)
             RenderBonds(x,y,z,Bonds[iat],0.05,color)
             RenderLabel(x,y,z,'  '+atNames[iat],matRot)
-        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
+        if Page.context: Page.canvas.SetCurrent(Page.context)
         Page.canvas.SwapBuffers()
 
     def OnSize(event):
@@ -6348,7 +6348,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             RenderBonds(x,y,z,Bonds[iat],0.05,color)
             if Page.labels:
                 RenderLabel(x,y,z,'  '+AtNames[iat],matRot)
-        if Page.context: Page.canvas.SetCurrent(Page.context)    # wx 2.9 fix
+        if Page.context: Page.canvas.SetCurrent(Page.context)
         Page.canvas.SwapBuffers()
 
     def OnSize(event):

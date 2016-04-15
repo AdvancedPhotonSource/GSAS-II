@@ -82,6 +82,8 @@ def GetImageZ(G2frame,data):
             darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
             backImage += darkImage*darkScale                
         sumImg += backImage*backScale
+    if darkImg: del darkImg         #force cleanup
+    if backImg: del backImg
     sumImg -= data.get('Flat Bkg',0.)
     return sumImg
     
@@ -194,6 +196,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         try:
             sumImg = GetImageZ(G2frame,data)
             G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,dlg)
+            del sumImg  #force cleanup
             Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
             G2frame.PatternId = Id
             G2frame.PatternTree.SelectItem(Id)
@@ -242,6 +245,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                                 Masks = G2frame.PatternTree.GetItemPyData(
                                     G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'))
                                 G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
+                                del image   #force cleanup
                                 pId = G2IO.SaveIntegration(G2frame,Id,Data)
                             finally:
                                 dlgp.Destroy()
@@ -2314,9 +2318,8 @@ class AutoIntFrame(wx.Frame):
         G2frame.PickId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls')
         # do integration
         size,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(imgId)
-#        G2frame.ImageZ = G2IO.GetImageData(G2frame,imagefile,True,imagetag)     #pointless since done in OnIntegrate?
         masks = G2frame.PatternTree.GetItemPyData(
-                G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
         data = G2frame.PatternTree.GetItemPyData(G2frame.PickId)
         # simulate a Image Controls press, since that is where the
         # integration is hidden

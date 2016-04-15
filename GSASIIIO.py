@@ -24,6 +24,7 @@ Also includes base classes for data import routines.
 import wx
 import math
 import numpy as np
+import copy
 import cPickle
 import sys
 import re

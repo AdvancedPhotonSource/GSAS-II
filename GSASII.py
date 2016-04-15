@@ -752,9 +752,8 @@ class GSASII(wx.Frame):
         '''
         # look up which format was requested
         reqrdr = self.ImportMenuId.get(event.GetId())
-        rdlist = self.OnImportGeneric(reqrdr,
-                                  self.ImportImageReaderlist,
-                                  'image',multiple=True,Preview=False)
+        rdlist = self.OnImportGeneric(reqrdr,self.ImportImageReaderlist,
+            'image',multiple=True,Preview=False)
         if not rdlist: return
         first = True
         for rd in rdlist:

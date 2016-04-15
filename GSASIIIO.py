@@ -272,19 +272,6 @@ def EditImageParms(parent,Data,Comments,Image,filename):
     dlg.CenterOnParent()
     dlg.ShowModal()
     
-def ReadLoadImage(imagefile,G2frame):
-    '''Read a GSAS-II image file and load it into the data tree
-    Called only from GSASII.OnImageRead (depreciated).
-    '''
-    # if a zip file, open and extract
-    if os.path.splitext(imagefile)[1].lower() == '.zip':
-        extractedfile = ExtractFileFromZip(imagefile,parent=G2frame)
-        if extractedfile is not None and extractedfile != imagefile:
-            imagefile = extractedfile
-    Comments,Data,Npix,Image = GetImageData(G2frame,imagefile) # can only read 1st image
-    if Comments:
-        LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image)
-    
 def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     '''Load an image into the tree. Saves the location of the image, as well as the
     ImageTag (where there is more than one image in the file), if defined.

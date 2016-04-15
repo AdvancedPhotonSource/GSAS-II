@@ -338,7 +338,8 @@ class GSASII(wx.Frame):
         return False
     
     def OnImportGeneric(self,reader,readerlist,label,multiple=False,
-                        usedRanIdList=[],Preview=True):
+                        usedRanIdList=[],Preview=True,
+                        load2Tree=False):
         '''Used for all imports, including Phases, datasets, images...
 
         Called from :meth:`GSASII.OnImportPhase`, :meth:`GSASII.OnImportImage`,
@@ -379,7 +380,10 @@ class GSASII(wx.Frame):
 
         :param bool Preview: indicates if a preview of the file should
           be shown. Default is True, but set to False for image files
-          which are all binary. 
+          which are all binary.
+
+        :param bool load2Tree: indicates if the file should be loaded
+          into the data tree immediately (used for images only)
 
         :returns: a list of reader objects (rd_list) that were able
           to read the specified file(s). This list may be empty. 
@@ -517,7 +521,16 @@ class GSASII(wx.Frame):
                             rd.errors += "\n  Traceback info:\n"+str(traceback.format_exc())
                     if flag: # this read succeeded
                         rd.readfilename = filename
-                        rd_list.append(copy.deepcopy(rd)) # save the result before it is written over
+                        if load2Tree:
+                            if rd.repeatcount == 1 and not rd.repeat: # skip image number if only one in set
+                                rd.Data['ImageTag'] = None
+                            else:
+                                rd.Data['ImageTag'] = rd.repeatcount
+                            G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
+                            rd_list.append(True) # save a stub the result before it is written over
+                            del rd.Image
+                        else:                                                   
+                            rd_list.append(copy.deepcopy(rd)) # save the result before it is written over
                         if rd.repeat:
                             repeat = True
                         continue
@@ -750,22 +763,15 @@ class GSASII(wx.Frame):
 
         A reader object is filled each time an image is read. 
         '''
+        self.CheckNotebook()
         # look up which format was requested
         reqrdr = self.ImportMenuId.get(event.GetId())
-        rdlist = self.OnImportGeneric(reqrdr,self.ImportImageReaderlist,
-            'image',multiple=True,Preview=False)
-        if not rdlist: return
-        first = True
-        for rd in rdlist:
-            if first:
-                first = False
-                self.CheckNotebook()
-            if rd.repeatcount == 1 and not rd.repeat: # skip image number if only one in set
-                rd.Data['ImageTag'] = None
-            else:
-                rd.Data['ImageTag'] = rd.repeatcount
-            G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
-        self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,self.Image,'Image Controls'))             #show last image to have beeen read
+        rdlist = self.OnImportGeneric(reqrdr,
+                    self.ImportImageReaderlist,
+                    'image',multiple=True,Preview=False,
+                    load2Tree=True)
+        if rdlist: 
+            self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,self.Image,'Image Controls'))             #show last image to have beeen read
                     
     def _Add_ImportMenu_Sfact(self,parent):
         '''configure the Import Structure Factor menus accord to the readers found in _init_Imports
@@ -2266,6 +2272,7 @@ class GSASII(wx.Frame):
         plotFrame = wx.Frame(None,-1,'GSASII Plots',size=wx.Size(700,600), \
             style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
         self.G2plotNB = G2plt.G2PlotNoteBook(plotFrame)
+        #self.G2plotNB = G2plt.G2PlotNoteBook(plotFrame,G2frame=self)
         plotFrame.Show()
         
         self.dataDisplay = None
@@ -2507,37 +2514,8 @@ class GSASII(wx.Frame):
                         
     def OnImageRead(self,event):
         '''Called to read in an image in any known format. *** Depreciated. ***
-        Note: When removed, G2IO.ReadLoadImage can also be removed
         '''
         G2G.G2MessageBox(self,'Please use the Import/Image/... menu item rather than this','depreciating menu item')
-        self.CheckNotebook()
-        dlg = wx.FileDialog(
-            self, 'Choose image files', '.', '',
-            'Any supported image file (*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.stl;*.G2img;*.png)|'
-            '*.edf;*.tif;*.tiff;*.mar*;*.ge*;*.avg;*.sum;*.img;*.stl;*.G2img;*.png;*.zip|'
-            'European detector file (*.edf)|*.edf|'
-            'Any detector tif (*.tif;*.tiff)|*.tif;*.tiff|'
-            'MAR file (*.mar*)|*.mar*|'
-            'GE Image (*.ge*;*.avg;*.sum)|*.ge*;*.avg;*.sum|'
-            'ADSC Image (*.img)|*.img|'
-            'Rigaku R-Axis IV (*.stl)|*.stl|'
-            'GSAS-II Image (*.G2img)|*.G2img|'
-            'Portable Network Graphics image (*.png)|*.png|'
-            'Zip archive (*.zip)|*.zip|'
-            'All files (*.*)|*.*',
-            wx.OPEN | wx.MULTIPLE)
-        try:
-            if dlg.ShowModal() == wx.ID_OK:
-                imagefiles = dlg.GetPaths()
-                imagefiles.sort()
-                for imagefile in imagefiles:
-                    G2IO.ReadLoadImage(imagefile,self)
-                os.chdir(dlg.GetDirectory())           # to get Mac/Linux to change directory!
-                self.PatternTree.SelectItem(G2gd.GetPatternTreeItemId(self,self.Image,'Image Controls'))             #show last image to be read
-        finally:
-            path = dlg.GetDirectory()           # to get Mac/Linux to change directory!
-            os.chdir(path)
-            dlg.Destroy()
 
     def CheckNotebook(self):
         '''Make sure the data tree has the minimally expected controls.

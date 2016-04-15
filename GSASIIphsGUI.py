@@ -43,6 +43,7 @@ import GSASIIplot as G2plt
 import GSASIIgrid as G2gd
 import GSASIIIO as G2IO
 import GSASIIstrMain as G2stMn
+import GSASIIstrIO as G2strIO
 import GSASIImath as G2mth
 import GSASIIpwd as G2pwd
 import GSASIIpy3 as G2py3
@@ -2586,9 +2587,44 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             UpdateLayerData()
             
         def OnImportLayer(event):
-            print 'Import atoms for a layer - TBD'
-            #from where? DIFFaX files? other phases? NB: transformation issues
-            event.Skip()
+            dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
+                wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.OPEN| wx.CHANGE_DIR)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    GPXFile = dlg.GetPath()
+                    phaseNames = G2strIO.GetPhaseNames(GPXFile)
+            finally:
+                dlg.Destroy()
+            dlg = wx.SingleChoiceDialog(G2frame,'Phase to use for layer','Select',phaseNames)
+            if dlg.ShowModal() == wx.ID_OK:
+                sel = dlg.GetSelection()
+                PhaseName = phaseNames[sel]
+            else:
+                return
+            Phase = G2strIO.GetAllPhaseData(GPXFile,PhaseName)
+            #need cell compatibility check here
+            Layer = {'Name':Phase['General']['Name'],'SameAs':'','Symm':'None'}
+            cx,ct,cs,cia = Phase['General']['AtomPtrs']
+            atoms = Phase['Atoms']
+            Atoms = []
+            for atom in atoms:
+                x,y,z,f = atom[cx:cx+4]
+                u = atom[cia+1]
+                if not u: u = 0.01
+                Atoms.append([atom[ct-1],atom[ct],x,y,z,f,u])
+                if atom[ct] not in data['Layers']['AtInfo']:
+                    data['Layers']['AtInfo'][atom[ct]] = G2elem.GetAtomInfo(atom[ct])
+            Layer['Atoms'] = Atoms
+            data['Layers']['Layers'].append(Layer)
+            Trans = data['Layers']['Transitions']
+            if len(Trans):
+                Trans.append([[0.,0.,0.,0.,'',False] for trans in Trans])
+                for trans in Trans:
+                    trans.append([0.,0.,0.,0.,'',False])
+            else:
+                Trans = [[[1.,0.,0.,0.,'',False],],]
+            data['Layers']['Transitions'] = Trans
+            UpdateLayerData()
             
         def LayerSizer(il,Layer):
             

@@ -1,2 +1,2 @@
-Built 12/23/15 on Debian 8 (jessie) on VM
-Python (2.7.11); scons 2.3.0; numpy 1.9.2 from anaconda
+Built 4/15/16 on Jenkins/crackle-vm with project GSAS-II-crackle
+miniconda 4.0.5 (python-2.7.11-0) gfortran 4.4.7

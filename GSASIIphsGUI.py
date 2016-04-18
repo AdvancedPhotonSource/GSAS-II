@@ -1212,12 +1212,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         SetPhaseWindow(G2frame.dataFrame,General,mainSizer,Scroll)
         
     def OnTransform(event):
-        '''What is needed here? Get user to refer to Intl. Tables 1A (or Bilbao server) & use new
-        space group, cell transformation & origin displacement (if needed) given therein.
-        Do this in popup dialog box with OK, Cancel buttons; if OK
-        apply to lattice parameters & atom position/Uij parameters
-        need to start with full unit cell contents, transform & then filter out symm. equiv.
-        '''
         dlg = G2gd.TransformDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -1228,6 +1222,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             dlg.Destroy()
         phaseName = newPhase['General']['Name']
         newPhase = G2lat.TransformPhase(data,newPhase,Trans,Vec)
+        newPhase['General']['Map'] = mapDefault.copy()
         sub = G2frame.PatternTree.AppendItem(parent=
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.PatternTree.SetItemPyData(sub,newPhase)

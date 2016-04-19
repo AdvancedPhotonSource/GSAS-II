@@ -260,19 +260,21 @@ def FillUnitCell(Phase):
     cx,ct,cs,cia = Phase['General']['AtomPtrs']
     for atom in Atoms:
         XYZ = np.array(atom[cx:cx+3])
+        xyz = XYZ%1.
+        unit = XYZ-xyz
         if atom[cia] == 'A':
             Uij = atom[cia+2:cia+8]
-            result = G2spc.GenAtom(XYZ,SGData,False,Uij,True)
+            result = G2spc.GenAtom(xyz,SGData,False,Uij,True)
             for item in result:
                 if item[0][2] >= .95: item[0][2] -= 1.
-                atom[cx:cx+3] = item[0]
+                atom[cx:cx+3] = item[0]+unit
                 atom[cia+2:cia+8] = item[1]
                 atomData.append(atom[:cia+9])  #not SS stuff
         else:
             result = G2spc.GenAtom(XYZ,SGData,False,Move=True)
             for item in result:
                 if item[0][2] >= .95: item[0][2] -= 1.
-                atom[cx:cx+3] = item[0]
+                atom[cx:cx+3] = item[0]+unit
                 atomData.append(atom[:cia+9])  #not SS stuff
     return atomData
        

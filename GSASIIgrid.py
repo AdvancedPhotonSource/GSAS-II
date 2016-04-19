@@ -354,13 +354,23 @@ class TransformDialog(wx.Dialog):
         def OnMatValue(event):
             Obj = event.GetEventObject()
             ix,iy = Ind[Obj.GetId()]
-            self.Trans[iy,ix] = float(Obj.GetValue())
+            val = Obj.GetValue()
+            if '/' in val:
+                vals = val.split('/')
+                self.Trans[iy,ix] = float(vals[0])/float(vals[1])
+            else:    
+                self.Trans[iy,ix] = float(Obj.GetValue())
             Obj.SetValue('%5.3f'%(self.Trans[iy,ix]))
             
         def OnVecValue(event):
             Obj = event.GetEventObject()
             iy = Ind[Obj.GetId()]
-            self.Vec[iy] = float(Obj.GetValue())
+            val = Obj.GetValue()
+            if '/' in val:
+                vals = val.split('/')
+                self.Vec[iy] = float(vals[0])/float(vals[1])
+            else:    
+                self.Vec[iy] = float(Obj.GetValue())
             Obj.SetValue('%5.3f'%(self.Vec[iy]))
                 
         def OnCommon(event):

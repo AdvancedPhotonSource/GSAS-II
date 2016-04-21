@@ -814,7 +814,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         dataSizer.Add(fullIntegrate,0,WACV)
         fullIntegrate.Bind(wx.EVT_CHECKBOX, OnFullIntegrate)
         fullIntegrate.SetValue(data['fullIntegrate'])
-        setDefault = wx.CheckBox(parent=G2frame.dataDisplay,label='Use as default for all images?')
+        setDefault = wx.CheckBox(parent=G2frame.dataDisplay,label='Use for all new images?')
         dataSizer.Add(setDefault,0,WACV)
         setDefault.Bind(wx.EVT_CHECKBOX, OnSetDefault)
         setDefault.SetValue(data['setDefault'])
@@ -1707,13 +1707,7 @@ def UpdateStressStrain(G2frame,data):
                     goodnames.append(name)
                     id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
                     Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Id)
-                    image = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-                    dark = Controls['dark image']
-                    if dark[0]:
-                        id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,dark[0])
-                        Npix,darkfile,imagetag = G2frame.PatternTree.GetImageLoc(id)
-                        darkImg = G2IO.GetImageData(G2frame,darkfile,True,ImageTag=imagetag)
-                        image += dark[1]*darkImg
+                    image = GetImageZ(G2frame,Controls)
                     G2img.FitStrSta(image,StaCtrls,Controls)
                     G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)
                     parmDict = {'Sample load':StaCtrls['Sample load'],}

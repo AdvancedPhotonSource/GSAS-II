@@ -52,6 +52,9 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 
 def GetImageZ(G2frame,data):
     '''Gets image & applies dark, background & flat background corrections
+    :param wx.Frame G2frame: main GSAS-II frame
+    param: dict data: Image Controls dictionary
+    return: array sumImg: corrected image for background/dark/flat back
     '''
     
     Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)
@@ -62,29 +65,34 @@ def GetImageZ(G2frame,data):
     darkImg,darkScale = data['dark image']
     if darkImg:
         Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
-        Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
-        imagefile = G2IO.CheckImageFile(G2frame,imagefile)
-        darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-        sumImg += darkImage*darkScale
+        if Did:
+            Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
+            imagefile = G2IO.CheckImageFile(G2frame,imagefile)
+            darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+            sumImg += darkImage*darkScale
     if not 'background image' in data:
         return sumImg
     backImg,backScale = data['background image']            
     if backImg:     #ignores any transmission effect in the background image
         Bid = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, backImg)
-        Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Bid)
-        imagefile = G2IO.CheckImageFile(G2frame,imagefile)
-        backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-        Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Bid,'Image Controls'))
-        if darkImg:
-            Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,darkImg)
-            Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
+        if Bid:
+            Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Bid)
             imagefile = G2IO.CheckImageFile(G2frame,imagefile)
-            darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-            backImage += darkImage*darkScale                
-        sumImg += backImage*backScale
+            backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+            Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Bid,'Image Controls'))
+            if darkImg:
+                Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,darkImg)
+                Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
+                imagefile = G2IO.CheckImageFile(G2frame,imagefile)
+                darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+                backImage += darkImage*darkScale                
+            sumImg += backImage*backScale
     if darkImg: del darkImg         #force cleanup
     if backImg: del backImg
     sumImg -= data.get('Flat Bkg',0.)
+    Imin = max(0.,np.min(sumImg))
+    Imax = np.max(sumImg)
+    data['range'] = [(Imin,Imax),[Imin,Imax]]
     return sumImg
     
 
@@ -176,8 +184,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     def ResetThresholds():
         Imin = max(0.,np.min(G2frame.ImageZ))
         Imax = np.max(G2frame.ImageZ)
-        data['range'] = [(Imin,Imax),[Imin,Imax]]
-        masks['Thresholds'] = [(Imin,Imax),[Imin,Imax]]
+        data['range'] = [(0,Imax),[Imin,Imax]]
+        masks['Thresholds'] = [(0,Imax),[Imin,Imax]]
         MaxSizer.GetChildren()[2].Window.SetValue(str(int(Imax)))   #tricky 
         MaxSizer.GetChildren()[5].Window.SetValue(str(int(Imin)))   #tricky
          
@@ -206,103 +214,77 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         for item in G2frame.MakePDF: item.Enable(True)
         
     def OnIntegrateAll(event):
-        TextList = [[False,'All IMG',0]]
-#        Names = []
-        if G2frame.PatternTree.GetCount():
-            id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-            while id:
-                name = G2frame.PatternTree.GetItemText(id)
-                if 'IMG' in name:
-                    TextList.append([False,name,id])
-                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            if len(TextList) == 1:
-                G2frame.ErrorDialog('Nothing to integrate','There must some "IMG" patterns')
-                return
-            dlg = G2frame.CopyDialog(G2frame,'Image integration controls','Select images to integrate:',TextList)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetData()
-                    if result[0][0]:                    #the 'All IMG' is True
-                        result = TextList[1:]
-                        for item in result: item[0] = True
-                    G2frame.EnablePlot = False
-                    for item in result:
-                        ifintegrate,name,id = item
-                        G2frame.Image = id
-                        if ifintegrate:
-                            Id = G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')
-                            Data = G2frame.PatternTree.GetItemPyData(Id)
-                            blkSize = 128   #this seems to be optimal; will break in polymask if >1024
-                            Nx,Ny = Data['size']
-                            nXBlks = (Nx-1)/blkSize+1
-                            nYBlks = (Ny-1)/blkSize+1
-                            Nup = nXBlks*nYBlks*3+3
-                            dlgp = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
-                                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-                            try:
-#                                GSASIIpath.IPyBreak()
-                                image = GetImageZ(G2frame,Data)
-                                Masks = G2frame.PatternTree.GetItemPyData(
-                                    G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'))
-                                G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
-                                del image   #force cleanup
-                                pId = G2IO.SaveIntegration(G2frame,Id,Data)
-                            finally:
-                                dlgp.Destroy()
-                    else:
-                        G2frame.EnablePlot = True
-                        G2frame.PatternTree.SelectItem(pId)
-                        G2frame.PatternTree.Expand(pId)
-                        G2frame.PatternId = pId
-                        
-            finally:
-                dlg.Destroy()
+        Names = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Image integration controls','Select images to integrate:',Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                items = dlg.GetSelections()
+                G2frame.EnablePlot = False
+                for item in items:
+                    name = Names[item]
+                    G2frame.Image = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                    CId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Image Controls')
+                    Data = G2frame.PatternTree.GetItemPyData(CId)
+                    blkSize = 128   #this seems to be optimal; will break in polymask if >1024
+                    Nx,Ny = Data['size']
+                    nXBlks = (Nx-1)/blkSize+1
+                    nYBlks = (Ny-1)/blkSize+1
+                    Nup = nXBlks*nYBlks*3+3
+                    dlgp = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
+                        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+                    try:
+                        image = GetImageZ(G2frame,Data)
+                        Masks = G2frame.PatternTree.GetItemPyData(
+                            G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Masks'))
+                        G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
+                        del image   #force cleanup
+                        pId = G2IO.SaveIntegration(G2frame,CId,Data)
+                    finally:
+                        dlgp.Destroy()
+                else:
+                    G2frame.EnablePlot = True
+                    G2frame.PatternTree.SelectItem(pId)
+                    G2frame.PatternTree.Expand(pId)
+                    G2frame.PatternId = pId
+#                        GSASIIpath.IPyBreak()
+        finally:
+            dlg.Destroy()
         
     def OnCopyControls(event):
-        TextList = [[False,'All IMG',0]]
-#        Names = []
-        if G2frame.PatternTree.GetCount():
-            id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-            while id:
-                name = G2frame.PatternTree.GetItemText(id)
-#                Names.append(name)
-                if 'IMG' in name:
-                    if id == G2frame.Image:
-                        Source = name
-                        Data = copy.deepcopy(data)
-#                        Data = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')))
-                        Data['showLines'] = True
-                        Data['ring'] = []
-                        Data['rings'] = []
-                        Data['ellipses'] = []
-                        Data['setDefault'] = False
-                    else:
-                        TextList.append([False,name,id])
-                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            if len(TextList) == 1:
-                G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "IMG" pattern')
-                return
-            dlg = G2frame.CopyDialog(G2frame,'Copy image controls','Copy controls from '+Source+' to:',TextList)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetData()
-                    if result[0][0]:
-                        result = TextList[1:]
-                        for item in result: item[0] = True
-                    for i,item in enumerate(result):
-                        ifcopy,name,id = item
-                        if ifcopy:
-                            oldData = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls')))
-                            Data['range'] = oldData['range']
-                            Data['size'] = oldData['size']
-                            Data['GonioAngles'] = oldData.get('GonioAngles', [0.,0.,0.])
-                            Data['ring'] = []
-                            Data['rings'] = []
-                            Data['ellipses'] = []
-                            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Image Controls'),copy.deepcopy(Data))
-            finally:
-                dlg.Destroy()
-                G2frame.PatternTree.SelectItem(G2frame.PickId)
+        Names = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+        if len(Names) == 1:
+            G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "IMG" pattern')
+            return
+# set up source
+        Data = copy.deepcopy(data)
+        Data['showLines'] = True
+        Data['ring'] = []
+        Data['rings'] = []
+        Data['ellipses'] = []
+        Data['setDefault'] = False
+        Source = G2frame.PatternTree.GetItemText(G2frame.Image)
+        Names.pop(Names.index(Source))
+# select targets & do copy
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy image controls','Copy controls from '+Source+' to:',Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                items = dlg.GetSelections()
+                G2frame.EnablePlot = False
+                for item in items:
+                    name = Names[item]
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                    CId = G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls')
+                    oldData = copy.deepcopy(G2frame.PatternTree.GetItemPyData(CId))
+#                    Data['range'] = oldData['range']
+                    Data['size'] = oldData['size']
+                    Data['GonioAngles'] = oldData.get('GonioAngles', [0.,0.,0.])
+                    Data['ring'] = []
+                    Data['rings'] = []
+                    Data['ellipses'] = []
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Image Controls'),copy.deepcopy(Data))
+        finally:
+            dlg.Destroy()
+            G2frame.PatternTree.SelectItem(G2frame.PickId)
                 
     def OnSaveControls(event):
         pth = G2G.GetExportPath(G2frame)
@@ -1190,43 +1172,29 @@ def UpdateMasks(G2frame,data):
         G2plt.PlotExposedImage(G2frame,event=event)
 
     def OnCopyMask(event):
-        TextList = [[False,'All IMG',0]]
-#        Names = []
-        if G2frame.PatternTree.GetCount():
-            id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-            while id:
-                name = G2frame.PatternTree.GetItemText(id)
-#                Names.append(name)
-                if 'IMG' in name:
-                    if id == G2frame.Image:
-                        Source = name
-                        Mask = copy.deepcopy(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Masks')))
-                        Thresh = Mask.pop('Thresholds')  #remove Thresholds from source mask & save it for later
-                    else:
-                        TextList.append([False,name,id])
-                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            if len(TextList) == 1:
-                G2frame.ErrorDialog('Nothing to copy mask to','There must be more than one "IMG" pattern')
-                return
-            dlg = G2frame.CopyDialog(G2frame,'Copy mask information','Copy mask from '+Source+' to:',TextList)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetData()
-                    if result[0][0]:
-                        result = TextList[1:]
-                        for item in result: item[0] = True
-                    for i,item in enumerate(result):
-                        ifcopy,name,id = item
-                        if ifcopy:
-                            mask = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'))
-#                            Mask['Thresholds'][0] = mask['Thresholds'][0]
-#                            Mask['Thresholds'][1][1] = min(mask['Thresholds'][1][1],Mask['Thresholds'][1][1])
-                            mask.update(Mask)
-                            mask['Thresholds'][1][0] = Thresh[1][0]  #copy only lower threshold                             
-                            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Masks'),copy.deepcopy(mask))
-            finally:
-                dlg.Destroy()
-                
+        Names = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+        if len(Names) == 1:
+            G2frame.ErrorDialog('Nothing to copy masks to','There must be more than one "IMG" pattern')
+            return
+        Source = G2frame.PatternTree.GetItemText(G2frame.Image)
+        Names.pop(Names.index(Source))
+        Data = copy.deepcopy(data)
+        Thresh = Data.pop('Thresholds')     # & remove it as well
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy mask data','Copy masks from '+Source+' to:',Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                items = dlg.GetSelections()
+                for item in items:
+                    name = Names[item]
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                    MId = G2gd.GetPatternTreeItemId(G2frame,Id,'Masks')
+                    Mask = copy.deepcopy(G2frame.PatternTree.GetItemPyData(MId))
+                    Mask.update(Data)
+                    Mask['Thresholds'][1][0] = Thresh[1][0]  #copy only lower threshold 
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Masks'),Mask)
+        finally:
+            dlg.Destroy()
+
     def OnSaveMask(event):
         CleanupMasks(data)
         pth = G2G.GetExportPath(G2frame)
@@ -1512,38 +1480,29 @@ def UpdateStressStrain(G2frame,data):
         UpdateStressStrain(G2frame,data)
             
     def OnCopyStrSta(event):
-        TextList = [[False,'All IMG',0,0]]
-#        Names = []
-        if G2frame.PatternTree.GetCount():
-            id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-            while id:
-                name = G2frame.PatternTree.GetItemText(id)
-#                Names.append(name)
-                if 'IMG' in name:
-                    Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'))
-                    if id == G2frame.Image:
-                        Source = name
-                    else:
-                        TextList.append([False,name,id,Data.get('Sample load',0.0)])
-                id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            if len(TextList) == 1:
-                G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "IMG" pattern')
-                return
-            dlg = G2frame.CopyDialog(G2frame,'Copy stress/strain controls','Copy controls from '+Source+' to:',TextList)
-            try:
-                if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetData()
-                    if result[0][0]:
-                        result = TextList[1:]
-                        for item in result: item[0] = True
-                    for i,item in enumerate(result):
-                        ifcopy,name,id,load = item
-                        if ifcopy:
-                            Data = copy.deepcopy(data)
-                            Data['Sample load'] = load
-                            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'Stress/Strain'),Data)
-            finally:
-                dlg.Destroy()
+        Names = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+        if len(Names) == 1:
+            G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "IMG" pattern')
+            return
+        Source = G2frame.PatternTree.GetItemText(G2frame.Image)
+        Names.pop(Names.index(Source))
+#        GSASIIpath.IPyBreak()
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy stress/strain controls','Copy controls from '+Source+' to:',Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                items = dlg.GetSelections()
+                for item in items:
+                    name = Names[item]
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                    CId = G2gd.GetPatternTreeItemId(G2frame,Id,'Stress/Strain')
+                    oldData = G2frame.PatternTree.GetItemPyData(CId)
+                    load = oldData.get('Sample load',0.0)
+                    Data = copy.deepcopy(data)
+                    Data['Sample load'] = load
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Stress/Strain'),Data)
+        finally:
+            dlg.Destroy()
+            G2frame.PatternTree.SelectItem(G2frame.PickId)
 
     def OnLoadStrSta(event):
         pth = G2G.GetImportPath(G2frame)
@@ -1673,71 +1632,66 @@ def UpdateStressStrain(G2frame,data):
         G2plt.PlotStrain(G2frame,data,newPlot=True)
         
     def OnFitAllStrSta(event):
-        TextList = [[False,'All IMG',0]]
-#        Names = []
-        if G2frame.PatternTree.GetCount():
-            choices = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
-            if len(choices) == 1:
-                G2frame.ErrorDialog('Nothing to fit','There must some "IMG" patterns')
-                return
-            sel = []
-            dlg = G2G.G2MultiChoiceDialog(G2frame,'Stress/Strain fitting','Select images to fit:',choices)
-            dlg.SetSelections(sel)
-            names = []
-            if dlg.ShowModal() == wx.ID_OK:
-                for sel in dlg.GetSelections():
-                    names.append(choices[sel])
-            dlg.Destroy()
-            SeqResult = {}
-            dlg = wx.ProgressDialog('Sequential IMG Strain fit','Data set name = '+names[0],len(names), 
-                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)          
-            wx.BeginBusyCursor()
-            goodnames = []
-            try:
-                for i,name in enumerate(names):
-                    print ' Sequential strain fit for ',name
-                    GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
-                    if not GoOn:
-                        break
-                    Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
-                    Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Image Controls'))
-                    StaCtrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Stress/Strain'))
-                    if not len(StaCtrls['d-zero']):
-                        continue
-                    goodnames.append(name)
-                    id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
-                    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Id)
-                    image = GetImageZ(G2frame,Controls)
-                    G2img.FitStrSta(image,StaCtrls,Controls)
-                    G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)
-                    parmDict = {'Sample load':StaCtrls['Sample load'],}
-                    varyNames = ['e11','e12','e22']
-                    sig = []
-                    varyList = []
-                    variables = []
-                    for i,item in enumerate(StaCtrls['d-zero']):
-                        variables += item['Emat']
-                        sig += item['Esig']
-                        varylist = ['%d%s%s'%(i,';',Name) for Name in varyNames]
-                        varyList += varylist
-                        parmDict.update(dict(zip(varylist,item['Emat'])))
-                        parmDict['%d:Dcalc'%(i)] = item['Dcalc']
-                    SeqResult[name] = {'variables':variables,'varyList':varyList,'sig':sig,'Rvals':[],
-                        'covMatrix':np.eye(len(variables)),'title':name,'parmDict':parmDict}
-                else:
-                    SeqResult['histNames'] = goodnames
-                    dlg.Destroy()
-                    print ' ***** Sequential strain refinement successful *****'
-            finally:
-                wx.EndBusyCursor()    
-            Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results')
-            if Id:
-                G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        choices = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+        sel = []
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Stress/Strain fitting','Select images to fit:',choices)
+        dlg.SetSelections(sel)
+        names = []
+        if dlg.ShowModal() == wx.ID_OK:
+            for sel in dlg.GetSelections():
+                names.append(choices[sel])
+        dlg.Destroy()
+        SeqResult = {}
+        dlg = wx.ProgressDialog('Sequential IMG Strain fit','Data set name = '+names[0],len(names), 
+            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)          
+        wx.BeginBusyCursor()
+        goodnames = []
+        try:
+            for i,name in enumerate(names):
+                print ' Sequential strain fit for ',name
+                GoOn = dlg.Update(i,newmsg='Data set name = '+name)[0]
+                if not GoOn:
+                    break
+                Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                G2frame.Image = Id
+                Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Image Controls'))
+                StaCtrls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Stress/Strain'))
+                if not len(StaCtrls['d-zero']):
+                    continue
+                goodnames.append(name)
+                id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
+                Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Id)
+                image = GetImageZ(G2frame,Controls)
+                G2img.FitStrSta(image,StaCtrls,Controls)
+                G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)
+                parmDict = {'Sample load':StaCtrls['Sample load'],}
+                varyNames = ['e11','e12','e22']
+                sig = []
+                varyList = []
+                variables = []
+                for i,item in enumerate(StaCtrls['d-zero']):
+                    variables += item['Emat']
+                    sig += item['Esig']
+                    varylist = ['%d%s%s'%(i,';',Name) for Name in varyNames]
+                    varyList += varylist
+                    parmDict.update(dict(zip(varylist,item['Emat'])))
+                    parmDict['%d:Dcalc'%(i)] = item['Dcalc']
+                SeqResult[name] = {'variables':variables,'varyList':varyList,'sig':sig,'Rvals':[],
+                    'covMatrix':np.eye(len(variables)),'title':name,'parmDict':parmDict}
             else:
-                Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential results')
-                G2frame.PatternTree.SetItemPyData(Id,SeqResult)
-            G2frame.PatternTree.SelectItem(Id)
-            print 'All images fitted'
+                SeqResult['histNames'] = goodnames
+                dlg.Destroy()
+                print ' ***** Sequential strain refinement successful *****'
+        finally:
+            wx.EndBusyCursor()    
+        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results')
+        if Id:
+            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        else:
+            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential results')
+            G2frame.PatternTree.SetItemPyData(Id,SeqResult)
+        G2frame.PatternTree.SelectItem(Id)
+        print 'All images fitted'
         
     def SamSizer():
         

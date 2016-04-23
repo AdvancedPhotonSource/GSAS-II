@@ -339,9 +339,9 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
         Data['dark image'] = ['',-1.0]
         Data['Flat Bkg'] = 0.0
     Data['setDefault'] = False
-    Data['range'] = [(0,Imax),[Imin,Imax]]
+    Data['range'] = [(0,Imax),[0,Imax]]
     G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Image Controls'),Data)
-    Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(0,Imax),[Imin,Imax]]}
+    Masks = {'Points':[],'Rings':[],'Arcs':[],'Polygons':[],'Frames':[],'Thresholds':[(0,Imax),[0,Imax]]}
     G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Masks'),Masks)
     G2frame.PatternTree.SetItemPyData(G2frame.PatternTree.AppendItem(Id,text='Stress/Strain'),
         {'Type':'True','d-zero':[],'Sample phi':0.0,'Sample z':0.0,'Sample load':0.0})

@@ -255,13 +255,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         if len(Names) == 1:
             G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "IMG" pattern')
             return
-# set up source
-        Data = copy.deepcopy(data)
-        Data['showLines'] = True
-        Data['ring'] = []
-        Data['rings'] = []
-        Data['ellipses'] = []
-        Data['setDefault'] = False
         Source = G2frame.PatternTree.GetItemText(G2frame.Image)
         Names.pop(Names.index(Source))
 # select targets & do copy
@@ -275,12 +268,16 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
                     CId = G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls')
                     oldData = copy.deepcopy(G2frame.PatternTree.GetItemPyData(CId))
-#                    Data['range'] = oldData['range']
+                    Data = copy.deepcopy(data)
                     Data['size'] = oldData['size']
                     Data['GonioAngles'] = oldData.get('GonioAngles', [0.,0.,0.])
                     Data['ring'] = []
                     Data['rings'] = []
                     Data['ellipses'] = []
+                    if name == Data['dark image'][0]:
+                        Data['dark image'] = ['',-1.]
+                    if name == Data['background image'][0]:
+                        Data['background image'] = ['',-1.]
                     G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Image Controls'),copy.deepcopy(Data))
         finally:
             dlg.Destroy()
@@ -858,6 +855,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
 
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Dark image'),0,WACV)
         Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+        Source = G2frame.PatternTree.GetItemText(G2frame.Image)
+        Choices.pop(Choices.index(Source))
         darkImage = wx.ComboBox(parent=G2frame.dataDisplay,value=data['dark image'][0],choices=Choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         darkImage.Bind(wx.EVT_COMBOBOX,OnDarkImage)
@@ -876,7 +875,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         backSizer.Add(flatbkg,0,WACV)
 
         backSizer.Add(wx.StaticText(G2frame.dataDisplay,-1,' Background image'),0,WACV)
-        Choices = ['',]+G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
         backImage = wx.ComboBox(parent=G2frame.dataDisplay,value=data['background image'][0],choices=Choices,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         backImage.Bind(wx.EVT_COMBOBOX,OnBackImage)

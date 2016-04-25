@@ -89,10 +89,9 @@ def GetImageZ(G2frame,data):
             sumImg += backImage*backScale
     if darkImg: del darkImg         #force cleanup
     if backImg: del backImg
-    sumImg -= data.get('Flat Bkg',0.)
-    Imin = max(0.,np.min(sumImg))
+    sumImg -= data.get('Flat Bkg',0)
     Imax = np.max(sumImg)
-    data['range'] = [(Imin,Imax),[Imin,Imax]]
+    data['range'] = [(0,Imax),[0,Imax]]
     return sumImg
     
 

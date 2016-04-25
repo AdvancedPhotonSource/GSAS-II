@@ -89,11 +89,11 @@ def GetImageZ(G2frame,data):
             sumImg += backImage*backScale
     if darkImg: del darkImg         #force cleanup
     if backImg: del backImg
-    sumImg -= float(data.get('Flat Bkg',0))
+#    GSASIIpath.IPyBreak()
+    sumImg -= int(data.get('Flat Bkg',0))
     Imax = np.max(sumImg)
     data['range'] = [(0,Imax),[0,Imax]]
     return sumImg
-    
 
 def UpdateImageData(G2frame,data):
     

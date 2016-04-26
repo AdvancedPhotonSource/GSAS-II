@@ -46,7 +46,6 @@ class GE_ReaderClass(G2IO.ImportImage):
         
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
         '''Read using GE file reader, :func:`GetGEsumData`
-        should this read all blocks & sum them if desired?
         '''
         #rdbuffer = kwarg.get('buffer')
         imagenum = kwarg.get('blocknum')
@@ -85,7 +84,6 @@ class GE_sumReaderClass(G2IO.ImportImage):
         
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
         '''Read using GE file reader, :func:`GetGEsumData`
-        should this read all blocks & sum them if desired?
         '''
         #rdbuffer = kwarg.get('buffer')
         imagenum = kwarg.get('blocknum')
@@ -98,7 +96,7 @@ class GE_sumReaderClass(G2IO.ImportImage):
         self.repeat = more
         return True
 
-def GetGEsumData(filename,imagenum=1,sum=False):  #
+def GetGEsumData(filename,imagenum=1,sum=False):
     '''Read G.E. detector images from various files as produced at 1-ID and
     with Detector Pool detector. Also sums multiple image files if desired
     '''

@@ -414,7 +414,9 @@ class TransformDialog(wx.Dialog):
                 self.newSpGrp = SpcGp
                 SGTxt.SetValue(self.Phase['General']['SGData']['SpGrp'])
                 msg = 'Space Group Information'
-                SGMessageBox(self.panel,msg,text,table).Show()
+                dlg = SGMessageBox(self.panel,msg,text,table)
+                dlg.Show()
+                dlg.Destroy()
 #            if self.Phase['General']['Type'] in ['modulated',]:
 #                self.Phase['General']['SuperSg'] = SetDefaultSSsymbol()
 #                self.Phase['General']['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]

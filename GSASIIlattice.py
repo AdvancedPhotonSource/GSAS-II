@@ -242,6 +242,14 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec):
     SGData = newPhase['General']['SGData']
     invTrans = nl.inv(Trans)
     newAtoms = FillUnitCell(oldPhase)
+    Unit = [int(max(unit))-1 for unit in Trans]
+    for i,unit in enumerate(Unit):
+        if unit > 0:
+            for j in range(unit):
+                moreAtoms = copy.deepcopy(newAtoms)
+                for atom in moreAtoms:
+                    atom[cx+i] += 1.
+                newAtoms += moreAtoms
     for atom in newAtoms:
         atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3],invTrans.T,Vec)
         if atom[cia] == 'A':
@@ -258,6 +266,7 @@ def FillUnitCell(Phase):
     atomData = []
     SGData = Phase['General']['SGData']
     cx,ct,cs,cia = Phase['General']['AtomPtrs']
+    unit = np.zeros(3)
     for atom in Atoms:
         XYZ = np.array(atom[cx:cx+3])
         xyz = XYZ%1.
@@ -267,14 +276,14 @@ def FillUnitCell(Phase):
             result = G2spc.GenAtom(xyz,SGData,False,Uij,True)
             for item in result:
                 if item[0][2] >= .95: item[0][2] -= 1.
-                atom[cx:cx+3] = item[0]+unit
+                atom[cx:cx+3] = item[0]
                 atom[cia+2:cia+8] = item[1]
                 atomData.append(atom[:cia+9])  #not SS stuff
         else:
-            result = G2spc.GenAtom(XYZ,SGData,False,Move=True)
+            result = G2spc.GenAtom(xyz,SGData,False,Move=True)
             for item in result:
                 if item[0][2] >= .95: item[0][2] -= 1.
-                atom[cx:cx+3] = item[0]+unit
+                atom[cx:cx+3] = item[0]
                 atomData.append(atom[:cia+9])  #not SS stuff
     return atomData
        
@@ -295,7 +304,7 @@ def GetUnique(Phase):
     Indx = {}
     XYZ = {}
     for ind in range(Ind):
-        XYZ[ind] = np.array(Atoms[ind][cx:cx+3])
+        XYZ[ind] = np.array(Atoms[ind][cx:cx+3])%1.
         Indx[ind] = True
     for ind in range(Ind):
         if Indx[ind]:

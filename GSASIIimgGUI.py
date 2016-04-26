@@ -447,8 +447,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         maxSizer = wx.FlexGridSizer(0,3,0,5)
         maxSizer.AddGrowableCol(1,1)
         maxSizer.SetFlexibleDirection(wx.HORIZONTAL)
-        sqrtDeltZero = math.sqrt(data['range'][0][1]-max(0.0,data['range'][0][0]))
-        DeltOne = data['range'][1][1]-max(0.0,data['range'][0][0])
+        sqrtDeltZero = max(1.0,math.sqrt(data['range'][0][1]-max(0.0,data['range'][0][0])))
+        DeltOne = max(1.0,data['range'][1][1]-max(0.0,data['range'][0][0]))
         sqrtDeltOne = math.sqrt(DeltOne)
         maxSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Max intensity'),0,WACV)
         maxSel = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,

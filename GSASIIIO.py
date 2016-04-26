@@ -276,13 +276,7 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     '''Load an image into the tree. Saves the location of the image, as well as the
     ImageTag (where there is more than one image in the file), if defined.
     '''
-    ImgNames = []
-    if G2frame.PatternTree.GetCount(): # get a list of existing Image entries
-        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
-        while item:
-            name = G2frame.PatternTree.GetItemText(item)
-            if name.startswith('IMG'): ImgNames.append(name)        
-            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+    ImgNames = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
     TreeLbl = 'IMG '+os.path.basename(imagefile)
     ImageTag = Data.get('ImageTag')
     if ImageTag:

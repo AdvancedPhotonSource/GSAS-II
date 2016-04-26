@@ -21,7 +21,7 @@ import numpy as np
 import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
-class GEsum_ReaderClass(G2IO.ImportImage):
+class GE_ReaderClass(G2IO.ImportImage):
     '''Routine to read a GE image, typically from APS Sector 1.
         
         The image files may be of form .geX (where X is ' ', 1, 2, 3 or 4),
@@ -46,9 +46,11 @@ class GEsum_ReaderClass(G2IO.ImportImage):
         
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
         '''Read using GE file reader, :func:`GetGEsumData`
+        should this read all blocks & sum them if desired?
         '''
         #rdbuffer = kwarg.get('buffer')
         imagenum = kwarg.get('blocknum')
+        #sum = kwarg.get('sum')
         if imagenum is None: imagenum = 1
         self.Comments,self.Data,self.Npix,self.Image,more = GetGEsumData(filename,imagenum=imagenum)
         if self.Npix == 0 or not self.Comments:
@@ -58,9 +60,47 @@ class GEsum_ReaderClass(G2IO.ImportImage):
         self.repeat = more
         return True
 
-def GetGEsumData(filename,imagenum=1):
+class GE_sumReaderClass(G2IO.ImportImage):
+    '''Routine to read multiple GE images & sum them, typically from APS Sector 1.
+        
+        The image files may be of form .geX (where X is ' ', 1, 2, 3 or 4),
+        which is a raw image from the detector. These files may contain more
+        than one image and have a rudimentary header. 
+        Files with extension .sum or .cor are 4 byte integers/pixel, one image/file.
+        Files with extension .avg are 2 byte integers/pixel, one image/file.
+    '''
+
+    def __init__(self):
+        super(self.__class__,self).__init__( # fancy way to self-reference
+            extensionlist=('.ge1','.ge2','.ge3','.ge4'),
+            strictExtension=True,
+            formatName = 'GE multi-image summed',
+            longFormatName = 'sum of GE multi-image file'
+            )
+
+    def ContentsValidator(self, filepointer):
+        '''no test at this time
+        '''
+        return True
+        
+    def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
+        '''Read using GE file reader, :func:`GetGEsumData`
+        should this read all blocks & sum them if desired?
+        '''
+        #rdbuffer = kwarg.get('buffer')
+        imagenum = kwarg.get('blocknum')
+        if imagenum is None: imagenum = 1
+        self.Comments,self.Data,self.Npix,self.Image,more = GetGEsumData(filename,imagenum=imagenum,sum=True)
+        if self.Npix == 0 or not self.Comments:
+            return False
+        self.LoadImage(ParentFrame,filename,imagenum)
+        self.repeatcount = imagenum
+        self.repeat = more
+        return True
+
+def GetGEsumData(filename,imagenum=1,sum=False):  #
     '''Read G.E. detector images from various files as produced at 1-ID and
-    with Detector Pool detector.
+    with Detector Pool detector. Also sums multiple image files if desired
     '''
     import struct as st
     import array as ar
@@ -99,10 +139,12 @@ def GetGEsumData(filename,imagenum=1):
             print('not enough images while reading GE file: '+filename+'image #'+str(imagenum))
             return 0,0,0,0,False            
         head += ['file: '+filename+' image #'+str(imagenum),]
-        #while nframes > 1:
-        #    print 'adding'
-        #    image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
-        #    nframes -= 1
+        if sum:    #will ignore imagenum
+            while nframes > 1: #OK, this will sum the frames.
+        #      print 'adding'
+                image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+                nframes -= 1
+            more = False
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
     File.close()

@@ -2042,7 +2042,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             cuij = colLabels.index('U11')
             css = colLabels.index('site sym')
             atomData = data['Atoms']
-            generalData = data['General']
             SGData = generalData['SGData']
             dlg = G2gd.SymOpDialog(G2frame,SGData,True,True)
             New = False
@@ -2084,7 +2083,49 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Atoms.ForceRefresh()
         else:
             print "select one or more rows of atoms"
-            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")            
+            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
+            
+    def AtomRotate(event):
+        Units = {'':np.zeros(3),
+            'xy':np.array([[i,j,0] for i in range(3) for j in range(3)])-np.array([1,1,0]),
+            'xz':np.array([[i,0,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
+            'yz':np.array([[0,i,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
+            'xyz':np.array([[i,j,k] for i in range(3) for j in range(3) for k in range(3)])-np.array([1,1,1])}
+        indx = Atoms.GetSelectedRows()
+        if indx:
+            generalData = data['General']
+            A,B = G2lat.cell2AB(generalData['Cell'][1:7])
+            colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
+            cx = colLabels.index('x')
+            cuia = colLabels.index('I/A')   #need to not do aniso atoms - stop with error? or force isotropic?
+            css = colLabels.index('site sym')
+            atomData = data['Atoms']
+            SGData = generalData['SGData']
+            dlg = G2gd.RotationDialog(G2frame)
+            try:
+                if dlg.ShowModal() == wx.ID_OK:
+                    M,T,Expand = dlg.GetSelection()
+                    Unit = Units[Expand]
+                    for ind in indx:
+                        XYZ = np.array(atomData[ind][cx:cx+3])
+                        for unit in Unit:
+                            XYZ += unit 
+                            XYZ -= T
+                            XYZ = np.inner(A,XYZ)   #to Cartesian
+                            XYZ = np.inner(M,XYZ)   #rotate
+                            XYZ = np.inner(B,XYZ)+T #back to crystal & translate
+                            if np.all(XYZ>=0.) and np.all(XYZ<1.0):
+                                atom = atomData[ind]
+                                atom[cx:cx+3] = XYZ
+                                atom[css:css+2] = G2spc.SytSym(XYZ,SGData)
+                                break
+            finally:
+                dlg.Destroy()
+            Atoms.ClearSelection()
+            Atoms.ForceRefresh()
+        else:
+            print "select one or more rows of atoms"
+            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
                 
     def MakeMolecule(event):      
         indx = Atoms.GetSelectedRows()
@@ -7292,6 +7333,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRotate, id=G2gd.wxID_ATOMSROTATE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, MakeMolecule, id=G2gd.wxID_MAKEMOLECULE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)

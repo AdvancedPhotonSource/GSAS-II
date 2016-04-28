@@ -68,8 +68,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
     wxID_ATOMSMODIFY, wxID_ATOMSTRANSFORM, wxID_ATOMSVIEWADD, wxID_ATOMVIEWINSERT,
     wxID_RELOADDRAWATOMS,wxID_ATOMSDISAGL,wxID_ATOMMOVE,wxID_MAKEMOLECULE,
     wxID_ASSIGNATMS2RB,wxID_ATOMSPDISAGL, wxID_ISODISP,wxID_ADDHATOM,wxID_UPDATEHATOM,
-    wxID_WAVEVARY,
-] = [wx.NewId() for item in range(18)]
+    wxID_WAVEVARY,wxID_ATOMSROTATE,
+] = [wx.NewId() for item in range(19)]
 
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
@@ -515,7 +515,148 @@ class TransformDialog(wx.Dialog):
     def OnCancel(self,event):
         parent = self.GetParent()
         parent.Raise()
-        self.EndModal(wx.ID_CANCEL)     
+        self.EndModal(wx.ID_CANCEL)
+        
+################################################################################
+class RotationDialog(wx.Dialog):
+    ''' Get Rotate & translate matrix & vector
+    
+    '''
+    def __init__(self,parent):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Atom group rotation/translation', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.Trans = np.eye(3)
+        self.Vec = np.zeros(3)
+        self.rotAngle = 0.
+        self.rotVec = np.array([0.,0.,1.])
+        self.Expand = ''
+        self.Draw()
+
+    def Draw(self):
+
+        def OnMatValue(event):
+            Obj = event.GetEventObject()
+            ix,iy = Ind[Obj.GetId()]
+            val = Obj.GetValue()
+            if '/' in val:
+                vals = val.split('/')
+                self.Trans[iy,ix] = float(vals[0])/float(vals[1])
+            else:    
+                self.Trans[iy,ix] = float(Obj.GetValue())
+            Obj.SetValue('%5.3f'%(self.Trans[iy,ix]))
+            
+            
+        def OnVecValue(event):
+            Obj = event.GetEventObject()
+            iy = Ind[Obj.GetId()]
+            val = Obj.GetValue()
+            if '/' in val:
+                vals = val.split('/')
+                self.Vec[iy] = float(vals[0])/float(vals[1])
+            else:    
+                self.Vec[iy] = float(Obj.GetValue())
+            Obj.SetValue('%5.3f'%(self.Vec[iy]))
+            
+        def OnExpand(event):
+            self.Expand = expand.GetValue()
+            
+        def OnRotAngle(event):
+            self.rotAngle = float(rotangle.GetValue())
+            rotangle.SetValue('%5.3f'%(self.rotAngle))
+            Q = G2mth.AVdeg2Q(self.rotAngle,self.rotVec)
+            self.Trans = G2mth.Q2Mat(Q)
+            self.Draw()
+            
+        def OnRotVec(event):
+            vals = rotvec.GetValue()
+            vals = vals.split()
+            self.rotVec = np.array([float(val) for val in vals])
+            rotvec.SetValue('%5.3f %5.3f %5.3f'%(self.rotVec[0],self.rotVec[1],self.rotVec[2]))
+            Q = G2mth.AVdeg2Q(self.rotAngle,self.rotVec)
+            self.Trans = G2mth.Q2Mat(Q)
+            self.Draw()
+            
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        Ind = {}
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        MatSizer = wx.BoxSizer(wx.HORIZONTAL)
+        transSizer = wx.BoxSizer(wx.VERTICAL)
+        transSizer.Add(wx.StaticText(self.panel,label=" XYZ Transformation matrix && vector: "+ \
+            "\n B*M*A*(X-V)+V = X'\n A,B: Cartesian transformation matrices"))
+        Trmat = wx.FlexGridSizer(3,5,0,0)
+        for iy,line in enumerate(self.Trans):
+            for ix,val in enumerate(line):
+                item = wx.TextCtrl(self.panel,value='%5.3f'%(val),
+                    size=(50,25),style=wx.TE_PROCESS_ENTER)
+                Ind[item.GetId()] = [ix,iy]
+                item.Bind(wx.EVT_TEXT_ENTER,OnMatValue)
+                item.Bind(wx.EVT_KILL_FOCUS,OnMatValue)
+                Trmat.Add(item)
+            Trmat.Add((25,0),0)
+            vec = wx.TextCtrl(self.panel,value='%5.3f'%(self.Vec[iy]),
+                    size=(50,25),style=wx.TE_PROCESS_ENTER)
+            Ind[vec.GetId()] = [iy]       
+            vec.Bind(wx.EVT_TEXT_ENTER,OnVecValue)
+            vec.Bind(wx.EVT_KILL_FOCUS,OnVecValue)
+            Trmat.Add(vec)
+        transSizer.Add(Trmat)
+        MatSizer.Add((10,0),0)
+        MatSizer.Add(transSizer)
+        mainSizer.Add(MatSizer)
+        rotationBox = wx.BoxSizer(wx.HORIZONTAL)
+        rotationBox.Add(wx.StaticText(self.panel,label=' Rotation angle: '),0,WACV)
+        rotangle = wx.TextCtrl(self.panel,value='%5.3f'%(self.rotAngle),
+            size=(50,25),style=wx.TE_PROCESS_ENTER)
+        rotangle.Bind(wx.EVT_TEXT_ENTER,OnRotAngle)
+        rotangle.Bind(wx.EVT_KILL_FOCUS,OnRotAngle)
+        rotationBox.Add(rotangle,0,WACV)
+        rotationBox.Add(wx.StaticText(self.panel,label=' about vector: '),0,WACV)
+        rotvec = wx.TextCtrl(self.panel,value='%5.3f %5.3f %5.3f'%(self.rotVec[0],self.rotVec[1],self.rotVec[2]),
+            size=(100,25),style=wx.TE_PROCESS_ENTER)
+        rotvec.Bind(wx.EVT_TEXT_ENTER,OnRotVec)
+        rotvec.Bind(wx.EVT_KILL_FOCUS,OnRotVec)
+        rotationBox.Add(rotvec,0,WACV)
+        mainSizer.Add(rotationBox,0,WACV)
+        expandChoice = ['','xy','xz','yz','xyz']
+        expandBox = wx.BoxSizer(wx.HORIZONTAL)
+        expandBox.Add(wx.StaticText(self.panel,label=' Expand -1 to +1 on: '),0,WACV)
+        expand = wx.ComboBox(self.panel,value=self.Expand,choices=expandChoice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        expand.Bind(wx.EVT_COMBOBOX,OnExpand)
+        expandBox.Add(expand,0,WACV)
+        expandBox.Add(wx.StaticText(self.panel,label=' and find unique atoms '),0,WACV)        
+        mainSizer.Add(expandBox)
+                
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+
+    def GetSelection(self):
+        return self.Trans,self.Vec,self.Expand
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)    
         
 ################################################################################
 class DIFFaXcontrols(wx.Dialog):
@@ -1760,6 +1901,8 @@ class DataFrame(wx.Frame):
             help='Select atoms to modify first')
         self.AtomEdit.Append(id=wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
             help='Select atoms to transform first')
+        self.AtomEdit.Append(id=wxID_ATOMSROTATE, kind=wx.ITEM_NORMAL,text='Rotate atoms',
+            help='Select atoms to rotate first')
         self.AtomEdit.Append(id=wxID_MAKEMOLECULE, kind=wx.ITEM_NORMAL,text='Assemble molecule',
             help='Assemble molecule from scatterd atom positions')
         self.AtomEdit.Append(id=wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',

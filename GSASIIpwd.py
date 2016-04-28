@@ -2080,6 +2080,9 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
     Nsteps = SetPWDRscan(inst,limits,profile)
 # result as Spec
     x0 = profile[0]
+    profile[3] = np.zeros(len(profile[0]))
+    profile[4] = np.zeros(len(profile[0]))
+    profile[5] = np.zeros(len(profile[0]))
     iBeg = np.searchsorted(x0,limits[0])
     iFin = np.searchsorted(x0,limits[1])
     if iFin-iBeg > 20000:

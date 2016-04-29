@@ -242,7 +242,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec):
     SGData = newPhase['General']['SGData']
     invTrans = nl.inv(Trans)
     newAtoms = FillUnitCell(oldPhase)
-    Unit = [int(max(unit))-1 for unit in Trans]
+    Unit =[abs(int(max(unit))-1) for unit in Trans]
     for i,unit in enumerate(Unit):
         if unit > 0:
             for j in range(unit):

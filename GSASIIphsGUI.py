@@ -2108,17 +2108,24 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Unit = Units[Expand]
                     for ind in indx:
                         XYZ = np.array(atomData[ind][cx:cx+3])
-                        for unit in Unit:
-                            XYZ += unit 
-                            XYZ -= T
-                            XYZ = np.inner(A,XYZ)   #to Cartesian
-                            XYZ = np.inner(M,XYZ)   #rotate
-                            XYZ = np.inner(B,XYZ)+T #back to crystal & translate
-                            if np.all(XYZ>=0.) and np.all(XYZ<1.0):
-                                atom = atomData[ind]
-                                atom[cx:cx+3] = XYZ
-                                atom[css:css+2] = G2spc.SytSym(XYZ,SGData)
-                                break
+                        XYZS = XYZ+Unit
+                        XYZS -= T
+                        XYZS = np.inner(A,XYZS).T   #to Cartesian
+                        XYZS = np.inner(M,XYZS).T   #rotate
+                        XYZS = np.inner(B,XYZS).T+T #back to crystal & translate
+                        GSASIIpath.IPyBreak()
+                        atomData[ind][cx:cx+3] = XYZ
+#                        for unit in Unit:
+#                            XYZ = np.copy(np.array(atomData[ind][cx:cx+3]))
+#                            XYZ += unit 
+#                            XYZ -= T
+#                            XYZ = np.inner(A,XYZ)   #to Cartesian
+#                            XYZ = np.inner(M,XYZ)   #rotate
+#                            XYZ = np.inner(B,XYZ)+T #back to crystal & translate
+#                            if np.all(XYZ>=0.) and np.all(XYZ<1.0):
+#                                atomData[ind][cx:cx+3] = XYZ
+##                                atom[css:css+2] = G2spc.SytSym(XYZ,SGData)
+#                                break
             finally:
                 dlg.Destroy()
             Atoms.ClearSelection()

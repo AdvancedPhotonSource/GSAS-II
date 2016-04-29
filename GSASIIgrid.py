@@ -1901,8 +1901,8 @@ class DataFrame(wx.Frame):
             help='Select atoms to modify first')
         self.AtomEdit.Append(id=wxID_ATOMSTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform atoms',
             help='Select atoms to transform first')
-        self.AtomEdit.Append(id=wxID_ATOMSROTATE, kind=wx.ITEM_NORMAL,text='Rotate atoms',
-            help='Select atoms to rotate first')
+#        self.AtomEdit.Append(id=wxID_ATOMSROTATE, kind=wx.ITEM_NORMAL,text='Rotate atoms',
+#            help='Select atoms to rotate first')
         self.AtomEdit.Append(id=wxID_MAKEMOLECULE, kind=wx.ITEM_NORMAL,text='Assemble molecule',
             help='Assemble molecule from scatterd atom positions')
         self.AtomEdit.Append(id=wxID_RELOADDRAWATOMS, kind=wx.ITEM_NORMAL,text='Reload draw atoms',

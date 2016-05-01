@@ -1654,6 +1654,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             AtomAdd(0,0,0)
         FillAtomsGrid(Atoms)
         event.StopPropagation()
+        data['Drawing']['Atoms'] = []
+        UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
                 
     def AtomAdd(x,y,z,El='H',Name='UNK'):
@@ -1671,8 +1673,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
                 {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
         SetupGeneral()
-        if 'Atoms' in data['Drawing']:            
-            DrawAtomAdd(data['Drawing'],atomData[-1])
+        data['Drawing']['Atoms'] = []
+        UpdateDrawAtoms()
+        G2plt.PlotStructure(G2frame,data)
+#        if 'Atoms' in data['Drawing']:            
+#            DrawAtomAdd(data['Drawing'],atomData[-1])
 
     def OnAtomInsert(event):
         indx = Atoms.GetSelectedRows()
@@ -1680,6 +1685,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             AtomInsert(indx[0],0,0,0)
             FillAtomsGrid(Atoms)
             event.StopPropagation()
+            data['Drawing']['Atoms'] = []
+            UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
         
     def OnAtomViewInsert(event):
@@ -1890,6 +1897,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],
                 {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
         SetupGeneral()
+        data['Drawing']['Atoms'] = []
+        UpdateDrawAtoms()
+        G2plt.PlotStructure(G2frame,data)
 
     def AtomDelete(event):
         colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
@@ -2031,6 +2041,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     SetupGeneral()
                     FillAtomsGrid(Atoms)
                 dlg.Destroy()
+            data['Drawing']['Atoms'] = []
+            UpdateDrawAtoms()
+            G2plt.PlotStructure(G2frame,data)
+        else:
+            print "select one or more rows of atoms"
+            G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
 
     def AtomTransform(event):
         indx = Atoms.GetSelectedRows()
@@ -2081,6 +2097,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 FillAtomsGrid(Atoms)
             else:
                 Atoms.ForceRefresh()
+            data['Drawing']['Atoms'] = []
+            UpdateDrawAtoms()
+            G2plt.PlotStructure(G2frame,data)
         else:
             print "select one or more rows of atoms"
             G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
@@ -7340,7 +7359,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRefine, id=G2gd.wxID_ATOMSREFINE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomModify, id=G2gd.wxID_ATOMSMODIFY)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AtomTransform, id=G2gd.wxID_ATOMSTRANSFORM)
-        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRotate, id=G2gd.wxID_ATOMSROTATE)
+#        G2frame.dataFrame.Bind(wx.EVT_MENU, AtomRotate, id=G2gd.wxID_ATOMSROTATE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, MakeMolecule, id=G2gd.wxID_MAKEMOLECULE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnReloadDrawAtoms, id=G2gd.wxID_RELOADDRAWATOMS)
         G2frame.dataFrame.Bind(wx.EVT_MENU, OnDistAngle, id=G2gd.wxID_ATOMSDISAGL)

@@ -251,7 +251,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec):
                     atom[cx+i] += 1.
                 newAtoms += moreAtoms
     for atom in newAtoms:
-        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3],invTrans.T,Vec)
+        atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3],invTrans.T,Vec)%1.
         if atom[cia] == 'A':
             atom[cia+2:cia+8] = TransformU6(atom[cia+2:cia+8],invTrans)
         atom[cs:cs+2] = G2spc.SytSym(atom[cx:cx+3],SGData)

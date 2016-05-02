@@ -355,22 +355,28 @@ class TransformDialog(wx.Dialog):
             Obj = event.GetEventObject()
             ix,iy = Ind[Obj.GetId()]
             val = Obj.GetValue()
-            if '/' in val:
-                vals = val.split('/')
-                self.Trans[iy,ix] = float(vals[0])/float(vals[1])
-            else:    
-                self.Trans[iy,ix] = float(Obj.GetValue())
+            try:
+                if '/' in val:
+                    vals = val.split('/')
+                    self.Trans[iy,ix] = float(vals[0])/float(vals[1])
+                else:    
+                    self.Trans[iy,ix] = float(Obj.GetValue())
+            except ValueError:
+                pass
             Obj.SetValue('%5.3f'%(self.Trans[iy,ix]))
             
         def OnVecValue(event):
             Obj = event.GetEventObject()
             iy = Ind[Obj.GetId()]
             val = Obj.GetValue()
-            if '/' in val:
-                vals = val.split('/')
-                self.Vec[iy] = float(vals[0])/float(vals[1])
-            else:    
-                self.Vec[iy] = float(Obj.GetValue())
+            try:
+                if '/' in val:
+                    vals = val.split('/')
+                    self.Vec[iy] = float(vals[0])/float(vals[1])
+                else:    
+                    self.Vec[iy] = float(Obj.GetValue())
+            except ValueError:
+                pass
             Obj.SetValue('%5.3f'%(self.Vec[iy]))
                 
         def OnCommon(event):
@@ -519,7 +525,9 @@ class TransformDialog(wx.Dialog):
         
 ################################################################################
 class RotationDialog(wx.Dialog):
-    ''' Get Rotate & translate matrix & vector
+    ''' Get Rotate & translate matrix & vector - currently not used
+    needs rethinking - possible use to rotate a group of atoms about some
+    vector/origin + translation
     
     '''
     def __init__(self,parent):

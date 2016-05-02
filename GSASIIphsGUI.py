@@ -3231,6 +3231,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         dStep = (BegFin[1]-BegFin[0])/nSteps
         vals = np.linspace(BegFin[0],BegFin[1],nSteps+1,True)
         for val in vals:
+            print ' Stacking simulation step for '+pName+' = %.5f'%(val)
             if 'cell' in pName:
                 cellId = cellSel.index(pName)
                 cell = Layers['Cell']

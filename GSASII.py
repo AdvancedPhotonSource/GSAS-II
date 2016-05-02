@@ -383,7 +383,10 @@ class GSASII(wx.Frame):
           which are all binary.
 
         :param bool load2Tree: indicates if the file should be loaded
-          into the data tree immediately (used for images only)
+          into the data tree immediately (used for images only). True
+          only when called from :meth:`OnImportImage`; causes return
+          value to change to a list of True values rather than
+          reader objects.
 
         :returns: a list of reader objects (rd_list) that were able
           to read the specified file(s). This list may be empty. 
@@ -2271,8 +2274,8 @@ class GSASII(wx.Frame):
         self.root = self.PatternTree.root
         plotFrame = wx.Frame(None,-1,'GSASII Plots',size=wx.Size(700,600), \
             style=wx.DEFAULT_FRAME_STYLE ^ wx.CLOSE_BOX)
-        self.G2plotNB = G2plt.G2PlotNoteBook(plotFrame)
-        #self.G2plotNB = G2plt.G2PlotNoteBook(plotFrame,G2frame=self)
+        #self.G2plotNB = G2plt.G2PlotNoteBook(plotFrame)
+        self.G2plotNB = G2plt.G2PlotNoteBook(plotFrame,G2frame=self)
         plotFrame.Show()
         
         self.dataDisplay = None
@@ -2348,6 +2351,7 @@ class GSASII(wx.Frame):
         self.LastImportDir = None # last-used directory where an import was done
         self.LastGPXdir = None    # directory where a GPX file was last read
         self.LastExportDir = None  # the last directory used for exports, if any.
+        self.dataDisplayPhaseText = ''
         
         arg = sys.argv
         if len(arg) > 1 and arg[1]:
@@ -3696,7 +3700,6 @@ class GSASII(wx.Frame):
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     Id = 0
-                    self.G2plotNB.setReplotFlags() # mark all plots as old
                     self.PatternTree.DeleteChildren(self.root)
                     self.HKL = []
                     G2IO.ProjFileOpen(self,False)
@@ -3707,8 +3710,7 @@ class GSASII(wx.Frame):
                     self.PickIdText = None  #force reload of page
                     self.PickId = Id
                     self.PatternTree.SelectItem(Id)
-                    G2gd.MovePatternTreeToGrid(self,Id)
-                    self.G2plotNB.replotAll() # refresh any plots not yet updated
+                    G2gd.MovePatternTreeToGrid(self,Id) # reload current tree item, should update current plot
             finally:
                 dlg2.Destroy()
         else:

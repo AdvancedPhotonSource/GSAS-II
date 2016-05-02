@@ -3800,7 +3800,11 @@ def GetPatternTreeDataNames(G2frame,dataTypes):
     return names
                           
 def GetPatternTreeItemId(G2frame, parentId, itemText):
-    '''Needs a doc string
+    '''Find the tree item that matches the text in itemText starting with parentId
+
+    :param wx.Frame G2frame: Data tree frame object
+    :param wx.TreeItemId parentId: tree item to start search with
+    :param str itemText: text for tree item
     '''
     item, cookie = G2frame.PatternTree.GetFirstChild(parentId)
     while item:

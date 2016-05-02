@@ -74,33 +74,8 @@ class _tabPlotWin(wx.Panel):
         self.ReplotRoutine = None
         self.ReplotArgs = []
         self.ReplotKwArgs = {}
-        self.needsUpdate = True
         wx.Panel.__init__(self,parent,id=id,**kwargs)
         
-    def AddRefresh(self,ReplotRoutine,ReplotArgs=[],ReplotKwArgs={}):
-        '''Define a routine used to refresh the plot
-        
-        :param function ReplotRoutine: function to be called
-        :param list ReplotArgs: list of positional parameters, if any
-        :param dict ReplotKwArgs: dict of keyword parameters, if any
-        '''
-        self.ReplotRoutine = ReplotRoutine
-        self.ReplotArgs = ReplotArgs
-        self.ReplotKwArgs = ReplotKwArgs
-
-    def Refresh(self):
-        'Replots the selected tab'
-        if self.ReplotRoutine:
-            #print 'Refresh G2PlotMpl with',self.ReplotRoutine
-            if not self.needsUpdate:
-                #print 'already updated\n'
-                return True
-            #if self.ReplotArgs: print '...args',self.ReplotArgs
-            #if self.ReplotKwArgs: print '...KWargs',self.ReplotKwArgs
-            self.ReplotRoutine(*self.ReplotArgs,**self.ReplotKwArgs)
-            return True
-        else:
-            return False
 class G2PlotMpl(_tabPlotWin):    
     'Creates a Matplotlib 2-D plot in the GSAS-II graphics window'
     def __init__(self,parent,id=-1,dpi=None,**kwargs):
@@ -155,7 +130,7 @@ class G2Plot3D(_tabPlotWin):
                               
 class G2PlotNoteBook(wx.Panel):
     'create a tabbed window for GSAS-II graphics'
-    def __init__(self,parent,id=-1):
+    def __init__(self,parent,id=-1,G2frame=None):
         wx.Panel.__init__(self,parent,id=id)
         #so one can't delete a plot page from tab!!
         self.nb = wx.aui.AuiNotebook(self, \
@@ -168,12 +143,14 @@ class G2PlotNoteBook(wx.Panel):
         self.status.SetStatusWidths([150,-1])
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
         self.nb.Bind(wx.EVT_KEY_UP,self.OnNotebookKey)
+        self.G2frame = G2frame
         
         self.plotList = []   # contains the tab label for each plot
         self.panelList = []   # contains the panel object for each plot
         self.figList = []   # contains the figure object for each plot
-        self.pageOnTop = None # keep track of top page during refresh all
-        self.skipPageChange = False
+        self.treeItem = {}  # contains the tree entry that generated a plot, indexed by the plot number
+        self.skipPageChange = False # set to True when no plot update is needed
+        self.allowZoomReset = True # this indicates plot should be updated not initialized
         
     def OnNotebookKey(self,event):
         '''Called when a keystroke event gets picked up by the notebook window
@@ -201,58 +178,31 @@ class G2PlotNoteBook(wx.Panel):
         self.panelList.append(page) # panel object for plot
         self.figList.append(page.figure)  # figure object for plot
         self.skipPageChange = False
+        self._registerTreeItem(name)
 
-    def registerReplot(self,name,ReplotRoutine,ReplotArgs=[],ReplotKwArgs={}):
-        'Define the routine and args needed to replot a figure'
-        try:
-            plotNum = self.plotList.index(name)
-        except ValueError:
-            print('No plot tab labeled '+name)
-            GSASIIpath.IPyBreak()
-        page = self.panelList[plotNum]
-        page.AddRefresh(ReplotRoutine,ReplotArgs,ReplotKwArgs)
-        
-    def setReplotFlags(self):
-        'Flag all plots as needing a redraw'
-        for page in self.panelList:
-            page.needsUpdate = True
-        self.pageOnTop = self.nb.GetSelection()
-        
-    def clearReplotFlag(self,name):
-        'Set when redrawing a plot so that it is not done twice'
-        try:
-            plotNum = self.plotList.index(name)
-        except ValueError:
-            print('clearReplotFlag: No plot tab labeled '+name)
-        page = self.panelList[plotNum]
-        page.needsUpdate = False
-
-    def ResetOnTop(self):
-        'Put the saved page back on top'
-        self.SetSelectionNoRefresh(self.pageOnTop)
-        
-    def SetSelectionNoRefresh(self,plotNum):
-        'Raises a plot tab without triggering a refresh via OnPageChanged'
-        self.skipPageChange = True
-        self.nb.SetSelection(plotNum) # raises plot tab
-        self.skipPageChange = False
-
+    def _registerTreeItem(self,plotLabel):
+        '''Save the name of the of the data tree item that has generated the plot
+        and for phases, save the name of the generating tab (at present that is not used)
+        '''
+        tree = self.G2frame.PatternTree
+        self.treeItem[plotLabel] = [tree._getTreeItemsList(tree.GetSelection()),'']
+        if len(self.treeItem[plotLabel]) == 2 and self.treeItem[plotLabel][0][0] == 'Phases':
+            self.treeItem[plotLabel][1] = self.G2frame.dataDisplayPhaseText
+                
     def RaisePageNoRefresh(self,Page):
         'Raises a plot tab without triggering a refresh via OnPageChanged'
         self.skipPageChange = True
         Page.SetFocus()
         self.skipPageChange = False
-                
-    def replotAll(self):
-        'refresh all current plots, if not already redrawn'
-        for page,label in zip(self.panelList,self.plotList):
-            if page.Refresh():
-                pass
-            elif GSASIIpath.GetConfigValue('debug'):
-                print('No refresh for '+label)                
-        if self.pageOnTop is not None:
-            wx.CallLater(150,self.ResetOnTop)
         
+    def SetSelectionNoRefresh(self,plotNum): 
+        'Raises a plot tab without triggering a refresh via OnPageChanged' 
+        self.skipPageChange = True
+        self.nb.SetSelection(plotNum) # raises plot tab 
+        Page = self.G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.SetFocus()
+        self.skipPageChange = False 
+ 	                         
     def addMpl(self,name=""):
         'Add a tabbed page with a matplotlib plot'
         page = G2PlotMpl(self.nb)
@@ -312,17 +262,27 @@ class G2PlotNoteBook(wx.Panel):
         self.status.SetFields(['',''])  # clear old status message
         self.status.SetStatusWidths([150,-1])
         if self.skipPageChange:
-#            print 'skipping OnPageChanged'
             self.skipPageChange = False
             return
-#        print 'OnPageChanged'
         page = self.panelList[self.nb.GetSelection()]   #GetCurrentPage() not in wx 2.7
-        page.needsUpdate = True
-        if page.Refresh():  # refresh plot, if possible
-            pass
-        elif self.plotList:
-            self.status.SetStatusText('Better to select this from GSAS-II data tree',1)
-        
+        tabLabel = event.GetEventObject().GetPageText(event.GetSelection())
+        if tabLabel in self.treeItem:
+            treeItems, tabname = self.treeItem[tabLabel]
+            id = self.G2frame.root
+            for item in treeItems:
+                id = G2gd.GetPatternTreeItemId(self.G2frame, id, item)
+            wx.CallLater(100,self.InvokeTreeItem,id)
+        else:
+            print 'OnPageChanged: not found:',tabLabel
+            
+    def InvokeTreeItem(self,id):
+        '''This is called to select an item from the tree using the self.allowZoomReset
+        flag to prevent a reset to the zoom of the plot (where implemented)
+        '''
+        self.allowZoomReset = False 
+        self.G2frame.PatternTree.SelectItem(id)
+        self.allowZoomReset = True 
+            
 class GSASIItoolbar(Toolbar):
     'Override the matplotlib toolbar so we can add more icons'
     ON_MPL_HELP = wx.NewId()
@@ -1160,23 +1120,16 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
 ##### PlotPatterns
 ################################################################################
             
-def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',TreeItemText=None):
+def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
     '''Powder pattern plotting package - displays single or multiple powder patterns as intensity vs
     2-theta, q or TOF. Can display multiple patterns as "waterfall plots" or contour plots. Log I 
     plotting available.
-
-    The histogram to be plotted is found in G2frame.PatternId unless the histogram name is specified
-    as TreeItemText
     '''
     global exclLines
     global DifLine
     global Ymax
     global Pattern
     plottype = plotType
-    if TreeItemText:
-        G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,TreeItemText)
-    else:
-        TreeItemText = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         
     if not G2frame.PatternId:
         return
@@ -1653,13 +1606,6 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR',TreeItemText=None):
         Page.canvas.mpl_connect('pick_event', OnPick)
         Page.canvas.mpl_connect('button_release_event', OnRelease)
         Page.canvas.mpl_connect('button_press_event',OnPress)
-    G2frame.G2plotNB.registerReplot('Powder Patterns',
-        ReplotRoutine=PlotPatterns,
-        ReplotKwArgs={'G2frame':G2frame, 'plotType':plottype,
-                      'TreeItemText':TreeItemText, 'newPlot':True
-                      })
-    G2frame.G2plotNB.status.SetStatusText('histogram: '+TreeItemText,1)
-    G2frame.G2plotNB.clearReplotFlag('Powder Patterns')
 #    if plottype == 'PWDR':  # avoids a very nasty clash with KILL_FOCUS in SASD TextCtrl?
 #        Page.SetFocus()
     G2frame.G2plotNB.status.DestroyChildren()
@@ -2848,7 +2794,7 @@ def PlotPowderLines(G2frame):
 ##### PlotPeakWidths
 ################################################################################
             
-def PlotPeakWidths(G2frame,TreeItemText=None):
+def PlotPeakWidths(G2frame):
     ''' Plotting of instrument broadening terms as function of 2-theta
     Seen when "Instrument Parameters" chosen from powder pattern data tree
     '''
@@ -2856,10 +2802,6 @@ def PlotPeakWidths(G2frame,TreeItemText=None):
 #    gam = lambda Th,X,Y: (X/cosd(Th)+Y*tand(Th))*math.pi/18000.
 #    gamFW = lambda s,g: np.exp(np.log(s**5+2.69269*s**4*g+2.42843*s**3*g**2+4.47163*s**2*g**3+0.07842*s*g**4+g**5)/5.)
 #    gamFW2 = lambda s,g: math.sqrt(s**2+(0.4654996*g)**2)+.5345004*g  #Ubaldo Bafile - private communication
-    if TreeItemText:
-        G2frame.PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,TreeItemText)
-    else:
-        TreeItemText = G2frame.PatternTree.GetItemText(G2frame.PatternId)
     PatternId = G2frame.PatternId
     limitID = G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits')
     if limitID:
@@ -2884,9 +2826,13 @@ def PlotPeakWidths(G2frame,TreeItemText=None):
         G2frame.PatternTree.SelectItem(item)
         print "done"
         return
+    xylim = []
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Peak Widths')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Plot = Page.figure.gca()
+        if not G2frame.G2plotNB.allowZoomReset: # save previous limits
+            xylim = Plot.get_xlim(),Plot.get_ylim()
         Page.figure.clf()
         Plot = Page.figure.gca()
         G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
@@ -2894,11 +2840,9 @@ def PlotPeakWidths(G2frame,TreeItemText=None):
         Plot = G2frame.G2plotNB.addMpl('Peak Widths').gca()
         plotNum = G2frame.G2plotNB.plotList.index('Peak Widths')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
-    G2frame.G2plotNB.registerReplot('Peak Widths',
-        ReplotRoutine=PlotPeakWidths,
-        ReplotKwArgs={'G2frame':G2frame, 'TreeItemText':TreeItemText})
+
+    TreeItemText = G2frame.PatternTree.GetItemText(G2frame.PatternId)
     G2frame.G2plotNB.status.SetStatusText('histogram: '+TreeItemText,1)
-    G2frame.G2plotNB.clearReplotFlag('Peak Widths')    
     Page.Choice = None
     G2frame.G2plotNB.RaisePageNoRefresh(Page)
     
@@ -3018,6 +2962,14 @@ def PlotPeakWidths(G2frame,TreeItemText=None):
         Plot.plot(Q,S,'+',color='b',label='Gaussian peak')
         Plot.plot(Q,G,'+',color='m',label='Lorentzian peak')
         Plot.legend(loc='best')
+    if xylim and not G2frame.G2plotNB.allowZoomReset:
+        # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
+        Page.toolbar.push_current()
+        Plot.set_xlim(xylim[0])
+        Plot.set_ylim(xylim[1])
+        Page.toolbar.push_current()
+        Page.toolbar.draw()
+    else:
         Page.canvas.draw()
     
 ################################################################################

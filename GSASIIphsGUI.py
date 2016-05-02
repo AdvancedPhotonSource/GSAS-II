@@ -7278,6 +7278,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
     def ChangePage(page):
         text = G2frame.dataDisplay.GetPageText(page)
+        G2frame.dataDisplayPhaseText = text
         if text == 'General':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.DataGeneral)
             UpdateGeneral()

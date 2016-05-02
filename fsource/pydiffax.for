@@ -241,7 +241,6 @@ Cf2py depend(NSADP) SADP
            end do
         end do
         print *, recrsv,inf_thick,xplcit,rndm,l_cnt,has_l_mirror
-      end if
         
 C      print *,lambda,max_angle,h_bnd,k_bnd,l_bnd,no_trials,
 C     1  rad_type,X_RAY,n_atoms
@@ -252,6 +251,7 @@ C        print *,(mat(i,j),i=1,n_layers)
 C        print *,(mat1(i,j),i=1,n_layers)
 C        print *,(l_phi(i,j),i=1,n_layers)
 C      end do
+      end if
         
       ok = GETSPC(AGLQ16,'GSAS-II')              
       DO I=1,NSADP

@@ -2648,6 +2648,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             data['Layers']['Transitions'] = Trans
             UpdateLayerData()
             
+        def OnDeleteLast(event):
+            del(data['Layers']['Layers'][-1])
+            del(data['Layers']['Transitions'][-1])
+            for trans in data['Layers']['Transitions']:
+                del trans[-1]
+            UpdateLayerData()
+                
         def OnImportLayer(event):
             dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
                 wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.OPEN| wx.CHANGE_DIR)
@@ -2848,7 +2855,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 transGrid.SetTable(transTable,True)
                 transGrid.SetScrollRate(0,0)    #get rid of automatic scroll bars
                 Indx[transGrid.GetId()] = Yi
-                for c in range(1,4):
+                for c in range(0,4):
                     attr = wx.grid.GridCellAttr()
                     attr.IncRef()               #fix from Jim Hester
                     attr.SetEditor(G2G.GridFractionEditor(transGrid))
@@ -3064,6 +3071,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         importLayer = wx.CheckBox(layerData,label=' Import new layer?')
         importLayer.Bind(wx.EVT_CHECKBOX, OnImportLayer)
         titleSizer.Add(importLayer,0,WACV)
+        deleteLast = wx.CheckBox(layerData,label=' Delete last layer?')
+        deleteLast.Bind(wx.EVT_CHECKBOX, OnDeleteLast)
+        titleSizer.Add(deleteLast,0,WACV)
         topSizer.Add(titleSizer,0,WACV)
         for il,layer in enumerate(Layers['Layers']):
             topSizer.Add(LayerSizer(il,layer))

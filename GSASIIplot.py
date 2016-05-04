@@ -280,7 +280,7 @@ class G2PlotNoteBook(wx.Panel):
         flag to prevent a reset to the zoom of the plot (where implemented)
         '''
         self.allowZoomReset = False 
-        self.G2frame.PatternTree.SelectItem(id)
+        if id: self.G2frame.PatternTree.SelectItem(id)
         self.allowZoomReset = True 
             
 class GSASIItoolbar(Toolbar):

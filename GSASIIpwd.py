@@ -2073,7 +2073,8 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
 # Controls & sequences
     laueId,controls = SetStackingClay(Layers,'PWDR')
 # cell & atoms
-    Nlayers = SetCellAtoms(Layers)    
+    Nlayers = SetCellAtoms(Layers)
+    Volume = Layers['Cell'][7]    
 # Transitions
     SetStackingTrans(Layers,Nlayers)
 # PWDR scan
@@ -2105,6 +2106,7 @@ def CalcStackingPWDR(Layers,scale,background,limits,inst,profile,debug):
         pyx.pyprofile(U,V,W,HW,4,Nsteps,BrdSpec)
     else:
         BrdSpec = spec[:Nsteps]
+    BrdSpec /= Volume
     iFin = iBeg+Nsteps
     bakType,backDict,backVary = SetBackgroundParms(background)
     backDict['Lam1'] = G2mth.getWave(inst)

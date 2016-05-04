@@ -1353,35 +1353,6 @@ class GSASII(wx.Frame):
             else:
                 self.ErrorDialog('Open Error','Error opening instrument parameter file '
                     +str(instfile)+' requested by file '+ filename)
-#        # did we read the data file from a zip? If so, look there for a
-#        # instrument parameter file
-#        if self.zipfile:
-#            for ext in '.instprm','.prm','.inst','.ins':
-#                instfile = G2IO.ExtractFileFromZip(self.zipfile,
-#                    selection=os.path.split(basename + ext)[1],parent=self)
-#                if instfile is not None and instfile != self.zipfile:
-#                    print 'debug:',instfile,'created from ',self.zipfile
-#                    Lines = self.OpenPowderInstprm(instfile)
-#                    instParmList = None
-#                    if Lines is not None:
-#                        instParmList = self.ReadPowderInstprm(Lines,bank)    #this is [Inst1,Inst2] a pair of dicts
-#                    if 'dict' in str(type(instParmList)):
-#                        rd.instfile = instfile
-#                        rd.instmsg = 'GSAS-II file '+instfile
-#                        return instParmList
-#                    else:
-#                        rd.instmsg = instParmList   #an error message
-#                        print 'three',instParmList
-#                        return GetDefaultParms(self,rd)
-#                    Iparm = self.ReadPowderIparm(instfile,bank,numbanks,rd)
-#                    if Iparm:
-#                        rd.instfile = instfile
-#                        rd.instmsg = instfile + ' bank ' + str(rd.instbank)
-#                        return SetPowderInstParms(Iparm,rd)
-#                    else:
-#                        #print 'debug: open/read for',instfile,'from',self.zipfile,'failed'
-#                        pass # fail silently
-#
         #Finally - ask user for Instrument parametrs file - seems it can't be in a zip file
         while True: # loop until we get a file that works or we get a cancel
             instfile = ''

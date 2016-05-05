@@ -3258,7 +3258,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         Dij = GetDij(phfx,SGData,parmDict)
         A = [parmDict[pfx+'A%d'%(i)]+Dij[i] for i in range(6)]
         G,g = G2lat.A2Gmat(A)       #recip & real metric tensors
-        if np.any(np.diag(G)<0.):
+        if np.any(np.diag(G)<0.) or np.any(np.isnan(A)):
             raise G2obj.G2Exception('invalid metric tensor \n cell/Dij refinement not advised')
         GA,GB = G2lat.Gmat2AB(G)    #Orthogonalization matricies
         Vst = np.sqrt(nl.det(G))    #V*

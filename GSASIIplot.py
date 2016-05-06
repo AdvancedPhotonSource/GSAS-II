@@ -2417,7 +2417,8 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
 ##### PlotXY
 ################################################################################
             
-def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title='',lines=False):
+def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
+    Title='',lines=False,names=[]):
     '''simple plot of xy data, used for diagnostic purposes
     '''
     def OnKeyPress(event):
@@ -2437,7 +2438,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title='',li
 #            print 'no binding for key',event.key
             #GSASIIpath.IPyBreak()
             return
-        wx.CallAfter(PlotXY,G2frame,XY,XY2,labelX,labelY,False,Title,False)
+        wx.CallAfter(PlotXY,G2frame,XY,XY2,labelX,labelY,False,Title,False,names)
 
     def OnMotion(event):
         xpos = event.xdata
@@ -2500,7 +2501,12 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,Title='',li
             X,Y = XY2[ixy]
             dX = Page.Offset[0]*(ixy+1)*Xmax/500.
             dY = Page.Offset[1]*(ixy+1)*Ymax/100.
-            Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
+            if len(names):
+                Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False,label=names[ixy])
+            else:
+                Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
+    if len(names):
+        Plot.legend(loc='best')
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

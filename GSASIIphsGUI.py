@@ -2526,10 +2526,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 
         def OnSeqPlot(event):
             seqPlot.SetValue(False)
-            resultXY,resultXY2 = Layers['seqResults']
+            resultXY,resultXY2,seqNames = Layers['seqResults']
             pName = Layers['seqCodes'][0]
             G2plt.PlotXY(G2frame,resultXY,XY2=resultXY2,labelX=r'$\mathsf{2\theta}$',
-            labelY='Intensity',newPlot=True,Title='Sequential simulations on '+pName,lines=False)
+                labelY='Intensity',newPlot=True,Title='Sequential simulations on '+pName,
+                lines=False,names=seqNames)
             
         def CellSizer():
             
@@ -3220,7 +3221,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             return            
         profile = np.copy(G2frame.PatternTree.GetItemPyData(G2frame.PatternId)[1])
         resultXY2 = []
-        resultXY = [np.vstack((profile[0],profile[1])),]
+        resultXY = [np.vstack((profile[0],profile[1])),]    #observed data
         data['Layers']['selInst'] = simCodes[1]
         data['Layers']['seqCodes'] = simCodes[2:]
         Layers = copy.deepcopy(data['Layers'])
@@ -3230,8 +3231,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         laue = Layers['Laue']
         dStep = (BegFin[1]-BegFin[0])/nSteps
         vals = np.linspace(BegFin[0],BegFin[1],nSteps+1,True)
+        simNames = []
         for val in vals:
             print ' Stacking simulation step for '+pName+' = %.5f'%(val)
+            simNames.append('%.3f'%(val))
             if 'cell' in pName:
                 cellId = cellSel.index(pName)
                 cell = Layers['Cell']
@@ -3262,7 +3265,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     Trans[iX][transId] = val
             G2pwd.CalcStackingPWDR(Layers,scale,background,limits,inst,profile,False)
             resultXY2.append([np.vstack((profile[0],profile[3])),][0])
-        data['Layers']['seqResults'] = [resultXY,resultXY2]
+        data['Layers']['seqResults'] = [resultXY,resultXY2,simNames]
         wx.MessageBox('Sequential simulation finished',caption='Stacking fault simulation',style=wx.ICON_EXCLAMATION)
         wx.CallAfter(UpdateLayerData)
         

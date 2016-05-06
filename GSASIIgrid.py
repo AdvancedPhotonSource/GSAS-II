@@ -686,7 +686,7 @@ class DIFFaXcontrols(wx.Dialog):
             self.Parm = self.Parms[0]
         self.parmRange = [0.,1.]
         self.parmStep = 2
-        self.Inst = 'None'
+        self.Inst = 'Gaussian'
         self.Draw()
         
     def Draw(self):

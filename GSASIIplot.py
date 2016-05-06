@@ -6033,9 +6033,13 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
     Bl = np.array([0,0,255])
-    uBox = np.array([[0,0,0],[1,0,0],[0,1,0],[0,0,1]])
-    uEdges = np.array([[uBox[0],uBox[1]],[uBox[0],uBox[2]],[uBox[0],uBox[3]]])
-    uColors = [Rd,Gr,Bl]
+    Bc = np.array([0,0,0])
+    uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
+    uEdges = np.array([
+        [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
+        [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
+        [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
+    uColors = [Rd,Gr,Bl,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc]
     AtInfo = Layers['AtInfo']
     Names = [layer['Name'] for layer in Layers['Layers']]
     getAtoms()
@@ -6222,8 +6226,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         glBegin(GL_LINES)
         for line,color in zip(uEdges,uColors):
             glColor3ubv(color)
-            glVertex3fv([0,0,0])
-#            glVertex3fv(-line[1])
+            glVertex3fv(line[0])
             glVertex3fv(line[1])
         glEnd()
         glPopMatrix()
@@ -6301,13 +6304,14 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         glMultMatrixf(A4mat.T)
         glTranslate(-Tx,-Ty,-Tz)
         RenderUnitVectors(0.,0.,0.)
-        radius = 0.2
+        radius = 0.5
+        glShadeModel(GL_SMOOTH)
         for iat,atom in enumerate(XYZ):
             x,y,z = atom
             CL = AtInfo[AtTypes[iat]]['Color']
             color = np.array(CL)/255.
             RenderSphere(x,y,z,radius,color)
-            RenderBonds(x,y,z,Bonds[iat],0.05,color)
+            RenderBonds(x,y,z,Bonds[iat],0.10,color)
             if Page.labels:
                 RenderLabel(x,y,z,'  '+AtNames[iat],matRot)
         try:

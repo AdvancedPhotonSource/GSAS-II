@@ -2471,7 +2471,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         colTypes = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,]+ \
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+2*[wg.GRID_VALUE_FLOAT+':10,4',] #x,y,z,frac,Uiso
         transTypes = [wg.GRID_VALUE_FLOAT+':10,3',]+3*[wg.GRID_VALUE_FLOAT+':10,5',]+ \
-            [wg.GRID_VALUE_CHOICE+": ,P",wg.GRID_VALUE_BOOL,]
+            [wg.GRID_VALUE_CHOICE+": ,P,Dx,Dy,Dz",wg.GRID_VALUE_BOOL,]
         plotDefaults = {'oldxy':[0.,0.],'Quaternion':[0.,0.,0.,1.],'cameraPos':30.,'viewDir':[0,0,1],
             'viewPoint':[[0.,0.,0.],[]],}
         Indx = {}

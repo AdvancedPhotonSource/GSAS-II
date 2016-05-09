@@ -3063,6 +3063,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         topSizer.Add(wx.StaticText(layerData,label=' Reference unit cell for all layers:'),0,WACV)
         topSizer.Add(CellSizer(),0,WACV)
         topSizer.Add(WidthSizer())
+        topSizer.Add(wx.StaticText(layerData,label=' NB: stacking fault refinement currently not available'),0,WACV)
         G2G.HorizontalLine(topSizer,layerData)
         titleSizer = wx.BoxSizer(wx.HORIZONTAL)
         titleSizer.Add(wx.StaticText(layerData,label=' Layer descriptions: '),0,WACV)

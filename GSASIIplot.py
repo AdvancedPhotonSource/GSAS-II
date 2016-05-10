@@ -189,20 +189,6 @@ class G2PlotNoteBook(wx.Panel):
         if len(self.treeItem[plotLabel]) == 2 and self.treeItem[plotLabel][0][0] == 'Phases':
             self.treeItem[plotLabel][1] = self.G2frame.dataDisplayPhaseText
                 
-    def RaisePageNoRefresh(self,Page):
-        'Raises a plot tab without triggering a refresh via OnPageChanged'
-        self.skipPageChange = True
-        Page.SetFocus()
-        self.skipPageChange = False
-        
-    def SetSelectionNoRefresh(self,plotNum): 
-        'Raises a plot tab without triggering a refresh via OnPageChanged' 
-        self.skipPageChange = True
-        self.nb.SetSelection(plotNum) # raises plot tab 
-        Page = self.G2frame.G2plotNB.nb.GetPage(plotNum)
-        Page.SetFocus()
-        self.skipPageChange = False 
- 	                         
     def addMpl(self,name=""):
         'Add a tabbed page with a matplotlib plot'
         page = G2PlotMpl(self.nb)
@@ -251,6 +237,22 @@ class G2PlotNoteBook(wx.Panel):
         except ValueError:          #no plot of this name - do nothing
             return      
         
+    def RaisePageNoRefresh(self,Page):
+        'Raises a plot tab without triggering a refresh via OnPageChanged'
+#        print 'Raise',str(self).split('0x')[1]
+        self.skipPageChange = True
+        Page.SetFocus()
+        self.skipPageChange = False
+        
+    def SetSelectionNoRefresh(self,plotNum): 
+        'Raises a plot tab without triggering a refresh via OnPageChanged' 
+#        print 'Select',str(self).split('0x')[1]
+        self.skipPageChange = True
+        self.nb.SetSelection(plotNum) # raises plot tab 
+        Page = self.G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.SetFocus()
+        self.skipPageChange = False
+ 	                         
     def OnPageChanged(self,event):
         '''respond to someone pressing a tab on the plot window.
         Called when a plot tab is clicked. on some platforms (Mac for sure) this
@@ -258,30 +260,35 @@ class G2PlotNoteBook(wx.Panel):
         .SetFocus(). The self.skipPageChange is used variable is set to suppress
         repeated replotting.
         '''
+        tabLabel = event.GetEventObject().GetPageText(event.GetSelection())
+#        print 'PageChanged, self=',str(self).split('0x')[1],tabLabel,self.skipPageChange
+#        print 'event type=',event.GetEventType()
         self.status.DestroyChildren()    #get rid of special stuff on status bar
         self.status.SetFields(['',''])  # clear old status message
         self.status.SetStatusWidths([150,-1])
         if self.skipPageChange:
-            self.skipPageChange = False
+#            self.skipPageChange = False
+#            if tabLabel in self.treeItem:
+#                del self.treeItem[tabLabel]
             return
         page = self.panelList[self.nb.GetSelection()]   #GetCurrentPage() not in wx 2.7
-        tabLabel = event.GetEventObject().GetPageText(event.GetSelection())
         if tabLabel in self.treeItem:
             treeItems, tabname = self.treeItem[tabLabel]
-            id = self.G2frame.root
+            pid = self.G2frame.root
             for item in treeItems:
-                id = G2gd.GetPatternTreeItemId(self.G2frame, id, item)
-            wx.CallLater(100,self.InvokeTreeItem,id)
+                pid = G2gd.GetPatternTreeItemId(self.G2frame, pid, item)
+            wx.CallLater(100,self.InvokeTreeItem,pid)
         else:
             print 'OnPageChanged: not found:',tabLabel
             
-    def InvokeTreeItem(self,id):
+    def InvokeTreeItem(self,pid):
         '''This is called to select an item from the tree using the self.allowZoomReset
         flag to prevent a reset to the zoom of the plot (where implemented)
         '''
         self.allowZoomReset = False 
-        if id: self.G2frame.PatternTree.SelectItem(id)
-        self.allowZoomReset = True 
+        if pid: self.G2frame.PatternTree.SelectItem(pid)
+        self.allowZoomReset = True
+ #       print 'invoke',str(self).split('0x')[1]
             
 class GSASIItoolbar(Toolbar):
     'Override the matplotlib toolbar so we can add more icons'

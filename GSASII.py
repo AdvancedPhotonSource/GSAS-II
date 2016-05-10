@@ -3679,9 +3679,10 @@ class GSASII(wx.Frame):
                     for txt in oldPath:
                         Id = G2gd.GetPatternTreeItemId(self, Id, txt)
                     self.PickIdText = None  #force reload of page
-                    self.PickId = Id
-                    self.PatternTree.SelectItem(Id)
-                    G2gd.MovePatternTreeToGrid(self,Id) # reload current tree item, should update current plot
+                    if Id:
+                        self.PickId = Id
+                        self.PatternTree.SelectItem(Id)
+                        G2gd.MovePatternTreeToGrid(self,Id) # reload current tree item, should update current plot
             finally:
                 dlg2.Destroy()
         else:

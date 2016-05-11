@@ -2663,6 +2663,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if dlg.ShowModal() == wx.ID_OK:
                     GPXFile = dlg.GetPath()
                     phaseNames = G2strIO.GetPhaseNames(GPXFile)
+                else:
+                    return
             finally:
                 dlg.Destroy()
             dlg = wx.SingleChoiceDialog(G2frame,'Phase to use for layer','Select',phaseNames)
@@ -3262,6 +3264,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Layers['Transitions'][Nx-iX][Nx-iY][0] = val
                         for i in range(Nx+1):
                             Layers['Transitions'][Nx-iY][Nx-i][0] = Layers['Transitions'][iY][i][0]
+                    print ' Transition matrix:'
+                    for trans in Layers['Transitions']:
+                        line = str([' %.3f'%(vals[0]) for vals in trans])
+                        print line[1:-2].replace("'",'')
                 else:
                     Trans[iX][transId] = val
             G2pwd.CalcStackingPWDR(Layers,scale,background,limits,inst,profile,False)

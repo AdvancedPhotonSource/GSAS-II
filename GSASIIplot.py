@@ -648,7 +648,7 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             try:
                 Fname = os.path.join(Mydir,generalData['Name']+'.'+mode)
             except NameError:   #for when generalData doesn't exist!
-                Fname = os.path.join(Mydir,'unknown'+'.'+mode)
+                Fname = (os.path.join(Mydir,'unknown'+'.'+mode)).replace('*','+')
             print Fname+' saved'
             size = Page.canvas.GetSize()
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
@@ -2270,7 +2270,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         except IndexError:
             return
         Ymax = max(Ymax,max(xye[1]))
-    offset = Pattern[0]['Offset'][0]*Ymax/100.0
+    offset = Pattern[0].get('Offset',[0,0])[0]*Ymax/100.0
     if G2frame.Contour:
         ContourZ = []
         ContourY = []
@@ -2291,7 +2291,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
-            X = xye[0]+Pattern[0]['Offset'][1]*.005*N
+            X = xye[0]+Pattern[0].get('Offset',[0,0])[1]*.005*N
             if ifpicked:
                 Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
                 Page.canvas.SetToolTipString('')
@@ -4709,7 +4709,8 @@ def PlotStructure(G2frame,data,firstCall=False):
                 except ImportError:
                     print "PIL/pillow Image module not present. Cannot save images without this"
                     raise Exception("PIL/pillow Image module not found")
-            Fname = os.path.join(Mydir,generalData['Name']+'.'+mode)
+            projFile = G2frame.GSASprojectfile
+            Fname = (os.path.splitext(projFile)[0]+'.'+mode).replace('*','+')
             size = Page.canvas.GetSize()
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
             if mode in ['jpeg',]:
@@ -6053,6 +6054,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         [uBox[2],uBox[3]],[uBox[1],uBox[5]],[uBox[2],uBox[6]],[uBox[3],uBox[7]], 
         [uBox[4],uBox[5]],[uBox[5],uBox[6]],[uBox[6],uBox[7]],[uBox[7],uBox[4]]])
     uColors = [Rd,Gr,Bl,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc, Wt-Bc,Wt-Bc,Wt-Bc,Wt-Bc]
+    uEdges[2][1][2] = len(laySeq)
     AtInfo = Layers['AtInfo']
     Names = [layer['Name'] for layer in Layers['Layers']]
     getAtoms()
@@ -6069,7 +6071,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
                     print "PIL/pillow Image module not present. Cannot save images without this"
                     raise Exception("PIL/pillow Image module not found")
             projFile = G2frame.GSASprojectfile
-            Fname = os.path.splitext(projFile)[0]+'.'+mode
+            Fname = (os.path.splitext(projFile)[0]+'.'+mode).replace('*','+')
             size = Page.canvas.GetSize()
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
             if mode in ['jpeg',]:

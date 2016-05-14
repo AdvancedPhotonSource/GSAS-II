@@ -3860,8 +3860,8 @@ tutorialCatalog = (
         
     ['StackingFaults-I', 'StackingFaults-I', 'Stacking Faults-I.htm', 
         'Stacking fault simulations for diamond'],
-#    ['StackingFaults-II', 'StackingFaults-II', 'Stacking Faults-II.htm', 
-#        'Stacking fault simulations for kaolinite'],
+    ['StackingFaults-II', 'StackingFaults-II', 'Stacking Faults II.htm', 
+        'Stacking fault simulations for kaolinite'],
         
     ['CFXraySingleCrystal','CFXraySingleCrystal','CFSingleCrystal.htm',
         'Charge Flipping structure solution with Xray single crystal data'],       

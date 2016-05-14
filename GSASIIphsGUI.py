@@ -1226,7 +1226,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         sub = G2frame.PatternTree.AppendItem(parent=
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.PatternTree.SetItemPyData(sub,newPhase)
-
+#        G2gd.MovePatternTreeToGrid(G2frame,sub) #bring up new phase General tab
+        
 ################################################################################
 #####  Atom routines
 ################################################################################
@@ -3091,6 +3092,27 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add(bottomSizer)
         SetPhaseWindow(G2frame.dataFrame,G2frame.layerData,mainSizer,Scroll)
         
+    def OnCopyPhase(event):
+        dlg = wx.FileDialog(G2frame, 'Choose GSAS-II project file', 
+            wildcard='GSAS-II project file (*.gpx)|*.gpx',style=wx.OPEN| wx.CHANGE_DIR)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                GPXFile = dlg.GetPath()
+                phaseNames = G2strIO.GetPhaseNames(GPXFile)
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        dlg = wx.SingleChoiceDialog(G2frame,'Phase to use for cell data','Select',phaseNames)
+        if dlg.ShowModal() == wx.ID_OK:
+            sel = dlg.GetSelection()
+            PhaseName = phaseNames[sel]
+        else:
+            return
+        General = G2strIO.GetAllPhaseData(GPXFile,PhaseName)['General']
+        data['Layers']['Cell'] = General['Cell']
+        wx.CallAfter(UpdateLayerData)
+
     def OnLoadDIFFaX(event):
         if len(data['Layers']['Layers']):
             dlg = wx.MessageDialog(G2frame,'Do you really want to replace the Layer data?','Load DIFFaX file', 
@@ -7398,11 +7420,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.WavesData)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnWaveVary, id=G2gd.wxID_WAVEVARY)
         # Stacking faults 
-        if data['General']['Type'] == 'faulted':
-            FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.LayerData)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnSimulate, id=G2gd.wxID_LAYERSIMULATE)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnSeqSimulate, id=G2gd.wxID_SEQUENCESIMULATE)
+        FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.LayerData)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyPhase, id=G2gd.wxID_COPYPHASE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSimulate, id=G2gd.wxID_LAYERSIMULATE)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, OnSeqSimulate, id=G2gd.wxID_SEQUENCESIMULATE)
         # Draw Options
         FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.DataDrawOptions)
         # Draw Atoms

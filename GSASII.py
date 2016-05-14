@@ -2862,6 +2862,7 @@ class GSASII(wx.Frame):
         sub = self.PatternTree.AppendItem(parent=sub,text=PhaseName)
         E,SGData = G2spc.SpcGroup('P 1')
         self.PatternTree.SetItemPyData(sub,G2IO.SetNewPhase(Name=PhaseName,SGData=SGData))
+        G2gd.MovePatternTreeToGrid(self,sub) #bring up new phase General tab
         
     def OnDeletePhase(self,event):
         'Delete a phase from the tree. Called by Data/Delete Phase menu'

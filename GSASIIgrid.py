@@ -86,8 +86,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_CLEARTEXTURE,wxID_REFINETEXTURE,
 ] = [wx.NewId() for item in range(2)]
 
-[ wxID_LOADDIFFAX,wxID_LAYERSIMULATE,wxID_SEQUENCESIMULATE,
-] = [wx.NewId() for item in range(3)]
+[ wxID_LOADDIFFAX,wxID_LAYERSIMULATE,wxID_SEQUENCESIMULATE, wxID_COPYPHASE,
+] = [wx.NewId() for item in range(4)]
 
 [ wxID_PAWLEYLOAD, wxID_PAWLEYESTIMATE, wxID_PAWLEYUPDATE,
 ] = [wx.NewId() for item in range(3)]
@@ -1960,6 +1960,8 @@ class DataFrame(wx.Frame):
         self.LayerData.Append(menu=self.LayerDataEdit, title='Operations')
         self.LayerDataEdit.Append(id=wxID_LOADDIFFAX, kind=wx.ITEM_NORMAL,text='Load from DIFFaX file',
             help='Load layer info from DIFFaX file')
+        self.LayerDataEdit.Append(id=wxID_COPYPHASE, kind=wx.ITEM_NORMAL,text='Copy phase cell',
+            help='Copy phase cell from another project')
         self.LayerDataEdit.Append(id=wxID_LAYERSIMULATE, kind=wx.ITEM_NORMAL,text='Simulate pattern',
             help='Simulate diffraction pattern from layer stacking')
         self.LayerDataEdit.Append(id=wxID_SEQUENCESIMULATE, kind=wx.ITEM_NORMAL,text='Sequence simulations',

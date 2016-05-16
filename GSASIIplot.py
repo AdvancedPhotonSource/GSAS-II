@@ -5980,8 +5980,8 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
     def FindBonds(atTypes,XYZ):
         Radii = []
         for Atype in atTypes:
-            Radii.append(AtInfo[Atype]['Drad'])
-            if Atype == 'H':
+            Radii.append(AtInfo[Atype[0]]['Drad'])
+            if Atype[0] == 'H':
                 Radii[-1] = 0.5
         Radii = np.array(Radii)
         Bonds = [[] for i in range(len(Radii))]
@@ -6006,7 +6006,7 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             if Layers['Layers'][layer]['SameAs']:
                 layer = Names.index(Layers['Layers'][layer]['SameAs'])
             atNames = [atom[0] for atom in Layers['Layers'][layer]['Atoms']]
-            atTypes = [atom[1] for atom in Layers['Layers'][layer]['Atoms']]
+            atTypes = [[atom[1],il] for atom in Layers['Layers'][layer]['Atoms']]
             XYZ = np.array([atom[2:5] for atom in Layers['Layers'][layer]['Atoms']])
             if '-1' in Layers['Layers'][layer]['Symm']:
                 atNames += atNames
@@ -6083,14 +6083,21 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             im.fromstring(Pix)
             im = im.transpose(Im.FLIP_TOP_BOTTOM)
             im.save(Fname,mode)
-            cb.SetValue(' save as:')
-            G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
+            print ' Drawing saved to: '+Fname
+        elif mode[0] in ['L','F']:
+            event.key = cb.GetValue()[0]
+            wx.CallAfter(OnPlotKeyPress,event)
+        Page.canvas.SetFocus() # redirect the Focus from the button back to the plot
 
     def OnPlotKeyPress(event):
         global AtNames,AtTypes,XYZ,Bonds
-        if event.GetKeyCode() > 255:
-            return
-        keyCode = chr(min(255,event.GetKeyCode()))
+        try:
+            key = event.GetKeyCode()
+            if key > 255:
+                key = 0
+            keyCode = chr(key)
+        except AttributeError:       #if from OnKeyBox above
+            keyCode = str(event.key).upper()
         dx = 0.
         dy = 0.
         dz = 0.
@@ -6098,6 +6105,8 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             Page.labels = not Page.labels
             Draw('labels')
             return
+        elif keyCode =='F' and len(laySeq) == 2:
+            Page.fade = not Page.fade
         if len(laySeq) != 2:
             return
         Trans = Layers['Transitions']
@@ -6141,20 +6150,17 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             if event.LeftIsDown():
                 SetRotation(newxy)
                 Q = defaults['Quaternion']
-                G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
             elif event.RightIsDown():
                 SetTranslation(newxy)
                 Tx,Ty,Tz = defaults['viewPoint'][0]
             elif event.MiddleIsDown():
                 SetRotationZ(newxy)
                 Q = defaults['Quaternion']
-                G2frame.G2plotNB.status.SetStatusText('New quaternion: %.2f+, %.2fi+ ,%.2fj+, %.2fk'%(Q[0],Q[1],Q[2],Q[3]),1)
             Draw('move')
         
     def OnMouseWheel(event):
         defaults['cameraPos'] += event.GetWheelRotation()/24
         defaults['cameraPos'] = max(10,min(500,defaults['cameraPos']))
-        G2frame.G2plotNB.status.SetStatusText('New camera distance: %.2f'%(defaults['cameraPos']),1)
         Draw('wheel')
         
     def SetBackground():
@@ -6319,14 +6325,20 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         glMultMatrixf(A4mat.T)
         glTranslate(-Tx,-Ty,-Tz)
         RenderUnitVectors(0.,0.,0.)
-        radius = 0.5
+        bondRad = 0.1
+        atomRad = 0.5
+        if Page.labels:
+            bondRad = 0.05
+            atomRad = 0.2
         glShadeModel(GL_SMOOTH)
         for iat,atom in enumerate(XYZ):
             x,y,z = atom
-            CL = AtInfo[AtTypes[iat]]['Color']
+            CL = AtInfo[AtTypes[iat][0]]['Color']
             color = np.array(CL)/255.
-            RenderSphere(x,y,z,radius,color)
-            RenderBonds(x,y,z,Bonds[iat],0.10,color)
+            if len(laySeq) == 2 and AtTypes[iat][1] and Page.fade:
+                color *= .5
+            RenderSphere(x,y,z,atomRad,color)
+            RenderBonds(x,y,z,Bonds[iat],bondRad,color)
             if Page.labels:
                 RenderLabel(x,y,z,'  '+AtNames[iat],matRot)
         try:
@@ -6348,18 +6360,19 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.views = False
         Page.labels = False
+        Page.fade = False
         view = False
         altDown = False
-    choice = [' save as:','jpeg','tiff','bmp']
+    choice = [' save as:','jpeg','tiff','bmp','use keys for:','L - toggle labels']
+    if len(laySeq) == 2:
+        choice += ['F - toggle fade','X/shift-X move Dx','Y/shift-Y move Dy','Z/shift-Z move Dz']
     Page.keyPress = OnPlotKeyPress
     G2frame.G2plotNB.RaisePageNoRefresh(Page)
     Font = Page.GetFont()
     cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
     cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
-    if len(laySeq) == 2:
-        G2frame.G2plotNB.status.SetStatusText('Shift layer +/-XYZ key: X/shift-X, Y/shift-Y, Z/shift-Z; key: L - toggle atom labels',1)
-    else:
-        G2frame.G2plotNB.status.SetStatusText('L - toggle atom labels',1)
+    text = [str(Layers['Layers'][seq]['Name']) for seq in laySeq]
+    G2frame.G2plotNB.status.SetStatusText(' Layers plotted: '+str(text).replace("'",'')[1:-1],1)
     Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
     Page.canvas.Bind(wx.EVT_RIGHT_DOWN, OnMouseDown)

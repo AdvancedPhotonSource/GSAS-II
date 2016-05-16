@@ -2797,7 +2797,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 Yi = Indx[Obj.GetId()]               
                 Xi,c =  event.GetRow(),event.GetCol()
                 if Xi >= 0 and c == 5:   #plot column
-                    Obj.SetCellValue(Xi,5,'')
                     G2plt.PlotLayers(G2frame,Layers,[Yi,Xi,],plotDefaults)
                 else:
                     event.Skip()

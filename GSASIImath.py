@@ -157,7 +157,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
         deltaChi2 = (chisq0-chisq1)/chisq0
         if Print:
             print ' Cycle: %d, Time: %.2fs, Chi**2: %.5g, Lambda: %.3g,  Delta: %.3g'%(
-                icycle,time.time()-time0,chisq1,lam,deltaChi2)
+                icycle,time.time()-time0,chisq1,lamMax,deltaChi2)
         if deltaChi2 < ftol:
             ifConverged = True
             if Print: print "converged"

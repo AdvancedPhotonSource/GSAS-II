@@ -234,7 +234,7 @@ def Refine(GPXfile,dlg):
         cPickle.dump(pawleyLookup,fl,1)
         fl.close()
     if dlg:
-        return True,Rvals['Rwp']
+        return True,Rvals
 
 def SeqRefine(GPXfile,dlg):
     '''Perform a sequential refinement -- cycles through all selected histgrams,

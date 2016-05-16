@@ -3661,14 +3661,20 @@ class GSASII(wx.Frame):
             if 'Phases' in parentName:
                 tabId = self.dataDisplay.GetSelection()
         try:
-            OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg)
+            OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg)    #Msg is Rvals dict if Ok=True
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()
             wx.Yield()
         if OK:
-            Rw = Msg
-            dlg2 = wx.MessageDialog(self,'Load new result?','Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
+            Rw = Msg['Rwp']
+            lamMax = Msg.get('lamMax',0.001)
+            text = 'Load new result?'
+            if lamMax >= 10.:
+                text += '\nWARNING: Steepest descents dominates;'+   \
+                ' minimum may not have been reached\nor result may be false minimum.'+  \
+                ' You should reconsider your parameter suite'
+            dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
                     Id = 0
@@ -3720,7 +3726,7 @@ class GSASII(wx.Frame):
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
         dlg.CenterOnParent()
         try:
-            OK,Msg = G2stMn.SeqRefine(self.GSASprojectfile,dlg)
+            OK,Msg = G2stMn.SeqRefine(self.GSASprojectfile,dlg)     #Msg is Rvals dict if Ok=True
         finally:
             dlg.Update(101.) # forces the Auto_Hide; needed after move w/Win & wx3.0
             dlg.Destroy()

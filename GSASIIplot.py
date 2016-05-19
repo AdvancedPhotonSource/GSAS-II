@@ -1602,7 +1602,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.figure.clf()
         Plot = Page.figure.gca()          #get a fresh plot after clf()
         G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
-    except ValueError:
+    except (ValueError,AttributeError):
         if plottype == 'SASD':
             G2frame.logPlot = True
             G2frame.ErrorBars = True

@@ -2799,6 +2799,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if Xi >= 0 and c == 5:   #plot column
                     G2plt.PlotLayers(G2frame,Layers,[Yi,Xi,],plotDefaults)
                 else:
+                    Psum = 0.
+                    for Xi in range(len(transArray)):
+                        Psum += transArray[Xi][Xi][0]
+                    Psum /= len(transArray)
+                    totalFault.SetLabel(' Total fault density = %.3f'%(1.-Psum))
                     event.Skip()
                     
             def OnNormProb(event):
@@ -2844,10 +2849,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             layerData.transGrids = []
             if not Names or not transArray:
                 return transSizer
+            diagSum = 0.
             for Yi,Yname in enumerate(Names):
                 transSizer.Add(wx.StaticText(layerData,label=' From %s to:'%(Yname)),0,WACV)
                 table = []
                 rowLabels = []
+                diagSum += transArray[Yi][Yi][0]
                 for Xi,Xname in enumerate(Names):
                     table.append(transArray[Yi][Xi])
                     rowLabels.append(Xname)
@@ -2867,6 +2874,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 transGrid.AutoSizeColumns(True)
                 transSizer.Add(transGrid)
                 layerData.transGrids.append(transGrid)
+            if len(transArray):
+                diagSum /= len(transArray)
+                totalFault = wx.StaticText(layerData,
+                    label=' Total fault density = %.3f'%(1.-diagSum))
+                transSizer.Add(totalFault,0,WACV)
             return transSizer
             
         def PlotSizer():

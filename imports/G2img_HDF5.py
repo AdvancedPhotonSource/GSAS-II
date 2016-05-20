@@ -64,8 +64,8 @@ class HDF5_Reader(G2IO.ImportImage):
             fp = h5py.File(filename, 'r')
             if not self.buffer.get('init'):
                 self.buffer['init'] = True
-                self.visit(fp)
-            self.Comments,self.Data,self.Npix,self.Image = self.readDataset(fp,imagenum)
+                self.Comments = self.visit(fp)
+            self.Data,self.Npix,self.Image = self.readDataset(fp,imagenum)
             if self.Npix == 0 or not self.Comments:
                 return False
             self.LoadImage(ParentFrame,filename,imagenum)
@@ -85,9 +85,12 @@ class HDF5_Reader(G2IO.ImportImage):
         length 2 or 4 assume an image and index in self.buffer['imagemap']
         ''' 
         datakeyword = 'data'
+        head = []
         def func(name, dset):
             if not hasattr(dset,'shape'): return # not array, can't be image
             if isinstance(dset, h5py.Dataset):
+                if len(dset.shape) < 2:
+                    head.append('%s: %s'%(dset.name,str(dset[()][0])))
                 if dset.name.endswith(datakeyword):
                     dims = dset.shape
                     if len(dims) == 4:
@@ -98,6 +101,7 @@ class HDF5_Reader(G2IO.ImportImage):
         if GSASIIpath.GetConfigValue('debug'): print 'visit'
         self.buffer['imagemap'] = []
         fp.visititems(func)
+        return head
         
     def readDataset(self,fp,imagenum=1):
         '''Read a specified image number from a file
@@ -108,9 +112,25 @@ class HDF5_Reader(G2IO.ImportImage):
             image = dset[()]
         else:
             image = dset[0,num,...]
-        head = ['raw data']
         sizexy = list(image.shape) 
-        Npix = sizexy[0]*sizexy[1]             
-        data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,
-                'center':[204.8,204.8],'size':sizexy}
-        return head,data,Npix,image
+        Npix = sizexy[0]*sizexy[1]
+        data = {'pixelSize':[200.,200.],'wavelength':0.15,'distance':1000.,
+                'center':[sizexy[0]*0.1,sizexy[1]*0.1],'size':sizexy}
+        for item in self.Comments:
+            name,val = item.split(':',1)
+            if 'wavelength' in name and 'spread' not in name:
+                try:
+                    data['wavelength'] = float(val)
+                except ValueError:
+                    pass
+            elif 'distance' in name:
+                data['distance'] = float(val)
+            elif 'x_pixel_size' in name:
+                data['pixelSize'][0] = float(val)*1000.
+            elif 'y_pixel_size' in name:
+                data['pixelSize'][1] = float(val)*1000.
+            elif 'beam_center_x' in name: 
+                data['center'][0] = float(val)
+            elif 'beam_center_y' in name: 
+                data['center'][1] = float(val)                
+        return data,Npix,image.T

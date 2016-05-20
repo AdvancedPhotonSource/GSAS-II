@@ -581,7 +581,7 @@ def ImageRecalibrate(G2frame,data,masks):
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))    
-    print 'calibration time = ',time.time()-time0
+    print 'calibration time = %.3f'%(time.time()-time0)
     G2plt.PlotImage(G2frame,newImage=True)        
     return True
             
@@ -793,7 +793,7 @@ def ImageCalibrate(G2frame,data):
     for H in HKL[:N]:
         ellipse = GetEllipse(H[3],data)
         data['ellipses'].append(copy.deepcopy(ellipse+('b',)))
-    print 'calibration time = ',time.time()-time0
+    print 'calibration time = %.3f'%(time.time()-time0)
     G2plt.PlotImage(G2frame,newImage=True)        
     return True
     

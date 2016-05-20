@@ -3945,8 +3945,8 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             else:
                 xpos = event.xdata
                 ypos = event.ydata
-                xpix = xpos*scalex
-                ypix = ypos*scaley
+                xpix = int(xpos*scalex)
+                ypix = int(ypos*scaley)
                 Int = 0
                 if (0 <= xpix <= sizexy[0]) and (0 <= ypix <= sizexy[1]):
                     Int = G2frame.ImageZ[ypix][xpix]

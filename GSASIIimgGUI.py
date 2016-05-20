@@ -165,8 +165,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
 # Menu items
             
     def OnCalibrate(event):
-        if not data.get('calibrant'):
-            G2G.G2MessageBox(G2frame,'A calibrant must first be selected')
         G2frame.dataFrame.GetStatusBar().SetStatusText('Select > 4 points on 1st used ring; LB to pick, RB on point to delete else RB to finish')
         G2frame.ifGetRing = True
                 
@@ -824,7 +822,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             except ValueError:
                 pass
             flatbkg.SetValue("%.0f"%(data['Flat Bkg']))    
-            G2frame.ImageZ += (oldFlat-data['Flat Bkg'])
+            G2frame.ImageZ += int(oldFlat-data['Flat Bkg'])
             ResetThresholds()
             G2plt.PlotExposedImage(G2frame,event=event)
 
@@ -889,14 +887,20 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     def CalibSizer():
                 
         def OnNewCalibrant(event):
-            data['calibrant'] = calSel.GetValue()
-            data['calibskip'] = calFile.Calibrants[data['calibrant']][3]
-            limits = calFile.Calibrants[data['calibrant']][4]
-            data['calibdmin'],data['pixLimit'],data['cutoff'] = limits
-            pixLimit.SetValue(str(limits[1]))
-            cutOff.SetValue('%.1f'%(limits[2]))
-            calibSkip.SetValue(str(data['calibskip']))
-            calibDmin.SetValue('%.1f'%(limits[0]))
+            data['calibrant'] = calSel.GetValue().strip()
+            if data['calibrant']:
+                G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=True)
+                G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCALIBRATE,enable=True)
+                data['calibskip'] = calFile.Calibrants[data['calibrant']][3]
+                limits = calFile.Calibrants[data['calibrant']][4]
+                data['calibdmin'],data['pixLimit'],data['cutoff'] = limits
+                pixLimit.SetValue(str(limits[1]))
+                cutOff.SetValue('%.1f'%(limits[2]))
+                calibSkip.SetValue(str(data['calibskip']))
+                calibDmin.SetValue('%.1f'%(limits[0]))
+            else:
+                G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)
+                G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCALIBRATE,enable=False)
             
         def OnCalibSkip(event):
             data['calibskip'] = int(calibSkip.GetValue())
@@ -1083,8 +1087,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=G2gd.wxID_IMCLEARCALIB)
     if data.get('calibrant'):
         G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=True)
+        G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCALIBRATE,enable=True)
     else:
         G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)
+        G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCALIBRATE,enable=False)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=G2gd.wxID_IMINTEGRATE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnIntegrateAll, id=G2gd.wxID_INTEGRATEALL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyControls, id=G2gd.wxID_IMCOPYCONTROLS)

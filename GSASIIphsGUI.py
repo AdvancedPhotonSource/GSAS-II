@@ -78,39 +78,6 @@ def SetPhaseWindow(mainFrame,phasePage,mainSizer,Scroll=0):
     phasePage.Scroll(0,Scroll)
     mainFrame.setSizePosLeft(Size)
     
-#def FindBondsToo():                         #works but slow for large structures - keep as reference
-#    cx,ct,cs,ci = data['Drawing']['atomPtrs']
-#    atomData = data['Drawing']['Atoms']
-#    generalData = data['General']
-#    Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
-#    radii = generalData['BondRadii']
-#    atomTypes = generalData['AtomTypes']
-#    try:
-#        indH = atomTypes.index('H')
-#        radii[indH] = 0.5
-#    except:
-#        pass            
-#    for atom in atomData:
-#        atom[-1] = []
-#    Atoms = []
-#    for i,atom in enumerate(atomData):
-#        Atoms.append([i,np.array(atom[cx:cx+3]),atom[cs],radii[atomTypes.index(atom[ct])]])
-#    for atomA in Atoms:
-#        if atomA[2] in ['lines','sticks','ellipsoids','balls & sticks','polyhedra']:
-#            for atomB in Atoms:                    
-#                Dx = atomB[1]-atomA[1]
-#                DX = np.inner(Amat,Dx)
-#                dist = np.sqrt(np.sum(DX**2))
-#                sumR = atomA[3]+atomB[3]
-#                if 0.5 < dist <= 0.85*sumR:
-#                    i = atomA[0]
-#                    if atomA[2] == 'polyhedra':
-#                        atomData[i][-1].append(DX)
-#                    elif atomB[1] != 'polyhedra':
-#                        j = atomB[0]
-#                        atomData[i][-1].append(Dx*atomA[3]/sumR)
-#                        atomData[j][-1].append(-Dx*atomB[3]/sumR)
-                
 def FindBondsDraw(data):    
     '''uses numpy & masks - very fast even for proteins!
     '''
@@ -478,6 +445,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if generalData['Type'] in ['modulated',]:
                     generalData['SuperSg'] = SetDefaultSSsymbol()
                     generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
+                Atoms = data['Atoms']
+                cx = generalData['AtomPtrs'][0]
+                for atom in Atoms:
+                    XYZ = atom[cx:cx+3]
+                    Sytsym,Mult = G2spc.SytSym(XYZ,SGData)
+                    atom[cx+4] = Sytsym
+                    atom[cx+5] = Mult
                 wx.CallAfter(UpdateGeneral)
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)

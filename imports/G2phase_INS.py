@@ -67,6 +67,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
         Title = ''
         Compnd = ''
         Atoms = []
+        aTypes = []
         A = np.zeros(shape=(3,3))
         S = file.readline()
         line = 1
@@ -91,14 +92,20 @@ class PhaseReaderClass(G2IO.ImportPhase):
                 SpGrp = 'P 1'
                 SGData = G2IO.SGData # P 1
                 self.warnings += '\nThe space group is not given in an ins file and has been set to "P 1".'
-                self.warnings += "Change this in phase's General tab."
+                self.warnings += "\nChange this in phase's General tab; NB: it might be in the Phase name."
             elif S[:4] in 'SFAC':
                 aTypes = S[4:].split()
+                if 'H' in aTypes:
+                    self.warnings += '\nHydrogen atoms found; consider replacing them with stereochemically tied ones.'
+                    self.warnings += "\nDo 'Edit/Insert H atoms' in this phase's Atoms tab after deleting the old ones."
             elif S[0] == 'Q':
                 pass
-            elif np.any(Aindx):   #this will find an atom record!
-                iNum = Aindx.index(True)
-                Atype = S[:iNum]
+            elif np.any(Aindx) or S[:4].strip() in aTypes:   #this will find an atom record!
+                try:
+                    iNum = Aindx.index(True)
+                except ValueError:
+                    iNum = 4
+                Atype = S[:iNum].strip()
                 Aname = S[:4]
                 x,y,z = S[9:45].split()
                 XYZ = np.array([float(x),float(y),float(z)])
@@ -129,6 +136,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
         file.close()
         self.errors = 'Error after read complete'
         Phase = G2IO.SetNewPhase(Name='ShelX phase',SGData=SGData,cell=cell+[Volume,])
+        Phase['General']['Name'] = Title
         Phase['General']['Type'] = 'nuclear'
         Phase['General']['AtomPtrs'] = [3,1,7,9]
         Phase['Atoms'] = Atoms

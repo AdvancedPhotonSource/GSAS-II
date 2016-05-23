@@ -69,7 +69,7 @@ def GetImageZ(G2frame,data):
             Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
             imagefile = G2IO.CheckImageFile(G2frame,imagefile)
             darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-            sumImg += darkImage*darkScale
+            sumImg += np.array(darkImage*darkScale,dtype='int32')
     if not 'background image' in data:
         return sumImg
     backImg,backScale = data['background image']            
@@ -85,8 +85,8 @@ def GetImageZ(G2frame,data):
                 Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
                 imagefile = G2IO.CheckImageFile(G2frame,imagefile)
                 darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
-                backImage += darkImage*darkScale                
-            sumImg += backImage*backScale
+                backImage += np.array(darkImage*darkScale,dtype='int32')                
+            sumImg += np.array(backImage*backScale,dtype='int32')
     if darkImg: del darkImg         #force cleanup
     if backImg: del backImg
 #    GSASIIpath.IPyBreak()

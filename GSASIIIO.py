@@ -897,8 +897,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
                 if Aname in Name:
                     nOcc += 1
                 item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            if nOcc:
-                Aname += '(%d)'%(nOcc)
+            Aname += '(%03d)'%(nOcc)
         Sample = G2pdG.SetDefaultSample()
         Sample['Gonio. radius'] = data['distance']
         Sample['Omega'] = data['GonioAngles'][0]

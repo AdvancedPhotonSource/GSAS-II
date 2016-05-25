@@ -31,7 +31,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
         super(self.__class__,self).__init__( # fancy way to say ImportPhase.__init__
             extensionlist=('.ins','.INS','.res','.RES'),
             strictExtension=True,
-            formatName = 'SHELX ins,res',
+            formatName = 'SHELX ins, res',
             longFormatName = 'SHELX input (*.ins, *.res) file import'
             )
         
@@ -106,7 +106,8 @@ class PhaseReaderClass(G2IO.ImportPhase):
             elif S[:4].upper() in 'SFAC':
                 aTypes = S[4:].split()
                 if 'H' in aTypes:
-                    self.warnings += '\nHydrogen atoms found; consider replacing them with stereochemically tied ones.'
+                    self.warnings += '\n\nHydrogen atoms found; consider replacing them with stereochemically tied ones'
+                    self.warnings += '\nas Shelx constraints & HFIX commands are ignored.'
                     self.warnings += "\nDo 'Edit/Insert H atoms' in this phase's Atoms tab after deleting the old ones."
             elif S[0] == 'Q':
                 pass
@@ -126,7 +127,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
                 if '=' not in S:
                     IA = 'I'
                     Uiso = float(AtRec[6])
-                    if Uiso < 0.:
+                    if Uiso < 0. or Uiso > 1.0:
                         Uiso = 0.025
                     Uij = [0. for i in range(6)]
                 else:

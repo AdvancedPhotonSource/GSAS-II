@@ -524,11 +524,12 @@ class GSASII(wx.Frame):
                             rd.errors += "\n  Traceback info:\n"+str(traceback.format_exc())
                     if flag: # this read succeeded
                         rd.readfilename = filename
-                        if load2Tree:
+                        if load2Tree:   #images only
                             if rd.repeatcount == 1 and not rd.repeat: # skip image number if only one in set
                                 rd.Data['ImageTag'] = None
                             else:
                                 rd.Data['ImageTag'] = rd.repeatcount
+                            rd.Data['formatName'] = rd.formatName
                             G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
                             rd_list.append(True) # save a stub the result before it is written over
                             del rd.Image

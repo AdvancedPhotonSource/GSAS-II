@@ -40,8 +40,15 @@ class GE_ReaderClass(G2IO.ImportImage):
             )
 
     def ContentsValidator(self, filepointer):
-        '''no test at this time
+        '''just a test on file size
         '''
+        if '.sum' not in str(filepointer):
+            try:
+                statinfo = os.stat(str(filepointer).split("'")[1])
+                fsize = statinfo.st_size
+                self.nimages = (fsize-8192)/(2*2048**2)
+            except:
+                return False    #bad file size
         return True
         
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
@@ -51,7 +58,8 @@ class GE_ReaderClass(G2IO.ImportImage):
         imagenum = kwarg.get('blocknum')
         #sum = kwarg.get('sum')
         if imagenum is None: imagenum = 1
-        self.Comments,self.Data,self.Npix,self.Image,more = GetGEsumData(filename,imagenum=imagenum)
+        self.Comments,self.Data,self.Npix,self.Image,more = \
+            GetGEsumData(filename,imagenum=imagenum)
         if self.Npix == 0 or not self.Comments:
             return False
         self.LoadImage(ParentFrame,filename,imagenum)
@@ -59,7 +67,7 @@ class GE_ReaderClass(G2IO.ImportImage):
         self.repeat = more
         return True
 
-class GE_sumReaderClass(G2IO.ImportImage):
+class GEsum_ReaderClass(G2IO.ImportImage):
     '''Routine to read multiple GE images & sum them, typically from APS Sector 1.
         
         The image files may be of form .geX (where X is ' ', 1, 2, 3 or 4),
@@ -78,8 +86,14 @@ class GE_sumReaderClass(G2IO.ImportImage):
             )
 
     def ContentsValidator(self, filepointer):
-        '''no test at this time
+        '''just a test on file size
         '''
+        try:
+            statinfo = os.stat(str(filepointer).split("'")[1])
+            fsize = statinfo.st_size
+            nimages = (fsize-8192)/(2*2048**2)
+        except:
+            return False    #bad file size
         return True
         
     def Reader(self,filename,filepointer, ParentFrame=None, **kwarg):
@@ -88,7 +102,8 @@ class GE_sumReaderClass(G2IO.ImportImage):
         #rdbuffer = kwarg.get('buffer')
         imagenum = kwarg.get('blocknum')
         if imagenum is None: imagenum = 1
-        self.Comments,self.Data,self.Npix,self.Image,more = GetGEsumData(filename,imagenum=imagenum,sum=True)
+        self.Comments,self.Data,self.Npix,self.Image,more = \
+            GetGEsumData(filename,imagenum=imagenum,sum=True)
         if self.Npix == 0 or not self.Comments:
             return False
         self.LoadImage(ParentFrame,filename,imagenum)
@@ -139,7 +154,6 @@ def GetGEsumData(filename,imagenum=1,sum=False):
         head += ['file: '+filename+' image #'+str(imagenum),]
         if sum:    #will ignore imagenum
             while nframes > 1: #OK, this will sum the frames.
-        #      print 'adding'
                 image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
                 nframes -= 1
             more = False

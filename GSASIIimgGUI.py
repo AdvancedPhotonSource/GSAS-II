@@ -59,16 +59,19 @@ def GetImageZ(G2frame,data):
     
     Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(G2frame.Image)
     imagefile = G2IO.CheckImageFile(G2frame,imagefile)
-    sumImg = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+    formatName = data.get('formatName','')
+    sumImg = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=formatName)
     if not 'dark image' in data:
         return sumImg
     darkImg,darkScale = data['dark image']
     if darkImg:
         Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
+        Ddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Did,'Image Controls'))
+        dformatName = Ddata.get('formatName','')
         if Did:
             Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
             imagefile = G2IO.CheckImageFile(G2frame,imagefile)
-            darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+            darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=dformatName)
             sumImg += np.array(darkImage*darkScale,dtype='int32')
     if not 'background image' in data:
         return sumImg
@@ -78,13 +81,16 @@ def GetImageZ(G2frame,data):
         if Bid:
             Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Bid)
             imagefile = G2IO.CheckImageFile(G2frame,imagefile)
-            backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
             Bdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Bid,'Image Controls'))
+            bformatName = Bdata.get('formatName','')
+            backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=bformatName)
             if darkImg:
                 Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,darkImg)
+                Ddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Did,'Image Controls'))
+                dformatName = Ddata.get('formatName','')
                 Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
                 imagefile = G2IO.CheckImageFile(G2frame,imagefile)
-                darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag)
+                darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=dformatName)
                 backImage += np.array(darkImage*darkScale,dtype='int32')                
             sumImg += np.array(backImage*backScale,dtype='int32')
     if darkImg: del darkImg         #force cleanup

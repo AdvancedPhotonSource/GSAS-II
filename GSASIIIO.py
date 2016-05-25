@@ -344,7 +344,7 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     G2frame.PickIdText = G2frame.GetTreeItemsList(G2frame.PickId)
     G2frame.Image = Id
 
-def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None):
+def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None,FormatName=''):
     '''Read a single image with an image importer. 
 
     :param wx.Frame G2frame: main GSAS-II Frame and data object.
@@ -353,6 +353,7 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None):
       otherwise  (default) return more (see below)
     :param int/str ImageTag: specifies a particular image to be read from a file.
       First image is read if None (default).
+    :param str formatName: the image reader formatName
 
     :returns: an image as a numpy array or a list of four items:
       Comments, Data, Npix and the Image, as selected by imageOnly
@@ -366,7 +367,10 @@ def GetImageData(G2frame,imagefile,imageOnly=False,ImageTag=None):
         if flag is None: 
             secondaryReaders.append(rd)
         elif flag:
-            primaryReaders.append(rd)
+            if not FormatName:
+                primaryReaders.append(rd)
+            elif FormatName == rd.formatName:
+                primaryReaders.append(rd)
     if len(secondaryReaders) + len(primaryReaders) == 0:
         print('Error: No matching format for file '+filename)
         raise Exception('No image read')

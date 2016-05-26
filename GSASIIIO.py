@@ -280,7 +280,7 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
     TreeLbl = 'IMG '+os.path.basename(imagefile)
     ImageTag = Data.get('ImageTag')
     if ImageTag:
-        TreeLbl += ' #'+str(ImageTag)
+        TreeLbl += ' #'+'%04d'%(ImageTag)
         imageInfo = (imagefile,ImageTag)
     else:
         imageInfo = imagefile
@@ -901,7 +901,7 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
                 if Aname in Name:
                     nOcc += 1
                 item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-            Aname += '(%03d)'%(nOcc)
+            Aname += '(%3d)'%(nOcc)
         Sample = G2pdG.SetDefaultSample()
         Sample['Gonio. radius'] = data['distance']
         Sample['Omega'] = data['GonioAngles'][0]

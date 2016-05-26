@@ -161,5 +161,5 @@ def GetGEsumData(filename,imagenum=1,sum=False):
     data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
     File.close()
     if GSASIIpath.GetConfigValue('debug'):
-        print 'Read GE file: '+filename+' image #'+str(imagenum)
+        print 'Read GE file: '+filename+' image #'+'%04d'%(imagenum)
     return head,data,Npix,image,more

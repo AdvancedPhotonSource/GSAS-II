@@ -66,9 +66,9 @@ def GetImageZ(G2frame,data):
     darkImg,darkScale = data['dark image']
     if darkImg:
         Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, darkImg)
-        Ddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Did,'Image Controls'))
-        dformatName = Ddata.get('formatName','')
         if Did:
+            Ddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Did,'Image Controls'))
+            dformatName = Ddata.get('formatName','')
             Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
             imagefile = G2IO.CheckImageFile(G2frame,imagefile)
             darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=dformatName)
@@ -86,12 +86,13 @@ def GetImageZ(G2frame,data):
             backImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=bformatName)
             if darkImg:
                 Did = G2gd.GetPatternTreeItemId(G2frame, G2frame.root,darkImg)
-                Ddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Did,'Image Controls'))
-                dformatName = Ddata.get('formatName','')
-                Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
-                imagefile = G2IO.CheckImageFile(G2frame,imagefile)
-                darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=dformatName)
-                backImage += np.array(darkImage*darkScale,dtype='int32')                
+                if Did:
+                    Ddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Did,'Image Controls'))
+                    dformatName = Ddata.get('formatName','')
+                    Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Did)
+                    imagefile = G2IO.CheckImageFile(G2frame,imagefile)
+                    darkImage = G2IO.GetImageData(G2frame,imagefile,True,ImageTag=imagetag,FormatName=dformatName)
+                    backImage += np.array(darkImage*darkScale,dtype='int32')                
             sumImg += np.array(backImage*backScale,dtype='int32')
     if darkImg: del darkImg         #force cleanup
     if backImg: del backImg

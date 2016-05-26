@@ -3875,6 +3875,9 @@ tutorialCatalog = (
         'Charge flipping with neutron TOF single crystal data'],
     ['MCsimanneal', 'MCsimanneal', 'MCSA in GSAS.htm',
         'Monte-Carlo simulated annealing structure'],
+        
+    ['MerohedralTwins', 'MerohedralTwins','Merohedral twin refinement in GSAS.htm',
+        'Merohedral twin refinements'],
 
     ['2DCalibration', '2DCalibration', 'Calibration of an area detector in GSAS.htm',
         'Calibration of an area detector'],

@@ -35,8 +35,7 @@ class G2_ReaderClass(G2IO.ImportImage):
         '''test by trying to unpickle (should be quick)
         '''
         try:
-            Fp = open(filename,'rb')
-            cPickle.load(Fp)
+            cPickle.load(filepointer)
         except:
             return False
         return True

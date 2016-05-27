@@ -1631,6 +1631,7 @@ class ImportImage(ImportBaseclass):
          * 'size': size of image (such as ``[2048,2048]``).
          * 'ImageTag': image number or other keyword used to retrieve image from
            a multi-image data file (defaults to ``1`` if not specified).
+         * 'sumfile': holds sum image file name if a sum was produced from a multi image file
 
     optional data items:
     
@@ -1661,6 +1662,7 @@ class ImportImage(ImportBaseclass):
         self.Image = None
         self.repeat = False
         self.repeatcount = 1
+        self.sumfile = ''
 
     def LoadImage(self,ParentFrame,imagefile,imagetag=None):
         '''Optionally, call this after reading in an image to load it into the tree.

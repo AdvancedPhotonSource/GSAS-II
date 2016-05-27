@@ -59,7 +59,7 @@ class GE_ReaderClass(G2IO.ImportImage):
         #sum = kwarg.get('sum')
         if imagenum is None: imagenum = 1
         self.Comments,self.Data,self.Npix,self.Image,more = \
-            GetGEsumData(filename,imagenum=imagenum)
+            GetGEsumData(self,filename,imagenum=imagenum)
         if self.Npix == 0 or not self.Comments:
             return False
         self.LoadImage(ParentFrame,filename,imagenum)
@@ -81,7 +81,7 @@ class GEsum_ReaderClass(G2IO.ImportImage):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.ge1','.ge2','.ge3','.ge4'),
             strictExtension=True,
-            formatName = 'GE multi-image summed',
+            formatName = 'sum GE multi-image',
             longFormatName = 'sum of GE multi-image file'
             )
 
@@ -103,7 +103,7 @@ class GEsum_ReaderClass(G2IO.ImportImage):
         imagenum = kwarg.get('blocknum')
         if imagenum is None: imagenum = 1
         self.Comments,self.Data,self.Npix,self.Image,more = \
-            GetGEsumData(filename,imagenum=imagenum,sum=True)
+            GetGEsumData(self,filename,imagenum=imagenum,sum=True)
         if self.Npix == 0 or not self.Comments:
             return False
         self.LoadImage(ParentFrame,filename,imagenum)
@@ -111,12 +111,13 @@ class GEsum_ReaderClass(G2IO.ImportImage):
         self.repeat = more
         return True
 
-def GetGEsumData(filename,imagenum=1,sum=False):
+def GetGEsumData(self,filename,imagenum=1,sum=False):
     '''Read G.E. detector images from various files as produced at 1-ID and
     with Detector Pool detector. Also sums multiple image files if desired
     '''
     import struct as st
     import array as ar
+    import cPickle
     more = False
     File = open(filename,'rb')
     if '.sum' in filename or '.cor' in filename:
@@ -153,10 +154,25 @@ def GetGEsumData(filename,imagenum=1,sum=False):
             return 0,0,0,0,False            
         head += ['file: '+filename+' image #'+str(imagenum),]
         if sum:    #will ignore imagenum
+            print 'Frames to read %d'%(nframes),
             while nframes > 1: #OK, this will sum the frames.
-                image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+                try:
+                    image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+                except ValueError:
+                    break
                 nframes -= 1
+                print '%d'%(nframes),
+            print ''   
             more = False
+            filename = os.path.splitext(filename)[0]+'.G2img'
+            File = open(filename,'wb')
+            Data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
+            image = np.reshape(image,(sizexy[1],sizexy[0]))
+            cPickle.dump([head,Data,Npix,image],File,1)
+            File.close()
+            self.sumfile = filename
+            self.formatName = 'Summed GSAS-II image'
+            sum = False
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}
     File.close()

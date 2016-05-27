@@ -244,7 +244,7 @@ def GetTifData(filename):
                 File.seek(8)
                 print 'Read APS PE-detector tiff file: ',filename
                 if dataType == 5:
-                    image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.float32)
+                    image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.intt32)
                 else:
                     image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
             elif IFD[258][2][0] == 16: 

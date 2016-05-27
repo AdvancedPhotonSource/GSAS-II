@@ -288,7 +288,7 @@ class G2PlotNoteBook(wx.Panel):
         self.allowZoomReset = False 
         if pid: self.G2frame.PatternTree.SelectItem(pid)
         self.allowZoomReset = True
- #       print 'invoke',str(self).split('0x')[1]
+#        print 'invoke',str(self).split('0x')[1],str(pid)
             
 class GSASIItoolbar(Toolbar):
     'Override the matplotlib toolbar so we can add more icons'
@@ -2675,6 +2675,7 @@ def PlotStrain(G2frame,data,newPlot=False):
     
     Page.Choice = None
     G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.skipPageChange = True      #to keep Stress/Strain data tab visible
     G2frame.G2plotNB.status.DestroyChildren()
     Plot.set_title('Strain')
     Plot.set_ylabel(r'd-spacing',fontsize=14)
@@ -3948,7 +3949,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 xpix = int(xpos*scalex)
                 ypix = int(ypos*scaley)
                 Int = 0
-                if (0 <= xpix <= sizexy[0]) and (0 <= ypix <= sizexy[1]):
+                if (0 <= xpix < sizexy[0]) and (0 <= ypix < sizexy[1]):
                     Int = G2frame.ImageZ[ypix][xpix]
                 tth,azm,D,dsp = G2img.GetTthAzmDsp(xpos,ypos,Data)
                 Q = 2.*math.pi/dsp
@@ -4110,7 +4111,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             StrSta['d-zero'] = G2mth.sortArray(StrSta['d-zero'],'Dset',reverse=True)
             G2frame.StrainKey = ''
             G2imG.UpdateStressStrain(G2frame,StrSta)
-            PlotStrain(G2frame,StrSta)
             wx.CallAfter(PlotImage,G2frame,newPlot=False)            
         else:
             Xpos,Ypos = [event.xdata,event.ydata]
@@ -4235,6 +4235,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     Page.Choice = None
     if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
         G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.skipPageChange = True
     Title = G2frame.PatternTree.GetItemText(G2frame.Image)[4:]
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.logPlot:

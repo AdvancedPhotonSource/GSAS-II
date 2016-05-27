@@ -530,6 +530,11 @@ class GSASII(wx.Frame):
                             else:
                                 rd.Data['ImageTag'] = rd.repeatcount
                             rd.Data['formatName'] = rd.formatName
+#                            print rd.readfilename
+#                            print rd.sumfile
+#                            print rd.Image.shape,rd.Image.dtype
+                            if rd.sumfile:
+                                rd.readfilename = rd.sumfile
                             G2IO.LoadImage2Tree(rd.readfilename,self,rd.Comments,rd.Data,rd.Npix,rd.Image)
                             rd_list.append(True) # save a stub the result before it is written over
                             del rd.Image
@@ -2780,6 +2785,7 @@ class GSASII(wx.Frame):
                             Found = True                                
                             Comments.append("%10.3f %s" % (scale,' * '+name))
                             Npix,imagefile,imagetag = DataList[i]
+                            imagefile = G2IO.CheckImageFile(self,imagefile)
                             image = G2IO.GetImageData(self,imagefile,imageOnly=True,ImageTag=imagetag)
                             if First:
                                 newImage = np.zeros_like(image)
@@ -2799,7 +2805,8 @@ class GSASII(wx.Frame):
                         self.ErrorDialog('Image sum error','No nonzero image multipliers found')
                         return
                         
-                    newImage = np.asfarray(newImage,dtype=np.float32)                        
+                        
+                    newImage = np.array(newImage,dtype=np.int32)                        
                     outname = 'IMG '+result[-1]
                     Id = 0
                     if outname in Names:

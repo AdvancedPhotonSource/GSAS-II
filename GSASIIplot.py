@@ -275,9 +275,12 @@ class G2PlotNoteBook(wx.Panel):
         if tabLabel in self.treeItem:
             treeItems, tabname = self.treeItem[tabLabel]
             pid = self.G2frame.root
-            for item in treeItems:
-                pid = G2gd.GetPatternTreeItemId(self.G2frame, pid, item)
-            wx.CallLater(100,self.InvokeTreeItem,pid)
+            try:
+                for item in treeItems:
+                    pid = G2gd.GetPatternTreeItemId(self.G2frame, pid, item)
+                wx.CallLater(100,self.InvokeTreeItem,pid)
+            except TypeError:
+                pass
         else:
             print 'OnPageChanged: not found:',tabLabel
             

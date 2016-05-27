@@ -675,6 +675,27 @@ class ExpressionDialog(wx.Dialog):
         self.setEvalResult("Expression evaluates to: "+str(s)+depVal)
         self.OKbtn.Enable()
         if self.ExtraBtn: self.ExtraBtn.Enable()
+            
+#==========================================================================
+#class BondDialog(wx.Dialog):
+    '''A wx.Dialog that allows a user to select a bond length to be evaluated.
+    What needs to be done here? Need phase info for atoms
+    0. Select phase
+    1. Select 1st atom from dialog
+    2. Find neighbors & select one from dialog
+    3. Set up distance equation & save it - has to look like result from Show in above ExpressionDialog        
+    Use existing bond & esd calculate routines
+    '''
+#==========================================================================
+#class AngleDialog(wx.Dialog):
+    '''A wx.Dialog that allows a user to select a bond angle to be evaluated.
+    What needs to be done here? Need phase info for atom
+    0. Select phase
+    1. Select 1st atom from dialog
+    2. Find neighbors & select two from dialog
+    3. Set up angle equation & save it - has to look like result from Show in above ExpressionDialog        
+    Use existing angle & esd calculate routines
+    '''
         
 if __name__ == "__main__":
     app = wx.PySimpleApp() # create the App

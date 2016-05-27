@@ -135,8 +135,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_RENAMESEQSEL,wxID_SAVESEQSEL,wxID_SAVESEQSELCSV,wxID_SAVESEQCSV,wxID_PLOTSEQSEL,
   wxID_ORGSEQSEL,wxADDSEQVAR,wxDELSEQVAR,wxEDITSEQVAR,wxCOPYPARFIT,wxID_AVESEQSEL,
-  wxADDPARFIT,wxDELPARFIT,wxEDITPARFIT,wxDOPARFIT,
-] = [wx.NewId() for item in range(15)]
+  wxADDPARFIT,wxDELPARFIT,wxEDITPARFIT,wxDOPARFIT,wxADDSEQDIST,wxADDSEQANGLE
+] = [wx.NewId() for item in range(17)]
 
 [ wxID_MODELCOPY,wxID_MODELFIT,wxID_MODELADD,wxID_ELEMENTADD,wxID_ELEMENTDELETE,
     wxID_ADDSUBSTANCE,wxID_LOADSUBSTANCE,wxID_DELETESUBSTANCE,wxID_COPYSUBSTANCE,
@@ -1463,6 +1463,12 @@ class DataFrame(wx.Frame):
             id=wxADDSEQVAR, kind=wx.ITEM_NORMAL,text='Add',
             help='Add a new pseudo-variable')
         self.SequentialPvars.Append(
+            id=wxADDSEQDIST, kind=wx.ITEM_NORMAL,text='Add dist',
+            help='Add a new bond distance pseudo-variable')
+        self.SequentialPvars.Append(
+            id=wxADDSEQANGLE, kind=wx.ITEM_NORMAL,text='Add angle',
+            help='Add a new bond angle pseudo-variable')
+        self.SequentialPvars.Append(
             id=wxDELSEQVAR, kind=wx.ITEM_NORMAL,text='Delete',
             help='Delete an existing pseudo-variable')
         self.SequentialPvars.Append(
@@ -2752,7 +2758,34 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             calcobj = G2obj.ExpressionCalcObj(obj)
             Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+            
+    def AddNewDistPseudoVar(event):
+        print 'Add bond distance pseudo-variable here - TBD'
+#        dlg = G2exG.BondDialog(
+#            G2frame.dataDisplay,PSvarDict,
+#            header='Select a Bond here',
+#            VarLabel = "New Bond",
+#            fit=False)
+#        obj = dlg.Show(True)
+#        dlg.Destroy()
+#        if obj:
+#            calcobj = G2obj.ExpressionCalcObj(obj)
+#            Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
+#            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
 
+    def AddNewAnglePseudoVar(event):
+        print 'Add bond angle pseudo-variable here - TBD'
+#        dlg = G2exG.AngleDialog(
+#            G2frame.dataDisplay,PSvarDict,
+#            header='Enter an Angle here',
+#            VarLabel = "New Angle",
+#            fit=False)
+#        obj = dlg.Show(True)
+#        dlg.Destroy()
+#        if obj:
+#            calcobj = G2obj.ExpressionCalcObj(obj)
+#            Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
+#            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
     def UpdateParmDict(parmDict):
         '''generate the atom positions and the direct & reciprocal cell values,
         because they might be needed to evaluate the pseudovar
@@ -3180,6 +3213,8 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAveSelSeq, id=wxID_AVESEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnReOrgSelSeq, id=wxID_ORGSEQSEL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewPseudoVar, id=wxADDSEQVAR)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewDistPseudoVar, id=wxADDSEQDIST)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewAnglePseudoVar, id=wxADDSEQANGLE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, DelPseudoVar, id=wxDELSEQVAR)
     G2frame.dataFrame.Bind(wx.EVT_MENU, EditPseudoVar, id=wxEDITSEQVAR)
     G2frame.dataFrame.Bind(wx.EVT_MENU, AddNewParFitEq, id=wxADDPARFIT)
@@ -3381,7 +3416,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
 
     # Make dict needed for creating & editing pseudovars (PSvarDict).
     name = histNames[0]
-    parmDict = data[name].get('parmDict')
+    parmDict = data[name].get('parmDict',{})
     PSvarDict = parmDict.copy()
     PSvarDict.update(sampleParms)
     UpdateParmDict(PSvarDict)

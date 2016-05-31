@@ -34,6 +34,10 @@ import GSASIIgrid as G2gd
 import GSASIIctrls as G2G
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
+import GSASIImath as G2mth
+
+# Define a short name for convenience
+WACV = wx.ALIGN_CENTER_VERTICAL
 
 def IndexParmDict(parmDict,wildcard):
     '''Separate the parameters in parmDict into list of keys by parameter
@@ -677,7 +681,7 @@ class ExpressionDialog(wx.Dialog):
         if self.ExtraBtn: self.ExtraBtn.Enable()
             
 #==========================================================================
-#class BondDialog(wx.Dialog):
+class BondDialog(wx.Dialog):
     '''A wx.Dialog that allows a user to select a bond length to be evaluated.
     What needs to be done here? Need phase info for atoms
     0. Select phase
@@ -686,8 +690,131 @@ class ExpressionDialog(wx.Dialog):
     3. Set up distance equation & save it - has to look like result from Show in above ExpressionDialog        
     Use existing bond & esd calculate routines
     '''
+    def __init__(self, parent, Phases, parmDict, exprObj=None,
+                 header='Enter restraint expression here',
+                 wintitle='Expression Editor',
+                 VarLabel=None,depVarDict=None,
+                 ExtraButton=None,usedVars=[]):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,wintitle, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.Phases = Phases
+        self.parmDict = parmDict
+        self.header = header
+        self.pName = Phases.keys()[0]
+        DisAglCtls = {}
+        dlg = G2gd.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
+        if dlg.ShowModal() == wx.ID_OK:
+            Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
+        dlg.Destroy()
+        self.Oatom = ''
+        self.Tatom = ''
+        
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnPhase(event):
+            Obj = event.GetEventObject()
+            self.pName = Obj.GetValue()
+            self.Oatom = ''
+            DisAglCtls = {}
+            dlg = G2gd.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
+            dlg.Destroy()
+            self.Draw()
+            
+        def OnOrigAtom(event):
+            Obj = event.GetEventObject()
+            self.Oatom = Obj.GetValue()
+            self.Draw()
+            
+        def OnTargAtom(event):
+            Obj = event.GetEventObject()
+            self.Tatom = Obj.GetValue()
+            self.Draw()
+
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label=self.header),0,WACV)
+        pNames = self.Phases.keys()
+        phaseSizer = wx.BoxSizer(wx.HORIZONTAL)
+        phaseSizer.Add(wx.StaticText(self.panel,label=' Select phase: '),0,WACV)
+        phase = wx.ComboBox(self.panel,value=self.pName,choices=pNames,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        phase.Bind(wx.EVT_COMBOBOX,OnPhase)
+        phaseSizer.Add(phase,0,WACV)
+        mainSizer.Add(phaseSizer)
+        Phase = self.Phases[self.pName]
+        cx,ct = Phase['General']['AtomPtrs'][:2]
+        Atoms = Phase['Atoms']
+        aNames = [atom[ct-1] for atom in Atoms]
+        atomSizer = wx.BoxSizer(wx.HORIZONTAL)
+        atomSizer.Add(wx.StaticText(self.panel,label=' Origin atom: '),0,WACV)
+        origAtom = wx.ComboBox(self.panel,value=self.Oatom,choices=aNames,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        origAtom.Bind(wx.EVT_COMBOBOX,OnOrigAtom)
+        atomSizer.Add(origAtom,0,WACV)
+        atomSizer.Add(wx.StaticText(self.panel,label=' distance to: '),0,WACV)
+        neigh = []
+        if self.Oatom:
+#            GSASIIpath.IPyBreak()
+            neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames)
+        bNames = ['',]
+        if neigh:
+            bNames = [item[0]+' d=%.3f'%(item[1]) for item in neigh[0]]
+        targAtom = wx.ComboBox(self.panel,value=self.Tatom,choices=bNames,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        targAtom.Bind(wx.EVT_COMBOBOX,OnTargAtom)
+        atomSizer.Add(targAtom,0,WACV)
+        
+        mainSizer.Add(atomSizer)
+
+
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+
+    def GetSelection(self):
+        exprObj = G2obj.ExpressionObj()
+        exprObj.LoadExpression(
+            self.expr,
+            self.exprVarLst,
+            self.varSelect,
+            self.varName,
+            self.varValue,
+            self.varRefflag,
+            )
+        if self.depVarDict:
+            exprObj.SetDepVar(self.dependentVar)
+        return exprObj
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)        
+            
 #==========================================================================
-#class AngleDialog(wx.Dialog):
+class AngleDialog(wx.Dialog):
     '''A wx.Dialog that allows a user to select a bond angle to be evaluated.
     What needs to be done here? Need phase info for atom
     0. Select phase
@@ -696,6 +823,91 @@ class ExpressionDialog(wx.Dialog):
     3. Set up angle equation & save it - has to look like result from Show in above ExpressionDialog        
     Use existing angle & esd calculate routines
     '''
+    def __init__(self, parent, Phases, parmDict, exprObj=None,
+                 header='Enter restraint expression here',
+                 wintitle='Expression Editor',
+                 VarLabel=None,depVarDict=None,
+                 ExtraButton=None,usedVars=[]):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,wintitle, 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.Phases = Phases
+        self.parmDict = parmDict
+        self.header = header
+        self.pName = Phases.keys()[0]
+        self.Oatom = ''
+        
+        self.Draw()
+
+    def Draw(self):
+        
+        def OnPhase(event):
+            Obj = event.GetEventObject()
+            self.pName = Obj.GetValue()
+            self.Draw()
+            
+        def OnOrigAtom(event):
+            Obj = event.GetEventObject()
+            self.Oatom = Obj.GetValue()
+            self.Draw()
+            
+
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label=self.header),0,WACV)
+        pNames = self.Phases.keys()
+        phaseSizer = wx.BoxSizer(wx.HORIZONTAL)
+        phaseSizer.Add(wx.StaticText(self.panel,label=' Select phase: '),0,WACV)
+        phase = wx.ComboBox(self.panel,value=self.pName,choices=pNames,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        phase.Bind(wx.EVT_COMBOBOX,OnPhase)
+        phaseSizer.Add(phase,0,WACV)
+        mainSizer.Add(phaseSizer)
+        Phase = self.Phases[self.pName]
+        cx,ct = Phase['General']['AtomPtrs'][:2]
+        Atoms = Phase['Atoms']
+        aNames = [atom[ct-1] for atom in Atoms]
+#        GSASIIpath.IPyBreak()
+        atomSizer = wx.BoxSizer(wx.HORIZONTAL)
+        atomSizer.Add(wx.StaticText(self.panel,label=' Origin atom: '),0,WACV)
+        origAtom = wx.ComboBox(self.panel,value=self.Oatom,choices=aNames,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        origAtom.Bind(wx.EVT_COMBOBOX,OnOrigAtom)
+        atomSizer.Add(origAtom,0,WACV)
+        
+        mainSizer.Add(atomSizer)
+
+
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+
+    def GetSelection(self):
+        return []
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)        
+                    
         
 if __name__ == "__main__":
     app = wx.PySimpleApp() # create the App

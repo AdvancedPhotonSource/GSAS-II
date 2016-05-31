@@ -2761,31 +2761,38 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             
     def AddNewDistPseudoVar(event):
         print 'Add bond distance pseudo-variable here - TBD'
-#        dlg = G2exG.BondDialog(
-#            G2frame.dataDisplay,PSvarDict,
-#            header='Select a Bond here',
-#            VarLabel = "New Bond",
-#            fit=False)
-#        obj = dlg.Show(True)
-#        dlg.Destroy()
-#        if obj:
-#            calcobj = G2obj.ExpressionCalcObj(obj)
-#            Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
-#            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+        dlg = G2exG.BondDialog(
+            G2frame.dataDisplay,Phases,PSvarDict,
+            header='Select a Bond here',
+            VarLabel = "New Bond")
+        if dlg.ShowModal() == wx.ID_OK:
+            obj = dlg.GetSelection()
+        else: 
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        if obj:
+            calcobj = G2obj.ExpressionCalcObj(obj)
+            Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
+            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
 
     def AddNewAnglePseudoVar(event):
         print 'Add bond angle pseudo-variable here - TBD'
-#        dlg = G2exG.AngleDialog(
-#            G2frame.dataDisplay,PSvarDict,
-#            header='Enter an Angle here',
-#            VarLabel = "New Angle",
-#            fit=False)
-#        obj = dlg.Show(True)
-#        dlg.Destroy()
-#        if obj:
-#            calcobj = G2obj.ExpressionCalcObj(obj)
-#            Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
-#            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+        dlg = G2exG.AngleDialog(
+            G2frame.dataDisplay,Phases,PSvarDict,
+            header='Enter an Angle here',
+            VarLabel = "New Angle")
+        if dlg.ShowModal() == wx.ID_OK:
+            obj = dlg.GetSelection()
+        else: 
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        if obj:
+            calcobj = G2obj.ExpressionCalcObj(obj)
+            Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
+            UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
+            
     def UpdateParmDict(parmDict):
         '''generate the atom positions and the direct & reciprocal cell values,
         because they might be needed to evaluate the pseudovar

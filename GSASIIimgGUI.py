@@ -2505,7 +2505,10 @@ def DefineEvaluator(dlg):
         for c in range(1,cols-1):
             lbl = ParmList[c]
             if lbl in nonInterpVars:
-                D[lbl] = float(parms[c][closest])
+                if lbl in ['outChannels',]:
+                    D[lbl] = int(float(parms[c][closest]))
+                else:
+                    D[lbl] = float(parms[c][closest])
             else:
                 y = np.array([float(i) for i in parms[c]])
                 D[lbl] = np.interp(dist,x,y)
@@ -2515,6 +2518,8 @@ def DefineEvaluator(dlg):
         for a,b in ('center_x','center_y'),('LRazimuth_min','LRazimuth_max'),('IOtth_min','IOtth_max'):
             r = a.split('_')[0]
             D[r] = [D[a],D[b]]
+            if r in ['LRazimuth',]:
+                D[r] = [int(D[a]),int(D[b])]
             del D[a]
             del D[b]
         return D,imctfile,maskfile

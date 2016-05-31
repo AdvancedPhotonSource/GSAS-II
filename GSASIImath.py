@@ -417,6 +417,52 @@ def FindNeighbors(phase,FrstName,AtNames,notName=''):
                 Ids.append(Atoms[j][cia+8])
     return Neigh,[OId,Ids]
     
+def FindAllNeighbors(phase,FrstName,AtNames,notName=''):
+    General = phase['General']
+    cx,ct,cs,cia = General['AtomPtrs']
+    Atoms = phase['Atoms']
+    atNames = [atom[ct-1] for atom in Atoms]
+    Cell = General['Cell'][1:7]
+    Amat,Bmat = G2lat.cell2AB(Cell)
+    SGData = General['SGData']
+    indices = (-1,0,1)
+    Units = np.array([[h,k,l] for h in indices for k in indices for l in indices])
+    atTypes = General['AtomTypes']
+    Radii = np.array(General['BondRadii'])
+    DisAglCtls = General['DisAglCtls']    
+    radiusFactor = DisAglCtls['Factors'][0]
+    AtInfo = dict(zip(atTypes,Radii)) #or General['BondRadii']
+    Orig = atNames.index(FrstName)
+    OId = Atoms[Orig][cia+8]
+    OType = Atoms[Orig][ct]
+    XYZ = getAtomXYZ(Atoms,cx)        
+    Oxyz = XYZ[Orig]
+    Neigh = []
+    Ids = []
+    sumR = np.array([AtInfo[OType]+AtInfo[atom[ct]] for atom in Atoms])
+    sumR = np.reshape(np.tile(sumR,27),(27,-1))
+    results = []
+    for xyz in XYZ:
+        results.append(G2spc.GenAtom(xyz,SGData,False,Move=False))
+    for iA,result in enumerate(results):
+        if iA != Orig:                
+            for [Txyz,Top,Tunit] in result:
+                Dx = np.array([Txyz-Oxyz+unit for unit in Units])
+                dx = np.inner(Dx,Amat)
+                dist = np.sqrt(np.sum(dx**2,axis=1))
+                IndB = ma.nonzero(ma.masked_greater(dist-radiusFactor*sumR[:,iA],0.))
+        #        GSASIIpath.IPyBreak()
+                for iU in IndB[0]:
+                    if AtNames[iA] != notName:
+                        unit = Units[iU]
+                        if np.any(unit):
+                            Topstr = ' +(%4d)[%2d,%2d,%2d]'%(Top,unit[0],unit[1],unit[2])
+                        else:
+                            Topstr = ' +(%4d)'%(Top)
+                        Neigh.append([AtNames[iA]+Topstr,dist[iU]])
+                        Ids.append(Atoms[iA][cia+8])
+    return Neigh,[OId,Ids]
+    
 def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
     
     def getTransMat(RXYZ,OXYZ,TXYZ,Amat):

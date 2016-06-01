@@ -899,13 +899,18 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)
             # next is most expensive step!
+#            print 'before Make'
             TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin),times)           #2-theta & azimuth arrays & create position mask
+#            print '\tafter Make'
             Nup += 1
             if dlg:
                 dlg.Update(Nup)
             Block = image[iBeg:iFin,jBeg:jFin]
             t0 = time.time()
+#            print 'before Fill'
             tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
+#            print '\tafter Fill'
+            del TA; del tam
             times[2] += time.time()-t0
             Nup += 1
             if dlg:
@@ -924,10 +929,13 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
             t0 = time.time()
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
+#                print 'before histo'
                 NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz*tad/tabs,
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
+#                print '\tafter histo'
             times[3] += time.time()-t0
             Nup += 1
+            del tax; del tay; del taz; del tad; del tabs
             if dlg:
                 dlg.Update(Nup)
     t0 = time.time()

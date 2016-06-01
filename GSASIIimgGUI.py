@@ -2435,16 +2435,16 @@ class AutoIntFrame(wx.Frame):
             if imagefile not in imageFileList: imageFileList.append(imagefile)
             # skip if already integrated
             if img in G2frame.IntegratedList: continue
+            controlsDict = G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,imgId, 'Image Controls'))
+            ImageMasks = G2frame.PatternTree.GetItemPyData(
+                G2gd.GetPatternTreeItemId(G2frame,imgId, 'Masks'))
             if self.params['Mode'] == 'table': # look up parameter values from table
-                controlsDict = G2frame.PatternTree.GetItemPyData(
-                    G2gd.GetPatternTreeItemId(G2frame,imgId, 'Image Controls'))
-                ImageMasks = G2frame.PatternTree.GetItemPyData(
-                    G2gd.GetPatternTreeItemId(G2frame,imgId, 'Masks'))
                 self.ResetFromTable(controlsDict['distance'])
-                # update controls from master
-                controlsDict.update(self.ImageControls)
-                # update masks from master w/o Thresholds
-                ImageMasks.update(self.ImageMasks)
+            # update controls from master
+            controlsDict.update(self.ImageControls)
+            # update masks from master w/o Thresholds
+            ImageMasks.update(self.ImageMasks)
             self.IntegrateImage(img)
             self.G2frame.oldImagefile = '' # mark image as changed; reread as needed
             wx.Yield()
@@ -2454,6 +2454,7 @@ class AutoIntFrame(wx.Frame):
 
         # loop over image files matching glob, reading in any new ones
         for newImage in self.currImageList:
+
             if newImage in imageFileList: continue # already read?
             for imgId in G2IO.ReadImages(G2frame,newImage):
                 controlsDict = G2frame.PatternTree.GetItemPyData(
@@ -2561,8 +2562,8 @@ class IntegParmTable(wx.Dialog):
                 pth = G2G.GetImportPath(G2frame)
                 if not pth: pth = '.'
                 dlg = wx.FileDialog(self, 'Read previous table or build new table by selecting image control files', pth,
-                                    style=wx.OPEN| wx.MULTIPLE,
-                                    wildcard='image control files (.imctrl)|*.imctrl|Integration table (*.imtbl)|*.imtbl')
+                    style=wx.OPEN| wx.MULTIPLE,
+                    wildcard='Integration table (*.imtbl)|*.imtbl|image control files (.imctrl)|*.imctrl')
                 dlg.CenterOnParent()
                 if dlg.ShowModal() == wx.ID_OK:
                     files = dlg.GetPaths()

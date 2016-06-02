@@ -413,9 +413,10 @@ def GetTthAzmG(x,y,data):
     G = ((dx-x0)**2+dy**2+distsq)/distsq       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
     X = np.dstack([dx.T,dy.T,np.zeros_like(dx.T)])
     Z = np.dot(X,MN).T[2]
-    tth = npatand(np.sqrt(dx**2+dy**2-Z**2)/(dist-Z))
+    xyZ = dx**2+dy**2-Z**2    
+    tth = npatand(np.sqrt(xyZ)/(dist-Z))
     dxy = peneCorr(tth,data['DetDepth'],tilt,npatan2d(dy,dx))
-    tth = npatan2d(np.sqrt(dx**2+dy**2-Z**2),dist-Z+dxy) 
+    tth = npatan2d(np.sqrt(xyZ),dist-Z+dxy) 
     azm = (npatan2d(dy,dx)+data['azmthOff']+720.)%360.
     return tth,azm,G
 
@@ -899,17 +900,13 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             jBeg = jBlk*blkSize
             jFin = min(jBeg+blkSize,Nx)
             # next is most expensive step!
-#            print 'before Make'
             TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin),times)           #2-theta & azimuth arrays & create position mask
-#            print '\tafter Make'
             Nup += 1
             if dlg:
                 dlg.Update(Nup)
             Block = image[iBeg:iFin,jBeg:jFin]
             t0 = time.time()
-#            print 'before Fill'
             tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
-#            print '\tafter Fill'
             del TA; del tam
             times[2] += time.time()-t0
             Nup += 1
@@ -928,11 +925,10 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             elif 'Q' == data.get('binType',''):
                 tay = 4.*np.pi*npsind(tay/2.)/data['wavelength']
             t0 = time.time()
+            taz = np.array((taz*tad/tabs),dtype='float32')
             if any([tax.shape[0],tay.shape[0],taz.shape[0]]):
-#                print 'before histo'
-                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz*tad/tabs,
+                NST,H0 = h2d.histogram2d(len(tax),tax,tay,taz,
                     numAzms,numChans,LRazm,lutth,Dazm,dtth,NST,H0)
-#                print '\tafter histo'
             times[3] += time.time()-t0
             Nup += 1
             del tax; del tay; del taz; del tad; del tabs

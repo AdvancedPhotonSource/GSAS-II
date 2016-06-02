@@ -2310,6 +2310,7 @@ class GSASII(wx.Frame):
         self.Image = 0
         self.oldImagefile = '' # the name of the last image file read
         self.oldImageTag = None # the name of the tag for multi-image files
+        self.PauseIntegration = False
         self.ImageZ = []
         self.Integrate = 0
         self.imageDefault = {}

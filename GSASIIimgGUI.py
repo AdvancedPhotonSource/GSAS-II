@@ -203,8 +203,12 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         nXBlks = (Nx-1)/blkSize+1
         nYBlks = (Ny-1)/blkSize+1
         Nup = nXBlks*nYBlks*3+1     #exact count expected so AUTO_HIDE works!
-        pdlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
-            style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
+        if IntegrateOnly:
+            pdlg = wx.ProgressDialog("Elapsed time","2D image integration\nCancel to pause",
+                Nup,style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)            
+        else:
+            pdlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
+                style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         try:
             sumImg = GetImageZ(G2frame,data)
             G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,pdlg)
@@ -214,8 +218,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             G2frame.PatternTree.SelectItem(Id)
             G2frame.PatternTree.Expand(Id)
         finally:
-            pdlg.Destroy()
+            if pdlg:
+                pdlg.Destroy()
         for item in G2frame.MakePDF: item.Enable(True)
+        G2frame.PauseIntegration = G2frame.Integrate[-1]
         
     def OnIntegrateAll(event):
         Names = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
@@ -245,6 +251,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                         pId = G2IO.SaveIntegration(G2frame,CId,Data)
                     finally:
                         dlgp.Destroy()
+                    if G2frame.Integrate[-1]:       #Cancel from progress bar?
+                        break
                 else:
                     G2frame.EnablePlot = True
                     G2frame.PatternTree.SelectItem(pId)
@@ -2017,8 +2025,8 @@ class AutoIntFrame(wx.Frame):
             #    return
             self.Pause = False
             # change button label
-            if btnstart.GetLabel() != 'Pause':
-                btnstart.SetLabel('Pause')
+            if self.btnstart.GetLabel() != 'Pause':
+                self.btnstart.SetLabel('Pause')
                 if self.timer.IsRunning(): self.timer.Stop()
                 self.PreventReEntryTimer = False
                 self.StartLoop()
@@ -2026,7 +2034,7 @@ class AutoIntFrame(wx.Frame):
                 self.timer.Start(int(1000*PollTime),oneShot=False)
                 self.Status.SetStatusText('Press Pause to delay integration or Reset to prepare to reintegrate all images')
             else:
-                btnstart.SetLabel('Resume')
+                self.btnstart.SetLabel('Resume')
                 if self.timer.IsRunning(): self.timer.Stop()
                 print('\nPausing autointegration\n')
                 self.Status.SetStatusText('Press Resume to continue integration or Reset to prepare to reintegrate all images')
@@ -2037,7 +2045,7 @@ class AutoIntFrame(wx.Frame):
             processing loop and resets the list of integrated files so
             all images can be reintegrated. 
             '''
-            btnstart.SetLabel('Restart')
+            self.btnstart.SetLabel('Restart')
             self.Status.SetStatusText('Press Restart to reload and re-integrate images matching filter')
             if self.timer.IsRunning(): self.timer.Stop()
             self.Reset = True
@@ -2213,9 +2221,9 @@ class AutoIntFrame(wx.Frame):
         mnsizer.Add(wx.StaticText(mnpnl, wx.ID_ANY,'AutoIntegration controls'),0,wx.TOP,5)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add((20,-1))
-        btnstart = wx.Button(mnpnl,  wx.ID_ANY, "Start")
-        btnstart.Bind(wx.EVT_BUTTON, OnStart)
-        sizer.Add(btnstart)
+        self.btnstart = wx.Button(mnpnl,  wx.ID_ANY, "Start")
+        self.btnstart.Bind(wx.EVT_BUTTON, OnStart)
+        sizer.Add(self.btnstart)
         btnstop = wx.Button(mnpnl,  wx.ID_ANY, "Reset")
         btnstop.Bind(wx.EVT_BUTTON, OnReset)
         sizer.Add(btnstop)
@@ -2474,7 +2482,13 @@ class AutoIntFrame(wx.Frame):
                 wx.Yield()
                 self.ShowMatchingFiles(self.params['filter'])
                 wx.Yield()
-            if self.Pause: return
+                self.Pause = G2frame.PauseIntegration
+            if self.Pause:
+                self.btnstart.SetLabel('Resume')
+                if self.timer.IsRunning(): self.timer.Stop()
+                print('\nPausing autointegration\n')
+                self.Status.SetStatusText('Press Resume to continue integration or Reset to prepare to reintegrate all images')
+                return
         
         if GSASIIpath.GetConfigValue('debug'):
             import datetime

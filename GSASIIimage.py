@@ -961,16 +961,16 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
         H0 /= np.array([G2pwd.Polarization(data['PolaVal'][0],H2[:-1],Azm=azm-90.)[0] for azm in (H1[:-1]+np.diff(H1)/2.)])
     Nup += 1
     if dlg:
-        dlg.Update(Nup)
+        pause = dlg.Update(Nup)
     times[4] += time.time()-t0
     print 'Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
         \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4])
     print "Elapsed time:","%8.3fs"%(time.time()-tbeg)
     print 'Integration complete'
     if returnN:     #As requested by Steven Weigand
-        return H0,H1,H2,NST
+        return H0,H1,H2,NST,not pause[0]
     else:
-        return H0,H1,H2
+        return H0,H1,H2,not pause[0]
     
 def MakeStrStaRing(ring,Image,Controls):
     ellipse = GetEllipse(ring['Dset'],Controls)

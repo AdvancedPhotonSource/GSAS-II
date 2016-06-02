@@ -202,19 +202,19 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         Nx,Ny = data['size']
         nXBlks = (Nx-1)/blkSize+1
         nYBlks = (Ny-1)/blkSize+1
-        Nup = nXBlks*nYBlks*3+3
-        dlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
+        Nup = nXBlks*nYBlks*3+1     #exact count expected so AUTO_HIDE works!
+        pdlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
         try:
             sumImg = GetImageZ(G2frame,data)
-            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,dlg)
+            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,pdlg)
             del sumImg  #force cleanup
             Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
             G2frame.PatternId = Id
             G2frame.PatternTree.SelectItem(Id)
             G2frame.PatternTree.Expand(Id)
         finally:
-            dlg.Destroy()
+            pdlg.Destroy()
         for item in G2frame.MakePDF: item.Enable(True)
         
     def OnIntegrateAll(event):

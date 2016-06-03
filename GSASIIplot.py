@@ -1621,6 +1621,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.canvas.mpl_connect('button_press_event',OnPress)
 #    if plottype == 'PWDR':  # avoids a very nasty clash with KILL_FOCUS in SASD TextCtrl?
 #        Page.SetFocus()
+    G2frame.G2plotNB.skipPageChange = True      #to keep Stress/Strain data tab visible
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.Contour:
         Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',

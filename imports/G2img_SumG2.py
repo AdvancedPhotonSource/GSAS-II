@@ -27,8 +27,8 @@ class G2_ReaderClass(G2IO.ImportImage):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.G2img',),
             strictExtension=True,
-            formatName = 'Summed GSAS-II image',
-            longFormatName = 'Pickled image from GSAS-II "Sum image data" command'
+            formatName = 'GSAS-II image',
+            longFormatName = 'cPickled image from GSAS-II'
             )
 
     def ContentsValidator(self, filepointer):

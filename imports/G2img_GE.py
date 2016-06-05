@@ -171,7 +171,7 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
             cPickle.dump([head,Data,Npix,image],File,1)
             File.close()
             self.sumfile = filename
-            self.formatName = 'Summed GSAS-II image'
+            self.formatName = 'GSAS-II image'
             sum = False
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     data = {'pixelSize':[200,200],'wavelength':0.15,'distance':250.0,'center':[204.8,204.8],'size':sizexy}

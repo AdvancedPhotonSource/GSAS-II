@@ -4034,7 +4034,7 @@ def UpdateModelsGrid(G2frame,data):
         partSizer.Add(wx.StaticText(G2frame.dataDisplay,label='Particle description: '),0,WACV)
         shapes = {'Spheroid':' Aspect ratio: ','Cylinder':' Diameter ','Cylinder AR':' Aspect ratio: ',
             'Unified sphere':'','Unified rod':' Diameter: ','Unified rod AR':' Aspect ratio: ',
-            'Unified disk':' Thickness: '}
+            'Unified disk':' Thickness: ', 'Spherical shell': ' Shell thickness'}
         partsh = wx.ComboBox(G2frame.dataDisplay,value=str(data['Size']['Shape'][0]),choices=shapes.keys(),
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         partsh.Bind(wx.EVT_COMBOBOX,OnShape)        
@@ -4090,7 +4090,8 @@ def UpdateModelsGrid(G2frame,data):
             'Cylinder AR':{'Aspect ratio':[1.0,False]},'Unified sphere':{},
             'Unified rod':{'Length':[100.,False]},'Unified rod AR':{'Aspect ratio':[1.0,False]},
             'Unified disk':{'Thickness':[100.,False]},
-            'Unified tube':{'Length':[100.,False],'Thickness':[10.,False]},}
+            'Unified tube':{'Length':[100.,False],'Thickness':[10.,False]},
+            'Spherical shell':{'Shell thickness':[1.5,False] }, }
                 
         StructureFactors = {'Dilute':{},'Hard sphere':{'VolFr':[0.1,False],'Dist':[100.,False]},
             'Sticky hard sphere':{'VolFr':[0.1,False],'Dist':[100.,False],'epis':[0.05,False],'Sticky':[0.2,False]},
@@ -4099,7 +4100,7 @@ def UpdateModelsGrid(G2frame,data):
                 
         ffDistChoices =  ['Sphere','Spheroid','Cylinder','Cylinder diam',
             'Cylinder AR','Unified sphere','Unified rod','Unified rod AR',
-            'Unified disk','Unified tube',]
+            'Unified disk','Unified tube','Spherical shell',]
                 
         ffMonoChoices = ['Sphere','Spheroid','Cylinder','Cylinder AR',]
         
@@ -4248,7 +4249,7 @@ def UpdateModelsGrid(G2frame,data):
                     parmSldr.Bind(wx.EVT_SLIDER,OnParmSlider)
                     parmSizer.Add(parmSldr,1,wx.EXPAND)
             if level['Controls']['DistType'] not in ['Bragg']:
-                parmOrder = ['Aspect ratio','Length','Diameter','Thickness','VolFr','Dist','epis','Sticky','Depth','Width']
+                parmOrder = ['Aspect ratio','Length','Diameter','Thickness','VolFr','Dist','epis','Sticky','Depth','Width','Shell thickness',]
                 fTypes = ['FF ','SF ']
                 for iarg,Args in enumerate([FFargs,SFargs]):
                     for parm in parmOrder:

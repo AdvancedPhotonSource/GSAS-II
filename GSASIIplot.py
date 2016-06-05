@@ -1621,7 +1621,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
         Page.canvas.mpl_connect('button_press_event',OnPress)
 #    if plottype == 'PWDR':  # avoids a very nasty clash with KILL_FOCUS in SASD TextCtrl?
 #        Page.SetFocus()
-    G2frame.G2plotNB.skipPageChange = True      #to keep Stress/Strain data tab visible
+#    G2frame.G2plotNB.skipPageChange = True      #to keep Stress/Strain data tab visible
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.Contour:
         Page.Choice = (' key press','d: lower contour max','u: raise contour max','o: reset contour max',
@@ -1743,7 +1743,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if G2frame.sqPlot:
                     Plot.set_ylabel(r'$S(Q)=I*Q^{4}$',fontsize=16)
                 else:
-                    Plot.set_ylabel(r'$Intensity, cm^{-1}$',fontsize=16)
+                    Plot.set_ylabel(r'$Intensity,\ cm^{-1}$',fontsize=16)
         else:
             if G2frame.plotStyle['sqrtPlot']:
                 Plot.set_ylabel(r'$\sqrt{Normalized\ intensity}$',fontsize=16)
@@ -3234,6 +3234,7 @@ def PlotTexture(G2frame,data,Start=False):
 
     Page.Choice = None
     G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.skipPageChange = True
     G2frame.G2plotNB.status.SetFields(['',''])    
     G2frame.G2plotNB.status.SetStatusWidths([150,-1])
     PH = np.array(SHData['PFhkl'])

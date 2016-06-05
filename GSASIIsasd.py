@@ -71,6 +71,22 @@ def SphereFF(Q,R,args=()):
     QR = Q[:,np.newaxis]*R
     return (3./(QR**3))*(np.sin(QR)-(QR*np.cos(QR)))
     
+def SphericalShellFF(Q,R,args=()):
+    ''' Compute spherical shell form factor - can use numpy arrays
+    param float Q: Q value array (usually in A-1)
+    param float R: sphere radius (Usually in A - must match Q-1 units)
+    param array args: [float r]: controls the shell thickness: R_inner = min(r*R,R), R_outer = max(r*R,R)
+    returns float: form factors as array as needed
+	Contributed by: L.A. Avakyan, Southern Federal University, Russia
+    '''
+    r = args[0]
+    if r < 0: # truncate to positive value
+        r = 0
+    if r < 1:  # r controls inner sphere radius
+        return SphereFF(Q,R) - SphereFF(Q,R*r)
+    else:      # r controls outer sphere radius
+        return SphereFF(Q,R*r) - SphereFF(Q,R)
+
 def SpheroidFF(Q,R,args):
     ''' Compute form factor of cylindrically symmetric ellipsoid (spheroid) 
     - can use numpy arrays for R & AR; will return corresponding numpy array
@@ -225,6 +241,21 @@ def SphereVol(R,args=()):
     returns float: volume
     '''
     return (4./3.)*np.pi*R**3
+
+def SphericalShellVol(R,args):
+    ''' Compute volume of spherical shell
+    - numpy array friendly
+    param float R: sphere radius
+    param array args: [float r]: controls shell thickness, see SphericalShellFF description
+    returns float: volume
+    '''
+    r = args[0]
+    if r < 0:
+        r = 0
+    if r < 1:
+        return SphereVol(R) - SphereVol(R*r)
+    else:
+        return SphereVol(R*r) - SphereVol(R)
 
 def SpheroidVol(R,args):
     ''' Compute volume of cylindrically symmetric ellipsoid (spheroid) 
@@ -1022,7 +1053,8 @@ def SizeDistribution(Profile,ProfDict,Limits,Sample,data):
         'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
         'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
         'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol],
-        'Cylinder diam':[CylinderDFF,CylinderDVol]}
+        'Cylinder diam':[CylinderDFF,CylinderDVol],
+        'Spherical shell': [SphericalShellFF, SphericalShellVol]}
     Shape = data['Size']['Shape'][0]
     SlitLen = Sample.get('SlitLen',0.0)
     Parms = data['Size']['Shape'][1:]
@@ -1071,7 +1103,8 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
         'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
         'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
         'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol],
-        'Unified tube':[UniTubeFF,UniTubeVol],'Cylinder diam':[CylinderDFF,CylinderDVol]}
+        'Unified tube':[UniTubeFF,UniTubeVol],'Cylinder diam':[CylinderDFF,CylinderDVol],
+        'Spherical shell':[SphericalShellFF,SphericalShellVol]}
             
     sfxns = {'Dilute':DiluteSF,'Hard sphere':HardSpheresSF,'Square well':SquareWellSF,
             'Sticky hard sphere':StickyHardSpheresSF,'InterPrecipitate':InterPrecipitateSF,}
@@ -1079,7 +1112,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
     parmOrder = ['Volume','Radius','Mean','StdDev','MinSize','G','Rg','B','P','Cutoff',
         'PkInt','PkPos','PkSig','PkGam',]
         
-    FFparmOrder = ['Aspect ratio','Length','Diameter','Thickness']
+    FFparmOrder = ['Aspect ratio','Length','Diameter','Thickness','Shell thickness']
     
     SFparmOrder = ['Dist','VolFr','epis','Sticky','Depth','Width']
 
@@ -1173,7 +1206,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
                 SFfxn = parmDict[cid+'StrFact']
                 FFargs = []
                 SFargs = []
-                for item in [cid+'Aspect ratio',cid+'Length',cid+'Thickness',cid+'Diameter']:
+                for item in [cid+'Aspect ratio',cid+'Length',cid+'Thickness',cid+'Diameter',cid+'Shell thickness']:
                     if item in parmDict: 
                         FFargs.append(parmDict[item])
                 for item in [cid+'Dist',cid+'VolFr',cid+'epis',cid+'Sticky',cid+'Depth',cid+'Width']:
@@ -1205,7 +1238,7 @@ def ModelFit(Profile,ProfDict,Limits,Sample,Model):
                 SFfxn = parmDict[cid+'StrFact']
                 FFargs = []
                 SFargs = []
-                for item in [cid+'Aspect ratio',cid+'Length',cid+'Thickness',cid+'Diameter',]:
+                for item in [cid+'Aspect ratio',cid+'Length',cid+'Thickness',cid+'Diameter',cid+'Shell thickness']:
                     if item in parmDict: 
                         FFargs.append(parmDict[item])
                 for item in [cid+'Dist',cid+'VolFr',cid+'epis',cid+'Sticky',cid+'Depth',cid+'Width']:
@@ -1282,7 +1315,8 @@ def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
         'Cylinder AR':[CylinderARFF,CylinderARVol],'Unified sphere':[UniSphereFF,UniSphereVol],
         'Unified rod':[UniRodFF,UniRodVol],'Unified rod AR':[UniRodARFF,UniRodARVol],
         'Unified disk':[UniDiskFF,UniDiskVol],'Sphere':[SphereFF,SphereVol],
-        'Unified tube':[UniTubeFF,UniTubeVol],'Cylinder diam':[CylinderDFF,CylinderDVol]}
+        'Unified tube':[UniTubeFF,UniTubeVol],'Cylinder diam':[CylinderDFF,CylinderDVol],
+        'Spherical shell':[SphericalShellFF,SphericalShellVol]}
     sfxns = {'Dilute':DiluteSF,'Hard sphere':HardSpheresSF,'Square well':SquareWellSF,
             'Sticky hard sphere':StickyHardSpheresSF,'InterPrecipitate':InterPrecipitateSF,}
 
@@ -1315,7 +1349,7 @@ def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
             for item in ['Dist','VolFr','epis','Sticky','Depth','Width',]:
                 if item in controls.get('SFargs',{}):
                     SFargs.append(controls['SFargs'][item][0])
-            for item in ['Aspect ratio','Length','Thickness','Diameter',]:
+            for item in ['Aspect ratio','Length','Thickness','Diameter','Shell thickness']:
                 if item in controls['FFargs']: 
                     FFargs.append(controls['FFargs'][item][0])
             contrast = controls['Contrast']
@@ -1356,7 +1390,7 @@ def ModelFxn(Profile,ProfDict,Limits,Sample,sasdData):
             for item in ['Dist','VolFr','epis','Sticky','Depth','Width',]:
                 if item in controls.get('SFargs',{}):
                     SFargs.append(controls['SFargs'][item][0])
-            for item in ['Aspect ratio','Length','Thickness','Diameter',]:
+            for item in ['Aspect ratio','Length','Thickness','Diameter','Shell thickness']:
                 if item in controls['FFargs']: 
                     FFargs.append(controls['FFargs'][item][0])
             contrast = controls['Contrast']

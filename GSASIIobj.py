@@ -1342,6 +1342,7 @@ def CompileVarDesc():
         'Length' : 'Cylinder length',
         'Diameter' : 'Cylinder/disk diameter',
         'Thickness' : 'Disk thickness',
+        'Shell thickness' : 'Multiplier to get inner(<1) or outer(>1) sphere radius',
         'Dist' : 'Interparticle distance',
         'VolFr' : 'Dense scatterer volume fraction',
         'epis' : 'Sticky sphere epsilon',

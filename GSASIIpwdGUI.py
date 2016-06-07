@@ -3323,13 +3323,13 @@ def UpdateReflectionGrid(G2frame,data,HKLF=False,Name=''):
                     Fosq = float(G2frame.refTable[phaseName].GetCellValue(r,5+im))
                     Fcsq = float(G2frame.refTable[phaseName].GetCellValue(r,7+im))
                     sig = float(G2frame.refTable[phaseName].GetCellValue(r,6+im))
-                    rat = abs(Fosq-Fcsq)/sig
+                    rat = 11.
+                    if sig:
+                        rat = abs(Fosq-Fcsq)/sig
                     if  rat > 10.:
                         G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.RED)
                     elif rat > 3.0:
                         G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.Colour(255,255,0))
-#                    else:
-#                        G2frame.refTable[phaseName].SetCellBackgroundColour(r,7+im,wx.WHITE)
                 else:   #PWDR
                     if float(G2frame.refTable[phaseName].GetCellValue(r,12+im+itof)) < 0.:
                         G2frame.refTable[phaseName].SetCellBackgroundColour(r,12+im+itof,wx.RED)

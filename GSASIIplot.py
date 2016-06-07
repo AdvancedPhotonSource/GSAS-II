@@ -4240,6 +4240,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
     Page.Choice = None
     if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
         G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.skipPageChange = True
     Title = G2frame.PatternTree.GetItemText(G2frame.Image)[4:]
     G2frame.G2plotNB.status.DestroyChildren()
     if G2frame.logPlot:

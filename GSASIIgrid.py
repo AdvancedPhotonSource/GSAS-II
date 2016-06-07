@@ -92,9 +92,10 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_PAWLEYLOAD, wxID_PAWLEYESTIMATE, wxID_PAWLEYUPDATE,
 ] = [wx.NewId() for item in range(3)]
 
-[ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,  
+[ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,wxID_IMRECALIBALL,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS, wxID_IMAUTOINTEG,
-] = [wx.NewId() for item in range(9)]
+    wxID_IMCOPYSELECTED,
+] = [wx.NewId() for item in range(11)]
 
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD, wxID_NEWMASKSPOT,wxID_NEWMASKARC,wxID_NEWMASKRING,
     wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,  wxID_MASKLOADNOT,
@@ -1748,6 +1749,8 @@ class DataFrame(wx.Frame):
             id=wxID_IMCALIBRATE, kind=wx.ITEM_NORMAL,text='Calibrate')
         self.ImageEdit.Append(help='Recalibrate detector by fitting to calibrant lines', 
             id=wxID_IMRECALIBRATE, kind=wx.ITEM_NORMAL,text='Recalibrate')
+        self.ImageEdit.Append(help='Recalibrate all images by fitting to calibrant lines', 
+            id=wxID_IMRECALIBALL, kind=wx.ITEM_NORMAL,text='Recalibrate all')            
         self.ImageEdit.Append(help='Clear calibration data points and rings',id=wxID_IMCLEARCALIB, 
             kind=wx.ITEM_NORMAL,text='Clear calibration')
         self.ImageEdit.Append(help='Integrate selected image',id=wxID_IMINTEGRATE, 
@@ -1756,6 +1759,8 @@ class DataFrame(wx.Frame):
             kind=wx.ITEM_NORMAL,text='Integrate all')
         self.ImageEdit.Append(help='Copy image controls to other images', 
             id=wxID_IMCOPYCONTROLS, kind=wx.ITEM_NORMAL,text='Copy Controls')
+        self.ImageEdit.Append(help='Copy selected image controls to other images', 
+            id=wxID_IMCOPYSELECTED, kind=wx.ITEM_NORMAL,text='Copy Selected')
         self.ImageEdit.Append(help='Save image controls to file', 
             id=wxID_IMSAVECONTROLS, kind=wx.ITEM_NORMAL,text='Save Controls')
         self.ImageEdit.Append(help='Load image controls from file', 

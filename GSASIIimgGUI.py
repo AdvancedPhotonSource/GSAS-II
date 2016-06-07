@@ -179,6 +179,29 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         G2img.ImageRecalibrate(G2frame,data,masks)
         wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
         
+    def OnRecalibAll(event):
+        Names = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Image calibration controls','Select images to recalibrate:',Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                items = dlg.GetSelections()
+                G2frame.EnablePlot = False
+                for item in items:
+                    name = Names[item]
+                    print 'calibrating',name
+                    G2frame.Image = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name)
+                    CId = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Image Controls')
+                    Data = G2frame.PatternTree.GetItemPyData(CId)
+                    G2frame.ImageZ = GetImageZ(G2frame,Data)
+                    Data['setRings'] = True
+                    Mid = G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Masks')
+                    Masks = G2frame.PatternTree.GetItemPyData(Mid)
+                    G2img.ImageRecalibrate(G2frame,Data,Masks)
+        finally:
+            dlg.Destroy()
+        G2plt.PlotExposedImage(G2frame,event=None)
+        wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
+        
     def OnClearCalib(event):
         data['ring'] = []
         data['rings'] = []
@@ -294,6 +317,52 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         finally:
             dlg.Destroy()
             G2frame.PatternTree.SelectItem(G2frame.PickId)
+            
+    def OnCopySelected(event):
+        Names = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
+        if len(Names) == 1:
+            G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "IMG" pattern')
+            return
+        Source = G2frame.PatternTree.GetItemText(G2frame.Image)
+        # Assemble a list of item labels
+        keyList = ['type','wavelength','calibrant','distance','center',
+                    'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
+                    'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
+                    'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
+                    'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
+        keyText = [i+'='+str(data[i]) for i in keyList]
+        # sort both lists together, ordered by keyText
+        selectedKeys = []
+        dlg = G2G.G2MultiChoiceDialog(
+            G2frame.dataFrame,
+            'Select which image controls\nto copy',
+            'Select image controls', keyText)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                selectedKeys = [keyList[i] for i in dlg.GetSelections()]
+        finally:
+            dlg.Destroy()
+        if not selectedKeys: return # nothing to copy
+        copyDict = {}
+        for parm in selectedKeys:
+            copyDict[parm] = data[parm]
+        dlg = G2G.G2MultiChoiceDialog(
+            G2frame.dataFrame,
+            'Copy image controls from\n'+Source+' to...',
+            'Copy image controls', Names)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                result = dlg.GetSelections()
+                for i in result: 
+                    item = Names[i]
+                    Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                    Controls = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Image Controls'))
+                    Controls.update(copy.deepcopy(copyDict))
+        finally:
+            dlg.Destroy()            
+                         
+            
+            
                 
     def OnSaveControls(event):
         pth = G2G.GetExportPath(G2frame)
@@ -906,6 +975,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             if data['calibrant']:
                 G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=True)
                 G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCALIBRATE,enable=True)
+                G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBALL,enable=True)
                 data['calibskip'] = calFile.Calibrants[data['calibrant']][3]
                 limits = calFile.Calibrants[data['calibrant']][4]
                 data['calibdmin'],data['pixLimit'],data['cutoff'] = limits
@@ -916,7 +986,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             else:
                 G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)
                 G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCALIBRATE,enable=False)
-            
+                G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBALL,enable=False)
         def OnCalibSkip(event):
             data['calibskip'] = int(calibSkip.GetValue())
             
@@ -1099,16 +1169,20 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         G2frame.dataFrame.CreateStatusBar()
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCalibrate, id=G2gd.wxID_IMCALIBRATE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnRecalibrate, id=G2gd.wxID_IMRECALIBRATE)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnRecalibAll, id=G2gd.wxID_IMRECALIBALL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnClearCalib, id=G2gd.wxID_IMCLEARCALIB)
     if data.get('calibrant'):
         G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=True)
         G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCALIBRATE,enable=True)
+        G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBALL,enable=True)
     else:
         G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBRATE,enable=False)
         G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMCALIBRATE,enable=False)
+        G2frame.dataFrame.ImageEdit.Enable(id=G2gd.wxID_IMRECALIBALL,enable=False)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnIntegrate, id=G2gd.wxID_IMINTEGRATE)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnIntegrateAll, id=G2gd.wxID_INTEGRATEALL)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyControls, id=G2gd.wxID_IMCOPYCONTROLS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopySelected, id=G2gd.wxID_IMCOPYSELECTED)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveControls, id=G2gd.wxID_IMSAVECONTROLS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadControls, id=G2gd.wxID_IMLOADCONTROLS)
     def OnDestroy(event):

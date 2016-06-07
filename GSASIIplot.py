@@ -2429,7 +2429,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
 ################################################################################
             
 def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
-    Title='',lines=False,names=[]):
+    Title='',lines=False,names=[],names2=[]):
     '''simple plot of xy data, used for diagnostic purposes
     '''
     def OnKeyPress(event):
@@ -2479,7 +2479,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.Offset = [0,0]
     
-    if len(XY2) > 1:
+    if XY2 and len(XY2) > 1:
         Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
             'u: offset up','o: reset offset',)
     else:
@@ -2504,16 +2504,19 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
         Xmax = max(Xmax,max(X))
         Ymax = max(Ymax,max(Y))
         if lines:
-            Plot.plot(X,Y,colors[ixy%6],picker=False)
+            if len(names):
+                Plot.plot(X,Y,colors[ixy%6],picker=False,label=names[ixy])
+            else:
+                Plot.plot(X,Y,colors[ixy%6],picker=False)
         else:
             Plot.plot(X,Y,colors[ixy%6]+'+',picker=False)
-    if len(XY2):
+    if XY2 and len(XY2):
         for ixy,xy in enumerate(XY2):
             X,Y = XY2[ixy]
             dX = Page.Offset[0]*(ixy+1)*Xmax/500.
             dY = Page.Offset[1]*(ixy+1)*Ymax/100.
-            if len(names):
-                Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False,label=names[ixy])
+            if len(names2):
+                Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False,label=names2[ixy])
             else:
                 Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
     if len(names):

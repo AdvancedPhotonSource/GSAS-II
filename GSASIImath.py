@@ -2787,12 +2787,14 @@ def ChargeFlip(data,reflDict,pgbar):
                 h,k,l = -hkl+Hmax       #Friedel pair refl.
                 Ehkl[h,k,l] = E*phasem
 #    Ehkl[Hmax] = 0.00001           #this to preserve F[0,0,0]
+    testHKL = np.array(flipData['testHKL'])+Hmax
     CEhkl = copy.copy(Ehkl)
     MEhkl = ma.array(Ehkl,mask=(Ehkl==0.0))
     Emask = ma.getmask(MEhkl)
     sumE = np.sum(ma.array(np.absolute(CEhkl),mask=Emask))
     Ncyc = 0
     old = np.seterr(all='raise')
+    twophases = []
     while True:        
         CErho = np.real(fft.fftn(fft.fftshift(CEhkl)))*(1.+0j)
         CEsig = np.std(CErho)
@@ -2801,6 +2803,7 @@ def ChargeFlip(data,reflDict,pgbar):
         CFhkl = fft.ifftshift(fft.ifftn(CFrho))
         CFhkl = np.where(CFhkl,CFhkl,1.0)           #avoid divide by zero
         phase = CFhkl/np.absolute(CFhkl)
+        twophases.append([np.angle(phase[h,k,l]) for h,k,l in testHKL])
         CEhkl = np.absolute(Ehkl)*phase
         Ncyc += 1
         sumCF = np.sum(ma.array(np.absolute(CFhkl),mask=Emask))
@@ -2822,7 +2825,7 @@ def ChargeFlip(data,reflDict,pgbar):
     mapData['rhoMax'] = max(np.max(mapData['rho']),-np.min(mapData['rho']))
     mapData['minmax'] = [np.max(mapData['rho']),np.min(mapData['rho'])]
     mapData['Type'] = reflDict['Type']
-    return mapData
+    return mapData,twophases
     
 def findSSOffset(SGData,SSGData,A,Fhklm):    
     '''default doc string
@@ -3113,7 +3116,7 @@ def SearchMap(generalData,drawingData,Neg=False):
         res = mapData['Resolution']
         incre = np.array(rho.shape,dtype=np.float)
         step = max(1.0,1./res)+1
-        steps = np.array(3*[step,])
+        steps = np.array((3*[step,]),dtype='int32')
     except KeyError:
         print '**** ERROR - Fourier map not defined'
         return peaks,mags

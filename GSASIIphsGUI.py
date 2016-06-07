@@ -202,7 +202,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             generalData['Map'] = mapDefault.copy()
         if 'Flip' not in generalData:
             generalData['Flip'] = {'RefList':'','Resolution':0.5,'Norm element':'None',
-                'k-factor':0.1,'k-Max':20.}
+                'k-factor':0.1,'k-Max':20.,}
+        if 'testHKL' not in generalData['Flip']:
+            generalData['Flip']['testHKL'] = [[0,0,2],[2,0,0],[1,1,1],[0,2,0],[1,2,3]]
         if 'doPawley' not in generalData:
             generalData['doPawley'] = False
         if 'Pawley dmin' not in generalData:
@@ -936,6 +938,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 except ValueError:
                     pass
                 kMax.SetValue("%.1f"%(Flip['k-Max']))          #reset in case of error
+                
+            def OnTestHKL(event):
+                Obj = event.GetEventObject()
+                name = Obj.GetName()
+                try:
+                    vals = Obj.GetValue().split()
+                    id = int(name.split('hkl')[1])
+                    HKL = [int(val) for val in vals]
+                    Flip['testHKL'][id] = HKL
+                except ValueError:
+                    HKL = Flip['testHKL'][id]
+                Obj.SetValue('%3d %3d %3d'%(HKL[0],HKL[1],HKL[2]))
 
             refsList = data['Histograms'].keys()
             flipSizer = wx.BoxSizer(wx.VERTICAL)
@@ -970,6 +984,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             kMax.Bind(wx.EVT_KILL_FOCUS,OnkMax)
             line2Sizer.Add(kMax,0,WACV)
             flipSizer.Add(line2Sizer,0,WACV)
+            line3Sizer = wx.BoxSizer(wx.HORIZONTAL)
+            line3Sizer.Add(wx.StaticText(General,label=' Test HKLs:'),0,WACV)
+            if len(Flip['testHKL']) < 5:
+                Flip['testHKL'] += [[1,1,1],[0,2,0],[1,2,3]]
+            HKL = Flip['testHKL']
+            for ih,hkl in enumerate(Flip['testHKL']):                
+                hkl = wx.TextCtrl(General,value='%3d %3d %3d'%(HKL[ih][0],HKL[ih][1],HKL[ih][2]),
+                    style=wx.TE_PROCESS_ENTER,name='hkl%d'%(ih))
+                hkl.Bind(wx.EVT_TEXT_ENTER,OnTestHKL)        
+                hkl.Bind(wx.EVT_KILL_FOCUS,OnTestHKL)
+                line3Sizer.Add(hkl,0,WACV)
+            flipSizer.Add(line3Sizer)
             return flipSizer
             
         def MCSASizer():
@@ -7200,11 +7226,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
         screenSize = wx.ClientDisplayRect()
         Size = pgbar.GetSize()
+        testNames = ['%3d%3d%3d'%(h,k,l) for h,k,l in flipData['testHKL']]
         if 50 < Size[0] < 500: # sanity check on size, since this fails w/Win & wx3.0
             pgbar.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
             pgbar.SetPosition(wx.Point(screenSize[2]-Size[0]-305,screenSize[1]+5))
         try:
-            mapData.update(G2mth.ChargeFlip(data,ReflData,pgbar))
+            result = G2mth.ChargeFlip(data,ReflData,pgbar)
+            mapData.update(result[0])
+            X = range(len(result[1]))
+            Y = 180.*np.array(result[1]).T/np.pi
+            XY = [[X,y] for y in Y]
+            G2plt.PlotXY(G2frame,XY,labelX='charge flip cycle',labelY='phase, deg',newPlot=True,
+                Title='Test HKL phases',lines=True,names=testNames)
         finally:
             pgbar.Destroy()
         mapData['Flip'] = True        

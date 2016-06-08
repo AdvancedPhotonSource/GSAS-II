@@ -328,7 +328,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         keyList = ['type','wavelength','calibrant','distance','center',
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
                     'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
-                    'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
+                    'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
                     'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
         keyText = [i+'='+str(data[i]) for i in keyList]
         # sort both lists together, ordered by keyText
@@ -360,9 +360,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     Controls.update(copy.deepcopy(copyDict))
         finally:
             dlg.Destroy()            
-                         
-            
-            
                 
     def OnSaveControls(event):
         pth = G2G.GetExportPath(G2frame)
@@ -377,7 +374,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 keys = ['type','wavelength','calibrant','distance','center',
                     'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
                     'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
-                    'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
+                    'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
                     'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
                 for key in keys:
                     if key not in data:     #uncalibrated!
@@ -390,7 +387,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     def OnLoadControls(event):
         cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type',
             'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
-            'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
+            'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
             'PolaVal','SampleAbs','dark image','background image']
         pth = G2G.GetImportPath(G2frame)
         if not pth: pth = '.'
@@ -406,9 +403,11 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     if S[0] == '#':
                         S = File.readline()
                         continue
-                    [key,val] = S[:-1].split(':')
+                    [key,val] = S[:-1].split(':',1)
                     if key in ['type','calibrant','binType','SampleShape',]:    #strings
                         save[key] = val
+                    elif key in ['varyList',]:
+                        save[key] = eval(val)   #dictionary
                     elif key in ['rotation']:
                         save[key] = float(val)
                     elif key in ['center',]:

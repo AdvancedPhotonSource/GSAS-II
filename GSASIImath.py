@@ -34,8 +34,6 @@ import GSASIIpwd as G2pwd
 import numpy.fft as fft
 import scipy.optimize as so
 import pypowder as pwd
-if GSASIIpath.GetConfigValue('debug'):
-    import pylab as pl
 
 sind = lambda x: np.sin(x*np.pi/180.)
 cosd = lambda x: np.cos(x*np.pi/180.)

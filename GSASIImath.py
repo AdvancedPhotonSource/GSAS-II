@@ -148,7 +148,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
                 x0 += Xvec
                 lam /= 10.
                 break
-            if lam > 10.e5:
+            if lam > 10.e3:
                 print 'ouch #3 chisq1 ',chisq1,' stuck > chisq0 ',chisq0
                 break
         lamMax = max(lamMax,lam)
@@ -460,6 +460,15 @@ def FindAllNeighbors(phase,FrstName,AtNames,notName=''):
                         Neigh.append([AtNames[iA]+Topstr,dist[iU]])
                         Ids.append(Atoms[iA][cia+8])
     return Neigh,[OId,Ids]
+    
+def calcBond(A,Ax,Bx,MTCU):
+    cell = G2lat.A2cell(A)
+    Amat,Bmat = G2lat.cell2AB(cell)
+    M,T,C,U = MTCU
+    Btx = np.inner(M,Bx)+T+C+U
+    Dx = Btx-Ax
+    dist = np.sqrt(np.inner(Amat,Dx))
+    return dist
     
 def AddHydrogens(AtLookUp,General,Atoms,AddHydId):
     

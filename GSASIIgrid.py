@@ -4026,21 +4026,28 @@ def MovePatternTreeToGrid(G2frame,item):
         masks = G2frame.PatternTree.GetItemPyData(
             GetPatternTreeItemId(G2frame,G2frame.Image, 'Masks'))
         data = G2frame.PatternTree.GetItemPyData(item)
+        G2frame.ImageZ = G2imG.GetImageZ(G2frame,data)
         G2imG.UpdateImageControls(G2frame,data,masks)
         G2plt.PlotImage(G2frame,newPlot=True)
     elif G2frame.PatternTree.GetItemText(item) == 'Masks':
         G2frame.dataFrame.SetTitle('Masks')
         G2frame.Image = G2frame.PatternTree.GetItemParent(item)
-        data = G2frame.PatternTree.GetItemPyData(item)
-        G2imG.UpdateMasks(G2frame,data)
+        masks = G2frame.PatternTree.GetItemPyData(item)
+        data = G2frame.PatternTree.GetItemPyData(
+            GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
+        G2frame.ImageZ = G2imG.GetImageZ(G2frame,data)
+        G2imG.UpdateMasks(G2frame,masks)
         G2plt.PlotImage(G2frame,newPlot=True)
     elif G2frame.PatternTree.GetItemText(item) == 'Stress/Strain':
         G2frame.dataFrame.SetTitle('Stress/Strain')
         G2frame.Image = G2frame.PatternTree.GetItemParent(item)
-        data = G2frame.PatternTree.GetItemPyData(item)
+        data = G2frame.PatternTree.GetItemPyData(
+            GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
+        G2frame.ImageZ = G2imG.GetImageZ(G2frame,data)
+        strsta = G2frame.PatternTree.GetItemPyData(item)
         G2plt.PlotImage(G2frame,newPlot=True)
-        G2plt.PlotStrain(G2frame,data,newPlot=True)
-        G2imG.UpdateStressStrain(G2frame,data)
+        G2plt.PlotStrain(G2frame,strsta,newPlot=True)
+        G2imG.UpdateStressStrain(G2frame,strsta)
     elif G2frame.PatternTree.GetItemText(item) == 'PDF Controls':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)
         for i in G2frame.ExportPDF: i.Enable(True)

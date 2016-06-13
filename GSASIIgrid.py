@@ -1464,7 +1464,7 @@ class DataFrame(wx.Frame):
             id=wxADDSEQVAR, kind=wx.ITEM_NORMAL,text='Add',
             help='Add a new pseudo-variable')
         self.SequentialPvars.Append(
-            id=wxADDSEQDIST, kind=wx.ITEM_NORMAL,text='Calc Distance',
+            id=wxADDSEQDIST, kind=wx.ITEM_NORMAL,text='Add Distance',
             help='Add a new bond distance pseudo-variable')
         self.SequentialPvars.Append(
             id=wxADDSEQANGLE, kind=wx.ITEM_NORMAL,text='Calc Angle',
@@ -2766,17 +2766,23 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             
     def AddNewDistPseudoVar(event):
         print 'Add bond distance pseudo-variable here - TBD'
+        obj = None
         dlg = G2exG.BondDialog(
             G2frame.dataDisplay,Phases,PSvarDict,
             header='Select a Bond here',
             VarLabel = "New Bond")
         if dlg.ShowModal() == wx.ID_OK:
-            #obj = dlg.GetSelection()
-            # create an expression object
-            obj = G2obj.ExpressionObj()
-            obj.expression = 'Dist(1,2)'
-            obj.distance_stuff = np.array([[0,1,1,-1]])
-            obj.distance_atoms = [1,2]
+            pName,Oatom,Tatom = dlg.GetSelection()
+            if Tatom:
+                Phase = Phases[pName]
+                General = Phase['General']
+                Cell = General['Cell'][1:7]
+                Amat = G2lat.cell2AB(Cell)[0]
+                # create an expression object
+                obj = G2obj.ExpressionObj()
+                obj.expression = 'Dist(%s,%s)'%(Oatom,Tatom.split(' d=')[0].replace(' ',''))
+                obj.distance_stuff = {'Amat':Amat,}
+                obj.distance_atoms = [1,2]
         else: 
             dlg.Destroy()
             return

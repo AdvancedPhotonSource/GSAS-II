@@ -723,17 +723,17 @@ class BondDialog(wx.Dialog):
             if dlg.ShowModal() == wx.ID_OK:
                 self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
             dlg.Destroy()
-            self.Draw()
+            wx.CallAfter(self.Draw)
             
         def OnOrigAtom(event):
             Obj = event.GetEventObject()
             self.Oatom = Obj.GetValue()
-            self.Draw()
+            wx.CallAfter(self.Draw)
             
         def OnTargAtom(event):
             Obj = event.GetEventObject()
             self.Tatom = Obj.GetValue()
-            self.Draw()
+            wx.CallAfter(self.Draw)
 
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -790,18 +790,7 @@ class BondDialog(wx.Dialog):
         self.Fit()
 
     def GetSelection(self):
-        exprObj = G2obj.ExpressionObj()
-        exprObj.LoadExpression(
-            self.expr,
-            self.exprVarLst,
-            self.varSelect,
-            self.varName,
-            self.varValue,
-            self.varRefflag,
-            )
-        if self.depVarDict:
-            exprObj.SetDepVar(self.dependentVar)
-        return exprObj
+        return self.pName,self.Oatom,self.Tatom
 
     def OnOk(self,event):
         parent = self.GetParent()

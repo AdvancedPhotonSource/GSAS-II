@@ -1660,6 +1660,9 @@ class ExpressionObj(object):
         '''Shows last encountered error in processing expression
         (list of 1-3 str values)'''
 
+        self.distance_stuff = None  # to be used for defining atom distances
+        self.distance_atoms = None  # to be used for defining atom distances
+
     def LoadExpression(self,expr,exprVarLst,varSelect,varName,varValue,varRefflag):
         '''Load the expression and associated settings into the object. Raises
         an exception if the expression is not parsed, if not all functions
@@ -1938,11 +1941,16 @@ class ExpressionCalcObj(object):
         for v in self.eObj.assgnVars:
             if not isinstance(self.eObj.assgnVars[v], basestring):
                 self.eObj.assgnVars[v] = self.eObj.assgnVars[v][0]
+        self.parmDict = {}
+        '''A copy of the parameter dictionary, for distance and angle computation
+        '''
 
     def SetupCalc(self,parmDict):
         '''Do all preparations to use the expression for computation.
         Adds the free parameter values to the parameter dict (parmDict).
         '''
+        if self.eObj.expression.startswith('Dist'):
+            return
         self.fxnpkgdict = self.eObj.CheckVars()
         # all is OK, compile the expression
         self.compiledExpr = compile(self.eObj.expression,'','eval')
@@ -2010,6 +2018,9 @@ class ExpressionCalcObj(object):
         '''Update the dict for the expression with values in a dict
         :param list parmDict: a dict of values some of which may be in use here
         '''
+        if self.eObj.expression.startswith('Dist'):
+            self.parmDict = parmDict
+            return
         for var in parmDict:
             if var in self.lblLookup:
                 self.exprDict[self.lblLookup[var]] = parmDict[var]
@@ -2029,6 +2040,10 @@ class ExpressionCalcObj(object):
 
         then the result will be ``4.0``.
         '''
+        if self.eObj.expression.startswith('Dist'):
+            dist = 0
+            #dist = CalcDist(self.eObj.distance_stuff, self.eObj.distance_atoms, self.parmDict)
+            return dist 
         if self.compiledExpr is None:
             raise Exception,"EvalExpression called before SetupCalc"
         val = eval(self.compiledExpr,globals(),self.exprDict)
@@ -2060,19 +2075,36 @@ if __name__ == "__main__":
     obj.assgnVars =  {'B': '0::Afrac:1'}
     obj.freeVars =  {'A': [u'A', 0.5, True]}
     #obj.CheckVars()
-    parmDict2 = {'0::Afrac:0':[0.0,True], '0::Afrac:1': [1.0,False]}
     calcobj = ExpressionCalcObj(obj)
-    calcobj.SetupCalc(parmDict2)
-    showEQ(calcobj)
 
-    obj.expression = "A*np.exp(B)"
-    obj.assgnVars =  {'B': '0::Afrac:*'}
-    obj.freeVars =  {'A': [u'Free Prm A', 0.5, True]}
+    obj1 = ExpressionObj()
+    obj1.expression = "A*np.exp(B)"
+    obj1.assgnVars =  {'B': '0::Afrac:*'}
+    obj1.freeVars =  {'A': [u'Free Prm A', 0.5, True]}
     #obj.CheckVars()
+    calcobj1 = ExpressionCalcObj(obj1)
+
+    obj2 = ExpressionObj()
+    obj2.distance_stuff = np.array([[0,1],[1,-1]])
+    obj2.expression = "Dist(1,2)"
+    GSASIIpath.InvokeDebugOpts()
+    parmDict2 = {'0::Afrac:0':[0.0,True], '0::Afrac:1': [1.0,False]}
+    calcobj2 = ExpressionCalcObj(obj2)
+    calcobj2.SetupCalc(parmDict2)
+    showEQ(calcobj2)
+    
     parmDict1 = {'0::Afrac:0':1.0, '0::Afrac:1': 1.0}
-    calcobj = ExpressionCalcObj(obj)
+    print '\nDict = ',parmDict1
     calcobj.SetupCalc(parmDict1)
     showEQ(calcobj)
+    calcobj1.SetupCalc(parmDict1)
+    showEQ(calcobj1)
 
+    parmDict2 = {'0::Afrac:0':[0.0,True], '0::Afrac:1': [1.0,False]}
+    print 'Dict = ',parmDict2
     calcobj.SetupCalc(parmDict2)
     showEQ(calcobj)
+    calcobj1.SetupCalc(parmDict2)
+    showEQ(calcobj1)
+    calcobj2.SetupCalc(parmDict2)
+    showEQ(calcobj2)

@@ -1464,10 +1464,10 @@ class DataFrame(wx.Frame):
             id=wxADDSEQVAR, kind=wx.ITEM_NORMAL,text='Add',
             help='Add a new pseudo-variable')
         self.SequentialPvars.Append(
-            id=wxADDSEQDIST, kind=wx.ITEM_NORMAL,text='Add dist',
+            id=wxADDSEQDIST, kind=wx.ITEM_NORMAL,text='Calc Distance',
             help='Add a new bond distance pseudo-variable')
         self.SequentialPvars.Append(
-            id=wxADDSEQANGLE, kind=wx.ITEM_NORMAL,text='Add angle',
+            id=wxADDSEQANGLE, kind=wx.ITEM_NORMAL,text='Calc Angle',
             help='Add a new bond angle pseudo-variable')
         self.SequentialPvars.Append(
             id=wxDELSEQVAR, kind=wx.ITEM_NORMAL,text='Delete',
@@ -2771,14 +2771,18 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             header='Select a Bond here',
             VarLabel = "New Bond")
         if dlg.ShowModal() == wx.ID_OK:
-            obj = dlg.GetSelection()
+            #obj = dlg.GetSelection()
+            # create an expression object
+            obj = G2obj.ExpressionObj()
+            obj.expression = 'Dist(1,2)'
+            obj.distance_stuff = np.array([[0,1,1,-1]])
+            obj.distance_atoms = [1,2]
         else: 
             dlg.Destroy()
             return
         dlg.Destroy()
         if obj:
-            calcobj = G2obj.ExpressionCalcObj(obj)
-            Controls['SeqPseudoVars'][calcobj.eObj.expression] = obj
+            Controls['SeqPseudoVars'][obj.expression] = obj
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
 
     def AddNewAnglePseudoVar(event):

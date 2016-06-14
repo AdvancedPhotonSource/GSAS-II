@@ -1467,7 +1467,7 @@ class DataFrame(wx.Frame):
             id=wxADDSEQDIST, kind=wx.ITEM_NORMAL,text='Add Distance',
             help='Add a new bond distance pseudo-variable')
         self.SequentialPvars.Append(
-            id=wxADDSEQANGLE, kind=wx.ITEM_NORMAL,text='Calc Angle',
+            id=wxADDSEQANGLE, kind=wx.ITEM_NORMAL,text='Add Angle',
             help='Add a new bond angle pseudo-variable')
         self.SequentialPvars.Append(
             id=wxDELSEQVAR, kind=wx.ITEM_NORMAL,text='Delete',
@@ -2776,13 +2776,28 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             if Tatom:
                 Phase = Phases[pName]
                 General = Phase['General']
-                Cell = General['Cell'][1:7]
-                Amat = G2lat.cell2AB(Cell)[0]
+                cx,ct = General['AtomPtrs'][:2]
+                pId = Phase['pId']
+                SGData = General['SGData']
+                sB = Tatom.find('(')+1
+                symNo = 0
+                if sB:
+                    sF = Tatom.find(')')
+                    symNo = int(Tatom[sB:sF])
+                cellNo = [0,0,0]
+                cB = Tatom.find('[')
+                if cB>0:
+                    cF = Tatom.find(']')+1
+                    cellNo = eval(Tatom[cB:cF])
+                Atoms = Phase['Atoms']
+                aNames = [atom[ct-1] for atom in Atoms]
+                oId = aNames.index(Oatom)
+                tId = aNames.index(Tatom.split(' +')[0])
                 # create an expression object
                 obj = G2obj.ExpressionObj()
                 obj.expression = 'Dist(%s,%s)'%(Oatom,Tatom.split(' d=')[0].replace(' ',''))
-                obj.distance_stuff = {'Amat':Amat,}
-                obj.distance_atoms = [1,2]
+                obj.distance_dict = {'pId':pId,'SGData':SGData,'symNo':symNo,'cellNo':cellNo}
+                obj.distance_atoms = [oId,tId]
         else: 
             dlg.Destroy()
             return

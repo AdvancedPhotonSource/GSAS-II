@@ -2042,7 +2042,8 @@ class ExpressionCalcObj(object):
         '''
         if self.eObj.expression.startswith('Dist'):
             dist = 0
-            #dist = CalcDist(self.eObj.distance_stuff, self.eObj.distance_atoms, self.parmDict)
+#            GSASIIpath.IPyBreak()
+            dist = G2mth.CalcDist(self.eObj.distance_dict, self.eObj.distance_atoms, self.parmDict)
             return dist 
         if self.compiledExpr is None:
             raise Exception,"EvalExpression called before SetupCalc"

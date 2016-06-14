@@ -1504,6 +1504,32 @@ def BessIn(nmax,x):
 ##### distance, angle, planes, torsion stuff 
 ################################################################################
 
+def CalcDist(distance_dict, distance_atoms, parmDict):
+    if not len(parmDict):
+        return 0.
+    pId = distance_dict['pId']
+    pfx = '%d::'%(pId)
+    A = [parmDict['%s::A%d'%(pId,i)] for i in range(6)]
+    Amat = G2lat.cell2AB(G2lat.A2cell(A))[0]
+    Oxyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[0])] for x in ['x','y','z']]
+    Txyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[1])] for x in ['x','y','z']]
+    inv = 1
+    symNo = distance_dict['symNo']
+    if symNo < 0:
+        inv = -1
+        symNo *= -1
+    cen = symNo/100
+    op = symNo%100-1
+    M,T = distance_dict['SGData']['SGOps'][op]
+    M *= inv
+    T *= inv
+    D = T+distance_dict['SGData']['SGCen'][cen]
+    D += distance_dict['cellNo']
+    Txyz = np.inner(M,Txyz)+D
+    dist = np.sqrt(np.sum(np.inner(Amat,(Txyz-Oxyz))**2))
+#    GSASIIpath.IPyBreak()
+    return dist    
+   
 def getSyXYZ(XYZ,ops,SGData):
     '''default doc string
     

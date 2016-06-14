@@ -2765,7 +2765,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
             
     def AddNewDistPseudoVar(event):
-        print 'Add bond distance pseudo-variable here - TBD'
         obj = None
         dlg = G2exG.BondDialog(
             G2frame.dataDisplay,Phases,PSvarDict,
@@ -2795,7 +2794,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 tId = aNames.index(Tatom.split(' +')[0])
                 # create an expression object
                 obj = G2obj.ExpressionObj()
-                obj.expression = 'Dist(%s,%s)'%(Oatom,Tatom.split(' d=')[0].replace(' ',''))
+                obj.expression = 'Dist(%s,\n%s)'%(Oatom,Tatom.split(' d=')[0].replace(' ',''))
                 obj.distance_dict = {'pId':pId,'SGData':SGData,'symNo':symNo,'cellNo':cellNo}
                 obj.distance_atoms = [oId,tId]
         else: 

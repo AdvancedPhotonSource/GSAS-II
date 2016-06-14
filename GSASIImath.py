@@ -1521,11 +1521,9 @@ def CalcDist(distance_dict, distance_atoms, parmDict):
     cen = symNo/100
     op = symNo%100-1
     M,T = distance_dict['SGData']['SGOps'][op]
-    M *= inv
-    T *= inv
-    D = T+distance_dict['SGData']['SGCen'][cen]
+    D = T*inv+distance_dict['SGData']['SGCen'][cen]
     D += distance_dict['cellNo']
-    Txyz = np.inner(M,Txyz)+D
+    Txyz = np.inner(M*inv,Txyz)+D
     dist = np.sqrt(np.sum(np.inner(Amat,(Txyz-Oxyz))**2))
 #    GSASIIpath.IPyBreak()
     return dist    

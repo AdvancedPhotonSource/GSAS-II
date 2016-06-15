@@ -1528,6 +1528,72 @@ def CalcDist(distance_dict, distance_atoms, parmDict):
 #    GSASIIpath.IPyBreak()
     return dist    
    
+def CalcDistSig(distance_dict, distance_atoms, parmDict,covData={}):
+    '''default doc string
+    
+    :param type name: description
+    
+    :returns: type name: description
+    
+    '''
+    def calcDist(Atoms,SyOps,Amat):
+        XYZ = []
+        for i,atom in enumerate(Atoms):
+            Inv,M,T,C,U = SyOps[i]
+            XYZ.append(np.array(atom[1:4]))
+            XYZ[-1] = Inv*(np.inner(M,np.array(XYZ[-1]))+T)+C+U
+            XYZ[-1] = np.inner(Amat,XYZ[-1]).T
+        V1 = XYZ[1]-XYZ[0]
+        return np.sqrt(np.sum(V1**2))
+        
+    if not len(parmDict):
+        return 0.
+    pId = distance_dict['pId']
+    pfx = '%d::'%(pId)
+    A = [parmDict['%s::A%d'%(pId,i)] for i in range(6)]
+    Amat = G2lat.cell2AB(G2lat.A2cell(A))[0]
+    Oxyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[0])] for x in ['x','y','z']]
+    Txyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[1])] for x in ['x','y','z']]
+    inv = 1
+    symNo = distance_dict['symNo']
+    if symNo < 0:
+        inv = -1
+        symNo *= -1
+    cen = symNo/100
+    op = symNo%100-1
+    M,T = distance_dict['SGData']['SGOps'][op]
+    D = T*inv+distance_dict['SGData']['SGCen'][cen]
+    D += distance_dict['cellNo']
+    Txyz = np.inner(M*inv,Txyz)+D
+    dist = np.sqrt(np.sum(np.inner(Amat,(Txyz-Oxyz))**2))
+
+    sig = -0.001
+    if 'covMatrix' in covData:
+        parmNames = []
+        dx = .00001
+        dadx = np.zeros(6)
+        for i in range(6):
+            ia = i/3
+            ix = i%3
+            Oxyz[ix+1] += dx
+            a0 = calcDist(Oatoms,SyOps,Amat)
+            Oatoms[ia][ix+1] -= 2*dx
+            dadx[i] = (calcDist(Oatoms,SyOps,Amat)-a0)/(2.*dx)
+        covMatrix = covData['covMatrix']
+        varyList = covData['varyList']
+        DistVcov = getVCov(names,varyList,covMatrix)
+        sig = np.sqrt(np.inner(dadx,np.inner(DistVcov,dadx)))
+        if sig < 0.001:
+            sig = -0.001
+    
+    return Dist,sig
+
+def CalcAngle(distance_dict, distance_atoms, parmDict):
+    if not len(parmDict):
+        return 0.
+
+    return 0.   #angle
+
 def getSyXYZ(XYZ,ops,SGData):
     '''default doc string
     

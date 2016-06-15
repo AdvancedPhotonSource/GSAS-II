@@ -3432,11 +3432,9 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
             derivs = np.array(
                 [EvalPSvarDeriv(calcobj,parmDict.copy(),sampleDict[name],var,ESD)
-                 for var,ESD in zip(varyList,sigs)]
-                )
+                 for var,ESD in zip(varyList,sigs)])
             esdList.append(np.sqrt(
-                np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T))
-                ))
+                np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
             PSvarDict = parmDict.copy()
             PSvarDict.update(sampleDict[name])
             UpdateParmDict(PSvarDict)

@@ -709,7 +709,6 @@ class BondDialog(wx.Dialog):
         dlg.Destroy()
         self.Oatom = ''
         self.Tatom = ''
-        
         self.Draw()
         
     def Draw(self):
@@ -824,8 +823,13 @@ class AngleDialog(wx.Dialog):
         self.parmDict = parmDict
         self.header = header
         self.pName = Phases.keys()[0]
+        DisAglCtls = {}
+        dlg = G2gd.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
+        if dlg.ShowModal() == wx.ID_OK:
+            Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
+        dlg.Destroy()
         self.Oatom = ''
-        
+        self.Tatoms = ['','']
         self.Draw()
 
     def Draw(self):
@@ -833,13 +837,23 @@ class AngleDialog(wx.Dialog):
         def OnPhase(event):
             Obj = event.GetEventObject()
             self.pName = Obj.GetValue()
-            self.Draw()
+            self.Oatom = ''
+            DisAglCtls = {}
+            dlg = G2gd.DisAglDialog(self.panel,DisAglCtls,self.Phases[self.pName]['General'],Reset=False)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
+            dlg.Destroy()
+            wx.CallAfter(self.Draw)
             
         def OnOrigAtom(event):
             Obj = event.GetEventObject()
             self.Oatom = Obj.GetValue()
-            self.Draw()
-            
+            wx.CallAfter(self.Draw)            
+
+        def OnTargAtom(event):
+            Obj = event.GetEventObject()
+            self.Tatom = Obj.GetValue()
+            wx.CallAfter(self.Draw)
 
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -859,13 +873,20 @@ class AngleDialog(wx.Dialog):
         aNames = [atom[ct-1] for atom in Atoms]
 #        GSASIIpath.IPyBreak()
         atomSizer = wx.BoxSizer(wx.HORIZONTAL)
-        atomSizer.Add(wx.StaticText(self.panel,label=' Origin atom: '),0,WACV)
+        atomSizer.Add(wx.StaticText(self.panel,label=' Origin atom (O in A-O-B): '),0,WACV)
         origAtom = wx.ComboBox(self.panel,value=self.Oatom,choices=aNames,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         origAtom.Bind(wx.EVT_COMBOBOX,OnOrigAtom)
-        atomSizer.Add(origAtom,0,WACV)
-        
+        atomSizer.Add(origAtom,0,WACV)        
         mainSizer.Add(atomSizer)
+        mainSizer.Add(wx.StaticText(self.panel,label=' A-O-B angle for A,B: '),0,WACV)
+        neigh = []
+        if self.Oatom:
+#            GSASIIpath.IPyBreak()
+            neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames)
+        bNames = ['',]
+        if neigh:
+            bNames = [item[0]+' d=%.3f'%(item[1]) for item in neigh[0]]
 
 
         OkBtn = wx.Button(self.panel,-1,"Ok")

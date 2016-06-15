@@ -903,7 +903,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             TA,tam = Make2ThetaAzimuthMap(data,masks,(iBeg,iFin),(jBeg,jFin),times)           #2-theta & azimuth arrays & create position mask
             Nup += 1
             if dlg:
-                dlg.Update(Nup)
+                pause = dlg.Update(Nup)
             Block = image[iBeg:iFin,jBeg:jFin]
             t0 = time.time()
             tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
@@ -911,7 +911,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             times[2] += time.time()-t0
             Nup += 1
             if dlg:
-                dlg.Update(Nup)
+                pause = dlg.Update(Nup)
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if data.get('SampleAbs',[0.0,''])[1]:
@@ -933,7 +933,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             Nup += 1
             del tax; del tay; del taz; del tad; del tabs
             if dlg:
-                dlg.Update(Nup)
+                pause = dlg.Update(Nup)
     t0 = time.time()
     NST = np.array(NST,dtype=np.float)
     H0 = np.divide(H0,NST)

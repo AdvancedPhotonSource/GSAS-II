@@ -1994,7 +1994,7 @@ def ReadControls(filename):
     'read an image controls (.imctrl) file'
     cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type',
             'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
-            'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
+            'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg',
             'PolaVal','SampleAbs','dark image','background image']
     File = open(filename,'r')
     save = {}
@@ -2033,7 +2033,7 @@ def Read_imctrl(imctrl_file):
         save['maskfile'] = '(none)'
     cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type',
                         'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
-                        'calibskip','pixLimit','cutoff','calibdmin','chisq','Flat Bkg',
+                        'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg',
                         'PolaVal','SampleAbs','dark image','background image']
     File = open(imctrl_file,'r')
     fullIntegrate = False
@@ -2493,7 +2493,7 @@ class AutoIntFrame(wx.Frame):
     def OnTimerLoop(self,event):
         '''A method that is called every :meth:`PollTime` seconds that is
         used to check for new files and process them. This is called only
-        after the "Start" button is pressed (when its label reads "Pause").
+        after the "Start" button is pressed (then its label reads "Pause").
         '''
         G2frame = self.G2frame
         try:
@@ -2527,16 +2527,22 @@ class AutoIntFrame(wx.Frame):
             # update masks from master w/o Thresholds
             ImageMasks.update(self.ImageMasks)
             self.IntegrateImage(img)
+            self.Pause = G2frame.PauseIntegration
             self.G2frame.oldImagefile = '' # mark image as changed; reread as needed
             wx.Yield()
             self.ShowMatchingFiles(self.params['filter'])
             wx.Yield()
-            if self.Pause: return
+            if self.Pause:
+                self.btnstart.SetLabel('Resume')
+                if self.timer.IsRunning(): self.timer.Stop()
+                print('\nPausing autointegration\n')
+                self.Status.SetStatusText('Press Resume to continue integration or Reset to prepare to reintegrate all images')
+                return
 
         # loop over image files matching glob, reading in any new ones
         for newImage in self.currImageList:
 
-            if newImage in imageFileList: continue # already read?
+            if newImage in imageFileList or self.Pause: continue # already read?
             for imgId in G2IO.ReadImages(G2frame,newImage):
                 controlsDict = G2frame.PatternTree.GetItemPyData(
                     G2gd.GetPatternTreeItemId(G2frame,imgId, 'Image Controls'))
@@ -2556,12 +2562,13 @@ class AutoIntFrame(wx.Frame):
                 self.ShowMatchingFiles(self.params['filter'])
                 wx.Yield()
                 self.Pause = G2frame.PauseIntegration
+                print 'pause',self.Pause
             if self.Pause:
                 self.btnstart.SetLabel('Resume')
                 if self.timer.IsRunning(): self.timer.Stop()
                 print('\nPausing autointegration\n')
                 self.Status.SetStatusText('Press Resume to continue integration or Reset to prepare to reintegrate all images')
-                return
+                break
         
         if GSASIIpath.GetConfigValue('debug'):
             import datetime

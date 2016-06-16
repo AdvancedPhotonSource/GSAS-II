@@ -1461,8 +1461,8 @@ class DataFrame(wx.Frame):
         self.SequentialPvars = wx.Menu(title='')
         self.SequentialMenu.Append(menu=self.SequentialPvars, title='Pseudo Vars')
         self.SequentialPvars.Append(
-            id=wxADDSEQVAR, kind=wx.ITEM_NORMAL,text='Add',
-            help='Add a new pseudo-variable')
+            id=wxADDSEQVAR, kind=wx.ITEM_NORMAL,text='Add Formula',
+            help='Add a new custom pseudo-variable')
         self.SequentialPvars.Append(
             id=wxADDSEQDIST, kind=wx.ITEM_NORMAL,text='Add Distance',
             help='Add a new bond distance pseudo-variable')
@@ -3440,6 +3440,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             UpdateParmDict(PSvarDict)
             calcobj.UpdateDict(PSvarDict)
             valList.append(calcobj.EvalExpression())
+            # if calcobj.su is not None: esdList[-1] = calcobj.su
         if not esdList:
             esdList = None
         colList += [valList]

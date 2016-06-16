@@ -1660,7 +1660,7 @@ class ExpressionObj(object):
         '''Shows last encountered error in processing expression
         (list of 1-3 str values)'''
 
-        self.distance_stuff = None  # to be used for defining atom distances
+        self.distance_dict  = None  # to be used for defining atom phase/symmetry info
         self.distance_atoms = None  # to be used for defining atom distances
 
     def LoadExpression(self,expr,exprVarLst,varSelect,varName,varValue,varRefflag):
@@ -1937,6 +1937,9 @@ class ExpressionCalcObj(object):
         indexed by the expression label name. (Used for only for diagnostics
         not evaluation of expression.)
         '''
+        self.su = None
+        '''Standard error evaluation where supplied by the evaluator
+        '''
         # Patch: for old-style expressions with a (now removed step size)
         for v in self.eObj.assgnVars:
             if not isinstance(self.eObj.assgnVars[v], basestring):
@@ -2040,11 +2043,13 @@ class ExpressionCalcObj(object):
 
         then the result will be ``4.0``.
         '''
+        self.su = None
         if self.eObj.expression.startswith('Dist'):
             dist = 0
 #            GSASIIpath.IPyBreak()
             dist = G2mth.CalcDist(self.eObj.distance_dict, self.eObj.distance_atoms, self.parmDict)
-            return dist 
+            #self.su = G2mth.CalcDistSu(self.eObj.distance_dict, self.eObj.distance_atoms, self.parmDict)
+            return dist
         if self.compiledExpr is None:
             raise Exception,"EvalExpression called before SetupCalc"
         val = eval(self.compiledExpr,globals(),self.exprDict)

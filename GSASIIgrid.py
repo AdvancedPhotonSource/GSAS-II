@@ -3470,7 +3470,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             UpdateParmDict(PSvarDict)
             calcobj.UpdateDict(PSvarDict)
             valList.append(calcobj.EvalExpression())
-            # if calcobj.su is not None: esdList[-1] = calcobj.su
+            if calcobj.su is not None: esdList[-1] = calcobj.su
         if not esdList:
             esdList = None
         colList += [valList]

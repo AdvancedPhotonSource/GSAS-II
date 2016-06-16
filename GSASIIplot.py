@@ -661,7 +661,10 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
             else:
                 Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
                 im = Im.new("RGB", (size[0],size[1]))
-            im.fromstring(Pix)
+            try:
+                im.frombytes(Pix)
+            except AttributeError:
+                im.fromstring(Pix)
             im = im.transpose(Im.FLIP_TOP_BOTTOM)
             im.save(Fname,mode)
             cb.SetValue(' save as/key:')
@@ -4728,7 +4731,10 @@ def PlotStructure(G2frame,data,firstCall=False):
             else:
                 Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
                 im = Im.new("RGB", (size[0],size[1]))
-            im.fromstring(Pix)
+            try:
+                im.frombytes(Pix)
+            except AttributeError:
+                im.fromstring(Pix)
             im = im.transpose(Im.FLIP_TOP_BOTTOM)
             im.save(Fname,mode)
             cb.SetValue(' save as/key:')
@@ -6089,7 +6095,10 @@ def PlotLayers(G2frame,Layers,laySeq,defaults):
             else:
                 Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
                 im = Im.new("RGB", (size[0],size[1]))
-            im.fromstring(Pix)
+            try:
+                im.frombytes(Pix)
+            except AttributeError:
+                im.fromstring(Pix)
             im = im.transpose(Im.FLIP_TOP_BOTTOM)
             im.save(Fname,mode)
             print ' Drawing saved to: '+Fname

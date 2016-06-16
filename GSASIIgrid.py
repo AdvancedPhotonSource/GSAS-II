@@ -3460,17 +3460,36 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             varyList = data[name]['varyList']
             parmDict = data[name]['parmDict']
             G2mv.GenerateConstraints(groups,parmlist,varyList,constrDict,fixedList,parmDict,SeqHist=ihst)
-            derivs = np.array(
-                [EvalPSvarDeriv(calcobj,parmDict.copy(),sampleDict[name],var,ESD)
-                 for var,ESD in zip(varyList,sigs)])
-            esdList.append(np.sqrt(
-                np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
+            if 'Dist' in expr:
+                derivs = G2mth.CalcDistDeriv(obj.distance_dict,obj.distance_atoms, parmDict)
+                pId = obj.distance_dict['pId']
+                aId,bId = obj.distance_atoms
+                varyNames = ['%d::dA%s:%d'%(pId,ip,aId) for ip in ['x','y','z']]
+                varyNames += ['%d::dA%s:%d'%(pId,ip,bId) for ip in ['x','y','z']]
+                VCoV = G2mth.getVCov(varyNames,varyList,data[name]['covMatrix'])
+                esdList.append(np.sqrt(np.inner(derivs,np.inner(VCoV,derivs.T)) ))
+#                GSASIIpath.IPyBreak()
+            elif 'Angle' in expr:
+                derivs = G2mth.CalcAngleDeriv(obj.angle_dict,obj.angle_atoms, parmDict)
+                pId = obj.angle_dict['pId']
+                aId,bId = obj.distance_atoms
+                varyNames = ['%d::dA%s:%d'%(pId,ip,aId) for ip in ['x','y','z']]
+                varyNames += ['%d::dA%s:%d'%(pId,ip,bId[0]) for ip in ['x','y','z']]
+                varyNames += ['%d::dA%s:%d'%(pId,ip,bId[1]) for ip in ['x','y','z']]
+                VCoV = G2mth.getVCov(varyNames,varyList,data[name]['covMatrix'])
+                esdList.append(np.sqrt(np.inner(derivs,np.inner(VCoV,derivs.T)) ))
+            else:
+                derivs = np.array(
+                    [EvalPSvarDeriv(calcobj,parmDict.copy(),sampleDict[name],var,ESD)
+                     for var,ESD in zip(varyList,sigs)])
+                esdList.append(np.sqrt(
+                    np.inner(derivs,np.inner(data[name]['covMatrix'],derivs.T)) ))
             PSvarDict = parmDict.copy()
             PSvarDict.update(sampleDict[name])
             UpdateParmDict(PSvarDict)
             calcobj.UpdateDict(PSvarDict)
             valList.append(calcobj.EvalExpression())
-            if calcobj.su is not None: esdList[-1] = calcobj.su
+#            if calcobj.su is not None: esdList[-1] = calcobj.su
         if not esdList:
             esdList = None
         colList += [valList]

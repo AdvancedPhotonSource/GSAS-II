@@ -1527,19 +1527,23 @@ def CalcDist(distance_dict, distance_atoms, parmDict):
     dist = np.sqrt(np.sum(np.inner(Amat,(Txyz-Oxyz))**2))
 #    GSASIIpath.IPyBreak()
     return dist    
+    
+def CalcDistDeriv(distance_dict, distance_atoms, parmDict):
+    if not len(parmDict):
+        return None
+    pId = distance_dict['pId']
+    pfx = '%d::'%(pId)
+    A = [parmDict['%s::A%d'%(pId,i)] for i in range(6)]
+    Amat = G2lat.cell2AB(G2lat.A2cell(A))[0]
+    Oxyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[0])] for x in ['x','y','z']]
+    Txyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[1])] for x in ['x','y','z']]
+    inv = 1
+    symNo = distance_dict['symNo']
+    Tunit = distance_dict['cellNo']
+    SGData = distance_dict['SGData']    
+    deriv = getDistDerv(Oxyz,Txyz,Amat,Tunit,symNo,SGData)
+    return deriv
    
-def CalcDistSu(distance_dict, distance_atoms, parmDict,covData={}):
-    '''default doc string
-    
-    :param type name: description
-    
-    :returns: type name: description
-    
-    '''
-    sig = 0.001
-    
-    return sig
-
 def CalcAngle(angle_dict, angle_atoms, parmDict):
     if not len(parmDict):
         return 0.
@@ -1572,17 +1576,21 @@ def CalcAngle(angle_dict, angle_atoms, parmDict):
 #    GSASIIpath.IPyBreak()
     return angle
 
-def CalcAngleSu(angle_dict, angle_atoms, parmDict,covData={}):
-    '''default doc string
-    
-    :param type name: description
-    
-    :returns: type name: description
-    
-    '''
-    sig = 0.5
-    
-    return sig
+def CalcAngleDeriv(angle_dict, angle_atoms, parmDict):
+    if not len(parmDict):
+        return None
+    pId = angle_dict['pId']
+    pfx = '%d::'%(pId)
+    A = [parmDict['%s::A%d'%(pId,i)] for i in range(6)]
+    Amat = G2lat.cell2AB(G2lat.A2cell(A))[0]
+    Oxyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[0])] for x in ['x','y','z']]
+    Txyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[1])] for x in ['x','y','z']]
+    inv = 1
+    symNo = distance_dict['symNo']
+    Tunit = distance_dict['cellNo']
+    SGData = distance_dict['SGData']    
+    deriv = getDistDerv(Oxyz,Txyz,Amat,Tunit,symNo,SGData)
+    return deriv
 
 def getSyXYZ(XYZ,ops,SGData):
     '''default doc stringvec

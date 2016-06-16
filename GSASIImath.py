@@ -1588,11 +1588,36 @@ def CalcDistSig(distance_dict, distance_atoms, parmDict,covData={}):
     
     return Dist,sig
 
-def CalcAngle(distance_dict, distance_atoms, parmDict):
+def CalcAngle(angle_dict, angle_atoms, parmDict):
     if not len(parmDict):
         return 0.
-
-    return 0.   #angle
+    pId = angle_dict['pId']
+    pfx = '%d::'%(pId)
+    A = [parmDict['%s::A%d'%(pId,i)] for i in range(6)]
+    Amat = G2lat.cell2AB(G2lat.A2cell(A))[0]
+    Oxyz = [parmDict['%s::A%s:%d'%(pId,x,angle_atoms[0])] for x in ['x','y','z']]
+    Axyz = [parmDict['%s::A%s:%d'%(pId,x,angle_atoms[1][0])] for x in ['x','y','z']]
+    Bxyz = [parmDict['%s::A%s:%d'%(pId,x,angle_atoms[1][1])] for x in ['x','y','z']]
+    ABxyz = [Axyz,Bxyz]
+    symNo = angle_dict['symNo']
+    for i in range(2):
+        inv = 1
+        if symNo[i] < 0:
+            inv = -1
+            symNo[i] *= -1
+        cen = symNo[i]/100
+        op = symNo[i]%100-1
+        M,T = angle_dict['SGData']['SGOps'][op]
+        D = T*inv+angle_dict['SGData']['SGCen'][cen]
+        D += angle_dict['cellNo'][i]
+        ABxyz[i] = np.inner(M*inv,ABxyz[i])+D
+        ABxyz[i] = np.inner(Amat,(ABxyz[i]-Oxyz))
+        dist = np.sqrt(np.sum(ABxyz[i]**2))
+        if not dist:
+            return 0.
+        ABxyz[i] /= dist
+    angle = acosd(np.sum(ABxyz[0]*ABxyz[1]))
+    return angle
 
 def getSyXYZ(XYZ,ops,SGData):
     '''default doc string

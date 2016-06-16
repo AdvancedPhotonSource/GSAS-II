@@ -1952,7 +1952,7 @@ class ExpressionCalcObj(object):
         '''Do all preparations to use the expression for computation.
         Adds the free parameter values to the parameter dict (parmDict).
         '''
-        if self.eObj.expression.startswith('Dist'):
+        if self.eObj.expression.startswith('Dist') or self.eObj.expression.startswith('Angle'):
             return
         self.fxnpkgdict = self.eObj.CheckVars()
         # all is OK, compile the expression
@@ -2021,7 +2021,7 @@ class ExpressionCalcObj(object):
         '''Update the dict for the expression with values in a dict
         :param list parmDict: a dict of values some of which may be in use here
         '''
-        if self.eObj.expression.startswith('Dist'):
+        if self.eObj.expression.startswith('Dist') or self.eObj.expression.startswith('Angle'):
             self.parmDict = parmDict
             return
         for var in parmDict:
@@ -2050,6 +2050,10 @@ class ExpressionCalcObj(object):
             dist = G2mth.CalcDist(self.eObj.distance_dict, self.eObj.distance_atoms, self.parmDict)
             #self.su = G2mth.CalcDistSu(self.eObj.distance_dict, self.eObj.distance_atoms, self.parmDict)
             return dist
+        elif self.eObj.expression.startswith('Angle'):
+            angle = 0
+            dist = G2mth.CalcAngle(self.eObj.angle_dict, self.eObj.angle_atoms, self.parmDict)
+            return angle
         if self.compiledExpr is None:
             raise Exception,"EvalExpression called before SetupCalc"
         val = eval(self.compiledExpr,globals(),self.exprDict)

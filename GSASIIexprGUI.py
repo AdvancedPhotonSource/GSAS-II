@@ -829,7 +829,7 @@ class AngleDialog(wx.Dialog):
             Phases[self.pName]['General']['DisAglCtls'] = dlg.GetData()
         dlg.Destroy()
         self.Oatom = ''
-        self.Tatoms = ['','']
+        self.Tatoms = ''
         self.Draw()
 
     def Draw(self):
@@ -850,9 +850,9 @@ class AngleDialog(wx.Dialog):
             self.Oatom = Obj.GetValue()
             wx.CallAfter(self.Draw)            
 
-        def OnTargAtom(event):
+        def OnTargAtoms(event):
             Obj = event.GetEventObject()
-            self.Tatom = Obj.GetValue()
+            self.Tatoms = Obj.GetValue()
             wx.CallAfter(self.Draw)
 
         self.panel.Destroy()
@@ -879,14 +879,20 @@ class AngleDialog(wx.Dialog):
         origAtom.Bind(wx.EVT_COMBOBOX,OnOrigAtom)
         atomSizer.Add(origAtom,0,WACV)        
         mainSizer.Add(atomSizer)
-        mainSizer.Add(wx.StaticText(self.panel,label=' A-O-B angle for A,B: '),0,WACV)
         neigh = []
         if self.Oatom:
-#            GSASIIpath.IPyBreak()
-            neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames)
-        bNames = ['',]
-        if neigh:
-            bNames = [item[0]+' d=%.3f'%(item[1]) for item in neigh[0]]
+            neigh = G2mth.FindAllNeighbors(Phase,self.Oatom,aNames)[0]
+            mainSizer.Add(wx.StaticText(self.panel,label=' A-O-B angle for A,B: '),0,WACV)
+            bNames = ['',]
+            if neigh:
+#                GSASIIpath.IPyBreak()
+                for iA,aName in enumerate(neigh):
+                    for cName in neigh[iA+1:]:
+                        bNames.append('%s;%s'%(aName[0].replace(' ',''),cName[0].replace(' ','')))
+                targAtoms = wx.ComboBox(self.panel,value=self.Tatoms,choices=bNames,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)
+                targAtoms.Bind(wx.EVT_COMBOBOX,OnTargAtoms)
+                mainSizer.Add(targAtoms,0,WACV)
 
 
         OkBtn = wx.Button(self.panel,-1,"Ok")
@@ -906,7 +912,7 @@ class AngleDialog(wx.Dialog):
         self.Fit()
 
     def GetSelection(self):
-        return []
+        return self.pName,self.Oatom,self.Tatoms
 
     def OnOk(self,event):
         parent = self.GetParent()

@@ -1537,7 +1537,6 @@ def CalcDistDeriv(distance_dict, distance_atoms, parmDict):
     Amat = G2lat.cell2AB(G2lat.A2cell(A))[0]
     Oxyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[0])] for x in ['x','y','z']]
     Txyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[1])] for x in ['x','y','z']]
-    inv = 1
     symNo = distance_dict['symNo']
     Tunit = distance_dict['cellNo']
     SGData = distance_dict['SGData']    
@@ -1583,18 +1582,17 @@ def CalcAngleDeriv(angle_dict, angle_atoms, parmDict):
     pfx = '%d::'%(pId)
     A = [parmDict['%s::A%d'%(pId,i)] for i in range(6)]
     Amat = G2lat.cell2AB(G2lat.A2cell(A))[0]
-    Oxyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[0])] for x in ['x','y','z']]
-    Txyz = [parmDict['%s::A%s:%d'%(pId,x,distance_atoms[1])] for x in ['x','y','z']]
-    inv = 1
-    symNo = distance_dict['symNo']
-    Tunit = distance_dict['cellNo']
-    SGData = distance_dict['SGData']    
-    deriv = getDistDerv(Oxyz,Txyz,Amat,Tunit,symNo,SGData)
+    Oxyz = [parmDict['%s::A%s:%d'%(pId,x,angle_atoms[0])] for x in ['x','y','z']]
+    Axyz = [parmDict['%s::A%s:%d'%(pId,x,angle_atoms[1][0])] for x in ['x','y','z']]
+    Bxyz = [parmDict['%s::A%s:%d'%(pId,x,angle_atoms[1][1])] for x in ['x','y','z']]
+    symNo = angle_dict['symNo']
+    Tunit = angle_dict['cellNo']
+    SGData = angle_dict['SGData']    
+    deriv = getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData)
     return deriv
 
 def getSyXYZ(XYZ,ops,SGData):
-    '''default doc stringvec
-    
+    '''default doc 
     
     :param type name: description
     
@@ -1903,6 +1901,14 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
         deriv[i+3] = (calcDist(Oxyz,Txyz,Tunit,inv,C,M,T,Amat)-d0)/(2.*dx)
         Txyz[i] -= dx
     return deriv
+    
+def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
+    dx = .00001
+    deriv = np.zeros(9)
+
+
+    return deriv
+    
     
 def getAngSig(VA,VB,Amat,SGData,covData={}):
     '''default doc string

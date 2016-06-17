@@ -2806,6 +2806,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             UpdateSeqResults(G2frame,data,G2frame.dataDisplay.GetSize()) # redisplay variables
 
     def AddNewAnglePseudoVar(event):
+        obj = None
         dlg = G2exG.AngleDialog(
             G2frame.dataDisplay,Phases,PSvarDict,
             header='Enter an Angle here',
@@ -3472,7 +3473,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
             elif 'Angle' in expr:
                 derivs = G2mth.CalcAngleDeriv(obj.angle_dict,obj.angle_atoms, parmDict)
                 pId = obj.angle_dict['pId']
-                aId,bId = obj.distance_atoms
+                aId,bId = obj.angle_atoms
                 varyNames = ['%d::dA%s:%d'%(pId,ip,aId) for ip in ['x','y','z']]
                 varyNames += ['%d::dA%s:%d'%(pId,ip,bId[0]) for ip in ['x','y','z']]
                 varyNames += ['%d::dA%s:%d'%(pId,ip,bId[1]) for ip in ['x','y','z']]

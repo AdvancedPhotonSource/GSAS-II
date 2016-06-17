@@ -2047,11 +2047,9 @@ class ExpressionCalcObj(object):
         if self.eObj.expression.startswith('Dist'):
 #            GSASIIpath.IPyBreak()
             dist = G2mth.CalcDist(self.eObj.distance_dict, self.eObj.distance_atoms, self.parmDict)
-            self.su = G2mth.CalcDistSu(self.eObj.distance_dict, self.eObj.distance_atoms, self.parmDict)
             return dist
         elif self.eObj.expression.startswith('Angle'):
             angle = G2mth.CalcAngle(self.eObj.angle_dict, self.eObj.angle_atoms, self.parmDict)
-            self.su = G2mth.CalcAngleSu(self.eObj.angle_dict, self.eObj.angle_atoms, self.parmDict)
             return angle
         if self.compiledExpr is None:
             raise Exception,"EvalExpression called before SetupCalc"

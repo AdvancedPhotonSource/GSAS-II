@@ -1903,12 +1903,47 @@ def getDistDerv(Oxyz,Txyz,Amat,Tunit,Top,SGData):
     return deriv
     
 def getAngleDerv(Oxyz,Axyz,Bxyz,Amat,Tunit,symNo,SGData):
+    
+    def calcAngle(Oxyz,ABxyz,Amat,Tunit,symNo,SGData):
+        vec = np.zeros((2,3))
+        for i in range(2):
+            inv = 1
+            if symNo[i] < 0:
+                inv = -1
+            cen = inv*symNo[i]/100
+            op = inv*symNo[i]%100-1
+            M,T = SGData['SGOps'][op]
+            D = T*inv+SGData['SGCen'][cen]
+            D += Tunit[i]
+            ABxyz[i] = np.inner(M*inv,ABxyz[i])+D
+            vec[i] = np.inner(Amat,(ABxyz[i]-Oxyz))
+            dist = np.sqrt(np.sum(vec[i]**2))
+            if not dist:
+                return 0.
+            vec[i] /= dist
+        angle = acosd(np.sum(vec[0]*vec[1]))
+    #    GSASIIpath.IPyBreak()
+        return angle
+        
     dx = .00001
     deriv = np.zeros(9)
-
-
+    for i in [0,1,2]:
+        Oxyz[i] -= dx
+        a0 = calcAngle(Oxyz,[Axyz,Bxyz],Amat,Tunit,symNo,SGData)
+        Oxyz[i] += 2*dx
+        deriv[i] = (calcAngle(Oxyz,[Axyz,Bxyz],Amat,Tunit,symNo,SGData)-a0)/(2.*dx)
+        Oxyz[i] -= dx
+        Axyz[i] -= dx
+        a0 = calcAngle(Oxyz,[Axyz,Bxyz],Amat,Tunit,symNo,SGData)
+        Axyz[i] += 2*dx
+        deriv[i+3] = (calcAngle(Oxyz,[Axyz,Bxyz],Amat,Tunit,symNo,SGData)-a0)/(2.*dx)
+        Axyz[i] -= dx
+        Bxyz[i] -= dx
+        a0 = calcAngle(Oxyz,[Axyz,Bxyz],Amat,Tunit,symNo,SGData)
+        Bxyz[i] += 2*dx
+        deriv[i+6] = (calcAngle(Oxyz,[Axyz,Bxyz],Amat,Tunit,symNo,SGData)-a0)/(2.*dx)
+        Bxyz[i] -= dx
     return deriv
-    
     
 def getAngSig(VA,VB,Amat,SGData,covData={}):
     '''default doc string

@@ -3805,6 +3805,8 @@ def UpdateModelsGrid(G2frame,data):
                 BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,newdata['BackFile'])
                 BackSample = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,BackId, 'Sample Parameters'))
                 Profile[5] = BackSample['Scale'][0]*G2frame.PatternTree.GetItemPyData(BackId)[1][1]
+        UpdateModelsGrid(G2frame,newdata)  
+        wx.CallAfter(UpdateModelsGrid,G2frame,data)
         RefreshPlots(True)
                 
     def OnCopyFlags(event):

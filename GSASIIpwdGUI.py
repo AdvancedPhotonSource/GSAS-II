@@ -830,7 +830,7 @@ def UpdateBackground(G2frame,data):
         xBeg = np.searchsorted(pwddata[0],limits[0])
         xFin = np.searchsorted(pwddata[0],limits[1])
         xdata = pwddata[0][xBeg:xFin]
-        ydata = si.interp1d(X,Y)(xdata)
+        ydata = si.interp1d(X,Y)(ma.getdata(xdata))
         #GSASIIpath.IPyBreak()
         W = [1]*len(xdata)
         Z = [0]*len(xdata)
@@ -3503,8 +3503,14 @@ def UpdateSubstanceGrid(G2frame,data):
             dlg.Destroy()        
         for item in copyList:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
-            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Substances'),
-                copy.copy(data))
+            Inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Instrument Parameters'))[0]
+            wave = G2mth.getWave(Inst)
+            ndata = copy.deepcopy(data)
+            for name in ndata['Substances'].keys():
+                contrst,absorb = G2mth.XScattDen(ndata['Substances'][name]['Elements'],ndata['Substances'][name]['Volume'],wave)         
+                ndata['Substances'][name]['XAnom density'] = contrst
+                ndata['Substances'][name]['XAbsorption'] = absorb
+            G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Substances'),ndata)
     
     def OnAddSubstance(event):
         dlg = wx.TextEntryDialog(None,'Enter a name for this substance','Substance Name Entry','New substance',
@@ -3562,14 +3568,14 @@ def UpdateSubstanceGrid(G2frame,data):
                 Info = G2elem.GetAtomInfo(El)
                 Info.update({'Num':1})
                 data['Substances'][name]['Elements'][El] = Info
-                data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
-                data['Substances'][name]['Density'] = \
-                    G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
-                data['Substances'][name]['Scatt density'] = \
-                    G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
-                contrst,absorb = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
-                data['Substances'][name]['XAnom density'] = contrst
-                data['Substances'][name]['XAbsorption'] = absorb
+            data['Substances'][name]['Volume'] = G2mth.El2EstVol(data['Substances'][name]['Elements'])
+            data['Substances'][name]['Density'] = \
+                G2mth.Vol2Den(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])
+            data['Substances'][name]['Scatt density'] = \
+                G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'])[0]
+            contrst,absorb = G2mth.XScattDen(data['Substances'][name]['Elements'],data['Substances'][name]['Volume'],wave)         
+            data['Substances'][name]['XAnom density'] = contrst
+            data['Substances'][name]['XAbsorption'] = absorb
         dlg.Destroy()
         
     def OnDeleteElement(event):

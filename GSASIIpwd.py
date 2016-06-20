@@ -21,6 +21,7 @@ import subprocess as subp
 import numpy as np
 import scipy as sp
 import numpy.linalg as nl
+import numpy.ma as ma
 import random as rand
 from numpy.fft import ifft, fft, fftshift
 import scipy.interpolate as si
@@ -615,7 +616,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
             for i in range(nBak):
                 bakVals[i] = parmDict[pfx+'Back;'+str(i)]
             bakInt = si.interp1d(bakPos,bakVals,'linear')
-            yb = bakInt(xdata)
+            yb = bakInt(ma.getdata(xdata))
         sumBk[0] = np.sum(yb)
 #Debye function        
     if pfx+'difC' in parmDict:

@@ -2227,6 +2227,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
     
     G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.DestroyChildren()
+    G2frame.G2plotNB.skipPageChange = True      #to keep ISFG data tab visible
     if G2frame.Contour:
         Page.Choice = (' key press','d: lower contour max','u: raise contour max',
             'i: interpolation method','s: color scheme','c: contour off')

@@ -4797,7 +4797,7 @@ def UpdatePDFGrid(G2frame,data):
             if name:
                 xydata[key] = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.root,name))
                 PDFname = name
-        powName = xydata['Sample'][2]
+        powName = Data['Sample']['Name']
         powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,powName)
         inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Instrument Parameters'))[0]
         auxPlot = G2pwd.CalcPDF(Data,inst,xydata)

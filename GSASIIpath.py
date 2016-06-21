@@ -170,8 +170,8 @@ def LoadConfigFile(filename):
 # routines to interface with subversion
 def whichsvn():
     '''Returns a path to the subversion exe file, if any is found.
-    Searches the current path as well as subdirectory "svn" and
-    "svn/bin" in the location of the GSASII source files.
+    Searches the current path after adding likely places where GSAS-II
+    might install svn. 
 
     :returns: None if svn is not found or an absolute path to the subversion
       executable file.
@@ -181,8 +181,12 @@ def whichsvn():
     svnprog = 'svn'
     if sys.platform == "win32": svnprog += '.exe'
     pathlist = os.environ["PATH"].split(os.pathsep)
-    pathlist.insert(0,os.path.join(os.path.split(__file__)[0],'svn'))
-    pathlist.insert(1,os.path.join(os.path.split(__file__)[0],'svn','bin'))
+    # add likely places to find subversion when installed with GSAS-II
+    for rpt in ('..','bin'),('..','Library','bin'),('svn','bin'),('svn',):
+        pt = os.path.normpath(os.path.join(os.path.split(__file__)[0],*rpt))
+        if os.path.exists(pt):
+            pathlist.insert(0,pt)
+    # search path for svn or svn.exe
     for path in pathlist:
         exe_file = os.path.join(path, svnprog)
         if is_exe(exe_file):

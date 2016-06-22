@@ -2043,7 +2043,11 @@ def Read_imctrl(imctrl_file):
             if S[0] == '#':
                 S = File.readline()
                 continue
-            [key,val] = S[:-1].split(':')
+            [key,val] = S.strip().split(':',1)
+            if val.find(':') != -1:
+                #print 'rejecting ',key,val
+                S = File.readline()
+                continue
             if key in ['type','calibrant','binType','SampleShape',]:    #strings
                 save[key] = val
             elif key == 'rotation':

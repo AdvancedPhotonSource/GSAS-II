@@ -227,7 +227,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         nYBlks = (Ny-1)/blkSize+1
         Nup = nXBlks*nYBlks*3+1     #exact count expected so AUTO_HIDE works!
         if IntegrateOnly:
-            pdlg = wx.ProgressDialog("Elapsed time","2D image integration\nCancel to pause",
+            pdlg = wx.ProgressDialog("Elapsed time","2D image integration\nPress Cancel to pause after current image",
                 Nup,style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)            
         else:
             pdlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
@@ -235,6 +235,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         try:
             sumImg = GetImageZ(G2frame,data)
             G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,pdlg)
+            G2frame.PauseIntegration = G2frame.Integrate[-1]
             del sumImg  #force cleanup
             Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
             G2frame.PatternId = Id
@@ -244,7 +245,6 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             if pdlg:
                 pdlg.Destroy()
         for item in G2frame.MakePDF: item.Enable(True)
-        G2frame.PauseIntegration = G2frame.Integrate[-1]
         
     def OnIntegrateAll(event):
         Names = G2gd.GetPatternTreeDataNames(G2frame,['IMG ',])
@@ -403,7 +403,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     if S[0] == '#':
                         S = File.readline()
                         continue
-                    [key,val] = S[:-1].split(':',1)
+                    [key,val] = S.strip().split(':',1)
                     if key in ['type','calibrant','binType','SampleShape',]:    #strings
                         save[key] = val
                     elif key in ['varyList',]:
@@ -1323,7 +1323,7 @@ def UpdateMasks(G2frame,data):
                     if S[0] == '#':
                         S = File.readline()
                         continue
-                    [key,val] = S[:-1].split(':')
+                    [key,val] = S.strip().split(':',1)
                     if key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds']:
                         if ignoreThreshold and key == 'Thresholds':
                             S = File.readline() 
@@ -1982,7 +1982,7 @@ def ReadMask(filename):
         if S[0] == '#':
             S = File.readline()
             continue
-        [key,val] = S[:-1].split(':')
+        [key,val] = S.strip().split(':',1)
         if key in ['Points','Rings','Arcs','Polygons','Frames','Thresholds']:
             save[key] = eval(val)
         S = File.readline()
@@ -2003,7 +2003,7 @@ def ReadControls(filename):
         if S[0] == '#':
             S = File.readline()
             continue
-        [key,val] = S[:-1].split(':')
+        [key,val] = S.strip().split(':',1)
         if key in ['type','calibrant','binType','SampleShape',]:    #strings
             save[key] = val
         elif key in ['rotation']:
@@ -2104,19 +2104,18 @@ class AutoIntFrame(wx.Frame):
             # change button label
             if self.btnstart.GetLabel() != 'Pause':
                 self.btnstart.SetLabel('Pause')
+                self.Status.SetStatusText('Press Pause to delay integration or Reset to prepare to reintegrate all images')
                 if self.timer.IsRunning(): self.timer.Stop()
                 self.PreventReEntryTimer = False
                 self.StartLoop()
-                self.OnTimerLoop(None) # run once immediately and again after delay
-                self.timer.Start(int(1000*PollTime),oneShot=False)
-                self.Status.SetStatusText('Press Pause to delay integration or Reset to prepare to reintegrate all images')
-            else:
-                self.btnstart.SetLabel('Resume')
-                if self.timer.IsRunning(): self.timer.Stop()
-                print('\nPausing autointegration\n')
-                self.Status.SetStatusText('Press Resume to continue integration or Reset to prepare to reintegrate all images')
-                self.Pause = True
-
+                self.OnTimerLoop(None) # run once immediately
+                if not self.Pause:
+                    # no pause, so start timer to check for new files
+                    self.timer.Start(int(1000*PollTime),oneShot=False)
+                    return
+            # we will get to this point if Paused
+            self.OnPause()
+            
         def OnReset(event):
             '''Called when Reset button is pressed. This stops the
             processing loop and resets the list of integrated files so
@@ -2301,13 +2300,13 @@ class AutoIntFrame(wx.Frame):
         self.btnstart = wx.Button(mnpnl,  wx.ID_ANY, "Start")
         self.btnstart.Bind(wx.EVT_BUTTON, OnStart)
         sizer.Add(self.btnstart)
-        btnstop = wx.Button(mnpnl,  wx.ID_ANY, "Reset")
-        btnstop.Bind(wx.EVT_BUTTON, OnReset)
-        sizer.Add(btnstop)
+        self.btnreset = wx.Button(mnpnl,  wx.ID_ANY, "Reset")
+        self.btnreset.Bind(wx.EVT_BUTTON, OnReset)
+        sizer.Add(self.btnreset)
         sizer.Add((20,-1),wx.EXPAND,1)
-        btnquit = wx.Button(mnpnl,  wx.ID_ANY, "Close")
-        btnquit.Bind(wx.EVT_BUTTON, OnQuit)
-        sizer.Add(btnquit)
+        self.btnclose = wx.Button(mnpnl,  wx.ID_ANY, "Close")
+        self.btnclose.Bind(wx.EVT_BUTTON, OnQuit)
+        sizer.Add(self.btnclose)
         sizer.Add((20,-1))
         mnsizer.Add(sizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP,5)
         
@@ -2353,6 +2352,21 @@ class AutoIntFrame(wx.Frame):
         self.PreventReEntryShowMatch = False
         return
         
+    def OnPause(self):
+        '''Respond to Pause, changes text on button/Status line, if needed
+        Stops timer
+        self.Pause should already be True
+        '''
+        if self.timer.IsRunning(): self.timer.Stop()
+        if self.btnstart.GetLabel() == 'Restart':
+            return
+        if self.btnstart.GetLabel() != 'Resume':
+            print('\nPausing autointegration\n')
+            self.btnstart.SetLabel('Resume')
+            self.Status.SetStatusText(
+                    'Press Resume to continue integration or Reset to prepare to reintegrate all images')
+        self.Pause = True
+            
     def IntegrateImage(self,img):
         '''Integrates a single image'''
         G2frame = self.G2frame
@@ -2400,6 +2414,17 @@ class AutoIntFrame(wx.Frame):
                 fil = os.path.join(self.params['outdir'],subdir,fileroot)
                 print('writing file '+fil+dfmt)
                 G2IO.ExportPowder(G2frame,treename,fil,dfmt)
+                
+    def EnableButtons(self,flag):
+        '''Turns the buttons at window bottom "off" when integration is running
+        '''
+        for item in (self.btnstart,self.btnreset,self.btnclose):
+            item.Enable(flag)
+        if flag:
+            self.btnstart.SetLabel('Pause')
+        else:
+            self.btnstart.SetLabel('(running)')
+        wx.Yield()
                 
     def ResetFromTable(self,dist):
         '''Sets integration parameters based on values from
@@ -2530,17 +2555,19 @@ class AutoIntFrame(wx.Frame):
             controlsDict.update(self.ImageControls)
             # update masks from master w/o Thresholds
             ImageMasks.update(self.ImageMasks)
-            self.IntegrateImage(img)
-            self.Pause = G2frame.PauseIntegration
+            self.EnableButtons(False)
+            try:
+                self.IntegrateImage(img)
+            finally:
+                self.EnableButtons(True)
+            self.Pause |= G2frame.PauseIntegration
             self.G2frame.oldImagefile = '' # mark image as changed; reread as needed
             wx.Yield()
             self.ShowMatchingFiles(self.params['filter'])
             wx.Yield()
             if self.Pause:
-                self.btnstart.SetLabel('Resume')
-                if self.timer.IsRunning(): self.timer.Stop()
-                print('\nPausing autointegration\n')
-                self.Status.SetStatusText('Press Resume to continue integration or Reset to prepare to reintegrate all images')
+                self.OnPause()
+                self.PreventReEntryTimer = False
                 return
 
         # loop over image files matching glob, reading in any new ones
@@ -2560,18 +2587,18 @@ class AutoIntFrame(wx.Frame):
                 ImageMasks.update(self.ImageMasks)
                 # now integrate the image
                 img = G2frame.PatternTree.GetItemText(imgId)
-                self.IntegrateImage(img)
+                self.EnableButtons(False)
+                try:
+                    self.IntegrateImage(img)
+                finally:
+                    self.EnableButtons(True)
+                self.Pause |= G2frame.PauseIntegration
                 self.G2frame.oldImagefile = '' # mark image as changed; reread as needed
                 wx.Yield()
                 self.ShowMatchingFiles(self.params['filter'])
                 wx.Yield()
-                self.Pause = G2frame.PauseIntegration
-                print 'pause',self.Pause
             if self.Pause:
-                self.btnstart.SetLabel('Resume')
-                if self.timer.IsRunning(): self.timer.Stop()
-                print('\nPausing autointegration\n')
-                self.Status.SetStatusText('Press Resume to continue integration or Reset to prepare to reintegrate all images')
+                self.OnPause()
                 break
         
         if GSASIIpath.GetConfigValue('debug'):

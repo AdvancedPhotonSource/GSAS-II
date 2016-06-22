@@ -862,9 +862,10 @@ def Fill2ThetaAzimuthMap(masks,TA,tam,image):
     return tax,tay,taz,tad,tabs
     
 def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
-    'Needs a doc string'    #for q, log(q) bins need data['binType']
+    'Integrate an image; called from OnIntegrateAll and OnIntegrate in G2imgGUI'    #for q, log(q) bins need data['binType']
     import histogram2d as h2d
     print 'Begin image integration'
+    CancelPressed = False
     LUtth = np.array(data['IOtth'])
     LRazm = np.array(data['LRazimuth'],dtype=np.float64)
     numAzms = data['outAzimuths']
@@ -904,6 +905,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             Nup += 1
             if dlg:
                 pause = dlg.Update(Nup)
+                if not pause[0]: CancelPressed = True
             Block = image[iBeg:iFin,jBeg:jFin]
             t0 = time.time()
             tax,tay,taz,tad,tabs = Fill2ThetaAzimuthMap(masks,TA,tam,Block)    #and apply masks
@@ -912,6 +914,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             Nup += 1
             if dlg:
                 pause = dlg.Update(Nup)
+                if not pause[0]: CancelPressed = True
             tax = np.where(tax > LRazm[1],tax-360.,tax)                 #put azm inside limits if possible
             tax = np.where(tax < LRazm[0],tax+360.,tax)
             if data.get('SampleAbs',[0.0,''])[1]:
@@ -934,6 +937,7 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
             del tax; del tay; del taz; del tad; del tabs
             if dlg:
                 pause = dlg.Update(Nup)
+                if not pause[0]: CancelPressed = True
     t0 = time.time()
     NST = np.array(NST,dtype=np.float)
     H0 = np.divide(H0,NST)
@@ -958,15 +962,16 @@ def ImageIntegrate(image,data,masks,blkSize=128,dlg=None,returnN=False):
     Nup += 1
     if dlg:
         pause = dlg.Update(Nup)
+        if not pause[0]: CancelPressed = True
     times[4] += time.time()-t0
     print 'Step times: \n apply masks  %8.3fs xy->th,azm   %8.3fs fill map     %8.3fs \
         \n binning      %8.3fs cleanup      %8.3fs'%(times[0],times[1],times[2],times[3],times[4])
     print "Elapsed time:","%8.3fs"%(time.time()-tbeg)
     print 'Integration complete'
     if returnN:     #As requested by Steven Weigand
-        return H0,H1,H2,NST,not pause[0]
+        return H0,H1,H2,NST,CancelPressed
     else:
-        return H0,H1,H2,not pause[0]
+        return H0,H1,H2,CancelPressed
     
 def MakeStrStaRing(ring,Image,Controls):
     ellipse = GetEllipse(ring['Dset'],Controls)

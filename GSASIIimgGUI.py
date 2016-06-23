@@ -370,20 +370,70 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 filename = dlg.GetPath()
                 # make sure extension is .imctrl
                 filename = os.path.splitext(filename)[0]+'.imctrl'
-                File = open(filename,'w')
-                keys = ['type','wavelength','calibrant','distance','center',
-                    'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
-                    'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
-                    'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
-                    'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
-                for key in keys:
-                    if key not in data:     #uncalibrated!
-                        continue
-                    File.write(key+':'+str(data[key])+'\n')
-                File.close()
+                WriteControls(filename,data)
         finally:
             dlg.Destroy()
+
+    def WriteControls(filename,data):
+        File = open(filename,'w')
+        keys = ['type','wavelength','calibrant','distance','center',
+            'tilt','rotation','azmthOff','fullIntegrate','LRazimuth',
+            'IOtth','outChannels','outAzimuths','invert_x','invert_y','DetDepth',
+            'calibskip','pixLimit','cutoff','calibdmin','Flat Bkg','varyList',
+            'binType','SampleShape','PolaVal','SampleAbs','dark image','background image']
+        for key in keys:
+            if key not in data:     #uncalibrated!
+                continue
+            File.write(key+':'+str(data[key])+'\n')
+        File.close()
         
+    def OnSaveMultiControls(event):
+        '''Save controls from multiple images
+        '''
+        imglist = []
+        item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
+        while item:
+            name = G2frame.PatternTree.GetItemText(item)
+            if name.startswith('IMG '): 
+                imglist.append(name)                
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+        if not imglist:
+            print('No images!')
+            return
+        dlg = G2G.G2MultiChoiceDialog(G2frame, 'Which images to select?',
+                                      'Select images', imglist, wx.CHOICEDLG_STYLE)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                treeEntries = [imglist[i] for i in dlg.GetSelections()]
+        finally:
+            dlg.Destroy()
+        if not treeEntries:
+            print('No images selected!')
+            return
+        pth = G2G.GetExportPath(G2frame)
+        dlg = wx.DirDialog(
+            G2frame, 'Select directory for output files',pth,wx.DD_DEFAULT_STYLE)
+        dlg.CenterOnParent()
+        outdir = None
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                outdir = dlg.GetPath()
+        finally:
+            dlg.Destroy()
+        if not outdir:
+            print('No directory')
+            return
+        for img in treeEntries:
+            item = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,img)
+            data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                G2frame,item,'Image Controls'))
+            Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(item)
+            filename = os.path.join(outdir,
+                                    os.path.splitext(os.path.split(imagefile)[1])[0]
+                                    + '.imctrl')
+            print('writing '+filename)
+            WriteControls(filename,data)
+            
     def OnLoadControls(event):
         cntlList = ['wavelength','distance','tilt','invert_x','invert_y','type',
             'fullIntegrate','outChannels','outAzimuths','LRazimuth','IOtth','azmthOff','DetDepth',
@@ -1183,6 +1233,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyControls, id=G2gd.wxID_IMCOPYCONTROLS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopySelected, id=G2gd.wxID_IMCOPYSELECTED)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveControls, id=G2gd.wxID_IMSAVECONTROLS)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnSaveMultiControls, id=G2gd.wxID_SAVESELECTEDCONTROLS)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadControls, id=G2gd.wxID_IMLOADCONTROLS)
     def OnDestroy(event):
         G2frame.autoIntFrame = None

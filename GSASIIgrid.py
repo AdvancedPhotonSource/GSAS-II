@@ -94,8 +94,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_IMCALIBRATE,wxID_IMRECALIBRATE,wxID_IMINTEGRATE, wxID_IMCLEARCALIB,wxID_IMRECALIBALL,  
     wxID_IMCOPYCONTROLS, wxID_INTEGRATEALL, wxID_IMSAVECONTROLS, wxID_IMLOADCONTROLS, wxID_IMAUTOINTEG,
-    wxID_IMCOPYSELECTED,
-] = [wx.NewId() for item in range(11)]
+    wxID_IMCOPYSELECTED, wxID_SAVESELECTEDCONTROLS,
+] = [wx.NewId() for item in range(12)]
 
 [ wxID_MASKCOPY, wxID_MASKSAVE, wxID_MASKLOAD, wxID_NEWMASKSPOT,wxID_NEWMASKARC,wxID_NEWMASKRING,
     wxID_NEWMASKFRAME, wxID_NEWMASKPOLY,  wxID_MASKLOADNOT,
@@ -1763,6 +1763,8 @@ class DataFrame(wx.Frame):
             id=wxID_IMCOPYSELECTED, kind=wx.ITEM_NORMAL,text='Copy Selected')
         self.ImageEdit.Append(help='Save image controls to file', 
             id=wxID_IMSAVECONTROLS, kind=wx.ITEM_NORMAL,text='Save Controls')
+        self.ImageEdit.Append(help='Save controls from selected images to file', 
+            id=wxID_SAVESELECTEDCONTROLS, kind=wx.ITEM_NORMAL,text='Save Multiple Controls')
         self.ImageEdit.Append(help='Load image controls from file', 
             id=wxID_IMLOADCONTROLS, kind=wx.ITEM_NORMAL,text='Load Controls')
         self.ImageEdit.Append(help='Open Auto-integration window to integrate a series of images', 

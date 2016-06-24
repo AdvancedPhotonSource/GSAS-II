@@ -272,6 +272,7 @@ class CIFpwdReader(G2IO.ImportPowderData):
                 # no weights
                 vl = np.zeros(len(x)) + 1.
             else:
+                vl = []
                 sucf = such[sui]
                 if sucf ==  '_pd_proc_ls_weight':
                     for val in cf[blk].get(sucf,'?'):
@@ -292,12 +293,12 @@ class CIFpwdReader(G2IO.ImportPowderData):
                 else:
                     for val in cf[blk].get(sucf,'?'):
                         v,e = cif.get_number_with_esd(val)
-                        if v is None: # not parsed
-                            vl.append(0.0)
-                        elif v <= 0:
-                            vl.append(0.0)
+                        if v is None or e is None: # not parsed or no ESD
+                            vl.append(np.NaN)
+                        elif e <= 0:
+                            vl.append(1.)
                         else:
-                            vl.append(1./(v*v))
+                            vl.append(1./(e*e))
             w = np.array(vl)
             # intensity modification factor
             if modi >= 1:

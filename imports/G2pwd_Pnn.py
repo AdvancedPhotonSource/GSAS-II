@@ -15,7 +15,7 @@ Routine to read in powder data from a GSAS .Pnn binary blocked file
 '''
 
 import sys
-import os.path as ospath
+import os.path
 import numpy as np
 import array as ar
 import GSASIIIO as G2IO
@@ -25,10 +25,11 @@ class Pnn_ReaderClass(G2IO.ImportPowderData):
     'Routines to import powder data from a .Pnn file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.P*',),
+            extensionlist=('.P01','.P02','.P03','.P04','.P05','.P06',
+                           '.P07','.P08','.P09','.P*',),
             strictExtension=False,
-            formatName = 'GSAS Pnn',
-            longFormatName = 'GSAS Pnn powder data file'
+            formatName = 'GSAS .Pnn',
+            longFormatName = 'GSAS .Pnn powder data file'
             )
 
     # Validate the contents -- make sure we only have valid lines
@@ -36,7 +37,14 @@ class Pnn_ReaderClass(G2IO.ImportPowderData):
         'Look through the file for expected types of lines in a valid GSAS Pnn file'
         gotCcomment = False
         self.GSAS = False
-        return True # no errors encountered
+        # file extension must be .Pxx or .pxx
+        ext = os.path.splitext(filepointer.name)[1]
+        if ext[1].upper() != 'P' or len(ext) != 4:
+            return False
+        if ext[2].isdigit() and ext[3].isdigit():
+            return True # no errors encountered
+        return False
+        
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):
         'Read a GSAS Pnn file'
@@ -63,7 +71,7 @@ class Pnn_ReaderClass(G2IO.ImportPowderData):
         self.powderdata = [np.array(x),np.array(y),np.array(w),np.zeros(N),np.zeros(N),np.zeros(N)]
         self.powderentry[0] = filename
         self.powderentry[2] = 1 # Pnn file only has one bank
-        self.idstring = ospath.basename(filename)
+        self.idstring = os.path.basename(filename)
         return True
      
             

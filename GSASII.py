@@ -554,14 +554,21 @@ class GSASII(wx.Frame):
                     break # success in reading, try no further
             else:
                 if singlereader:
+                    print('The '+ rd.formatName+
+                            ' reader was not able to read file '+filename+msg)
+                    try:
+                        print('\n\nError message(s):\n\t'+errorReport)
+                    except:
+                        pass
                     self.ErrorDialog('Read Error','The '+ rd.formatName+
-                                     ' reader was not able to read file '+filename+msg+
-                                     '\n\nError message(s):\n'+errorReport
-                                     )
+                                     ' reader was not able to read file '+filename+msg)
                 else:
-                    self.ErrorDialog('Read Error','No reader was able to read file '+filename+msg+
-                                     '\n\nError messages:\n'+errorReport
-                                     )
+                    print('No reader was able to read file '+filename+msg)
+                    try:
+                        print('\n\nError message(s):\n\t'+errorReport)
+                    except:
+                        pass
+                    self.ErrorDialog('Read Error','No reader was able to read file '+filename+msg)
             if fp: fp.close()
         return rd_list
 
@@ -1458,9 +1465,10 @@ class GSASII(wx.Frame):
                 finally:
                     dlg.Destroy()
             HistName = G2obj.MakeUniqueLabel(HistName,PWDRlist)
-            print 'Read powder data '+str(HistName)+ \
-                ' from file '+str(rd.readfilename) + \
-                ' with parameters from '+str(rd.instmsg)
+            print('Read powder data '+str(HistName)+ 
+                ' from file '+str(rd.readfilename) +
+                ' (format: '+ rd.formatName + 
+                '). Inst parameters from '+str(rd.instmsg))
             # data are read, now store them in the tree
             Id = self.PatternTree.AppendItem(parent=self.root,text=HistName)
             if 'T' in Iparm1['Type'][0]:
@@ -1546,7 +1554,7 @@ class GSASII(wx.Frame):
         phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
         phaseNameList = usedHistograms.keys() # phase names in use
         if not phaseNameList: return # no phases yet, nothing to do
-        header = 'Select phase(s) to add the new\npowder dataset(s) to:'
+        header = 'Select phase(s) to link\nto new data:'
         for Name in newHistList:
             header += '\n  '+str(Name)
 

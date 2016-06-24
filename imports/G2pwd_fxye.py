@@ -51,7 +51,10 @@ class GSAS_ReaderClass(G2IO.ImportPowderData):
                 return True
             else:
                 self.errors = 'Unexpected information in line: '+str(i+1)
-                self.errors += '  '+str(line)
+                if all([ord(c) < 128 and ord(c) != 0 for c in str(line)]): # show only if ASCII
+                    self.errors += '  '+str(line)
+                else: 
+                    self.errors += '  (binary)'
                 return False
         return False # no bank records
 

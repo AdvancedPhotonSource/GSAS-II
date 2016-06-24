@@ -1427,9 +1427,12 @@ class ImportBaseclass(object):
                 return True
             else: # found something invalid
                 self.errors = 'line '+str(i+1)+' contains unexpected data:\n'
-                self.errors += '  '+str(l)
-                self.errors += '  Note: a CIF should only have blank lines or comments before'
-                self.errors += '        a data_ statement begins a block.'
+                if all([ord(c) < 128 and ord(c) != 0 for c in str(l)]): # show only if ASCII
+                    self.errors += '  '+str(l)
+                else: 
+                    self.errors += '  (binary)'
+                self.errors += '\n  Note: a CIF should only have blank lines or comments before'
+                self.errors += '\n        a data_ statement begins a block.'
                 return False 
 
 ######################################################################

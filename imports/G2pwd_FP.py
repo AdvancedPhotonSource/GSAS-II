@@ -59,7 +59,10 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                         break
             except ValueError:
                 self.errors = 'Unexpected information in line: '+str(i+1)
-                self.errors += '  '+str(S)
+                if all([ord(c) < 128 and ord(c) != 0 for c in str(S)]): # show only if ASCII
+                    self.errors += '  '+str(S)
+                else: 
+                    self.errors += '  (binary)'
                 return False
         return True # no errors encountered
 

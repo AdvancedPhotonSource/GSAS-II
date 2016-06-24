@@ -43,8 +43,11 @@ class xye_ReaderClass(G2IO.ImportPowderData):
         elif head == 'RAW1.01':
             self.formatName = 'Bruker RAW ver. 3'
         else:
-            self.errors = 'Unexpected information in header: '+str(head)
-            self.errors += '  '+str(head)
+            self.errors = 'Unexpected information in header: '
+            if all([ord(c) < 128 and ord(c) != 0 for c in str(head)]): # show only if ASCII
+                self.errors += '  '+str(head)
+            else: 
+                self.errors += '  (binary)'
             return False
         return True
             

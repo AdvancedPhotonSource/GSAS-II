@@ -35,6 +35,19 @@ VERY_LIGHT_GREY = wx.Colour(235,235,235)
 ################################################################################
 #####  Restraints
 ################################################################################           
+def GetSelectedRows(widget):
+    '''Returns a list of selected rows. Rows can be selected, blocks of cells
+    or individual cells can be selected. The column for selected cells is ignored.
+    '''
+    rows = widget.GetSelectedRows()
+    if not rows:
+        top = widget.GetSelectionBlockTopLeft()
+        bot = widget.GetSelectionBlockBottomRight()
+        if top and bot:
+            rows = range(top[0][0],bot[0][0]+1)
+    if not rows:
+        rows = sorted(list(set([cell[0] for cell in widget.GetSelectedCells()])))
+    return rows
        
 def UpdateRestraints(G2frame,data,Phases,phaseName):
     '''Respond to selection of the Restraints item on the
@@ -781,11 +794,12 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         useData.SetValue(restData['Use'])        
         wtBox.Add(useData,0,wx.ALIGN_CENTER_VERTICAL)
         if 'Bonds' in restData or 'Angles' in restData:
-            wtBox.Add(wx.StaticText(wind,-1,'Search range:'),0,wx.ALIGN_CENTER_VERTICAL)
+            wtBox.Add(wx.StaticText(wind,-1,'  Search range:'),0,wx.ALIGN_CENTER_VERTICAL)
             sRange = wx.TextCtrl(wind,-1,value='%.2f'%(restData['Range']),style=wx.TE_PROCESS_ENTER,size=(50,20))
             sRange.Bind(wx.EVT_TEXT_ENTER,OnRange)
             sRange.Bind(wx.EVT_KILL_FOCUS,OnRange)
             wtBox.Add(sRange,0,wx.ALIGN_CENTER_VERTICAL)
+            wtBox.Add(wx.StaticText(wind,-1,'(x sum(atom radii)'),0,wx.ALIGN_CENTER_VERTICAL)
         return wtBox
         
     def OnRowSelect(event):
@@ -829,9 +843,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             except ValueError:
                 pass            
             wx.CallAfter(UpdateBondRestr,bondRestData)                
-            
+
         def OnChangeValue(event):
-            rows = Bonds.GetSelectedRows()
+            rows = GetSelectedRows(Bonds)
             if not rows:
                 return
             Bonds.ClearSelection()
@@ -845,7 +859,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             UpdateBondRestr(bondRestData)                
 
         def OnChangeEsd(event):
-            rows = Bonds.GetSelectedRows()
+            rows = GetSelectedRows(Bonds)
             if not rows:
                 return
             Bonds.ClearSelection()
@@ -859,7 +873,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             UpdateBondRestr(bondRestData)                
                                 
         def OnDeleteRestraint(event):
-            rows = Bonds.GetSelectedRows()
+            rows = GetSelectedRows(Bonds)
             if not rows:
                 return
             Bonds.ClearSelection()
@@ -869,7 +883,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 bondList.remove(bondList[row])
             UpdateBondRestr(bondRestData)                
             
-        BondRestr.DestroyChildren()
+        #BondRestr.DestroyChildren()
+        if BondRestr.GetSizer():
+            BondRestr.GetSizer().Clear(True)
         dataDisplay = wx.Panel(BondRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
@@ -885,7 +901,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             chisq = 0.
             Types = [wg.GRID_VALUE_STRING,]+4*[wg.GRID_VALUE_FLOAT+':10,3',]
             if 'macro' in General['Type']:
-                colLabels = ['(res) A - (res) B','calc','obs','esd','delt/sig']
+                colLabels = ['(res) A - (res) B','calc','target','esd','delt/sig']
                 for i,[indx,ops,obs,esd] in enumerate(bondList):
                     try:
                         atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
@@ -901,7 +917,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         print '**** WARNING - missing atom - restraint deleted ****'
                         bad.append(i)
             else:
-                colLabels = ['A+SymOp - B+SymOp','calc','obs','esd','delt/sig']
+                colLabels = ['A+SymOp - B+SymOp','calc','target','esd','delt/sig']
                 for i,[indx,ops,obs,esd] in enumerate(bondList):
                     try:
                         names = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
@@ -941,7 +957,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         BondRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
         Size[0] = 600
-        Size[1] += 50       #make room for tab
+        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         BondRestr.SetSize(Size)
         BondRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)
@@ -961,7 +977,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wx.CallAfter(UpdateAngleRestr,angleRestData)                
             
         def OnChangeValue(event):
-            rows = Angles.GetSelectedRows()
+            rows = GetSelectedRows(Angles)
             if not rows:
                 return
             Angles.ClearSelection()
@@ -975,7 +991,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             UpdateAngleRestr(angleRestData)                
 
         def OnChangeEsd(event):
-            rows = Angles.GetSelectedRows()
+            rows = GetSelectedRows(Angles)
             if not rows:
                 return
             Angles.ClearSelection()
@@ -989,7 +1005,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             UpdateAngleRestr(angleRestData)                
                                             
         def OnDeleteRestraint(event):
-            rows = Angles.GetSelectedRows()
+            rows = GetSelectedRows(Angles)
             if not rows:
                 return
             rows.sort()
@@ -998,7 +1014,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 angleList.remove(angleList[row])
             UpdateAngleRestr(angleRestData)                
             
-        AngleRestr.DestroyChildren()
+        #AngleRestr.DestroyChildren()
+        if AngleRestr.GetSizer():
+            AngleRestr.GetSizer().Clear(True)
         dataDisplay = wx.Panel(AngleRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
@@ -1012,7 +1030,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             chisq = 0.
             Types = [wg.GRID_VALUE_STRING,]+4*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
-                colLabels = ['(res) A - (res) B - (res) C','calc','obs','esd','delt/sig']
+                colLabels = ['(res) A - (res) B - (res) C','calc','target','esd','delt/sig']
                 for i,[indx,ops,obs,esd] in enumerate(angleList):
                     try:
                         atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
@@ -1028,7 +1046,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         print '**** WARNING - missing atom - restraint deleted ****'
                         bad.append(i)
             else:
-                colLabels = ['A+SymOp - B+SymOp - C+SymOp','calc','obs','esd','delt/sig']
+                colLabels = ['A+SymOp - B+SymOp - C+SymOp','calc','target','esd','delt/sig']
                 for i,[indx,ops,obs,esd] in enumerate(angleList):
                     try:
                         atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
@@ -1070,7 +1088,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         AngleRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
         Size[0] = 600
-        Size[1] += 50      #make room for tab
+        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         AngleRestr.SetSize(Size)
         AngleRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)
@@ -1095,7 +1113,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wx.CallAfter(UpdatePlaneRestr,planeRestData)                
             
         def OnChangeEsd(event):
-            rows = Planes.GetSelectedRows()
+            rows = GetSelectedRows(Planes)
             if not rows:
                 return
             Planes.ClearSelection()
@@ -1109,7 +1127,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             UpdatePlaneRestr(planeRestData)                
                                             
         def OnDeleteRestraint(event):
-            rows = Planes.GetSelectedRows()
+            rows = GetSelectedRows(Planes)
             if not rows:
                 return
             rows.sort()
@@ -1118,7 +1136,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 planeList.remove(planeList[row])
             UpdatePlaneRestr(planeRestData)                
             
-        PlaneRestr.DestroyChildren()
+        #PlaneRestr.DestroyChildren()
+        if PlaneRestr.GetSizer():
+            PlaneRestr.GetSizer().Clear(True)
         dataDisplay = wx.Panel(PlaneRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
@@ -1132,7 +1152,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             chisq = 0.
             Types = [wg.GRID_VALUE_STRING,]+3*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
-                colLabels = ['(res) atom','calc','obs','esd']
+                colLabels = ['(res) atom','calc','target','esd']
                 for i,[indx,ops,obs,esd] in enumerate(planeList):
                     try:
                         atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
@@ -1150,7 +1170,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         print '**** WARNING - missing atom - restraint deleted ****'
                         bad.append(i)
             else:                                
-                colLabels = ['atom+SymOp','calc','obs','esd']
+                colLabels = ['atom+SymOp','calc','target','esd']
                 for i,[indx,ops,obs,esd] in enumerate(planeList):
                     try:
                         atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
@@ -1195,7 +1215,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         PlaneRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
         Size[0] = 600
-        Size[1] += 50       #make room for tab
+        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         PlaneRestr.SetSize(Size)
         PlaneRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)
@@ -1216,7 +1236,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wx.CallAfter(UpdateChiralRestr,chiralRestData)                
             
         def OnDeleteRestraint(event):
-            rows = Volumes.GetSelectedRows()
+            rows = GetSelectedRows(Volumes)
             if not rows:
                 return
             rows.sort()
@@ -1226,7 +1246,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             UpdateChiralRestr(chiralRestData)                
             
         def OnChangeValue(event):
-            rows = Volumes.GetSelectedRows()
+            rows = GetSelectedRows(Volumes)
             if not rows:
                 return
             Volumes.ClearSelection()
@@ -1240,7 +1260,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             UpdateChiralRestr(chiralRestData)                
 
         def OnChangeEsd(event):
-            rows = Volumes.GetSelectedRows()
+            rows = GetSelectedRows(Volumes)
             if not rows:
                 return
             Volumes.ClearSelection()
@@ -1253,7 +1273,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             dlg.Destroy()
             UpdateChiralRestr(chiralRestData)                
                                             
-        ChiralRestr.DestroyChildren()
+        #ChiralRestr.DestroyChildren()
+        if ChiralRestr.GetSizer():
+            ChiralRestr.GetSizer().Clear(True)
         dataDisplay = wx.Panel(ChiralRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
@@ -1267,7 +1289,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             chisq = 0.
             Types = [wg.GRID_VALUE_STRING,]+4*[wg.GRID_VALUE_FLOAT+':10,2',]
             if 'macro' in General['Type']:
-                colLabels = ['(res) O (res) A (res) B (res) C','calc','obs','esd','delt/sig']
+                colLabels = ['(res) O (res) A (res) B (res) C','calc','target','esd','delt/sig']
                 for i,[indx,ops,obs,esd] in enumerate(volumeList):
                     try:
                         atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,0,4)
@@ -1283,7 +1305,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                         print '**** WARNING - missing atom - restraint deleted ****'
                         bad.append(i)
             else:
-                colLabels = ['O+SymOp  A+SymOp  B+SymOp  C+SymOp)','calc','obs','esd','delt/sig']
+                colLabels = ['O+SymOp  A+SymOp  B+SymOp  C+SymOp)','calc','target','esd','delt/sig']
                 for i,[indx,ops,obs,esd] in enumerate(volumeList):
                     try:
                         atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
@@ -1325,7 +1347,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         ChiralRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
         Size[0] = 600
-        Size[1] += 50       #make room for tab
+        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         ChiralRestr.SetSize(Size)
         ChiralRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)
@@ -1345,7 +1367,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wx.CallAfter(UpdateTorsionRestr,torsionRestData)                
             
         def OnDeleteRestraint(event):
-            rows = Torsions.GetSelectedRows()
+            rows = GetSelectedRows(Torsions)
             if not rows:
                 return
             rows.sort()
@@ -1355,7 +1377,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wx.CallAfter(UpdateTorsionRestr,torsionRestData)                
             
         def OnChangeEsd(event):
-            rows = Torsions.GetSelectedRows()
+            rows = GetSelectedRows(Torsions)
             if not rows:
                 return
             Torsions.ClearSelection()
@@ -1368,7 +1390,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             dlg.Destroy()
             wx.CallAfter(UpdateTorsionRestr,torsionRestData)                
                                             
-        TorsionRestr.DestroyChildren()
+        #TorsionRestr.DestroyChildren()
+        if TorsionRestr.GetSizer():
+            TorsionRestr.GetSizer().Clear(True)
         dataDisplay = wx.Panel(TorsionRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
@@ -1444,7 +1468,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         TorsionRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
         Size[0] = 600
-        Size[1] += 50       #make room for tab
+        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         TorsionRestr.SetSize(Size)
         TorsionRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)
@@ -1464,7 +1488,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wx.CallAfter(UpdateRamaRestr,ramaRestData)                
             
         def OnDeleteRestraint(event):
-            rows = Ramas.GetSelectedRows()
+            rows = GetSelectedRows(Ramas)
             if not rows:
                 return
             rows.sort()
@@ -1474,7 +1498,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             UpdateRamaRestr(ramaRestData)                
             
         def OnChangeEsd(event):
-            rows = Ramas.GetSelectedRows()
+            rows = GetSelectedRows(Ramas)
             if not rows:
                 return
             Ramas.ClearSelection()
@@ -1487,7 +1511,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             dlg.Destroy()
             UpdateRamaRestr(ramaRestData)                
                                             
-        RamaRestr.DestroyChildren()
+        #RamaRestr.DestroyChildren()
+        if RamaRestr.GetSizer():
+            RamaRestr.GetSizer().Clear(True)
         dataDisplay = wx.Panel(RamaRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
@@ -1565,7 +1591,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         RamaRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
         Size[0] = 600
-        Size[1] += 50       #make room for tab
+        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         RamaRestr.SetSize(Size)
         RamaRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)
@@ -1592,7 +1618,8 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wx.CallAfter(UpdateChemcompRestr,chemcompRestData)                
             
         def OnDeleteRestraint(event):
-            rows = ChemComps.GetSelectedRows()[0]
+            #rows = GetSelectedRows()
+            rows = ChemComps.GetSelectedRows()[0] # why is this indexed as [0]?
             if not rows:
                 return
             rowLabl = ChemComps.GetRowLabelValue(r)
@@ -1606,7 +1633,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             UpdateChemcompRestr(chemcompRestData)                
             
         def OnChangeValue(event):
-            rows = ChemComps.GetSelectedRows()
+            rows = GetSelectedRows(ChemComps)
             if not rows:
                 return
             ChemComps.ClearSelection()
@@ -1622,7 +1649,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             dlg.Destroy()
             UpdateChemcompRestr(chemcompRestData)                
 
-        ChemCompRestr.DestroyChildren()
+        #ChemCompRestr.DestroyChildren()
+        if ChemCompRestr.GetSizer():
+            ChemCompRestr.GetSizer().Clear(True)
         dataDisplay = wx.Panel(ChemCompRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
@@ -1638,7 +1667,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             bad = []
             chisq = 0.
             Types = [wg.GRID_VALUE_STRING,]+5*[wg.GRID_VALUE_FLOAT+':10,2',]
-            colLabels = ['Atoms','mul*frac','factor','calc','obs','esd']
+            colLabels = ['Atoms','mul*frac','factor','calc','target','esd']
             for i,[indx,factors,obs,esd] in enumerate(chemcompList):
                 try:
                     atoms = G2mth.GetAtomItemsById(Atoms,AtLookUp,indx,ct-1)
@@ -1694,7 +1723,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         ChemCompRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
         Size[0] = 600
-        Size[1] += 50       #make room for tab
+        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         ChemCompRestr.SetSize(Size)
         ChemCompRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)
@@ -1703,7 +1732,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
     def UpdateTextureRestr(textureRestData):
             
         def OnDeleteRestraint(event):
-            rows = Textures.GetSelectedRows()
+            rows = GetSelectedRows(Textures)
             if not rows:
                 return
             rows.sort()
@@ -1731,7 +1760,9 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
                 pass            
             wx.CallAfter(UpdateTextureRestr,textureRestData)                
 
-        TextureRestr.DestroyChildren()
+        #TextureRestr.DestroyChildren()
+        if TextureRestr.GetSizer():
+            TextureRestr.GetSizer().Clear(True)
         dataDisplay = wx.Panel(TextureRestr)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((5,5),0)
@@ -1772,7 +1803,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         TextureRestr.SetSizer(mainSizer)
         Size = mainSizer.Fit(G2frame.dataFrame)
         Size[0] = 600
-        Size[1] += 50       #make room for tab
+        Size[1] = min(Size[1]+50,500)       #make room for tab, but not too big
         TextureRestr.SetSize(Size)
         TextureRestr.SetScrollbars(10,10,Size[0]/10-4,Size[1]/10-1)
         G2frame.dataFrame.SetSize(Size)

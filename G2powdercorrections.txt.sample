@@ -1,0 +1,7 @@
+# example file to apply corrections to input powder data
+# change rd.powderdata[i] where [0] is x-axis values; [1] is powder pattern 
+# intensities; [2] is 1/sig(intensity)^2 values (weights)
+TT = rd.powderdata[0]
+rd.powderdata[0] += 0.06038972 - 0.001500277 * TT + 7.389e-06 * TT**2
+# To use this, edit this file and save it to the directory where the data file is located. 
+# The file must be named G2powdercorrections.txt

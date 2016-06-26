@@ -1503,6 +1503,19 @@ class GSASII(wx.Frame):
                 'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,
                 'qPlot':False,'dPlot':False,'sqrtPlot':False
                 }
+            # apply user-supplied corrections to powder data
+            corrfile = os.path.join(os.path.split(rd.readfilename)[0],'G2powdercorrections.txt')
+            if os.path.exists(corrfile):
+                print('Applying corrections from file '+corrfile)
+                fp = open(corrfile,'r')
+                corr = fp.read()
+                fp.close()
+                try:
+                    exec(corr)
+                    print('done')
+                except Exception as err:
+                    print('error: '+str(err))
+                    print('with commands '+str(corr))
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
             self.PatternTree.SetItemPyData(Id,[valuesdict,rd.powderdata])
             self.PatternTree.SetItemPyData(

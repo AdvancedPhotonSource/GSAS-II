@@ -498,7 +498,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     
         def OnNewColorBar(event):
             data['color'] = colSel.GetValue()
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         def OnAzmthOff(event):
             try:
@@ -507,7 +507,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             except ValueError:
                 pass
             azmthOff.SetValue("%.2f"%(data['azmthOff']))          #reset in case of error  
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         comboSizer = wx.BoxSizer(wx.HORIZONTAL)
         comboSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Type of image data: '),0,WACV)
@@ -544,7 +544,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             sqrtDeltOne = math.sqrt(DeltOne)
             maxSel.SetValue(int(100*sqrtDeltOne/sqrtDeltZero))
             minSel.SetValue(int(100*(data['range'][1][0]/DeltOne)))
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
         def OnMinVal(event):
             try:
@@ -556,7 +556,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 pass
             minVal.SetValue('%.0f'%(data['range'][1][0]))
             minSel.SetValue(int(100*(data['range'][1][0]-max(0.0,data['range'][0][0]))/DeltOne))
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
         def OnMaxSlider(event):
             sqrtDeltZero = math.sqrt(data['range'][0][1])
@@ -566,14 +566,14 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             DeltOne = max(1.0,data['range'][1][1]-data['range'][1][0])
             minSel.SetValue(int(100*(data['range'][1][0]/DeltOne)))
             maxVal.SetValue('%.0f'%(data['range'][1][1]))
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
         def OnMinSlider(event):
             DeltOne = data['range'][1][1]-data['range'][1][0]
             imin = int(minSel.GetValue())*DeltOne/100.
             data['range'][1][0] = max(0.0,min(data['range'][1][1]-1,imin))
             minVal.SetValue('%.0f'%(data['range'][1][0]))
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
         maxSizer = wx.FlexGridSizer(0,3,0,5)
         maxSizer.AddGrowableCol(1,1)
@@ -677,7 +677,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 data['IOtth'] = [Ltth,Utth]
             G2frame.InnerTth.SetValue("%8.3f" % (Ltth))
             G2frame.OuterTth.SetValue("%8.3f" % (Utth))
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         def OnLRazim(event):
             Lazm = int(G2frame.Lazim.GetValue())%360
@@ -689,7 +689,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             G2frame.Lazim.SetValue("%6d" % (Lazm))
             G2frame.Razim.SetValue("%6d" % (Razm))
             data['LRazimuth'] = [Lazm,Razm]
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         def OnNumOutChans(event):
             try:
@@ -710,13 +710,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             except ValueError:
                 pass
             outAzim.SetValue(str(data['outAzimuths']))          #reset in case of error        
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         def OnOblique(event):
-            if data['Oblique'][1]:
-                data['Oblique'][1] = False
-            else:
-                data['Oblique'][1] = True
+            data['Oblique'][1] = not data['Oblique'][1]
                 
         def OnObliqVal(event):
             try:
@@ -738,11 +735,8 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
                            
         def OnSamAbs(event):
-            if data['SampleAbs'][1]:
-                data['SampleAbs'][1] = False
-            else:
-                data['SampleAbs'][1] = True
-                
+            data['SampleAbs'][1] = not data['SampleAbs'][1]
+                            
         def OnSamAbsVal(event):
             try:
                 value = float(samabsVal.GetValue())
@@ -758,10 +752,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             samabsVal.SetValue('%.3f'%(data['SampleAbs'][0]))
                            
         def OnShowLines(event):
-            if data['showLines']:
-                data['showLines'] = False
-            else:
-                data['showLines'] = True
+            data['showLines'] = not data['showLines']
             G2plt.PlotExposedImage(G2frame,event=event)
             
         def OnFullIntegrate(event):
@@ -784,17 +775,11 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 data['setDefault'] = True
                 
         def OnCenterAzm(event):
-            if data['centerAzm']:
-                data['centerAzm'] = False
-            else:
-                data['centerAzm'] = True
-            G2plt.PlotExposedImage(G2frame,event=event)
+            data['centerAzm'] = not data['centerAzm']
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
                 
         def OnApplyPola(event):
-            if data['PolaVal'][1]:
-                data['PolaVal'][1] = False
-            else:
-                data['PolaVal'][1] = True
+            data['PolaVal'][1] = not data['PolaVal'][1]
                 
         def OnPolaVal(event):
             try:
@@ -939,13 +924,13 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             data['background image'][0] = backImage.GetValue()
             G2frame.ImageZ = GetImageZ(G2frame,data)
             ResetThresholds()
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
         def OnDarkImage(event):
             data['dark image'][0] = darkImage.GetValue()
             G2frame.ImageZ = GetImageZ(G2frame,data)
             ResetThresholds()
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
         def OnFlatBkg(event):
             oldFlat = data.get('Flat Bkg',0.)
@@ -957,7 +942,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             flatbkg.SetValue("%.0f"%(data['Flat Bkg']))    
             G2frame.ImageZ += int(oldFlat-data['Flat Bkg'])
             ResetThresholds()
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
 
         def OnBackMult(event):
             try:
@@ -968,7 +953,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             backMult.SetValue("%.3f" % (data['background image'][1]))          #reset in case of error 
             G2frame.ImageZ = GetImageZ(G2frame,data)
             ResetThresholds()
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         def OnDarkMult(event):
             try:
@@ -979,7 +964,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             darkMult.SetValue("%.3f" % (data['dark image'][1]))          #reset in case of error 
             G2frame.ImageZ = GetImageZ(G2frame,data)
             ResetThresholds()
-            G2plt.PlotExposedImage(G2frame,event=event)
+            wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         backSizer = wx.FlexGridSizer(0,6,5,5)
 
@@ -1063,10 +1048,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             data['pixLimit'] = int(pixLimit.GetValue())
             
         def OnSetRings(event):
-            if data['setRings']:
-                data['setRings'] = False
-            else:
-                data['setRings'] = True
+            data['setRings'] = not data['setRings']
             G2plt.PlotExposedImage(G2frame,event=event)
     
         calibSizer = wx.FlexGridSizer(0,3,5,5)

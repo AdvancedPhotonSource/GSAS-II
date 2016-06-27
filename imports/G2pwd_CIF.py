@@ -260,13 +260,17 @@ class CIFpwdReader(G2IO.ImportPowderData):
             # y-values
             ycf = ych[yi]
             vl = []
+            v2 = []
             for val in cf[blk].get(ycf,'?'):
                 v,e = cif.get_number_with_esd(val)
                 if v is None: # not parsed
                     vl.append(np.NaN)
+                    v2.append(np.NaN)
                 else:
                     vl.append(v)
+                    v2.append(max(e,1.0))
             y = np.array(vl)
+            w = 1./np.array(v2)**2
             # weights
             if sui == -1:
                 # no weights
@@ -299,7 +303,7 @@ class CIFpwdReader(G2IO.ImportPowderData):
                             vl.append(1.)
                         else:
                             vl.append(1./(e*e))
-            w = np.array(vl)
+#            w = np.array(vl)
             # intensity modification factor
             if modi >= 1:
                 ycf = modch[modi-1]

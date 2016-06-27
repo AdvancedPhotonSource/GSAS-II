@@ -163,7 +163,7 @@ def GetTifData(filename):
         wavelength = (wavelength <= 0) and None or wavelength
 # extract resonable distance from header
         distance = (marFrame.startXtalToDetector+marFrame.endXtalToDetector)*5e-4
-        distance = (distance <= 0) and marFrame.xtalToDetector*1e-3 or distance
+        distance = (distance <= marFrame.startXtalToDetector*5e-4) and marFrame.xtalToDetector*1e-3 or distance
         distance = (distance <= 0) and None or distance
 # extract resonable center from header
         center = [marFrame.beamX*marFrame.pixelsizeX*1e-9,marFrame.beamY*marFrame.pixelsizeY*1e-9]
@@ -196,7 +196,7 @@ def GetTifData(filename):
             pixy = [172,172]
             File.seek(4096)
             print 'Read Pilatus tiff file: ',filename
-            image = ar.array('L',File.read(4*Npix))
+            image = ar.array('I',File.read(4*Npix))
             image = np.array(np.asarray(image),dtype=np.int32)
         else:
             if IFD[258][2][0] == 16:
@@ -210,7 +210,7 @@ def GetTifData(filename):
                 pixy = [200,200]
                 File.seek(8)
                 print 'Read CHESS-detector tiff file: ',filename
-                image = np.array(ar.array('L',File.read(4*Npix)),dtype=np.int32)
+                image = np.array(ar.array('I',File.read(4*Npix)),dtype=np.int32)
     elif 270 in IFD:
         File.seek(IFD[270][2][0])
         S = File.read(IFD[273][2][0]-IFD[270][2][0])

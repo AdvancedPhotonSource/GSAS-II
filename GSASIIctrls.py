@@ -4112,7 +4112,7 @@ class OpenTutorial(wx.Dialog):
                 print("Problem: dir "+fullpath+" exists has either help or Exercises, not both")
                 wx.EndBusyCursor()
                 raise Exception
-        if not GSASIIpath.svnInstallDir(baseURL+"/MT",fullpath):
+        if not GSASIIpath.svnInstallDir(baseURL+"/MT",fullpath):    #this could load specific requested tutorial directory
             wx.EndBusyCursor()
             print("Problem transferring empty directory from web")
             raise Exception
@@ -4150,7 +4150,7 @@ class OpenTutorial(wx.Dialog):
 
         if not os.path.exists(pth):
             try:
-                os.makedirs(pth)
+                os.makedirs(pth)    #failing for no obvious reason
             except OSError:
                 msg = 'The selected directory is not valid.\n\t'
                 msg += pth

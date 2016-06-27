@@ -443,7 +443,7 @@ def svnInstallDir(URL,loadpath):
     if svnVersionNumber() >= 1.6: cmd += ['--trust-server-cert']
     print("Loading files from "+URL)
     s = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    out,err = s.communicate()
+    out,err = s.communicate()   #this fails too easily
     if err:
         print(60*"=")
         print ("****** An error was noted, see below *********")

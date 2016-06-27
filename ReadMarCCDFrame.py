@@ -283,7 +283,7 @@ class marFrame():
         self.TIFFyResolution = IFD[283][2][0] # pixels per resolutionUnit in Y direction (ImageLength direction
         self.TIFFresolutionUnit = IFD[296][2][0] # 3 = centimeter
         self.byteDepth = self.TIFFbitDepth/8
-        self.arrayTypeCode = ['','B','H','L'][self.byteDepth]
+        self.arrayTypeCode = ['','B','H','I','I'][self.byteDepth]
         # MarCCD specific header info
         File.seek(IFD[34710][2][0])
         self.headerType = st.unpack(byteOrd+'I',File.read(4))[0] #/* flag for header type  (can be used as magic number) */

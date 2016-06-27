@@ -307,7 +307,7 @@ def GetEllipse(dsp,data):
     cent = data['center']
     tilt = data['tilt']
     phi = data['rotation']
-    dep = data['DetDepth']
+    dep = data.get('DetDepth',0.0)
     tth = 2.0*asind(data['wavelength']/(2.*dsp))
     dxy = peneCorr(tth,dep,tilt)
     dist = data['distance']

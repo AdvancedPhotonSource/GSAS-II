@@ -232,18 +232,15 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         else:
             pdlg = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
                 style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-        try:
-            sumImg = GetImageZ(G2frame,data)
-            G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,pdlg)
-            G2frame.PauseIntegration = G2frame.Integrate[-1]
-            del sumImg  #force cleanup
-            Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
-            G2frame.PatternId = Id
-            G2frame.PatternTree.SelectItem(Id)
-            G2frame.PatternTree.Expand(Id)
-        finally:
-            if pdlg:
-                pdlg.Destroy()
+        sumImg = GetImageZ(G2frame,data)
+        G2frame.Integrate = G2img.ImageIntegrate(sumImg,data,masks,blkSize,pdlg)
+        G2frame.PauseIntegration = G2frame.Integrate[-1]
+        del sumImg  #force cleanup
+        Id = G2IO.SaveIntegration(G2frame,G2frame.PickId,data,(event is None))
+        G2frame.PatternId = Id
+        G2frame.PatternTree.SelectItem(Id)
+        G2frame.PatternTree.Expand(Id)
+        wx.CallAfter(pdlg.Destroy)
         for item in G2frame.MakePDF: item.Enable(True)
         
     def OnIntegrateAll(event):
@@ -264,16 +261,14 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     nYBlks = (Ny-1)/blkSize+1
                     Nup = nXBlks*nYBlks*3+3
                     dlgp = wx.ProgressDialog("Elapsed time","2D image integration",Nup,
-                        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE)
-                    try:
-                        image = GetImageZ(G2frame,Data)
-                        Masks = G2frame.PatternTree.GetItemPyData(
-                            G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Masks'))
-                        G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
-                        del image   #force cleanup
-                        pId = G2IO.SaveIntegration(G2frame,CId,Data)
-                    finally:
-                        dlgp.Destroy()
+                        style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_CAN_ABORT)
+                    image = GetImageZ(G2frame,Data)
+                    Masks = G2frame.PatternTree.GetItemPyData(
+                        G2gd.GetPatternTreeItemId(G2frame,G2frame.Image,'Masks'))
+                    G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
+                    del image   #force cleanup
+                    pId = G2IO.SaveIntegration(G2frame,CId,Data)
+                    wx.CallAfter(dlgp.Destroy)
                     if G2frame.Integrate[-1]:       #Cancel from progress bar?
                         break
                 else:

@@ -1,2 +1,2 @@
-Built 4/15/16 on Jenkins/crackle-vm with project GSAS-II-crackle
-miniconda 4.0.5 (python-2.7.11-0) gfortran 4.4.7
+Built 6/28/16 on Jenkins/crackle-vm with project GSAS-II-Linux64-numpy-1.6
+scipy-0.13.1; numpy-1.6.2; python-2.7.11-5; gfortran 4.4.7

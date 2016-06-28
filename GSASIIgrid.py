@@ -107,7 +107,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY, wxID_SAMPLECOPY, wxID_SAMPLECOPYSOME, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
     wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,wxID_SAMPLE1VAL,wxID_ALLSAMPLELOAD,
-] = [wx.NewId() for item in range(12)]
+    wxID_MAKEBACKRDF,
+] = [wx.NewId() for item in range(13)]
 
 [ wxID_INSTPRMRESET,wxID_CHANGEWAVETYPE,wxID_INSTCOPY, wxID_INSTFLAGCOPY, wxID_INSTLOAD,
     wxID_INSTSAVE, wxID_INST1VAL, wxID_INSTCALIB,wxID_INSTSAVEALL,
@@ -1548,6 +1549,8 @@ class DataFrame(wx.Frame):
             help='Copy background refinement flags to other histograms')
         self.BackEdit.Append(id=wxID_PEAKSMOVE, kind=wx.ITEM_NORMAL,text='Move peaks',
             help='Move background peaks to Peak List')
+        self.BackEdit.Append(id=wxID_MAKEBACKRDF, kind=wx.ITEM_NORMAL,text='Plot RDF',
+            help='Plot radial distribution from differences')
         self.BackFixed = wx.Menu(title='') # fixed background point menu
         self.BackMenu.Append(menu=self.BackFixed, title='Fixed Points')
         self.wxID_BackPts = {}
@@ -2429,7 +2432,10 @@ def UpdateComments(G2frame,data):
     G2frame.dataDisplay = wx.TextCtrl(parent=G2frame.dataFrame,size=G2frame.dataFrame.GetClientSize(),
         style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP)
     for line in data:
-        G2frame.dataDisplay.AppendText(line+'\n')
+        if '\n' not in line:
+            G2frame.dataDisplay.AppendText(line+'\n')
+        else:
+            G2frame.dataDisplay.AppendText(line)
     G2frame.dataFrame.setSizePosLeft([400,250])
             
 ################################################################################

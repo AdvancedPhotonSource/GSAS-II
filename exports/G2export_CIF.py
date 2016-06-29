@@ -330,8 +330,8 @@ class ExportCIF(G2IO.ExportBaseclass):
                     s += G2mth.ValEsd(inst[item][1],sig)+', '                    
             elif 'T' in inst['Type'][0]:    #to be tested after TOF Rietveld done
                 s = 'Von Dreele-Jorgenson-Windsor function parameters\n'+ \
-                    '   alpha, beta-0, beta-1, beta-q, sig-0, sig-1, sig-q, X, Y:\n    '
-                for item in ['alpha','bet-0','bet-1','bet-q','sig-0','sig-1','sig-q','X','Y']:
+                    '   alpha, beta-0, beta-1, beta-q, sig-0, sig-1, sig-2, sig-q, X, Y:\n    '
+                for item in ['alpha','beta-0','beta-1','beta-q','sig-0','sig-1','sig-2','sig-q','X','Y']:
                     name = hfx+item
                     sig = self.sigDict.get(name,-0.009)
                     s += G2mth.ValEsd(inst[item][1],sig)+', '
@@ -928,7 +928,7 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteCIFitem('  ' + PutInCol(G2mth.ValEsd(lam2,slam2),15)+
                              PutInCol(G2mth.ValEsd(ratio,sratio),15)+
                              PutInCol('2',5))                
-            else:
+            elif 'Lam' in inst:
                 lam1 = self.parmDict.get('Lam',inst['Lam'][1])
                 slam1 = self.sigDict.get('Lam',-0.00009)
                 WriteCIFitem('_diffrn_radiation_wavelength',G2mth.ValEsd(lam1,slam1))
@@ -999,10 +999,9 @@ class ExportCIF(G2IO.ExportBaseclass):
                     WriteCIFitem('_diffrn_radiation_polarisn_ratio',txt)
             elif histblk['Instrument Parameters'][0]['Type'][1][1] == 'N':
                 WriteCIFitem('_diffrn_radiation_probe','neutron')
-            # TOF (note that this may not be defined)
-            #if histblk['Instrument Parameters'][0]['Type'][1][2] == 'T':
-            #    WriteCIFitem('_pd_meas_2theta_fixed',text)
-            
+            if 'T' in inst['Type'][0]:
+                txt = G2mth.ValEsd(inst['2-theta'][0],-0.009)
+                WriteCIFitem('_pd_meas_2theta_fixed',txt)
 
             # TODO: this will need help from Bob
             #if not oneblock:
@@ -1119,12 +1118,12 @@ class ExportCIF(G2IO.ExportBaseclass):
             else:
                 fixedstep = True
 
-            if fixedstep: # and not TOF
+            zero = None
+            if fixedstep and 'T' not in inst['Type'][0]: # and not TOF
                 WriteCIFitem('_pd_meas_2theta_range_min', G2mth.ValEsd(histblk['Data'][0][0],-0.00009))
                 WriteCIFitem('_pd_meas_2theta_range_max', G2mth.ValEsd(histblk['Data'][0][-1],-0.00009))
                 WriteCIFitem('_pd_meas_2theta_range_inc', G2mth.ValEsd(steps.sum()/len(steps),-0.00009))
                 # zero correct, if defined
-                zero = None
                 zerolst = histblk['Instrument Parameters'][0].get('Zero')
                 if zerolst: zero = zerolst[1]
                 zero = self.parmDict.get('Zero',zero)
@@ -1142,6 +1141,8 @@ class ExportCIF(G2IO.ExportBaseclass):
             if not fixedstep:
                 if zero:
                     WriteCIFitem('   _pd_proc_2theta_corrected')
+                elif 'T' in inst['Type'][0]: # and not TOF
+                    WriteCIFitem('   _pd_meas_time_of_flight')
                 else:
                     WriteCIFitem('   _pd_meas_2theta_scan')
             # at least for now, always report weights.
@@ -1175,8 +1176,10 @@ class ExportCIF(G2IO.ExportBaseclass):
     
                     if fixedstep:
                         s = ""
-                    else:
+                    elif zero:
                         s = PutInCol(G2mth.ValEsd(x-zero,-0.00009),10)
+                    else:
+                        s = PutInCol(G2mth.ValEsd(x,-0.00009),10)
                     s += PutInCol(Yfmt(ndec,yobs),12)
                     s += PutInCol(Yfmt(ndec,ycalc),12)
                     s += PutInCol(Yfmt(ndec,ybkg),11)

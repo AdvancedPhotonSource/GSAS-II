@@ -56,6 +56,94 @@ tand = lambda x: math.tan(x*math.pi/180.)
 cosd = lambda x: math.cos(x*math.pi/180.)
 asind = lambda x: 180.*math.asin(x)/math.pi
     
+################################################################################
+###### class definitions
+################################################################################
+
+class RDFDialog(wx.Dialog):
+    def __init__(self,parent):
+        wx.Dialog.__init__(self,parent,-1,'Background radial distribution function',
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.result = {'UseObsCalc':False,'maxR':10.0,'Smooth':'linear'}
+        
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnUseOC(event):
+            self.result['UseObsCalc'] = not self.result['UseObsCalc']
+            
+        def OnSmCombo(event):
+            self.result['Smooth'] = smCombo.GetValue()
+            
+        def OnMaxR(event):
+            try:
+                val = float(maxR.GetValue())
+                if val <= 0.:
+                    raise ValueError
+            except ValueError:
+                val = self.result['maxR']
+            self.result['maxR'] = val
+            maxR.SetValue('%.1f'%(val))
+        
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        Ind = {}
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label='Background RDF controls:'),0,WACV)
+        useOC = wx.CheckBox(self.panel,label=' Use obs && calc intensities?')
+        useOC.SetValue(self.result['UseObsCalc'])
+        useOC.Bind(wx.EVT_CHECKBOX,OnUseOC)
+        mainSizer.Add(useOC,0,WACV)
+        dataSizer = wx.BoxSizer(wx.HORIZONTAL)
+        dataSizer.Add(wx.StaticText(self.panel,label=' Smoothing type: '),0,WACV)
+        smChoice = ['linear','nearest','zero','slinear',]
+        smCombo = wx.ComboBox(self.panel,value=self.result['Smooth'],choices=smChoice,
+            style=wx.CB_READONLY|wx.CB_DROPDOWN)
+        smCombo.Bind(wx.EVT_COMBOBOX, OnSmCombo)
+        dataSizer.Add(smCombo,0,WACV)
+        dataSizer.Add(wx.StaticText(self.panel,label=' Maximum radial dist.: '),0,WACV)
+        maxR = wx.TextCtrl(self.panel,value='%.1f'%(self.result['maxR']),style=wx.TE_PROCESS_ENTER)
+        maxR.Bind(wx.EVT_TEXT_ENTER,OnMaxR)        
+        maxR.Bind(wx.EVT_KILL_FOCUS,OnMaxR)
+        dataSizer.Add(maxR,0,WACV)
+        mainSizer.Add(dataSizer,0,WACV)
+
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        return self.result
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+        
+    
+################################################################################
+##### Setup routines
+################################################################################
+    
 def IsHistogramInAnyPhase(G2frame,histoName):
     'Needs a doc string'
     phases = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases')
@@ -850,7 +938,7 @@ def UpdateBackground(G2frame,data):
         wx.BeginBusyCursor()
         try:
             G2pwd.DoPeakFit('LSQ',[],background,limits,inst,inst2,
-                            np.array((xdata,ydata,W,Z,Z,Z)),bakVary,False,controls)
+                np.array((xdata,ydata,W,Z,Z,Z)),bakVary,False,controls)
         finally:
             wx.EndBusyCursor()
         # compute the background values and plot them
@@ -881,6 +969,30 @@ def UpdateBackground(G2frame,data):
         for peak in data[1]['peaksList']:
             Peaks['peaks'].append([peak[0],0,peak[2],0,peak[4],0,peak[6],0])
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Peak List'),Peaks)
+        
+    def OnMakeRDF(event):
+        dlg = RDFDialog(G2frame)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                RDFcontrols = dlg.GetSelection()
+            else:
+                return
+        finally:
+            dlg.Destroy()
+        xydata = {}
+        PatternId = G2frame.PatternId        
+        background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
+        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
+        inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
+        pwddata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
+        auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata,xydata)
+#        GSASIIpath.IPyBreak()
+        superMinusOne = unichr(0xaf)+unichr(0xb9)
+        for plot in auxPlot:
+            XY = np.array(plot[:2])
+            G2plt.PlotXY(G2frame,[XY,],Title=plot[2],labelX=r'$Q,\AA$'+superMinusOne,labelY=r'$I(Q)$')      
+        G2plt.PlotXY(G2frame,xydata,Title='D(r)')  
+        
         
     def BackSizer():
         
@@ -1075,6 +1187,7 @@ def UpdateBackground(G2frame,data):
     G2frame.Bind(wx.EVT_MENU,OnBackCopy,id=G2gd.wxID_BACKCOPY)
     G2frame.Bind(wx.EVT_MENU,OnBackFlagCopy,id=G2gd.wxID_BACKFLAGCOPY)
     G2frame.Bind(wx.EVT_MENU,OnPeaksMove,id=G2gd.wxID_PEAKSMOVE)
+    G2frame.Bind(wx.EVT_MENU,OnMakeRDF,id=G2gd.wxID_MAKEBACKRDF)
     G2frame.Bind(wx.EVT_MENU,OnBkgFit,id=G2frame.dataFrame.wxID_BackPts['Fit'])
     G2frame.Bind(wx.EVT_MENU,OnBkgClear,id=G2frame.dataFrame.wxID_BackPts['Clear'])    
     BackId = G2gd.GetPatternTreeItemId(G2frame,G2frame.PatternId, 'Background')
@@ -4477,6 +4590,9 @@ def UpdatePDFGrid(G2frame,data):
         data['QScaleLim'][0] = 0.90*data['QScaleLim'][1]
     azimuth = inst['Azimuth'][1]
     itemDict = {}
+    #patch
+    if 'BackRatio' not in data:
+        data['BackRatio'] = 0.
     
     def FillFileSizer(fileSizer,key):
         #fileSizer is a FlexGridSizer(3,6)
@@ -4634,6 +4750,24 @@ def UpdatePDFGrid(G2frame,data):
         auxPlot = ComputePDF(data)
         G2plt.PlotISFG(G2frame,newPlot=False)
         
+    def OnBackVal(event):
+        try:
+            value = float(backVal.GetValue())
+            value = min(max(0.,value),1.0)
+        except ValueError:
+            value = data['BackRatio']
+        data['BackRatio'] = value
+        backVal.SetValue('%.3f'%(value))
+        auxPlot = ComputePDF(data)
+        G2plt.PlotISFG(G2frame,newPlot=False)
+        
+    def OnBackSlider(event):
+        value = int(backSldr.GetValue())/100.
+        data['BackRatio'] = value
+        backVal.SetValue('%.3f'%(data['BackRatio']))
+        auxPlot = ComputePDF(data)
+        G2plt.PlotISFG(G2frame,newPlot=False)
+        
     def OnRulandWdt(event):
         try:
             value = float(rulandWdt.GetValue())
@@ -4657,6 +4791,11 @@ def UpdatePDFGrid(G2frame,data):
         
     def OnLorch(event):
         data['Lorch'] = lorch.GetValue()
+        auxPlot = ComputePDF(data)
+        G2plt.PlotISFG(G2frame,newPlot=False)        
+                        
+    def OnSinDamp(event):
+        data['sinDamp'] = sinDamp.GetValue()
         auxPlot = ComputePDF(data)
         G2plt.PlotISFG(G2frame,newPlot=False)        
                         
@@ -4943,6 +5082,18 @@ def UpdatePDFGrid(G2frame,data):
         sqBox.Add(obliqCoeff,0)
     mainSizer.Add(sqBox,0)
         
+    bkBox = wx.BoxSizer(wx.HORIZONTAL)
+    bkBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Background ratio: '),0,WACV)    
+    backSldr = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
+        value=int(100*data['BackRatio']))
+    bkBox.Add(backSldr,1,wx.EXPAND)
+    backSldr.Bind(wx.EVT_SLIDER, OnBackSlider)
+    backVal = wx.TextCtrl(G2frame.dataDisplay,value='%.3f'%(data['BackRatio']))
+    backVal.Bind(wx.EVT_TEXT_ENTER,OnBackVal)        
+    backVal.Bind(wx.EVT_KILL_FOCUS,OnBackVal)
+    bkBox.Add(backVal,0,WACV)    
+    mainSizer.Add(bkBox,0,wx.ALIGN_LEFT|wx.EXPAND)
+
     sqBox = wx.BoxSizer(wx.HORIZONTAL)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Ruland width: '),0,WACV)    
     rulandSldr = wx.Slider(parent=G2frame.dataDisplay,style=wx.SL_HORIZONTAL,
@@ -4960,6 +5111,11 @@ def UpdatePDFGrid(G2frame,data):
     lorch.SetValue(data['Lorch'])
     lorch.Bind(wx.EVT_CHECKBOX, OnLorch)
     sqBox.Add(lorch,0,WACV)
+# this isn't the right thing but something is needed here - leave as place holder
+#    sinDamp = wx.CheckBox(G2frame.dataDisplay,label='SinQ damping?')
+#    sinDamp.SetValue(data['sinDamp'])
+#    sinDamp.Bind(wx.EVT_CHECKBOX,OnSinDamp)
+#    sqBox.Add(sinDamp,0,WACV)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling q-range: '),0,WACV)
     SQmin = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][0]))
     SQmin.Bind(wx.EVT_TEXT_ENTER,OnSQmin)        

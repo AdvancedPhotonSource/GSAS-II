@@ -4352,7 +4352,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 ind = np.searchsorted(Azm,cake)
                 Plot.plot([arcxI[ind],arcxO[ind]],[arcyI[ind],arcyO[ind]],color='k',dashes=(5,5))
                     
-        if G2frame.PickId and G2frame.PatternTree.GetItemText(G2frame.PickId) in 'Image Controls':
+        if G2frame.PickId and G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Image Controls',]:
             for xring,yring in Data['ring']:
                 Plot.plot(xring,yring,'r+',picker=3)
             if Data['setRings']:
@@ -4366,7 +4366,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
                 if width > 0:       #ellipses
                     Plot.add_artist(Ellipse([cent[0],cent[1]],2*width,2*height,phi,ec=col,fc='none'))
                     Plot.text(cent[0],cent[1],'+',color=col,ha='center',va='center')
-        if G2frame.PatternTree.GetItemText(G2frame.PickId) in 'Stress/Strain':
+        if G2frame.PickId and G2frame.PatternTree.GetItemText(G2frame.PickId) in ['Stress/Strain',]:
             for N,ring in enumerate(StrSta['d-zero']):
                 xring,yring = ring['ImxyObs']
                 Plot.plot(xring,yring,colors[N%6]+'.')

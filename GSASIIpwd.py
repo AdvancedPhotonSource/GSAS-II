@@ -299,8 +299,9 @@ def CalcPDF(data,inst,xydata):
     dq = Qpoints[1]-Qpoints[0]
     XY[0] = npT2q(XY[0],wave)    
 #    Qdata = np.nan_to_num(si.griddata(XY[0],XY[1],Qpoints,method='linear')) #only OK for scipy 0.9!
-    T = si.interp1d(XY[0],XY[1],bounds_error=False,fill_value=0.0)      #OK for scipy 0.8
+    T = si.interp1d(XY[0],XY[1],bounds_error=False,fill_value=XY[1][0])      #OK for scipy 0.8
     Qdata = T(Qpoints)
+    Qdata -= np.min(Qdata)*data['BackRatio']
     
     qLimits = data['QScaleLim']
     minQ = np.searchsorted(Qpoints,qLimits[0])
@@ -312,7 +313,6 @@ def CalcPDF(data,inst,xydata):
         newdata.append(item[:maxQ])
     xydata['IofQ'][1] = newdata
     
-
     xydata['SofQ'] = copy.deepcopy(xydata['IofQ'])
     FFSq,SqFF,CF = GetAsfMean(ElList,(xydata['SofQ'][1][0]/(4.0*np.pi))**2)  #these are <f^2>,<f>^2,Cf
     Q = xydata['SofQ'][1][0]
@@ -326,19 +326,44 @@ def CalcPDF(data,inst,xydata):
     xydata['SofQ'][1][1] = xydata['SofQ'][1][1]/SqFF
     scale = len(xydata['SofQ'][1][1][minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
     xydata['SofQ'][1][1] *= scale
-    
+#    if data.get('sinDamp',False):   #not the right thing but leave as place holder
+#        sinDamp = np.sin(np.pi*xydata['SofQ'][1][0]/qLimits[1])
+#        xydata['SofQ'][1][1] *= sinDamp
     xydata['FofQ'] = copy.deepcopy(xydata['SofQ'])
     xydata['FofQ'][1][1] = xydata['FofQ'][1][0]*(xydata['SofQ'][1][1]-1.0)
     if data['Lorch']:
-        xydata['FofQ'][1][1] *= LorchWeight(Q)
-    
+        xydata['FofQ'][1][1] *= LorchWeight(Q)    
     xydata['GofR'] = copy.deepcopy(xydata['FofQ'])
     nR = len(xydata['GofR'][1][1])
     xydata['GofR'][1][1] = -dq*np.imag(ft.fft(xydata['FofQ'][1][1],4*nR)[:nR])
     xydata['GofR'][1][0] = 0.5*np.pi*np.linspace(0,nR,nR)/qLimits[1]
-    
-        
     return auxPlot
+    
+def MakeRDF(RDFcontrols,background,inst,pwddata,xydata):
+#    GSASIIpath.IPyBreak()
+    auxPlot = []
+    if 'C' in inst['Type'][0]:
+        Tth = pwddata[0]
+        hc = 12.397639
+        wave = G2mth.getWave(inst)
+        keV = hc/wave
+        minQ = npT2q(Tth[0],wave)
+        maxQ = npT2q(Tth[-1],wave)    
+        
+
+    elif 'T' in inst['Type'][0]:
+        TOF = pwddata[0]
+        difC = inst['difC'][1]
+        minQ = 2.*np.pi*difC/TOF[-1]
+        maxQ = 2.*np.pi*difC/TOF[0]
+        
+    Qpoints = np.linspace(0.,maxQ,len(pwddata[0]),endpoint=True)
+    dq = Qpoints[1]-Qpoints[0]
+    T = si.interp1d(pwddata[0],pwddata[1],bounds_error=False,fill_value=0.0,kind=RDFcontrols['Smooth'])      #OK for scipy 0.8
+    Qdata = T(Qpoints)
+    auxPlot.append([Qpoints,Qdata,'interp1d:'+RDFcontrols['Smooth']])
+    return auxPlot
+    print 'make RDF'
 
 ################################################################################        
 #GSASII peak fitting routines: Finger, Cox & Jephcoat model        
@@ -1419,7 +1444,11 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
         for i,back in enumerate(Background[0][3:]):
             ptstr += ptfmt % (back)
             if Background[0][1]:
-                sigstr += ptfmt % (sigDict['Back;'+str(i)])
+                prm = 'Back;'+str(i)
+                if prm in sigDict:
+                    sigstr += ptfmt % (sigDict[prm])
+                else:
+                    sigstr += " "*12
             if len(ptstr) > 75:
                 print ptstr
                 if Background[0][1]: print sigstr
@@ -1440,6 +1469,8 @@ def DoPeakFit(FitPgm,Peaks,Background,Limits,Inst,Inst2,data,prevVaryList=[],one
                     line += ptfmt%(Background[1]['debyeTerms'][term][2*ip])
                     if name+str(term) in sigDict:
                         line += ptfmt%(sigDict[name+str(term)])
+                    else:
+                        line += " "*12
                 print line
         if Background[1]['nPeaks']:
             print 'Coefficients for Background Peaks'

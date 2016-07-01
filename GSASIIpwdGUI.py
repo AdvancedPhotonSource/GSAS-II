@@ -65,7 +65,7 @@ class RDFDialog(wx.Dialog):
         wx.Dialog.__init__(self,parent,-1,'Background radial distribution function',
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
-        self.result = {'UseObsCalc':False,'maxR':10.0,'Smooth':'linear'}
+        self.result = {'UseObsCalc':True,'maxR':20.0,'Smooth':'linear'}
         
         self.Draw()
         
@@ -92,13 +92,13 @@ class RDFDialog(wx.Dialog):
         Ind = {}
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(wx.StaticText(self.panel,label='Background RDF controls:'),0,WACV)
-        useOC = wx.CheckBox(self.panel,label=' Use obs && calc intensities?')
+        useOC = wx.CheckBox(self.panel,label=' Use obs - calc intensities?')
         useOC.SetValue(self.result['UseObsCalc'])
         useOC.Bind(wx.EVT_CHECKBOX,OnUseOC)
         mainSizer.Add(useOC,0,WACV)
         dataSizer = wx.BoxSizer(wx.HORIZONTAL)
         dataSizer.Add(wx.StaticText(self.panel,label=' Smoothing type: '),0,WACV)
-        smChoice = ['linear','nearest','zero','slinear',]
+        smChoice = ['linear','nearest',]
         smCombo = wx.ComboBox(self.panel,value=self.result['Smooth'],choices=smChoice,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
         smCombo.Bind(wx.EVT_COMBOBOX, OnSmCombo)
@@ -979,20 +979,23 @@ def UpdateBackground(G2frame,data):
                 return
         finally:
             dlg.Destroy()
-        xydata = {}
         PatternId = G2frame.PatternId        
         background = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Background'))
         limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Limits'))[1]
         inst,inst2 = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'Instrument Parameters'))
         pwddata = G2frame.PatternTree.GetItemPyData(PatternId)[1]
-        auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata,xydata)
+        auxPlot = G2pwd.MakeRDF(RDFcontrols,background,inst,pwddata)
 #        GSASIIpath.IPyBreak()
         superMinusOne = unichr(0xaf)+unichr(0xb9)
         for plot in auxPlot:
             XY = np.array(plot[:2])
-            G2plt.PlotXY(G2frame,[XY,],Title=plot[2],labelX=r'$Q,\AA$'+superMinusOne,labelY=r'$I(Q)$')      
-        G2plt.PlotXY(G2frame,xydata,Title='D(r)')  
-        
+            if plot[2] == 'D(R)':
+                xlabel = r'$R, \AA$'
+                ylabel = r'$D(R), arb. units$'
+            else:
+                xlabel = r'$Q,\AA$'+superMinusOne
+                ylabel = r'$I(Q)$'
+            G2plt.PlotXY(G2frame,[XY,],Title=plot[2],labelX=xlabel,labelY=ylabel,lines=True)      
         
     def BackSizer():
         
@@ -4794,11 +4797,6 @@ def UpdatePDFGrid(G2frame,data):
         auxPlot = ComputePDF(data)
         G2plt.PlotISFG(G2frame,newPlot=False)        
                         
-    def OnSinDamp(event):
-        data['sinDamp'] = sinDamp.GetValue()
-        auxPlot = ComputePDF(data)
-        G2plt.PlotISFG(G2frame,newPlot=False)        
-                        
     def OnPacking(event):
         try:
             value = float(pack.GetValue())
@@ -4953,7 +4951,8 @@ def UpdatePDFGrid(G2frame,data):
         print 'Done calculating PDF:'
         Status.SetStatusText('PDF computed')
         for plot in auxPlot:
-            G2plt.PlotXY(G2frame,plot[:2],Title=plot[2])
+            XY = np.array(plot[:2])
+            G2plt.PlotXY(G2frame,[XY,],Title=plot[2])
         
         G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')
         G2plt.PlotISFG(G2frame,newPlot=True,type='S(Q)')
@@ -5111,11 +5110,6 @@ def UpdatePDFGrid(G2frame,data):
     lorch.SetValue(data['Lorch'])
     lorch.Bind(wx.EVT_CHECKBOX, OnLorch)
     sqBox.Add(lorch,0,WACV)
-# this isn't the right thing but something is needed here - leave as place holder
-#    sinDamp = wx.CheckBox(G2frame.dataDisplay,label='SinQ damping?')
-#    sinDamp.SetValue(data['sinDamp'])
-#    sinDamp.Bind(wx.EVT_CHECKBOX,OnSinDamp)
-#    sqBox.Add(sinDamp,0,WACV)
     sqBox.Add(wx.StaticText(G2frame.dataDisplay,label=' Scaling q-range: '),0,WACV)
     SQmin = wx.TextCtrl(G2frame.dataDisplay,value='%.1f'%(data['QScaleLim'][0]))
     SQmin.Bind(wx.EVT_TEXT_ENTER,OnSQmin)        

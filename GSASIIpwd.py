@@ -348,22 +348,16 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
     auxPlot = []
     if 'C' in inst['Type'][0]:
         Tth = pwddata[0]
-        hc = 12.397639
         wave = G2mth.getWave(inst)
-        keV = hc/wave
         minQ = npT2q(Tth[0],wave)
         maxQ = npT2q(Tth[-1],wave)
         powQ = npT2q(Tth,wave)  
-        
-
     elif 'T' in inst['Type'][0]:
         TOF = pwddata[0]
         difC = inst['difC'][1]
         minQ = 2.*np.pi*difC/TOF[-1]
         maxQ = 2.*np.pi*difC/TOF[0]
         powQ = 2.*np.pi*difC/TOF
-        
-#UseObsCalc? = True for obs-calc; False for obs & calc separate plots
     piDQ = np.pi/(maxQ-minQ)
     Qpoints = np.linspace(minQ,maxQ,len(pwddata[0]),endpoint=True)
     if RDFcontrols['UseObsCalc']:
@@ -371,7 +365,8 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
     else:
         Qdata = si.griddata(powQ,pwddata[1],Qpoints,method=RDFcontrols['Smooth'],fill_value=pwddata[1][0])
     Qdata *= np.sin((Qpoints-minQ)*piDQ)/piDQ
-#    auxPlot.append([Qpoints,Qdata,'interp1d:'+RDFcontrols['Smooth']])
+    Qdata *= 0.5*np.sqrt(Qpoints)       #Qbin normalization
+    auxPlot.append([Qpoints,Qdata,'interp1d:'+RDFcontrols['Smooth']])
 #    GSASIIpath.IPyBreak()
     dq = Qpoints[1]-Qpoints[0]
     nR = len(Qdata)

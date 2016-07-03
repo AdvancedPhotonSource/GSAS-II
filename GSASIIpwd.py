@@ -44,8 +44,6 @@ except ImportError:
 
     
 # trig functions in degrees
-sind = lambda x: math.sin(x*math.pi/180.)
-asind = lambda x: 180.*math.asin(x)/math.pi
 tand = lambda x: math.tan(x*math.pi/180.)
 atand = lambda x: 180.*math.atan(x)/math.pi
 atan2d = lambda y,x: 180.*math.atan2(y,x)/math.pi
@@ -60,8 +58,8 @@ npacosd = lambda x: 180.*np.arccos(x)/math.pi
 nptand = lambda x: np.tan(x*math.pi/180.)
 npatand = lambda x: 180.*np.arctan(x)/np.pi
 npatan2d = lambda y,x: 180.*np.arctan2(y,x)/np.pi
-npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave
-npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)
+npT2stl = lambda tth, wave: 2.0*npsind(tth/2.0)/wave    #=d*
+npT2q = lambda tth,wave: 2.0*np.pi*npT2stl(tth,wave)    #=2pi*d*
 ateln2 = 8.0*math.log(2.0)
     
 #GSASII pdf calculation routines
@@ -345,6 +343,7 @@ def CalcPDF(data,inst,xydata):
     
 def MakeRDF(RDFcontrols,background,inst,pwddata):
     import scipy.fftpack as ft
+    import scipy.signal as signal
     auxPlot = []
     if 'C' in inst['Type'][0]:
         Tth = pwddata[0]
@@ -363,16 +362,19 @@ def MakeRDF(RDFcontrols,background,inst,pwddata):
     if RDFcontrols['UseObsCalc']:
         Qdata = si.griddata(powQ,pwddata[1]-pwddata[3],Qpoints,method=RDFcontrols['Smooth'],fill_value=0.)
     else:
-        Qdata = si.griddata(powQ,pwddata[1],Qpoints,method=RDFcontrols['Smooth'],fill_value=pwddata[1][0])
+        Qdata = si.griddata(powQ,pwddata[1]-pwddata[4],Qpoints,method=RDFcontrols['Smooth'],fill_value=pwddata[1][0])
     Qdata *= np.sin((Qpoints-minQ)*piDQ)/piDQ
     Qdata *= 0.5*np.sqrt(Qpoints)       #Qbin normalization
-    auxPlot.append([Qpoints,Qdata,'interp1d:'+RDFcontrols['Smooth']])
 #    GSASIIpath.IPyBreak()
     dq = Qpoints[1]-Qpoints[0]
     nR = len(Qdata)
-    DofR = -dq*np.imag(ft.fft(Qdata,16*nR)[:nR])
     R = 0.5*np.pi*np.linspace(0,nR,nR)/(4.*maxQ)
     iFin = np.searchsorted(R,RDFcontrols['maxR'])
+    bBut,aBut = signal.butter(4,0.01)
+    Qsmooth = signal.filtfilt(bBut,aBut,Qdata)
+#    auxPlot.append([Qpoints,Qdata,'interpolate:'+RDFcontrols['Smooth']])
+#    auxPlot.append([Qpoints,Qsmooth,'interpolate:'+RDFcontrols['Smooth']])
+    DofR = dq*np.imag(ft.fft(Qsmooth,16*nR)[:nR])
     auxPlot.append([R[:iFin],DofR[:iFin],'D(R)'])    
     return auxPlot
 
@@ -597,7 +599,7 @@ def getBackground(pfx,parmDict,bakType,dataType,xdata):
         q = 2.*np.pi*parmDict[pfx+'difC']/xdata
     elif 'C' in dataType:
         wave = parmDict.get(pfx+'Lam',parmDict.get(pfx+'Lam1',1.0))
-        q = 2.*np.pi*npsind(xdata/2.)/wave
+        q = npT2q(xdata,wave)
     yb = np.zeros_like(xdata)
     nBak = 0
     cw = np.diff(xdata)
@@ -778,14 +780,11 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
     if hfx+'difC' in parmDict:
         ff = 1.
     else:
-        try:
-            wave = parmDict[hfx+'Lam']
-        except KeyError:
-            wave = parmDict[hfx+'Lam1']
-        q = 4.0*np.pi*npsind(xdata/2.0)/wave
+        wave = parmDict.get(hfx+'Lam',parmDict.get(hfx+'Lam1',1.0))
+        q = npT2q(xdata,wave)
         SQ = (q/(4*np.pi))**2
         FF = G2elem.GetFormFactorCoeff('Si')[0]
-        ff = np.array(G2elem.ScatFac(FF,SQ)[0])
+        ff = np.array(G2elem.ScatFac(FF,SQ)[0])*np.pi**2    #needs pi^2~10. for cw data (why?)
     iD = 0        
     while True:
         try:
@@ -797,10 +796,10 @@ def getBackgroundDerv(hfx,parmDict,bakType,dataType,xdata):
             sqr = np.sin(q*dbR)/(q*dbR)
             cqr = np.cos(q*dbR)
             temp = np.exp(-dbU*q**2)
-            dyddb[3*iD] = ff*sqr*temp/(np.pi*cw)
-            dyddb[3*iD+1] = ff*dbA*temp*(cqr-sqr)/(np.pi*dbR*cw)
-            dyddb[3*iD+2] = -ff*dbA*sqr*temp*q**2/(np.pi*cw)
-            iD += 1       #ff*dbA*np.sin(q*dbR)*np.exp(-dbU*q**2)/(q*dbR)
+            dyddb[3*iD] = ff*sqr*temp
+            dyddb[3*iD+1] = ff*dbA*temp*(cqr-sqr)/(dbR)
+            dyddb[3*iD+2] = -ff*dbA*sqr*temp*q**2
+            iD += 1
         except KeyError:
             break
     iD = 0

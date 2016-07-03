@@ -1013,16 +1013,40 @@ class GSASII(wx.Frame):
                     il += 1
                     S = instLines[il]
             Found = True
-            S = S.replace(' ','')
-            SS = S[:-1].split(';')
-            for s in SS:
-                [item,val] = s.split(':')
-                newItems.append(item)
-                try:
-                    newVals.append(float(val))
-                except ValueError:
-                    newVals.append(val)
-            il += 1                        
+            if '"""' in S:
+                delim = '"""' 
+            elif "'''" in S:
+                delim = "'''"
+            else:
+                S = S.replace(' ','')
+                SS = S.strip().split(';')
+                for s in SS:
+                    [item,val] = s.split(':',1)
+                    newItems.append(item)
+                    try:
+                        newVals.append(float(val))
+                    except ValueError:
+                        newVals.append(val)
+                il += 1
+                continue
+            # read multiline values, delimited by ''' or """
+            item,val = S.strip().split(':',1)
+            val = val.replace(delim,'').rstrip()
+            val += '\n'
+            while True:
+                il += 1
+                if il >= len(instLines): break
+                S = instLines[il]
+                if delim in S:
+                    val += S.replace(delim,'').rstrip()
+                    val += '\n'
+                    break
+                else:
+                    val += S.rstrip()
+                    val += '\n'
+            newItems.append(item)
+            newVals.append(val)
+            il += 1
         return [G2IO.makeInstDict(newItems,newVals,len(newVals)*[False,]),{}]
         
     def ReadPowderIparm(self,instfile,bank,databanks,rd):
@@ -1503,7 +1527,8 @@ class GSASII(wx.Frame):
                 'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,
                 'qPlot':False,'dPlot':False,'sqrtPlot':False
                 }
-            # apply user-supplied corrections to powder data
+            # apply user-supplied corrections to powder data (remove this below, also from help)
+            # also see https://subversion.xray.aps.anl.gov/trac/pyGSAS/changeset/2344
             corrfile = os.path.join(os.path.split(rd.readfilename)[0],'G2powdercorrections.txt')
             if os.path.exists(corrfile):
                 print('Applying corrections from file '+corrfile)
@@ -1516,6 +1541,18 @@ class GSASII(wx.Frame):
                 except Exception as err:
                     print('error: '+str(err))
                     print('with commands '+str(corr))
+            # apply user-supplied corrections to powder data
+            if 'CorrectionCode' in Iparm1:
+                print('Applying corrections from instprm file')
+                corr = Iparm1['CorrectionCode'][0]
+                try:
+                    exec(corr)
+                    print('done')
+                except Exception as err:
+                    print('error: '+str(err))
+                    print('with commands -------------------')
+                    print(str(corr))
+                    print('---------------------------------')
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
             self.PatternTree.SetItemPyData(Id,[valuesdict,rd.powderdata])
             self.PatternTree.SetItemPyData(

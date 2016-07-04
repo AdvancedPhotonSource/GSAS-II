@@ -1,0 +1,30 @@
+#GSAS-II instrument parameter file; manually edited by B.H.Toby to show how to use CorrectionCode
+Lam:0.72768
+SH/L:0.002
+Azimuth:45.814
+X:0.0
+Source: 
+Zero:0.0
+U:1.0
+W:0.4
+V:-0.1
+Y:0.0
+Polariz.:0.99
+Type:PXC
+Bank:1
+CorrectionCode:'''# Example 2theta correction (applied via numpy array correction; fast!)
+print '2theta before', rd.powderdata[0][:3],'...',rd.powderdata[0][-2:]
+TT = rd.powderdata[0]
+rd.powderdata[0] += 0.06038972 - 0.001500277 * TT + 7.389e-06 * TT**2
+print '2theta after', rd.powderdata[0][:3],'...',rd.powderdata[0][-2:]
+'''
+#
+# alternate example. This applies a correction point-by-point in a loop
+#
+#CorrectionCode:'''#apply 2theta correction in a loop
+#print '2T before', rd.powderdata[0][:3],'...',rd.powderdata[0][-3:]
+#for i in range(len(rd.powderdata[0])):
+#    TT = rd.powderdata[0][i]
+#    rd.powderdata[0][i] += 0.06038972 - 0.001500277 * TT + 7.389e-06 * TT**2
+#print '2T after', rd.powderdata[0][:3],'...',rd.powderdata[0][-3:]
+#'''

@@ -1527,20 +1527,6 @@ class GSASII(wx.Frame):
                 'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,
                 'qPlot':False,'dPlot':False,'sqrtPlot':False
                 }
-            # apply user-supplied corrections to powder data (remove this below, also from help)
-            # also see https://subversion.xray.aps.anl.gov/trac/pyGSAS/changeset/2344
-            corrfile = os.path.join(os.path.split(rd.readfilename)[0],'G2powdercorrections.txt')
-            if os.path.exists(corrfile):
-                print('Applying corrections from file '+corrfile)
-                fp = open(corrfile,'r')
-                corr = fp.read()
-                fp.close()
-                try:
-                    exec(corr)
-                    print('done')
-                except Exception as err:
-                    print('error: '+str(err))
-                    print('with commands '+str(corr))
             # apply user-supplied corrections to powder data
             if 'CorrectionCode' in Iparm1:
                 print('Applying corrections from instprm file')
@@ -1553,6 +1539,8 @@ class GSASII(wx.Frame):
                     print('with commands -------------------')
                     print(str(corr))
                     print('---------------------------------')
+                finally:
+                    del Iparm1['CorrectionCode']
             rd.Sample['ranId'] = valuesdict['ranId'] # this should be removed someday
             self.PatternTree.SetItemPyData(Id,[valuesdict,rd.powderdata])
             self.PatternTree.SetItemPyData(

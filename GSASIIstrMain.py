@@ -612,7 +612,7 @@ def PrintDistAngle(DisAglCtls,DisAglData,out=sys.stdout):
     else: 
         MyPrint('\n Unit cell: a = '+('%.5f'%Cell[0])+' b = '+('%.5f'%Cell[1])+' c = '+('%.5f'%Cell[2])+
             ' alpha = '+('%.3f'%Cell[3])+' beta = '+('%.3f'%Cell[4])+' gamma = '+
-            ('%.3f'%Cell[5])+' volume = '+('%.3f'%Cell[6]))
+            ('%.3f'%Cell[5])+' Volume = '+('%.3f'%Cell[6]))
 
     AtomLabels,DistArray,AngArray = RetDistAngle(DisAglCtls,DisAglData)
     origAtoms = DisAglData['OrigAtoms']

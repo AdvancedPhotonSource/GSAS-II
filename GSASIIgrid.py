@@ -2894,7 +2894,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                 if i in uniqCellIndx[pId]:
                     lbl = str(pId)+'::'+cellUlbl[i]
                     parmDict[lbl] = val
-            lbl = str(pId)+'::'+'vol'
+            lbl = str(pId)+'::'+'Vol'
             parmDict[lbl] = G2lat.calc_V(A)
         return parmDict
 
@@ -2945,7 +2945,7 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
                     if i in uniqCellIndx[pId]:
                         lbl = str(pId)+'::'+cellUlbl[i]
                         VparmDict[lbl] = val
-                lbl = str(pId)+'::'+'vol'
+                lbl = str(pId)+'::'+'Vol'
                 VparmDict[lbl] = G2lat.calc_V(A)
             # dict should be fully updated, use it & calculate
             calcobj.SetupCalc(VparmDict)

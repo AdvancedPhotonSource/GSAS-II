@@ -434,7 +434,7 @@ def UpdatePeakGrid(G2frame, data):
         x = x0[iBeg:iFin]
         y0 = profile[1][iBeg:iFin]
         y1 = copy.copy(y0)
-        ysig = np.std(y1)
+        ysig = 0.5*np.std(y1)
         offset = [-1,1]
         ymask = ma.array(y0,mask=(y0<ysig))
         for off in offset:

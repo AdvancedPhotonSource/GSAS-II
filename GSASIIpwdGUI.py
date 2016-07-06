@@ -1219,6 +1219,8 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     G2frame.ifGetExclude = False
         
     def KeyEditPeakGrid(event):
+        '''for deleting excluded regions
+        '''
         if event.GetKeyCode() == wx.WXK_DELETE:
             row = G2frame.dataDisplay.GetSelectedRows()[0]
             if row > 1: #can't delete limits!
@@ -1279,6 +1281,8 @@ def UpdateLimitsGrid(G2frame, data,plottype):
     G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LimitMenu)
     if not G2frame.dataFrame.GetStatusBar():
         Status = G2frame.dataFrame.CreateStatusBar()
+    if len(data)>2:
+        Status.SetStatusText('To delete excluded region: select & press Delete key')
     G2frame.Bind(wx.EVT_MENU,OnLimitCopy,id=G2gd.wxID_LIMITCOPY)
     G2frame.Bind(wx.EVT_MENU,OnAddExcl,id=G2gd.wxID_ADDEXCLREGION)    
     G2frame.dataDisplay = G2G.GSGrid(parent=G2frame.dataFrame)

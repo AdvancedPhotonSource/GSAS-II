@@ -67,6 +67,7 @@ GkDelta = unichr(0x0394)
 Gkrho = unichr(0x03C1)
 nxs = np.newaxis
 #    GSASIIpath.IPyBreak()
+plotDebug = False
     
 class _tabPlotWin(wx.Panel):    
     'Creates a basic tabbed plot window for GSAS-II graphics'
@@ -239,14 +240,14 @@ class G2PlotNoteBook(wx.Panel):
         
     def RaisePageNoRefresh(self,Page):
         'Raises a plot tab without triggering a refresh via OnPageChanged'
-#        print 'Raise',str(self).split('0x')[1]
+        if plotDebug: print 'Raise',str(self).split('0x')[1]
         self.skipPageChange = True
         Page.SetFocus()
         self.skipPageChange = False
         
     def SetSelectionNoRefresh(self,plotNum): 
         'Raises a plot tab without triggering a refresh via OnPageChanged' 
-#        print 'Select',str(self).split('0x')[1]
+        if plotDebug: print 'Select',str(self).split('0x')[1]
         self.skipPageChange = True
         self.nb.SetSelection(plotNum) # raises plot tab 
         Page = self.G2frame.G2plotNB.nb.GetPage(plotNum)
@@ -261,8 +262,9 @@ class G2PlotNoteBook(wx.Panel):
         repeated replotting.
         '''
         tabLabel = event.GetEventObject().GetPageText(event.GetSelection())
-#        print 'PageChanged, self=',str(self).split('0x')[1],tabLabel,self.skipPageChange
-#        print 'event type=',event.GetEventType()
+        if plotDebug: 
+            print 'PageChanged, self=',str(self).split('0x')[1],tabLabel,self.skipPageChange
+            print 'event type=',event.GetEventType()
         self.status.DestroyChildren()    #get rid of special stuff on status bar
         self.status.SetFields(['',''])  # clear old status message
         self.status.SetStatusWidths([150,-1])
@@ -291,7 +293,7 @@ class G2PlotNoteBook(wx.Panel):
         self.allowZoomReset = False 
         if pid: self.G2frame.PatternTree.SelectItem(pid)
         self.allowZoomReset = True
-#        print 'invoke',str(self).split('0x')[1],str(pid)
+        if plotDebug: print 'invoke',str(self).split('0x')[1],str(pid)
             
 class GSASIItoolbar(Toolbar):
     'Override the matplotlib toolbar so we can add more icons'
@@ -2489,6 +2491,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
     else:
         Page.Choice = None
     G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.skipPageChange = True      
     G2frame.G2plotNB.status.DestroyChildren()
     Plot.set_title(Title)
     if labelX:
@@ -3046,6 +3049,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         plotNum = G2frame.G2plotNB.plotList.index(plotType)
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
     Page.Choice = None
+    G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    G2frame.G2plotNB.skipPageChange = True
     G2frame.G2plotNB.status.SetStatusText('',1)
     
     PHI = np.linspace(0.,360.,30,True)
@@ -4233,8 +4238,6 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
         if newImage:
             Page.figure.clf()
             Plot = Page.figure.gca()          #get a fresh plot after clf()
-#        if not event:                       #event from GUI TextCtrl - don't want focus to change to plot!!!
-#            G2frame.G2plotNB.SetSelectionNoRefresh(plotNum) # raises plot tab
     except ValueError:
         Plot = G2frame.G2plotNB.addMpl('2D Powder Image').gca()
         plotNum = G2frame.G2plotNB.plotList.index('2D Powder Image')
@@ -5650,7 +5653,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     def OnSize(event):
         Draw('size')
         
-    def OnFocus(event):         #not needed?? Bind commented out below
+    def OnFocus(event):
         Draw('focus')
         
     # PlotStructure execution starts here (N.B. initialization above)

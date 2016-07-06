@@ -1279,13 +1279,14 @@ def CompileVarDesc():
         'Scale' : 'Phase or Histogram scale factor',
         # Phase vars (p::<var>)
         'A([0-5])' : 'Reciprocal metric tensor component \\1',
-        'Vol' : 'Unit cell volume',
+        '[vV]ol' : 'Unit cell volume', # probably an error that both upper and lower case are used
         # Atom vars (p::<var>:a)
         'dA([xyz])$' : 'change to atomic coordinate, \\1',
         'A([xyz])$' : '\\1 fractional atomic coordinate',
         'AUiso':'Atomic isotropic displacement parameter',
         'AU([123][123])':'Atomic anisotropic displacement parameter U\\1',
         'Afrac': 'Atomic occupancy parameter',
+        'Amul': 'Atomic site multiplicity value',
         # Hist & Phase (HAP) vars (p:h:<var>)
         'Back': 'Background term',
         'BkPkint;(.*)':'Background peak #\\1 intensity',

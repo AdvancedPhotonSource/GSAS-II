@@ -503,7 +503,7 @@ class GSASII(wx.Frame):
                     fp.seek(0)  # rewind
                     rd.objname = os.path.basename(filename)
                     flag = False
-                    if GSASIIpath.GetConfigValue('debug'):
+                    if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
                         flag = rd.Reader(filename,fp,self,
                                          buffer=rdbuffer,
                                          blocknum=block,
@@ -1592,7 +1592,7 @@ class GSASII(wx.Frame):
         phaseRIdList,usedHistograms = self.GetPhaseInfofromTree()
         phaseNameList = usedHistograms.keys() # phase names in use
         if not phaseNameList: return # no phases yet, nothing to do
-        header = 'Select phase(s) to link\nto new data:'
+        header = 'Select phase(s) to link\nto the newly-read data:'
         for Name in newHistList:
             header += '\n  '+str(Name)
 
@@ -3800,6 +3800,7 @@ class GSASII(wx.Frame):
                     G2IO.ProjFileOpen(self,False)
                     Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
                     self.PatternTree.SelectItem(Id)
+                    G2gd.MovePatternTreeToGrid(self,Id) # reload current tree item, should update current plot
 #                    self.G2plotNB.replotAll() # refresh any plots not yet updated - doesn't exist!
             finally:
                 dlg.Destroy()

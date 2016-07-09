@@ -3011,21 +3011,20 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     '''Plot 3D mustrain/size/preferred orientation figure. In this instance data is for a phase
     '''
     
-    PatternId = G2frame.PatternId
+    import scipy.interpolate as si
     generalData = data['General']
     SGData = generalData['SGData']
     SGLaue = SGData['SGLaue']
     if Start:                   #initialize the spherical harmonics qlmn arrays
         ptx.pyqlmninit()
         Start = False
-#    MuStrKeys = G2spc.MustrainNames(SGData)
     cell = generalData['Cell'][1:]
     A,B = G2lat.cell2AB(cell[:6])
     Vol = cell[6]
     useList = data['Histograms']
     phase = generalData['Name']
     plotType = generalData['Data plot type']
-    plotDict = {'Mustrain':'Mustrain','Size':'Size','Preferred orientation':'Pref.Ori.'}
+    plotDict = {'Mustrain':'Mustrain','Size':'Size','Preferred orientation':'Pref.Ori.','Inv. pole figure':''}
     for ptype in plotDict:
         G2frame.G2plotNB.Delete(ptype)
     if plotType in ['None'] or not useList:
@@ -3059,7 +3058,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     Y = np.outer(npcosd(PHI),npsind(PSI))
     Z = np.outer(np.ones(np.size(PHI)),npcosd(PSI))
     try:        #temp patch instead of 'mustrain' for old files with 'microstrain'
-        coeff = useList[hist][plotDict[plotType]]
+        if plotDict[plotType]:
+            coeff = useList[hist][plotDict[plotType]]
     except KeyError:
         return
     if plotType in ['Mustrain','Size']:
@@ -3142,7 +3142,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Plot.set_xlabel(r'X, $\mu$strain')
             Plot.set_ylabel(r'Y, $\mu$strain')
             Plot.set_zlabel(r'Z, $\mu$strain')
-    else:
+    elif plotType in ['Preferred orientation',]:
         h,k,l = generalData['POhkl']
         if coeff[0] == 'MD':
             print 'March-Dollase preferred orientation plot'
@@ -3162,6 +3162,69 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Plot.set_title('Axial distribution for HKL='+str(PH)+' in '+phase+'\n'+hist)
             Plot.set_xlabel(r'$\psi$',fontsize=16)
             Plot.set_ylabel('MRD',fontsize=14)
+    elif plotType in ['Inv. pole figure',]:
+        Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
+        rId = G2gd.GetPatternTreeItemId(G2frame,Id,'Reflection Lists')
+        RefData = G2frame.PatternTree.GetItemPyData(rId)[phase]
+        Type = RefData['Type']
+        Refs = RefData['RefList'].T
+        ns = 0
+        if RefData['Super']:
+            ns = 1
+        if 'C' in Type:
+            obsRMD = Refs[12+ns]
+        else:
+            obsRMD = Refs[15+ns]
+        ObsIVP = []
+        Phi = []
+        Beta = []
+        Rmd = []
+        refSets = [G2spc.GenHKLf(hkl,SGData)[2] for hkl in Refs[:3].T]
+        refSets = [[np.fromstring(item.strip('[]').replace('-0','0'),sep=' ')    \
+            for item in list(set([str(ref) for ref in refSet]))] for refSet in refSets]
+        for ir,refSet in enumerate(refSets):
+            refSet = [np.where(ref[2]<0,-1*ref,ref) for ref in refSet]
+            refSets[ir] = refSet
+            r,beta,phi = G2lat.HKL2SpAng(refSet,cell[:6],SGData)    #radius, inclination, azimuth
+#            beta,phi = G2lat.CrsAng(np.array(refSet),cell[:6],SGData)
+            phi *= np.pi/180.
+            beta *= np.pi/180.
+            Phi += list(phi)
+            Beta += list(beta)
+            Rmd += len(phi)*[obsRMD[ir],]
+        Beta = np.abs(np.array(Beta))
+        Phi = np.array(Phi)
+        Phi=np.where(Phi<0.,Phi+2.*np.pi,Phi)
+        Rmd = np.array(Rmd)
+        Rmd = np.where(Rmd<0.,0.,Rmd)
+        y,x = np.sin(Beta)*np.cos(Phi),np.sin(Beta)*np.sin(Phi)        
+        sq2 = 1.0/math.sqrt(2.0)
+        npts = 201
+        X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
+        R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
+        P=np.where(P<0.,P+360.,P)
+        R = np.where(R <= 1.,2.*npatand(R),0.0)
+        Z = np.zeros_like(R)
+#        GSASIIpath.IPyBreak()
+        try:
+            lut = si.SmoothSphereBivariateSpline(Beta,Phi,Rmd,s=len(Beta))
+            Z = [lut(r*np.pi/180.,p*np.pi/180.) for r,p in zip(list(R),list(P))]
+        except AttributeError:
+            print 'scipy needs to be 0.11.0 or newer'
+            return        
+        Z = np.reshape(Z,(npts,npts))
+        try:
+            CS = Plot.contour(Y,X,Z,aspect='equal')
+            Plot.clabel(CS,fontsize=9,inline=1)
+        except ValueError:
+            pass
+        Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
+        Plot.plot(x,y,'+')
+        Page.figure.colorbar(Img)
+        Plot.axis('off')
+        Plot.set_title('0 0 1 Inverse pole figure for %s'%(phase))
+        Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
+        
     Page.canvas.draw()
     
 ################################################################################

@@ -100,7 +100,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             G2plt.PlotSizeStrainPO(G2frame,data,G2frame.hist)
         
         plotSizer = wx.BoxSizer(wx.VERTICAL)
-        choice = ['None','Mustrain','Size','Preferred orientation']
+        choice = ['None','Mustrain','Size','Preferred orientation','Inv. pole figure']
         plotSel = wx.RadioBox(DData,wx.ID_ANY,'Select plot type:',choices=choice,
             majorDimension=1,style=wx.RA_SPECIFY_COLS)
         plotSel.SetStringSelection(generalData['Data plot type'])
@@ -114,7 +114,9 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             poAxis.Bind(wx.EVT_TEXT_ENTER,OnPOhkl)
             poAxis.Bind(wx.EVT_KILL_FOCUS,OnPOhkl)
             POhklSizer.Add(poAxis,0,WACV)
-            plotSizer.Add(POhklSizer)            
+            plotSizer.Add(POhklSizer)
+        elif generalData['Data plot type'] == 'Inv. pole figure':
+            pass    #might need something here?      
         return plotSizer
        
     def ScaleSizer():

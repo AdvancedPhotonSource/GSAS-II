@@ -370,7 +370,6 @@ def Gmat2AB(G):
     B = nl.inv(A)
     return A,B
     
-
 def cell2AB(cell):
     """Computes orthogonalization matrix from unit cell constants
 
@@ -391,6 +390,23 @@ def cell2AB(cell):
     A[2][2] = 1/cellstar[2]         # 1/c*
     B = nl.inv(A)
     return A,B
+    
+def HKL2SpAng(H,cell,SGData):
+    """Computes spherical coords for hkls; view along 001
+
+    :param array H: arrays of hkl
+    :param tuple cell: a,b,c, alpha, beta, gamma (degrees)
+    :param dict SGData: space group dictionary
+    :returns: arrays of r,phi,psi (radius,inclination,azimuth) about 001 
+    """
+    A,B = cell2AB(cell)
+    xH = np.inner(B,H)
+    r = np.sqrt(np.sum(xH**2,axis=0))
+    phi = acosd(xH[2]/r)
+    psi = atan2d(xH[1],xH[0])
+    phi = np.where(phi>90.,180.-phi,phi)
+#    GSASIIpath.IPyBreak()
+    return r,phi,psi
     
 def U6toUij(U6):
     """Fill matrix (Uij) from U6 = [U11,U22,U33,U12,U13,U23]

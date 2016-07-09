@@ -1152,6 +1152,19 @@ def GenAtom(XYZ,SGData,All=False,Uij=[],Move=True):
         return zip(XYZEquiv,UijEquiv,Idup,Cell)
     else:
         return zip(XYZEquiv,Idup,Cell)
+        
+def GenHKL(HKL,SGData):
+    ''' Generates all equivlent reflections including Friedel pairs
+    :param HKL:  [h,k,l] must be integral values
+    :param SGData: space group data obtained from SpcGroup
+    :returns: array Uniq: equivalent reflections
+    '''
+    
+    Ops = SGData['SGOps']
+    OpM = np.array([op[0] for op in Ops])
+    Uniq = np.inner(OpM,HKL)
+    Uniq = list(Uniq)+list(-1*Uniq)
+    return np.array(Uniq)
 
 def GenHKLf(HKL,SGData):
     '''

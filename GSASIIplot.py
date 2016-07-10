@@ -3207,7 +3207,13 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         Z = np.zeros_like(R)
 #        GSASIIpath.IPyBreak()
         try:
-            lut = si.SmoothSphereBivariateSpline(Beta,Phi,Rmd,s=len(Beta))
+            sfac = 1
+            while True:
+                try:
+                    lut = si.SmoothSphereBivariateSpline(Beta,Phi,Rmd,s=sfac)
+                    break
+                except ValueError:
+                    sfac *= 1.2
             Z = [lut(r*np.pi/180.,p*np.pi/180.) for r,p in zip(list(R),list(P))]
         except AttributeError:
             print 'scipy needs to be 0.11.0 or newer'

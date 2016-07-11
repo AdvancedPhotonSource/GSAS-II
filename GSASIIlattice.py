@@ -400,7 +400,7 @@ def HKL2SpAng(H,cell,SGData):
     :returns: arrays of r,phi,psi (radius,inclination,azimuth) about 001 
     """
     A,B = cell2AB(cell)
-    xH = np.inner(B,H)
+    xH = np.inner(B.T,H)
     r = np.sqrt(np.sum(xH**2,axis=0))
     phi = acosd(xH[2]/r)
     psi = atan2d(xH[1],xH[0])

@@ -3179,14 +3179,16 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         Phi = []
         Beta = []
         Rmd = []
-        refSets = [G2spc.GenHKLf(hkl,SGData)[2] for hkl in Refs[:3].T]
-        refSets = [[np.fromstring(item.strip('[]').replace('-0','0'),sep=' ')    \
-            for item in list(set([str(ref) for ref in refSet]))] for refSet in refSets]
+        Ops = np.array([Op[0].T for Op in SGData['SGOps']])
+        refSets = [np.inner(Ops,hkl) for hkl in Refs[:3].T]
         for ir,refSet in enumerate(refSets):
-            refSet = [np.where(ref[2]<0,-1*ref,ref) for ref in refSet]
+            refSet = np.vstack((refSet,-refSet))    #add Friedel pairs
+            refSet = [np.where(ref[2]<0,-1.*ref,ref) for ref in refSet] #take +l of each pair then remove duplicates
+            refSet = set([str(ref).strip('[]').replace('-0',' 0') for ref in refSet])
+            refSet = [np.fromstring(item,sep=' ') for item in refSet]
             refSets[ir] = refSet
+        for ir,refSet in enumerate(refSets):
             r,beta,phi = G2lat.HKL2SpAng(refSet,cell[:6],SGData)    #radius, inclination, azimuth
-#            beta,phi = G2lat.CrsAng(np.array(refSet),cell[:6],SGData)
             phi *= np.pi/180.
             beta *= np.pi/180.
             Phi += list(phi)
@@ -3213,7 +3215,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
                     lut = si.SmoothSphereBivariateSpline(Beta,Phi,Rmd,s=sfac)
                     break
                 except ValueError:
-                    sfac *= 1.2
+                    sfac *= 1.05
             Z = [lut(r*np.pi/180.,p*np.pi/180.) for r,p in zip(list(R),list(P))]
         except AttributeError:
             print 'scipy needs to be 0.11.0 or newer'

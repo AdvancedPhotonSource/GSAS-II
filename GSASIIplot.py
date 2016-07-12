@@ -3011,6 +3011,36 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
     '''Plot 3D mustrain/size/preferred orientation figure. In this instance data is for a phase
     '''
     
+    def OnPick(event):
+        if plotType not in ['Inv. pole figure',]:
+            return
+        ind = event.ind[0]
+        h,k,l = RefSets[ind]
+        msg = '%d,%d,%d=%.2f'%(h,k,l,Rmd[ind])
+        Page.canvas.SetToolTipString(msg)
+
+    def rp2xyz(r,p):
+        z = npcosd(r)
+        xy = np.sqrt(1.-z**2)
+        return xy*npcosd(p),xy*npsind(p),z
+        
+    def OnMotion(event):
+        if plotType not in ['Inv. pole figure',]:
+            return
+        if event.xdata and event.ydata:                 #avoid out of frame errors
+            xpos = event.xdata
+            ypos = event.ydata
+            r = xpos**2+ypos**2
+            if r <= 1.0:
+                r,p = 2.*npatand(np.sqrt(r)),npatan2d(ypos,xpos)    #stereoproj.
+                if p<0.:
+                    p += 360.
+                ipf = lut(r*np.pi/180.,p*np.pi/180.)
+                xyz = np.inner(Bmat.T,np.array([rp2xyz(r,p)]))
+                x,y,z = list(xyz/np.max(np.abs(xyz)))
+                G2frame.G2plotNB.status.SetStatusText(
+                    'psi =%9.3f, beta =%9.3f, MRD =%9.3f hkl=%5.2f,%5.2f,%5.2f'%(r,p,ipf,x,y,z),1)
+    
     import scipy.interpolate as si
     generalData = data['General']
     SGData = generalData['SGData']
@@ -3019,7 +3049,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         ptx.pyqlmninit()
         Start = False
     cell = generalData['Cell'][1:]
-    A,B = G2lat.cell2AB(cell[:6])
+    Amat,Bmat = G2lat.cell2AB(cell[:6])
     Vol = cell[6]
     useList = data['Histograms']
     phase = generalData['Name']
@@ -3047,6 +3077,8 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Plot = G2frame.G2plotNB.addMpl(plotType).gca()               
         plotNum = G2frame.G2plotNB.plotList.index(plotType)
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
+        Page.canvas.mpl_connect('pick_event', OnPick)
+        Page.canvas.mpl_connect('motion_notify_event', OnMotion)
     Page.Choice = None
     G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.skipPageChange = True
@@ -3077,7 +3109,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
                 return R*xyz
                 
             iso,aniso = coeff[1][:2]
-            axes = np.inner(A,np.array(coeff[3]))
+            axes = np.inner(Amat,np.array(coeff[3]))
             axes /= nl.norm(axes)
             Shkl = np.array(coeff[1])
             XYZ = np.dstack((X,Y,Z))
@@ -3106,7 +3138,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         elif coeff[0] == 'generalized':
             
             def genMustrain(xyz,SGData,A,Shkl):
-                uvw = np.inner(A.T,xyz)
+                uvw = np.inner(Amat.T,xyz)
                 Strm = np.array(G2spc.MustrainCoeff(uvw,SGData))
                 Sum = np.sum(np.multiply(Shkl,Strm))
                 Sum = np.where(Sum > 0.01,Sum,0.01)
@@ -3116,7 +3148,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Shkl = np.array(coeff[4])
             if np.any(Shkl):
                 XYZ = np.dstack((X,Y,Z))
-                XYZ = np.nan_to_num(np.apply_along_axis(genMustrain,2,XYZ,SGData,A,Shkl))
+                XYZ = np.nan_to_num(np.apply_along_axis(genMustrain,2,XYZ,SGData,Amat,Shkl))
                 X,Y,Z = np.dsplit(XYZ,3)
                 X = X[:,:,0]
                 Y = Y[:,:,0]
@@ -3184,9 +3216,10 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         for ir,refSet in enumerate(refSets):
             refSet = np.vstack((refSet,-refSet))    #add Friedel pairs
             refSet = [np.where(ref[2]<0,-1.*ref,ref) for ref in refSet] #take +l of each pair then remove duplicates
-            refSet = set([str(ref).strip('[]').replace('-0',' 0') for ref in refSet])
-            refSet = [np.fromstring(item,sep=' ') for item in refSet]
+            refSet = [str(ref).strip('[]').replace('-0',' 0') for ref in refSet]
+            refSet = [np.fromstring(item,sep=' ') for item in set(refSet)]
             refSets[ir] = refSet
+        RefSets = []
         for ir,refSet in enumerate(refSets):
             r,beta,phi = G2lat.HKL2SpAng(refSet,cell[:6],SGData)    #radius, inclination, azimuth
             phi *= np.pi/180.
@@ -3194,12 +3227,14 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             Phi += list(phi)
             Beta += list(beta)
             Rmd += len(phi)*[obsRMD[ir],]
+            RefSets += refSet
+        RefSets = np.array(RefSets)
         Beta = np.abs(np.array(Beta))
         Phi = np.array(Phi)
         Phi=np.where(Phi<0.,Phi+2.*np.pi,Phi)
         Rmd = np.array(Rmd)
         Rmd = np.where(Rmd<0.,0.,Rmd)
-        y,x = np.sin(Beta)*np.cos(Phi),np.sin(Beta)*np.sin(Phi)        
+        x,y = np.tan(Beta/2.)*np.cos(Phi),np.tan(Beta/2.)*np.sin(Phi)        
         sq2 = 1.0/math.sqrt(2.0)
         npts = 201
         X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
@@ -3209,7 +3244,7 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         Z = np.zeros_like(R)
 #        GSASIIpath.IPyBreak()
         try:
-            sfac = 1
+            sfac = 0.5
             while True:
                 try:
                     lut = si.SmoothSphereBivariateSpline(Beta,Phi,Rmd,s=sfac)
@@ -3227,11 +3262,10 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         except ValueError:
             pass
         Img = Plot.imshow(Z.T,aspect='equal',cmap=G2frame.ContourColor,extent=[-1,1,-1,1])
-        Plot.plot(x,y,'+')
+        Plot.plot(-x,y,'+',picker=3)
         Page.figure.colorbar(Img)
         Plot.axis('off')
-        Plot.set_title('0 0 1 Inverse pole figure for %s'%(phase))
-        Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
+        Plot.set_title('0 0 1 Inverse pole figure for %s\n%s'%(phase,hist))
         
     Page.canvas.draw()
     
@@ -3413,7 +3447,6 @@ def PlotTexture(G2frame,data,Start=False):
             h,k,l = SHData['PFhkl']
             Plot.axis('off')
             Plot.set_title('%d %d %d Pole figure for %s'%(h,k,l,pName))
-            Plot.set_xlabel(G2frame.Projection.capitalize()+' projection')
     Page.canvas.draw()
 
 ################################################################################

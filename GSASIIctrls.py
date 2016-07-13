@@ -3461,9 +3461,8 @@ def SaveConfigVars(vars,parent=None):
             fp = open(savefile,'w')
         except IOError:
             if parent:
-                G2MessageBox(parent,
-                             'Error trying to write configuration to '+savefile,
-                             'Unable to save')
+                G2MessageBox(parent,'Error trying to write configuration to '+savefile,
+                    'Unable to save')
             else:
                 print('Error trying to write configuration to '+savefile)
             return True

@@ -3032,7 +3032,10 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
             ypos = event.ydata
             r = xpos**2+ypos**2
             if r <= 1.0:
-                r,p = 2.*npatand(np.sqrt(r)),npatan2d(ypos,xpos)    #stereoproj.
+                if 'equal' in G2frame.Projection:
+                    r,p = 2.*npasind(np.sqrt(r)*sq2),npatan2d(ypos,xpos)
+                else:
+                    r,p = 2.*npatand(np.sqrt(r)),npatan2d(ypos,xpos)
                 if p<0.:
                     p += 360.
                 ipf = lut(r*np.pi/180.,p*np.pi/180.)
@@ -3234,17 +3237,23 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
         Phi=np.where(Phi<0.,Phi+2.*np.pi,Phi)
         Rmd = np.array(Rmd)
         Rmd = np.where(Rmd<0.,0.,Rmd)
-        x,y = np.tan(Beta/2.)*np.cos(Phi),np.tan(Beta/2.)*np.sin(Phi)        
+        if 'equal' in G2frame.Projection:
+            x,y = np.tan(Beta/2.)*np.cos(Phi),np.tan(Beta/2.)*np.sin(Phi)        
+        else:
+            x,y = np.tan(Beta/2.)*np.cos(Phi),np.tan(Beta/2.)*np.sin(Phi)        
         sq2 = 1.0/math.sqrt(2.0)
         npts = 201
         X,Y = np.meshgrid(np.linspace(1.,-1.,npts),np.linspace(-1.,1.,npts))
         R,P = np.sqrt(X**2+Y**2).flatten(),npatan2d(X,Y).flatten()
         P=np.where(P<0.,P+360.,P)
-        R = np.where(R <= 1.,2.*npatand(R),0.0)
+        if 'equal' in G2frame.Projection:
+            R = np.where(R <= 1.,2.*npasind(R*sq2),0.0)
+        else:
+            R = np.where(R <= 1.,2.*npatand(R),0.0)
         Z = np.zeros_like(R)
 #        GSASIIpath.IPyBreak()
         try:
-            sfac = 0.5
+            sfac = 0.1
             while True:
                 try:
                     lut = si.SmoothSphereBivariateSpline(Beta,Phi,Rmd,s=sfac)
@@ -3252,8 +3261,11 @@ def PlotSizeStrainPO(G2frame,data,hist='',Start=False):
                 except ValueError:
                     sfac *= 1.05
             Z = [lut(r*np.pi/180.,p*np.pi/180.) for r,p in zip(list(R),list(P))]
+            print 'IVP for histogramn: %s: interpolate sfactor: %.2f'%(hist,sfac)
         except AttributeError:
-            print 'scipy needs to be 0.11.0 or newer'
+            G2frame.G2plotNB.Delete(plotType)
+            G2G.G2MessageBox(G2frame,'IVP interpolate error: scipy needs to be 0.11.0 or newer',
+                    'IVP error')
             return        
         Z = np.reshape(Z,(npts,npts))
         try:

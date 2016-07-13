@@ -179,9 +179,9 @@ class G2PlotNoteBook(wx.Panel):
         self.panelList.append(page) # panel object for plot
         self.figList.append(page.figure)  # figure object for plot
         self.skipPageChange = False
-        self._registerTreeItem(name)
+#        self._registerTreeItem(name)
 
-    def _registerTreeItem(self,plotLabel):
+    def _registerTreeItem(self,plotLabel):      #disabled for now
         '''Save the name of the of the data tree item that has generated the plot
         and for phases, save the name of the generating tab (at present that is not used)
         '''
@@ -284,7 +284,8 @@ class G2PlotNoteBook(wx.Panel):
             except TypeError:
                 pass
         else:
-            print 'OnPageChanged: not found:',tabLabel
+            pass
+#            print 'OnPageChanged: not found:',tabLabel         #comment out for now
             
     def InvokeTreeItem(self,pid):
         '''This is called to select an item from the tree using the self.allowZoomReset

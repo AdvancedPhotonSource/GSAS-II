@@ -28,6 +28,13 @@ import inspect
 import numpy as np
 import scipy as sp
 import wx
+try:  # patch for LANG environment var problem on occasional OSX machines
+    import locale
+    locale.getdefaultlocale()
+except ValueError:
+    print('Fixing location (see https://github.com/matplotlib/matplotlib/issues/5420.)')
+    os.environ['LC_ALL'] = 'en_US.UTF-8'
+    locale.getdefaultlocale()
 import matplotlib as mpl
 try:
     import OpenGL as ogl

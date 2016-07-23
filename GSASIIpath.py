@@ -391,10 +391,10 @@ def svnUpdateProcess(version=None,projectfile=None):
 
 def svnSwitchDir(rpath,filename,baseURL,loadpath=None):
     '''This performs a switch command to move files between subversion trees.
-
-    This is currently used for moving tutorial web pages and demo files
-    into the GSAS-II source tree. Note that if the files were previously downloaded
-    the switch command will update the files to the newest version. 
+    Note that if the files were previously downloaded, 
+    the switch command will update the files to the newest version.
+    
+    This routine is no longer used.
     
     :param str rpath: path to locate files, relative to the GSAS-II
       installation path (defaults to path2GSAS2)
@@ -432,9 +432,9 @@ def svnSwitchDir(rpath,filename,baseURL,loadpath=None):
 def svnInstallDir(URL,loadpath):
     '''Load a subversion tree into a specified directory
 
-    :param str rpath: path to locate files, relative to the GSAS-II
-      installation path (defaults to path2GSAS2)
     :param str URL: the repository URL
+    :param str loadpath: path to locate files
+
     '''
     import subprocess
     svn = whichsvn()

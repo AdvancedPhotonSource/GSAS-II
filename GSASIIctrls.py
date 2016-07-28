@@ -3875,15 +3875,6 @@ tutorialCatalog = (
     
     #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title'],
     )
-# Get the tutorial location if set; if not pick a default directory in a logical place
-if GSASIIpath.GetConfigValue('Tutorial_location'):
-    tutorialPath = os.path.abspath(GSASIIpath.GetConfigValue('Tutorial_location'))
-elif sys.platform.lower().startswith('win') and os.path.exists(os.path.abspath(os.path.expanduser('~/My Documents'))):
-    tutorialPath = os.path.abspath(os.path.expanduser('~/My Documents/G2tutorials'))
-elif sys.platform.lower().startswith('win') and os.path.exists(os.path.abspath(os.path.expanduser('~/Documents'))):
-    tutorialPath = os.path.abspath(os.path.expanduser('~/Documents/G2tutorials'))
-else:
-    tutorialPath = os.path.abspath(os.path.expanduser('~/G2tutorials'))
 
 class OpenTutorial(wx.Dialog):
     '''Open a tutorial, optionally copying it to the local disk. Always copy
@@ -3921,6 +3912,7 @@ class OpenTutorial(wx.Dialog):
         config_example.py file. System managers can select to have
         tutorial files installed at a shared location.
         '''
+        self.SetTutorialPath()
         hlp = HelpButton(pnl,msg)
         sizer1.Add((-1,-1),1, wx.EXPAND, 0)
         sizer1.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 0)
@@ -3955,12 +3947,12 @@ class OpenTutorial(wx.Dialog):
         btn = wx.Button(pnl, wx.ID_ANY, "Set download location")
         btn.Bind(wx.EVT_BUTTON, self.SelectDownloadLoc)
         sizer1.Add(btn,0,WACV)
-        self.dataLoc = wx.StaticText(pnl, wx.ID_ANY,tutorialPath)
+        self.dataLoc = wx.StaticText(pnl, wx.ID_ANY,self.tutorialPath)
         sizer1.Add(self.dataLoc,0,WACV)
         sizer.Add(sizer1)
         
         btnsizer = wx.StdDialogButtonSizer()
-        btn = wx.Button(pnl, wx.ID_CANCEL)
+        btn = wx.Button(pnl, wx.ID_CANCEL,"Done")
         btnsizer.AddButton(btn)
         btnsizer.Realize()
         sizer.Add(btnsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
@@ -3968,13 +3960,28 @@ class OpenTutorial(wx.Dialog):
         sizer.Fit(self)
         self.topsizer=sizer
         self.CenterOnParent()
-    
+
+    def SetTutorialPath(self):
+        '''Get the tutorial location if set; if not pick a default
+        directory in a logical place
+        '''
+        if GSASIIpath.GetConfigValue('Tutorial_location'):
+            self.tutorialPath = os.path.abspath(GSASIIpath.GetConfigValue('Tutorial_location'))
+        elif (sys.platform.lower().startswith('win') and
+              os.path.exists(os.path.abspath(os.path.expanduser('~/My Documents')))):
+            self.tutorialPath = os.path.abspath(os.path.expanduser('~/My Documents/G2tutorials'))
+        elif (sys.platform.lower().startswith('win') and
+              os.path.exists(os.path.abspath(os.path.expanduser('~/Documents')))):
+            self.tutorialPath = os.path.abspath(os.path.expanduser('~/Documents/G2tutorials'))
+        else:
+            self.tutorialPath = os.path.abspath(os.path.expanduser('~/G2tutorials'))
+
     def SelectAndDownload(self,event):
         '''Make a list of all tutorials on web and allow user to choose one to
         download and then view
         '''
         indices = [j for j,i in enumerate(tutorialCatalog)
-            if not os.path.exists(os.path.join(tutorialPath,i[0],i[1]))]
+            if not os.path.exists(os.path.join(self.tutorialPath,i[0],i[1]))]
         if not indices:
             G2MessageBox(self,'All tutorials are downloaded','None to download')
             return
@@ -3983,8 +3990,8 @@ class OpenTutorial(wx.Dialog):
         selected = self.ChooseTutorial(choices)
         if selected is None: return
         j = indices[selected]
-        fullpath = os.path.join(tutorialPath,tutorialCatalog[j][0],tutorialCatalog[j][1])
-        fulldir = os.path.join(tutorialPath,tutorialCatalog[j][0])
+        fullpath = os.path.join(self.tutorialPath,tutorialCatalog[j][0],tutorialCatalog[j][1])
+        fulldir = os.path.join(self.tutorialPath,tutorialCatalog[j][0])
         URL = G2BaseURL+'/Tutorials/'+tutorialCatalog[j][0]+'/'
         if GSASIIpath.svnInstallDir(URL,fulldir):
             ShowWebPage(fullpath,self.frame)
@@ -3996,7 +4003,7 @@ class OpenTutorial(wx.Dialog):
         '''Select a previously downloaded tutorial
         '''
         indices = [j for j,i in enumerate(tutorialCatalog)
-            if os.path.exists(os.path.join(tutorialPath,i[0],i[1]))]
+            if os.path.exists(os.path.join(self.tutorialPath,i[0],i[1]))]
         if not indices:
             G2MessageBox(self,'There are no downloaded tutorials','None downloaded')
             return
@@ -4004,7 +4011,7 @@ class OpenTutorial(wx.Dialog):
         selected = self.ChooseTutorial(choices)
         if selected is None: return
         j = indices[selected]
-        fullpath = os.path.join(tutorialPath,tutorialCatalog[j][0],tutorialCatalog[j][1])
+        fullpath = os.path.join(self.tutorialPath,tutorialCatalog[j][0],tutorialCatalog[j][1])
         self.EndModal(wx.ID_OK)
         ShowWebPage(fullpath,self.frame)
 
@@ -4062,9 +4069,9 @@ class OpenTutorial(wx.Dialog):
         'Find the downloaded tutorials and run an svn update on them'
         updated = 0
         for i in tutorialCatalog:
-            if not os.path.exists(os.path.join(tutorialPath,i[0],i[1])): continue
+            if not os.path.exists(os.path.join(self.tutorialPath,i[0],i[1])): continue
             print('Updating '+i[0])
-            GSASIIpath.svnUpdateDir(os.path.join(tutorialPath,i[0]))
+            GSASIIpath.svnUpdateDir(os.path.join(self.tutorialPath,i[0]))
             updated += 0
         if not updated:
             G2MessageBox(self,'Warning, you have no downloaded tutorials','None Downloaded')
@@ -4074,12 +4081,12 @@ class OpenTutorial(wx.Dialog):
         'Download or update all tutorials'
         fail = ''
         for i in tutorialCatalog:
-            if os.path.exists(os.path.join(tutorialPath,i[0],i[1])):
+            if os.path.exists(os.path.join(self.tutorialPath,i[0],i[1])):
                 print('Updating '+i[0])
-                GSASIIpath.svnUpdateDir(os.path.join(tutorialPath,i[0]))
+                GSASIIpath.svnUpdateDir(os.path.join(self.tutorialPath,i[0]))
             else:
-                fullpath = os.path.join(tutorialPath,i[0],i[1])
-                fulldir = os.path.join(tutorialPath,i[0])
+                fullpath = os.path.join(self.tutorialPath,i[0],i[1])
+                fulldir = os.path.join(self.tutorialPath,i[0])
                 URL = G2BaseURL+'/Tutorials/'+i[0]+'/'
                 if not GSASIIpath.svnInstallDir(URL,fulldir):
                     if fail: fail += ', '
@@ -4092,9 +4099,8 @@ class OpenTutorial(wx.Dialog):
         '''Select a download location,
         Cancel resets to the default
         '''
-        global tutorialPath
         dlg = wx.DirDialog(self, "Choose a directory for tutorial downloads:",
-                           defaultPath=tutorialPath)#,style=wx.DD_DEFAULT_STYLE)
+                           defaultPath=self.tutorialPath)#,style=wx.DD_DEFAULT_STYLE)
                            #)
         try:
             if dlg.ShowModal() != wx.ID_OK:
@@ -4117,13 +4123,14 @@ class OpenTutorial(wx.Dialog):
             print('\t'+os.path.join(pth,"help"))
             print('\t'+os.path.join(pth,"Exercises"))
             print('Subdirectories in the above can be deleted to save space\n\n')
-        tutorialPath = pth
-        self.dataLoc.SetLabel(tutorialPath)
+        self.tutorialPath = pth
+        self.dataLoc.SetLabel(self.tutorialPath)
         if GSASIIpath.GetConfigValue('Tutorial_location') == pth: return
         vars = GetConfigValsDocs()
         try:
             vars['Tutorial_location'][1] = pth
             if GSASIIpath.GetConfigValue('debug'): print('Saving Tutorial_location: '+pth)
+            GSASIIpath.SetConfigValue(vars)
             SaveConfigVars(vars)
         except KeyError:
             pass

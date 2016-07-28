@@ -713,8 +713,8 @@ def UpdatePeakGrid(G2frame, data):
                     msg = wg.GridTableMessage(G2frame.PeakTable, 
                         wg.GRIDTABLE_NOTIFY_ROWS_DELETED,0,nDel)
                     G2frame.dataDisplay.ProcessTableMessage(msg)
-                data = G2frame.PeakTable.GetData()
-                G2frame.PatternTree.SetItemPyData(G2frame.PickId,data['peaks'][:-nDel])
+                data['peaks'] = G2frame.PeakTable.GetData()[:-nDel]
+                G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
                 G2frame.dataDisplay.ForceRefresh()
                 setBackgroundColors()
                         

@@ -4750,7 +4750,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     A4mat = np.concatenate((np.concatenate((Amat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     B4mat = np.concatenate((np.concatenate((Bmat,[[0],[0],[0]]),axis=1),[[0,0,0,1],]),axis=0)
     SGData = generalData['SGData']
-    if generalData['Type'] in ['modulated','magnetic']:
+    if generalData['Modulated']:
         SSGData = generalData['SSGData']
     Mydir = generalData['Mydir']
     Super = generalData.get('Super',0)
@@ -4942,7 +4942,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 Set4DMapRoll(dirDict[key])
             SetPeakRoll(dirDict[key])
             SetMapPeaksText(mapPeaks)
-        elif key in ['M',]and generalData['Type'] in ['modulated','magnetic']:  #make a movie file
+        elif key in ['M',]and generalData['Modulated']:  #make a movie file
             G2frame.tau = 0.
             for i in range(10):
                 G2frame.tau += 0.1
@@ -4953,7 +4953,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 if not np.any(Fade):
                     Fade += 1
                 Draw('key down',Fade)
-        elif key in ['+','-','=','0'] and generalData['Type'] in ['modulated','magnetic']:
+        elif key in ['+','-','=','0'] and generalData['Modulated']:
             if keyBox:
                 OnKeyPressed(event)
             return
@@ -4967,7 +4967,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             key = chr(keyCode)
         except AttributeError:       #if from OnKeyBox above
             key = str(event.key).upper()
-        if key in ['+','-','=','0'] and generalData['Type'] in ['modulated','magnetic']:
+        if key in ['+','-','=','0'] and generalData['Modulated']:
             if key == '0':
                 G2frame.tau = 0.
             elif key in ['+','=']:
@@ -5793,7 +5793,7 @@ def PlotStructure(G2frame,data,firstCall=False):
             'u: roll up','d: roll down','l: roll left','r: roll right']
     else:
         choice = [' save as/key:','jpeg','tiff','bmp','c: center on 1/2,1/2,1/2','n: next','p: previous']
-    if generalData['Type'] in ['modulated','magnetic',] and len(drawAtoms):
+    if generalData['Modulated'] and len(drawAtoms):
         choice += ['+: increase tau','-: decrease tau','0: set tau = 0']    #add 'm: make modulation movie'
 
     Tx,Ty,Tz = drawingData['viewPoint'][0]

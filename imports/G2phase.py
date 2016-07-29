@@ -259,6 +259,9 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                     SGData = G2IO.SGData # P 1 -- unlikely to need this!
                     self.warnings += '\nThe GSAS space group was not interpreted(!) and has been set to "P 1".'
                     self.warnings += "Change this in phase's General tab."                       
+            elif 'SPNFLP' in key:
+                spin = {'1':'black','-1':'red'}
+                SpnFlp = [spin[s.strip()] for s in EXPphase[key].split()]                
             elif 'OD    ' in key:
                 SHdata = EXPphase[key].split() # may not have all 9 values
                 SHvals = 9*[0]
@@ -275,7 +278,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                 textureData['Sample phi'] = [False,float(SHvals[8])]
                 shNcof = int(SHvals[1])
         Atoms = []
-        if Ptype == 'nuclear':
+        if Ptype in ['nuclear','magnetic',]:
             for key in keyList:
                 if 'AT' in key:
                     if key[11:] == 'A':
@@ -295,6 +298,10 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                         Atom[7],Atom[8] = G2spc.SytSym(XYZ,SGData)
                         Atom.append(ran.randint(0,sys.maxint))
                         Atoms.append(Atom)
+                    elif key[11:] == 'M' and key[6:8] == 'AT':
+                        S = EXPphase[key]
+                        Mag = [float(S[:10]),float(S[10:20]),float(S[20:30])]
+                        Atoms[-1] = Atoms[-1][:7]+Mag+Atoms[-1][7:]
         elif Ptype == 'macromolecular':
             for key in keyList:
                 if 'AT' in key[6:8]:
@@ -333,7 +340,10 @@ class EXP_ReaderClass(G2IO.ImportPhase):
         general['Type'] = Ptype
         if general['Type'] =='macromolecular':
             general['AtomPtrs'] = [6,4,10,12]
-        else:
+        elif general['Type'] =='magnetic':
+            general['AtomPtrs'] = [3,1,10,12]
+            general['SGData']['SGSpin'] = SpnFlp    
+        else:   #nuclear
             general['AtomPtrs'] = [3,1,7,9]    
         general['SH Texture'] = textureData
         Phase['Atoms'] = Atoms
@@ -439,7 +449,6 @@ class JANA_ReaderClass(G2IO.ImportPhase):
             elif 'qi' in S[:2]:
                 if nqi:
                     raise self.ImportException("Supersymmetry too high; GSAS-II limited to (3+1) supersymmetry")            
-                Type = 'modulated'
                 vec = S.split()[1:]
                 SuperVec = [[float(vec[i]) for i in range(3)],False,4]
                 nqi += 1
@@ -548,6 +557,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
             raise self.ImportException("No cell found")
         Phase = G2IO.SetNewPhase(Name=Title,SGData=SGData,cell=cell+[Volume,])
         Phase['General']['Type'] = Type
+        Phase['General']['Modulated'] = True
         Phase['General']['Super'] = nqi
         Phase['General']['SuperVec'] = SuperVec
         Phase['General']['SuperSg'] = SuperSg

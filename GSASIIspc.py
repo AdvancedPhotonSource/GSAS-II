@@ -92,10 +92,14 @@ def SpcGroup(SGSymbol):
     elif SGData['SGLatt'] == 'R':
         SGData['SGCen'] = np.array(([0,0,0],[1./3.,2./3.,2./3.],[2./3.,1./3.,1./3.]))
     SGData['SGOps'] = []
+    SGData['SGGen'] = []
+    SGData['SGSpin'] = []
     for i in range(SGInfo[5]):
         Mat = np.array(SGInfo[6][i])
         Trns = np.array(SGInfo[7][i])
         SGData['SGOps'].append([Mat,Trns])
+        SGData['SGGen'].append(int(SGInfo[8][i]))
+        SGData['SGSpin'].append('black')
     if SGData['SGLaue'] in '-1':
         SGData['SGSys'] = SysSym[0]
     elif SGData['SGLaue'] in '2/m':
@@ -114,7 +118,7 @@ def SpcGroup(SGSymbol):
         SGData['SGSys'] = SysSym[7]
     SGData['SGPolax'] = SGpolar(SGData)
     SGData['SGPtGrp'],SGData['SSGKl'] = SGPtGroup(SGData)
-    return SGInfo[8],SGData
+    return SGInfo[-1],SGData
 
 def SGErrors(IErr):
     '''
@@ -416,6 +420,233 @@ def SpaceGroup(SGSymbol):
         return
     for l in SGPrint(A):
         print l
+        
+def GetGenSym(SGData):
+    '''
+    Get the space group generator symbols
+    :param SGData: from :func:`SpcGroup`
+    LaueSym = ('-1','2/m','mmm','4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm','m3','m3m')
+    LattSym = ('P','A','B','C','I','F','R')
+    UniqSym = ('','','a','b','c','',)
+    
+    '''
+    if SGData['SGInv']:
+        if SGData['SGLaue'] in ['-1','2/m','mmm']:
+            Ibar = 7
+        elif SGData['SGLaue'] in ['4/m','4/mmm']:
+            Ibar = 1
+        elif SGData['SGLaue'] in ['3R','3mR','3','3m1','31m','6/m','6/mmm']:
+            Ibar = 15 #8+4+2+1
+        else:
+            Ibar = 4
+        Ibarx = Ibar&14
+    else:
+        Ibarx = 8
+        if SGData['SGLaue'] in ['-1','2/m','mmm','m3','m3m']:
+            Ibarx = 0
+    moregen = []
+    for gen in SGData['SGGen']:
+        if SGData['SGLaue'] in ['m3','m3m']:
+            if gen in [1,2,4]: gen = 4
+            elif gen < 7: gen = 0
+        elif SGData['SGLaue'] in ['4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm']:
+            if gen == 2: gen = 4
+            elif gen in [3,5]: gen = 3
+            elif gen == 6:
+                if SGData['SGLaue'] in ['4/m','4/mmm']: gen = 128
+                else: gen = 16
+            elif not SGData['SGInv'] and gen == 12: gen = 8
+            elif not SGData['SGInv'] and SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm'] and gen == 1 : gen = 24
+        if gen == 99:
+            if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']: gen = 3
+            elif SGData['SGLaue'] == 'm3m': gen = 12
+            else: gen = 8
+        elif gen == 98:
+            if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']: gen = 4
+            else: gen = 8
+        elif not SGData['SGInv'] and gen == 23 and SGData['SGLaue'] in ['m3','m3m']: gen = 24
+        elif gen >= 16 and gen != 128:
+            if not SGData['SGInv']: gen = 31
+            else: gen = gen^Ibarx
+        if SGData['SGInv']:
+            if gen < 128:
+                moregen.append(gen^Ibar)
+            else:
+                moregen.append(1)
+    SGData['SGGen'] += moregen
+    OprNames = [GetOprPtrName(str(irtx))[1] for irtx in PackRot(SGData['SGOps'])]
+    if SGData['SGInv']:
+        OprNames += [GetOprPtrName(str(-irtx))[1] for irtx in PackRot(SGData['SGOps'])]
+    Nsyms = len(SGData['SGOps'])
+    if SGData['SGInv']: Nsyms *= 2
+    UsymOp = []
+    OprFlg = []    
+    if Nsyms in [1,3]: NunqOp = 0       #Triclinic acentric OR trigonal 3
+    elif Nsyms == 2:                    #Centric triclinic or acentric momoclinic
+        NunqOp = 1
+        UsymOp.append(OprNames[1])
+        OprFlg.append(SGData['SGGen'][1])
+    elif Nsyms == 4:                    #Point symmetry 2/m, 222, 22m, or 4
+        if '4z' in OprNames[1]:          #Point symmetry 4 or -4
+            NunqOp = 1
+            UsymOp.append(OprNames[1])
+            OprFlg.append(SGData['SGGen'][1])
+        elif not SGData['SGInv']:       #Acentric Orthorhombic
+            if 'm' in OprNames[1:4]:    #22m, 2m2 or m22
+                NunqOp = 2
+                if '2' in OprNames[1]:      #Acentric orthorhombic, 2mm
+                    UsymOp.append(OprNames[2])
+                    OprFlg.append(SGData['SGGen'][2])
+                    UsymOp.append(OprNames[3])
+                    OprFlg.append(SGData['SGGen'][3])
+                elif '2' in OprNames[2]:    #Acentric orthorhombic, m2m
+                    UsymOp.append(OprNames[1])
+                    OprFlg.append(SGData['SGGen'][1])
+                    UsymOp.append(OprNames[3])
+                    OprFlg.append(SGData['SGGen'][3])
+                else:                       #Acentric orthorhombic, mm2
+                    UsymOp.append(OprNames[1])
+                    OprFlg.append(SGData['SGGen'][1])
+                    UsymOp.append(OprNames[2])
+                    OprFlg.append(SGData['SGGen'][2])
+            else:                           #Acentric orthorhombic, 222
+                NunqOp = -3
+                SGData['SGGen'][1:] = [4,2,1]
+                UsymOp.append(OprNames[1])
+                OprFlg.append(SGData['SGGen'][1])
+                UsymOp.append(OprNames[2])
+                OprFlg.append(SGData['SGGen'][2])
+                UsymOp.append(OprNames[3])
+                OprFlg.append(SGData['SGGen'][3])
+        else:                               #Centric Monoclinic
+            NunqOp = 2
+            UsymOp.append(OprNames[1])
+            OprFlg.append(SGData['SGGen'][1])
+            UsymOp.append(OprNames[3])
+            OprFlg.append(SGData['SGGen'][3])
+    elif Nsyms == 6:                    #Point symmetry 32, 3m or 6
+            NunqOp = 1
+            if '6' in OprNames[1]:      #Hexagonal 6/m Laue symmetry
+                UsymOp.append(OprNames[1])
+                OprFlg.append(SGData['SGGen'][1])
+            else:                       #Trigonal
+                UsymOp.append(OprNames[4])
+                OprFlg.append(SGData['SGGen'][3])
+                if '2100' in OprNames[1]: UsymOp[-1] = ' 2100 '
+    elif Nsyms == 8:                    #Point symmetry mmm, 4/m, or 422, etc
+        if '4' in OprNames[1]:           #Tetragonal
+            NunqOp = 2
+            if SGData['SGInv']:         #4/m
+                UsymOp.append(OprNames[1])
+                OprFlg.append(SGData['SGGen'][1])
+                UsymOp.append(OprNames[6])
+                OprFlg.append(SGData['SGGen'][6])
+            else:
+                if 'x' in OprNames[4]:      #4mm type group
+                    UsymOp.append(OprNames[4])
+                    OprFlg.append(5)
+                    UsymOp.append(OprNames[7])
+                    OprFlg.append(7)
+                else:                       #-42m, -4m2, and 422 type groups
+                    UsymOp.append(OprNames[5])
+                    OprFlg.append(7)
+                    UsymOp.append(OprNames[6])
+                    OprFlg.append(18)
+        else:                               #Orthorhombic, mmm
+            NunqOp = 3
+            UsymOp.append(OprNames[1])
+            OprFlg.append(SGData['SGGen'][1])
+            UsymOp.append(OprNames[2])
+            OprFlg.append(SGData['SGGen'][2])
+            UsymOp.append(OprNames[7])
+            OprFlg.append(SGData['SGGen'][7])
+    elif Nsyms == 12 and '3' in OprNames[1]:        #Trigonal
+        NunqOp = 2
+        UsymOp.append(OprNames[3])
+        OprFlg.append(SGData['SGGen'][3])
+        UsymOp.append(OprNames[9])
+        OprFlg.append(SGData['SGGen'][9])
+    elif Nsyms == 12 and '6' in OprNames[1]:        #Hexagonal
+        NunqOp = 2
+        if 'mz' in OprNames[9]:                     #6/m
+            UsymOp.append(OprNames[1])
+            OprFlg.append(SGData['SGGen'][1])
+            UsymOp.append(OprNames[6])
+            OprFlg.append(SGData['SGGen'][6])
+        else:                                       #6mm, -62m, -6m2 or 622
+            UsymOp.append(OprNames[6])
+            OprFlg.append(17)
+            if 'm' in OprNames[1]: OprFlg[-1] = 20
+            UsymOp.append(OprNames[7])
+            OprFlg.append(23)
+    elif Nsyms in [16,24]:
+        if '3' in OprNames[1]:
+            NunqOp = 1
+            UsymOp.append('')
+            OprFlg.append(SGData['SGGen'][3])
+            for i in range(Nsyms):
+                if 'mx' in OprNames[i]:
+                    UsymOp[-1] = OprNames[i]
+                elif 'm11' in OprNames[i]:
+                    UsymOp[-1] = OprNames[i]
+                elif '211' in OprNames[i]:
+                    UsymOp[-1] = OprNames[i]
+                    OprFlg[-1] = 24
+        else:                                     #4/mmm or 6/mmm
+            NunqOp = 3
+            UsymOp.append('  mz  ')
+            OprFlg.append(1)
+            if '4' in OprNames[1]:                  #4/mmm
+                UsymOp.append('  mx  ')
+                OprFlg.append(19)
+                UsymOp.append(' m110 ')
+                OprFlg.append(21)
+            else:                                   #6/mmm
+                UsymOp.append(' m110 ')
+                OprFlg.append(3)
+                UsymOp.append(' m+-0 ')
+                OprFlg.append(7)
+    else:                                           #System is cubic
+        if Nsyms == 48:
+            NunqOp = 2
+            UsymOp.append('  mx  ')
+            OprFlg.append(3)
+            UsymOp.append(' m110 ')
+            OprFlg.append(23)
+        else:
+            NunqOp = 0
+    ncv = len(SGData['SGCen'])
+    if ncv > 1:
+        for icv in range(ncv):
+            if icv:
+                if SGData['SGCen'][icv][0] == 0.5:
+                    if SGData['SGCen'][icv][1] == 0.5:
+                        if SGData['SGCen'][icv][2] == 0.5:
+                            UsymOp.append(' Icen ')
+                        else:
+                            UsymOp.append(' Ccen ')
+                    else:
+                        UsymOp.append(' Bcen ')
+                elif SGData['SGCen'][icv][1] == 0.5:
+                    UsymOp.append(' Acen ')
+                else:
+                    UsymOp.append(' Rcen ')
+    return UsymOp,OprFlg
+    
+def MagSGSym(SGData):
+    SGLaue = SGData['SGLaue']
+    SpnFlp = SGData['SGSpin']
+    if not len(SpnFlp):
+        return SGData['SpGrp']
+    print SGData['SpGrp'],': ',SGData['SGGen'],SpnFlp
+    magSym = SGData['SpGrp'].split()
+    if len(SpnFlp) == 1:
+        if 'red' == SpnFlp[-1]:
+            magSym[1] += "'"
+        return ' '.join(magSym) 
+                   
+        
+    return ' '.join(magSym)
         
 ################################################################################
 #### Superspace group codes
@@ -2022,6 +2253,18 @@ def Muiso2Shkl(muiso,SGData,cell):
     result = so.leastsq(minMus,S0,(np.ones(HKL.shape[0])*muiso,HKL,SGData,A))
     return result[0]
        
+def PackRot(SGOps):
+    IRT = []
+    for ops in SGOps:
+        M = ops[0]
+        irt = 0
+        for j in range(2,-1,-1):
+            for k in range(2,-1,-1):
+                irt *= 3
+                irt += M[k][j]
+        IRT.append(int(irt))
+    return IRT 
+        
 def SytSym(XYZ,SGData):
     '''
     Generates the number of equivalent positions and a site symmetry code for a specified coordinate and space group
@@ -2034,18 +2277,6 @@ def SytSym(XYZ,SGData):
      * The 2nd element is the site multiplicity
 
     '''
-    def PackRot(SGOps):
-        IRT = []
-        for ops in SGOps:
-            M = ops[0]
-            irt = 0
-            for j in range(2,-1,-1):
-                for k in range(2,-1,-1):
-                    irt *= 3
-                    irt += M[k][j]
-            IRT.append(int(irt))
-        return IRT 
-        
     SymName = ''
     Mult = 1
     Isym = 0

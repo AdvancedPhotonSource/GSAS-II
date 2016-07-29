@@ -218,9 +218,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'fast parms':[1.0,1.0,1.0],'log slope':0.9,'Cycles':1,'Results':[],'newDmin':True}
         if 'AtomPtrs' not in generalData:
             generalData['AtomPtrs'] = [3,1,7,9]
-            if generalData['Type'] =='macromolecular':
+            if generalData['Type'] == 'macromolecular':
                 generalData['AtomPtrs'] = [6,4,10,12]
-        if generalData['Type'] in ['modulated','magnetic',]: 
+            elif generalData['Type'] == 'magnetic':
+                generalData['AtomPtrs'] = [3,1,10,12]
+        if generalData['Type'] in ['modulated',]:
+            generalData['Modulated'] = True
+            generalData['Type'] = 'nuclear'
             if 'Super' not in generalData:
                 generalData['Super'] = 1
                 generalData['SuperVec'] = [[0,0,.1],False,4]
@@ -228,6 +232,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             if '4DmapData' not in generalData:
                 generalData['4DmapData'] = mapDefault.copy()
                 generalData['4DmapData'].update({'MapType':'Fobs'})
+        if 'Modulated' not in generalData:
+            generalData['Modulated'] = False
         if 'HydIds' not in generalData:
             generalData['HydIds'] = {}
 # end of patches
@@ -315,7 +321,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         #General.DestroyChildren() # bad, deletes scrollbars on Mac!
         if General.GetSizer():
             General.GetSizer().Clear(True)
-        phaseTypes = ['nuclear','modulated','magnetic','macromolecular','faulted']
+        phaseTypes = ['nuclear','magnetic','macromolecular','faulted']
         SetupGeneral()
         generalData = data['General']
         Map = generalData['Map']
@@ -368,23 +374,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 if not len(generalData['AtomTypes']):             #can change only if no atoms!
                     generalData['Type'] = TypeTxt.GetValue()
                     pages = [G2frame.dataDisplay.GetPageText(PageNum) for PageNum in range(G2frame.dataDisplay.GetPageCount())]
-                    if generalData['Type'] in ['modulated','magnetic']:
-                        if 'SuperSg' not in generalData:
-                            generalData['SuperSg'] = SetDefaultSSsymbol()
-                        generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
-                        if 'MC/SA' in pages:
-                            pass
-#                            G2frame.dataDisplay.DeletePage(pages.index('MC/SA'))   #this crashes!!
-                        if 'Layers' in pages:
-                            pass
-#                            G2frame.dataDisplay.DeletePage(pages.index('Layers'))
-                        if 'Wave Data' not in pages:
-                            G2frame.waveData = wx.ScrolledWindow(G2frame.dataDisplay)
-                            G2frame.dataDisplay.InsertPage(3,G2frame.waveData,'Wave Data')
-                            Id = wx.NewId()
-                            TabSelectionIdDict[Id] = 'Wave Data'
-                        wx.CallAfter(UpdateGeneral)
-                    elif generalData['Type'] == 'faulted':
+                    if generalData['Type'] == 'faulted':
                         G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadDIFFaX, id=G2gd.wxID_LOADDIFFAX)
                         G2frame.dataFrame.Bind(wx.EVT_MENU, OnSimulate, id=G2gd.wxID_LAYERSIMULATE)
                         G2frame.dataFrame.Bind(wx.EVT_MENU, OnSeqSimulate, id=G2gd.wxID_SEQUENCESIMULATE)
@@ -444,7 +434,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     SGTxt.SetValue(generalData['SGData']['SpGrp'])
                     msg = 'Space Group Information'
                     G2gd.SGMessageBox(General,msg,text,table).Show()
-                if generalData['Type'] in ['modulated',]:
+                if generalData['Modulated']:
                     generalData['SuperSg'] = SetDefaultSSsymbol()
                     generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
                 Atoms = data['Atoms']
@@ -455,6 +445,41 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     atom[cx+4] = Sytsym
                     atom[cx+5] = Mult
                 wx.CallAfter(UpdateGeneral)
+                
+            def OnModulated(event):
+                if not len(generalData['AtomTypes']):             #can change only if no atoms!
+                    pages = [G2frame.dataDisplay.GetPageText(PageNum) for PageNum in range(G2frame.dataDisplay.GetPageCount())]
+                    if generalData['Type'] in ['nuclear','magnetic']:
+                        generalData['Modulated'] = modulated.GetValue()
+                        if generalData['Modulated']:
+                            if 'SuperSg' not in generalData:
+                                generalData['SuperSg'] = SetDefaultSSsymbol()
+                            generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
+                            if 'Super' not in generalData:
+                                generalData['Super'] = 1
+                                generalData['SuperVec'] = [[0,0,.1],False,4]
+                                generalData['SSGData'] = {}
+                            if '4DmapData' not in generalData:
+                                generalData['4DmapData'] = mapDefault.copy()
+                                generalData['4DmapData'].update({'MapType':'Fobs'})
+                            if 'MC/SA' in pages:
+                                pass
+    #                            G2frame.dataDisplay.DeletePage(pages.index('MC/SA'))   #this crashes!!
+                            if 'Layers' in pages:
+                                pass
+    #                            G2frame.dataDisplay.DeletePage(pages.index('Layers'))
+                            if 'Wave Data' not in pages:
+                                G2frame.waveData = wx.ScrolledWindow(G2frame.dataDisplay)
+                                G2frame.dataDisplay.InsertPage(3,G2frame.waveData,'Wave Data')
+                                Id = wx.NewId()
+                                TabSelectionIdDict[Id] = 'Wave Data'
+                        else:
+                            if 'Wave Data' in pages:
+                                G2frame.dataDisplay.DeletePage(pages.index('Wave Data'))
+                        wx.CallAfter(UpdateGeneral)
+                else:
+                    G2frame.ErrorDialog('Modulation type change error','Can change modulation only if there are no atoms')
+                    modulated.SetValue(generalData['Modulated'])                
                 
             nameSizer = wx.BoxSizer(wx.HORIZONTAL)
             nameSizer.Add(wx.StaticText(General,-1,' Phase name: '),0,WACV)
@@ -471,6 +496,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             SGTxt = wx.TextCtrl(General,-1,value=generalData['SGData']['SpGrp'],style=wx.TE_PROCESS_ENTER)
             SGTxt.Bind(wx.EVT_TEXT_ENTER,OnSpaceGroup)
             nameSizer.Add(SGTxt,0,WACV)
+            if generalData['Type'] in ['nuclear','magnetic']:
+                modulated = wx.CheckBox(General,label='Modulated? ')
+                modulated.SetValue(generalData['Modulated'])
+                modulated.Bind(wx.EVT_CHECKBOX,OnModulated)
+                nameSizer.Add(modulated,0,WACV)           
             return nameSizer
             
         def CellSizer():
@@ -683,6 +713,37 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 mattTxt.SetBackgroundColour(VERY_LIGHT_GREY)
                 denSizer.Add(mattTxt,0,WACV)
             return denSizer,denTxt,mattTxt
+            
+        def MagSizer():
+            
+            def OnSpinOp(event):
+                Obj = event.GetEventObject()
+                isym = Indx[Obj.GetId()]
+                SGData['SGSpin'][isym] = Obj.GetValue()
+                wx.CallAfter(UpdateGeneral)                               
+
+            SGData = generalData['SGData']            
+            Indx = {}
+            MagSym = generalData['SGData']['SpGrp'].split()
+            magSizer = wx.BoxSizer(wx.VERTICAL)
+            magSizer.Add(wx.StaticText(General,label=' Magnetic spin operator selection:'),0,WACV)
+            magSizer.Add(wx.StaticText(General,label='NB: UNDER CONSTRUCTION - DO NOT USE'),0,WACV)
+            if not len(GenSym):
+                magSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
+                return magSizer
+            spinSizer = wx.BoxSizer(wx.HORIZONTAL)
+            spinColor = ['black','red']
+            for isym,sym in enumerate(GenSym):
+                spinSizer.Add(wx.StaticText(General,label='%s: '%(sym.strip())),0,WACV)                
+                spinOp = wx.ComboBox(General,value=SGData['SGSpin'][isym],choices=spinColor,
+                    style=wx.CB_READONLY|wx.CB_DROPDOWN)                
+                Indx[spinOp.GetId()] = isym
+                spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
+                spinSizer.Add(spinOp,0,WACV)
+            MagSym = G2spc.MagSGSym(SGData)
+            spinSizer.Add(wx.StaticText(General,label=' Magnetic space group: '+MagSym),0,WACV)
+            magSizer.Add(spinSizer)
+            return magSizer
             
         def PawleySizer():
             
@@ -1187,7 +1248,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mainSizer.Add(ElemSizer())
         G2G.HorizontalLine(mainSizer,General)
         
-        if generalData['Type'] in ['modulated','magnetic',]:
+        if generalData['Type'] == 'magnetic':
+            GenSym,GenFlg = G2spc.GetGenSym(generalData['SGData'])
+            mainSizer.Add(MagSizer())
+            G2G.HorizontalLine(mainSizer,General)
+
+        if generalData['Modulated']:
             G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_SINGLEMCSA,False)
             G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_MULTIMCSA,False)
             G2frame.dataFrame.GeneralCalc.Enable(G2gd.wxID_4DCHARGEFLIP,True)
@@ -1226,7 +1292,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         sub = G2frame.PatternTree.AppendItem(parent=
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)
         G2frame.PatternTree.SetItemPyData(sub,newPhase)
-#        G2gd.MovePatternTreeToGrid(G2frame,sub) #bring up new phase General tab
         
 ################################################################################
 #####  Atom routines
@@ -1246,7 +1311,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 noSkip = True
                 if Atoms.GetColLabelValue(c) == 'refine':
                     Type = generalData['Type']
-                    if Type in ['nuclear','macromolecular','modulated','faulted',]:
+                    if Type in ['nuclear','macromolecular','faulted',]:
                         choice = ['F - site fraction','X - coordinates','U - thermal parameters']
                     elif Type in ['magnetic',]:
                         choice = ['F - site fraction','X - coordinates','U - thermal parameters','M - magnetic moment']
@@ -1397,6 +1462,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             if CSI[2][i]:
                                 Atoms.SetCellStyle(r,ci,WHITE,False)
                     SetupGeneral()
+                elif Atoms.GetColLabelValue(c) in ['Mx','My','Mz']:
+                    pass
                 elif Atoms.GetColLabelValue(c) == 'I/A':            #note use of text color to make it vanish!
                     if atomData[r][c] == 'I':
                         Uij = atomData[r][c+2:c+8]
@@ -1625,6 +1692,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             Types = [wg.GRID_VALUE_STRING,
                 wg.GRID_VALUE_CHOICE+AAchoice,
                 wg.GRID_VALUE_STRING] + Types
+        elif generalData['Type'] == 'magnetic':
+            colLabels = colLabels[:7]+['Mx','My','Mz']+colLabels[7:]
+            Types = Types[:7]+3*[wg.GRID_VALUE_FLOAT+':10,4',]+Types[7:]
         SGData = data['General']['SGData']
         G2frame.dataFrame.SetStatusText('')
         if SGData['SGPolax']:
@@ -1667,12 +1737,20 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
         Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)
         if generalData['Type'] == 'macromolecular':
-            atomData.append([0,Name,'',Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
+            atomData.append([0,Name,'',Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['nuclear','faulted',]:
-            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
-        elif generalData['Type'] in ['modulated','magnetic',]:
-            atomData.append([Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
-                {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+            if generalData['Modulated']:
+                atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
+                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+            else:
+                atomData.append([Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
+        elif generalData['Type'] == 'magnetic':
+            if generalData['Modulated']:
+                atomData.append([Name,El,'',x,y,z,1.,0.,0.,0.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId,[],[],
+                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+            else:
+                atomData.append([Name,El,'',x,y,z,1.,0.,0.,0.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
+            
         SetupGeneral()
         data['Drawing']['Atoms'] = []
         UpdateDrawAtoms()
@@ -1857,7 +1935,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'L','K','M','F','P','S','T','W','Y','V','M',' ',' ',' ']
         generalData = data['General']
         SGData = generalData['SGData']
-        if generalData['Type'] in ['nuclear','modulated','faulted',]:
+        if generalData['Type'] in ['nuclear','faulted',]:
             if oldatom:
                 opr = oldatom[5]
                 if atom[9] == 'A':                    
@@ -1870,6 +1948,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 atomInfo = [atom[:2]+atom[3:6]+['1',]+['vdW balls',]+
                     ['',]+[[255,255,255],]+atom[9:]+[[],[]]][0]
             ct,cs = [1,8]         #type & color
+        elif  generalData['Type'] == 'magnetic':
+            atomInfo = [atom[:2]+atom[3:6]+atom[7:10]+['1',]+['vdW balls',]+
+                ['',]+[[255,255,255],]+atom[12:]+[[],[]]][0]
+            ct,cs = [1,11]         #type & color
         elif generalData['Type'] == 'macromolecular':
             try:
                 oneLetter = AA3letter.index(atom[1])
@@ -1893,11 +1975,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if generalData['Type'] == 'macromolecular':
             atomData.insert(indx,[0,Name,'',Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['nuclear','faulted',]:
-            atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
-        elif generalData['Type'] in ['modulated','magnetic']:
-            atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],
-                {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
-        SetupGeneral()
+            if generalData['Modulated']:
+                atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],
+                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+            else:
+                atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
+            SetupGeneral()
         data['Drawing']['Atoms'] = []
         UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
@@ -3592,14 +3675,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if 'showRigidBodies' not in drawingData:
             drawingData['showRigidBodies'] = True
         cx,ct,cs,ci = [0,0,0,0]
-        if generalData['Type'] in ['nuclear','modulated','faulted',]:
+        if generalData['Type'] in ['nuclear','faulted',]:
             cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index
         elif generalData['Type'] == 'macromolecular':
             cx,ct,cs,ci = [5,4,9,20]         #x, type, style & index
         elif generalData['Type'] == 'magnetic':
-            cx,ct,cs,ci = [2,1,6,20]         #x, type, style & index
-#        elif generalData['Type'] == 'modulated':
-#           ?????   for future
+            cx,ct,cs,ci = [2,1,9,20]         #x, type, style & index
         drawingData['atomPtrs'] = [cx,ct,cs,ci]
         if not drawingData.get('Atoms'):
             for atom in atomData:
@@ -3866,6 +3947,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             styleChoice = [' ','lines','vdW balls','sticks','balls & sticks','ellipsoids','backbone','ribbons','schematic']
             labelChoice = [' ','type','name','number','residue','1-letter','chain']
             Types[9] = wg.GRID_VALUE_CHOICE+": ,type,name,number,residue,1-letter,chain"
+        elif generalData['Type'] == 'magnetic':
+            colLabels = colLabels[:5]+['Mx','My','Mz']+colLabels[5:]
+            Types = Types[:5]+3*[wg.GRID_VALUE_FLOAT+':10,4',]+Types[5:]
         table = []
         rowLabels = []
         for i,atom in enumerate(drawingData['Atoms']):
@@ -6739,7 +6823,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             PawleyPeaks = data['Pawley ref']                        
             rowLabels = []
             for i in range(len(PawleyPeaks)): rowLabels.append(str(i))
-            if generalData['Type'] in ['modulated','magnetic',]:
+            if generalData['Modulated']:
                 colLabels = ['h','k','l','m','mul','d','refine','Fsq(hkl)','sig(Fsq)']
                 Types = 5*[wg.GRID_VALUE_LONG,]+[wg.GRID_VALUE_FLOAT+':10,4',wg.GRID_VALUE_BOOL,]+ \
                     2*[wg.GRID_VALUE_FLOAT+':10,2',]
@@ -6770,7 +6854,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         dmin = generalData['Pawley dmin']
         PawleyPeaks = []
         HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
-        if generalData['Type'] in ['modulated','magnetic',]:
+        if generalData['Modulated']:
             Vec,x,maxH = generalData['SuperVec']
             SSGData = G2spc.SSpcGroup(SGData,generalData['SuperSg'])[1]
             wx.BeginBusyCursor()
@@ -6809,7 +6893,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Vst = 1.0/data['General']['Cell'][7]     #Get volume
         generalData = data['General']
         im = 0
-        if generalData['Type'] in ['modulated','magnetic',]:
+        if generalData['Modulated']:
             im = 1
         HistoNames = filter(lambda a:Histograms[a]['Use']==True,Histograms.keys())
         PatternId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,HistoNames[0])
@@ -6867,7 +6951,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         refData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,  \
             PatternId,'Reflection Lists'))[PhaseName]['RefList']
         im = 0
-        if data['General']['Type'] in ['modulated','magnetic',]:
+        if data['General']['Modulated']:
             im = 1
         Inv = data['General']['SGData']['SGInv']
         mult = 0.5
@@ -7095,7 +7179,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             mapData.update(G2mth.OmitMap(data,ReflData,pgbar))
             pgbar.Destroy()
         else:
-            if generalData['Type'] in ['modulated',]:
+            if generalData['Modulated']:
                 dim = '4D '
                 G2mth.Fourier4DMap(data,ReflData)
             else:
@@ -7353,7 +7437,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         elif text == 'Layers':
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.LayerData)
             UpdateLayerData()
-        elif text == 'Wave Data' and data['General']['Type'] in ['modulated','magnetic']:
+        elif text == 'Wave Data' and data['General']['Modulated']:
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.WavesData)
             UpdateWavesData()
             wx.CallAfter(G2plt.PlotStructure,G2frame,data,firstCall=True)
@@ -7434,7 +7518,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         for id in G2frame.dataFrame.ReImportMenuId:     #loop over submenu items
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnReImport, id=id)
         # Wave Data
-        if data['General']['Type'] in ['modulated','magnetic']:
+        if data['General']['Modulated']:
             FillSelectPageMenu(TabSelectionIdDict, G2frame.dataFrame.WavesData)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnWaveVary, id=G2gd.wxID_WAVEVARY)
         # Stacking faults 
@@ -7510,6 +7594,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     #if isinstance(data['MCSA']['Results'],dict):
     if 'dict' in str(type(data['MCSA']['Results'])):
         data['MCSA']['Results'] = []
+    if 'Modulated' not in data['General']:
+        data['General']['Modulated'] = False
+    if 'modulated' in data['General']['Type']:
+        data['General']['Modulated'] = True
+        data['General']['Type'] = 'nuclear'
+        
 #end patch    
 
     global rbAtmDict   
@@ -7535,7 +7625,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.gridList.append(Atoms)
     G2frame.dataDisplay.AddPage(Atoms,'Atoms')
     Pages.append('Atoms')
-    if data['General']['Type'] in ['modulated','magnetic']:
+    if data['General']['Modulated']:
         G2frame.waveData = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(G2frame.waveData,'Wave Data')
         Pages.append('Wave Data') 
@@ -7550,7 +7640,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.gridList.append(drawAtoms)
     G2frame.dataDisplay.AddPage(drawAtoms,'Draw Atoms')
     Pages.append('Draw Atoms')
-    if data['General']['Type'] not in ['modulated','magnetic','faulted',]:
+    if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
         RigidBodies = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(RigidBodies,'RB Models')
         Pages.append('RB Models')
@@ -7558,7 +7648,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
     G2frame.dataDisplay.gridList.append(MapPeaks)    
     G2frame.dataDisplay.AddPage(MapPeaks,'Map peaks')
     Pages.append('Map peaks')
-    if data['General']['Type'] not in ['modulated','magnetic','faulted',]:
+    if data['General']['Type'] not in ['faulted',] and not data['General']['Modulated']:
         G2frame.MCSA = wx.ScrolledWindow(G2frame.dataDisplay)
         G2frame.dataDisplay.AddPage(G2frame.MCSA,'MC/SA')
         Pages.append('MC/SA')

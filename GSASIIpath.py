@@ -450,6 +450,7 @@ def svnInstallDir(URL,loadpath):
         print(60*"=")
         print err
         return False
+    print ("Files installed at: "+loadpath)
     return True
             
 def IPyBreak_base():

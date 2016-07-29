@@ -3114,7 +3114,7 @@ def GetFobsSq(Histograms,Phases,parmDict,calcControls):
                     continue
                 Phase = Phases[phase]
                 im = 0
-                if Phase['General']['Type'] in ['modulated','magnetic']:
+                if Phase['General']['Modulated']:
                     im = 1
                 pId = Phase['pId']
                 phfx = '%d:%d:'%(pId,hId)
@@ -3250,7 +3250,7 @@ def getPowderProfile(parmDict,x,varylist,Histogram,Phases,calcControls,pawleyLoo
         SGData = Phase['General']['SGData']
         SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
         im = 0
-        if Phase['General']['Type'] in ['modulated','magnetic']:
+        if Phase['General']['Modulated']:
             SSGData = Phase['General']['SSGData']
             SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
             im = 1  #offset in SS reflection list
@@ -3429,7 +3429,7 @@ def getPowderProfileDerv(parmDict,x,varylist,Histogram,Phases,rigidbodyDict,calc
         SGData = Phase['General']['SGData']
         SGMT = np.array([ops[0].T for ops in SGData['SGOps']])
         im = 0
-        if Phase['General']['Type'] in ['modulated','magnetic']:
+        if Phase['General']['Modulated']:
             SSGData = Phase['General']['SSGData']
             SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
             im = 1  #offset in SS reflection list
@@ -3687,7 +3687,7 @@ def dervHKLF(Histogram,Phase,calcControls,varylist,parmDict,rigidbodyDict):
     phfx = '%d:%d:'%(Phase['pId'],hId)
     SGData = Phase['General']['SGData']
     im = 0
-    if Phase['General']['Type'] in ['modulated','magnetic']:
+    if Phase['General']['Modulated']:
         SSGData = Phase['General']['SSGData']
         SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
         im = 1  #offset in SS reflection list
@@ -3978,7 +3978,7 @@ def errRefine(values,HistoPhases,parmDict,varylist,calcControls,pawleyLookup,dlg
             im = 0
             if parmDict[phfx+'Scale'] < 0.:
                 parmDict[phfx+'Scale'] = .001                
-            if Phase['General']['Type'] in ['modulated','magnetic']:
+            if Phase['General']['Modulated']:
                 SSGData = Phase['General']['SSGData']
                 SSGMT = np.array([ops[0].T for ops in SSGData['SSGOps']])
                 im = 1  #offset in SS reflection list

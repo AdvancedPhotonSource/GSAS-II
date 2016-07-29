@@ -1,7 +1,7 @@
 C Space group access routines for python
 
       SUBROUTINE SGFORPY(SPG,LAUE,SGINV,SGLATT,SGUNIQ,SGPOL,
-     1  SGNOPS,SGMTRX,SGTRNS,IERR)
+     1  SGNOPS,SGMTRX,SGTRNS,SGGEN,IERR)
 Cf2py intent(in)  SPG
 Cf2py intent(out) LAUE
 Cf2py intent(out) SGINV
@@ -11,11 +11,12 @@ Cf2py intent(out) SGPOL
 Cf2py intent(out) SGNOPS
 Cf2py intent(out) SGMTRX
 Cf2py intent(out) SGTRNS
+Cf2py intent(out) SGGEN
 Cf2py intent(out) IERR
 
       CHARACTER*(20) SPG
       INTEGER*4     LAUE,SGINV,SGLATT,SGUNIQ,SGNOPS,IERR,SGNCEN
-      REAL*4        SGMTRX(24,3,3),SGTRNS(24,3)
+      REAL*4        SGMTRX(24,3,3),SGTRNS(24,3),SGGEN(24)
       REAL*4        RT(5,4,25),CEN(3,4)
       INTEGER*4     JRT(3,5,24)
 
@@ -29,6 +30,7 @@ Cf2py intent(out) IERR
             SGTRNS(K,I) = JRT(I,4,K)/12.
           END DO
         END DO
+        SGGEN(K) = JRT(3,5,K)
       END DO
       RETURN
       END

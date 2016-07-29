@@ -1028,6 +1028,7 @@ def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
         'General':{
             'Name':Name,
             'Type':'nuclear',
+            'Modulated':False,
             'AtomPtrs':[3,1,7,9],
             'SGData':SGData,
             'Cell':[False,]+cell,
@@ -1052,7 +1053,7 @@ def SetNewPhase(Name='New Phase',SGData=None,cell=None,Super=None):
         'RBModels':{},
         }
     if Super and Super.get('Use',False):
-        phaseData['General'].update({'Type':'modulated','Super':True,'SuperSg':Super['ssSymb']})
+        phaseData['General'].update({'Modulated':True,'Super':True,'SuperSg':Super['ssSymb']})
         phaseData['General']['SSGData'] = G2spc.SSpcGroup(SGData,Super['ssSymb'])
         phaseData['General']['SuperVec'] = [Super['ModVec'],False,Super['maxH']]
 

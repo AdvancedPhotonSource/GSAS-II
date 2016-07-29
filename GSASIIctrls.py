@@ -3838,11 +3838,14 @@ tutorialCatalog = (
 
     ['StartingGSASII', 'Starting GSAS.htm', 'Starting GSAS-II'],
        
+    ['LabData', 'Laboratory X.htm', 'Fitting laboratory X-ray powder data for fluoroapatite'],
+    ['CWNeutron', 'Neutron CW Powder Data.htm', 'CW Neutron Powder fit for Yttrium-Iron Garnet'],
+
     ['FitPeaks', 'Fit Peaks.htm', 'Fitting individual peaks & autoindexing'],
+    ['CFjadarite', 'Charge Flipping in GSAS.htm', '     Charge Flipping structure solution for jadarite'],
+    ['CFsucrose', 'Charge Flipping - sucrose.htm','     Charge Flipping structure solution for sucrose'],
     ['BkgFit', 'FitBkgTut.htm',  'Fitting the Starting Background using Fixed Points'],
        
-    ['CWNeutron', 'Neutron CW Powder Data.htm', 'CW Neutron Powder fit for Yttrium-Iron Garnet'],
-    ['LabData', 'Laboratory X.htm', 'Fitting laboratory X-ray powder data for fluoroapatite'],
     ['CWCombined', 'Combined refinement.htm', 'Combined X-ray/CW-neutron refinement of PbSO4'],
     ['TOF-CW Joint Refinement', 'TOF combined XN Rietveld refinement in GSAS.htm', 'Combined X-ray/TOF-neutron Rietveld refinement'],
     ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets'],
@@ -3853,24 +3856,22 @@ tutorialCatalog = (
     ['StackingFaults-III', 'Stacking Faults-III.htm', 'Stacking fault simulations for Georgia kaolinite'],
         
     ['CFXraySingleCrystal', 'CFSingleCrystal.htm', 'Charge Flipping structure solution with Xray single crystal data'],       
-    ['CFjadarite', 'Charge Flipping in GSAS.htm', 'Charge Flipping structure solution for jadarite'],
-    ['CFsucrose', 'Charge Flipping - sucrose.htm', 'Charge Flipping structure solution for sucrose'],
     ['TOF Charge Flipping', 'Charge Flipping with TOF single crystal data in GSASII.htm', 'Charge flipping with neutron TOF single crystal data'],
-    ['MCsimanneal', 'MCSA in GSAS.htm', 'Monte-Carlo simulated annealing structure'],
+    ['MCsimanneal', 'MCSA in GSAS.htm', 'Monte-Carlo simulated annealing structure determination'],
         
     ['MerohedralTwins', 'Merohedral twin refinement in GSAS.htm', 'Merohedral twin refinements'],
 
     ['2DCalibration', 'Calibration of an area detector in GSAS.htm', 'Calibration of an area detector'],
-    ['2DIntegration', 'Integration of area detector data in GSAS.htm', 'Integration of area detector data'],
+    ['2DIntegration', 'Integration of area detector data in GSAS.htm', '     Integration of area detector data'],
     ['TOF Calibration', 'Calibration of a TOF powder diffractometer.htm', 'Calibration of a Neutron TOF diffractometer'],
     ['TOF Single Crystal Refinement', 'TOF single crystal refinement in GSAS.htm', 'Single crystal refinement from TOF data'],
        
     ['2DStrain', 'Strain fitting of 2D data in GSAS-II.htm', 'Strain fitting of 2D data'],
     ['2DTexture', 'Texture analysis of 2D data in GSAS-II.htm', 'Texture analysis of 2D data'],
               
-    ['SAimages', 'Small Angle Image Processing.htm', 'Image Processing of small angle x-ray data'],
-    ['SAfit', 'Fitting Small Angle Scattering Data.htm', 'Fitting small angle x-ray data (alumina powder)'],
     ['SAsize', 'Small Angle Size Distribution.htm', 'Small angle x-ray data size distribution (alumina powder)'],
+    ['SAfit', 'Fitting Small Angle Scattering Data.htm', '     Fitting small angle x-ray data (alumina powder)'],
+    ['SAimages', 'Small Angle Image Processing.htm', 'Image Processing of small angle x-ray data'],
     ['SAseqref', 'Sequential Refinement of Small Angle Scattering Data.htm', 'Sequential refinement with small angle scattering data'],
     
     #['ExampleDir', 'ExamplePage.html', 'Example Tutorial Title'],
@@ -4034,7 +4035,7 @@ class OpenTutorial(wx.Dialog):
             'double-click closes the dialog'
             dlg.EndModal(wx.ID_OK)
         dlg = wx.Dialog(self,wx.ID_ANY,
-                        'Select a tutorial to view',
+                        'Select a tutorial to view. NB: indented ones require prerequisite',
                         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         pnl = wx.Panel(dlg)
         sizer = wx.BoxSizer(wx.VERTICAL)

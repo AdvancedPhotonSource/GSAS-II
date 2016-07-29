@@ -889,7 +889,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
         if General['Type'] == 'macromolecular':
             line = ' res no residue chain'+line
         print >>pFile,line
-        if General['Type'] in ['nuclear','modulated','magnetic','faulted',]:
+        if General['Type'] in ['nuclear','magnetic','faulted',]:
             print >>pFile,135*'-'
             for i,at in enumerate(Atoms):
                 line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cx])+'%10.5f'%(at[cx+1])+ \
@@ -1075,7 +1075,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
             phaseVary += cellVary(pfx,SGData)       #also fills in symmetry required constraints 
         SSGtext = []    #no superstructure
         im = 0
-        if General['Type'] in ['modulated','magnetic']:
+        if General['Modulated']:
             im = 1      #refl offset
             Vec,vRef,maxH = General['SuperVec']
             phaseDict.update({pfx+'mV0':Vec[0],pfx+'mV1':Vec[1],pfx+'mV2':Vec[2]})
@@ -1162,7 +1162,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                                 for eqv in equiv[1:]:
                                     eqv[1] /= coef
                                 G2mv.StoreEquivalence(name,equiv[1:])
-                if General['Type'] in ['modulated','magnetic']:
+                if General['Modulated']:
                     AtomSS = at[-1]['SS1']
                     waveType = AtomSS['waveType']
                     phaseDict[pfx+'waveType:'+str(i)] = waveType
@@ -1253,7 +1253,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                         print >>pFile,' ( 1)    %s'%(SGtable[0])
                 PrintRBObjects(resRBData,vecRBData)
                 PrintAtoms(General,Atoms)
-                if General['Type'] in ['modulated','magnetic']:
+                if General['Modulated']:
                     PrintWaves(General,Atoms)
                 print >>pFile,'\n Unit cell: a = %.5f'%(cell[1]),' b = %.5f'%(cell[2]),' c = %.5f'%(cell[3]), \
                     ' alpha = %.3f'%(cell[4]),' beta = %.3f'%(cell[5]),' gamma = %.3f'%(cell[6]), \
@@ -1836,7 +1836,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
             print >>pFile,ptstr
             print >>pFile,sigstr
         ik = 6  #for Pawley stuff below
-        if General['Type'] in ['modulated','magnetic']:
+        if General['Modulated']:
             ik = 7
             Vec,vRef,maxH = General['SuperVec']
             if vRef:
@@ -1908,7 +1908,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                             atomsSig[str(i)+':'+str(ind)] = sigDict[names[ind]]
                 ind = General['AtomTypes'].index(at[ct])
                 General['Mass'] += General['AtomMass'][ind]*at[cx+3]*at[cx+5]
-                if General['Type'] in ['modulated','magnetic']:
+                if General['Modulated']:
                     AtomSS = at[-1]['SS1']
                     waveType = AtomSS['waveType']
                     for Stype in ['Sfrac','Spos','Sadp','Smag']:
@@ -1940,7 +1940,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                     wavesSig[name] = sigDict[pfx+name]
                     
             PrintAtomsAndSig(General,Atoms,atomsSig)
-            if General['Type'] in ['modulated','magnetic']:
+            if General['Modulated']:
                 PrintWavesAndSig(General,Atoms,wavesSig)
             
         
@@ -2079,7 +2079,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
         SGData = Phases[phase]['General']['SGData']
         cell = Phases[phase]['General']['Cell'][1:7]
         A = G2lat.cell2A(cell)
-        if Phases[phase]['General']['Type'] in ['modulated','magnetic']:
+        if Phases[phase]['General']['Modulated']:
             SSGData = Phases[phase]['General']['SSGData']
             Vec,x,maxH = Phases[phase]['General']['SuperVec']
         pId = Phases[phase]['pId']
@@ -2194,7 +2194,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     refList = []
                     Uniq = []
                     Phi = []
-                    if Phases[phase]['General']['Type'] in ['modulated','magnetic']:
+                    if Phases[phase]['General']['Modulated']:
                         ifSuper = True
                         HKLd = np.array(G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A))
                         HKLd = G2mth.sortArray(HKLd,4,reverse=True)

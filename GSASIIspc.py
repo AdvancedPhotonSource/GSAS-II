@@ -98,7 +98,8 @@ def SpcGroup(SGSymbol):
         Mat = np.array(SGInfo[6][i])
         Trns = np.array(SGInfo[7][i])
         SGData['SGOps'].append([Mat,Trns])
-        SGData['SGGen'].append(int(SGInfo[8][i]))
+        if 'list' in str(type(SGInfo[8])):        #patch for old fortran bin?
+            SGData['SGGen'].append(int(SGInfo[8][i]))
         SGData['SGSpin'].append('black')
     if SGData['SGLaue'] in '-1':
         SGData['SGSys'] = SysSym[0]

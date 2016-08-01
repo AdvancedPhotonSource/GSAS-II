@@ -1583,9 +1583,9 @@ class DataFrame(wx.Frame):
             id=wxID_INSTPRMRESET, kind=wx.ITEM_NORMAL,text='Reset profile')            
         self.InstEdit.Append(help='Load instrument profile parameters from file', 
             id=wxID_INSTLOAD, kind=wx.ITEM_NORMAL,text='Load profile...')            
-        self.InstEdit.Append(help='Save all instrument profile parameters to one file', 
-            id=wxID_INSTSAVE, kind=wx.ITEM_NORMAL,text='Save profile...')
         self.InstEdit.Append(help='Save instrument profile parameters to file', 
+            id=wxID_INSTSAVE, kind=wx.ITEM_NORMAL,text='Save profile...')
+        self.InstEdit.Append(help='Save all instrument profile parameters to one file', 
             id=wxID_INSTSAVEALL, kind=wx.ITEM_NORMAL,text='Save all profile...')            
         self.InstEdit.Append(help='Copy instrument profile parameters to other histograms', 
             id=wxID_INSTCOPY, kind=wx.ITEM_NORMAL,text='Copy')

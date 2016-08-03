@@ -3486,7 +3486,11 @@ def SaveConfigVars(vars,parent=None):
                 eval(vars[var][1]) # test for an expression
                 fp.write(var + ' = ' + str(vars[var][1])+'\n')
             except: # must be a string
-                fp.write(var + ' = "' + str(vars[var][1])+'"\n')
+                varstr = vars[var][1]
+                if '\\' in varstr:
+                    fp.write(var + ' = os.path.normpath("' + varstr.replace('\\','/') +'")\n')
+                else:
+                    fp.write(var + ' = "' + str(varstr)+'"\n')
         if vars[var][3]:
             fp.write("'''" + str(vars[var][3]) + "\n'''\n\n")
     fp.close()
@@ -3849,7 +3853,7 @@ tutorialCatalog = (
     ['CWCombined', 'Combined refinement.htm', 'Combined X-ray/CW-neutron refinement of PbSO4'],
     ['TOF-CW Joint Refinement', 'TOF combined XN Rietveld refinement in GSAS.htm', 'Combined X-ray/TOF-neutron Rietveld refinement'],
     ['SeqRefine', 'SequentialTutorial.htm', 'Sequential refinement of multiple datasets'],
-    ['SeqParametric', 'ParametricFitting.htm', 'Parametric Fitting and Pseudo Variables for Sequential Fits'],
+    ['SeqParametric', 'ParametricFitting.htm', '     Parametric Fitting and Pseudo Variables for Sequential Fits'],
         
     ['StackingFaults-I', 'Stacking Faults-I.htm', 'Stacking fault simulations for diamond'],
     ['StackingFaults-II', 'Stacking Faults II.htm', 'Stacking fault simulations for Keokuk kaolinite'],
@@ -3987,7 +3991,6 @@ class OpenTutorial(wx.Dialog):
             G2MessageBox(self,'All tutorials are downloaded','None to download')
             return
         choices = [tutorialCatalog[i][2] for i in indices]
-        print len(tutorialCatalog),len(choices)
         selected = self.ChooseTutorial(choices)
         if selected is None: return
         j = indices[selected]

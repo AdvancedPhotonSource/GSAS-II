@@ -98,9 +98,9 @@ def SpcGroup(SGSymbol):
         Mat = np.array(SGInfo[6][i])
         Trns = np.array(SGInfo[7][i])
         SGData['SGOps'].append([Mat,Trns])
-        if 'list' in str(type(SGInfo[8])):        #patch for old fortran bin?
+        if 'array' in str(type(SGInfo[8])):        #patch for old fortran bin?
             SGData['SGGen'].append(int(SGInfo[8][i]))
-        SGData['SGSpin'].append('black')
+        SGData['SGSpin'].append(1)
     if SGData['SGLaue'] in '-1':
         SGData['SGSys'] = SysSym[0]
     elif SGData['SGLaue'] in '2/m':
@@ -642,10 +642,17 @@ def MagSGSym(SGData):
     print SGData['SpGrp'],': ',SGData['SGGen'],SpnFlp
     magSym = SGData['SpGrp'].split()
     if len(SpnFlp) == 1:
-        if 'red' == SpnFlp[-1]:
+        if SpnFlp[-1] == -1:
             magSym[1] += "'"
-        return ' '.join(magSym) 
-                   
+        return ' '.join(magSym)
+    if SGLaue in ['mmm','4/mmm','6/mmm']:
+        for i in [0,1,2]:
+            if SpnFlp[i] < 0:  
+                magSym[i+1] += "'"
+    elif SGLaue in ['2/m','4/m','6/m']:
+        for i in [0,1]:
+            if SpnFlp[i] < 0:  
+                magSym[i+1] += "'"
         
     return ' '.join(magSym)
         

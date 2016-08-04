@@ -260,8 +260,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                     self.warnings += '\nThe GSAS space group was not interpreted(!) and has been set to "P 1".'
                     self.warnings += "Change this in phase's General tab."                       
             elif 'SPNFLP' in key:
-                spin = {'1':'black','-1':'red'}
-                SpnFlp = [spin[s.strip()] for s in EXPphase[key].split()]                
+                SpnFlp = [int(s) for s in EXPphase[key].split()]                
             elif 'OD    ' in key:
                 SHdata = EXPphase[key].split() # may not have all 9 values
                 SHvals = 9*[0]

@@ -7,10 +7,10 @@
 # $Id: G2pwd_xye.py 1620 2014-12-27 17:14:59Z vondreele $
 ########### SVN repository information ###################
 '''
-*Module G2pwd_xye: Topas .xye data*
+*Module G2pwd_BrukerRAW: Bruker 3 & 4 .raw data*
 ------------------------------------
 
-Routine to read in powder data from a Topas-compatible .xye file
+Routine to read in powder data from a Bruker 3 & 4 .raw file
 
 '''
 
@@ -42,6 +42,8 @@ class xye_ReaderClass(G2IO.ImportPowderData):
             self.formatName = 'Bruker RAW ver. 2'
         elif head == 'RAW1.01':
             self.formatName = 'Bruker RAW ver. 3'
+        elif head == 'RAW4.00':
+            self.formatName = 'Bruker RAW ver. 4'
         else:
             self.errors = 'Unexpected information in header: '
             if all([ord(c) < 128 and ord(c) != 0 for c in str(head)]): # show only if ASCII
@@ -100,8 +102,6 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                 import traceback
                 traceback.print_exc(file=sys.stdout)
                 return False
-                
-                
         elif 'ver. 3' in self.formatName:
             try:
                 File.seek(12)
@@ -146,6 +146,46 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                         File.seek(pos)
                     if blockNum == nBlock:
                         self.repeat = False                                   
+                File.close()
+            except Exception as detail:
+                self.errors += '\n  '+str(detail)
+                print self.formatName+' read error:'+str(detail) # for testing
+                import traceback
+                traceback.print_exc(file=sys.stdout)
+                return False
+            
+        elif 'ver. 4' in self.formatName:   #does not work - format still elusive
+            try:
+                File.seek(12)   #ok
+                self.comments.append('Date='+File.read(10))
+                self.comments.append('Time='+File.read(10))
+                File.seek(144)
+                self.comments.append('Sample='+File.read(60))
+                File.seek(564)  # where is it?
+                radius = st.unpack('<f',File.read(4))[0]
+                self.comments.append('Gonio. radius=%.2f'%(radius))
+                self.Sample['Gonio. radius'] = radius
+                File.seek(516)  #ok
+                self.comments.append('Anode='+File.read(4))
+                File.seek(472)  #ok
+                self.comments.append('Ka mean=%.5f'%(st.unpack('<d',File.read(8))[0]))
+                self.comments.append('Ka1=%.5f'%(st.unpack('<d',File.read(8))[0]))
+                self.comments.append('Ka2=%.5f'%(st.unpack('<d',File.read(8))[0]))
+                self.comments.append('Kb=%.5f'%(st.unpack('<d',File.read(8))[0]))
+                self.comments.append('Ka2/Ka1=%.5f'%(st.unpack('<d',File.read(8))[0]))
+                File.seek(pos)  #deliberate fail here - pos not known from file contents
+                self.idstring = ospath.basename(filename) + ' Scan '+str(1)
+                nSteps = int(st.unpack('<i',File.read(4))[0])
+                t = st.unpack('<d',File.read(8))[0]
+                start2Th = st.unpack('<d',File.read(8))[0]
+                File.seek(pos+176)
+                step = st.unpack('<d',File.read(8))[0]
+                pos += headLen      #position at start of data block
+                File.seek(pos)                                    
+                x = np.array([start2Th+i*step for i in range(nSteps)])
+                y = np.array([max(1.,st.unpack('<f',File.read(4))[0]) for i in range(nSteps)])
+                w = 1./y
+                self.powderdata = [x,y,w,np.zeros(nSteps),np.zeros(nSteps),np.zeros(nSteps)]
                 File.close()
             except Exception as detail:
                 self.errors += '\n  '+str(detail)

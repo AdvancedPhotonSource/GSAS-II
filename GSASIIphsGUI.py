@@ -719,7 +719,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnSpinOp(event):
                 Obj = event.GetEventObject()
                 isym = Indx[Obj.GetId()]
-                SGData['SGSpin'][isym] = Obj.GetValue()
+                spCode = {'red':-1,'black':1}
+                SGData['SGSpin'][isym] = spCode[Obj.GetValue()]
                 wx.CallAfter(UpdateGeneral)                               
 
             SGData = generalData['SGData']            
@@ -733,9 +734,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 return magSizer
             spinSizer = wx.BoxSizer(wx.HORIZONTAL)
             spinColor = ['black','red']
+            spCode = {-1:'red',1:'black'}
             for isym,sym in enumerate(GenSym):
                 spinSizer.Add(wx.StaticText(General,label='%s: '%(sym.strip())),0,WACV)                
-                spinOp = wx.ComboBox(General,value=SGData['SGSpin'][isym],choices=spinColor,
+                spinOp = wx.ComboBox(General,value=spCode[SGData['SGSpin'][isym]],choices=spinColor,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)                
                 Indx[spinOp.GetId()] = isym
                 spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)

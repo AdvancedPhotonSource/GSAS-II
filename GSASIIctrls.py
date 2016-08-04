@@ -3199,6 +3199,7 @@ M.M.J. Treacy, J.M. Newsam & M.W. Deem,
                                    'Subversion error',
                                    wx.OK)
             dlg.ShowModal()
+            dlg.Destroy()
             return
         mods = GSASIIpath.svnFindLocalChanges()
         if mods:
@@ -3220,6 +3221,14 @@ M.M.J. Treacy, J.M. Newsam & M.W. Deem,
                 dlg.Destroy()
                 return
             dlg.Destroy()
+        if GSASIIpath.svnGetRev(local=False) is None:
+            dlg = wx.MessageDialog(self.frame,
+                                   'Error obtaining current GSAS-II version. Is internet access working correctly?',
+                                   'Subversion error',
+                                   wx.OK)
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
         dlg = downdate(parent=self.frame)
         if dlg.ShowModal() == wx.ID_OK:
             ver = dlg.getVersion()

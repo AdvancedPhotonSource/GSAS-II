@@ -7,10 +7,10 @@
 # $Id: G2pwd_xye.py 1620 2014-12-27 17:14:59Z vondreele $
 ########### SVN repository information ###################
 '''
-*Module G2pwd_BrukerRAW: Bruker 3 & 4 .raw data*
-------------------------------------
+*Module G2pwd_BrukerRAW: Bruker v.1-v.3 .raw data*
+---------------------------------------------------
 
-Routine to read in powder data from a Bruker 3 & 4 .raw file
+Routine to read in powder data from a Bruker versions 1-3 .raw file
 
 '''
 
@@ -22,7 +22,7 @@ import numpy as np
 import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 1620 $")
-class xye_ReaderClass(G2IO.ImportPowderData):
+class raw_ReaderClass(G2IO.ImportPowderData):
     'Routines to import powder data from a binary Bruker .RAW file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
@@ -44,6 +44,11 @@ class xye_ReaderClass(G2IO.ImportPowderData):
             self.formatName = 'Bruker RAW ver. 3'
         elif head == 'RAW4.00':
             self.formatName = 'Bruker RAW ver. 4'
+            self.errors += "Sorry, this is a Version 4 Bruker file. "
+            self.errors += "We need documentation for it so that it can be implemented in GSAS-II. "
+            self.errors += "Use PowDLL (http://users.uoi.gr/nkourkou/powdll/) to convert it to ASCII xy."
+            print(self.errors)
+            return False
         else:
             self.errors = 'Unexpected information in header: '
             if all([ord(c) < 128 and ord(c) != 0 for c in str(head)]): # show only if ASCII

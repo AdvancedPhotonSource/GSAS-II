@@ -20,6 +20,8 @@ import time
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
+import numpy.fft as fft
+import scipy.signal as signal
 import polymask as pm
 from scipy.optimize import leastsq
 import copy
@@ -215,13 +217,17 @@ def ImageLocalMax(image,w,Xpix,Ypix):
     sizey,sizex = image.shape
     xpix = int(Xpix)            #get reference corner of pixel chosen
     ypix = int(Ypix)
-    if (w < xpix < sizex-w) and (w < ypix < sizey-w) and image[ypix,xpix]:
-        Z = image[ypix-w:ypix+w,xpix-w:xpix+w]
-        Zmax = np.argmax(Z)
-        Zmin = np.argmin(Z)
+    if not w:
+        ZMax = np.sum(image[ypix-1:ypix+1,xpix-1:xpix+1])
+        return xpix,ypix,ZMax,0.0001
+    if (w2 < xpix < sizex-w2) and (w2 < ypix < sizey-w2) and image[ypix,xpix]:
+        ZMax = image[ypix-w:ypix+w,xpix-w:xpix+w]
+        Zmax = np.argmax(ZMax)
+        ZMin = image[ypix-w2:ypix+w2,xpix-w2:xpix+w2]
+        Zmin = np.argmin(ZMin)
         xpix += Zmax%w2-w
         ypix += Zmax/w2-w
-        return xpix,ypix,np.ravel(Z)[Zmax],max(0.0001,np.ravel(Z)[Zmin])   #avoid neg/zero minimum
+        return xpix,ypix,np.ravel(ZMax)[Zmax],max(0.0001,np.ravel(ZMin)[Zmin])   #avoid neg/zero minimum
     else:
         return 0,0,0,0      
     
@@ -242,6 +248,7 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
     sphi = sind(phi-90.)
     ring = []
     C = int(ellipseC())         #ring circumference
+    azm = []
     for i in range(0,C,1):      #step around ring in 1mm increments
         a = 360.*i/C
         x = radii[1]*cosd(a)        #major axis
@@ -256,9 +263,11 @@ def makeRing(dsp,ellipse,pix,reject,scalex,scaley,image):
             Y /= scaley
             if [X,Y,dsp] not in ring:           #no duplicates!
                 ring.append([X,Y,dsp])
+                azm.append(a)
     if len(ring) < 10:
         ring = []
-    return ring
+        azm = []
+    return ring,azm
     
 def GetEllipse2(tth,dxy,dist,cent,tilt,phi):
     '''uses Dandelin spheres to find ellipse or hyperbola parameters from detector geometry
@@ -553,7 +562,7 @@ def ImageRecalibrate(G2frame,data,masks):
             print 'next line is a hyperbola - search stopped'
             break
         ellipse = GetEllipse(dsp,data)
-        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(G2frame.ImageZ,mask=tam))
+        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,ma.array(G2frame.ImageZ,mask=tam))[0]
         if Ring:
             if iH >= skip:
                 data['rings'].append(np.array(Ring))
@@ -622,10 +631,10 @@ def ImageCalibrate(G2frame,data):
         
     #setup 360 points on that ring for "good" fit
     data['ellipses'].append(ellipse[:]+('g',))
-    Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)
+    Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)[0]
     if Ring:
         ellipse = FitEllipse(Ring)
-        Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)    #do again
+        Ring = makeRing(1.0,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)[0]    #do again
         ellipse = FitEllipse(Ring)
     else:
         print '1st ring not sufficiently complete to proceed'
@@ -669,7 +678,7 @@ def ImageCalibrate(G2frame,data):
         dist = data['distance']
         tth = npatan2d(radii[0],dist)
         data['wavelength'] = wave =  2.0*dsp*sind(tth/2.0)
-    Ring0 = makeRing(dsp,ellipse,3,cutoff,scalex,scaley,G2frame.ImageZ)
+    Ring0 = makeRing(dsp,ellipse,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
     ttth = nptand(tth)
     stth = npsind(tth)
     ctth = npcosd(tth)
@@ -705,7 +714,7 @@ def ImageCalibrate(G2frame,data):
             tth = 2.0*asind(wave/(2.*dsp))
             ellipsep = GetEllipse2(tth,0.,dist,centp,tilt,phi)
             print fmt%('plus ellipse :',ellipsep[0][0],ellipsep[0][1],ellipsep[1],ellipsep[2][0],ellipsep[2][1])
-            Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,G2frame.ImageZ)
+            Ringp = makeRing(dsp,ellipsep,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
             parmDict = {'dist':dist,'det-X':centp[0],'det-Y':centp[1],
                 'tilt':tilt,'phi':phi,'wave':wave,'dep':0.0}        
             varyList = [item for item in varyDict if varyDict[item]]
@@ -719,7 +728,7 @@ def ImageCalibrate(G2frame,data):
                 chip = 1e6
             ellipsem = GetEllipse2(tth,0.,dist,centm,-tilt,phi)
             print fmt%('minus ellipse:',ellipsem[0][0],ellipsem[0][1],ellipsem[1],ellipsem[2][0],ellipsem[2][1])
-            Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,G2frame.ImageZ)
+            Ringm = makeRing(dsp,ellipsem,3,cutoff,scalex,scaley,G2frame.ImageZ)[0]
             if len(Ringm) > 10:
                 parmDict['tilt'] *= -1
                 chim = FitDetector(np.array(Ring0+Ringm),varyList,parmDict,True)
@@ -759,7 +768,7 @@ def ImageCalibrate(G2frame,data):
         elcent,phi,radii = ellipse = GetEllipse(dsp,data)
         data['ellipses'].append(copy.deepcopy(ellipse+('g',)))
         if debug:   print fmt%('predicted ellipse:',elcent[0],elcent[1],phi,radii[0],radii[1])
-        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)
+        Ring = makeRing(dsp,ellipse,pixLimit,cutoff,scalex,scaley,G2frame.ImageZ)[0]
         if Ring:
             data['rings'].append(np.array(Ring))
             rings = np.concatenate((data['rings']),axis=0)
@@ -978,7 +987,7 @@ def MakeStrStaRing(ring,Image,Controls):
     pixSize = Controls['pixelSize']
     scalex = 1000./pixSize[0]
     scaley = 1000./pixSize[1]
-    Ring = np.array(makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)).T   #returns x,y,dsp for each point in ring
+    Ring = np.array(makeRing(ring['Dset'],ellipse,ring['pixLimit'],ring['cutoff'],scalex,scaley,Image)[0]).T   #returns x,y,dsp for each point in ring
     if len(Ring):
         ring['ImxyObs'] = copy.copy(Ring[:2])
         TA = GetTthAzm(Ring[0],Ring[1],Controls)       #convert x,y to tth,azm
@@ -1000,6 +1009,9 @@ def FitStrSta(Image,StrSta,Controls):
     StaControls = copy.deepcopy(Controls)
     phi = StrSta['Sample phi']
     wave = Controls['wavelength']
+    pixelSize = Controls['pixelSize']
+    scalex = 1000./pixelSize[0]
+    scaley = 1000./pixelSize[1]
     StaType = StrSta['Type']
     StaControls['distance'] += StrSta['Sample z']*cosd(phi)
 
@@ -1012,7 +1024,33 @@ def FitStrSta(Image,StrSta,Controls):
             val,esd = FitStrain(Ring,p0,dset,wave,phi,StaType)
             ring['Emat'] = val
             ring['Esig'] = esd
+            ellipse = FitEllipse(R['ImxyObs'].T)
+            ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image)
+            ringint = np.array([float(Image[int(y*scaley),int(x*scalex)]) for x,y in np.array(ringxy)[:,:2]])
+            ringint /= np.mean(ringint)
+            ring['Ivar'] = np.var(ringint)
+            print 'Variance in normalized ring intensity: %.3f'%(ring['Ivar'])
     CalcStrSta(StrSta,Controls)
+    
+def IntStrSta(Image,StrSta,Controls):
+    StaControls = copy.deepcopy(Controls)
+    pixelSize = Controls['pixelSize']
+    scalex = 1000./pixelSize[0]
+    scaley = 1000./pixelSize[1]
+    phi = StrSta['Sample phi']
+    StaControls['distance'] += StrSta['Sample z']*cosd(phi)
+    RingsAI = []
+    for ring in StrSta['d-zero']:       #get observed x,y,d points for the d-zeros
+        Ring,R = MakeStrStaRing(ring,Image,StaControls)
+        if len(Ring):
+            ellipse = FitEllipse(R['ImxyObs'].T)
+            ringxy,ringazm = makeRing(ring['Dcalc'],ellipse,0,0.,scalex,scaley,Image)
+            ringint = np.array([float(Image[int(y*scaley),int(x*scalex)]) for x,y in np.array(ringxy)[:,:2]])
+            ringint /= np.mean(ringint)
+            print 'variance:',ring['Dcalc'],np.var(ringint)
+            RingsAI.append(np.array(zip(ringazm,ringint)).T)
+#            GSASIIpath.IPyBreak()
+    return RingsAI
     
 def CalcStrSta(StrSta,Controls):
 

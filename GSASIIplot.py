@@ -2437,7 +2437,7 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
             
 def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
     Title='',lines=False,names=[],names2=[]):
-    '''simple plot of xy data, used for diagnostic purposes
+    '''simple plot of xy data
     '''
     def OnKeyPress(event):
         if event.key == 'u':
@@ -2456,7 +2456,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
 #            print 'no binding for key',event.key
             #GSASIIpath.IPyBreak()
             return
-        wx.CallAfter(PlotXY,G2frame,XY,XY2,labelX,labelY,False,Title,False,names)
+        wx.CallAfter(PlotXY,G2frame,XY,XY2,labelX,labelY,False,Title,lines,names)
 
     def OnMotion(event):
         xpos = event.xdata
@@ -2486,7 +2486,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
         Page.Offset = [0,0]
     
-    if XY2 and len(XY2) > 1:
+    if lines:
         Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
             'u: offset up','o: reset offset',)
     else:
@@ -2512,10 +2512,12 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
         Xmax = max(Xmax,max(X))
         Ymax = max(Ymax,max(Y))
         if lines:
+            dX = Page.Offset[0]*(ixy+1)*Xmax/500.
+            dY = Page.Offset[1]*(ixy+1)*Ymax/100.
             if len(names):
-                Plot.plot(X,Y,colors[ixy%6],picker=False,label=names[ixy])
+                Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False,label=names[ixy])
             else:
-                Plot.plot(X,Y,colors[ixy%6],picker=False)
+                Plot.plot(X+dX,Y+dY,colors[ixy%6],picker=False)
         else:
             Plot.plot(X,Y,colors[ixy%6]+'+',picker=False)
     if XY2 and len(XY2):
@@ -2544,7 +2546,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
 ################################################################################
             
 def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
-    '''simple contour plot of xyz data, used for diagnostic purposes
+    '''simple contour plot of xyz data
     '''
     def OnKeyPress(event):
         if event.key == 'u':

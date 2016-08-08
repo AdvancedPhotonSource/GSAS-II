@@ -102,8 +102,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 ] = [wx.NewId() for item in range(9)]
 
 [ wxID_STRSTACOPY, wxID_STRSTAFIT, wxID_STRSTASAVE, wxID_STRSTALOAD,wxID_STRSTSAMPLE,
-    wxID_APPENDDZERO,wxID_STRSTAALLFIT,wxID_UPDATEDZERO,
-] = [wx.NewId() for item in range(8)]
+    wxID_APPENDDZERO,wxID_STRSTAALLFIT,wxID_UPDATEDZERO,wxID_STRSTAPLOT,
+] = [wx.NewId() for item in range(9)]
 
 [ wxID_BACKCOPY,wxID_LIMITCOPY, wxID_SAMPLECOPY, wxID_SAMPLECOPYSOME, wxID_BACKFLAGCOPY, wxID_SAMPLEFLAGCOPY,
     wxID_SAMPLESAVE, wxID_SAMPLELOAD,wxID_ADDEXCLREGION,wxID_SETSCALE,wxID_SAMPLE1VAL,wxID_ALLSAMPLELOAD,
@@ -1813,6 +1813,8 @@ class DataFrame(wx.Frame):
             id=wxID_APPENDDZERO, kind=wx.ITEM_NORMAL,text='Append d-zero')
         self.StrStaEdit.Append(help='Fit stress/strain data', 
             id=wxID_STRSTAFIT, kind=wx.ITEM_NORMAL,text='Fit stress/strain')
+        self.StrStaEdit.Append(help='Plot intensity distribution', 
+            id=wxID_STRSTAPLOT, kind=wx.ITEM_NORMAL,text='Plot intensity distribution')
         self.StrStaEdit.Append(help='Update d-zero from ave d-zero',
             id=wxID_UPDATEDZERO, kind=wx.ITEM_NORMAL,text='Update d-zero')        
         self.StrStaEdit.Append(help='Fit stress/strain data for all images', 
@@ -4124,10 +4126,10 @@ def MovePatternTreeToGrid(G2frame,item):
         G2frame.Image = G2frame.PatternTree.GetItemParent(item)
         data = G2frame.PatternTree.GetItemPyData(
             GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
-        G2frame.ImageZ = G2imG.GetImageZ(G2frame,data)
+        G2frame.ImageZ = G2imG.GetImageZ(G2frame,data,newRange=False)
         strsta = G2frame.PatternTree.GetItemPyData(item)
-        G2plt.PlotImage(G2frame,newPlot=True)
         G2plt.PlotStrain(G2frame,strsta,newPlot=True)
+        G2plt.PlotImage(G2frame,newPlot=False)
         G2imG.UpdateStressStrain(G2frame,strsta)
     elif G2frame.PatternTree.GetItemText(item) == 'PDF Controls':
         G2frame.PatternId = G2frame.PatternTree.GetItemParent(item)

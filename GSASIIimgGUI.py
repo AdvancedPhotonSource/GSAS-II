@@ -50,7 +50,7 @@ asind = lambda x: 180.*math.asin(x)/math.pi
 ##### Image Data
 ################################################################################
 
-def GetImageZ(G2frame,data):
+def GetImageZ(G2frame,data,newRange=True):
     '''Gets image & applies dark, background & flat background corrections
     :param wx.Frame G2frame: main GSAS-II frame
     param: dict data: Image Controls dictionary
@@ -99,7 +99,8 @@ def GetImageZ(G2frame,data):
 #    GSASIIpath.IPyBreak()
     sumImg -= int(data.get('Flat Bkg',0))
     Imax = np.max(sumImg)
-    data['range'] = [(0,Imax),[0,Imax]]
+    if newRange:
+        data['range'] = [(0,Imax),[0,Imax]]
     return sumImg
 
 def UpdateImageData(G2frame,data):
@@ -1447,10 +1448,10 @@ def UpdateMasks(G2frame,data):
     Text.SetBackgroundColour(VERY_LIGHT_GREY)
     littleSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' Lower/Upper thresholds '),0,WACV)
     lowerThreshold = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=thresh[1],key=0,
-                                           min=thresh[0][0],OnLeave=Replot,typeHint=int)
+        min=thresh[0][0],OnLeave=Replot,typeHint=int)
     littleSizer.Add(lowerThreshold,0,WACV)
     upperThreshold = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=thresh[1],key=1,
-                                           max=thresh[0][1],OnLeave=Replot,typeHint=int)
+        max=thresh[0][1],OnLeave=Replot,typeHint=int)
     littleSizer.Add(upperThreshold,0,WACV)
     mainSizer.Add(littleSizer,0,)
     if Spots:
@@ -1470,11 +1471,10 @@ def UpdateMasks(G2frame,data):
                 littleSizer.Add(spotText,0,WACV)
                 spotText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
                 spotDiameter = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Spots[i],key=2,
-                                           max=100.,OnLeave=Replot,nDig=[8,2])
+                    max=100.,OnLeave=Replot,nDig=[8,2])
                 littleSizer.Add(spotDiameter,0,WACV)
                 spotDelete = G2G.G2LoggedButton(G2frame.dataDisplay,label='delete?',
-                                            locationcode='Delete+Points+'+str(i),
-                                            handler=onDeleteMask)
+                    locationcode='Delete+Points+'+str(i),handler=onDeleteMask)
                 littleSizer.Add(spotDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     if Rings:
@@ -1493,11 +1493,10 @@ def UpdateMasks(G2frame,data):
                 ringText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
                 littleSizer.Add(ringText,0,WACV)
                 ringThick = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Rings[i],key=1,
-                                           min=0.001,max=1.,OnLeave=Replot,nDig=[8,3])
+                    min=0.001,max=1.,OnLeave=Replot,nDig=[8,3])
                 littleSizer.Add(ringThick,0,WACV)
                 ringDelete = G2G.G2LoggedButton(G2frame.dataDisplay,label='delete?',
-                                            locationcode='Delete+Rings+'+str(i),
-                                            handler=onDeleteMask)
+                    locationcode='Delete+Rings+'+str(i),handler=onDeleteMask)
                 littleSizer.Add(ringDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     if Arcs:
@@ -1523,11 +1522,10 @@ def UpdateMasks(G2frame,data):
                 azmText.Bind(wx.EVT_ENTER_WINDOW,OnTextMsg)
                 littleSizer.Add(azmText,0,WACV)
                 arcThick = G2G.ValidatedTxtCtrl(G2frame.dataDisplay,loc=Arcs[i],key=2,
-                                           min=0.001,max=20.,OnLeave=Replot,nDig=[8,3])
+                    min=0.001,max=20.,OnLeave=Replot,nDig=[8,3])
                 littleSizer.Add(arcThick,0,WACV)
                 arcDelete = G2G.G2LoggedButton(G2frame.dataDisplay,label='delete?',
-                                            locationcode='Delete+Arcs+'+str(i),
-                                            handler=onDeleteMask)
+                    locationcode='Delete+Arcs+'+str(i),handler=onDeleteMask)
                 littleSizer.Add(arcDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     if Polygons:
@@ -1544,8 +1542,7 @@ def UpdateMasks(G2frame,data):
                 polyText = wx.ComboBox(G2frame.dataDisplay,value=polyList[0],choices=polyList,style=wx.CB_READONLY)
                 littleSizer.Add(polyText,0,WACV)
                 polyDelete = G2G.G2LoggedButton(G2frame.dataDisplay,label='delete?',
-                                            locationcode='Delete+Polygons+'+str(i),
-                                            handler=onDeleteMask)
+                    locationcode='Delete+Polygons+'+str(i),handler=onDeleteMask)
                 littleSizer.Add(polyDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     if frame:
@@ -1560,8 +1557,7 @@ def UpdateMasks(G2frame,data):
         frameText = wx.ComboBox(G2frame.dataDisplay,value=frameList[0],choices=frameList,style=wx.CB_READONLY)
         littleSizer.Add(frameText,0,WACV)
         frameDelete = G2G.G2LoggedButton(G2frame.dataDisplay,label='delete?',
-                                            locationcode='Delete+Frame',
-                                            handler=onDeleteFrame)
+            locationcode='Delete+Frame',handler=onDeleteFrame)
         littleSizer.Add(frameDelete,0,WACV)
         mainSizer.Add(littleSizer,0,)
     mainSizer.Layout()    
@@ -1741,6 +1737,17 @@ def UpdateStressStrain(G2frame,data):
                 stsrData.update(newItems)        
         UpdateStressStrain(G2frame,data)        
     
+    def OnPlotStrSta(event):
+        Controls = G2frame.PatternTree.GetItemPyData(
+            G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
+        RingInt = G2img.IntStrSta(G2frame.ImageZ,data,Controls)
+        Names = ['d=%.3f'%(ring['Dcalc']) for ring in data['d-zero']]
+        G2plt.PlotExposedImage(G2frame,event=event)
+        G2frame.G2plotNB.Delete('Ring Intensities')
+        G2plt.PlotXY(G2frame,RingInt,labelX='Azimuth',
+            labelY='Intensity',newPlot=True,Title='Ring Intensities',
+            names=Names,lines=True)
+        
     def OnFitStrSta(event):
         Controls = G2frame.PatternTree.GetItemPyData(
             G2gd.GetPatternTreeItemId(G2frame,G2frame.Image, 'Image Controls'))
@@ -1791,10 +1798,14 @@ def UpdateStressStrain(G2frame,data):
                 for i,item in enumerate(StaCtrls['d-zero']):
                     variables += item['Emat']
                     sig += item['Esig']
-                    varylist = ['%d%s%s'%(i,';',Name) for Name in varyNames]
+                    varylist = ['%d;%s'%(i,Name) for Name in varyNames]
                     varyList += varylist
                     parmDict.update(dict(zip(varylist,item['Emat'])))
-                    parmDict['%d:Dcalc'%(i)] = item['Dcalc']
+                    parmDict['%d;Dcalc'%(i)] = item['Dcalc']
+                    parmDict['%d;Ivar'%(i)] = item['Ivar']
+                    variables.append(item['Ivar'])
+                    varyList.append('%d;Ivar'%(i))
+                    sig.append(0.)
                 SeqResult[name] = {'variables':variables,'varyList':varyList,'sig':sig,'Rvals':[],
                     'covMatrix':np.eye(len(variables)),'title':name,'parmDict':parmDict}
             else:
@@ -1971,6 +1982,7 @@ def UpdateStressStrain(G2frame,data):
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnAppendDzero, id=G2gd.wxID_APPENDDZERO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnUpdateDzero, id=G2gd.wxID_UPDATEDZERO)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitStrSta, id=G2gd.wxID_STRSTAFIT)
+    G2frame.dataFrame.Bind(wx.EVT_MENU, OnPlotStrSta, id=G2gd.wxID_STRSTAPLOT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnFitAllStrSta, id=G2gd.wxID_STRSTAALLFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnCopyStrSta, id=G2gd.wxID_STRSTACOPY)
     G2frame.dataFrame.Bind(wx.EVT_MENU, OnLoadStrSta, id=G2gd.wxID_STRSTALOAD)

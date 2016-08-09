@@ -269,7 +269,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                     G2frame.Integrate = G2img.ImageIntegrate(image,Data,Masks,blkSize,dlgp)
                     del image   #force cleanup
                     pId = G2IO.SaveIntegration(G2frame,CId,Data)
-                    wx.CallAfter(dlgp.Destroy)
+                    dlgp.Destroy()
                     if G2frame.Integrate[-1]:       #Cancel from progress bar?
                         break
                 else:
@@ -1766,6 +1766,10 @@ def UpdateStressStrain(G2frame,data):
         if dlg.ShowModal() == wx.ID_OK:
             for sel in dlg.GetSelections():
                 names.append(choices[sel])
+        else:
+            return
+        if not names:
+            return
         dlg.Destroy()
         SeqResult = {}
         dlg = wx.ProgressDialog('Sequential IMG Strain fit','Data set name = '+names[0],len(names), 

@@ -3376,7 +3376,7 @@ class GSASII(wx.Frame):
         '''
         sind = lambda x: math.sin(x*math.pi/180.)
         tth2q = lambda t,w:4.0*math.pi*sind(t/2.0)/w
-        TextList = ['All PWDR']
+        TextList = []
         PDFlist = []
         Names = []
         if self.PatternTree.GetCount():
@@ -3390,13 +3390,10 @@ class GSASII(wx.Frame):
             if len(TextList) == 1:
                 self.ErrorDialog('Nothing to make PDFs for','There must be at least one "PWDR" pattern')
                 return
-            dlg = wx.MultiChoiceDialog(self,'Make PDF controls','Make PDF controls for:',TextList, wx.CHOICEDLG_STYLE)
+            dlg = G2G.G2MultiChoiceDialog(self,'Make PDF controls','Make PDF controls for:',TextList, wx.CHOICEDLG_STYLE)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    result = dlg.GetSelections()
-                    for i in result: PDFlist.append(TextList[i])
-                    if 0 in result:
-                        PDFlist = [item for item in TextList if item[:4] == 'PWDR']                        
+                    PDFlist = [TextList[i] for i in dlg.GetSelections()]
                     for item in PDFlist:
                         PWDRname = item[4:]
                         Id = self.PatternTree.AppendItem(parent=self.root,text='PDF '+PWDRname)
@@ -3407,7 +3404,7 @@ class GSASII(wx.Frame):
                             'Container Bkg.':{'Name':'','Mult':-1.0,'Add':0.0},'ElList':{},
                             'Geometry':'Cylinder','Diam':1.0,'Pack':0.50,'Form Vol':10.0,
                             'DetType':'Image plate','ObliqCoeff':0.2,'Ruland':0.025,'QScaleLim':[0,100],
-                            'Lorch':True,}
+                            'Lorch':True,'BackRatio':0.0}
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='PDF Controls'),Data)
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='I(Q)'+PWDRname),[])        
                         self.PatternTree.SetItemPyData(self.PatternTree.AppendItem(Id,text='S(Q)'+PWDRname),[])        

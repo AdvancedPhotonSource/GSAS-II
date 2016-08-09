@@ -4626,7 +4626,7 @@ def UpdatePDFGrid(G2frame,data):
             G2plt.PlotISFG(G2frame,newPlot=True)
                         
         item = data[key]
-        fileList = np.array(GetFileList('PWDR')).T[1]
+        fileList = GetFileList('PWDR')
         fileSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' '+key+' file:'),0,WACV)
         fileName = wx.ComboBox(G2frame.dataDisplay,value=item['Name'],choices=fileList,
             style=wx.CB_READONLY|wx.CB_DROPDOWN)
@@ -4849,45 +4849,34 @@ def UpdatePDFGrid(G2frame,data):
         auxPlot = ComputePDF(data)
         G2plt.PlotISFG(G2frame,newPlot=True)        
 
-    def GetFileList(fileType,skip=None):
-        fileList = [[False,'',0]]
-        Source = ''
+    def GetFileList(fileType):
+        fileList = []
         id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         while id:
             name = G2frame.PatternTree.GetItemText(id)
             if fileType in name:
-                if id == skip:
-                    Source = name
-                else:
-                    fileList.append([False,name,id])
+                fileList.append(name)
             id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
-        if skip:
-            return fileList,Source
-        else:
-            return fileList
+        return fileList
         
     def OnCopyPDFControls(event):
         import copy
-        TextList,Source = GetFileList('PDF',skip=G2frame.PatternId)
-        TextList[0] = [False,'All PDF',0]
+        TextList = GetFileList('PDF')
+        Source = G2frame.PatternTree.GetItemText(G2frame.PatternId)
         if len(TextList) == 1:
             G2frame.ErrorDialog('Nothing to copy controls to','There must be more than one "PDF" pattern')
             return
-        dlg = G2frame.CopyDialog(G2frame,'Copy PDF controls','Copy controls from '+Source+' to:',TextList)
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Copy PDF controls','Copy controls from '+Source+' to:',TextList)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                result = dlg.GetData()
-                if result[0][0]:
-                    result = TextList[1:]
-                    for item in result: item[0] = True
-                for i,item in enumerate(result):
-                    ifcopy,name,id = item
-                    if ifcopy:
-                        olddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Controls'))
-                        sample = olddata['Sample']
-                        olddata.update(copy.deepcopy(data))
-                        olddata['Sample'] = sample
-                        G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Controls'),olddata)
+                PDFlist = [TextList[i] for i in dlg.GetSelections()]
+                for item in PDFlist:
+                    id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
+                    olddata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Controls'))
+                    sample = olddata['Sample']
+                    olddata.update(copy.deepcopy(data))
+                    olddata['Sample'] = sample
+                    G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id, 'PDF Controls'),olddata)
                 Status.SetStatusText('PDF controls copied')
         finally:
             dlg.Destroy()
@@ -4940,8 +4929,9 @@ def UpdatePDFGrid(G2frame,data):
                 PDFname = name
         powName = Data['Sample']['Name']
         powId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,powName)
+        limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Limits'))[1]
         inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,powId,'Instrument Parameters'))[0]
-        auxPlot = G2pwd.CalcPDF(Data,inst,xydata)
+        auxPlot = G2pwd.CalcPDF(Data,inst,limits,xydata)
         PDFId = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'PDF '+powName[4:])
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PDFId,'I(Q)'+powName[4:]),xydata['IofQ'])
         G2frame.PatternTree.SetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PDFId,'S(Q)'+powName[4:]),xydata['SofQ'])
@@ -4974,6 +4964,9 @@ def UpdatePDFGrid(G2frame,data):
                     auxPlot = ComputePDF(Data)                    
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
             Status.SetStatusText('All PDFs computed')
+            G2plt.PlotISFG(G2frame,newPlot=True,type='I(Q)')
+            G2plt.PlotISFG(G2frame,newPlot=True,type='S(Q)')
+            G2plt.PlotISFG(G2frame,newPlot=True,type='F(Q)')
             G2plt.PlotISFG(G2frame,newPlot=True,type='G(R)')
             print ' Done calculating PDFs:'
         

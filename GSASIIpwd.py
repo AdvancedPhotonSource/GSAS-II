@@ -258,7 +258,7 @@ def GetNumDensity(ElList,Vol):
         sumNoAtoms += ElList[El]['FormulaNo']
     return sumNoAtoms/Vol
            
-def CalcPDF(data,inst,xydata):
+def CalcPDF(data,inst,limits,xydata):
     'needs a doc string'
     auxPlot = []
     import copy
@@ -320,11 +320,11 @@ def CalcPDF(data,inst,xydata):
     xydata['SofQ'] = copy.deepcopy(xydata['IofQ'])
     FFSq,SqFF,CF = GetAsfMean(ElList,(xydata['SofQ'][1][0]/(4.0*np.pi))**2)  #these are <f^2>,<f>^2,Cf
     Q = xydata['SofQ'][1][0]
-    auxPlot.append([Q,np.copy(CF),'CF-unCorr'])
+#    auxPlot.append([Q,np.copy(CF),'CF-unCorr'])
     ruland = Ruland(data['Ruland'],wave,Q,CF)
-    auxPlot.append([Q,ruland,'Ruland'])      
+#    auxPlot.append([Q,ruland,'Ruland'])      
     CF *= ruland
-    auxPlot.append([Q,CF,'CF-Corr'])
+#    auxPlot.append([Q,CF,'CF-Corr'])
     scale = np.sum((FFSq+CF)[minQ:maxQ])/np.sum(xydata['SofQ'][1][1][minQ:maxQ])
     xydata['SofQ'][1][1] *= scale
     xydata['SofQ'][1][1] -= CF

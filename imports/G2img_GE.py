@@ -120,12 +120,12 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
     import cPickle
     more = False
     File = open(filename,'rb')
-    if '.sum' in filename:
+    if os.path.splitext(filename) in ['.sum',]:
         head = ['GE detector sum  data from APS 1-ID',]
         sizexy = [2048,2048]
         Npix = sizexy[0]*sizexy[1]
         image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
-    elif '.avg' or '.cor' in filename in filename:
+    elif os.path.splitext(filename) in ['.avg','.cor']:
         File.seek(0,2)
         last = File.tell()
         pos = last-2*(2048**2)

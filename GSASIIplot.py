@@ -2142,23 +2142,25 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         if event.key == 'u':
             if G2frame.Contour:
                 G2frame.Cmax = min(1.0,G2frame.Cmax*1.2)
-            elif Pattern[0]['Offset'][0] < 100.:
-                Pattern[0]['Offset'][0] += 1.
+            elif Page.Offset[1] < 100.:
+               Page.Offset[1] += 1.
         elif event.key == 'd':
             if G2frame.Contour:
                 G2frame.Cmax = max(0.0,G2frame.Cmax*0.8)
-            elif Pattern[0]['Offset'][0] > 0.:
-                Pattern[0]['Offset'][0] -= 1.
+            elif Page.Offset[1] > 0.:
+                Page.Offset[1] -= 1.
         elif event.key == 'l':
-            Pattern[0]['Offset'][1] -= 1.
+            Page.Offset[0] -= 1.
         elif event.key == 'r':
-            Pattern[0]['Offset'][1] += 1.
+            Page.Offset[0] += 1.
         elif event.key == 'o':
-            Pattern[0]['Offset'] = [0,0]
+            Page.Offset = [0,0]
+        elif event.key == 'm':
+            G2frame.SinglePlot = not G2frame.SinglePlot
         elif event.key == 'c':
             newPlot = True
             G2frame.Contour = not G2frame.Contour
-            if not G2frame.Contour:
+            if G2frame.Contour:
                 G2frame.SinglePlot = False
                 Pattern[0]['Offset'] = [0.,0.]
         elif event.key == 's':
@@ -2227,6 +2229,7 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)
         Page.canvas.mpl_connect('key_press_event', OnPlotKeyPress)
         Page.canvas.mpl_connect('motion_notify_event', OnMotion)
+        Page.Offset = [0,0]
     
     G2frame.G2plotNB.RaisePageNoRefresh(Page)
     G2frame.G2plotNB.status.DestroyChildren()
@@ -2236,10 +2239,10 @@ def PlotISFG(G2frame,newPlot=False,type=''):
             'i: interpolation method','s: color scheme','c: contour off')
     else:
         Page.Choice = (' key press','l: offset left','r: offset right','d: offset down','u: offset up',
-            'o: reset offset','t: toggle legend','c: contour on','s: toggle single plot')
+            'o: reset offset','t: toggle legend','c: contour on',
+            'm: toggle multiplot','s: toggle single plot')
     Page.keyPress = OnPlotKeyPress
     PatternId = G2frame.PatternId
-    PickId = G2frame.PickId
     Plot.set_title(type)
     if type == 'G(R)':
         Plot.set_xlabel(r'$R,\AA$',fontsize=14)
@@ -2261,14 +2264,15 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         PlotList = []
         item, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         while item:
-            if 'PDF' in G2frame.PatternTree.GetItemText(item):
+            if 'PDF' in G2frame.PatternTree.GetItemText(item).split()[0]:
                 name = type+G2frame.PatternTree.GetItemText(item)[4:]
                 Id = G2gd.GetPatternTreeItemId(G2frame,item,name)
                 Pattern = G2frame.PatternTree.GetItemPyData(Id)
                 if Pattern:
                     Pattern.append(name)
                     PlotList.append(Pattern)
-            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
+            item, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)                
+                    
     PDFdata = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,PatternId, 'PDF Controls'))
     numbDen = G2pwd.GetNumDensity(PDFdata['ElList'],PDFdata['Form Vol'])
     Xb = [0.,10.]
@@ -2288,13 +2292,11 @@ def PlotISFG(G2frame,newPlot=False,type=''):
         Nseq = 0
     for N,Pattern in enumerate(PlotList):
         xye = Pattern[1]
-        if PickId:
-            ifpicked = Pattern[2] == G2frame.PatternTree.GetItemText(PatternId)
         X = xye[0]
         if not lenX:
             lenX = len(X)           
-        Y = xye[1]+offset*N
-        if G2frame.Contour:
+        if G2frame.Contour and len(Pattern)>1:
+            Y = xye[1]
             if lenX == len(X):
                 ContourY.append(N)
                 ContourZ.append(Y)
@@ -2302,22 +2304,19 @@ def PlotISFG(G2frame,newPlot=False,type=''):
                 Nseq += 1
                 Plot.set_ylabel('Data sequence',fontsize=12)
         else:
-            X = xye[0]+Pattern[0].get('Offset',[0,0])[1]*.005*N
-            if ifpicked:
-                Plot.plot(X,Y,colors[N%6]+'+',picker=3.,clip_on=False)
-                Page.canvas.SetToolTipString('')
+            X = xye[0]+Page.Offset[0]*.005*N
+            Y = xye[1]+Page.Offset[1]*.01*N
+            if G2frame.Legend:
+                Plot.plot(X,Y,colors[N%6],picker=False,label='Azm:'+Pattern[2].split('=')[1])
             else:
-                if G2frame.Legend:
-                    Plot.plot(X,Y,colors[N%6],picker=False,label='Azm:'+Pattern[2].split('=')[1])
-                else:
-                    Plot.plot(X,Y,colors[N%6],picker=False)
+                Plot.plot(X,Y,colors[N%6],picker=False)
             if type == 'G(R)':
                 Plot.plot(Xb,Yb,color='k',dashes=(5,5))
             elif type == 'F(Q)':
                 Plot.axhline(0.,color=wx.BLACK)
             elif type == 'S(Q)':
                 Plot.axhline(1.,color=wx.BLACK)
-    if G2frame.Contour:
+    if G2frame.Contour and len(Pattern)>1:
         acolor = mpl.cm.get_cmap(G2frame.ContourColor)
         Img = Plot.imshow(ContourZ,cmap=acolor,vmin=0,vmax=Ymax*G2frame.Cmax,interpolation=G2frame.Interpolate, 
             extent=[ContourX[0],ContourX[-1],ContourY[0],ContourY[-1]],aspect='auto',origin='lower')

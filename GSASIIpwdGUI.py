@@ -4854,7 +4854,7 @@ def UpdatePDFGrid(G2frame,data):
         id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
         while id:
             name = G2frame.PatternTree.GetItemText(id)
-            if fileType in name:
+            if fileType in name.split()[0]:
                 fileList.append(name)
             id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)
         return fileList
@@ -4959,7 +4959,7 @@ def UpdatePDFGrid(G2frame,data):
             id, cookie = G2frame.PatternTree.GetFirstChild(G2frame.root)
             while id:
                 Name = G2frame.PatternTree.GetItemText(id)
-                if 'PDF' in Name:
+                if 'PDF' in Name.split()[0]:
                     Data = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,id,'PDF Controls'))
                     auxPlot = ComputePDF(Data)                    
                 id, cookie = G2frame.PatternTree.GetNextChild(G2frame.root, cookie)

@@ -1150,13 +1150,10 @@ class ScrolledMultiEditor(wx.Dialog):
             if i < len(sizevals):
                 if sizevals[i]: kargs['size']=sizevals[i]
             if CopyButton:
-                import wx.lib.colourselect as wscs
+                import wx.lib.colourselect as wscs  # is there a way to test? 
                 but = wscs.ColourSelect(label='v', # would like to use u'\u2193' or u'\u25BC' but not in WinXP
-                                        # is there a way to test? 
-                                        parent=panel,
-                                        colour=(255,255,200),
-                                        size=wx.Size(30,23),
-                                        style=wx.RAISED_BORDER)
+                    parent=panel,colour=(255,255,200),size=wx.Size(30,23),
+                    style=wx.RAISED_BORDER)
                 but.Bind(wx.EVT_BUTTON, self._OnCopyButton)
                 but.SetToolTipString('Press to copy adjacent value to all rows below')
                 self.ButtonIndex[but] = i

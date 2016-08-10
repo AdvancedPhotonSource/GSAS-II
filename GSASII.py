@@ -28,6 +28,7 @@ import inspect
 import numpy as np
 import scipy as sp
 import wx
+import wx.lib.scrolledpanel as wxscroll
 try:  # patch for LANG environment var problem on occasional OSX machines
     import locale
     locale.getdefaultlocale()
@@ -2631,10 +2632,12 @@ class GSASII(wx.Frame):
     class SumDialog(wx.Dialog):
         'Allows user to supply scale factor(s) when summing data'
         def __init__(self,parent,title,text,dataType,data):
-            wx.Dialog.__init__(self,parent,-1,title, 
-                pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+            wx.Dialog.__init__(self,parent,-1,title,size=(400,250),
+                pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
             self.data = data
-            panel = wx.Panel(self)
+            size = (400,250)
+            panel = wxscroll.ScrolledPanel(self, wx.ID_ANY,size=size,
+                style = wx.TAB_TRAVERSAL|wx.SUNKEN_BORDER)
             mainSizer = wx.BoxSizer(wx.VERTICAL)
             topLabl = wx.StaticText(panel,-1,text)
             mainSizer.Add((10,10),1)
@@ -2642,7 +2645,7 @@ class GSASII(wx.Frame):
             mainSizer.Add((10,10),1)
             dataGridSizer = wx.FlexGridSizer(cols=2,hgap=2,vgap=2)
             for id,item in enumerate(self.data[:-1]):
-                name = wx.TextCtrl(panel,-1,item[1],size=wx.Size(200,20))
+                name = wx.TextCtrl(panel,-1,item[1],size=wx.Size(300,20))
                 name.SetEditable(False)
                 scale = wx.TextCtrl(panel,id,'%.3f'%(item[0]),style=wx.TE_PROCESS_ENTER)
                 scale.Bind(wx.EVT_TEXT_ENTER,self.OnScaleChange)
@@ -2652,7 +2655,7 @@ class GSASII(wx.Frame):
             if dataType:
                 dataGridSizer.Add(wx.StaticText(panel,-1,'Sum result name: '+dataType),0, \
                     wx.LEFT|wx.TOP|wx.ALIGN_CENTER_VERTICAL,10)
-                self.name = wx.TextCtrl(panel,-1,self.data[-1],size=wx.Size(200,20),style=wx.TE_PROCESS_ENTER)
+                self.name = wx.TextCtrl(panel,-1,self.data[-1],size=wx.Size(300,20),style=wx.TE_PROCESS_ENTER)
                 self.name.Bind(wx.EVT_TEXT_ENTER,self.OnNameChange)
                 self.name.Bind(wx.EVT_KILL_FOCUS,self.OnNameChange)
                 dataGridSizer.Add(self.name,0,wx.RIGHT|wx.TOP,10)
@@ -2668,6 +2671,9 @@ class GSASII(wx.Frame):
             btnSizer.Add(cancelBtn)
             btnSizer.Add((20,20),1)
             
+            panel.SetSizer(mainSizer)
+            panel.SetAutoLayout(1)
+            panel.SetupScrolling()
             mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
             panel.SetSizer(mainSizer)
             panel.Fit()
@@ -2804,7 +2810,7 @@ class GSASII(wx.Frame):
                 dlg.Destroy()
 
     def OnImageSum(self,event):
-        'Sum together image data(?)'
+        'Sum together image data'
         TextList = []
         DataList = []
         SumList = []
@@ -2874,7 +2880,7 @@ class GSASII(wx.Frame):
                         Id = self.PatternTree.AppendItem(parent=self.root,text=outname)
                     if Id:
                         pth = G2G.GetExportPath(self)
-                        dlg = wx.FileDialog(self, 'Choose sum image filename', pth, '', 
+                        dlg = wx.FileDialog(self, 'Choose sum image filename', pth,outname.split('IMG ')[1], 
                             'G2img files (*.G2img)|*.G2img', 
                             wx.SAVE|wx.FD_OVERWRITE_PROMPT)
                         if dlg.ShowModal() == wx.ID_OK:
@@ -2889,6 +2895,7 @@ class GSASII(wx.Frame):
                         del(newImage)
                         if self.imageDefault:
                             Data = copy.copy(self.imageDefault)
+                        Data['formatName'] = 'GSAS-II image'
                         Data['showLines'] = True
                         Data['ring'] = []
                         Data['rings'] = []

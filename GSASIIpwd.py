@@ -263,22 +263,26 @@ def CalcPDF(data,inst,limits,xydata):
     auxPlot = []
     import copy
     import scipy.fftpack as ft
-    #subtract backgrounds - if any
+    Ibeg = np.searchsorted(xydata['Sample'][1][0],limits[0])
+    Ifin = np.searchsorted(xydata['Sample'][1][0],limits[1])
+    #subtract backgrounds - if any & use PWDR limits
+#    GSASIIpath.IPyBreak()
     xydata['IofQ'] = copy.deepcopy(xydata['Sample'])
+    xydata['IofQ'][1] = np.array(xydata['IofQ'][1])[:,Ibeg:Ifin]
     if data['Sample Bkg.']['Name']:
-        xydata['IofQ'][1][1] += (xydata['Sample Bkg.'][1][1]+
+        xydata['IofQ'][1][1] += (xydata['Sample Bkg.'][1][1][Ibeg:Ifin]+
             data['Sample Bkg.']['Add'])*data['Sample Bkg.']['Mult']
     if data['Container']['Name']:
         xycontainer = (xydata['Container'][1][1]+data['Container']['Add'])*data['Container']['Mult']
         if data['Container Bkg.']['Name']:
-            xycontainer += (xydata['Container Bkg.'][1][1]+
+            xycontainer += (xydata['Container Bkg.'][1][1][Ibeg:Ifin]+
                 data['Container Bkg.']['Add'])*data['Container Bkg.']['Mult']
         xydata['IofQ'][1][1] += xycontainer
     #get element data & absorption coeff.
     ElList = data['ElList']
     Abs = G2lat.CellAbsorption(ElList,data['Form Vol'])
     #Apply angle dependent corrections
-    Tth = xydata['Sample'][1][0]
+    Tth = xydata['IofQ'][1][0]
     dt = (Tth[1]-Tth[0])
     MuR = Abs*data['Diam']/20.0
     xydata['IofQ'][1][1] /= Absorb(data['Geometry'],MuR,Tth)

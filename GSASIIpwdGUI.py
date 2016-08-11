@@ -447,9 +447,9 @@ def UpdatePeakGrid(G2frame, data):
             refs = G2mth.sortArray(refs,0,reverse=True)     #small 2-Thetas first
         else:   #'T'OF
             refs = G2mth.sortArray(refs,0,reverse=False)    #big TOFs first
-        for i,ref1 in enumerate(refs):
+        for i,ref1 in enumerate(refs):      #reject picks closer than 1 FWHM
             for ref2 in refs[i+1:]:
-                if abs(ref2[0]-ref1[0]) < 0.1*G2pwd.getFWHM(ref1[0],inst):
+                if abs(ref2[0]-ref1[0]) < G2pwd.getFWHM(ref1[0],inst):
                     del(refs[i])
         if 'C' in Inst['Type'][0]:    
             refs = G2mth.sortArray(refs,1,reverse=True)

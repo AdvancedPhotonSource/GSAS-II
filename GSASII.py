@@ -89,6 +89,8 @@ import GSASIImapvars as G2mv
 import GSASIIobj as G2obj
 import GSASIIlattice as G2lat
 import GSASIIlog as log
+WACV = wx.ALIGN_CENTER_VERTICAL
+#                GSASIIpath.IPyBreak()
 
 __version__ = '0.2.0'
 
@@ -2643,23 +2645,29 @@ class GSASII(wx.Frame):
             mainSizer.Add((10,10),1)
             mainSizer.Add(topLabl,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,10)
             mainSizer.Add((10,10),1)
-            dataGridSizer = wx.FlexGridSizer(cols=2,hgap=2,vgap=2)
+            self.dataGridSizer = wx.FlexGridSizer(cols=2,hgap=2,vgap=2)
             for id,item in enumerate(self.data[:-1]):
                 name = wx.TextCtrl(panel,-1,item[1],size=wx.Size(300,20))
                 name.SetEditable(False)
                 scale = wx.TextCtrl(panel,id,'%.3f'%(item[0]),style=wx.TE_PROCESS_ENTER)
                 scale.Bind(wx.EVT_TEXT_ENTER,self.OnScaleChange)
                 scale.Bind(wx.EVT_KILL_FOCUS,self.OnScaleChange)
-                dataGridSizer.Add(scale,0,wx.LEFT,10)
-                dataGridSizer.Add(name,0,wx.RIGHT,10)
+                self.dataGridSizer.Add(scale,0,wx.LEFT,10)
+                self.dataGridSizer.Add(name,0,wx.RIGHT,10)
             if dataType:
-                dataGridSizer.Add(wx.StaticText(panel,-1,'Sum result name: '+dataType),0, \
+                self.dataGridSizer.Add(wx.StaticText(panel,-1,'Sum result name: '+dataType),0, \
                     wx.LEFT|wx.TOP|wx.ALIGN_CENTER_VERTICAL,10)
                 self.name = wx.TextCtrl(panel,-1,self.data[-1],size=wx.Size(300,20),style=wx.TE_PROCESS_ENTER)
                 self.name.Bind(wx.EVT_TEXT_ENTER,self.OnNameChange)
                 self.name.Bind(wx.EVT_KILL_FOCUS,self.OnNameChange)
-                dataGridSizer.Add(self.name,0,wx.RIGHT|wx.TOP,10)
-            mainSizer.Add(dataGridSizer,0,wx.EXPAND)
+                self.dataGridSizer.Add(self.name,0,wx.RIGHT|wx.TOP,10)
+                self.dataGridSizer.Add(wx.StaticText(panel,label='All scales value: '),0,  \
+                    wx.LEFT|wx.TOP|wx.ALIGN_CENTER_VERTICAL,10)
+                allScale = wx.TextCtrl(panel,value='',style=wx.TE_PROCESS_ENTER)
+                allScale.Bind(wx.EVT_TEXT_ENTER,self.OnAllScale)
+                allScale.Bind(wx.EVT_KILL_FOCUS,self.OnAllScale)
+                self.dataGridSizer.Add(allScale,0,WACV)
+            mainSizer.Add(self.dataGridSizer,0,wx.EXPAND)
             OkBtn = wx.Button(panel,-1,"Ok")
             OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
             cancelBtn = wx.Button(panel,-1,"Cancel")
@@ -2689,6 +2697,21 @@ class GSASII(wx.Frame):
                 if value and '-' not in value[0]:
                     print 'bad input - numbers only'
                     self.FindWindowById(id).SetValue('0.000')
+                    
+        def OnAllScale(self,event):
+            id = event.GetId()
+            try:
+                scale = float(self.FindWindowById(id).GetValue())
+                self.FindWindowById(id).SetValue('%.3f'%(scale))
+                entries = self.dataGridSizer.GetChildren()
+                for i,item in enumerate(self.data[:-1]):
+                    item[0] = scale
+                    entries[2*i].GetWindow().SetValue('%.3f'%(scale))
+                 
+            except ValueError:
+                print 'bad input - numbers only'
+                self.FindWindowById(id).SetValue('')
+                    
             
         def OnNameChange(self,event):
             self.data[-1] = self.name.GetValue() 

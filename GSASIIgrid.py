@@ -4015,7 +4015,7 @@ def MovePatternTreeToGrid(G2frame,item):
             for i in G2frame.Refine: i.Enable(True)
             G2frame.EnableSeqRefineMenu()
             UpdateControls(G2frame,data)
-        elif G2frame.PatternTree.GetItemText(item) == 'Sequential results':
+        elif 'Sequential' in G2frame.PatternTree.GetItemText(item):
             data = G2frame.PatternTree.GetItemPyData(item)
             UpdateSeqResults(G2frame,data)
         elif G2frame.PatternTree.GetItemText(item) == 'Covariance':

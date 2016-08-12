@@ -534,6 +534,8 @@ def UpdatePeakGrid(G2frame, data):
             for sel in dlg.GetSelections():
                 names.append(histList[sel])
         dlg.Destroy()
+        if not names:
+            return
         SeqResult = {}
         Reverse = False
         CopyForward = False
@@ -600,11 +602,11 @@ def UpdatePeakGrid(G2frame, data):
         finally:
             wx.EndBusyCursor()
         SeqResult['histNames'] = Names
-        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results')
+        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential peak fit results')
         if Id:
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         else:
-            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential results')
+            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential peak fit results')
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         G2frame.PatternTree.SelectItem(Id)
         
@@ -1537,6 +1539,9 @@ def UpdateInstrumentGrid(G2frame,data):
         for item in copyList:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
             instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+            if 'Bank' not in instData:
+                instData['Bank'] = [1,1,0]
+#            GSASIIpath.IPyBreak()
             if len(data) == len(instData) and instType == instData['Type'][0]:   #don't mix data types or lam & lam1/lam2 parms!
                 for item in instData:
                     if item not in ['Source',]:
@@ -1566,6 +1571,8 @@ def UpdateInstrumentGrid(G2frame,data):
         for item in copyList:
             Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,item)
             instData = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id,'Instrument Parameters'))[0]
+            if 'Bank' not in instData:
+                instData['Bank'] = [1,1,0]
             if len(data) == len(instData) and instType == instData['Type'][0]:  #don't mix data types or lam & lam1/lam2 parms!
                 instData.update(data)
             else:
@@ -4028,11 +4035,11 @@ def UpdateModelsGrid(G2frame,data):
                 print ' ***** Small angle sequential refinement successful *****'
         finally:
             wx.EndBusyCursor()    
-        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results')
+        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential SASD results')
         if Id:
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         else:
-            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential results')
+            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential SASD results')
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         G2frame.PatternTree.SelectItem(Id)
         

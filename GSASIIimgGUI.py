@@ -1745,7 +1745,7 @@ def UpdateStressStrain(G2frame,data):
         G2plt.PlotExposedImage(G2frame,event=event)
         G2frame.G2plotNB.Delete('Ring Intensities')
         G2plt.PlotXY(G2frame,RingInt,labelX='Azimuth',
-            labelY='Intensity',newPlot=True,Title='Ring Intensities',
+            labelY='MRD',newPlot=True,Title='Ring Intensities',
             names=Names,lines=True)
         
     def OnFitStrSta(event):
@@ -1772,10 +1772,23 @@ def UpdateStressStrain(G2frame,data):
             return
         dlg.Destroy()
         SeqResult = {}
+        Reverse = False
+        CopyForward = False
+        choice = ['Reverse sequence','Copy from prev.',]
+        dlg = wx.MultiChoiceDialog(G2frame.dataFrame,'Sequential controls','Select controls',choice)
+        if dlg.ShowModal() == wx.ID_OK:
+            for sel in dlg.GetSelections():
+                if sel:
+                    CopyForward = True
+                else:
+                    Reverse = True
+        dlg.Destroy()
         dlg = wx.ProgressDialog('Sequential IMG Strain fit','Data set name = '+names[0],len(names), 
             style = wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_REMAINING_TIME|wx.PD_CAN_ABORT)          
         wx.BeginBusyCursor()
         goodnames = []
+        if Reverse:
+            names.reverse()
         try:
             for i,name in enumerate(names):
                 print ' Sequential strain fit for ',name
@@ -1792,6 +1805,10 @@ def UpdateStressStrain(G2frame,data):
                 id = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, name)
                 Npix,imagefile,imagetag = G2frame.PatternTree.GetImageLoc(Id)
                 image = GetImageZ(G2frame,Controls)
+                if i and CopyForward:
+                    for j,ring in enumerate(StaCtrls['d-zero']):
+                        ring['Emat'] = variables[4*j:4*j+3]
+                #get results from previous & put in StaCtrls
                 G2img.FitStrSta(image,StaCtrls,Controls)
                 G2plt.PlotStrain(G2frame,StaCtrls,newPlot=True)
                 parmDict = {'Sample load':StaCtrls['Sample load'],}
@@ -1799,16 +1816,16 @@ def UpdateStressStrain(G2frame,data):
                 sig = []
                 varyList = []
                 variables = []
-                for i,item in enumerate(StaCtrls['d-zero']):
+                for j,item in enumerate(StaCtrls['d-zero']):
                     variables += item['Emat']
                     sig += item['Esig']
-                    varylist = ['%d;%s'%(i,Name) for Name in varyNames]
+                    varylist = ['%d;%s'%(j,Name) for Name in varyNames]
                     varyList += varylist
                     parmDict.update(dict(zip(varylist,item['Emat'])))
-                    parmDict['%d;Dcalc'%(i)] = item['Dcalc']
-                    parmDict['%d;Ivar'%(i)] = item['Ivar']
+                    parmDict['%d;Dcalc'%(j)] = item['Dcalc']
+                    parmDict['%d;Ivar'%(j)] = item['Ivar']
                     variables.append(item['Ivar'])
-                    varyList.append('%d;Ivar'%(i))
+                    varyList.append('%d;Ivar'%(j))
                     sig.append(0.)
                 SeqResult[name] = {'variables':variables,'varyList':varyList,'sig':sig,'Rvals':[],
                     'covMatrix':np.eye(len(variables)),'title':name,'parmDict':parmDict}
@@ -1818,11 +1835,11 @@ def UpdateStressStrain(G2frame,data):
                 print ' ***** Sequential strain refinement successful *****'
         finally:
             wx.EndBusyCursor()    
-        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential results')
+        Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential strain fit results')
         if Id:
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         else:
-            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential results')
+            Id = G2frame.PatternTree.AppendItem(parent=G2frame.root,text='Sequential strain fit results')
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)
         G2frame.PatternTree.SelectItem(Id)
         print 'All images fitted'
@@ -1914,7 +1931,7 @@ def UpdateStressStrain(G2frame,data):
         def OnCutOff(event):
             Obj = event.GetEventObject()
             try:
-                value = min(10.0,max(0.5,float(Obj.GetValue())))
+                value = min(20.0,max(0.5,float(Obj.GetValue())))
             except ValueError:
                 value = 1.0
             Obj.SetValue("%.1f"%(value))

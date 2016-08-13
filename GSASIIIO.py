@@ -948,31 +948,72 @@ def SaveIntegration(G2frame,PickId,data,Overwrite=False):
             Id,[valuesdict,
                 [np.array(X),np.array(Y),np.array(W),np.zeros(N),np.zeros(N),np.zeros(N)]])
     return Id       #last powder pattern generated
+    
+def XYsave(G2frame,XY,labelX='X',labelY='Y',names=None):
+    'Save XY table data'
+    pth = G2G.GetExportPath(G2frame)
+    dlg = wx.FileDialog(
+        G2frame, 'Enter csv filename for XY table', pth, '',
+        'XY table file (*.csv)|*.csv',wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+    try:
+        if dlg.ShowModal() == wx.ID_OK:
+            filename = dlg.GetPath()
+            filename = os.path.splitext(filename)[0]+'.csv'
+            File = open(filename,'w')
+        else:
+            filename = None
+    finally:
+        dlg.Destroy()
+    if not filename:
+        return
+    for i in range(len(XY)):
+        if names != None:
+            header = '%s,%s(%s)\n'%(labelX,labelY,names[i])
+        else:
+            header = '%s,%s(%d)\n'%(labelX,labelY,i)
+        File.write(header)
+        for x,y in XY[i].T:
+            File.write('%.3f,%.3f\n'%(x,y))   
+    File.close()
+    print ' XY data saved to: ',filename
             
 def PDFSave(G2frame,exports):
-    'Save a PDF G(r) and S(Q) in column formats'
+    'Save a PDF G(r) and F(Q), S(Q) in column formats'
     for export in exports:
         PickId = G2gd.GetPatternTreeItemId(G2frame, G2frame.root, export)
         SQname = 'S(Q)'+export[4:]
+        FQname = 'F(Q)'+export[4:]
         GRname = 'G(R)'+export[4:]
         sqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.sq')
+        fqfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.fq')
         grfilename = ospath.join(G2frame.dirname,export.replace(' ','_')[5:]+'.gr')
         sqId = G2gd.GetPatternTreeItemId(G2frame, PickId, SQname)
+        fqId = G2gd.GetPatternTreeItemId(G2frame, PickId, FQname)
         grId = G2gd.GetPatternTreeItemId(G2frame, PickId, GRname)
         sqdata = np.array(G2frame.PatternTree.GetItemPyData(sqId)[1][:2]).T
+        fqdata = np.array(G2frame.PatternTree.GetItemPyData(fqId)[1][:2]).T
         grdata = np.array(G2frame.PatternTree.GetItemPyData(grId)[1][:2]).T
         sqfile = open(sqfilename,'w')
+        fqfile = open(sqfilename,'w')
         grfile = open(grfilename,'w')
         sqfile.write('#T S(Q) %s\n'%(export))
+        fqfile.write('#T F(Q) %s\n'%(export))
         grfile.write('#T G(R) %s\n'%(export))
         sqfile.write('#L Q     S(Q)\n')
+        sqfile.write('#L Q     F(Q)\n')
         grfile.write('#L R     G(R)\n')
         for q,sq in sqdata:
             sqfile.write("%15.6g %15.6g\n" % (q,sq))
         sqfile.close()
+        print ' S(Q) saved to: ',sqfilename
+        for q,fq in fqdata:
+            fqfile.write("%15.6g %15.6g\n" % (q,fq))
+        fqfile.close()
+        print ' F(Q) saved to: ',fqfilename
         for r,gr in grdata:
             grfile.write("%15.6g %15.6g\n" % (r,gr))
         grfile.close()
+        print ' G)R) saved to: ',grfilename
     
 def PeakListSave(G2frame,file,peaks):
     'Save powder peaks to a data file'

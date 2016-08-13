@@ -2252,9 +2252,7 @@ class GSASII(wx.Frame):
             menubar.Append(menu=self.MacroMenu, title='Macro')
             self._init_Macro()
         HelpMenu=G2G.MyHelp(self,helpType='Data tree',
-            morehelpitems=[
-                           ('&Tutorials','Tutorials'), 
-                           ])
+            morehelpitems=[('&Tutorials','Tutorials'),])
         menubar.Append(menu=HelpMenu,title='&Help')
             
     def _init_ctrls(self, parent):

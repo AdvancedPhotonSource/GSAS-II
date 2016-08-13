@@ -2451,6 +2451,11 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
             Page.Offset[0] += 1.
         elif event.key == 'o':
             Page.Offset = [0,0]
+        elif event.key == 's':
+            if len(XY):
+                G2IO.XYsave(G2frame,XY,labelX,labelY,names)
+            if XY2 != None:
+                G2IO.XYsave(G2frame,XY2,labelX,labelY,names2)
         else:
 #            print 'no binding for key',event.key
             #GSASIIpath.IPyBreak()
@@ -2487,7 +2492,7 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
     
     if lines:
         Page.Choice = (' key press','l: offset left','r: offset right','d: offset down',
-            'u: offset up','o: reset offset',)
+            'u: offset up','o: reset offset','s: save data as csv file')
     else:
         Page.Choice = None
     G2frame.G2plotNB.RaisePageNoRefresh(Page)

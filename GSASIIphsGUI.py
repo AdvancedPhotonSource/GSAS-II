@@ -7322,6 +7322,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             X = range(len(result[1]))
             Y = 180.*np.array(result[1]).T/np.pi
             XY = [[X,y] for y in Y]
+            XY = np.array(XY).reshape((5,2,-1))
             G2plt.PlotXY(G2frame,XY,labelX='charge flip cycle',labelY='phase, deg',newPlot=True,
                 Title='Test HKL phases',lines=True,names=testNames)
         finally:

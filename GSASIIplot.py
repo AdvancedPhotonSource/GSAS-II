@@ -2434,9 +2434,22 @@ def PlotCalib(G2frame,Inst,XY,Sigs,newPlot=False):
 ##### PlotXY
 ################################################################################
             
-def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
+def PlotXY(G2frame,XY,XY2=None,labelX='X',labelY='Y',newPlot=False,
     Title='',lines=False,names=[],names2=[]):
     '''simple plot of xy data
+    
+    :param wx.Frame G2frame: The main GSAS-II tree "window"
+    :param list XY: a list of X,Y array pairs; len(X) = len(Y)
+    :param list XY2: a secondary list of X,Y pairs
+    :param str labelX: label for X-axis
+    :param str labelY: label for Y-axis
+    :param bool newPlot: =True if new plot is to be made
+    :param str Title: title for plot
+    :param bool lines: = True if lines desired for XY plot; XY2 always plotted as lines
+    :param list of str names: legend names for each XY plot
+    :param list of str names2: legend names for each XY2 plot
+    :return nothing
+    
     '''
     def OnKeyPress(event):
         if event.key == 'u':
@@ -2499,14 +2512,8 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
     G2frame.G2plotNB.skipPageChange = True      
     G2frame.G2plotNB.status.DestroyChildren()
     Plot.set_title(Title)
-    if labelX:
-        Plot.set_xlabel(r''+labelX,fontsize=14)
-    else:
-        Plot.set_xlabel(r'X',fontsize=14)
-    if labelY:
-        Plot.set_ylabel(r''+labelY,fontsize=14)
-    else:
-        Plot.set_ylabel(r'Y',fontsize=14)
+    Plot.set_xlabel(r''+labelX,fontsize=14)
+    Plot.set_ylabel(r''+labelY,fontsize=14)
     colors=['b','g','r','c','m','k']
     Page.keyPress = OnKeyPress
     Xmax = 0.
@@ -2549,8 +2556,18 @@ def PlotXY(G2frame,XY,XY2=None,labelX=None,labelY=None,newPlot=False,
 ##### PlotXYZ
 ################################################################################
             
-def PlotXYZ(G2frame,XY,Z,labelX=None,labelY=None,newPlot=False,Title=''):
+def PlotXYZ(G2frame,XY,Z,labelX='X',labelY='Y',newPlot=False,Title=''):
     '''simple contour plot of xyz data
+    
+    :param wx.Frame G2frame: The main GSAS-II tree "window"
+    :param list XY: a list of X,Y arrays
+    :param list Z: a list of Z values for each X,Y pair
+    :param str labelX: label for X-axis
+    :param str labelY: label for Y-axis
+    :param bool newPlot: =True if new plot is to be made
+    :param str Title: title for plot
+    :return nothing
+    
     '''
     def OnKeyPress(event):
         if event.key == 'u':

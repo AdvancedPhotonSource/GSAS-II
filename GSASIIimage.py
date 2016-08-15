@@ -378,14 +378,13 @@ def GetTthAzmDsp(x,y,data): #expensive
     cent = data['center']
     tilt = data['tilt']
     dist = data['distance']/cosd(tilt)
-    x0 = data['distance']*tand(tilt)
+    x0 = dist*tand(tilt)
     phi = data['rotation']
     dep = data['DetDepth']
-    LRazim = data['LRazimuth']
     azmthoff = data['azmthOff']
     dx = np.array(x-cent[0],dtype=np.float32)
     dy = np.array(y-cent[1],dtype=np.float32)
-    D = ((dx-x0)**2+dy**2+data['distance']**2)      #sample to pixel distance
+    D = ((dx-x0)**2+dy**2+dist**2)      #sample to pixel distance
     X = np.array(([dx,dy,np.zeros_like(dx)]),dtype=np.float32).T
     X = np.dot(X,makeMat(phi,2))
     Z = np.dot(X,makeMat(tilt,0)).T[2]
@@ -396,7 +395,7 @@ def GetTthAzmDsp(x,y,data): #expensive
     tth = npatan2d(DY,DX) 
     dsp = wave/(2.*npsind(tth/2.))
     azm = (npatan2d(dy,dx)+azmthoff+720.)%360.
-    G = D/data['distance']**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
+    G = D/dist**2       #for geometric correction = 1/cos(2theta)^2 if tilt=0.
     return np.array([tth,azm,G,dsp])
     
 def GetTth(x,y,data):

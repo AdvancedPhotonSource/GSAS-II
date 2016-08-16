@@ -601,6 +601,8 @@ def UpdatePeakGrid(G2frame, data):
             print ' ***** Sequential peak fit successful *****'
         finally:
             wx.EndBusyCursor()
+        if Reverse:
+            Names.reverse()
         SeqResult['histNames'] = Names
         Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential peak fit results')
         if Id:
@@ -3985,7 +3987,7 @@ def UpdateModelsGrid(G2frame,data):
             for sel in dlg.GetSelections():
                 names.append(choices[sel])
         dlg.Destroy()
-        SeqResult = {'histNames':names}
+        SeqResult = {}
         Reverse = False
         CopyForward = False
         choice = ['Reverse sequence','Copy from prev.']
@@ -4035,6 +4037,9 @@ def UpdateModelsGrid(G2frame,data):
                 print ' ***** Small angle sequential refinement successful *****'
         finally:
             wx.EndBusyCursor()    
+        if Reverse:
+            names.reverse()
+        SeqResult['histNames'] = names
         Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential SASD results')
         if Id:
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)

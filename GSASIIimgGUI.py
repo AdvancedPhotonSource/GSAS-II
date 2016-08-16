@@ -1835,6 +1835,9 @@ def UpdateStressStrain(G2frame,data):
                 print ' ***** Sequential strain refinement successful *****'
         finally:
             wx.EndBusyCursor()    
+        if Reverse:
+            names.reverse()
+        SeqResult['histNames'] = names
         Id =  G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Sequential strain fit results')
         if Id:
             G2frame.PatternTree.SetItemPyData(Id,SeqResult)

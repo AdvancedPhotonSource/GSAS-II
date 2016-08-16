@@ -278,7 +278,7 @@ def SeqRefine(GPXfile,dlg):
     if 'Reverse Seq' in Controls:
         if Controls['Reverse Seq']:
             histNames.reverse()
-    SeqResult = {'histNames':histNames}
+    SeqResult = {}
     makeBack = True
     Histo = {}
     NewparmDict = {}
@@ -431,6 +431,9 @@ def SeqRefine(GPXfile,dlg):
             printFile.close()
             print ' ***** Refinement aborted *****'
             return False,Msg.msg
+    if Reverse:
+        histNames.reverse()
+    SeqResult['histNames'] = histNames
     G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)
     printFile.close()
     print ' Sequential refinement results are in file: '+ospath.splitext(GPXfile)[0]+'.lst'

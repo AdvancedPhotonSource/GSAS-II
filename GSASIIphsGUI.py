@@ -6850,10 +6850,22 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     
     def OnPawleyLoad(event):
         generalData = data['General']
+        histograms = data['Histograms'].keys()
         cell = generalData['Cell'][1:7]
         A = G2lat.cell2A(cell)
         SGData = generalData['SGData']
         dmin = generalData['Pawley dmin']
+        for hist in histograms:
+            if 'PWDR' in hist[:4]:
+                Id = G2gd.GetPatternTreeItemId(G2frame,G2frame.root,hist)
+                inst = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(
+                    G2frame,Id, 'Instrument Parameters'))[0]
+                limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Limits'))
+                Tmin = G2lat.Dsp2pos(inst,dmin)
+                if 'T' in inst['Type'][0]:
+                    limits[1][0] = Tmin
+                else:
+                    limits[1][1] = Tmin
         PawleyPeaks = []
         HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
         if generalData['Modulated']:

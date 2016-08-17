@@ -5872,6 +5872,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
                 Bonds[j].append(-Dx[j]*Radii[j]/sumR[j])
         return Bonds
                         
+    Mydir = G2frame.dirname
     Wt = np.array([255,255,255])
     Rd = np.array([255,0,0])
     Gr = np.array([0,255,0])
@@ -5950,18 +5951,6 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
         
-#    def SetRBOrigin(newxy):
-##first get translation vector in screen coords.       
-#        oldxy = defaults['oldxy']
-#        if not len(oldxy): oldxy = list(newxy)
-#        dxy = newxy-oldxy
-#        defaults['oldxy'] = list(newxy)
-#        V = np.array([dxy[0],-dxy[1],0.])/100.
-#        Q = defaults['Quaternion']
-#        V = G2mth.prodQVQ(G2mth.invQ(Q),V)
-#        rbData['rbXYZ'] += V
-#        PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults) 
-#               
     def SetRotation(newxy):
 #first get rotation vector in screen coords. & angle increment        
         oldxy = defaults['oldxy']
@@ -6103,6 +6092,37 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     def OnSize(event):
         Draw('size')
         
+    def OnKeyBox(event):
+        mode = cb.GetValue()
+        if mode in ['jpeg','bmp','tiff',]:
+            try:
+                import Image as Im
+            except ImportError:
+                try:
+                    from PIL import Image as Im
+                except ImportError:
+                    print "PIL/pillow Image module not present. Cannot save images without this"
+                    raise Exception("PIL/pillow Image module not found")
+            
+            Fname = os.path.join(Mydir,Page.name+'.'+mode)
+            print Fname+' saved'
+            size = Page.canvas.GetSize()
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            if mode in ['jpeg',]:
+                Pix = glReadPixels(0,0,size[0],size[1],GL_RGBA, GL_UNSIGNED_BYTE)
+                im = Im.new("RGBA", (size[0],size[1]))
+            else:
+                Pix = glReadPixels(0,0,size[0],size[1],GL_RGB, GL_UNSIGNED_BYTE)
+                im = Im.new("RGB", (size[0],size[1]))
+            try:
+                im.frombytes(Pix)
+            except AttributeError:
+                im.fromstring(Pix)
+            im = im.transpose(Im.FLIP_TOP_BOTTOM)
+            im.save(Fname,mode)
+            cb.SetValue(' save as/key:')
+            G2frame.G2plotNB.status.SetStatusText('Drawing saved to: '+Fname,1)
+
     try:
         plotNum = G2frame.G2plotNB.plotList.index('Rigid body')
         Page = G2frame.G2plotNB.nb.GetPage(plotNum)        
@@ -6114,7 +6134,15 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
         Page.views = False
         view = False
         altDown = False
+#    GSASIIpath.IPyBreak()
+    Page.name = rbData['RBname']
     G2frame.G2plotNB.RaisePageNoRefresh(Page)
+    Page.Choice = None
+    choice = [' save as:','jpeg','tiff','bmp',]
+    cb = wx.ComboBox(G2frame.G2plotNB.status,style=wx.CB_DROPDOWN|wx.CB_READONLY,choices=choice)
+    cb.Bind(wx.EVT_COMBOBOX, OnKeyBox)
+    cb.SetValue(' save as/key:')
+    
     Font = Page.GetFont()
     Page.canvas.Bind(wx.EVT_MOUSEWHEEL, OnMouseWheel)
     Page.canvas.Bind(wx.EVT_LEFT_DOWN, OnMouseDown)
@@ -6126,6 +6154,7 @@ def PlotRigidBody(G2frame,rbType,AtInfo,rbData,defaults):
     Page.camera['backColor'] = np.array([0,0,0,0])
     Page.canvas.SetCurrent()
     Draw('main')
+    Draw('main')    #to fill both buffers so save works
 
 ################################################################################
 #### Plot Layers

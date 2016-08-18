@@ -1109,6 +1109,8 @@ class MultipleChoicesDialog(wx.Dialog):
         *  headinglist = [ 'select a, b or c', 'select 1 of 2', 'No option here']
         
     selections are placed in self.chosen when OK is pressed
+
+    Also see GSASIIctrls
     '''
     def __init__(self,choicelist,headinglist,
                  head='Select options',
@@ -1720,6 +1722,13 @@ class ImportImage(ImportBaseclass):
             ParentFrame.oldImageTag = imagetag   # save the tag of the last image file read            
 
 ######################################################################
+def striphist(var,insChar=''):
+    'strip a histogram number from a var name'
+    sv = var.split(':')
+    if len(sv) <= 1: return var
+    if sv[1]:
+        sv[1] = insChar
+    return ':'.join(sv)
 class ExportBaseclass(object):
     '''Defines a base class for the exporting of GSAS-II results.
 
@@ -1952,7 +1961,7 @@ class ExportBaseclass(object):
                 )
         else:
             raise Exception('This should not happen!')
-        
+
     def loadParmDict(self):
         '''Load the GSAS-II refinable parameters from the tree into a dict (self.parmDict). Update
         refined values to those from the last cycle and set the uncertainties for the
@@ -2044,6 +2053,8 @@ class ExportBaseclass(object):
         self.xtalDict = {}
         self.Phases = {}
         self.Histograms = {}
+        self.SeqRefdata = None
+        self.SeqRefhist = None
         if self.G2frame.PatternTree.IsEmpty(): return # nothing to do
         histType = None        
         if self.currentExportType == 'phase':
@@ -2123,8 +2134,11 @@ class ExportBaseclass(object):
                 self.xtalDict[i] = hist
 
     def dumpTree(self,mode='type'):
-        '''Print out information on the data tree dicts loaded in loadTree
+        '''Print out information on the data tree dicts loaded in loadTree.
+        Used for testing only.
         '''
+        if self.SeqRefdata and self.SeqRefhist:
+            print('Note that dumpTree does not show sequential results')
         print '\nOverall'
         if mode == 'type':
             def Show(arg): return type(arg)
@@ -2204,6 +2218,10 @@ class ExportBaseclass(object):
         :returns: the file object opened by the routine which is also
           saved as self.fp
         '''
+        if mode == 'd': # debug mode
+            self.fullpath = '(stdout)'
+            self.fp = sys.stdout
+            return
         if not fil:
             if not os.path.splitext(self.filename)[1]:
                 self.filename += self.extension
@@ -2218,16 +2236,42 @@ class ExportBaseclass(object):
         :param str line: the text to be written. 
         '''
         self.fp.write(line+'\n')
+        
     def CloseFile(self,fp=None):
         '''Close a file opened in OpenFile
 
         :param file fp: the file object to be closed. If None (default)
           file object self.fp is closed. 
         '''
+        if self.fp == sys.stdout: return # debug mode
         if fp is None:
             fp = self.fp
             self.fp = None
         fp.close()
+        
+    def SetSeqRef(self,data,hist):
+        '''Set the exporter to retrieve results from a sequential refinement
+        rather than the main tree
+        '''
+        self.SeqRefdata = data
+        self.SeqRefhist = hist
+        data_name = data[hist]
+        for i,val in zip(data_name['varyList'],data_name['sig']):
+            self.sigDict[i] = val
+            self.sigDict[striphist(i)] = val
+        for i in data_name['parmDict']:
+            self.parmDict[striphist(i)] = data_name['parmDict'][i]
+            self.parmDict[i] = data_name['parmDict'][i]
+            # zero out the dA[xyz] terms, they would only bring confusion
+            key = i.split(':')
+            if len(key) < 3: continue
+            if key[2].startswith('dA'):
+                self.parmDict[i] = 0.0
+        for i,(val,sig) in data_name.get('depParmDict',{}).iteritems():
+            self.parmDict[i] = val
+            self.sigDict[i] = sig
+        #GSASIIpath.IPyBreak()
+                
     # Tools to pull information out of the data arrays
     def GetCell(self,phasenam):
         """Gets the unit cell parameters and their s.u.'s for a selected phase
@@ -2237,6 +2281,8 @@ class ExportBaseclass(object):
           to a, b, c, alpha, beta, gamma, volume where `cellList` has the
           cell values and `cellSig` has their uncertainties.
         """
+        if self.SeqRefdata and self.SeqRefhist:
+            return self.GetSeqCell(phasenam,self.SeqRefdata[self.SeqRefhist])
         phasedict = self.Phases[phasenam] # pointer to current phase info
         try:
             pfx = str(phasedict['pId'])+'::'
@@ -2248,7 +2294,42 @@ class ExportBaseclass(object):
         except KeyError:
             cell = phasedict['General']['Cell'][1:]
             return cell,7*[0]
-    
+            
+    def GetSeqCell(self,phasenam,data_name):
+        """Gets the unit cell parameters and their s.u.'s for a selected phase
+        and histogram in a sequential fit
+
+        :param str phasenam: the name for the selected phase
+        :param dict data_name: the sequential refinement parameters for the selected histogram
+        :returns: `cellList,cellSig` where each is a 7 element list corresponding
+          to a, b, c, alpha, beta, gamma, volume where `cellList` has the
+          cell values and `cellSig` has their uncertainties.
+        """
+        phasedict = self.Phases[phasenam]
+        SGdata = phasedict['General']['SGData']
+        pId = phasedict['pId']
+        RecpCellTerms = G2lat.cell2A(phasedict['General']['Cell'][1:7])
+        ESDlookup = {}
+        Dlookup = {}
+        varied = [striphist(i) for i in data_name['varyList']]
+        for item,val in data_name['newCellDict'].iteritems():
+            if item in varied:
+                ESDlookup[val[0]] = item
+                Dlookup[item] = val[0]
+        A = RecpCellTerms[:]
+        for i in range(6):
+            var = str(pId)+'::A'+str(i)
+            if var in ESDlookup:
+                A[i] = data_name['newCellDict'][ESDlookup[var]][1] # override with refined value
+        cellDict = dict(zip([str(pId)+'::A'+str(i) for i in range(6)],A))
+        zeroDict = {i:0.0 for i in cellDict}
+        A,zeros = G2stIO.cellFill(str(pId)+'::',SGdata,cellDict,zeroDict)
+        covData = {
+            'varyList': [Dlookup.get(striphist(v),v) for v in data_name['varyList']],
+            'covMatrix': data_name['covMatrix']
+            }
+        return list(G2lat.A2cell(A)) + [G2lat.calc_V(A)], G2stIO.getCellEsd(str(pId)+'::',SGdata,A,covData)
+                
     def GetAtoms(self,phasenam):
         """Gets the atoms associated with a phase. Can be used with standard
         or macromolecular phases
@@ -2284,8 +2365,10 @@ class ExportBaseclass(object):
             xyz = []
             for j,v in enumerate(('x','y','z')):
                 val = at[cx+j]
-                pfx = str(phasedict['pId'])+'::dA'+v+':'+str(i)
-                sig = self.sigDict.get(pfx,-0.000009)
+                pfx = str(phasedict['pId']) + '::A' + v + ':' + str(i)
+                val = self.parmDict.get(pfx, val)
+                dpfx = str(phasedict['pId'])+'::dA'+v+':'+str(i)
+                sig = self.sigDict.get(dpfx,-0.000009)
                 xyz.append((val,sig))
             xyz.append((fval,fsig))
             td = []
@@ -2305,6 +2388,7 @@ class ExportBaseclass(object):
 ######################################################################
 def ExportPowderList(G2frame):
     '''Returns a list of extensions supported by :func:`GSASIIIO:ExportPowder`
+    This is used in :meth:`GSASIIimgGUI.AutoIntFrame` only. 
     
     :param wx.Frame G2frame: the GSAS-II main data tree window
     '''
@@ -2319,7 +2403,8 @@ def ExportPowderList(G2frame):
     return extList
 
 def ExportPowder(G2frame,TreeName,fileroot,extension):
-    '''Writes a single powder histogram using the Export routines
+    '''Writes a single powder histogram using the Export routines.
+    This is used in :meth:`GSASIIimgGUI.AutoIntFrame` only. 
 
     :param wx.Frame G2frame: the GSAS-II main data tree window
     :param str TreeName: the name of the histogram (PWDR ...) in the data tree
@@ -2347,7 +2432,72 @@ def ExportPowder(G2frame,TreeName,fileroot,extension):
                 print err
     else:
         print('No Export routine supports extension '+extension)
-        
+
+def ExportSequential(G2frame,data,obj,exporttype):
+    '''
+    Used to export from every phase/dataset in a sequential refinement using
+    a .Writer method for either projects or phases. Prompts to select histograms
+    and for phase exports, which phase(s). 
+
+    :param wx.Frame G2frame: the GSAS-II main data tree window
+    :param dict data: the sequential refinement data object
+    :param str exporttype: indicates the type of export ('project' or 'phase')
+    '''
+    if len(data['histNames']) == 0:
+        G2G.G2MessageBox(G2frame,'There are no sequential histograms','Warning')
+    obj.InitExport(None)
+    obj.loadTree()
+    obj.loadParmDict()
+    if len(data['histNames']) == 1:
+        histlist = data['histNames']
+    else:
+        dlg = G2G.G2MultiChoiceDialog(G2frame,'Select histograms to export from list',
+                                 'Select histograms',data['histNames'])
+        if dlg.ShowModal() == wx.ID_OK:
+            histlist = [data['histNames'][l] for l in dlg.GetSelections()]
+            dlg.Destroy()
+        else:
+            dlg.Destroy()
+            return
+    if exporttype == 'Phase':
+        phaselist = obj.Phases.keys()
+        if len(obj.Phases) == 0:
+            G2G.G2MessageBox(G2frame,'There are no phases in sequential ref.','Warning')
+            return
+        elif len(obj.Phases) > 1:
+            dlg = G2G.G2MultiChoiceDialog(G2frame,'Select phases to export from list',
+                                    'Select phases', phaselist)
+            if dlg.ShowModal() == wx.ID_OK:
+                phaselist = [phaselist[l] for l in dlg.GetSelections()]
+                dlg.Destroy()
+            else:
+                dlg.Destroy()
+                return
+        filename = obj.askSaveFile()
+        if not filename: return True
+        obj.dirname,obj.filename = os.path.split(filename)
+        print('Writing output to file '+str(obj.filename)+"...")
+        mode = 'w'
+        for p in phaselist:
+            for h in histlist:
+                obj.SetSeqRef(data,h)
+                #GSASIIpath.IPyBreak()
+                obj.Writer(h,phasenam=p,mode=mode)
+                mode = 'a'
+        print('...done')
+    elif exporttype == 'Project':
+        filename = obj.askSaveFile()
+        if not filename: return True
+        obj.dirname,obj.filename = os.path.split(filename)
+        print('Writing output to file '+str(obj.filename)+"...")
+        mode = 'w'
+        for h in histlist:
+            obj.SetSeqRef(data,h)
+            obj.Writer(h,mode=mode)
+            print('\t'+str(h)+' written')
+            mode = 'a'
+        print('...done')
+
 def ReadDIFFaX(DIFFaXfile):
     print 'read ',DIFFaXfile
     Layer = {'Laue':'-1','Cell':[False,1.,1.,1.,90.,90.,90,1.],'Width':[[10.,10.],[False,False]],

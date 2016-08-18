@@ -52,6 +52,53 @@ class ExportPhaseCSV(G2IO.ExportBaseclass):
         self.exporttype = ['phase']
         self.multiple = True # allow multiple phases to be selected
 
+    def Writer(self,hist,phasenam,mode='w'):
+        self.OpenFile(mode=mode)
+        # test for aniso atoms
+        aniso = False
+        AtomsList = self.GetAtoms(phasenam)
+        for lbl,typ,mult,xyz,td in AtomsList:
+            if len(td) != 1:
+                aniso = True
+                break
+        if mode == 'w':
+            lbllist = ['hist','phase','a','b','c','alpha','beta','gamma','volume']
+            lbllist += ["atm label","elem","mult","x","y","z","frac","Uiso"]
+            if aniso: lbllist += ['U11','U22','U33','U12','U13','U23']
+            WriteList(self,lbllist)
+            
+        cellList,cellSig = self.GetCell(phasenam)
+        line = '"' + str(hist)+ '","' + str(phasenam) + '"'
+        for defsig,val in zip(
+            3*[-0.00001] + 3*[-0.001] + [-0.01], # sets sig. figs.
+            cellList
+            ):
+            txt = G2mth.ValEsd(val,defsig)
+            if line: line += ','
+            line += txt
+        self.Write(line)
+
+        # get atoms and print separated by commas
+        AtomsList = self.GetAtoms(phasenam)
+        for lbl,typ,mult,xyz,td in AtomsList:
+            line = ",,,,,,,,,"
+            line += '"' + lbl + '","' + typ + '",' + str(mult) + ','
+            for val,sig in xyz:
+                line += G2mth.ValEsd(val,-abs(sig))
+                line += ","
+            if len(td) == 1:
+                line += G2mth.ValEsd(td[0][0],-abs(td[0][1]))
+            else:
+                line += ","
+                for val,sig in td:
+                    line += G2mth.ValEsd(val,-abs(sig))
+                    line += ","
+            self.Write(line)
+
+        if mode == 'w':
+            print('Phase '+str(phasenam)+' written to file '+str(self.fullpath))
+        self.CloseFile()
+    
     def Exporter(self,event=None):
         '''Export a phase as a csv file
         '''
@@ -63,7 +110,7 @@ class ExportPhaseCSV(G2IO.ExportBaseclass):
         self.loadParmDict()
         if self.ExportSelect(): return # set export parameters; get file name
         self.OpenFile()
-        # if more than one format is selected, put them into a single file
+        # if more than one phase is selected, put them into a single file
         for phasenam in self.phasenam:
             phasedict = self.Phases[phasenam] # pointer to current phase info            
             i = self.Phases[phasenam]['pId']
@@ -126,7 +173,7 @@ class ExportPowderCSV(G2IO.ExportBaseclass):
         self.multiple = True
 
     def Writer(self,TreeName,filename=None):
-        print filename
+        #print filename
         self.OpenFile(filename)
         histblk = self.Histograms[TreeName]
         WriteList(self,("x","y_obs","weight","y_calc","y_bkg"))

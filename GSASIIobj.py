@@ -1368,6 +1368,7 @@ def CompileVarDesc():
         'Back$': 'background parameter',
         'pos$': 'peak position',
         'int$': 'peak intensity',
+        'WgtFrac':'phase weight fraction',
         }.items():
         VarDesc[key] = value
         reVarDesc[re.compile(key)] = value

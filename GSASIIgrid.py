@@ -1504,6 +1504,33 @@ class DataFrame(wx.Frame):
         self.SequentialPfit.Append(
             id=wxDOPARFIT, kind=wx.ITEM_NORMAL,text='Fit to equation(s)',
             help='Perform a parametric minimization')
+        # fill sequential Export menu
+        self.SeqExportLookup = {}
+        self.SequentialEx = wx.Menu(title='')
+        self.SequentialMenu.Append(menu=self.SequentialEx, title='Seq Export')
+        for lbl,txt in (('Phase','Export selected phase(s)'),
+                        ('Project','Export entire sequential fit')):
+            objlist = []
+            for obj in self.G2frame.exporterlist:
+                if lbl.lower() in obj.exporttype:
+                    try:
+                        obj.Writer
+                    except AttributeError:
+                        continue
+                    objlist.append(obj)
+            if objlist:
+                submenu = wx.Menu()
+                item = self.SequentialEx.AppendMenu(
+                    wx.ID_ANY, lbl+' as',
+                    submenu, help=txt)
+                for obj in objlist:
+                    item = submenu.Append(
+                        wx.ID_ANY,
+                        help=obj.longFormatName,
+                        kind=wx.ITEM_NORMAL,
+                        text=obj.formatName)
+                    self.SeqExportLookup[item.GetId()] = (obj,lbl) # lookup table for submenu item
+        
         self.PostfillDataMenu()
             
         # PWDR & SASD
@@ -3205,7 +3232,15 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         if dlg.Show():
             variableLabels[var] = dlg.GetValue()
         dlg.Destroy()
-        
+
+    def DoSequentialExport(event):
+        '''Event handler for all Sequential Export menu items
+        '''
+        vals = G2frame.dataFrame.SeqExportLookup.get(event.GetId())
+        if vals is None:
+            print('Error: Id not found. This should not happen!')
+        G2IO.ExportSequential(G2frame,data,*vals)
+    
     #def GridRowLblToolTip(row): return 'Row ='+str(row)
     
     # lookup table for unique cell parameters by symmetry
@@ -3270,7 +3305,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     initialCell = {}
     RcellLbls = {}
     zeroDict = {}
-    Rcelldict = {}
     for phase in Phases:
         phasedict = Phases[phase]
         pId = phasedict['pId']
@@ -3279,7 +3313,6 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         RecpCellTerms[pId] = G2lat.cell2A(phasedict['General']['Cell'][1:7])
         zeroDict[pId] = dict(zip(RcellLbls[pId],6*[0.,]))
         SGdata[pId] = phasedict['General']['SGData']
-        Rcelldict.update({lbl:val for lbl,val in zip(RcellLbls[pId],RecpCellTerms[pId])})
         laue = SGdata[pId]['SGLaue']
         if laue == '2/m':
             laue += SGdata[pId]['SGUniq']
@@ -3314,6 +3347,10 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
     G2frame.dataFrame.Bind(wx.EVT_MENU, DelParFitEq, id=wxDELPARFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, EditParFitEq, id=wxEDITPARFIT)
     G2frame.dataFrame.Bind(wx.EVT_MENU, DoParEqFit, id=wxDOPARFIT)
+
+    for id in G2frame.dataFrame.SeqExportLookup:        
+        G2frame.dataFrame.Bind(wx.EVT_MENU, DoSequentialExport, id=id)
+
     EnablePseudoVarMenus()
     EnableParFitEqMenus()
 
@@ -3437,6 +3474,27 @@ def UpdateSeqResults(G2frame,data,prevSize=None):
         #GSASIIpath.IPyBreak()
     colList += zip(*vals)
     colSigs += zip(*esds)
+    # compute and add weight fractions to table if varied
+    for phase in Phases:
+        var = str(Phases[phase]['pId'])+':*:Scale'
+        if var not in combinedVaryList: continue
+        wtFrList = []
+        sigwtFrList = []
+        for i,name in enumerate(histNames):
+            wtFrSum = 0.
+            for phase1 in Phases:
+                wtFrSum += Phases[phase1]['Histograms'][name]['Scale'][0]*Phases[phase1]['General']['Mass']
+            var = str(Phases[phase]['pId'])+':'+str(i)+':Scale'
+            wtFr = Phases[phase]['Histograms'][name]['Scale'][0]*Phases[phase]['General']['Mass']/wtFrSum
+            wtFrList.append(wtFr)
+            if var in data[name]['varyList']:
+                sig = data[name]['sig'][data[name]['varyList'].index(var)]*wtFr/Phases[phase]['Histograms'][name]['Scale'][0]
+            else:
+                sig = 0.0
+            sigwtFrList.append(sig)
+        colLabels.append(str(Phases[phase]['pId'])+':*:WgtFrac')
+        colList += [wtFrList]
+        colSigs += [sigwtFrList]
                 
     # tabulate constrained variables, removing histogram numbers if needed
     # from parameter label

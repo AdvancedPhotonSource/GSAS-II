@@ -607,7 +607,8 @@ def Dsp2pos(Inst,dsp):
     '''
     if 'C' in Inst['Type'][0] or 'PKS' in Inst['Type'][0]:
         wave = G2mth.getWave(Inst)
-        pos = 2.0*asind(wave/(2.*dsp))+Inst.get('Zero',[0,0])[1]             
+        val = min(0.995,wave/(2.*dsp))  #set max at 168deg
+        pos = 2.0*asind(val)+Inst.get('Zero',[0,0])[1]             
     else:   #'T'OF
         pos = Inst['difC'][1]*dsp+Inst['Zero'][1]+Inst['difA'][1]*dsp**2+Inst.get('difB',[0,0,False])[1]/dsp
     return pos

@@ -6863,9 +6863,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 limits = G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,Id, 'Limits'))
                 Tmin = G2lat.Dsp2pos(inst,dmin)
                 if 'T' in inst['Type'][0]:
-                    limits[1][0] = Tmin
+                    limits[1][0] = max(limits[0][0],Tmin)
                 else:
-                    limits[1][1] = Tmin
+                    limits[1][1] = min(limits[0][1],Tmin)
         PawleyPeaks = []
         HKLd = np.array(G2lat.GenHLaue(dmin,SGData,A))
         if generalData['Modulated']:

@@ -86,6 +86,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             wx.CallLater(100,UpdateDData,G2frame,DData,data,G2frame.hist)
             
         def OnPOhkl(event):
+            event.Skip()
             Obj = event.GetEventObject()
             Saxis = Obj.GetValue().split()
             try:
@@ -126,6 +127,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Scale'][1] = Obj.GetValue()
             
         def OnScaleVal(event):
+            event.Skip()
             Obj = event.GetEventObject()
             try:
                 scale = float(Obj.GetValue())
@@ -156,6 +158,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         UseList[G2frame.hist][name][2][2] = Obj.GetValue()
         
     def OnLGmixVal(event):
+        event.Skip()
         Obj = event.GetEventObject()
         hist,name = Indx[Obj.GetId()]
         try:
@@ -184,6 +187,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Size'][2][pid] = Obj.GetValue()
         
     def OnSizeVal(event):
+        event.Skip()
         Obj = event.GetEventObject()
         hist,pid = Indx[Obj.GetId()]
         if UseList[G2frame.hist]['Size'][0] == 'ellipsoidal':
@@ -221,6 +225,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Mustrain'][2][pid] = Obj.GetValue()
         
     def OnStrainVal(event):
+        event.Skip()
         Snames = G2spc.MustrainNames(SGData)
         Obj = event.GetEventObject()
         hist,pid = Indx[Obj.GetId()]
@@ -243,6 +248,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         wx.CallAfter(G2plt.PlotSizeStrainPO,G2frame,data,hist)
         
     def OnStrainAxis(event):
+        event.Skip()
         Obj = event.GetEventObject()
         Saxis = Obj.GetValue().split()
         try:
@@ -281,6 +287,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         UseList[G2frame.hist]['HStrain'][1][pid] = Obj.GetValue()
         
     def OnHstrainVal(event):
+        event.Skip()
         Snames = G2spc.HStrainNames(SGData)
         Obj = event.GetEventObject()
         hist,pid = Indx[Obj.GetId()]
@@ -292,6 +299,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         Obj.SetValue("%.3g"%(UseList[G2frame.hist]['HStrain'][0][pid]))          #reset in case of error
 
     def OnPOVal(event):
+        event.Skip()
         Obj = event.GetEventObject()
         try:
             mdVal = float(Obj.GetValue())
@@ -302,6 +310,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
         Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Pref.Ori.'][1]))          #reset in case of error
         
     def OnPOAxis(event):
+        event.Skip()
         Obj = event.GetEventObject()
         Saxis = Obj.GetValue().split()
         try:
@@ -527,6 +536,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     def SHDataSizer(POData):
         
         def OnODFValue(event):
+            event.Skip()
             Obj = event.GetEventObject()
             odf = ODFIndx[Obj.GetId()]
             try:
@@ -567,6 +577,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
         def OnshToler(event):
+            event.Skip()
             try:
                 value = float(shToler.GetValue())
                 POData[7] = value
@@ -599,6 +610,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
                 
         def OnTbarVal(event):
+            event.Skip()
             Obj = event.GetEventObject()
             try:
                 tbar = float(Obj.GetValue())
@@ -609,6 +621,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Extinction'][2]['Tbar']))
     
         def OnCos2TM(event):
+            event.Skip()
             Obj = event.GetEventObject()
             try:
                 val = float(Obj.GetValue())
@@ -619,6 +632,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Obj.SetValue("%.3f"%(UseList[G2frame.hist]['Extinction'][2]['Cos2TM']))
         
         def OnEval(event):
+            event.Skip()
             Obj = event.GetEventObject()
             item = Indx[Obj.GetId()]
             try:
@@ -639,6 +653,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             UseList[G2frame.hist]['Extinction'][1] = Obj.GetValue()
             
         def OnExtVal(event):
+            event.Skip()
             Obj = event.GetEventObject()
             try:
                 ext = float(Obj.GetValue())
@@ -722,6 +737,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     def BabSizer():
         
         def OnBabVal(event):
+            event.Skip()
             Obj = event.GetEventObject()
             item,bab = Indx[Obj.GetId()]
             try:
@@ -755,6 +771,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
     def FlackSizer():
         
         def OnFlackVal(event):
+            event.Skip()
             Obj = event.GetEventObject()
             try:
                 flack = float(Obj.GetValue())
@@ -792,6 +809,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
         def OnMat(event):
+            event.Skip()
             Obj = event.GetEventObject()
             it,im = Indx[Obj.GetId()]
             newMat = Obj.GetValue().split()
@@ -803,6 +821,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             Obj.SetValue('%3d %3d %3d'%(uvw[0],uvw[1],uvw[2]))
             
         def OnTwinVal(event):
+            event.Skip()
             Obj = event.GetEventObject()
             it = Indx[Obj.GetId()]
             try:
@@ -950,6 +969,7 @@ def UpdateDData(G2frame,DData,data,hist='',Scroll=0):
             wx.CallLater(100,RepaintHistogramInfo,DData.GetScrollPos(wx.VERTICAL))
             
         def OnSizeAxis(event):            
+            event.Skip()
             Obj = event.GetEventObject()
             Saxis = Obj.GetValue().split()
             try:

@@ -2686,6 +2686,7 @@ class GSASII(wx.Frame):
             self.Fit()
 
         def OnScaleChange(self,event):
+            event.Skip()
             id = event.GetId()
             value = self.FindWindowById(id).GetValue()
             try:
@@ -2697,6 +2698,7 @@ class GSASII(wx.Frame):
                     self.FindWindowById(id).SetValue('0.000')
                     
         def OnAllScale(self,event):
+            event.Skip()
             id = event.GetId()
             try:
                 scale = float(self.FindWindowById(id).GetValue())
@@ -2712,6 +2714,7 @@ class GSASII(wx.Frame):
                     
             
         def OnNameChange(self,event):
+            event.Skip()
             self.data[-1] = self.name.GetValue() 
             
         def OnOk(self,event):

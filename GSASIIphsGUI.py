@@ -346,6 +346,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     return '(00g)'
                                 
             def OnPhaseName(event):
+                event.Skip()
                 oldName = generalData['Name']
                 phaseRIdList,usedHistograms = G2frame.GetPhaseInfofromTree()
                 phaseNameList = usedHistograms.keys() # phase names in use
@@ -411,6 +412,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     TypeTxt.SetValue(generalData['Type'])                
                 
             def OnSpaceGroup(event):
+                event.Skip()
                 Flds = SGTxt.GetValue().split()
                 #get rid of extra spaces between fields first
                 for fld in Flds: fld = fld.strip()
@@ -524,6 +526,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['Cell'][0] = cellRef.GetValue()
                 
             def OnCellChange(event):
+                event.Skip()
                 SGData = generalData['SGData']
                 laue = SGData['SGLaue']
                 if laue == '2/m':
@@ -753,6 +756,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['doPawley'] = pawlRef.GetValue()
             
             def OnPawleyVal(event):
+                event.Skip()
                 try:
                     dmin = float(pawlVal.GetValue())
                     if 0.25 <= dmin <= 20.:
@@ -762,6 +766,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 pawlVal.SetValue("%.5f"%(generalData['Pawley dmin']))          #reset in case of error                
             
             def OnPawleyNegWt(event):
+                event.Skip()
                 try:
                     wt = float(pawlNegWt.GetValue())
                     if 0. <= wt <= 1.:
@@ -791,6 +796,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def ModulatedSizer(name):
             
             def OnSuperGp(event):   #for HKLF needs to reject SSgps not agreeing with modVec!
+                event.Skip()
                 SSymbol = superGp.GetValue()
                 E,SSGData = G2spc.SSpcGroup(generalData['SGData'],SSymbol)
                 if SSGData:
@@ -811,11 +817,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     wx.MessageBox(Text,caption=msg,style=Style)
                 wx.CallAfter(UpdateGeneral)                
             
-            def OnDim(event):
-                generalData['Super'] = dim.GetValue()
-                wx.CallAfter(UpdateGeneral)
-                
             def OnVec(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 ind = Indx[Obj.GetId()]
                 val = Obj.GetValue()
@@ -898,6 +901,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))                
                 
             def OnResVal(event):
+                event.Skip()
                 try:
                     res = float(mapRes.GetValue())
                     if 0.25 <= res <= 20.:
@@ -907,6 +911,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 mapRes.SetValue("%.2f"%(Map['Resolution']))          #reset in case of error
             
             def OnCutOff(event):
+                event.Skip()
                 try:
                     res = float(cutOff.GetValue())
                     if 1.0 <= res <= 100.:
@@ -976,6 +981,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 PE.Destroy()                
                 
             def OnResVal(event):
+                event.Skip()
                 try:
                     res = float(flipRes.GetValue())
                     if 0.25 <= res <= 20.:
@@ -985,6 +991,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 flipRes.SetValue("%.2f"%(Flip['Resolution']))          #reset in case of error
             
             def OnkFactor(event):
+                event.Skip()
                 try:
                     res = float(kFactor.GetValue())
                     if 0.1 <= res <= 1.2:
@@ -994,6 +1001,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 kFactor.SetValue("%.3f"%(Flip['k-factor']))          #reset in case of error
             
             def OnkMax(event):
+                event.Skip()
                 try:
                     res = float(kMax.GetValue())
                     if res >= 10.:
@@ -1003,6 +1011,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 kMax.SetValue("%.1f"%(Flip['k-Max']))          #reset in case of error
                 
             def OnTestHKL(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 name = Obj.GetName()
                 try:
@@ -1068,6 +1077,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 MCSAdata['Data source'] = refList.GetValue()
             
             def OnDmin(event):
+                event.Skip()
                 try:
                     val = float(dmin.GetValue())
                     if 1.0 <= val < 5.0:
@@ -1085,6 +1095,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.CallAfter(UpdateGeneral,General.GetScrollPos(wx.VERTICAL))
                 
             def OnSlope(event):
+                event.Skip()
                 try:
                     val = float(slope.GetValue())
                     if .25 <= val < 1.0:
@@ -1094,6 +1105,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 slope.SetValue("%.3f"%(MCSAdata['log slope']))          #reset in case of error                
             
             def OnAjump(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 name,ind = Indx[Obj.GetId()]
                 try:
@@ -1111,6 +1123,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 MCSAdata['autoRan'] = autoRan.GetValue()
                 
             def OnRanRange(event):
+                event.Skip()
                 try:
                     val = float(ranRange.GetValue())/100
                     if 0.01 <= val <= 0.99:
@@ -1120,6 +1133,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 ranRange.SetValue('%.1f'%(MCSAdata['ranRange']*100.))
             
             def OnAnneal(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 ind,fmt = Indx[Obj.GetId()]
                 if ind == 2:        #No. trials
@@ -2594,6 +2608,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             wx.CallAfter(UpdateLayerData)
         
         def OnToler(event): #used when Laue = unknown
+            event.Skip()
             try:
                 val = float(toler.GetValue())
             except ValueError:
@@ -2630,6 +2645,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 data['Layers']['Cell'][0] = cellRef.GetValue()
                 
             def OnCellChange(event):
+                event.Skip()
                 laue = data['Layers']['Laue']
                 cell = data['Layers']['Cell']
                 Obj = event.GetEventObject()
@@ -2693,6 +2709,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def WidthSizer():
             
             def OnWidthChange(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 id = Indx[Obj]
                 try:
@@ -2787,6 +2804,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def LayerSizer(il,Layer):
             
             def OnNameChange(event):
+                event.Skip()
                 Layer['Name'] = layerName.GetValue()                
                 UpdateLayerData()
                 
@@ -2969,6 +2987,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def PlotSizer():
             
             def OnPlotSeq(event):
+                event.Skip()
                 vals = plotSeq.GetValue().split()
                 try:
                     vals = [int(val)-1 for val in vals]
@@ -3023,6 +3042,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.CallAfter(UpdateLayerData)
                 
             def OnNumLayers(event):
+                event.Skip()
                 val = numLayers.GetValue()
                 if val == 'infinite':
                     data['Layers']['Stacking'][1] = val
@@ -3037,6 +3057,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 numLayers.SetValue(data['Layers']['Stacking'][1])
                 
             def OnNumRan(event):
+                event.Skip()
                 val = numRan.GetValue()
                 try:
                     if 0 > int(val) > 1022:
@@ -3048,6 +3069,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 numRan.SetValue(val)
                 
             def OnStackList(event):
+                event.Skip()
                 stack = stackList.GetValue()
                 stack = stack.replace('\n',' ').strip().strip('\n')
                 nstar = stack.count('*')
@@ -3495,6 +3517,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     RepaintAtomInfo(G2frame.waveData.GetScrollPos(wx.VERTICAL))
                     
                 def OnWaveVal(event):
+                    event.Skip()
                     Obj = event.GetEventObject()
                     iatm,item,iwave,ival = Indx[Obj.GetId()]
                     try:
@@ -4434,6 +4457,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnZstep(event):
+                event.Skip()
                 try:
                     step = float(Zstep.GetValue())
                     if not (0.01 <= step <= 1.0):
@@ -4596,6 +4620,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnViewPoint(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 viewPt = Obj.GetValue().split()
                 try:
@@ -4607,6 +4632,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnViewDir(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 viewDir = Obj.GetValue().split()
                 try:
@@ -4684,6 +4710,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def RadSizer():
             
             def OnSizeHatoms(event):
+                event.Skip()
                 try:
                     value = max(0.1,min(1.2,float(sizeH.GetValue())))
                 except ValueError:
@@ -4693,6 +4720,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnRadFactor(event):
+                event.Skip()
                 try:
                     value = max(0.1,min(1.2,float(radFactor.GetValue())))
                 except ValueError:
@@ -4793,6 +4821,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             textureData[angIndx[Obj.GetId()]][0] = Obj.GetValue()
             
         def OnAngValue(event):
+            event.Skip()
             Obj = event.GetEventObject()
             try:
                 value =  float(Obj.GetValue())
@@ -4802,6 +4831,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             textureData[valIndx[Obj.GetId()]][1] = value
             
         def OnODFValue(event): 
+            event.Skip()
             Obj = event.GetEventObject()
             try:
                 value =  float(Obj.GetValue())
@@ -4818,6 +4848,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             wx.CallAfter(G2plt.PlotTexture,G2frame,data)
             
         def OnPFValue(event):
+            event.Skip()
             Obj = event.GetEventObject()
             Saxis = Obj.GetValue().split()
             if textureData['PlotType'] in ['Pole figure','Axial pole distribution','3D pole distribution']:                
@@ -4946,6 +4977,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def SHPenalty(Penalty):
             
             def OnHKLList(event):
+                event.Skip()
                 dlg = G2G.G2MultiChoiceDialog(G2frame, 'Select penalty hkls',
                     'Penalty hkls',hkls,filterBox=False)
                 try:
@@ -4960,6 +4992,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 wx.CallLater(100,UpdateTexture)
                 
             def OnshToler(event):
+                event.Skip()
                 try:
                     value = float(shToler.GetValue())
                     Penalty[1] = value
@@ -5440,6 +5473,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         def ThermDataSizer(RBObj,rbType):
             
             def OnThermval(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
                 try:
@@ -5497,6 +5531,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 RBObj['Orient'][1] = Qcheck.GetValue()
                 
             def OnOrigX(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
                 try:
@@ -5513,6 +5548,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     pass
                 
             def OnOrien(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
                 A,V = G2mth.Q2AVdeg(RBObj['Orient'][0])
@@ -5578,6 +5614,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 RBObj['Torsions'][item][1] = Obj.GetValue()                
                 
             def OnTorsion(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 item = Indx[Obj.GetId()]
                 try:
@@ -5918,6 +5955,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 G2plt.PlotStructure(G2frame,data)
                 
             def OnTorAngle(event):
+                event.Skip()
                 OkBtn.SetLabel('OK')
                 OkBtn.Enable(True)
                 Obj = event.GetEventObject()
@@ -6257,6 +6295,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             model[item][1][ix] = Obj.GetValue()
             
         def OnPosVal(event):
+            event.Skip()
             Obj = event.GetEventObject()
             model,item,ix = Indx[Obj.GetId()]
             try:
@@ -6267,6 +6306,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2plt.PlotStructure(G2frame,data)
             
         def OnPosRange(event):
+            event.Skip()
             Obj = event.GetEventObject()
             model,item,ix = Indx[Obj.GetId()]
             Range = Obj.GetValue().split()
@@ -6313,6 +6353,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 model['Ovar'] = Obj.GetValue()
             
             def OnOriVal(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 model,ix,ObjA,ObjV = Indx[Obj.GetId()]
                 A = model['Ori'][0][0]
@@ -6452,6 +6493,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 POData['Coef'][1] = poRef.GetValue()
                 
             def OnPOVal(event):
+                event.Skip()
                 try:
                     mdVal = float(poVal.GetValue())
                     if mdVal > 0:
@@ -6461,6 +6503,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 poVal.SetValue("%.3f"%(POData['Coef'][0]))
                 
             def OnPORange(event):
+                event.Skip()
                 Range = poRange.GetValue().split()
                 try:
                     rmin,rmax = [float(Range[i]) for i in range(2)]
@@ -6474,6 +6517,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 poRange.SetValue('%.3f %.3f'%(rmin,rmax))                 
                 
             def OnPOAxis(event):
+                event.Skip()
                 Saxis = poAxis.GetValue().split()
                 try:
                     hkl = [int(Saxis[i]) for i in range(3)]

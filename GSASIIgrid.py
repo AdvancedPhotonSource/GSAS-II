@@ -354,6 +354,7 @@ class TransformDialog(wx.Dialog):
     def Draw(self):
                 
         def OnMatValue(event):
+            event.Skip()
             Obj = event.GetEventObject()
             ix,iy = Ind[Obj.GetId()]
             val = Obj.GetValue()
@@ -368,6 +369,7 @@ class TransformDialog(wx.Dialog):
             Obj.SetValue('%5.3f'%(self.Trans[iy,ix]))
             
         def OnVecValue(event):
+            event.Skip()
             Obj = event.GetEventObject()
             iy = Ind[Obj.GetId()]
             val = Obj.GetValue()
@@ -397,6 +399,7 @@ class TransformDialog(wx.Dialog):
             OnTest(event)
        
         def OnSpaceGroup(event):
+            event.Skip()
             Flds = SGTxt.GetValue().split()
             #get rid of extra spaces between fields first
             for fld in Flds: fld = fld.strip()
@@ -546,6 +549,7 @@ class RotationDialog(wx.Dialog):
     def Draw(self):
 
         def OnMatValue(event):
+            event.Skip()
             Obj = event.GetEventObject()
             ix,iy = Ind[Obj.GetId()]
             val = Obj.GetValue()
@@ -558,6 +562,7 @@ class RotationDialog(wx.Dialog):
             
             
         def OnVecValue(event):
+            event.Skip()
             Obj = event.GetEventObject()
             iy = Ind[Obj.GetId()]
             val = Obj.GetValue()
@@ -572,6 +577,7 @@ class RotationDialog(wx.Dialog):
             self.Expand = expand.GetValue()
             
         def OnRotAngle(event):
+            event.Skip()
             self.rotAngle = float(rotangle.GetValue())
             rotangle.SetValue('%5.3f'%(self.rotAngle))
             Q = G2mth.AVdeg2Q(self.rotAngle,self.rotVec)
@@ -579,6 +585,7 @@ class RotationDialog(wx.Dialog):
             self.Draw()
             
         def OnRotVec(event):
+            event.Skip()
             vals = rotvec.GetValue()
             vals = vals.split()
             self.rotVec = np.array([float(val) for val in vals])
@@ -710,6 +717,7 @@ class DIFFaXcontrols(wx.Dialog):
             self.parmStep = int(numStep.GetValue())
             
         def OnParmRange(event):
+            event.Skip()
             vals = parmrange.GetValue().split()
             try:
                 vals = [float(vals[0]),float(vals[1])]
@@ -840,6 +848,7 @@ class MergeDialog(wx.Dialog):
     def Draw(self):
                 
         def OnMatValue(event):
+            event.Skip()
             Obj = event.GetEventObject()
             ix,iy = Ind[Obj.GetId()]
             self.Trans[ix,iy] = float(Obj.GetValue())
@@ -1165,6 +1174,7 @@ class DisAglDialog(wx.Dialog):
         self.Fit()
     
     def OnRadiiVal(self,event):
+        event.Skip()
         Obj = event.GetEventObject()
         item = self.objList[Obj.GetId()]
         try:
@@ -2175,6 +2185,7 @@ def UpdateNotebook(G2frame,data):
     editing of the text in that tree entry
     '''
     def OnNoteBook(event):
+        event.Skip()
         data = G2frame.dataDisplay.GetValue().split('\n')
         G2frame.PatternTree.SetItemPyData(GetPatternTreeItemId(G2frame,G2frame.root,'Notebook'),data)
         if 'nt' not in os.name:
@@ -2296,6 +2307,7 @@ def UpdateControls(G2frame,data):
             wx.CallAfter(UpdateControls,G2frame,data)
             
         def OnConvergence(event):
+            event.Skip()
             try:
                 value = max(1.e-9,min(1.0,float(Cnvrg.GetValue())))
             except ValueError:
@@ -2308,6 +2320,7 @@ def UpdateControls(G2frame,data):
             maxCyc.SetValue(str(data['max cyc']))
                         
         def OnFactor(event):
+            event.Skip()
             try:
                 value = min(max(float(Factr.GetValue()),0.00001),100.)
             except ValueError:
@@ -2322,6 +2335,7 @@ def UpdateControls(G2frame,data):
             data['HatomFix'] = Hfix.GetValue()
         
         def OnUsrRej(event):
+            event.Skip()
             Obj = event.GetEventObject()
             item,limits = Indx[Obj]
             try:
@@ -2387,6 +2401,7 @@ def UpdateControls(G2frame,data):
     def AuthSizer():
 
         def OnAuthor(event):
+            event.Skip()
             data['Author'] = auth.GetValue()
 
         Author = data['Author']
@@ -3766,6 +3781,7 @@ def UpdatePWHKPlot(G2frame,kind,item):
         G2plt.PlotDeltSig(G2frame,kind)
         
     def OnWtFactor(event):
+        event.Skip()
         try:
             val = float(wtval.GetValue())
         except ValueError:

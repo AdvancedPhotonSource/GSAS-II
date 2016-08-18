@@ -764,6 +764,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
         if 'Range' not in restData: restData['Range'] = 1.1     #patch
         
         def OnWtFactor(event):
+            event.Skip()
             try:
                 value = float(wtfactor.GetValue())
             except ValueError:
@@ -772,6 +773,7 @@ def UpdateRestraints(G2frame,data,Phases,phaseName):
             wtfactor.SetValue('%.2f'%(value))
             
         def OnRange(event):
+            event.Skip()
             try:
                 value = float(sRange.GetValue())
             except ValueError:

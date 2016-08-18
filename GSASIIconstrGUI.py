@@ -51,6 +51,7 @@ class MultiIntegerDialog(wx.Dialog):
     def Draw(self):
         
         def OnValItem(event):
+            event.Skip()
             Obj = event.GetEventObject()
             ind = Indx[Obj.GetId()]
             try:
@@ -1458,6 +1459,7 @@ def UpdateRigidBodies(G2frame,data):
         def rbNameSizer(rbId,rbData):
 
             def OnRBName(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 rbId = Indx[Obj.GetId()]
                 rbData['RBname'] = Obj.GetValue()
@@ -1530,6 +1532,7 @@ def UpdateRigidBodies(G2frame,data):
         def rbVectMag(rbId,imag,rbData):
             
             def OnRBVectorMag(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 rbId,imag = Indx[Obj.GetId()]
                 try:
@@ -1821,6 +1824,7 @@ def UpdateRigidBodies(G2frame,data):
         def SeqSizer(angSlide,rbId,iSeq,Seq,atNames):
             
             def ChangeAngle(event):
+                event.Skip()
                 Obj = event.GetEventObject()
                 rbId,Seq = Indx[Obj.GetId()][:2]
                 val = Seq[2]

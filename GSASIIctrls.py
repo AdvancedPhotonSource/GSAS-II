@@ -528,6 +528,7 @@ class ValidatedTxtCtrl(wx.TextCtrl):
         '''Enter has been pressed or focus transferred to another control,
         Evaluate and update the current control contents
         '''
+        event.Skip()
         if self.evaluated: # deal with computed expressions
             if self.invalid: # don't substitute for an invalid expression
                 if event: event.Skip()
@@ -1887,6 +1888,7 @@ class SingleFloatDialog(wx.Dialog):
     def Draw(self):
         
         def OnValItem(event):
+            event.Skip()
             try:
                 val = float(valItem.GetValue())
                 if val < self.limits[0] or val > self.limits[1]:
@@ -1947,6 +1949,7 @@ class MultiFloatDialog(wx.Dialog):
     def Draw(self):
         
         def OnValItem(event):
+            event.Skip()
             Obj = event.GetEventObject()
             id,limits,format = Indx[Obj]
             try:
@@ -2149,6 +2152,7 @@ class G2ColumnIDDialog(wx.Dialog):
             self.EndModal(wx.ID_OK)
             
         def OnModify(event):
+            event.Skip()
             Obj = event.GetEventObject()
             icol,colData = Indx[Obj.GetId()]
             modify = Obj.GetValue()
@@ -3748,6 +3752,7 @@ class downdate(wx.Dialog):
 
     def _onSpin(self,event):
         'Called to load info about the selected version in the dialog'
+        event.Skip()
         ver = self.spin.GetValue()
         d = GSASIIpath.svnGetLog(version=ver)
         date = d.get('date','?').split('T')[0]

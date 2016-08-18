@@ -106,6 +106,7 @@ def GetImageZ(G2frame,data,newRange=True):
 def UpdateImageData(G2frame,data):
     
     def OnPixVal(event):
+        event.Skip()
         Obj = event.GetEventObject()
         id = Indx[Obj.GetId()]
         try:
@@ -497,6 +498,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         def OnAzmthOff(event):
+            event.Skip()
             try:
                 azmthoff = float(azmthOff.GetValue())
                 data['azmthOff'] = azmthoff
@@ -528,6 +530,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
     def MaxSizer():
                 
         def OnMaxVal(event):
+            event.Skip()
             try:
                 value = min(data['range'][0][1],int(maxVal.GetValue()))
                 if value < data['range'][1][0]+1:
@@ -543,6 +546,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
         def OnMinVal(event):
+            event.Skip()
             try:
                 value = int(minVal.GetValue())
                 if value > data['range'][1][1]-1:
@@ -605,6 +609,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             data['varyList'][name] = Obj.GetValue()
             
         def OnCalVal(event):
+            event.Skip()
             Obj = event.GetEventObject()
             name = Indx[Obj]
             try:
@@ -663,6 +668,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
         
         def OnIOtth(event):
+            event.Skip()
             Ltth = max(float(G2frame.InnerTth.GetValue()),0.001)
             Utth = float(G2frame.OuterTth.GetValue())
             if Ltth > Utth:
@@ -676,6 +682,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         def OnLRazim(event):
+            event.Skip()
             Lazm = int(G2frame.Lazim.GetValue())%360
             Razm = int(G2frame.Razim.GetValue())%360
             if Lazm > Razm:
@@ -688,6 +695,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         def OnNumOutChans(event):
+            event.Skip()
             try:
                 numChans = int(outChan.GetValue())
                 if numChans < 10:
@@ -695,9 +703,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 data['outChannels'] = numChans
             except ValueError:
                 pass
-            outChan.SetValue(str(data['outChannels']))          #reset in case of error        
+            outChan.SetValue('%d'%(data['outChannels']))          #reset in case of error        
         
         def OnNumOutAzms(event):
+            event.Skip()
             try:
                 numAzms = int(outAzim.GetValue())
                 if numAzms < 1:
@@ -705,13 +714,14 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
                 data['outAzimuths'] = numAzms            
             except ValueError:
                 pass
-            outAzim.SetValue(str(data['outAzimuths']))          #reset in case of error        
+            outAzim.SetValue('%d'%(data['outAzimuths']))          #reset in case of error        
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         def OnOblique(event):
             data['Oblique'][1] = not data['Oblique'][1]
                 
         def OnObliqVal(event):
+            event.Skip()
             try:
                 value = float(obliqVal.GetValue())
                 if 0.01 <= value <= 0.99:
@@ -734,6 +744,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             data['SampleAbs'][1] = not data['SampleAbs'][1]
                             
         def OnSamAbsVal(event):
+            event.Skip()
             try:
                 value = float(samabsVal.GetValue())
                 minmax = [0.,2.]
@@ -778,6 +789,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             data['PolaVal'][1] = not data['PolaVal'][1]
                 
         def OnPolaVal(event):
+            event.Skip()
             try:
                 value = float(polaVal.GetValue())
                 if 0.001 <= value <= 0.999:
@@ -840,11 +852,11 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         dataSizer.Add(littleSizer,0,)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' No. 2-theta/azimuth bins'),0,WACV)
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
-        outChan = wx.TextCtrl(parent=G2frame.dataDisplay,value=str(data['outChannels']),style=wx.TE_PROCESS_ENTER)
+        outChan = wx.TextCtrl(parent=G2frame.dataDisplay,value='%d'%(data['outChannels']),style=wx.TE_PROCESS_ENTER)
         outChan.Bind(wx.EVT_TEXT_ENTER,OnNumOutChans)
         outChan.Bind(wx.EVT_KILL_FOCUS,OnNumOutChans)
         littleSizer.Add(outChan,0,WACV)
-        outAzim = wx.TextCtrl(parent=G2frame.dataDisplay,value=str(data['outAzimuths']),style=wx.TE_PROCESS_ENTER)
+        outAzim = wx.TextCtrl(parent=G2frame.dataDisplay,value='%d'%(data['outAzimuths']),style=wx.TE_PROCESS_ENTER)
         outAzim.Bind(wx.EVT_TEXT_ENTER,OnNumOutAzms)
         outAzim.Bind(wx.EVT_KILL_FOCUS,OnNumOutAzms)
         littleSizer.Add(outAzim,0,WACV)
@@ -929,6 +941,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
             
         def OnFlatBkg(event):
+            event.Skip()
             oldFlat = data.get('Flat Bkg',0.)
             try:
                 value = float(flatbkg.GetValue())
@@ -941,6 +954,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
 
         def OnBackMult(event):
+            event.Skip()
             try:
                 mult = float(backMult.GetValue())
                 data['background image'][1] = mult
@@ -952,6 +966,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
         def OnDarkMult(event):
+            event.Skip()
             try:
                 mult = float(darkMult.GetValue())
                 data['dark image'][1] = mult
@@ -1021,6 +1036,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             data['calibskip'] = int(calibSkip.GetValue())
             
         def OnCalibDmin(event):
+            event.Skip()
             try:
                 dmin = float(calibDmin.GetValue())
                 if dmin < 0.25:
@@ -1031,6 +1047,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             calibDmin.SetValue("%.2f"%(data['calibdmin']))          #reset in case of error  
                     
         def OnCutOff(event):
+            event.Skip()
             try:
                 cutoff = float(cutOff.GetValue())
                 if cutoff < 0.1:
@@ -1103,6 +1120,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         ValObj = {}
         
         def OnGonioAngle(event):
+            event.Skip()
             Obj = event.GetEventObject()
             item = ValObj[Obj.GetId()]
             try:
@@ -1853,6 +1871,7 @@ def UpdateStressStrain(G2frame,data):
             data['Type'] = strType.GetValue()
         
         def OnSamPhi(event):
+            event.Skip()
             try:
                 value = float(samPhi.GetValue())
             except ValueError:
@@ -1861,6 +1880,7 @@ def UpdateStressStrain(G2frame,data):
             samPhi.SetValue("%.3f" % (data['Sample phi']))
                 
         def OnSamZ(event):
+            event.Skip()
             try:
                 value = float(samZ.GetValue())
             except ValueError:
@@ -1869,6 +1889,7 @@ def UpdateStressStrain(G2frame,data):
             samZ.SetValue("%.3f" % (data['Sample z']))
                 
         def OnSamLoad(event):
+            event.Skip()
             try:
                 value = float(samLoad.GetValue())
             except ValueError:
@@ -1906,6 +1927,7 @@ def UpdateStressStrain(G2frame,data):
     def DzeroSizer():
     
         def OnDzero(event):
+            event.Skip()
             Obj = event.GetEventObject()
             try:
                 value = min(20.0,max(0.25,float(Obj.GetValue())))
@@ -1932,6 +1954,7 @@ def UpdateStressStrain(G2frame,data):
             G2plt.PlotStrain(G2frame,data,newPlot=True)
         
         def OnCutOff(event):
+            event.Skip()
             Obj = event.GetEventObject()
             try:
                 value = min(20.0,max(0.5,float(Obj.GetValue())))

@@ -78,6 +78,7 @@ class RDFDialog(wx.Dialog):
             self.result['Smooth'] = smCombo.GetValue()
             
         def OnMaxR(event):
+            event.Skip()
             try:
                 val = float(maxR.GetValue())
                 if val <= 0.:
@@ -1025,6 +1026,7 @@ def UpdateBackground(G2frame,data):
             wx.CallLater(100,UpdateBackground,G2frame,data)
             
         def OnBakVal(event):
+            event.Skip()
             Obj = event.GetEventObject()
             item = ValObj[Obj.GetId()][0]
             try:
@@ -2236,6 +2238,7 @@ def UpdateSampleGrid(G2frame,data):
             wx.CallAfter(UpdateSampleGrid,G2frame,data)            
             
     def OnMaterial(event):
+        event.Skip()
         Obj = event.GetEventObject()
         id,key = Info[Obj.GetId()]
         if key == 'Name':
@@ -2629,6 +2632,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         G2frame.ifX20 = x20.GetValue()
         
     def OnStartVol(event):
+        event.Skip()
         try:
             stVol = int(float(startVol.GetValue()))
             if stVol < 25:
@@ -2643,6 +2647,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         bravais[bravList.index(Obj.GetId())] = Obj.GetValue()
         
     def OnZero(event):
+        event.Skip()
         try:
             Zero = min(5.0,max(-5.0,float(zero.GetValue())))
         except ValueError:
@@ -2673,6 +2678,7 @@ def UpdateUnitCellsGrid(G2frame, data):
         wx.CallAfter(UpdateUnitCellsGrid,G2frame,data)
         
     def OnModVal(event):
+        event.Skip()
         Obj = event.GetEventObject()
         ObjId = Obj.GetId()
         Id = Indx[ObjId]
@@ -2795,6 +2801,7 @@ def UpdateUnitCellsGrid(G2frame, data):
             dlg.Destroy()
         
     def OnCellChange(event):
+        event.Skip()
         Obj = event.GetEventObject()
         ObjId = cellList.index(Obj.GetId())
         try:
@@ -3741,6 +3748,7 @@ def UpdateSubstanceGrid(G2frame,data):
     def SubstSizer():
         
         def OnValueChange(event):
+            event.Skip()
             Obj = event.GetEventObject()
             if len(Indx[Obj.GetId()]) == 3:
                 name,El,keyId = Indx[Obj.GetId()]
@@ -4106,6 +4114,7 @@ def UpdateModelsGrid(G2frame,data):
         item[ind] = Obj.GetValue()
         
     def OnIntVal(event):
+        event.Skip()
         Obj = event.GetEventObject()
         item,ind,minVal = Indx[Obj.GetId()]
         try:
@@ -4128,6 +4137,7 @@ def UpdateModelsGrid(G2frame,data):
             wx.CallAfter(UpdateModelsGrid,G2frame,data)
             
         def OnPartVal(event):
+            event.Skip()
             try:
                 val = max(0.0,float(partprm.GetValue()))
             except ValueError:
@@ -4249,6 +4259,7 @@ def UpdateModelsGrid(G2frame,data):
         slMult = 1000.
                   
         def OnValue(event):
+            event.Skip()
             Obj = event.GetEventObject()
             item,key,sldrObj = Indx[Obj.GetId()]
             try:
@@ -4469,6 +4480,7 @@ def UpdateModelsGrid(G2frame,data):
         return partSizer
         
     def OnEsdScale(event):
+        event.Skip()
         try:
             value = float(esdScale.GetValue())
             if value <= 0.:
@@ -4480,6 +4492,7 @@ def UpdateModelsGrid(G2frame,data):
         RefreshPlots(True)
         
     def OnBackChange(event):
+        event.Skip()
         try:
             value = float(backVal.GetValue())
         except ValueError:
@@ -4626,6 +4639,7 @@ def UpdatePDFGrid(G2frame,data):
             UpdatePDFGrid(G2frame,data)
         
         def OnValueChange(event):
+            event.Skip()
             Obj = event.GetEventObject()
             fileKey,itemKey,fmt = itemDict[Obj.GetId()]
             try:
@@ -4671,6 +4685,7 @@ def UpdatePDFGrid(G2frame,data):
     def FillElemSizer(elemSizer,ElData):
         
         def OnFractionChange(event):
+            event.Skip()
             try:
                 value = max(0.0,float(num.GetValue()))
             except ValueError:
@@ -4706,6 +4721,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,newPlot=True)        
         
     def OnFormVol(event):
+        event.Skip()
         try:
             value = float(formVol.GetValue())
             if value <= 0.0:
@@ -4718,6 +4734,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,newPlot=False)        
         
     def OnDiameter(event):
+        event.Skip()
         try:
             value = float(diam.GetValue())
             if value <= 0.0:
@@ -4730,6 +4747,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,newPlot=False)
         
     def OnPolaVal(event):
+        event.Skip()
         try:
             value = float(polaVal.GetValue())
             if not (0.0 <= value <= 1.0):
@@ -4743,6 +4761,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,newPlot=False)
                 
     def OnAzimVal(event):
+        event.Skip()
         try:
             value = float(azimVal.GetValue())
             if not (0. <= value <= 360.):
@@ -4756,6 +4775,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,newPlot=False)
                         
     def OnObliqCoeff(event):
+        event.Skip()
         try:
             value = float(obliqCoeff.GetValue())
             if value < 0.0:
@@ -4770,6 +4790,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,newPlot=False)
         
     def OnBackVal(event):
+        event.Skip()
         try:
             value = float(backVal.GetValue())
             value = min(max(0.,value),1.0)
@@ -4788,6 +4809,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,newPlot=False)
         
     def OnRulandWdt(event):
+        event.Skip()
         try:
             value = float(rulandWdt.GetValue())
             if value <= 0.001:
@@ -4814,6 +4836,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,newPlot=False)        
                         
     def OnPacking(event):
+        event.Skip()
         try:
             value = float(pack.GetValue())
             if value <= 0.0:
@@ -4826,6 +4849,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,newPlot=False)        
                 
     def OnSQmin(event):
+        event.Skip()
         try:
             value = float(SQmin.GetValue())
             if value < qLimits[0]:
@@ -4838,6 +4862,7 @@ def UpdatePDFGrid(G2frame,data):
         G2plt.PlotISFG(G2frame,newPlot=True)        
         
     def OnSQmax(event):
+        event.Skip()
         try:
             value = float(SQmax.GetValue())
             if value > qLimits[1]:

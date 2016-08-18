@@ -14,6 +14,7 @@
 
 import sys
 import os
+import time
 import GSASIIIO as G2IO
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: 2133 $")
@@ -49,29 +50,6 @@ def GetCbfData(self,filename):
     import numpy as np
     import cPickle
     
-#    def analyze(stream):
-#        listnpa = []
-#        key16 = "\x80"
-#        key32 = "\x00\x80"
-#        key64 = "\x00\x00\x00\x80"
-#        iBeg = True
-#        st64 = stream.split(key64)
-#        for iA,stA in enumerate(st64):
-#            st32 = stA.split(key32)
-#            for iB,stB in enumerate(st32):
-#                st16 = stB.split(key16)
-#                if not iB:
-#                    listnpa.append(np.fromstring(st16[0], dtype="int32"))
-#                else:
-#                    for iC,stC in enumerate(st16):
-#                        if not iC:
-#                            listnpa.append(np.fromstring(stC, dtype="int8"))
-#                        else:
-#                            listnpa.append(np.fromstring(stC, dtype="int16"))
-                    
-                
-            
-
     def analyse(stream):
         """
         Analyze a stream of char with any length of exception (2,4, or 8 bytes integers)
@@ -156,9 +134,11 @@ def GetCbfData(self,filename):
             Npix = int(fields[1])
     cent = [cent[0]*pixSize[0]/1000.,cent[1]*pixSize[1]/1000.]
     compImage = stream[imageBeg:imageBeg+compImageSize]
-    GSASIIpath.IPyBreak()
+#    GSASIIpath.IPyBreak()
+    time0 = time.time()
     image = np.hstack(analyse(compImage)).cumsum()
     image = np.reshape(image,(sizexy[1],sizexy[0]))
+    print 'import time:',time.time()-time0
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
     Npix = sizexy[0]*sizexy[1]
     

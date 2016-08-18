@@ -667,7 +667,7 @@ def UpdateConstraints(G2frame,data):
                 if CheckAddedConstraint(newcons):
                     data[constrDictEnt] += newcons
         dlg.Destroy()
-        OnPageChanged(None)
+        wx.CallAfter(OnPageChanged,None)
         
     def OnAddEquivalence(event):
         '''add an Equivalence constraint'''
@@ -760,7 +760,7 @@ def UpdateConstraints(G2frame,data):
                 if CheckAddedConstraint(newcons):
                     data[constrDictEnt] += newcons
         dlg.Destroy()
-        OnPageChanged(None)
+        wx.CallAfter(OnPageChanged,None)
                         
     def FindNeighbors(phase,FrstName,AtNames):
         General = phase['General']
@@ -857,7 +857,7 @@ def UpdateConstraints(G2frame,data):
             if len(newcons) > 0:
                 if CheckAddedConstraint(newcons):
                     data[constrDictEnt] += newcons
-        OnPageChanged(None)
+        wx.CallAfter(OnPageChanged,None)
                         
     def MakeConstraintsSizer(name,pageDisplay):
         '''Creates a sizer displaying all of the constraints entered of
@@ -988,7 +988,7 @@ def UpdateConstraints(G2frame,data):
         Obj = event.GetEventObject()
         Id,name = Indx[Obj.GetId()]
         del(data[name][Id])
-        OnPageChanged(None)        
+        wx.CallAfter(OnPageChanged,None)
         
     def OnConstEdit(event):
         '''Called to edit an individual contraint in response to a
@@ -1046,8 +1046,8 @@ def UpdateConstraints(G2frame,data):
             import traceback
             print traceback.format_exc()
         finally:
-            dlg.Destroy()            
-        OnPageChanged(None)                     
+            dlg.Destroy()
+        wx.CallAfter(OnPageChanged,None)
    
     def UpdateConstraintPanel(panel,typ):
         '''Update the contents of the selected Constraint
@@ -1103,7 +1103,7 @@ def UpdateConstraints(G2frame,data):
                  G2gd.wxID_CONSHIST,
                  G2gd.wxID_CONSGLOBAL).index(event.GetId())
             G2frame.dataDisplay.SetSelection(i)
-            OnPageChanged(None)
+            wx.CallAfter(OnPageChanged,None)
         except ValueError:
             print('Unexpected event in RaisePage')
 
@@ -1142,7 +1142,7 @@ def UpdateConstraints(G2frame,data):
     G2frame.dataDisplay.AddPage(HistConstr,'Histogram constraints')
     GlobalConstr = wx.ScrolledWindow(G2frame.dataDisplay)
     G2frame.dataDisplay.AddPage(GlobalConstr,'Global constraints')
-    OnPageChanged(None) # show initial page
+    wx.CallAfter(OnPageChanged,None)
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
     # validate all the constrants -- should not see any errors here normally
     allcons = []
@@ -1971,4 +1971,4 @@ def UpdateRigidBodies(G2frame,data):
     G2frame.dataDisplay.AddPage(ResidueRB,'Residue rigid bodies')
     UpdateVectorRB()
     G2frame.dataDisplay.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, OnPageChanged)
-    OnPageChanged(None)
+    wx.CallAfter(OnPageChanged,None)

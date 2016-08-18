@@ -1376,17 +1376,17 @@ class DataFrame(wx.Frame):
                 id=id, kind=wx.ITEM_NORMAL,text=txt,
                 help='Select '+txt+' constraint editing tab')
         self.ConstraintEdit = wx.Menu(title='')
-        self.ConstraintMenu.Append(menu=self.ConstraintEdit, title='Edit')
+        self.ConstraintMenu.Append(menu=self.ConstraintEdit, title='Edit Constr.') # renamed from Edit due to Mac adding extra items to menu
         self.ConstraintEdit.Append(id=wxID_HOLDADD, kind=wx.ITEM_NORMAL,text='Add hold',
-            help='Add hold on a parameter value')
+            help='Prevent refinement of parameter values')
         self.ConstraintEdit.Append(id=wxID_EQUIVADD, kind=wx.ITEM_NORMAL,text='Add equivalence',
-            help='Add equivalence between parameter values')
-        self.ConstraintEdit.Append(id=wxID_CONSTRAINTADD, kind=wx.ITEM_NORMAL,text='Add constraint',
-            help='Add constraint on parameter values')
+            help='Force parameter values to be equivalent')
+        self.ConstraintEdit.Append(id=wxID_CONSTRAINTADD, kind=wx.ITEM_NORMAL,text='Add constraint equation',
+            help='Add a constraint equation to apply to parameter values')
         self.ConstraintEdit.Append(id=wxID_FUNCTADD, kind=wx.ITEM_NORMAL,text='Add New Var',
-            help='Add variable composed of existing parameter')
-        self.ConstraintEdit.Append(id=wxID_EQUIVALANCEATOMS, kind=wx.ITEM_NORMAL,text='Add atom equivalence',
-            help='Add equivalences between atom parameter values')
+            help='Create a variable composed of existing parameters')
+        self.ConstraintEdit.Append(id=wxID_EQUIVALANCEATOMS, kind=wx.ITEM_NORMAL,text='Make atoms equivalent',
+            help='Force atom parameter values to be equivalent')
         self.ConstraintEdit.Enable(wxID_EQUIVALANCEATOMS,False)
 #        self.ConstraintEdit.Append(id=wxID_ADDRIDING, kind=wx.ITEM_NORMAL,text='Add H riding constraints',
 #            help='Add H atom riding constraints between atom parameter values')

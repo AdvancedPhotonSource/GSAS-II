@@ -1447,7 +1447,7 @@ class DataFrame(wx.Frame):
         self.RestraintMenu = wx.MenuBar()
         self.PrefillDataMenu(self.RestraintMenu,helpType='Restraints')
         self.RestraintMenu.Append(menu=self.RestraintTab, title='Select tab')
-        self.RestraintMenu.Append(menu=self.RestraintEdit, title='Edit')
+        self.RestraintMenu.Append(menu=self.RestraintEdit, title='Edit Restr.')
         self.PostfillDataMenu()
             
         # Sequential results
@@ -1564,11 +1564,11 @@ class DataFrame(wx.Frame):
             help='Copy of HKLF parameters')
         self.PostfillDataMenu()
             
-        # PDR / Limits
+        # PWDR / Limits
         self.LimitMenu = wx.MenuBar()
         self.PrefillDataMenu(self.LimitMenu,helpType='Limits')
         self.LimitEdit = wx.Menu(title='')
-        self.LimitMenu.Append(menu=self.LimitEdit, title='Edit')
+        self.LimitMenu.Append(menu=self.LimitEdit, title='Edit Limits')
         self.LimitEdit.Append(id=wxID_LIMITCOPY, kind=wx.ITEM_NORMAL,text='Copy',
             help='Copy limits to other histograms')
         self.LimitEdit.Append(id=wxID_ADDEXCLREGION, kind=wx.ITEM_NORMAL,text='Add exclude',
@@ -1745,7 +1745,7 @@ class DataFrame(wx.Frame):
         self.SubstanceMenu = wx.MenuBar()
         self.PrefillDataMenu(self.SubstanceMenu,helpType='Substances')
         self.SubstanceEdit = wx.Menu(title='')
-        self.SubstanceMenu.Append(menu=self.SubstanceEdit, title='Edit')
+        self.SubstanceMenu.Append(menu=self.SubstanceEdit, title='Edit substance')
         self.SubstanceEdit.Append(id=wxID_LOADSUBSTANCE, kind=wx.ITEM_NORMAL,text='Load substance',
             help='Load substance from file')
         self.SubstanceEdit.Append(id=wxID_ADDSUBSTANCE, kind=wx.ITEM_NORMAL,text='Add substance',
@@ -1917,7 +1917,7 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.DataMenu,helpType='Data', helpLbl='Phase/Data')
         self.DataMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.DataEdit = wx.Menu(title='')
-        self.DataMenu.Append(menu=self.DataEdit, title='Edit')
+        self.DataMenu.Append(menu=self.DataEdit, title='Edit Phase')
         self.DataEdit.Append(id=wxID_DATACOPY, kind=wx.ITEM_NORMAL,text='Copy data',
             help='Copy phase data to other histograms')
         self.DataEdit.Append(id=wxID_DATACOPYFLAGS, kind=wx.ITEM_NORMAL,text='Copy flags',
@@ -1940,7 +1940,7 @@ class DataFrame(wx.Frame):
         self.AtomsMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.AtomEdit = wx.Menu(title='')
         self.AtomCompute = wx.Menu(title='')
-        self.AtomsMenu.Append(menu=self.AtomEdit, title='Edit')
+        self.AtomsMenu.Append(menu=self.AtomEdit, title='Edit Atoms')
         self.AtomsMenu.Append(menu=self.AtomCompute, title='Compute')
         self.AtomEdit.Append(id=wxID_ATOMSEDITADD, kind=wx.ITEM_NORMAL,text='Append atom',
             help='Appended as an H atom')
@@ -2002,7 +2002,7 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.WavesData,helpType='Wave Data', helpLbl='Imcommensurate wave data')
         self.WavesData.Append(menu=wx.Menu(title=''),title='Select tab')
         self.WavesDataEdit = wx.Menu(title='')
-        self.WavesData.Append(menu=self.WavesDataEdit, title='Edit')
+        self.WavesData.Append(menu=self.WavesDataEdit, title='Edit Wave')
         self.WavesDataEdit.Append(id=wxID_WAVEVARY, kind=wx.ITEM_NORMAL,text='Global wave vary',
             help='Global setting of wave vary flags')
         self.PostfillDataMenu()
@@ -2037,7 +2037,7 @@ class DataFrame(wx.Frame):
         self.DrawAtomCompute = wx.Menu(title='')
         self.DrawAtomRestraint = wx.Menu(title='')
         self.DrawAtomRigidBody = wx.Menu(title='')
-        self.DrawAtomsMenu.Append(menu=self.DrawAtomEdit, title='Edit')
+        self.DrawAtomsMenu.Append(menu=self.DrawAtomEdit, title='Edit Figure')
         self.DrawAtomsMenu.Append(menu=self.DrawAtomCompute,title='Compute')
         self.DrawAtomsMenu.Append(menu=self.DrawAtomRestraint, title='Restraints')
         self.DrawAtomsMenu.Append(menu=self.DrawAtomRigidBody, title='Rigid body')
@@ -2154,7 +2154,7 @@ class DataFrame(wx.Frame):
         self.PrefillDataMenu(self.RigidBodiesMenu,helpType='Rigid bodies')
         self.RigidBodiesMenu.Append(menu=wx.Menu(title=''),title='Select tab')
         self.RigidBodiesEdit = wx.Menu(title='')
-        self.RigidBodiesMenu.Append(menu=self.RigidBodiesEdit, title='Edit')
+        self.RigidBodiesMenu.Append(menu=self.RigidBodiesEdit, title='Edit Body')
         self.RigidBodiesEdit.Append(id=wxID_ASSIGNATMS2RB, kind=wx.ITEM_NORMAL,text='Assign atoms to rigid body',
             help='Select & position rigid body in structure of existing atoms')
         self.RigidBodiesEdit.Append(id=wxID_AUTOFINDRESRB, kind=wx.ITEM_NORMAL,text='Auto find residues',

@@ -17,6 +17,7 @@ import os
 import time
 import GSASIIIO as G2IO
 import GSASIIpath
+import unpack_cbf as cbf
 GSASIIpath.SetVersionNumber("$Revision: 2133 $")
 class CBF_ReaderClass(G2IO.ImportImage):
     '''Routine to read a Read cif image data .cbf file.
@@ -26,7 +27,7 @@ class CBF_ReaderClass(G2IO.ImportImage):
         super(self.__class__,self).__init__( # fancy way to self-reference
             extensionlist=('.cbf',),
             strictExtension=True,
-            formatName = 'CBF image (Slow!)',
+            formatName = 'CBF image',
             longFormatName = 'CIF Binary Data Format image file (NB: Slow!)'
             )
 
@@ -136,17 +137,13 @@ def GetCbfData(self,filename):
     compImage = stream[imageBeg:imageBeg+compImageSize]
 #    GSASIIpath.IPyBreak()
     time0 = time.time()
-    image = np.hstack(analyse(compImage)).cumsum()
+    nxy = sizexy[0]*sizexy[1]
+    nimg = len(compImage)
+    image = np.zeros(nxy)
+    image = cbf.unpack_cbf(nimg,compImage,nxy,image)
     image = np.reshape(image,(sizexy[1],sizexy[0]))
-    print 'import time:',time.time()-time0
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
     Npix = sizexy[0]*sizexy[1]
     
-    filename = os.path.splitext(filename)[0]+'.G2img'
-    File = open(filename,'wb')
-    cPickle.dump([head,data,Npix,image],File,1)
-    File.close()
-    self.sumfile = filename
-    self.formatName = 'GSAS-II image'
     return head,data,Npix,image
         

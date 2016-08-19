@@ -683,14 +683,14 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         
         def OnLRazim(event):
             event.Skip()
-            Lazm = int(G2frame.Lazim.GetValue())%360
-            Razm = int(G2frame.Razim.GetValue())%360
+            Lazm = float(G2frame.Lazim.GetValue())%360.
+            Razm = float(G2frame.Razim.GetValue())%360.
             if Lazm > Razm:
-                Razm += 360
+                Razm += 360.
             if data['fullIntegrate']:
-                Razm = Lazm+360
-            G2frame.Lazim.SetValue("%6d" % (Lazm))
-            G2frame.Razim.SetValue("%6d" % (Razm))
+                Razm = Lazm+360.
+            G2frame.Lazim.SetValue("%6.1f" % (Lazm))
+            G2frame.Razim.SetValue("%6.1f" % (Razm))
             data['LRazimuth'] = [Lazm,Razm]
             wx.CallAfter(G2plt.PlotExposedImage,G2frame,event=event)
         
@@ -766,10 +766,10 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             Lazm =int(G2frame.Lazim.GetValue())
             if data['fullIntegrate']:
                 data['fullIntegrate'] = False
-                data['LRazimuth'] = [Lazm,Lazm+20]
+                data['LRazimuth'] = [Lazm,Lazm+20.]
             else:
                 data['fullIntegrate'] = True
-                data['LRazimuth'] = [Lazm,Lazm+360]
+                data['LRazimuth'] = [Lazm,Lazm+360.]
             wx.CallLater(100,UpdateImageControls,G2frame,data,masks)
             G2plt.PlotExposedImage(G2frame,event=event)
             
@@ -836,18 +836,18 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
         LRazim = data['LRazimuth']
         littleSizer = wx.BoxSizer(wx.HORIZONTAL)
         G2frame.Lazim = wx.TextCtrl(parent=G2frame.dataDisplay,
-            value=("%6d" % (LRazim[0])),style=wx.TE_PROCESS_ENTER)
+            value=("%6.1f" % (LRazim[0])),style=wx.TE_PROCESS_ENTER)
         G2frame.Lazim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
         G2frame.Lazim.Bind(wx.EVT_KILL_FOCUS,OnLRazim)
         littleSizer.Add(G2frame.Lazim,0,WACV)
         G2frame.Razim = wx.TextCtrl(parent=G2frame.dataDisplay,
-            value=("%6d" % (LRazim[1])),style=wx.TE_PROCESS_ENTER)
+            value=("%6.1f" % (LRazim[1])),style=wx.TE_PROCESS_ENTER)
         G2frame.Razim.Bind(wx.EVT_TEXT_ENTER,OnLRazim)
         G2frame.Razim.Bind(wx.EVT_KILL_FOCUS,OnLRazim)
         if data['fullIntegrate']:
             G2frame.Razim.Enable(False)
             G2frame.Razim.SetBackgroundColour(VERY_LIGHT_GREY)
-            G2frame.Razim.SetValue("%6d" % (LRazim[0]+360))
+            G2frame.Razim.SetValue("%6.1f" % (LRazim[0]+360.))
         littleSizer.Add(G2frame.Razim,0,WACV)
         dataSizer.Add(littleSizer,0,)
         dataSizer.Add(wx.StaticText(parent=G2frame.dataDisplay,label=' No. 2-theta/azimuth bins'),0,WACV)
@@ -2157,7 +2157,7 @@ def Read_imctrl(imctrl_file):
             S = File.readline()
     finally:
         File.close()
-        if fullIntegrate: save['LRazimuth_min'],save['LRazimuth_max'] = 0,0
+        if fullIntegrate: save['LRazimuth_min'],save['LRazimuth_max'] = 0.,0.
     return save
     
 class AutoIntFrame(wx.Frame):

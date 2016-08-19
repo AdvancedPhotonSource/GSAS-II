@@ -322,7 +322,7 @@ def LoadImage2Tree(imagefile,G2frame,Comments,Data,Npix,Image):
         Data['DetDepthRef'] = False
         Data['calibrant'] = ''
         Data['IOtth'] = [2.0,5.0]
-        Data['LRazimuth'] = [135,225]
+        Data['LRazimuth'] = [0.,180.]
         Data['azmthOff'] = 0.0
         Data['outChannels'] = 2500
         Data['outAzimuths'] = 1

@@ -4464,7 +4464,7 @@ def PlotImage(G2frame,newPlot=False,event=None,newImage=True):
             ellI = G2img.GetEllipse(dspI,Data)           #=False if dsp didn't yield an ellipse (ugh! a parabola or a hyperbola)
             dspO = wave/(2.0*sind(IOtth[1]/2.0))
             ellO = G2img.GetEllipse(dspO,Data)           #Ditto & more likely for outer ellipse
-            Azm = np.array(range(LRAzim[0],LRAzim[1]+1))-AzmthOff
+            Azm = np.arange(LRAzim[0],LRAzim[1]+1.)-AzmthOff
             if ellI:
                 xyI = []
                 for azm in Azm:

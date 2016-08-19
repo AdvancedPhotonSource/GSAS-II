@@ -139,9 +139,11 @@ def GetCbfData(self,filename):
     time0 = time.time()
     nxy = sizexy[0]*sizexy[1]
     nimg = len(compImage)
-    image = np.zeros(nxy)
+    image = np.zeros(nxy,dtype=np.float32)
     image = cbf.unpack_cbf(nimg,compImage,nxy,image)
+#    image = np.hstack(analyse(compImage)).cumsum()
     image = np.reshape(image,(sizexy[1],sizexy[0]))
+#    print 'import time:',time.time()-time0
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
     Npix = sizexy[0]*sizexy[1]
     

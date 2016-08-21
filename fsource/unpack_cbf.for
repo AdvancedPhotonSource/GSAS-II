@@ -18,13 +18,14 @@ Cf2py depend(MXY) IMG
       INTEGER*1 IONEBYTE
       INTEGER*2 ITWOBYTES
       INTEGER*4 IFOURBYTES
-      
+
       E1 = CHAR(128)
       E2 = CHAR(0)//CHAR(128)
       E4 = CHAR(0)//CHAR(0)//CHAR(0)//CHAR(128)
 
-      I = 1
+      I = 0
       J = 0
+      BASEPIXEL = 0
       DO WHILE ( I.LT.N )
         C1 = CMPR(I)
         ISIZE = 1
@@ -42,7 +43,6 @@ Cf2py depend(MXY) IMG
               END IF
            END IF
         END IF
-c        BASEPIXEL = 0
         IF ( ISIZE .EQ. 1 ) THEN
            IONEBYTE = ICHAR(CMPR(I))
            I = I+1
@@ -60,6 +60,7 @@ c        BASEPIXEL = 0
            I = I+4
            BASEPIXEL = BASEPIXEL+IFOURBYTES
         END IF
+c        IF ( MOD(J,100000).EQ.0 ) PRINT *,I,J,BASEPIXEL
         IMG(J) = BASEPIXEL
         J = J+1
       END DO

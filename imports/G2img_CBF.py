@@ -49,50 +49,6 @@ def GetCbfData(self,filename):
     'Read cif binarydetector data cbf file'
     
     import numpy as np
-    import cPickle
-    
-    def analyse(stream):
-        """
-        Analyze a stream of char with any length of exception (2,4, or 8 bytes integers)
-
-        @return list of NParrays
-        """
-        listnpa = []
-        key16 = "\x80"
-        key32 = "\x00\x80"
-        key64 = "\x00\x00\x00\x80"
-        idx = 0
-        shift = 1
-        position = 0
-        while True:
-            lns = len(stream)
-            idx = stream.find(key16)
-            if idx == -1:
-                listnpa.append(np.fromstring(stream, dtype="int8"))
-                break
-            listnpa.append(np.fromstring(stream[:idx], dtype="int8"))
-            position += listnpa[-1].size
-
-            if stream[idx + 1:idx + 3] == key32:
-                if stream[idx + 3:idx + 7] == key64:
-                    listnpa.append(np.fromstring(stream[idx + 7:idx + 15], dtype="int64"))
-                    position += 1
-#                    print "loop64 x=%4i y=%4i in idx %4i lns %4i value=%s" % ((position % 2463), (position // 2463), idx, lns, listnpa[-1])
-                    shift = 15
-                else: #32 bit int
-                    listnpa.append(np.fromstring(stream[idx + 3:idx + 7], dtype="int32"))
-                    position += 1
-#                    print "loop32 x=%4i y=%4i in idx %4i lns %4i value=%s" % ((position % 2463), (position // 2463), idx, lns, listnpa[-1])
-                    shift = 7
-            else: #int16 
-                listnpa.append(np.fromstring(stream[idx + 1:idx + 3], dtype="int16"))
-                position += 1
-#                print "loop16 x=%4i y=%4i in idx %4i lns %4i value=%s" % ((position % 2463), (position // 2463), idx, lns, listnpa[-1])
-                shift = 3
-            stream = stream[idx + shift:]
-        return  listnpa
-    
-    
     if GSASIIpath.GetConfigValue('debug'):
         print 'Read cif binary detector data cbf file: ',filename
     File = open(filename,'rb')
@@ -133,17 +89,16 @@ def GetCbfData(self,filename):
             sizexy[1] = int(fields[1])
         elif 'Number-of-Elements' in line:
             Npix = int(fields[1])
+    nxy = sizexy[0]*sizexy[1]
+    image = np.zeros(nxy,dtype=np.int32)
     cent = [cent[0]*pixSize[0]/1000.,cent[1]*pixSize[1]/1000.]
     compImage = stream[imageBeg:imageBeg+compImageSize]
 #    GSASIIpath.IPyBreak()
     time0 = time.time()
-    nxy = sizexy[0]*sizexy[1]
     nimg = len(compImage)
-    image = np.zeros(nxy,dtype=np.float32)
     image = cbf.unpack_cbf(nimg,compImage,nxy,image)
-#    image = np.hstack(analyse(compImage)).cumsum()
     image = np.reshape(image,(sizexy[1],sizexy[0]))
-#    print 'import time:',time.time()-time0
+    print 'import time:',time.time()-time0
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
     Npix = sizexy[0]*sizexy[1]
     

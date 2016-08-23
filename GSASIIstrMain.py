@@ -275,9 +275,8 @@ def SeqRefine(GPXfile,dlg):
         histNames = Controls['Seq Data']
     else:
         histNames = G2stIO.GetHistogramNames(GPXfile,['PWDR',])
-    if 'Reverse Seq' in Controls:
-        if Controls['Reverse Seq']:
-            histNames.reverse()
+    if Controls.get('Reverse Seq'):
+        histNames.reverse()
     SeqResult = {}
     makeBack = True
     Histo = {}
@@ -431,7 +430,7 @@ def SeqRefine(GPXfile,dlg):
             printFile.close()
             print ' ***** Refinement aborted *****'
             return False,Msg.msg
-    if Reverse:
+    if Controls.get('Reverse Seq'):
         histNames.reverse()
     SeqResult['histNames'] = histNames
     G2stIO.SetSeqResult(GPXfile,Histograms,SeqResult)

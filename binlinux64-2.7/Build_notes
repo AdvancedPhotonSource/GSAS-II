@@ -1,3 +1,4 @@
-Built 7/12/16 GSAS-II-Linux64-numpy-1.11 on crackle-vm
-installing: python-2.7.11-0
-python 2.7.12-1  numpy:       1.11.1-py27_0  scipy:       0.17.1-np111py27_1 scons:       2.3.0-py27_0      libgfortran: 3.0.0-1 
+built 8/23/16 on Jenkins with https://jenkins.aps.anl.gov/view/GSAS-II/job/GSAS-II-Linux64-numpy-1.6/
+numpy                     1.6.2                    py27_5  
+scipy                     0.13.1               np16py27_1  
+scons                     2.3.0                    py27_0  

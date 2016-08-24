@@ -2327,6 +2327,9 @@ def ValEsd(value,esd=0,nTZ=False):
     if math.isnan(esd): # invalid esd, treat as zero
         esd = 0
         esdoff = 5
+#    if esd < 1.e-5:
+#        esd = 0
+#        esdoff = 5
     elif esd != 0:
         # transform the esd to a one or two digit integer
         l = math.log10(abs(esd)) % 1.

@@ -1479,11 +1479,16 @@ def getCellEsd(pfx,SGData,A,covData):
     vcov = G2mth.getVCov(RMnames,varyList,covMatrix)
     Ax = np.array(A)
     Ax[3:] /= 2.
-    drVdA = np.array([Ax[1]*Ax[2]-Ax[5]**2,Ax[0]*Ax[2]-Ax[4]**2,Ax[0]*Ax[1]-Ax[3]**2,
-        Ax[4]*Ax[5]-Ax[2]*Ax[3],Ax[3]*Ax[5]-Ax[1]*Ax[4],Ax[3]*Ax[4]-Ax[0]*Ax[5]])
+    drVdA = np.array([
+        Ax[1]*Ax[2]-Ax[5]**2,
+        Ax[0]*Ax[2]-Ax[4]**2,
+        Ax[0]*Ax[1]-Ax[3]**2,
+        Ax[4]*Ax[5]-Ax[2]*Ax[3],
+        Ax[3]*Ax[5]-Ax[1]*Ax[4],
+        Ax[3]*Ax[4]-Ax[0]*Ax[5]])
     srcvlsq = np.inner(drVdA,np.inner(vcov,drVdA.T))
     Vol = 1/np.sqrt(rVsq)
-    sigVol = Vol**3*np.sqrt(srcvlsq)/2.
+    sigVol = Vol**3*np.sqrt(srcvlsq)/2.         #ok - checks with GSAS
     R123 = Ax[0]*Ax[1]*Ax[2]
     dsasdg = np.zeros((3,6))
     dadg = np.zeros((6,6))
@@ -1513,7 +1518,7 @@ def getCellEsd(pfx,SGData,A,covData):
             if ij == i0:
                 dadg[i0][ij] = dadg[i0][ij]-0.5*cell[i0]/Ax[i0]
             dadg[i3][ij] = -dadg[i3][ij]*rsin[2-i0]*dpr
-    sigMat = np.inner(dadg,np.inner(vcov,dadg.T))
+    sigMat = np.inner(dadg,np.inner(dadg,vcov))
     var = np.diag(sigMat)
     CS = np.where(var>0.,np.sqrt(var),0.)
     return [CS[0],CS[1],CS[2],CS[5],CS[4],CS[3],sigVol]
@@ -1525,7 +1530,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         print >>pFile,'\n Atoms:'
         line = '   name      x         y         z      frac   Uiso     U11     U22     U33     U12     U13     U23'
         if General['Type'] == 'magnetic':
-            line += '   Mx     My     Mz'
+            line = line[:24]+'   Mx     My     Mz'+line[24:]
         elif General['Type'] == 'macromolecular':
             line = ' res no residue chain '+line
         cx,ct,cs,cia = General['AtomPtrs']

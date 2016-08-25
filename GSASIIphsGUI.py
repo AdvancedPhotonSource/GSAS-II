@@ -4180,10 +4180,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         dlg = G2gd.SphereEnclosure(G2frame,data['General'],data['Drawing'],indx)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                centers,radius = dlg.GetSelection()
+                centers,radius,targets = dlg.GetSelection()
                 for orig in centers:
                     xyzA = np.array(orig)
                     for atomB in atomData[:numAtoms]:
+                        if atomB[ct] not in targets:
+                            continue
                         xyzB = np.array(atomB[cx:cx+3])
                         Uij = atomB[cuij:cuij+6]
 #                        GSASIIpath.IPyBreak()

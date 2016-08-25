@@ -329,6 +329,7 @@ class SphereEnclosure(wx.Dialog):
     :param wx.Frame parent: reference to parent frame (or None)
     :param general: general data (includes drawing data)
     :param atoms: drawing atoms data
+    :param indx: list of selected atoms (may be empty)
     
     '''
     def __init__(self,parent,general,drawing,indx):
@@ -340,6 +341,7 @@ class SphereEnclosure(wx.Dialog):
         self.indx = indx
         self.Sphere = 1.0
         self.centers = []
+        self.atomTypes = [[item,True] for item in self.General['AtomTypes']]
         
         self.Draw()
         
@@ -355,6 +357,11 @@ class SphereEnclosure(wx.Dialog):
             except ValueError:
                 pass
             radius.SetValue('%.3f'%(self.Sphere))
+            
+        def OnAtomType(event):
+            Obj = event.GetEventObject()
+            id = Ind[Obj.GetId()]
+            self.atomTypes[id][1] = Obj.GetValue()
         
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -383,6 +390,16 @@ class SphereEnclosure(wx.Dialog):
         radius.Bind(wx.EVT_KILL_FOCUS,OnRadius)
         sphereSizer.Add(radius,0,WACV)
         mainSizer.Add(sphereSizer,0,WACV)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Target selected atoms:'),0,WACV)
+        atSizer = wx.BoxSizer(wx.HORIZONTAL)
+        Ind = {}
+        for i,item in enumerate(self.atomTypes):
+            atm = wx.CheckBox(self.panel,label=item[0])
+            atm.SetValue(item[1])
+            atm.Bind(wx.EVT_CHECKBOX, OnAtomType)
+            Ind[atm.GetId()] = i
+            atSizer.Add(atm,0,WACV)
+        mainSizer.Add(atSizer,0,WACV)
         
         OkBtn = wx.Button(self.panel,-1,"Ok")
         OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
@@ -401,7 +418,11 @@ class SphereEnclosure(wx.Dialog):
         self.Fit()
         
     def GetSelection(self):
-        return self.centers,self.Sphere
+        used = []
+        for atm in self.atomTypes:
+            if atm[1]:
+                used.append(str(atm[0]))
+        return self.centers,self.Sphere,used
 
     def OnOk(self,event):
         parent = self.GetParent()

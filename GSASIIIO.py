@@ -1799,7 +1799,7 @@ class ExportBaseclass(object):
 
     def ExportSelect(self,AskFile='ask'):
         '''Selects histograms or phases when needed. Sets a default file name when
-        requested in self.filename; always sets a default directory in self.dirname.
+        requested into self.filename; always sets a default directory in self.dirname.
 
         :param bool AskFile: Determines how this routine processes getting a
           location to store the current export(s).

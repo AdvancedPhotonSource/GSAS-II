@@ -15,15 +15,8 @@ This implements a complex exporter :class:`ExportCIF` that can implement an
 entire project in a complete CIF intended for submission as a
 publication. In addition, there are three subclasses of :class:`ExportCIF`:
 :class:`ExportProjectCIF`, 
-:class:`ExportPhaseCIF` and :class:`ExportDataCIF` that
-export a project, single phase or data set. Note that ``self.mode`` determines
-what is written:
-
- * `self.mode="simple"` creates a simple CIF with only coordinates
-   or data, while 
-
- * `self.mode="full"` creates a complete CIF of project.
- 
+:class:`ExportPhaseCIF` and :class:`ExportDataCIF` where extra parameters
+for the _Exporter() determine if a project, single phase or data set are written.
 '''
 
 import datetime as dt
@@ -56,21 +49,15 @@ CIFdic = None
 class ExportCIF(G2IO.ExportBaseclass):
     '''Base class for CIF exports
     '''
-    def __init__(self,G2frame):
-        super(self.__class__,self).__init__( # fancy way to say <parentclass>.__init__
-            G2frame=G2frame,
-            formatName = 'Full CIF',
-            extension='.cif',
-            longFormatName = 'Export project as CIF'
-            )
+    def __init__(self,G2frame,formatName,extension,longFormatName=None,):
+        G2IO.ExportBaseclass.__init__(self,G2frame,formatName,extension,longFormatName=None)
         self.exporttype = []
         self.author = ''
-        self.mode = ''
+        self.CIFname = ''
 
     def _Exporter(self,event=None,phaseOnly=None,histOnly=None):
-        '''Basic code to export a CIF. Export can be full or simple (as set by self.mode).
-        "simple" skips data, distances & angles, etc. and can only include
-        a single phase while "full" is intended for for publication submission.
+        '''Basic code to export a CIF. Export can be full or simple, as set by
+        phaseOnly and histOnly which skips distances & angles, etc.
         '''
 
 #***** define functions for export method =======================================
@@ -1288,12 +1275,14 @@ class ExportCIF(G2IO.ExportBaseclass):
                 dlg.Destroy()
                 return False  # cancel was pressed
             self.author = dlg.GetValue()
+            self.shortauthorname = self.author.replace(',','').replace(' ','')[:20]
             dlg.Destroy()
             try:
                 self.OverallParms['Controls']["Author"] = self.author # save for future
             except KeyError:
                 pass
             return True
+
         def EditInstNames(event=None):
             'Provide a dialog for editing instrument names'
             dictlist = []
@@ -1596,13 +1585,14 @@ class ExportCIF(G2IO.ExportBaseclass):
             dlg.CenterOnParent()
             dlg.ShowModal()
             
-#***** end of functions for export method =======================================
+#=================================================================================
+#===== end of function definitions for _Exporter =================================
 #=================================================================================
         # make sure required information is present
         self.CIFdate = dt.datetime.strftime(dt.datetime.now(),"%Y-%m-%dT%H:%M")
-        self.CIFname = self.CIFname.replace(' ','')
-        if not self.CIFname: # none defined & needed, save as GPX to get one
-            self.G2frame.OnFileSaveas(None)
+        if not self.CIFname: # Get a name for the CIF. If not defined, use the GPX name (save if that is needed). 
+            if not self.G2frame.GSASprojectfile:
+                self.G2frame.OnFileSaveas(None)
             if not self.G2frame.GSASprojectfile: return
             self.CIFname = os.path.splitext(
                 os.path.split(self.G2frame.GSASprojectfile)[1]
@@ -1613,11 +1603,9 @@ class ExportCIF(G2IO.ExportBaseclass):
             self.author = self.OverallParms['Controls'].get("Author",'').strip()
         except KeyError:
             pass
-        while not (self.author or self.quickmode):
-            if not EditAuthor(): return
-        self.shortauthorname = self.author.replace(',','').replace(' ','')[:20]
-            
         if phaseOnly:
+            print('Writing CIF output to file '+str(self.filename))
+            self.OpenFile()
             oneblock = True
             self.quickmode = True
             #====Phase only CIF ====================================================
@@ -1627,30 +1615,33 @@ class ExportCIF(G2IO.ExportBaseclass):
             #phaseblk = self.Phases[phaseOnly] # pointer to current phase info
             # report the phase info
             WritePhaseInfo(phaseOnly)
+            self.CloseFile()
             return
-        elif histOnly and len(self.Phases) == 1:
+        elif histOnly:
+            print('Writing CIF output to file '+str(self.filename))
+            self.OpenFile()
             hist = histOnly
             histname = histOnly.replace(' ','')
             oneblock = True
-            self.quickmode = False
+            self.quickmode = True
             self.ifHKLF = False
             self.ifPWDR = True
             self.Write(' ')
             self.Write(70*'#')
-            phasenam = self.Phases.keys()[0]
+            #phasenam = self.Phases.keys()[0]
             WriteCIFitem('data_'+self.CIFname)
             #print 'phasenam',phasenam
             #phaseblk = self.Phases[phasenam] # pointer to current phase info
-            instnam = instnam.replace(' ','')
-            WriteCIFitem('_pd_block_id',
-                         str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                         str(self.shortauthorname) + "|" + instnam + '|' + histname)
+            #instnam = instnam.replace(' ','')
+            #WriteCIFitem('_pd_block_id',
+            #             str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
+            #             str(self.shortauthorname) + "|" + instnam + '|' + histname)
             #WriteAudit()
             #writeCIFtemplate(self.OverallParms['Controls'],'publ') # overall (publication) template
             #WriteOverall()
             #writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
             # report the phase info
-            WritePhaseInfo(phasenam,hist)
+            #WritePhaseInfo(phasenam,hist)
             # preferred orientation
             #SH = FormatSH(phasenam)
             #MD = FormatHAPpo(phasenam)
@@ -1667,94 +1658,11 @@ class ExportCIF(G2IO.ExportBaseclass):
             histblk = self.Histograms[hist]["Sample Parameters"]
             #writeCIFtemplate(histblk,'powder',histblk['InstrName']) # write powder template
             WritePowderData(hist)
+            self.CloseFile()
             return
-        elif histOnly:
-            hist = histOnly
-            histname = '|' + histOnly.replace(' ','')
-            self.ifHKLF = False
-            if hist.startswith("PWDR"):
-                self.ifPWDR = True
-                if not self.Histograms[hist]["Sample Parameters"].get('InstrName'):
-                    self.Histograms[hist]["Sample Parameters"]['InstrName'] = 'Unknown'
-            else:
-                print("error: not Powder")
-                return
-            oneblock = False
-            self.quickmode = False
-            #=== multiblock: multiple phases and/or histograms ====================
-            self.Write(70*'#')
-            #WriteCIFitem('\ndata_'+self.CIFname+'_publ')
-            #WriteAudit()
-            #WriteCIFitem('_pd_block_id',
-            #    str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-            #                 str(self.shortauthorname) + histname + "|Overall")
-            #writeCIFtemplate(self.OverallParms['Controls'],'publ') #insert the publication template
-                # ``template_publ.cif`` or a modified version
-                # overall info
-            WriteCIFitem('data_'+str(self.CIFname)+ histname +'_overall')
-            #WriteOverall() # this does not give right value
-            #============================================================
-            WriteCIFitem('# POINTERS TO PHASE AND HISTOGRAM BLOCKS')
-            datablockidDict = {} # save block names here -- N.B. check for conflicts between phase & hist names (unlikely!)
-            # loop over phase blocks
-            loopprefix = ''
-            WriteCIFitem('loop_   _pd_phase_block_id')
-
-            for phasenam in sorted(self.Phases.keys()):
-                i = self.Phases[phasenam]['pId']
-                datablockidDict[phasenam] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                                 'phase_'+ str(i) + '|' + str(self.shortauthorname) + histname)
-                WriteCIFitem(loopprefix,datablockidDict[phasenam])
-            # data block
-            loopprefix = '_pd_block_diffractogram_id'
-            histblk = self.Histograms[hist]
-            instnam = histblk["Sample Parameters"]['InstrName']
-            instnam = instnam.replace(' ','')
-            j = histblk['hId']
-            datablockidDict[hist] = (str(self.CIFdate) + "|" + str(self.CIFname) + "|" +
-                                             str(self.shortauthorname) + "|" +
-                                             instnam + "_hist_"+str(j))
-            WriteCIFitem(loopprefix,datablockidDict[hist])
-            #============================================================
-            # loop over phases, exporting them
-            phasebyhistDict = {} # create a cross-reference to phases by histogram
-            for j,phasenam in enumerate(sorted(self.Phases.keys())):
-                i = self.Phases[phasenam]['pId']
-                WriteCIFitem('\ndata_'+self.CIFname+"_phase_"+str(i))
-                WriteCIFitem('# Information for phase '+str(i))
-                WriteCIFitem('_pd_block_id',datablockidDict[phasenam])
-                # report the phase
-                #writeCIFtemplate(self.Phases[phasenam]['General'],'phase',phasenam) # write phase template
-                WritePhaseInfo(phasenam,hist)
-                # preferred orientation
-                #SH = FormatSH(phasenam)
-                #MD = FormatHAPpo(phasenam)
-                #if SH and MD:
-                #    WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + '\n' + MD)
-                #elif SH or MD:
-                #    WriteCIFitem('_pd_proc_ls_pref_orient_corr', SH + MD)
-                #else:
-                #    WriteCIFitem('_pd_proc_ls_pref_orient_corr', 'none')
-                # report sample profile terms
-                #PP = FormatPhaseProfile(phasenam)
-                #if PP: WriteCIFitem('_pd_proc_ls_profile_function',PP)
-
-                #============================================================
-            # export selected histogram
-            histblk = self.Histograms[hist]
-            WriteCIFitem('\ndata_'+self.CIFname+"_pwd_"+str(i))
-                        #instnam = histblk["Sample Parameters"]['InstrName']
-                        # report instrumental profile terms
-            WriteCIFitem('_pd_proc_ls_profile_function',
-                    FormatInstProfile(histblk["Instrument Parameters"],histblk['hId']))
-            WriteCIFitem('# Information for histogram '+str(i)+': '+hist)
-            WriteCIFitem('_pd_block_id',datablockidDict[hist])
-            histprm = self.Histograms[hist]["Sample Parameters"]
-            #writeCIFtemplate(histprm,'powder',histprm['InstrName']) # powder template
-            WritePowderData(hist)
-            return
-
+        #===============================================================================
         # the normal export process starts here
+        #===============================================================================
         # get the project file name
         self.CIFname = os.path.splitext(
             os.path.split(self.G2frame.GSASprojectfile)[1]
@@ -1764,10 +1672,8 @@ class ExportCIF(G2IO.ExportBaseclass):
         self.loadTree()
         # create a dict with refined values and their uncertainties
         self.loadParmDict()
-        if self.mode=='simple':
-            if self.ExportSelect('ask'): return
-        else:
-            if self.ExportSelect('default'): return
+        if self.ExportSelect('ask'): return
+        #if self.ExportSelect('default'): return
         # Someday: get restraint & constraint info
         #restraintDict = self.OverallParms.get('Restraints',{})
         #for i in  self.OverallParms['Constraints']:
@@ -1781,24 +1687,13 @@ class ExportCIF(G2IO.ExportBaseclass):
                'Empty project',
                'Project does not contain any data or phases. Are they interconnected?')
            return
+        if not self.author:
+            if not EditAuthor(): return
         # test for quick CIF mode or no data
         self.quickmode = False
         phasenam = None # include all phases
-        if self.mode == "simple" and self.currentExportType == 'phase':
-            if len(self.Phases) == 0: # this check is probably not needed
-                self.G2frame.ErrorDialog(
-                    'No phase present',
-                    'Cannot create a coordinates CIF with no phases')
-                return
-            self.quickmode = True
-            oneblock = True
-            if len(self.Phases) > 1: # quick mode: get selected phase
-                phasenam = self.phasenam[0]
-        elif self.mode == "simple": # powder/single xtal data export
-            self.quickmode = True
-            oneblock = True
         # Project export: will this require a multiblock CIF?
-        elif len(self.Phases) > 1:
+        if len(self.Phases) > 1:
             oneblock = False
         elif len(self.powderDict) + len(self.xtalDict) > 1:
             oneblock = False
@@ -1808,74 +1703,73 @@ class ExportCIF(G2IO.ExportBaseclass):
         # check there is an instrument name for every histogram
         self.ifPWDR = False
         self.ifHKLF = False
-        if not self.quickmode:
-            invalid = 0
-            key3 = 'InstrName'
-            for hist in self.Histograms:
-                if hist.startswith("PWDR"):
-                    self.ifPWDR = True
-                    key2 = "Sample Parameters"
-                    d = self.Histograms[hist][key2]
-                elif hist.startswith("HKLF"):
-                    self.ifHKLF = True
-                    key2 = "Instrument Parameters"
-                    d = self.Histograms[hist][key2][0]                    
-                instrname = d.get(key3)
-                if instrname is None:
-                    d[key3] = ''
-                    invalid += 1
-                elif instrname.strip() == '':
-                    invalid += 1
-            if invalid:
-                msg = ""
-                if invalid > 3: msg = (
-                    "\n\nNote: it may be faster to set the name for\n"
-                    "one histogram for each instrument and use the\n"
-                    "File/Copy option to duplicate the name"
-                    )
-                if not EditInstNames(): return
-        if not self.quickmode:
-            # check for a distance-angle range search range for each phase
-            for phasenam in sorted(self.Phases.keys()):
-                #i = self.Phases[phasenam]['pId']
-                phasedict = self.Phases[phasenam] # pointer to current phase info            
-                if 'DisAglCtls' not in phasedict['General']:
-                    dlg = G2gd.DisAglDialog(
-                        self.G2frame,
-                        {},
-                        phasedict['General'])
-                    if dlg.ShowModal() == wx.ID_OK:
-                        phasedict['General']['DisAglCtls'] = dlg.GetData()
-                    else:
-                        dlg.Destroy()
-                        return
-                    dlg.Destroy()
-        if not self.quickmode:
-            # check if temperature values & pressure are defaulted
-            default = 0
-            for hist in self.Histograms:
-                if hist.startswith("PWDR"): 
-                    key2 = "Sample Parameters"
-                    T = self.Histograms[hist][key2].get('Temperature')
-                    if not T:
-                        default += 1
-                    elif T == 300:
-                        default += 1
-                    P = self.Histograms[hist][key2].get('Pressure')
-                    if not P:
-                        default += 1
-                    elif P == 1:
-                        default += 1
-            if default > 0:
-                dlg = wx.MessageDialog(
+        invalid = 0
+        key3 = 'InstrName'
+        for hist in self.Histograms:
+            if hist.startswith("PWDR"):
+                self.ifPWDR = True
+                key2 = "Sample Parameters"
+                d = self.Histograms[hist][key2]
+            elif hist.startswith("HKLF"):
+                self.ifHKLF = True
+                key2 = "Instrument Parameters"
+                d = self.Histograms[hist][key2][0]                    
+            instrname = d.get(key3)
+            if instrname is None:
+                d[key3] = ''
+                invalid += 1
+            elif instrname.strip() == '':
+                invalid += 1
+        if invalid:
+            msg = ""
+            if invalid > 3: msg = (
+                "\n\nNote: it may be faster to set the name for\n"
+                "one histogram for each instrument and use the\n"
+                "File/Copy option to duplicate the name"
+                )
+            if not EditInstNames(): return
+            
+        # check for a distance-angle range search range for each phase
+        for phasenam in sorted(self.Phases.keys()):
+            #i = self.Phases[phasenam]['pId']
+            phasedict = self.Phases[phasenam] # pointer to current phase info            
+            if 'DisAglCtls' not in phasedict['General']:
+                dlg = G2gd.DisAglDialog(
                     self.G2frame,
-                    'Temperature/Pressure values appear to be defaulted for some powder histograms (See Sample Parameters for each PWDR tree entry). Do you want to use those values?',
-                    'Check T and P values',
-                    wx.OK|wx.CANCEL)
-                ret = dlg.ShowModal()
+                    {},
+                    phasedict['General'])
+                if dlg.ShowModal() == wx.ID_OK:
+                    phasedict['General']['DisAglCtls'] = dlg.GetData()
+                else:
+                    dlg.Destroy()
+                    return
                 dlg.Destroy()
-                if ret != wx.ID_OK: return
-        if oneblock and not self.quickmode:
+
+        # check if temperature values & pressure are defaulted
+        default = 0
+        for hist in self.Histograms:
+            if hist.startswith("PWDR"): 
+                key2 = "Sample Parameters"
+                T = self.Histograms[hist][key2].get('Temperature')
+                if not T:
+                    default += 1
+                elif T == 300:
+                    default += 1
+                P = self.Histograms[hist][key2].get('Pressure')
+                if not P:
+                    default += 1
+                elif P == 1:
+                    default += 1
+        if default > 0:
+            dlg = wx.MessageDialog(
+                self.G2frame,
+                'Temperature/Pressure values appear to be defaulted for some powder histograms (See Sample Parameters for each PWDR tree entry). Do you want to use those values?',
+                'Check T and P values',
+                wx.OK|wx.CANCEL)
+            ret = dlg.ShowModal()
+            dlg.Destroy()
+            if ret != wx.ID_OK: return
+        if oneblock:
             # select a dataset to use (there should only be one set in one block,
             # but take whatever comes 1st)
             for hist in self.Histograms:
@@ -1886,16 +1780,16 @@ class ExportCIF(G2IO.ExportBaseclass):
                 elif hist.startswith("HKLF"): 
                     instnam = histblk["Instrument Parameters"][0]['InstrName']
                     break # ignore all but 1st data histogram
-        if not self.quickmode: # give the user a chance to edit all defaults
-            self.cifdefs = wx.Dialog(
-                self.G2frame,
-                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
-            EditCIFDefaults()
-            self.cifdefs.CenterOnParent()
-            val = self.cifdefs.ShowModal()
-            self.cifdefs.Destroy()
-            if val != wx.ID_OK:
-                return
+        # give the user a chance to edit all defaults
+        self.cifdefs = wx.Dialog(
+            self.G2frame,
+            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        EditCIFDefaults()
+        self.cifdefs.CenterOnParent()
+        val = self.cifdefs.ShowModal()
+        self.cifdefs.Destroy()
+        if val != wx.ID_OK:
+            return
         #======================================================================
         # Start writing the CIF - single block
         #======================================================================
@@ -1912,15 +1806,6 @@ class ExportCIF(G2IO.ExportBaseclass):
                 WriteSingleXtalData(hist)
             else:
                 print "should not happen"
-        elif self.quickmode:
-            #====Phase only CIF ====================================================
-            WriteCIFitem('data_'+self.CIFname)
-            if phasenam is None: # if not already selected, select the first phase (should be one) 
-                phasenam = self.Phases.keys()[0]
-            #print 'phasenam',phasenam
-            #phaseblk = self.Phases[phasenam] # pointer to current phase info
-            # report the phase info
-            WritePhaseInfo(phasenam)
         elif oneblock:
             #====Single block, data & phase CIF ===================================
             WriteCIFitem('data_'+self.CIFname)
@@ -2104,16 +1989,16 @@ class ExportProjectCIF(ExportCIF):
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
     def __init__(self,G2frame):
-        G2IO.ExportBaseclass.__init__(self,
+        ExportCIF.__init__(self,
             G2frame=G2frame,
             formatName = 'Full CIF',
             extension='.cif',
             longFormatName = 'Export project as CIF'
             )
         self.exporttype = ['project']
-
+        
     def Exporter(self,event=None):
-        self._Exporter(self,event=event)
+        self._Exporter(event=event)
 
     def Writer(self,hist,mode='w'):
         # set the project file name
@@ -2129,13 +2014,13 @@ class ExportProjectCIF(ExportCIF):
         
 class ExportPhaseCIF(ExportCIF):
     '''Used to create a simple CIF with one phase. Uses exact same code as
-    :class:`ExportCIF` except that `self.mode` is set to "simple" in `self.InitExport`.
+    :class:`ExportCIF` except that `phaseOnly` is set for the Exporter
     Shows up in menu as Quick CIF.
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
     def __init__(self,G2frame):
-        G2IO.ExportBaseclass.__init__(self,
+        ExportCIF.__init__(self,
             G2frame=G2frame,
             formatName = 'Quick CIF',
             extension='.cif',
@@ -2144,10 +2029,19 @@ class ExportPhaseCIF(ExportCIF):
         self.exporttype = ['phase']
         # CIF-specific items
         self.author = ''
-        self.mode = 'simple'
 
     def Exporter(self,event=None):
-        self._Exporter(self,event=event)
+        # get a phase and file name
+        # the export process starts here
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.loadTree()
+        # create a dict with refined values and their uncertainties
+        self.loadParmDict()
+        self.multiple = False
+        self.currentExportType = 'phase'
+        if self.ExportSelect('ask'): return
+        self._Exporter(event=event,phaseOnly=self.phasenam[0])
 
     def Writer(self,hist,phasenam,mode='w'):
         # set the project file name
@@ -2159,28 +2053,70 @@ class ExportPhaseCIF(ExportCIF):
         self._Exporter(phaseOnly=phasenam)
         self.CloseFile()
 
-class ExportDataCIF(ExportCIF):
+class ExportPwdrCIF(ExportCIF):
     '''Used to create a simple CIF containing diffraction data only. Uses exact same code as
-    :class:`ExportCIF` except that `self.mode` is set to "simple" and `self.currentExportType`
-    is set to "single" or "powder" in `self.InitExport`. Shows up in menus as Data-only CIF.
+    :class:`ExportCIF` except that `histOnly` is set for the Exporter
+    Shows up in menu as Quick CIF.
 
     :param wx.Frame G2frame: reference to main GSAS-II frame
     '''
     def __init__(self,G2frame):
-        G2IO.ExportBaseclass.__init__(self,
+        ExportCIF.__init__(self,
             G2frame=G2frame,
             formatName = 'Data-only CIF',
             extension='.cif',
             longFormatName = 'Export data as CIF'
             )
-        self.exporttype = ['single','powder']
+        self.exporttype = ['powder']
         # CIF-specific items
         self.author = ''
-        self.mode = 'simple'
 
     def Exporter(self,event=None):
-        self._Exporter(self,event=event)
-        
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.currentExportType = None
+        self.loadTree()
+        self.currentExportType = 'powder'
+        # create a dict with refined values and their uncertainties
+        self.loadParmDict()
+        self.multiple = False
+        if self.ExportSelect( # set export parameters
+            AskFile='ask' # get a file name/directory to save in
+            ): return
+        self._Exporter(event=event,histOnly=self.histnam[0])
+
+class ExportHKLCIF(ExportCIF):
+    '''Used to create a simple CIF containing diffraction data only. Uses exact same code as
+    :class:`ExportCIF` except that `histOnly` is set for the Exporter
+    Shows up in menu as Quick CIF.
+
+    :param wx.Frame G2frame: reference to main GSAS-II frame
+    '''
+    def __init__(self,G2frame):
+        ExportCIF.__init__(self,
+            G2frame=G2frame,
+            formatName = 'Data-only CIF',
+            extension='.cif',
+            longFormatName = 'Export data as CIF'
+            )
+        self.exporttype = ['single']
+        # CIF-specific items
+        self.author = ''
+
+    def Exporter(self,event=None):
+        self.InitExport(event)
+        # load all of the tree into a set of dicts
+        self.currentExportType = None
+        self.loadTree()
+        self.currentExportType = 'single'
+        # create a dict with refined values and their uncertainties
+        self.loadParmDict()
+        self.multiple = False
+        if self.ExportSelect( # set export parameters
+            AskFile='ask' # get a file name/directory to save in
+            ): return
+        self._Exporter(event=event,histOnly=self.histnam[0])
+                
 #===============================================================================
 # misc CIF utilities
 #===============================================================================

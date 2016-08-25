@@ -2073,39 +2073,39 @@ class GSASII(wx.Frame):
         #     pdfmenu, help='Export pair distribution function(s)')
 
         # find all the exporter files
-        pathlist = sys.path
-        filelist = []
-        for path in pathlist:
-            for filename in glob.iglob(os.path.join(path,"G2export*.py")):
-                filelist.append(filename)    
-        filelist = sorted(list(set(filelist))) # remove duplicates
-        self.exporterlist = []
-        # go through the routines and import them, saving objects that
-        # have export routines (method Exporter)
-        for filename in filelist:
-            path,rootname = os.path.split(filename)
-            pkg = os.path.splitext(rootname)[0]
-            try:
-                fp = None
-                fp, fppath,desc = imp.find_module(pkg,[path,])
-                pkg = imp.load_module(pkg,fp,fppath,desc)
-                for clss in inspect.getmembers(pkg): # find classes defined in package
-                    if clss[0].startswith('_'): continue
-                    if inspect.isclass(clss[1]):
-                        # check if we have the required methods
-                        for m in 'Exporter','loadParmDict':
-                            if not hasattr(clss[1],m): break
-                            if not callable(getattr(clss[1],m)): break
-                        else:
-                            exporter = clss[1](self) # create an export instance
-                            self.exporterlist.append(exporter)
-            except AttributeError:
-                print 'Import_'+errprefix+': Attribute Error'+str(filename)
-                pass
-            except ImportError:
-                print 'Import_'+errprefix+': Error importing file'+str(filename)
-                pass
-            if fp: fp.close()
+        if not self.exporterlist: # this only needs to be done once
+            pathlist = sys.path
+            filelist = []
+            for path in pathlist:
+                for filename in glob.iglob(os.path.join(path,"G2export*.py")):
+                    filelist.append(filename)    
+            filelist = sorted(list(set(filelist))) # remove duplicates
+            # go through the routines and import them, saving objects that
+            # have export routines (method Exporter)
+            for filename in filelist:
+                path,rootname = os.path.split(filename)
+                pkg = os.path.splitext(rootname)[0]
+                try:
+                    fp = None
+                    fp, fppath,desc = imp.find_module(pkg,[path,])
+                    pkg = imp.load_module(pkg,fp,fppath,desc)
+                    for clss in inspect.getmembers(pkg): # find classes defined in package
+                        if clss[0].startswith('_'): continue
+                        if inspect.isclass(clss[1]):
+                            # check if we have the required methods
+                            for m in 'Exporter','loadParmDict':
+                                if not hasattr(clss[1],m): break
+                                if not callable(getattr(clss[1],m)): break
+                            else:
+                                exporter = clss[1](self) # create an export instance
+                                self.exporterlist.append(exporter)
+                except AttributeError:
+                    print 'Import_'+errprefix+': Attribute Error'+str(filename)
+                    pass
+                except ImportError:
+                    print 'Import_'+errprefix+': Error importing file'+str(filename)
+                    pass
+                if fp: fp.close()
         # Add submenu item(s) for each Exporter by its self-declared type (can be more than one)
         for obj in self.exporterlist:
             #print 'exporter',obj
@@ -2313,6 +2313,7 @@ class GSASII(wx.Frame):
         
     def __init__(self, parent):
         self.ExportLookup = {}
+        self.exporterlist = []
         self._init_ctrls(parent)
         self.Image = wx.Image(
             os.path.join(GSASIIpath.path2GSAS2,'gsas2.ico'),

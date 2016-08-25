@@ -537,7 +537,7 @@ def RetDistAngle(DisAglCtls,DisAglData):
                                 pdpx = G2mth.getDistDerv(Oatom[3:6],Tatom[3:6],Amat,unit,Top,SGData)
                                 sig = 0.0
                                 if len(Xvcov):
-                                    sig = np.sqrt(np.inner(pdpx,np.inner(Xvcov,pdpx)))
+                                    sig = np.sqrt(np.inner(pdpx,np.inner(pdpx,Xvcov)))
                                 Dist.append([Oatom[0],Tatom[0],tunit,Top,ma.getdata(dist[indb])[i],sig])
                                 if (Dist[-1][-2]-AsumR) <= 0.:
                                     Vect.append(dx.T[indb][i]/Dist[-1][-2])

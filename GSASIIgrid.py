@@ -74,8 +74,8 @@ WACV = wx.ALIGN_CENTER_VERTICAL
 [ wxID_DRAWATOMSTYLE, wxID_DRAWATOMLABEL, wxID_DRAWATOMCOLOR, wxID_DRAWATOMRESETCOLOR, 
     wxID_DRAWVIEWPOINT, wxID_DRAWTRANSFORM, wxID_DRAWDELETE, wxID_DRAWFILLCELL, 
     wxID_DRAWADDEQUIV, wxID_DRAWFILLCOORD, wxID_DRAWDISAGLTOR,  wxID_DRAWPLANE,
-    wxID_DRAWDISTVP,
-] = [wx.NewId() for item in range(13)]
+    wxID_DRAWDISTVP, wxID_DRAWADDSPHERE,
+] = [wx.NewId() for item in range(14)]
 
 [ wxID_DRAWRESTRBOND, wxID_DRAWRESTRANGLE, wxID_DRAWRESTRPLANE, wxID_DRAWRESTRCHIRAL,
 ] = [wx.NewId() for item in range(4)]
@@ -323,8 +323,99 @@ class SymOpDialog(wx.Dialog):
         self.EndModal(wx.ID_CANCEL)
         
 ################################################################################
+class SphereEnclosure(wx.Dialog):
+    ''' Add atoms within sphere of enclosure to drawing
+    
+    :param wx.Frame parent: reference to parent frame (or None)
+    :param general: general data (includes drawing data)
+    :param atoms: drawing atoms data
+    
+    '''
+    def __init__(self,parent,general,drawing,indx):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Setup phase transformation', 
+            pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
+        self.panel = wx.Panel(self)         #just a dummy - gets destroyed in Draw!
+        self.General = general
+        self.Drawing = drawing
+        self.indx = indx
+        self.Sphere = 1.0
+        self.centers = []
+        
+        self.Draw()
+        
+    def Draw(self):
+        
+        def OnRadius(event):
+            event.Skip()
+            try:
+                val = float(radius.GetValue())
+                if val < 0.5:
+                    raise ValueError
+                self.Sphere = val
+            except ValueError:
+                pass
+            radius.SetValue('%.3f'%(self.Sphere))
+        
+        self.panel.Destroy()
+        self.panel = wx.Panel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add(wx.StaticText(self.panel,label=' Sphere of enclosure controls:'),0,WACV)
+        topSizer = wx.BoxSizer(wx.HORIZONTAL)
+        atoms = []
+        if len(self.indx):
+            topSizer.Add(wx.StaticText(self.panel,label=' Sphere centered at atoms: '),0,WACV)
+            cx,ct,cs = self.Drawing['atomPtrs'][:3]
+#            print self.Drawing.keys()
+            for id in self.indx:
+                atom = self.Drawing['Atoms'][id]
+                self.centers.append(atom[cx:cx+3])
+                atoms.append('%s(%s)'%(atom[ct-1],atom[cs-1]))
+            topSizer.Add(wx.ComboBox(self.panel,choices=atoms,value=atoms[0],
+                style=wx.CB_READONLY|wx.CB_DROPDOWN),0,WACV)
+        else:
+            topSizer.Add(wx.StaticText(self.panel,label=' Sphere centered at drawing view point'),0,WACV)
+            self.centers.append(self.Drawing['viewPoint'][0])
+        mainSizer.Add(topSizer,0,WACV)
+        sphereSizer = wx.BoxSizer(wx.HORIZONTAL)
+        sphereSizer.Add(wx.StaticText(self.panel,label=' Sphere radius: '),0,WACV)
+        radius = wx.TextCtrl(self.panel,value='%.3f'%(self.Sphere),style=wx.TE_PROCESS_ENTER)
+        radius.Bind(wx.EVT_TEXT_ENTER,OnRadius)
+        radius.Bind(wx.EVT_KILL_FOCUS,OnRadius)
+        sphereSizer.Add(radius,0,WACV)
+        mainSizer.Add(sphereSizer,0,WACV)
+        
+        OkBtn = wx.Button(self.panel,-1,"Ok")
+        OkBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+        cancelBtn = wx.Button(self.panel,-1,"Cancel")
+        cancelBtn.Bind(wx.EVT_BUTTON, self.OnCancel)
+        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(OkBtn)
+        btnSizer.Add((20,20),1)
+        btnSizer.Add(cancelBtn)
+        btnSizer.Add((20,20),1)
+        
+        mainSizer.Add(btnSizer,0,wx.EXPAND|wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
+        self.panel.Fit()
+        self.Fit()
+        
+    def GetSelection(self):
+        return self.centers,self.Sphere
+
+    def OnOk(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_OK)
+
+    def OnCancel(self,event):
+        parent = self.GetParent()
+        parent.Raise()
+        self.EndModal(wx.ID_CANCEL)
+        
+################################################################################
 class TransformDialog(wx.Dialog):
-    ''' Phaae transformation
+    ''' Phase transformation
     
     :param wx.Frame parent: reference to parent frame (or None)
     :param phase: phase data
@@ -2053,6 +2144,8 @@ class DataFrame(wx.Frame):
             help='View point is 1st atom selected')
         self.DrawAtomEdit.Append(id=wxID_DRAWADDEQUIV, kind=wx.ITEM_NORMAL,text='Add atoms',
             help='Add symmetry & cell equivalents to drawing set from selected atoms')
+        self.DrawAtomEdit.Append(id=wxID_DRAWADDSPHERE, kind=wx.ITEM_NORMAL,text='Add sphere of atoms',
+            help='Add atoms within sphere of enclosure')
         self.DrawAtomEdit.Append(id=wxID_DRAWTRANSFORM, kind=wx.ITEM_NORMAL,text='Transform draw atoms',
             help='Transform selected atoms by symmetry & cell translations')
         self.DrawAtomEdit.Append(id=wxID_DRAWFILLCOORD, kind=wx.ITEM_NORMAL,text='Fill CN-sphere',

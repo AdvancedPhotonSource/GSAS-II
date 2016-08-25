@@ -4165,6 +4165,49 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             drawAtoms.ClearSelection()
             G2plt.PlotStructure(G2frame,data)
             
+    def AddSphere(event):
+        generalData = data['General']
+        Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
+        atomData = data['Drawing']['Atoms']
+        numAtoms = len(atomData)
+        cx,ct,cs,ci = data['Drawing']['atomPtrs']
+        cuij = cs+5
+        generalData = data['General']
+        SGData = generalData['SGData']
+        cellArray = G2lat.CellBlock(1)
+        indx = drawAtoms.GetSelectedRows()
+        indx.sort()
+        dlg = G2gd.SphereEnclosure(G2frame,data['General'],data['Drawing'],indx)
+        try:
+            if dlg.ShowModal() == wx.ID_OK:
+                centers,radius = dlg.GetSelection()
+                for orig in centers:
+                    xyzA = np.array(orig)
+                    for atomB in atomData[:numAtoms]:
+                        xyzB = np.array(atomB[cx:cx+3])
+                        Uij = atomB[cuij:cuij+6]
+#                        GSASIIpath.IPyBreak()
+                        result = G2spc.GenAtom(xyzB,SGData,False,Uij,True)
+                        for item in result:
+                            atom = copy.copy(atomB)
+                            atom[cx:cx+3] = item[0]
+                            atom[cx+3] = str(item[2])+'+'
+                            atom[cuij:cuij+6] = item[1]
+                            for xyz in cellArray+np.array(atom[cx:cx+3]):
+                                dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
+                                if 0 < dist <= radius:
+                                    if noDuplicate(xyz,atomData):
+                                        C = xyz-atom[cx:cx+3]+item[3]
+                                        newAtom = atom[:]
+                                        newAtom[cx:cx+3] = xyz
+                                        newAtom[cx+3] += str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
+                                        atomData.append(newAtom)
+        finally:
+            dlg.Destroy()
+        UpdateDrawAtoms()
+        drawAtoms.ClearSelection()
+        G2plt.PlotStructure(G2frame,data)
+            
     def TransformSymEquiv(event):
         indx = drawAtoms.GetSelectedRows()
         indx.sort()
@@ -7596,6 +7639,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         G2frame.dataFrame.Bind(wx.EVT_MENU, ResetAtomColors, id=G2gd.wxID_DRAWATOMRESETCOLOR)
         G2frame.dataFrame.Bind(wx.EVT_MENU, SetViewPoint, id=G2gd.wxID_DRAWVIEWPOINT)
         G2frame.dataFrame.Bind(wx.EVT_MENU, AddSymEquiv, id=G2gd.wxID_DRAWADDEQUIV)
+        G2frame.dataFrame.Bind(wx.EVT_MENU, AddSphere, id=G2gd.wxID_DRAWADDSPHERE)
         G2frame.dataFrame.Bind(wx.EVT_MENU, TransformSymEquiv, id=G2gd.wxID_DRAWTRANSFORM)
         G2frame.dataFrame.Bind(wx.EVT_MENU, FillCoordSphere, id=G2gd.wxID_DRAWFILLCOORD)            
         G2frame.dataFrame.Bind(wx.EVT_MENU, FillUnitCell, id=G2gd.wxID_DRAWFILLCELL)

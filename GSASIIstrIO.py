@@ -1486,7 +1486,7 @@ def getCellEsd(pfx,SGData,A,covData):
         Ax[4]*Ax[5]-Ax[2]*Ax[3],
         Ax[3]*Ax[5]-Ax[1]*Ax[4],
         Ax[3]*Ax[4]-Ax[0]*Ax[5]])
-    srcvlsq = np.inner(drVdA,np.inner(vcov,drVdA.T))
+    srcvlsq = np.inner(drVdA,np.inner(drVdA,vcov))
     Vol = 1/np.sqrt(rVsq)
     sigVol = Vol**3*np.sqrt(srcvlsq)/2.         #ok - checks with GSAS
     R123 = Ax[0]*Ax[1]*Ax[2]

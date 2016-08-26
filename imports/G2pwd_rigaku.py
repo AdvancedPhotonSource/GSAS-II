@@ -14,17 +14,17 @@ import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision: $")
 class Rigaku_ReaderClass(G2IO.ImportPowderData):
     '''Routines to import powder data from a Rigaku .txt file with an angle and
-    then 11(!) intensity values on the line. The example file is proceeded
+    then 1 or 11(!) intensity values on the line. The example file is proceeded
     with 10 of blank lines, but I have assumed they could be any sort of text.
-    This code should work with an angle and any number of intensity values/line > 3
+    This code should work with an angle and any number of intensity values/line
     as long as the number is the same on each line. The step size may not change. The
     number of comment lines can also change, but should not appear to be intensity
     values (numbers only).
     '''
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.txt',),
-            strictExtension=False,
+            extensionlist=('.txt','.TXT'),
+            strictExtension=True,
             formatName = 'Rigaku .txt exported',
             longFormatName = 'Rigaku powder data exported as .txt'
             )
@@ -53,10 +53,10 @@ class Rigaku_ReaderClass(G2IO.ImportPowderData):
                         err = True
                         break
                 if err: continue
-                if vals < 4: continue
+                if vals < 1: continue
                 header = False # found first non-header line
-            if vals < 4:
-                print('Two few values for Rigaku .txt file')
+            if vals < 2:
+                print('Too few values for Rigaku .txt file')
                 return False
             if self.vals is None:
                 self.vals = vals

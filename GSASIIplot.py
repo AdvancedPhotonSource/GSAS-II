@@ -24,6 +24,7 @@ import wx.aui
 import wx.glcanvas
 import matplotlib as mpl
 import mpl_toolkits.mplot3d.axes3d as mp3d
+import config as cfg
 import GSASIIpath
 GSASIIpath.SetVersionNumber("$Revision$")
 import GSASIIgrid as G2gd
@@ -1513,7 +1514,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
             if mode == 'Add':
                 backDict['FixedPoints'].append(xy)
                 Plot = Page.figure.gca()
-                Plot.plot(event.xdata,event.ydata,'rD',clip_on=True,picker=3.)
+                Plot.plot(event.xdata,event.ydata,'rD',clip_on=cfg.clip_on,picker=3.)
                 Page.canvas.draw()
                 return
             elif G2frame.itemPicked is not None: # end of drag in move
@@ -1874,7 +1875,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if G2frame.logPlot:
                     if 'PWDR' in plottype:
                         Plot.set_yscale("log",nonposy='mask')
-                        Plot.plot(X,Y,colors[N%6]+pP,picker=3.,clip_on=True)
+                        Plot.plot(X,Y,colors[N%6]+pP,picker=3.,clip_on=cfg.clip_on)
                         Plot.plot(X,Z,colors[(N+1)%6],picker=False)
                         Plot.plot(X,W,colors[(N+2)%6],picker=False)     #background
                     elif 'SASD' in plottype:
@@ -1892,12 +1893,12 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                             if G2frame.ErrorBars:
                                 if G2frame.sqPlot:
                                     Plot.errorbar(X,YB,yerr=X**4*Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
-                                        ecolor=colors[N%6],picker=3.,clip_on=True)
+                                        ecolor=colors[N%6],picker=3.,clip_on=cfg.clip_on)
                                 else:
                                     Plot.errorbar(X,YB,yerr=Sample['Scale'][0]*np.sqrt(1./(Pattern[0]['wtFactor']*xye[2])),
-                                        ecolor=colors[N%6],picker=3.,clip_on=True)
+                                        ecolor=colors[N%6],picker=3.,clip_on=cfg.clip_on)
                             else:
-                                Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=True)
+                                Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=cfg.clip_on)
                             Plot.plot(X,W,colors[(N+2)%6],picker=False)     #const. background
                             Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
                 elif G2frame.Weight and 'PWDR' in plottype:
@@ -1905,24 +1906,24 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     Ymax = max(DY)
                     DZ = xye[3]*np.sqrt(xye[2])
                     DS = xye[5]*np.sqrt(xye[2])-Ymax*Pattern[0]['delOffset']
-                    ObsLine = Plot.plot(X,DY,colors[N%6]+pP,picker=3.,clip_on=True)         #Io/sig(Io)
+                    ObsLine = Plot.plot(X,DY,colors[N%6]+pP,picker=3.,clip_on=cfg.clip_on)         #Io/sig(Io)
                     Plot.plot(X,DZ,colors[(N+1)%6],picker=False)                    #Ic/sig(Io)
                     DifLine = Plot.plot(X,DS,colors[(N+3)%6],picker=1.)                    #(Io-Ic)/sig(Io)
                     Plot.axhline(0.,color=wx.BLACK)
                 else:
                     if G2frame.SubBack:
                         if 'PWDR' in plottype:
-                            Plot.plot(Xum,Y-W,colors[N%6]+pP,picker=False,clip_on=True)  #Io-Ib
+                            Plot.plot(Xum,Y-W,colors[N%6]+pP,picker=False,clip_on=cfg.clip_on)  #Io-Ib
                             Plot.plot(X,Z-W,colors[(N+1)%6],picker=False)               #Ic-Ib
                         else:
-                            Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=True)
+                            Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=cfg.clip_on)
                             Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
                     else:
                         if 'PWDR' in plottype:
-                            ObsLine = Plot.plot(Xum,Y,colors[N%6]+pP,picker=3.,clip_on=True)    #Io
+                            ObsLine = Plot.plot(Xum,Y,colors[N%6]+pP,picker=3.,clip_on=cfg.clip_on)    #Io
                             Plot.plot(X,Z,colors[(N+1)%6],picker=False)                 #Ic
                         else:
-                            Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=True)
+                            Plot.plot(X,YB,colors[N%6]+pP,picker=3.,clip_on=cfg.clip_on)
                             Plot.plot(X,ZB,colors[(N+1)%6],picker=False)
                     if 'PWDR' in plottype:
                         Plot.plot(X,W,colors[(N+2)%6],picker=False)                 #Ib
@@ -2042,7 +2043,7 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                     x = G2lat.Dsp2pos(Parms,x)
                 else:
                     break
-            Plot.plot(x,y,'rD',clip_on=True,picker=3.)
+            Plot.plot(x,y,'rD',clip_on=cfg.clip_on,picker=3.)
     if not newPlot:
         # this restores previous plot limits (but I'm not sure why there are two .push_current calls)
         Page.toolbar.push_current()

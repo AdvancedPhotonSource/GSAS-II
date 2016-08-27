@@ -89,10 +89,10 @@ try:
     vals = [True for i in inspect.getmembers(config) if '__' not in i[0]]
     print str(len(vals))+' values read from config file '+os.path.abspath(config.__file__)
 except ImportError:
-    configDict = {}
+    configDict = {'Clip_on':True}
 except Exception as err:
     print("Error importing config.py file: "+str(err))
-    configDict = {}
+    configDict = {'Clip_on':True}
     
 def GetConfigValue(key,default=None):
     '''Return the configuration file value for key or a default value if not present

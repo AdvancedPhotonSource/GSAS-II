@@ -42,6 +42,11 @@ If debug is False, calls to :func:`GSASIIpath.IPyBreak` and
 :func:`GSASIIpath.pdbBreak` are ignored.
 '''
 
+Clip_on = True
+''' if True then line plots willl be clipped at plot border; 
+if False line plots extend nto white space around plot frme
+'''
+
 Transpose = False
 'Set to True to cause images to be Transposed when read (for code development)'
 

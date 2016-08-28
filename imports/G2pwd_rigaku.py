@@ -35,6 +35,8 @@ class Rigaku_ReaderClass(G2IO.ImportPowderData):
     # Validate the contents -- make sure we only have valid lines and set
     # values we will need for later read.
     def ContentsValidator(self, filepointer):
+        self.vals = None
+        self.stepsize = None
         j = 0
         prevAngle = None
         header = True

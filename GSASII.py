@@ -3419,7 +3419,7 @@ class GSASII(wx.Frame):
                 if 'PWDR' in name:
                     TextList.append(name)
                 id, cookie = self.PatternTree.GetNextChild(self.root, cookie)
-            if len(TextList) == 1:
+            if len(TextList) < 1:
                 self.ErrorDialog('Nothing to make PDFs for','There must be at least one "PWDR" pattern')
                 return
             dlg = G2G.G2MultiChoiceDialog(self,'Make PDF controls','Make PDF controls for:',TextList, wx.CHOICEDLG_STYLE)

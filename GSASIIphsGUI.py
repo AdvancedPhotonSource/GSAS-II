@@ -1266,6 +1266,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         
         if generalData['Type'] == 'magnetic':
             GenSym,GenFlg = G2spc.GetGenSym(generalData['SGData'])
+            generalData['SGData']['GenSym'] = GenSym
             mainSizer.Add(MagSizer())
             G2G.HorizontalLine(mainSizer,General)
 

@@ -101,6 +101,66 @@ def SpcGroup(SGSymbol):
         if 'array' in str(type(SGInfo[8])):        #patch for old fortran bin?
             SGData['SGGen'].append(int(SGInfo[8][i]))
         SGData['SGSpin'].append(1)
+    if SGData['SGInv']:
+        if SGData['SGLaue'] in ['-1','2/m','mmm']:
+            Ibar = 7
+        elif SGData['SGLaue'] in ['4/m','4/mmm']:
+            Ibar = 1
+        elif SGData['SGLaue'] in ['3R','3mR','3','3m1','31m','6/m','6/mmm']:
+            Ibar = 15 #8+4+2+1
+        else:
+            Ibar = 4
+        Ibarx = Ibar&14
+    else:
+        Ibarx = 8
+        if SGData['SGLaue'] in ['-1','2/m','mmm','m3','m3m']:
+            Ibarx = 0
+    moregen = []
+    for i,gen in enumerate(SGData['SGGen']):
+        if SGData['SGLaue'] in ['m3','m3m']:
+            if gen in [1,2,4]:
+                SGData['SGGen'][i] = 4
+            elif gen < 7:
+                SGData['SGGen'][i] = 0
+        elif SGData['SGLaue'] in ['4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm']:
+            if gen == 2:
+                SGData['SGGen'][i] = 4
+            elif gen in [3,5]:
+                SGData['SGGen'][i] = 3
+            elif gen == 6:
+                if SGData['SGLaue'] in ['4/m','4/mmm']:
+                    SGData['SGGen'][i] = 128
+                else:
+                    SGData['SGGen'][i] = 16
+            elif not SGData['SGInv'] and gen == 12:
+                SGData['SGGen'][i] = 8
+            elif (not SGData['SGInv']) and (SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']) and (gen == 1):
+                SGData['SGGen'][i] = 24
+        if gen in [99,]:
+            if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']:
+                SGData['SGGen'][i] = 3
+            elif SGData['SGLaue'] == 'm3m':
+                SGData['SGGen'][i] = 12
+            else:
+                SGData['SGGen'][i] = 8
+        elif gen in [98,]:
+            if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']:
+                SGData['SGGen'][i] = 4
+            else:
+                SGData['SGGen'][i] = 8
+        elif not SGData['SGInv'] and gen in [23,] and SGData['SGLaue'] in ['m3','m3m']:
+            SGData['SGGen'][i] = 24
+        elif gen >= 16 and gen != 128:
+            if not SGData['SGInv']:
+                SGData['SGGen'][i] = 31
+            else: 
+                SGData['SGGen'][i] = gen^Ibarx
+        if SGData['SGInv']:
+            if gen < 128:
+                moregen.append(gen^Ibar)
+            else:
+                moregen.append(1)
+    SGData['SGGen'] += moregen
     if SGData['SGLaue'] in '-1':
         SGData['SGSys'] = SysSym[0]
     elif SGData['SGLaue'] in '2/m':
@@ -431,50 +491,6 @@ def GetGenSym(SGData):
     UniqSym = ('','','a','b','c','',)
     
     '''
-    if SGData['SGInv']:
-        if SGData['SGLaue'] in ['-1','2/m','mmm']:
-            Ibar = 7
-        elif SGData['SGLaue'] in ['4/m','4/mmm']:
-            Ibar = 1
-        elif SGData['SGLaue'] in ['3R','3mR','3','3m1','31m','6/m','6/mmm']:
-            Ibar = 15 #8+4+2+1
-        else:
-            Ibar = 4
-        Ibarx = Ibar&14
-    else:
-        Ibarx = 8
-        if SGData['SGLaue'] in ['-1','2/m','mmm','m3','m3m']:
-            Ibarx = 0
-    moregen = []
-    for gen in SGData['SGGen']:
-        if SGData['SGLaue'] in ['m3','m3m']:
-            if gen in [1,2,4]: gen = 4
-            elif gen < 7: gen = 0
-        elif SGData['SGLaue'] in ['4/m','4/mmm','3R','3mR','3','3m1','31m','6/m','6/mmm']:
-            if gen == 2: gen = 4
-            elif gen in [3,5]: gen = 3
-            elif gen == 6:
-                if SGData['SGLaue'] in ['4/m','4/mmm']: gen = 128
-                else: gen = 16
-            elif not SGData['SGInv'] and gen == 12: gen = 8
-            elif not SGData['SGInv'] and SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm'] and gen == 1 : gen = 24
-        if gen == 99:
-            if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']: gen = 3
-            elif SGData['SGLaue'] == 'm3m': gen = 12
-            else: gen = 8
-        elif gen == 98:
-            if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']: gen = 4
-            else: gen = 8
-        elif not SGData['SGInv'] and gen == 23 and SGData['SGLaue'] in ['m3','m3m']: gen = 24
-        elif gen >= 16 and gen != 128:
-            if not SGData['SGInv']: gen = 31
-            else: gen = gen^Ibarx
-        if SGData['SGInv']:
-            if gen < 128:
-                moregen.append(gen^Ibar)
-            else:
-                moregen.append(1)
-    SGData['SGGen'] += moregen
     OprNames = [GetOprPtrName(str(irtx))[1] for irtx in PackRot(SGData['SGOps'])]
     if SGData['SGInv']:
         OprNames += [GetOprPtrName(str(-irtx))[1] for irtx in PackRot(SGData['SGOps'])]
@@ -631,15 +647,16 @@ def GetGenSym(SGData):
                 elif SGData['SGCen'][icv][1] == 0.5:
                     UsymOp.append(' Acen ')
                 else:
-                    UsymOp.append(' Rcen ')
+                    if (icv == 1) and ('c' not in SGData['SpGrp']):
+                        UsymOp.append(' Rcen ')
     return UsymOp,OprFlg
     
 def MagSGSym(SGData):
     SGLaue = SGData['SGLaue']
     SpnFlp = SGData['SGSpin']
+    GenSym = SGData['GenSym']
     if not len(SpnFlp):
         return SGData['SpGrp']
-    print SGData['SpGrp'],': ',SGData['SGGen'],SpnFlp
     magSym = SGData['SpGrp'].split()
     if len(SpnFlp) == 1:
         if SpnFlp[-1] == -1:
@@ -650,10 +667,46 @@ def MagSGSym(SGData):
             if SpnFlp[i] < 0:  
                 magSym[i+1] += "'"
     elif SGLaue in ['2/m','4/m','6/m']:
+        sym = magSym[1].replace("'","").split('/')
         for i in [0,1]:
-            if SpnFlp[i] < 0:  
-                magSym[i+1] += "'"
+            if SpnFlp[i] < 0:                      
+                sym[i] += "'"
+        magSym[1] = '/'.join(sym)
+    elif SGLaue in ['3','3m1','31m']:   #ok 
+#        GSASIIpath.IPyBreak()
+        print GenSym
+        print magSym
+        print SpnFlp
+        if len(GenSym) == 1:
+            id = 2
+            if (len(magSym) == 4) and (magSym[2] == '1'):
+                id = 3
+            if '3' in GenSym[0]:
+                id = 1
+            magSym[id].strip("'")
+            if SpnFlp[0] < 0:
+                magSym[id] += "'"
+        else:
+            i,j = [1,2]
+            if magSym[2] == '1':
+                i,j = [1,3]
+            magSym[i].strip("'")
+            magSym[j].strip("'")
+            if SpnFlp[:2] == [1,-1]:
+                magSym[i] += "'"
+            elif SpnFlp[:2] == [-1,-1]:
+                magSym[j] += "'"
+            elif SpnFlp[:2] == [-1,1]:
+                magSym[i] += "'"
+                magSym[j] += "'"
+            if 'c' not in magSym[2]:
+                magSym[0] = magSym[0][0]
+                if SpnFlp[1] < 0:
+                    magSym[0] += '(R)'
+                
+                   
         
+    print SGData['SpGrp'],': ',SGData['SGGen'],SpnFlp,' '.join(magSym),SGData['SGLatt']
     return ' '.join(magSym)
         
 ################################################################################

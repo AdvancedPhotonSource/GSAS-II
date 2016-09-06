@@ -584,11 +584,9 @@ def GetEdfData(filename,imageOnly=False):
             break  
     File.seek(fileSize-imSize)
     if dType == 'UnsignedShort':        
-        image = np.array(ar.array('H',File.read(imSize)),dtype=np.int32)
-    elif dType in ['UnsignedInt','UnsignedLong']:
-        image = np.array(ar.array('L',File.read(imSize)),dtype=np.int32)
-    elif dType in ['SignedInteger','SignedLong']:
-        image = np.array(ar.array('l',File.read(imSize)),dtype=np.int32)
+        image = np.array(np.frombuffer(File.read(imSize),dtype=np.int16),dtype=np.int32)
+    else:
+        image = np.array(np.frombuffer(File.read(imSize),dtype=np.int32),dtype=np.int32)
     image = np.reshape(image,(sizexy[1],sizexy[0]))
     data = {'pixelSize':pixSize,'wavelength':wave,'distance':dist,'center':cent,'size':sizexy}
     Npix = sizexy[0]*sizexy[1]

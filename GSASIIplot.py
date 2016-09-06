@@ -3317,7 +3317,7 @@ def PlotTexture(G2frame,data,Start=False):
 
     shModels = ['cylindrical','none','shear - 2/m','rolling - mmm']
     SamSym = dict(zip(shModels,['0','-1','2/m','mmm']))
-    PatternId = G2frame.PatternId
+#    PatternId = G2frame.PatternId
     generalData = data['General']
     SGData = generalData['SGData']
     pName = generalData['Name']

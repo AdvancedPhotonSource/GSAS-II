@@ -722,8 +722,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             def OnSpinOp(event):
                 Obj = event.GetEventObject()
                 isym = Indx[Obj.GetId()]
-                spCode = {'red':-1,'black':1}
+                spCode = {'red':-1,'black':1}                    
                 SGData['SGSpin'][isym] = spCode[Obj.GetValue()]
+                G2spc.CheckSpin(isym,SGData)
                 wx.CallAfter(UpdateGeneral)                               
 
             SGData = generalData['SGData']            
@@ -746,7 +747,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 spinOp.Bind(wx.EVT_COMBOBOX,OnSpinOp)
                 spinSizer.Add(spinOp,0,WACV)
             MagSym = G2spc.MagSGSym(SGData)
-            spinSizer.Add(wx.StaticText(General,label=' Magnetic space group: '+MagSym),0,WACV)
+            SGData['MagSpGrp'] = MagSym
+            spinSizer.Add(wx.StaticText(General,label=' OG Magnetic space group: '+MagSym),0,WACV)
             magSizer.Add(spinSizer)
             return magSizer
             

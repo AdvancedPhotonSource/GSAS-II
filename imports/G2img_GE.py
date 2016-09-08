@@ -124,7 +124,8 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
         head = ['GE detector sum  data from APS 1-ID',]
         sizexy = [2048,2048]
         Npix = sizexy[0]*sizexy[1]
-        image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
+        image = np.array(np.frombuffer(File.read(4*Npix),dtype=np.float32),dtype=np.int32)
+#        image = np.array(ar.array('f',File.read(4*Npix)),dtype=np.int32)
     elif filename.split('.')[-1] in ['avg','cor']:
         File.seek(0,2)
         last = File.tell()
@@ -133,7 +134,8 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
         head = ['GE detector avg or cor data from APS 1-ID',]
         sizexy = [2048,2048]
         Npix = sizexy[0]*sizexy[1]
-        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.int16),dtype=np.int32)
+#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
     else:
         head = ['GE detector raw data',]
         File.seek(18)
@@ -152,7 +154,8 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
         Npix = sizexy[0]*sizexy[1]
         pos = 8192 + (imagenum-1)*2*Npix
         File.seek(pos)
-        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+        image = np.array(np.frombuffer(File.read(2*Npix),dtype=np.int16),dtype=np.int32)
+#        image = np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
         if len(image) != sizexy[1]*sizexy[0]:
             print('not enough images while reading GE file: '+filename+'image #'+str(imagenum))
             return 0,0,0,0,False            
@@ -161,7 +164,8 @@ def GetGEsumData(self,filename,imagenum=1,sum=False):
             print 'Frames to read %d'%(nframes),
             while nframes > 1: #OK, this will sum the frames.
                 try:
-                    image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
+                    image += np.array(np.frombuffer(File.read(2*Npix),dtype=np.int16),dtype=np.int32)
+#                    image += np.array(ar.array('H',File.read(2*Npix)),dtype=np.int32)
                 except ValueError:
                     break
                 nframes -= 1

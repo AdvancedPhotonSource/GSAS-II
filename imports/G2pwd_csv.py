@@ -25,9 +25,9 @@ class csv_ReaderClass(G2IO.ImportPowderData):
     'Routines to import powder data from a .xye file'
     def __init__(self):
         super(self.__class__,self).__init__( # fancy way to self-reference
-            extensionlist=('.csv',),
+            extensionlist=('.csv','.xy','.XY',),
             strictExtension=True,
-            formatName = 'comma/tab separated (.csv)',
+            formatName = 'comma/tab/semicolon separated',
             longFormatName = 'Worksheet-type .csv powder data file'
             )
 
@@ -43,7 +43,7 @@ class csv_ReaderClass(G2IO.ImportPowderData):
         try:
             begin = True
             for i,S in enumerate(filepointer):
-                vals = S.replace(',',' ').split()
+                vals = S.replace(',',' ').replace(';',' ').split()
                 if len(vals) < 2 and i > 0:
                     print 'Line '+str(i+1)+' cannot be read:\n\t'+S
                     continue

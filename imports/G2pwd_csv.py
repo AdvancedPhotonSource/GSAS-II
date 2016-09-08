@@ -33,6 +33,22 @@ class csv_ReaderClass(G2IO.ImportPowderData):
 
     # Validate the contents -- make sure we only have valid lines
     def ContentsValidator(self, filepointer):
+        good = 0
+        for i,S in enumerate(filepointer):
+            if i > 1000: break
+            vals = S.replace(',',' ').replace(';',' ').split()
+            if len(vals) >= 2:
+                for j,v in enumerate(vals):
+                    if j == 3: break
+                    try:
+                        float(v)
+                    except ValueError:
+                        if good > 1: return False
+                        continue
+                good += 1
+                continue
+            elif good > 1:
+                return False
         return True # no errors encountered
 
     def Reader(self,filename,filepointer, ParentFrame=None, **unused):

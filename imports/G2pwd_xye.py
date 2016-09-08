@@ -50,7 +50,8 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                 else:
                     begin = False
                 # valid line to read? 
-            vals = S.split()
+            #vals = S.split()
+            vals = S.replace(',',' ').replace(';',' ').split()
             if len(vals) == 2 or len(vals) == 3:
                 continue
             else:
@@ -89,7 +90,8 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                     else:
                         begin = False
                 # valid line to read
-                vals = S.split()
+                #vals = S.split()
+                vals = S.replace(',',' ').replace(';',' ').split()
                 if len(vals) < 2:
                     print 'Line '+str(i+1)+' cannot be read:\n\t'+S
                     continue

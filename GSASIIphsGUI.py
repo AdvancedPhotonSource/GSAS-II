@@ -725,8 +725,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 spCode = {'red':-1,'black':1}                    
                 SGData['SGSpin'][isym] = spCode[Obj.GetValue()]
                 G2spc.CheckSpin(isym,SGData)
-                wx.CallAfter(UpdateGeneral)                               
-
+                wx.CallAfter(UpdateGeneral)
+                
+            def OnShowSpins(event):
+                showSpins.SetValue(False)
+                msg = 'Magnetic spin operators for '+SGData['MagSpGrp']
+                text,table = G2spc.SGPrint(SGData,AddInv=True)
+                text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
+                G2gd.SGMagSpinBox(General,msg,text,table,OprNames,SpnFlp).Show()
+                
             SGData = generalData['SGData']            
             Indx = {}
             MagSym = generalData['SGData']['SpGrp'].split()
@@ -748,7 +755,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 spinSizer.Add(spinOp,0,WACV)
             MagSym = G2spc.MagSGSym(SGData)
             SGData['MagSpGrp'] = MagSym
-            spinSizer.Add(wx.StaticText(General,label=' OG Magnetic space group: '+MagSym),0,WACV)
+            OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+            spinSizer.Add(wx.StaticText(General,label=' OG Magnetic space group: %s  '%(MagSym)),0,WACV)
+            showSpins = wx.CheckBox(General,label=' Show spins?')
+            showSpins.Bind(wx.EVT_CHECKBOX,OnShowSpins)
+            spinSizer.Add(showSpins,0,WACV)
             magSizer.Add(spinSizer)
             return magSizer
             
@@ -1269,6 +1280,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if generalData['Type'] == 'magnetic':
             GenSym,GenFlg = G2spc.GetGenSym(generalData['SGData'])
             generalData['SGData']['GenSym'] = GenSym
+            generalData['SGData']['GenFlg'] = GenFlg
             mainSizer.Add(MagSizer())
             G2G.HorizontalLine(mainSizer,General)
 

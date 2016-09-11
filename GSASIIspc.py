@@ -103,10 +103,12 @@ def SpcGroup(SGSymbol):
         SGData['SGSpin'].append(1)
     if SGData['SGLaue'] == '2/m' and SGData['SGLatt'] != 'P' and '/' in SGData['SpGrp']:
         SGData['SGSpin'].append(1)  #fix bug in fortran
-    if SGData['SpGrp'] in ['F 2 2 2','F m m m','F m m 2','F m 2 m','F 2 m m']:
-        SGData['SGSpin'] = [1,1,1,1,1,1]
-    if SGData['SpGrp'] in ['F d d 2','F d 2 d','F 2 d d','F d d d']:
-        SGData['SGSpin'] = [1,1,1]
+    if 'F' in SGData['SpGrp']:
+        SGData['SGSpin'] += [1,1,1,1]
+    elif 'R' in SGData['SpGrp']:
+        SGData['SGSpin'] += [1,1,1]
+    elif SGData['SpGrp'][0] in ['A','B','C','I']:
+        SGData['SGSpin'] += [1,]
     if SGData['SGInv']:
         if SGData['SGLaue'] in ['-1','2/m','mmm']:
             Ibar = 7
@@ -167,6 +169,7 @@ def SpcGroup(SGSymbol):
             else:
                 moregen.append(1)
     SGData['SGGen'] += moregen
+#    GSASIIpath.IPyBreak()
     if SGData['SGLaue'] in '-1':
         SGData['SGSys'] = SysSym[0]
     elif SGData['SGLaue'] in '2/m':
@@ -356,7 +359,7 @@ def SGPtGroup(SGData):
         else:
             return 'm-3m',[]
     
-def SGPrint(SGData):
+def SGPrint(SGData,AddInv=False):
     '''
     Print the output of SpcGroup in a nicely formatted way. Used in SpaceGroup
 
@@ -394,6 +397,10 @@ def SGPrint(SGData):
     SGTable = []
     for i,Opr in enumerate(SGData['SGOps']):
         SGTable.append('(%2d) %s'%(i+1,MT2text(Opr)))
+    if AddInv and SGData['SGInv']:
+        for i,Opr in enumerate(SGData['SGOps']):
+            IOpr = [-Opr[0],-Opr[1]]
+            SGTable.append('(%2d) %s'%(i+1,MT2text(IOpr)))        
     return SGText,SGTable
 
 def AllOps(SGData):
@@ -487,7 +494,10 @@ def SpaceGroup(SGSymbol):
         return
     for l in SGPrint(A):
         print l
-        
+################################################################################
+#### Magnetic space group stuff
+################################################################################
+
 def GetGenSym(SGData):
     '''
     Get the space group generator symbols
@@ -503,7 +513,7 @@ def GetGenSym(SGData):
     Nsyms = len(SGData['SGOps'])
     if SGData['SGInv']: Nsyms *= 2
     UsymOp = []
-    OprFlg = []    
+    OprFlg = []  
     if Nsyms in [1,3]: NunqOp = 0       #Triclinic acentric OR trigonal 3
     elif Nsyms == 2:                    #Centric triclinic or acentric monoclinic
         NunqOp = 1
@@ -888,7 +898,48 @@ def MagSGSym(SGData):
             magSym[3] += "'"
         if SpnFlp[2] < 0:
             magSym[0] += '(P)'
+#    print SpnFlp
     return ' '.join(magSym)
+    
+def GenMagOps(SGData):
+    FlpSpn = SGData['SGSpin']
+    Nsym = len(SGData['SGOps'])
+    Nfl = len(SGData['GenFlg'])
+    Ncv = len(SGData['SGCen'])
+    sgOp = [M for M,T in SGData['SGOps']]
+    OprName = [GetOprPtrName(str(irtx))[1] for irtx in PackRot(SGData['SGOps'])]
+    if SGData['SGInv']:
+        Nsym *= 2
+        sgOp += [-M for M,T in SGData['SGOps']]
+        OprName += [GetOprPtrName(str(-irtx))[1] for irtx in PackRot(SGData['SGOps'])]
+    Nsyms = 0
+    sgOps = []
+    OprNames = []
+    for incv in range(Ncv):
+        Nsyms += Nsym
+        sgOps += sgOp
+        OprNames += OprName    
+    SpnFlp = np.ones(Nsym,dtype=np.int)
+    for ieqv in range(Nsym):
+        for iunq in range(Nfl):
+            if SGData['SGGen'][ieqv] & SGData['GenFlg'][iunq]:
+                SpnFlp[ieqv] *= FlpSpn[iunq]
+#    print '\nMagSpGrp:',SGData['MagSpGrp'],Ncv
+#    print 'GenFlg:',SGData['GenFlg']
+#    print 'GenSym:',SGData['GenSym']
+#    print 'FlpSpn:',Nfl,FlpSpn
+    detM = [nl.det(M) for M in sgOp]
+    for incv in range(Ncv):
+        if incv:
+            SpnFlp = np.concatenate((SpnFlp,SpnFlp[:Nsym]*FlpSpn[Nfl+incv-1]))
+    MagMom = SpnFlp*np.array(Ncv*detM)
+    SGData['MagMom'] = MagMom
+#    print 'SgOps:',OprNames
+#    print 'SpnFlp:',SpnFlp
+#    print 'MagMom:',MagMom
+    return OprNames,SpnFlp
+    
+    
     
     
         
@@ -1806,8 +1857,7 @@ def GetKNsym(key):
 
 def GetNXUPQsym(siteSym):
     '''        
-    The codes XUPQ are for lookup of symmetry constraints for position(X), thermal parm(U) & magnetic moments 
-    (P&Q-not used in GSAS-II)
+    The codes XUPQ are for lookup of symmetry constraints for position(X), thermal parm(U) & magnetic moments (P & Q) 
     '''
     NXUPQsym = {
         '    1   ':(28,29,28,28),'   -1   ':( 1,29,28, 0),'    2(x)':(12,18,12,25),'    m(x)':(25,18,12,25),

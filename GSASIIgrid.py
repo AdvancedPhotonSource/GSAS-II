@@ -184,7 +184,7 @@ class SGMessageBox(wx.Dialog):
     def __init__(self,parent,title,text,table,):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        self.text=text
+        self.text = text
         self.table = table
         self.panel = wx.Panel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -223,6 +223,74 @@ class SGMessageBox(wx.Dialog):
         '''
         self.ShowModal()
         return
+
+class SGMagSpinBox(wx.Dialog):
+    ''' Special version of MessageBox that displays magnetic spin text
+    '''
+    def __init__(self,parent,title,text,table,names,spins,):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,size=wx.Size(400,350))
+        self.text = text
+        self.table = table
+        self.names = names
+        self.spins = spins
+        self.panel = wxscroll.ScrolledPanel(self)
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.Add((0,10))
+        first = text[0].split(':')
+        cents = ['',]
+        if not 'P' in first[1][0]:
+            cents = text[-1].split(';')
+        for line in text:
+            mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
+        try:
+            nops = self.names.index(' 1bar ')
+        except ValueError:
+            nops = len(self.names)
+        ncol = self.table[0].count(',')+2
+        for ic,cent in enumerate(cents):
+            if cent:
+                cent = cent.strip(' (').strip(')+\n') 
+                mainSizer.Add(wx.StaticText(self.panel,label=' for (%s)+'%(cent)),0,WACV)
+            tableSizer = wx.FlexGridSizer(0,2*ncol+3,0,0)
+            for j,item in enumerate(self.table):
+                flds = item.split(')')[1]
+                tableSizer.Add(wx.StaticText(self.panel,label='  (%2d)  '%(j+1)),0,WACV|wx.ALIGN_LEFT)            
+                flds = flds.replace(' ','').split(',')
+                for i,fld in enumerate(flds):
+                    if i < ncol-1:
+                        text = wx.StaticText(self.panel,label='%s, '%(fld))
+                        tableSizer.Add(text,0,WACV|wx.ALIGN_RIGHT)
+                    else:
+                        text = wx.StaticText(self.panel,label='%s '%(fld))
+                        tableSizer.Add(text,0,WACV|wx.ALIGN_RIGHT)
+                text = wx.StaticText(self.panel,label=' (%s) '%(self.names[j]))
+                if self.spins[j+ic*len(self.table)] < 0:
+                    text.SetForegroundColour('Red')
+                tableSizer.Add(text,0,WACV|wx.ALIGN_RIGHT)
+                if not j%2:
+                    tableSizer.Add((20,0))
+            mainSizer.Add(tableSizer,0,wx.ALIGN_LEFT)
+            
+        btnsizer = wx.StdDialogButtonSizer()
+        OKbtn = wx.Button(self.panel, wx.ID_OK)
+        OKbtn.SetDefault()
+        btnsizer.AddButton(OKbtn)
+        btnsizer.Realize()
+        mainSizer.Add((0,10))
+        mainSizer.Add(btnsizer,0,wx.ALIGN_CENTER)
+        self.panel.SetSizer(mainSizer)
+        size = np.array(self.GetSize())
+        self.panel.SetupScrolling()
+        size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
+        self.panel.SetSize(size)
+        self.panel.SetAutoLayout(1)
+
+    def Show(self):
+        '''Use this method after creating the dialog to post it
+        '''
+        self.ShowModal()
+        return    
 
 ################################################################################
 class SymOpDialog(wx.Dialog):
@@ -1164,9 +1232,9 @@ class AddHatomDialog(wx.Dialog):
         btnSizer.Add(CancelBtn)
         btnSizer.Add((20,20),1)
         mainSizer.Add(btnSizer,0,wx.BOTTOM|wx.TOP, 10)
+        self.panel.SetSizer(mainSizer)
         size = np.array(self.GetSize())
         self.panel.SetupScrolling()
-        self.panel.SetSizer(mainSizer)
         self.panel.SetAutoLayout(1)
         size = [size[0]-5,size[1]-20]       #this fiddling is needed for older wx!
         self.panel.SetSize(size)
@@ -1207,8 +1275,7 @@ class DisAglDialog(wx.Dialog):
       search ranges for each element.
     '''
     def __init__(self,parent,data,default,Reset=True):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,
-                           'Distance Angle Controls', 
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,'Distance Angle Controls', 
             pos=wx.DefaultPosition,style=wx.DEFAULT_DIALOG_STYLE)
         self.default = default
         self.Reset = Reset

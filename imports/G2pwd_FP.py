@@ -134,6 +134,7 @@ class xye_ReaderClass(G2IO.ImportPowderData):
                     print S
                     break
             N = len(x)
+            if N <= 1: return False
             self.powderdata = [
                 np.array(x), # x-axis values
                 np.array(y), # powder pattern intensities

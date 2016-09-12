@@ -35,6 +35,11 @@ class HDF5_Reader(G2IO.ImportImage):
         if h5py is None:
             self.UseReader = False
             print('HDF5 Reader skipped because h5py library is not installed')
+            import os,sys
+            os.path.split(sys.executable)[0]
+            conda = os.path.join(os.path.split(sys.executable)[0],'conda')
+            if os.path.exists(conda):
+                print('To fix this use command:\n\t'+conda+' install h5py hdf5')
         super(self.__class__,self).__init__( # fancy way to self-reference
                                              extensionlist=('.hdf5','.hd5','.h5','.hdf'),
                                              strictExtension=True,
@@ -65,8 +70,13 @@ class HDF5_Reader(G2IO.ImportImage):
             if not self.buffer.get('init'):
                 self.buffer['init'] = True
                 self.Comments = self.visit(fp)
+                if imagenum > len(self.buffer['imagemap']):
+                    self.errors = 'No valid images found in file'
+                    return False
+                
             self.Data,self.Npix,self.Image = self.readDataset(fp,imagenum)
-            if self.Npix == 0 or not self.Comments:
+            if self.Npix == 0:
+                self.errors = 'No valid images found in file'
                 return False
             self.LoadImage(ParentFrame,filename,imagenum)
             self.repeatcount = imagenum 
@@ -94,11 +104,14 @@ class HDF5_Reader(G2IO.ImportImage):
                 if dset.name.endswith(datakeyword):
                     dims = dset.shape
                     if len(dims) == 4:
-                        self.buffer['imagemap'] += [
-                            (dset.name,i) for i in range(dims[1])]
+                        self.buffer['imagemap'] += [(dset.name,i) for i in range(dims[1])]
+                    elif len(dims) == 3:
+                        self.buffer['imagemap'] += [(dset.name,i) for i in range(dims[0])]
                     elif len(dims) == 2:
                         self.buffer['imagemap'] += [(dset.name,None)]
-        if GSASIIpath.GetConfigValue('debug'): print 'visit'
+                    else:
+                        print('Skipping entry '+str(dset.name)+'. Shape is '+str(dims))
+        #if GSASIIpath.GetConfigValue('debug'): print 'visit'
         self.buffer['imagemap'] = []
         fp.visititems(func)
         return head
@@ -110,8 +123,14 @@ class HDF5_Reader(G2IO.ImportImage):
         dset = fp[name]
         if num is None:
             image = dset[()]
-        else:
+        elif len(dset.shape) == 4:
             image = dset[0,num,...]
+        elif len(dset.shape) == 3:
+            image = dset[num,...]
+        else:
+            msg = 'Unexpected image dimensions '+name
+            print(msg)
+            raise Exception(msg)
         sizexy = list(image.shape) 
         Npix = sizexy[0]*sizexy[1]
         data = {'pixelSize':[200.,200.],'wavelength':0.15,'distance':1000.,

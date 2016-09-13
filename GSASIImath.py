@@ -50,7 +50,7 @@ nxs = np.newaxis
 ##### Hessian least-squares Levenberg-Marquardt routine
 ################################################################################
 
-def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Print=False):
+def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,lamda=-3,Print=False):
     
     """
     Minimize the sum of squares of a function (:math:`f`) evaluated on a series of
@@ -74,6 +74,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
     :param float xtol: Relative error desired in the approximate solution.
     :param int maxcyc: The maximum number of cycles of refinement to execute, if -1 refine 
         until other limits are met (ftol, xtol)
+    :param int lamda: initial Marquardt lambda=10**lamda 
     :param bool Print: True for printing results (residuals & times) by cycle
 
     :returns: (x,cov_x,infodict) where
@@ -108,7 +109,7 @@ def HessianLSQ(func,x0,Hess,args=(),ftol=1.49012e-8,xtol=1.49012e-8, maxcyc=0,Pr
         
     icycle = 0
     One = np.ones((n,n))
-    lam = 0.001
+    lam = 10.**lamda
     lamMax = lam
     nfev = 0
     if Print:

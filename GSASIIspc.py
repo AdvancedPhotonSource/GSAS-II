@@ -144,28 +144,30 @@ def SpcGroup(SGSymbol):
                 SGData['SGGen'][i] = 8
             elif (not SGData['SGInv']) and (SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']) and (gen == 1):
                 SGData['SGGen'][i] = 24
-        if gen in [99,]:
+        gen = SGData['SGGen'][i]
+        if gen == 99:
+            gen = 8
             if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']:
-                SGData['SGGen'][i] = 3
+                gen = 3
             elif SGData['SGLaue'] == 'm3m':
-                SGData['SGGen'][i] = 12
-            else:
-                SGData['SGGen'][i] = 8
-        elif gen in [98,]:
+                gen = 12
+            SGData['SGGen'][i] = gen
+        elif gen == 98:
+            gen = 8
             if SGData['SGLaue'] in ['3m1','31m','6/m','6/mmm']:
-                SGData['SGGen'][i] = 4
-            else:
-                SGData['SGGen'][i] = 8
+                gen = 4
+            SGData['SGGen'][i] = gen
         elif not SGData['SGInv'] and gen in [23,] and SGData['SGLaue'] in ['m3','m3m']:
             SGData['SGGen'][i] = 24
         elif gen >= 16 and gen != 128:
             if not SGData['SGInv']:
-                SGData['SGGen'][i] = 31
-            else: 
-                SGData['SGGen'][i] = gen^Ibarx
+                gen = 31
+            else:
+                gen ^= Ibarx 
+            SGData['SGGen'][i] = gen
         if SGData['SGInv']:
             if gen < 128:
-                moregen.append(gen^Ibar)
+                moregen.append(SGData['SGGen'][i]^Ibar)
             else:
                 moregen.append(1)
     SGData['SGGen'] += moregen
@@ -565,7 +567,7 @@ def GetGenSym(SGData):
             else:                       #Trigonal
                 UsymOp.append(OprNames[4])
                 OprFlg.append(SGData['SGGen'][3])
-                if '2100' in OprNames[1]: UsymOp[-1] = ' 2100 '
+                if '2110' in OprNames[1]: UsymOp[-1] = ' 2100 '
     elif Nsyms == 8:                    #Point symmetry mmm, 4/m, or 422, etc
         if '4' in OprNames[1]:           #Tetragonal
             NunqOp = 2
@@ -577,14 +579,14 @@ def GetGenSym(SGData):
             else:
                 if 'x' in OprNames[4]:      #4mm type group
                     UsymOp.append(OprNames[4])
-                    OprFlg.append(5)
+                    OprFlg.append(6)
                     UsymOp.append(OprNames[7])
-                    OprFlg.append(7)
+                    OprFlg.append(8)
                 else:                       #-42m, -4m2, and 422 type groups
                     UsymOp.append(OprNames[5])
-                    OprFlg.append(7)
+                    OprFlg.append(8)
                     UsymOp.append(OprNames[6])
-                    OprFlg.append(18)
+                    OprFlg.append(19)
         else:                               #Orthorhombic, mmm
             NunqOp = 3
             UsymOp.append(OprNames[1])
@@ -608,10 +610,10 @@ def GetGenSym(SGData):
             OprFlg.append(SGData['SGGen'][6])
         else:                                       #6mm, -62m, -6m2 or 622
             UsymOp.append(OprNames[6])
-            OprFlg.append(17)
-            if 'm' in OprNames[1]: OprFlg[-1] = 20
+            OprFlg.append(18)
+            if 'm' in UsymOp[-1]: OprFlg[-1] = 20
             UsymOp.append(OprNames[7])
-            OprFlg.append(23)
+            OprFlg.append(24)
     elif Nsyms in [16,24]:
         if '3' in OprNames[1]:
             NunqOp = 1
@@ -631,21 +633,21 @@ def GetGenSym(SGData):
             OprFlg.append(1)
             if '4' in OprNames[1]:                  #4/mmm
                 UsymOp.append('  mx  ')
-                OprFlg.append(19)
+                OprFlg.append(20)
                 UsymOp.append(' m110 ')
-                OprFlg.append(21)
+                OprFlg.append(24)
             else:                                   #6/mmm
                 UsymOp.append(' m110 ')
-                OprFlg.append(3)
+                OprFlg.append(4)
                 UsymOp.append(' m+-0 ')
-                OprFlg.append(7)
+                OprFlg.append(8)
     else:                                           #System is cubic
         if Nsyms == 48:
             NunqOp = 2
             UsymOp.append('  mx  ')
-            OprFlg.append(3)
+            OprFlg.append(4)
             UsymOp.append(' m110 ')
-            OprFlg.append(23)
+            OprFlg.append(24)
         else:
             NunqOp = 0
     ncv = len(SGData['SGCen'])
@@ -669,25 +671,12 @@ def GetGenSym(SGData):
                         UsymOp.append(' Bcen ')
                 elif SGData['SGCen'][icv][1] == 0.5:
                     UsymOp.append(' Acen ')
-                else:
-                    if (icv == 1) and ('c' not in SGData['SpGrp']):
-                        UsymOp.append(' Rcen ')
     return UsymOp,OprFlg
     
 def CheckSpin(isym,SGData):
     ''' Check for exceptions in spin rules
     '''
-    if SGData['SpGrp'] in ['R 3 2','R -3',]:
-        if SGData['SGSpin'][isym] < 0:
-            SGData['SGSpin'][(isym+1)%2] = 1
-    elif SGData['SpGrp'] == 'R -3 m':
-        if SGData['SGSpin'][2] < 0:
-            if SGData['SGSpin'][0]*SGData['SGSpin'][1] < 0:
-                if SGData['SGSpin'][isym] < 0:
-                    SGData['SGSpin'][:2] = [-1,-1]
-                else:
-                    SGData['SGSpin'][:2] = [1,1]
-    elif SGData['SpGrp'] in ['C c','C 1 c 1','A a','A 1 a 1','B b 1 1','C c 1 1',
+    if SGData['SpGrp'] in ['C c','C 1 c 1','A a','A 1 a 1','B b 1 1','C c 1 1',
         'A 1 1 a','B 1 1 b','I -4']:
         if SGData['SGSpin'][:2] == [-1,-1]:
             SGData['SGSpin'][(isym+1)%2] = 1
@@ -823,22 +812,16 @@ def MagSGSym(SGData):
 #        GSASIIpath.IPyBreak()
         magSym[0] = magSym[0].split('(')[0]
         if len(GenSym) == 1:    #all ok
-            if 'R' in GenSym[0]:
-                if SpnFlp[0] < 0:
-                    magSym[0] += '(R)'
-            else:    
-                id = 2
-                if (len(magSym) == 4) and (magSym[2] == '1'):
-                    id = 3
-                if '3' in GenSym[0]:
-                    id = 1
-                magSym[id].strip("'")
-                if SpnFlp[0] < 0:
-                    magSym[id] += "'"
+            id = 2
+            if (len(magSym) == 4) and (magSym[2] == '1'):
+                id = 3
+            if '3' in GenSym[0]:
+                id = 1
+            magSym[id].strip("'")
+            if SpnFlp[0] < 0:
+                magSym[id] += "'"
         elif len(GenSym) == 2:
             if 'R' in GenSym[1]:
-                if SpnFlp[1] < 0:
-                    magSym[0] += '(R)'
                 magSym[-1].strip("'")
                 if SpnFlp[0] < 0:
                     magSym[-1] += "'"
@@ -857,8 +840,6 @@ def MagSGSym(SGData):
                     magSym[j] += "'"
         else:
             if 'c' not in magSym[2]:
-                if SpnFlp[2] < 0:
-                    magSym[0] += '(R)'
                 i,j = [1,2]
                 magSym[i].strip("'")
                 magSym[j].strip("'")
@@ -935,6 +916,7 @@ def GenMagOps(SGData):
     MagMom = SpnFlp*np.array(Ncv*detM)
     SGData['MagMom'] = MagMom
 #    print 'SgOps:',OprNames
+#    print 'SGGen:',SGData['SGGen']
 #    print 'SpnFlp:',SpnFlp
 #    print 'MagMom:',MagMom
     return OprNames,SpnFlp

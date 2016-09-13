@@ -229,7 +229,7 @@ class SGMagSpinBox(wx.Dialog):
     '''
     def __init__(self,parent,title,text,table,names,spins,):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,pos=wx.DefaultPosition,
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,size=wx.Size(400,350))
+            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,size=wx.Size(420,350))
         self.text = text
         self.table = table
         self.names = names
@@ -237,9 +237,9 @@ class SGMagSpinBox(wx.Dialog):
         self.panel = wxscroll.ScrolledPanel(self)
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add((0,10))
-        first = text[0].split(':')
-        cents = ['',]
-        if not 'P' in first[1][0]:
+        first = text[0].split(':')[-1].strip()
+        cents = [0,]
+        if 'P' != first[0]:
             cents = text[-1].split(';')
         for line in text:
             mainSizer.Add(wx.StaticText(self.panel,label='     %s     '%(line)),0,WACV)
@@ -270,7 +270,7 @@ class SGMagSpinBox(wx.Dialog):
                 tableSizer.Add(text,0,WACV|wx.ALIGN_RIGHT)
                 if not j%2:
                     tableSizer.Add((20,0))
-            mainSizer.Add(tableSizer,0,wx.ALIGN_LEFT)
+            mainSizer.Add(tableSizer,0,wx.ALIGN_CENTER)
             
         btnsizer = wx.StdDialogButtonSizer()
         OKbtn = wx.Button(self.panel, wx.ID_OK)
@@ -2447,6 +2447,8 @@ def UpdateControls(G2frame,data):
         data['UsrReject'] = {'minF/sig':0,'MinExt':0.01,'MaxDF/F':20.,'MaxD':500.,'MinD':0.05}
     if 'HatomFix' not in data:
         data['HatomFix'] = False
+    if 'Marquardt' not in data:
+        data['Marquardt'] = -3
     
     #end patch
 
@@ -2526,6 +2528,10 @@ def UpdateControls(G2frame,data):
         def OnMaxCycles(event):
             data['max cyc'] = int(maxCyc.GetValue())
             maxCyc.SetValue(str(data['max cyc']))
+            
+        def OnMarqLam(event):
+            data['Marquardt'] = int(marqLam.GetValue())
+            marqLam.SetValue(str(data['Marquardt']))
                         
         def OnFactor(event):
             event.Skip()
@@ -2573,9 +2579,15 @@ def UpdateControls(G2frame,data):
             Choice = ['0','1','2','3','5','10','15','20']
             maxCyc = wx.ComboBox(parent=G2frame.dataDisplay,value=str(data['max cyc']),choices=Choice,
                 style=wx.CB_READONLY|wx.CB_DROPDOWN)
-            maxCyc.SetValue(str(data['max cyc']))
+#            maxCyc.SetValue(str(data['max cyc']))
             maxCyc.Bind(wx.EVT_COMBOBOX, OnMaxCycles)
             LSSizer.Add(maxCyc,0,WACV)
+            LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Initial lambda = 10**'),0,WACV)
+            MarqChoice = ['-3','-2','-1','0','1','2','3','4']
+            marqLam = wx.ComboBox(parent=G2frame.dataDisplay,value=str(data['Marquardt']),choices=MarqChoice,
+                style=wx.CB_READONLY|wx.CB_DROPDOWN)
+            marqLam.Bind(wx.EVT_COMBOBOX,OnMarqLam)
+            LSSizer.Add(marqLam,0,WACV)
         else:
             LSSizer.Add(wx.StaticText(G2frame.dataDisplay,label=' Initial shift factor: '),0,WACV)
             Factr = wx.TextCtrl(G2frame.dataDisplay,-1,value='%.5f'%(data['shift factor']),style=wx.TE_PROCESS_ENTER)

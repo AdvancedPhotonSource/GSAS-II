@@ -5469,6 +5469,31 @@ def PlotStructure(G2frame,data,firstCall=False):
                 gluCylinder(q,radius,radius,Z,slice,2)
             glPopMatrix()            
         glPopMatrix()
+        
+    def RenderMoment(x,y,z,Moment,color,slice=20):
+        Dx = Moment/2.
+        Z = np.sqrt(np.sum(Dx**2))
+        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color-Bc)
+        glPushMatrix()
+        glTranslate(x,y,z)
+        glMultMatrixf(B4mat.T)
+        if Z:
+            glTranslate(-Dx[0],-Dx[1],-Dx[2])
+            azm = atan2d(-Dx[1],-Dx[0])
+            phi = acosd(Dx[2]/Z)
+            glRotate(-azm,0,0,1)
+            glRotate(phi,1,0,0)
+            q = gluNewQuadric()
+            gluQuadricOrientation(q,GLU_INSIDE)
+            gluDisk(q,0.,.1,slice,1)
+            gluQuadricOrientation(q,GLU_OUTSIDE)
+            gluCylinder(q,.1,.1,2.*Z,slice,10)
+            glTranslate(0,0,2*Z)
+            gluQuadricOrientation(q,GLU_INSIDE)
+            gluDisk(q,.1,.2,slice,1)
+            gluQuadricOrientation(q,GLU_OUTSIDE)
+            gluCylinder(q,.2,0.,.4,slice,10)
+        glPopMatrix()            
                 
     def RenderLines(x,y,z,Bonds,color):
         glShadeModel(GL_FLAT)
@@ -5677,7 +5702,11 @@ def PlotStructure(G2frame,data,firstCall=False):
                 try:
                     glLoadName(atom[-3])
                 except: #problem with old files - missing code
-                    pass                    
+                    pass
+            if generalData['Type'] == 'magnetic':
+                Moment = np.array(atom[cx+3:cx+6])
+                color = Wt
+                RenderMoment(x,y,z,Moment,color)                    
             if 'balls' in atom[cs]:
                 vdwScale = drawingData['vdwScale']
                 ballScale = drawingData['ballScale']

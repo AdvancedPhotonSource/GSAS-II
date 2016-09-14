@@ -1066,12 +1066,13 @@ def CalcStrSta(StrSta,Controls):
             ring['ImtaCalc'] = np.array([np.exp(V)*ring['Dset'],azm])
         else:
             ring['ImtaCalc'] = np.array([(V+1.)*ring['Dset'],azm])
-        ring['Dcalc'] = np.mean(ring['ImtaCalc'][0])
+        dmin = np.min(ring['ImtaCalc'][0])
+        dmax = np.max(ring['ImtaCalc'][0])
+        ring['Dcalc'] = dmin+(dmax-dmin)/4.
+#        ring['Dcalc'] = np.mean(ring['ImtaCalc'][0])
 
 def calcFij(omg,phi,azm,th):
-    '''Does something...
-
-    Uses parameters as defined by Bob He & Kingsley Smith, Adv. in X-Ray Anal. 41, 501 (1997)
+    '''    Uses parameters as defined by Bob He & Kingsley Smith, Adv. in X-Ray Anal. 41, 501 (1997)
 
     :param omg: his omega = sample omega rotation; 0 when incident beam || sample surface, 
         90 when perp. to sample surface

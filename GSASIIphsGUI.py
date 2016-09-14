@@ -756,6 +756,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             MagSym = G2spc.MagSGSym(SGData)
             SGData['MagSpGrp'] = MagSym
             OprNames,SpnFlp = G2spc.GenMagOps(SGData)
+            SGData['OprNames'] = OprNames
+            SGData['SpnFlp'] = SpnFlp
             spinSizer.Add(wx.StaticText(General,label=' OG Magnetic space group: %s  '%(MagSym)),0,WACV)
             showSpins = wx.CheckBox(General,label=' Show spins?')
             showSpins.Bind(wx.EVT_CHECKBOX,OnShowSpins)
@@ -1493,8 +1495,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             if CSI[2][i]:
                                 Atoms.SetCellStyle(r,ci,WHITE,False)
                     SetupGeneral()
-                elif Atoms.GetColLabelValue(c) in ['Mx','My','Mz']:
-                    pass
                 elif Atoms.GetColLabelValue(c) == 'I/A':            #note use of text color to make it vanish!
                     if atomData[r][c] == 'I':
                         Uij = atomData[r][c+2:c+8]
@@ -1635,6 +1635,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             colIA = colLabels.index('I/A')
             colU11 = colLabels.index('U11')
             colUiso = colLabels.index('Uiso')
+            colM = 0
+            if 'Mx' in colLabels:
+                colM = colLabels.index('Mx')
             attr = wx.grid.GridCellAttr()
             attr.IncRef()               #fix from Jim Hester
             attr.SetEditor(G2G.GridFractionEditor(Atoms))
@@ -1674,6 +1677,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         cj = colU11+i
                         Atoms.SetCellStyle(row,cj,VERY_LIGHT_GREY,True)
                         Atoms.SetCellTextColour(row,cj,VERY_LIGHT_GREY)
+                if colM:
+                    CSI = G2spc.GetCSpqinel(atomData[row][colSS])
+                    for i in range(3):
+                        ci = i+colM
+                        Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
+                        if CSI[0] and CSI[1][1][i]:
+                            Atoms.SetCellStyle(row,ci,WHITE,False)
                 if 'X' in rbExcl:
                     for c in range(0,colX+3):
                         if c != colR:
@@ -1684,6 +1694,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         if not data['Drawing']:                 #if new drawing - no drawing data!
             SetupDrawingData()
         generalData = data['General']
+        SpnFlp = generalData['SGData'].get('SpnFlp',[])
+        print SpnFlp
+        OprNames = generalData['SGData'].get('OprNames',[])
+        print OprNames
         atomData = data['Atoms']
         DData = data['Drawing']
         resRBData = data['RBModels'].get('Residue',[])
@@ -4327,6 +4341,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             atomData = data['Drawing']['Atoms']
             colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
             cx = colLabels.index('x')
+            cs = colLabels.index('Sym Op')
             cuia = colLabels.index('I/A')
             cuij = cuia+2
             generalData = data['General']
@@ -4342,7 +4357,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         for item in result:
                             atom = copy.copy(atomData[ind])
                             atom[cx:cx+3] = item[0]
-                            atom[cx+3] = str(item[2])+'+' \
+                            atom[cs] = str(item[2])+'+' \
                                 +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
                             atom[cuij:cuij+6] = item[1]
                             Opp = G2spc.Opposite(item[0])
@@ -4350,15 +4365,16 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                 if noDuplicate(Opp[key],atomData):
                                     unit = np.array(eval(key))*1.-item[3]
                                     cell = '%d+%d,%d,%d'%(item[2],unit[0],unit[1],unit[2])
+                                    #transform moment here
                                     atom[cx:cx+3] = Opp[key]
-                                    atom[cx+3] = cell
+                                    atom[cs] = cell
                                     atomData.append(atom[:cuij+9])  #not SS stuff
                     else:
                         result = G2spc.GenAtom(XYZ,SGData,False,Move=True)
                         for item in result:
                             atom = copy.copy(atomData[ind])
                             atom[cx:cx+3] = item[0]
-                            atom[cx+3] = str(item[1])+'+' \
+                            atom[cs] = str(item[1])+'+' \
                                 +str(item[2][0])+','+str(item[2][1])+','+str(item[2][2])
                             Opp = G2spc.Opposite(item[0])
                             for key in Opp:
@@ -4366,7 +4382,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     unit = np.array(eval(key))*1.-item[2]
                                     cell = '%d+%d,%d,%d'%(item[1],unit[0],unit[1],unit[2])
                                     atom[cx:cx+3] = Opp[key]
-                                    atom[cx+3] = cell
+                                    #transform moment here
+                                    atom[cs] = cell
                                     atomData.append(atom[:cuij+9])  #not SS stuff
                     data['Drawing']['Atoms'] = atomData
             finally:

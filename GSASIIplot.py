@@ -4776,6 +4776,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     SGData = generalData['SGData']
     if generalData['Modulated']:
         SSGData = generalData['SSGData']
+    SpnFlp = SGData.get('SpnFlp',[])
     Mydir = generalData['Mydir']
     Super = generalData.get('Super',0)
     atomData = data['Atoms']
@@ -5212,6 +5213,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
         glLightfv(GL_LIGHT0,GL_AMBIENT,[1,1,1,.8])
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[1,1,1,1])
+        glLightfv(GL_LIGHT0,GL_SPECULAR,[1,1,1,.5])
         
     def GetRoll(newxy,rhoshape):
         Q = drawingData['Quaternion']
@@ -5473,7 +5475,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     def RenderMoment(x,y,z,Moment,color,slice=20):
         Dx = Moment/2.
         Z = np.sqrt(np.sum(Dx**2))
-        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color-Bc)
+        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
         glPushMatrix()
         glTranslate(x,y,z)
         glMultMatrixf(B4mat.T)
@@ -5485,12 +5487,12 @@ def PlotStructure(G2frame,data,firstCall=False):
             glRotate(phi,1,0,0)
             q = gluNewQuadric()
             gluQuadricOrientation(q,GLU_INSIDE)
-            gluDisk(q,0.,.1,slice,1)
+            gluDisk(q,0.,.08,slice,1)
             gluQuadricOrientation(q,GLU_OUTSIDE)
             gluCylinder(q,.1,.1,2.*Z,slice,10)
-            glTranslate(0,0,2*Z)
+            glTranslate(0,0,2*Z+.02)
             gluQuadricOrientation(q,GLU_INSIDE)
-            gluDisk(q,.1,.2,slice,1)
+            gluDisk(q,.12,.18,slice,1)
             gluQuadricOrientation(q,GLU_OUTSIDE)
             gluCylinder(q,.2,0.,.4,slice,10)
         glPopMatrix()            
@@ -5704,8 +5706,12 @@ def PlotStructure(G2frame,data,firstCall=False):
                 except: #problem with old files - missing code
                     pass
             if generalData['Type'] == 'magnetic':
+                SymOp = int(atom[cs-1].split('+')[0])
+                OpNum = G2spc.GetOpNum(SymOp,SGData)-1
                 Moment = np.array(atom[cx+3:cx+6])
-                color = Wt
+                color = Wt-Bc
+                if SpnFlp[OpNum] < 0:
+                    color = Rd
                 RenderMoment(x,y,z,Moment,color)                    
             if 'balls' in atom[cs]:
                 vdwScale = drawingData['vdwScale']

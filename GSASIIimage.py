@@ -1068,7 +1068,10 @@ def CalcStrSta(StrSta,Controls):
             ring['ImtaCalc'] = np.array([(V+1.)*ring['Dset'],azm])
         dmin = np.min(ring['ImtaCalc'][0])
         dmax = np.max(ring['ImtaCalc'][0])
-        ring['Dcalc'] = dmin+(dmax-dmin)/4.
+        if abs(Eij[0]) < abs(Eij[2]):         #tension
+            ring['Dcalc'] = dmin+(dmax-dmin)/4.
+        else:                       #compression
+            ring['Dcalc'] = dmin+3.*(dmax-dmin)/4.
 #        ring['Dcalc'] = np.mean(ring['ImtaCalc'][0])
 
 def calcFij(omg,phi,azm,th):

@@ -295,12 +295,13 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                                 float(S[108:118]),float(S[118:128])]
                         XYZ = Atom[3:6]
                         Atom[7],Atom[8] = G2spc.SytSym(XYZ,SGData)
+                        if Ptype == 'magnetic':
+                            Atom = Atom[:7]+[0.,0.,0.]+Atom[7:]
                         Atom.append(ran.randint(0,sys.maxint))
                         Atoms.append(Atom)
                     elif key[11:] == 'M' and key[6:8] == 'AT':
                         S = EXPphase[key]
-                        Mag = [float(S[:10]),float(S[10:20]),float(S[20:30])]
-                        Atoms[-1] = Atoms[-1][:7]+Mag+Atoms[-1][7:]
+                        Atoms[-1][7:10] = [float(S[:10]),float(S[10:20]),float(S[20:30])]
         elif Ptype == 'macromolecular':
             for key in keyList:
                 if 'AT' in key[6:8]:

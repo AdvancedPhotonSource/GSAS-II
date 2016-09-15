@@ -921,9 +921,15 @@ def GenMagOps(SGData):
 #    print 'MagMom:',MagMom
     return OprNames,SpnFlp
     
-    
-    
-    
+def GetOpNum(Opr,SGData):
+    Inv = SGData['SGInv']
+    Nops = len(SGData['SGOps'])
+    opNum = abs(Opr)%100
+    if Opr < 0:
+        opNum += Nops
+    cent = abs(Opr)/100
+    opNum += cent*Nops*Inv
+    return opNum
         
 ################################################################################
 #### Superspace group codes

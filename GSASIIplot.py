@@ -2725,6 +2725,7 @@ def PlotStrain(G2frame,data,newPlot=False):
         Plot.plot(X,Y,colors[N%6]+'+',picker=False)
         Y,X = np.array(item['ImtaCalc'])
         Plot.plot(X,Y,colors[N%6],picker=False)
+        Plot.plot([0.,360.],[item['Dcalc'],item['Dcalc']],colors[5],dashes=(5,5))
     if not newPlot:
         Page.toolbar.push_current()
         Plot.set_xlim(xylim[0])

@@ -128,7 +128,7 @@ class PDB_ReaderClass(G2IO.ImportPhase):
                 XYZ = [float(S[31:39]),float(S[39:47]),float(S[47:55])]
                 XYZ = np.inner(AB,XYZ)
                 XYZ = np.where(abs(XYZ)<0.00001,0,XYZ)
-                SytSym,Mult = G2spc.SytSym(XYZ,SGData)
+                SytSym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
                 Uiso = float(S[61:67])/EightPiSq
                 Type = S[12:14].lower()
                 if Type[0] in '123456789':
@@ -294,7 +294,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                                 float(S[88:98]),float(S[98:108]),
                                 float(S[108:118]),float(S[118:128])]
                         XYZ = Atom[3:6]
-                        Atom[7],Atom[8] = G2spc.SytSym(XYZ,SGData)
+                        Atom[7],Atom[8] = G2spc.SytSym(XYZ,SGData)[:2]
                         if Ptype == 'magnetic':
                             Atom = Atom[:7]+[0.,0.,0.]+Atom[7:]
                         Atom.append(ran.randint(0,sys.maxint))
@@ -311,7 +311,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                         float(S[16:24]),float(S[24:32]),float(S[32:40]),
                         float(S[8:16]),'1',1,'I',float(S[40:46]),0,0,0,0,0,0]
                     XYZ = Atom[6:9]
-                    Atom[10],Atom[11] = G2spc.SytSym(XYZ,SGData)
+                    Atom[10],Atom[11] = G2spc.SytSym(XYZ,SGData)[:2]
                     Atom.append(ran.randint(0,sys.maxint))
                     Atoms.append(Atom)
         Volume = G2lat.calc_V(G2lat.cell2A(abc+angles))
@@ -482,7 +482,7 @@ class JANA_ReaderClass(G2IO.ImportPhase):
             Sfrac = []
             Smag = []
             XYZ = [float(S1[27:36]),float(S1[36:45]),float(S1[45:54])]
-            SytSym,Mult = G2spc.SytSym(XYZ,SGData)
+            SytSym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
             aType = Atypes[int(S1[9:11])-1]
             Name = S1[:8].strip()
             if S1[11:15].strip() == '1':

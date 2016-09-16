@@ -123,7 +123,7 @@ class PhaseReaderClass(G2IO.ImportPhase):
                 x,y,z = AtRec[2:5]
                 XYZ = np.array([float(x),float(y),float(z)])
                 XYZ = np.where(np.abs(XYZ)<0.00001,0,XYZ)
-                SytSym,Mult = G2spc.SytSym(XYZ,SGData)
+                SytSym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
                 if '=' not in S:
                     IA = 'I'
                     Uiso = float(AtRec[6])

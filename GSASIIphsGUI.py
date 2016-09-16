@@ -443,7 +443,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 cx = generalData['AtomPtrs'][0]
                 for atom in Atoms:
                     XYZ = atom[cx:cx+3]
-                    Sytsym,Mult = G2spc.SytSym(XYZ,SGData)
+                    Sytsym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
                     atom[cx+4] = Sytsym
                     atom[cx+5] = Mult
                 wx.CallAfter(UpdateGeneral)
@@ -1482,7 +1482,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     SScol = colLabels.index('site sym')
                     Mulcol = colLabels.index('mult')
                     E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
-                    Sytsym,Mult = G2spc.SytSym(XYZ,SGData)
+                    Sytsym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
                     atomData[r][SScol] = Sytsym
                     atomData[r][Mulcol] = Mult
                     if atomData[r][colLabels.index('I/A')] == 'A':
@@ -1678,12 +1678,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         Atoms.SetCellStyle(row,cj,VERY_LIGHT_GREY,True)
                         Atoms.SetCellTextColour(row,cj,VERY_LIGHT_GREY)
                 if colM:
-                    CSI = G2spc.GetCSpqinel(atomData[row][colSS])
+                    SytSym,Mul,Nop = G2spc.SytSym(atomData[row][colX:colX+3],SGData)
+                    if SpnFlp[Nop] > 0.:    #black
+                        CSI = G2spc.GetCSpqinel(SytSym)[0]
+                    else:                   #red
+                        CSI = G2spc.GetCSpqinel(SytSym)[1]
                     for i in range(3):
                         ci = i+colM
                         Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
-                        if CSI[0] and CSI[0][1][i]:
+                        Atoms.SetCellTextColour(row,ci,VERY_LIGHT_GREY)
+                        if CSI and CSI[1][i]:
                             Atoms.SetCellStyle(row,ci,WHITE,False)
+                            Atoms.SetCellTextColour(row,ci,BLACK)
+                            
                 if 'X' in rbExcl:
                     for c in range(0,colX+3):
                         if c != colR:
@@ -1778,7 +1785,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         Ncol = Atoms.GetNumberCols()
         atId = ran.randint(0,sys.maxint)
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
-        Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)
+        Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
         if generalData['Type'] == 'macromolecular':
             atomData.append([0,Name,'',Name,El,'',x,y,z,1.,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
         elif generalData['Type'] in ['nuclear','faulted',]:
@@ -2013,7 +2020,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData = data['General']
         Ncol = Atoms.GetNumberCols()
         E,SGData = G2spc.SpcGroup(generalData['SGData']['SpGrp'])
-        Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)
+        Sytsym,Mult = G2spc.SytSym([x,y,z],SGData)[:2]
         atId = ran.randint(0,sys.maxint)
         if generalData['Type'] == 'macromolecular':
             atomData.insert(indx,[0,Name,'',Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.10,0,0,0,0,0,0,atId])
@@ -2208,7 +2215,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         else:
                             atom = atomData[ind]
                         atom[cx:cx+3] = XYZ
-                        atom[css:css+2] = G2spc.SytSym(XYZ,SGData)
+                        atom[css:css+2] = G2spc.SytSym(XYZ,SGData)[:2]
                         if atom[cuia] == 'A':
                             Uij = atom[cuij:cuij+6]
                             U = G2spc.Uij2U(Uij)
@@ -2270,7 +2277,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
 #                            XYZ = np.inner(B,XYZ)+T #back to crystal & translate
 #                            if np.all(XYZ>=0.) and np.all(XYZ<1.0):
 #                                atomData[ind][cx:cx+3] = XYZ
-##                                atom[css:css+2] = G2spc.SytSym(XYZ,SGData)
+##                                atom[css:css+2] = G2spc.SytSym(XYZ,SGData)[:2]
 #                                break
             finally:
                 dlg.Destroy()
@@ -4207,8 +4214,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         numAtoms = len(atomData)
         cx,ct,cs,ci = data['Drawing']['atomPtrs']
         cuij = cs+5
-        cmx = 0
         colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
+        cmx = 0
         if 'Mx' in colLabels:
             cmx = colLabels.index('Mx')
         generalData = data['General']
@@ -4233,6 +4240,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         for item in result:
                             atom = copy.copy(atomB)
                             atom[cx:cx+3] = item[0]
+                            Opr = abs(item[2])%100
+                            Cent = abs(item[2]/100)
+                            M = SGData['SGOps'][Opr-1][0]
+                            if cmx:
+                                opNum = G2spc.GetOpNum(item[2],SGData)
+                                atom[cmx:cmx+3] = np.inner(M,np.array(atom[cmx:cmx+3]))
                             atom[cs-1] = str(item[2])+'+'
                             atom[cuij:cuij+6] = item[1]
                             for xyz in cellArray+np.array(atom[cx:cx+3]):
@@ -4305,6 +4318,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2plt.PlotStructure(G2frame,data)
             
     def FillCoordSphere(event):
+        colLabels = [drawAtoms.GetColLabelValue(c) for c in range(drawAtoms.GetNumberCols())]
         generalData = data['General']
         Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
         radii = generalData['BondRadii']
@@ -4321,8 +4335,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             numAtoms = len(atomData)
             cx,ct,cs,ci = data['Drawing']['atomPtrs']
             cij = ci+2
-            generalData = data['General']
+            cmx = 0
+            if 'Mx' in colLabels:
+                cmx = colLabels.index('Mx')
             SGData = generalData['SGData']
+            SpnFlp = SGData.get('SpnFlp',[])
             cellArray = G2lat.CellBlock(1)
             wx.BeginBusyCursor()
             try:
@@ -4338,11 +4355,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             dist = np.sqrt(np.sum(np.inner(Amat,xyz-xyzA)**2))
                             if 0 < dist <= data['Drawing']['radiusFactor']*sumR:
                                 if noDuplicate(xyz,atomData):
-                                    oprB = atomB[cx+3]
+                                    oprB = atomB[cs-1]
                                     C = xyz-xyzB
                                     newOp = '1+'+str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
                                     newAtom = atomB[:]
                                     newAtom[cx:cx+3] = xyz
+                                    OpN = int(oprB.split('+')[0])
+                                    Opr = abs(OpN)%100
+                                    Cent = abs(OpN/100)
+                                    M = SGData['SGOps'][Opr-1][0]
+                                    if cmx:
+                                        opNum = G2spc.GetOpNum(OpN,SGData)
+                                    newAtom[cmx:cmx+3] = np.inner(M,np.array(newAtom[cmx:cmx+3]))
                                     newAtom[cs-1] = G2spc.StringOpsProd(oprB,newOp,SGData)
                                     atomData.append(newAtom[:cij+9])  #not SS stuff
             finally:

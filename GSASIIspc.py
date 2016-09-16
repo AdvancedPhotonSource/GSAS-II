@@ -2583,6 +2583,7 @@ def SytSym(XYZ,SGData):
     if SGData['SGLaue'] in ['3','3m1','31m','6/m','6/mmm']:
         Isym = 1073741824
     Jdup = 0
+    Ndup = 0
     Xeqv = GenAtom(XYZ,SGData,True)
     IRT = PackRot(SGData['SGOps'])
     L = -1
@@ -2592,6 +2593,7 @@ def SytSym(XYZ,SGData):
                 irtx = (1-2*invers)*IRT[io]
                 L += 1
                 if not Xeqv[L][1]:
+                    Ndup = io
                     Jdup += 1
                     jx = GetOprPtrName(str(irtx))
                     if jx[2] < 39:
@@ -2599,7 +2601,7 @@ def SytSym(XYZ,SGData):
     if Isym == 1073741824: Isym = 0
     Mult = len(SGData['SGOps'])*len(SGData['SGCen'])*(int(SGData['SGInv'])+1)/Jdup
           
-    return GetKNsym(str(Isym)),Mult
+    return GetKNsym(str(Isym)),Mult,Ndup
     
 def ElemPosition(SGData):
     ''' Under development. 
@@ -3734,9 +3736,9 @@ def test3():
         (E,S) = SpcGroup(spc)
         assert not E, msg
         for t in crdlist:
-            symb, m = SytSym(t[0],S)
+            symb, m, n = SytSym(t[0],S)
             if symb.strip() != t[2].strip() or m != t[1]:
-                print spc,t[0],m,symb,t[2]
+                print spc,t[0],m,n,symb,t[2]
             assert m == t[1]
             #assert symb.strip() == t[2].strip()
 

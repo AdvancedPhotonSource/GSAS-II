@@ -257,7 +257,7 @@ class CIFPhaseReader(G2IO.ImportPhase):
                             col = G2AtomDict.get(key)
                             if col:
                                 atomlist[col] = cif.get_number_with_esd(val)[0]
-                    atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)
+                    atomlist[7],atomlist[8] = G2spc.SytSym(atomlist[3:6],SGData)[:2]
                     atomlist[1] = G2elem.FixValence(atomlist[1])
                     self.Phase['Atoms'].append(atomlist)
                     ranIdlookup[atomlist[0]] = atomlist[-1]

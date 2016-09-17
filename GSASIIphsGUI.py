@@ -440,12 +440,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     generalData['SuperSg'] = SetDefaultSSsymbol()
                     generalData['SSGData'] = G2spc.SSpcGroup(generalData['SGData'],generalData['SuperSg'])[1]
                 Atoms = data['Atoms']
-                cx = generalData['AtomPtrs'][0]
+                cx,ct,cs,cia = generalData['AtomPtrs']
                 for atom in Atoms:
                     XYZ = atom[cx:cx+3]
                     Sytsym,Mult = G2spc.SytSym(XYZ,SGData)[:2]
-                    atom[cx+4] = Sytsym
-                    atom[cx+5] = Mult
+                    atom[cs] = Sytsym
+                    atom[cs+1] = Mult
                 wx.CallAfter(UpdateGeneral)
                 
             def OnModulated(event):
@@ -739,7 +739,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             MagSym = generalData['SGData']['SpGrp'].split()
             magSizer = wx.BoxSizer(wx.VERTICAL)
             magSizer.Add(wx.StaticText(General,label=' Magnetic spin operator selection:'),0,WACV)
-            magSizer.Add(wx.StaticText(General,label='NB: UNDER CONSTRUCTION - DO NOT USE'),0,WACV)
+            magSizer.Add(wx.StaticText(General,label='NB: UNDER CONSTRUCTION - LS NOT AVAILABLE'),0,WACV)
             if not len(GenSym):
                 magSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
                 return magSizer
@@ -1731,8 +1731,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         else:
             for item in Items:
                 G2frame.dataFrame.AtomsMenu.Enable(item,False)
+        parmChoice = ': ,X,XU,U,F,FX,FXU,FU'
+        if generalData['Type'] == 'magnetic':
+            parmChoice += ',M,MX,MXU,MU,MF,MFX,MFXU,MFU'
         AAchoice = ": ,ALA,ARG,ASN,ASP,CYS,GLN,GLU,GLY,HIS,ILE,LEU,LYS,MET,PHE,PRO,SER,THR,TRP,TYR,VAL,MSE,HOH,UNK"
-        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+": ,X,XU,U,F,FX,FXU,FU",]+ \
+        Types = [wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+parmChoice,]+ \
             3*[wg.GRID_VALUE_FLOAT+':10,5',]+[wg.GRID_VALUE_FLOAT+':10,4', #x,y,z,frac
             wg.GRID_VALUE_STRING,wg.GRID_VALUE_STRING,wg.GRID_VALUE_CHOICE+":I,A",]
         Types += 7*[wg.GRID_VALUE_FLOAT+':10,5',]
@@ -2031,6 +2034,12 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             else:
                 atomData.insert(indx,[Name,El,'',x,y,z,1,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
             SetupGeneral()
+        elif generalData['Type'] == 'magnetic':
+            if generalData['Modulated']:
+                atomData.insert(indx,[Name,El,'',x,y,z,1,0.,0.,0.,Sytsym,Mult,0,'I',0.01,0,0,0,0,0,0,atId,[],[],
+                    {'SS1':{'waveType':'Fourier','Sfrac':[],'Spos':[],'Sadp':[],'Smag':[]}}])
+            else:
+                atomData.insert(indx,[Name,El,'',x,y,z,1,0.,0.,0.,Sytsym,Mult,'I',0.01,0,0,0,0,0,0,atId])
         data['Drawing']['Atoms'] = []
         UpdateDrawAtoms()
         G2plt.PlotStructure(G2frame,data)
@@ -2094,6 +2103,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
             ci = colLabels.index('I/A')
             choices = ['Type','Name','x','y','z','frac','I/A','Uiso']
+            if generalData['Type'] == 'magnetic':
+                choices += ['Mx','My','Mz',]
             dlg = wx.SingleChoiceDialog(G2frame,'Select','Atom parameter',choices)
             parm = ''
             if dlg.ShowModal() == wx.ID_OK:
@@ -2175,6 +2186,19 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                     SetupGeneral()
                     FillAtomsGrid(Atoms)
                 dlg.Destroy()
+            elif parm in ['Mx','My','Mz',]:
+                limits = [-10.,10.]
+                val = 0.
+                dlg = G2G.SingleFloatDialog(G2frame,'Atom moment','Enter new value for '+parm,val,limits)
+                if dlg.ShowModal() == wx.ID_OK:
+                    parm = dlg.GetValue()
+                    for r in indx:                        
+                        if not Atoms.IsReadOnly(r,cid):
+                            atomData[r][cid] = parm
+                    SetupGeneral()
+                    FillAtomsGrid(Atoms)
+                dlg.Destroy()
+                
             data['Drawing']['Atoms'] = []
             UpdateDrawAtoms()
             G2plt.PlotStructure(G2frame,data)
@@ -2186,11 +2210,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         indx = Atoms.GetSelectedRows()
         if indx:
             generalData = data['General']
+            SpnFlp = generalData['SGData'].get('SpnFlp',[])
             colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
             cx = colLabels.index('x')
             cuia = colLabels.index('I/A')
             cuij = colLabels.index('U11')
             css = colLabels.index('site sym')
+            cmx = 0
+            if 'Mx' in colLabels:
+                cmx = colLabels.index('Mx')
             atomData = data['Atoms']
             SGData = generalData['SGData']
             dlg = G2gd.SymOpDialog(G2frame,SGData,True,True)
@@ -2222,6 +2250,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             U = np.inner(np.inner(M,U),M)
                             Uij = G2spc.U2Uij(U)
                             atom[cuij:cuij+6] = Uij
+                        if cmx:
+                            atom[cmx:cmx+3] = np.inner(M,np.array(atom[cmx:cmx+3]))
                         if New:
                             atomData.append(atom)
             finally:
@@ -2239,6 +2269,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             G2frame.ErrorDialog('Select atom',"select one or more atoms then redo")
             
     def AtomRotate(event):
+        ''' 
+        Currently not used - Bind commented out below
+        '''
         Units = {'':np.zeros(3),
             'xy':np.array([[i,j,0] for i in range(3) for j in range(3)])-np.array([1,1,0]),
             'xz':np.array([[i,0,j] for i in range(3) for j in range(3)])-np.array([1,1,0]),
@@ -2314,8 +2347,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             data['Drawing']['Atoms'] = []
             OnReloadDrawAtoms(event)            
             FillAtomsGrid(Atoms)
-            
-            
 #                G2frame.ErrorDialog('Distance/Angle calculation','try again but do "Reset" to fill in missing atom types')
         else:
             print "select one atom"
@@ -4241,7 +4272,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             atom = copy.copy(atomB)
                             atom[cx:cx+3] = item[0]
                             Opr = abs(item[2])%100
-                            Cent = abs(item[2]/100)
                             M = SGData['SGOps'][Opr-1][0]
                             if cmx:
                                 opNum = G2spc.GetOpNum(item[2],SGData)
@@ -4360,14 +4390,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     newOp = '1+'+str(int(round(C[0])))+','+str(int(round(C[1])))+','+str(int(round(C[2])))
                                     newAtom = atomB[:]
                                     newAtom[cx:cx+3] = xyz
-                                    OpN = int(oprB.split('+')[0])
+                                    newAtom[cs-1] = G2spc.StringOpsProd(oprB,newOp,SGData)
+                                    OpN = int(newAtom[cs-1].split('+')[0])
                                     Opr = abs(OpN)%100
-                                    Cent = abs(OpN/100)
                                     M = SGData['SGOps'][Opr-1][0]
                                     if cmx:
                                         opNum = G2spc.GetOpNum(OpN,SGData)
-                                    newAtom[cmx:cmx+3] = np.inner(M,np.array(newAtom[cmx:cmx+3]))
-                                    newAtom[cs-1] = G2spc.StringOpsProd(oprB,newOp,SGData)
+                                        newAtom[cmx:cmx+3] = np.inner(M,np.array(newAtom[cmx:cmx+3]))
                                     atomData.append(newAtom[:cij+9])  #not SS stuff
             finally:
                 wx.EndBusyCursor()
@@ -4402,7 +4431,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             atom = copy.copy(atomData[ind])
                             atom[cx:cx+3] = item[0]
                             Opr = abs(item[2])%100
-                            Cent = abs(item[2]/100)
                             M = SGData['SGOps'][Opr-1][0]
                             if cmx:
                                 opNum = G2spc.GetOpNum(item[2],SGData)
@@ -4424,7 +4452,6 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         for item in result:
                             atom = copy.copy(atomData[ind])
                             Opr = abs(item[1])%100
-                            Cent = abs(item[1]/100)
                             M = SGData['SGOps'][Opr-1][0]
                             atom[cx:cx+3] = item[0]
                             if cmx:

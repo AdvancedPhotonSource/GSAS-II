@@ -771,8 +771,6 @@ def Plot3DSngl(G2frame,newPlot=False,Data=None,hklRef=None,Title=False):
     Gr = np.array([0,255,0])
     wxGreen = wx.Colour(0,255,0)
     Bl = np.array([0,0,255])
-    Or = np.array([255,128,0])
-    wxOrange = wx.Colour(255,128,0)
     uBox = np.array([[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]])
     uEdges = np.array([
         [uBox[0],uBox[1]],[uBox[0],uBox[3]],[uBox[0],uBox[4]],[uBox[1],uBox[2]], 
@@ -5694,7 +5692,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 continue
             atColor = atmFade[iat]*np.array(CL)/255.
             if drawingData['showRigidBodies'] and atom[ci] in rbAtmDict:
-                bndColor = Or
+                bndColor = Or/255.
             else:
                 bndColor = atColor
             if iat in Ind and G2frame.dataDisplay.GetPageText(getSelection()) != 'Map peaks':
@@ -5815,7 +5813,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 name = '  '+aType+str(ind)
                 color = np.array(MCSA['AtInfo'][aType][1])
                 RenderSphere(x,y,z,0.2,color/255.)
-                RenderBonds(x,y,z,mcsaBonds[ind],0.03,Gr)
+                RenderBonds(x,y,z,mcsaBonds[ind],0.03,Gr/255.)
                 RenderLabel(x,y,z,name,0.2,wxOrange,matRot)
         if Backbones:
             for chain in Backbones:

@@ -1287,6 +1287,7 @@ def CompileVarDesc():
         'AU([123][123])':'Atomic anisotropic displacement parameter U\\1',
         'Afrac': 'Atomic occupancy parameter',
         'Amul': 'Atomic site multiplicity value',
+        'AM([xyz])$' : 'Atomic magnetic moment parameter, \\1',
         # Hist & Phase (HAP) vars (p:h:<var>)
         'Back': 'Background term',
         'BkPkint;(.*)':'Background peak #\\1 intensity',

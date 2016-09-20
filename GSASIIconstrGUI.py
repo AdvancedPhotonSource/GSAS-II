@@ -249,7 +249,7 @@ def UpdateConstraints(G2frame,data):
     TypeList = []
     for item in phaseList:
         Split = item.split(':')
-        if Split[2][:2] in ['AU','Af','dA']:
+        if Split[2][:2] in ['AU','Af','dA','AM']:
             Id = int(Split[0])
             phaseAtNames[item] = AtomDict[Id][int(Split[3])][0]
             phaseAtTypes[item] = AtomDict[Id][int(Split[3])][1]
@@ -303,6 +303,8 @@ def UpdateConstraints(G2frame,data):
             namelist = ['dAx','dAy','dAz']
         elif 'AU' in name:
             namelist = ['AUiso','AU11','AU22','AU33','AU12','AU13','AU23']
+        elif 'AM' in name:
+            namelist = ['AMx','AMy','AMz']
         elif 'Tm' in name:
             namelist = ['Tmin','Tmax']
         elif 'RB' in name:

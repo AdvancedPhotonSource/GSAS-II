@@ -59,6 +59,21 @@ def GetFFtable(atomTypes):
                 FFtable[El] = item
     return FFtable
     
+def GetMFtable(atomTypes):
+    ''' returns a dictionary of magnetic form factor data for atom types found in atomTypes
+
+    :param list atomTypes: list of atom types
+    :return: FFtable, dictionary of form factor data; key is atom type
+
+    '''
+    FFtable = {}
+    for El in atomTypes:
+        FFs = GetMagFormFacCoeff(getElSym(El))
+        for item in FFs:
+            if item['Symbol'] == El.upper():
+                FFtable[El] = item
+    return FFtable
+    
 def GetBLtable(General):
     ''' returns a dictionary of neutron scattering length data for atom types & isotopes found in General
 
@@ -265,7 +280,7 @@ def GetXsectionCoeff(El):
     return Orbs
     
 def GetMagFormFacCoeff(El):
-    """Read magnetic form factor data from atomdata.asc file
+    """Read magnetic form factor data from atmdata.py
 
     :param El: 2 character element symbol
     :return: MagFormFactors: list of all magnetic form factors dictionaries for element El.
@@ -282,21 +297,21 @@ def GetMagFormFacCoeff(El):
     * 'nfc': NC coefficient
     
     """
+    Els = El.capitalize().strip()
     MagFormFactors = []
-    mags = [ky for ky in atmdata.MagFF.keys() if El == getElSym(ky)]
+    mags = [ky for ky in atmdata.MagFF.keys() if Els == getElSym(ky)]
     for mag in mags:
         magData = {}
         data = atmdata.MagFF[mag]
-        magData['Symbol'] = mag
-        magData['Z'] = atmdata.XrayFF[getElSym(mags)]['Z']
+        magData['Symbol'] = mag.upper()
+        magData['Z'] = atmdata.XrayFF[getElSym(mag)]['Z']
         magData['mfa'] = [data['M'][i] for i in [0,2,4,6]]
-        magdata['mfb'] = [data['M'][i] for i in [1,3,5,7]]
-        magdata['mfc'] = data['M'][8]
+        magData['mfb'] = [data['M'][i] for i in [1,3,5,7]]
+        magData['mfc'] = data['M'][8]
         magData['nfa'] = [data['N'][i] for i in [0,2,4,6]]
-        magdata['nfb'] = [data['N'][i] for i in [1,3,5,7]]
-        magdata['nfc'] = data['N'][8]
-        magdata['g-fac'] = data['N'][9]
-        MagFormFactors.append(magdata)
+        magData['nfb'] = [data['N'][i] for i in [1,3,5,7]]
+        magData['nfc'] = data['N'][8]
+        MagFormFactors.append(magData)
     return MagFormFactors
 
 def ScatFac(El, SQ):
@@ -310,6 +325,24 @@ def ScatFac(El, SQ):
     fb = np.array(El['fb'])
     t = -fb[:,np.newaxis]*SQ
     return np.sum(fa[:,np.newaxis]*np.exp(t)[:],axis=0)+El['fc']
+        
+def MagScatFac(El, SQ,gfac):
+    """compute value of form factor
+
+    :param El: element dictionary defined in GetFormFactorCoeff 
+    :param SQ: (sin-theta/lambda)**2
+    :param gfac: Lande g factor (normally = 2.0)
+    :return: real part of form factor
+    """
+    mfa = np.array(El['mfa'])
+    mfb = np.array(El['mfb'])
+    nfa = np.array(El['nfa'])
+    nfb = np.array(El['nfb'])
+    mt = -mfb[:,np.newaxis]*SQ
+    nt = -nfb[:,np.newaxis]*SQ
+    MMF = np.sum(mfa[:,np.newaxis]*np.exp(mt)[:],axis=0)+El['mfc']
+    NMF = np.sum(nfa[:,np.newaxis]*np.exp(nt)[:],axis=0)+El['nfc']
+    return MMF+(2.0/gfac-1.0)*NMF
         
 def BlenResCW(Els,BLtables,wave):
     FP = np.zeros(len(Els))

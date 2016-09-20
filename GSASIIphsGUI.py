@@ -49,6 +49,7 @@ import GSASIIpwd as G2pwd
 import GSASIIpy3 as G2py3
 import GSASIIobj as G2obj
 import GSASIIctrls as G2G
+import atmdata
 import numpy as np
 import numpy.linalg as nl
 import numpy.ma as ma
@@ -244,12 +245,15 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData['vdWRadii'] = []
         generalData['AtomMass'] = []
         generalData['Color'] = []
+        if generalData['Type'] == 'magnetic' and not 'Lande g' in generalData:
+            generalData['MagDmin'] = 1.0
+            generalData['Lande g'] = []
         generalData['Mydir'] = G2frame.dirname
         badList = {}
         for atom in atomData:
             atom[ct] = atom[ct].lower().capitalize()              #force to standard form
             if generalData['AtomTypes'].count(atom[ct]):
-                generalData['NoAtoms'][atom[ct]] += atom[cs-1]*float(atom[cs+1])
+                generalData['NoAtoms'][atom[ct]] += atom[cx+3]*float(atom[cs+1])
             elif atom[ct] != 'UNK':
                 Info = G2elem.GetAtomInfo(atom[ct])
                 if not Info:
@@ -276,8 +280,14 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         isotope = generalData['Isotopes'][atom[ct]].keys()[-1]
                         generalData['Isotope'][atom[ct]] = isotope
                     generalData['AtomMass'].append(Info['Mass'])
-                generalData['NoAtoms'][atom[ct]] = atom[cs-1]*float(atom[cs+1])
+                generalData['NoAtoms'][atom[ct]] = atom[cx+3]*float(atom[cs+1])
                 generalData['Color'].append(Info['Color'])
+                if generalData['Type'] == 'magnetic':
+                    generalData['MagDmin'] = generalData.get('MagDmin',1.0)
+                    if atom[ct] in atmdata.MagFF:
+                        generalData['Lande g'].append(2.0)
+                    else:
+                        generalData['Lande g'].append(None)
         if badList:
             msg = 'Warning: element symbol(s) not found:'
             for key in badList:
@@ -650,6 +660,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 denSizer[1].SetValue('%.3f'%(density))
                 if denSizer[2]:
                     denSizer[2].SetValue('%.3f'%(mattCoeff))
+                    
+            def OnGfacVal(event):
+                Obj = event.GetEventObject()
+                ig = Indx[Obj.GetId()]
+                try:
+                    val = float(Obj.GetValue())
+                    if val < 1. or val > 2.0:
+                        raise ValueError
+                except ValueError:
+                    val = generalData['Lande g'][ig]
+                generalData['Lande g'][ig] = val
+                Obj.SetValue('%.2f'%(val))
                 
             elemSizer = wx.FlexGridSizer(0,len(generalData['AtomTypes'])+1,1,1)
             elemSizer.Add(wx.StaticText(General,label=' Elements'),0,WACV)
@@ -696,7 +718,17 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 colorTxt = wx.TextCtrl(General,value='',style=wx.TE_READONLY)
                 colorTxt.SetBackgroundColour(wx.Colour(R,G,B))
                 elemSizer.Add(colorTxt,0,WACV)
-            
+            if generalData['Type'] == 'magnetic':
+                elemSizer.Add(wx.StaticText(General,label=' Lande g factor: '),0,WACV)
+                for ig,gfac in enumerate(generalData['Lande g']):
+                    if gfac == None:
+                        elemSizer.Add((5,0),)
+                    else:
+                        gfacTxt = wx.TextCtrl(General,value='%.2f'%(gfac),style=wx.TE_PROCESS_ENTER)
+                        Indx[gfacTxt.GetId()] = ig
+                        gfacTxt.Bind(wx.EVT_TEXT_ENTER,OnGfacVal)        
+                        gfacTxt.Bind(wx.EVT_KILL_FOCUS,OnGfacVal)
+                        elemSizer.Add(gfacTxt,0,WACV)
             return elemSizer
         
         def DenSizer():
@@ -732,14 +764,25 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 msg = 'Magnetic spin operators for '+SGData['MagSpGrp']
                 text,table = G2spc.SGPrint(SGData,AddInv=True)
                 text[0] = ' Magnetic Space Group: '+SGData['MagSpGrp']
+                text[3] = ' The magnetic lattice point group is '+SGData['MagPtGp']
                 G2gd.SGMagSpinBox(General,msg,text,table,OprNames,SpnFlp).Show()
+                
+            def OnDminVal(event):
+                event.Skip()
+                try:
+                    val = float(dminVal.GetValue())
+                    if val > 0.7:
+                        generalData['MagDmin'] = val
+                except ValueError:
+                    pass
+                dminVal.SetValue("%.4f"%(generalData['MagDmin']))
                 
             SGData = generalData['SGData']            
             Indx = {}
             MagSym = generalData['SGData']['SpGrp'].split()
             magSizer = wx.BoxSizer(wx.VERTICAL)
             magSizer.Add(wx.StaticText(General,label=' Magnetic spin operator selection:'),0,WACV)
-            magSizer.Add(wx.StaticText(General,label='NB: UNDER CONSTRUCTION - LS NOT AVAILABLE'),0,WACV)
+            magSizer.Add(wx.StaticText(General,label='  NB: UNDER CONSTRUCTION - LS NOT AVAILABLE'),0,WACV)
             if not len(GenSym):
                 magSizer.Add(wx.StaticText(General,label=' No spin inversion allowed'),0,WACV)
                 return magSizer
@@ -747,7 +790,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             spinColor = ['black','red']
             spCode = {-1:'red',1:'black'}
             for isym,sym in enumerate(GenSym):
-                spinSizer.Add(wx.StaticText(General,label='%s: '%(sym.strip())),0,WACV)                
+                spinSizer.Add(wx.StaticText(General,label=' %s: '%(sym.strip())),0,WACV)                
                 spinOp = wx.ComboBox(General,value=spCode[SGData['SGSpin'][isym]],choices=spinColor,
                     style=wx.CB_READONLY|wx.CB_DROPDOWN)                
                 Indx[spinOp.GetId()] = isym
@@ -758,11 +801,18 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             OprNames,SpnFlp = G2spc.GenMagOps(SGData)
             SGData['OprNames'] = OprNames
             SGData['SpnFlp'] = SpnFlp
-            spinSizer.Add(wx.StaticText(General,label=' OG Magnetic space group: %s  '%(MagSym)),0,WACV)
+            spinSizer.Add(wx.StaticText(General,label=' Magnetic space group: %s  '%(MagSym)),0,WACV)
             showSpins = wx.CheckBox(General,label=' Show spins?')
             showSpins.Bind(wx.EVT_CHECKBOX,OnShowSpins)
             spinSizer.Add(showSpins,0,WACV)
             magSizer.Add(spinSizer)
+            dminSizer = wx.BoxSizer(wx.HORIZONTAL)
+            dminSizer.Add(wx.StaticText(General,label=' Magnetic reflection d-min: '),0,WACV)
+            dminVal = wx.TextCtrl(General,value='%.4f'%(generalData['MagDmin']),style=wx.TE_PROCESS_ENTER)
+            dminVal.Bind(wx.EVT_TEXT_ENTER,OnDminVal)        
+            dminVal.Bind(wx.EVT_KILL_FOCUS,OnDminVal)
+            dminSizer.Add(dminVal,0,WACV)
+            magSizer.Add(dminSizer,0,WACV)
             return magSizer
             
         def PawleySizer():
@@ -2210,6 +2260,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         indx = Atoms.GetSelectedRows()
         if indx:
             generalData = data['General']
+            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
             SpnFlp = generalData['SGData'].get('SpnFlp',[])
             colLabels = [Atoms.GetColLabelValue(c) for c in range(Atoms.GetNumberCols())]
             cx = colLabels.index('x')
@@ -2251,7 +2302,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             Uij = G2spc.U2Uij(U)
                             atom[cuij:cuij+6] = Uij
                         if cmx:
-                            atom[cmx:cmx+3] = np.inner(M,np.array(atom[cmx:cmx+3]))
+                            mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
+                            atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)
                         if New:
                             atomData.append(atom)
             finally:
@@ -4199,6 +4251,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 cmx = colLabels.index('Mx')
             atomData = data['Drawing']['Atoms']
             generalData = data['General']
+            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
             dlg = G2gd.SymOpDialog(G2frame,SGData,False,True)
@@ -4226,7 +4279,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             atom[cs-1] = G2spc.StringOpsProd(atomOp,newOp,SGData)
                             if cmx:
                                 opNum = G2spc.GetOpNum(OprNum,SGData)
-                                atom[cmx:cmx+3] = np.inner(M,np.array(atom[cmx:cmx+3]))
+                                mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
+                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)
                             if atom[cui] == 'A':
                                 Uij = atom[cuij:cuij+6]
                                 Uij = G2spc.U2Uij(np.inner(np.inner(M,G2spc.Uij2U(Uij)),M))
@@ -4275,7 +4329,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             M = SGData['SGOps'][Opr-1][0]
                             if cmx:
                                 opNum = G2spc.GetOpNum(item[2],SGData)
-                                atom[cmx:cmx+3] = np.inner(M,np.array(atom[cmx:cmx+3]))
+                                mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
+                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)
                             atom[cs-1] = str(item[2])+'+'
                             atom[cuij:cuij+6] = item[1]
                             for xyz in cellArray+np.array(atom[cx:cx+3]):
@@ -4306,6 +4361,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 cmx = colLabels.index('Mx')
             atomData = data['Drawing']['Atoms']
             generalData = data['General']
+            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
             dlg = G2gd.SymOpDialog(G2frame,SGData,False,True)
@@ -4329,7 +4385,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         OprNum = ((Opr+1)+100*Cent)*(1-2*Inv)
                         if cmx:
                             opNum = G2spc.GetOpNum(OprNum,SGData)
-                            atom[cmx:cmx+3] = np.inner(M,np.array(atom[cmx:cmx+3]))
+                            mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
+                            atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)
                         atomOp = atom[cs-1]
                         newOp = str(((Opr+1)+100*Cent)*(1-2*Inv))+'+'+ \
                             str(int(Cell[0]))+','+str(int(Cell[1]))+','+str(int(Cell[2]))
@@ -4396,7 +4453,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                                     M = SGData['SGOps'][Opr-1][0]
                                     if cmx:
                                         opNum = G2spc.GetOpNum(OpN,SGData)
-                                        newAtom[cmx:cmx+3] = np.inner(M,np.array(newAtom[cmx:cmx+3]))
+                                        mom = np.inner(np.array(newAtom[cmx:cmx+3]),Bmat)
+                                        newAtom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)
                                     atomData.append(newAtom[:cij+9])  #not SS stuff
             finally:
                 wx.EndBusyCursor()
@@ -4417,6 +4475,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 cmx = colLabels.index('Mx')
             cuij = cui+2
             generalData = data['General']
+            Amat,Bmat = G2lat.cell2AB(generalData['Cell'][1:7])            
             SGData = generalData['SGData']
             SpnFlp = SGData.get('SpnFlp',[])
             wx.BeginBusyCursor()
@@ -4434,7 +4493,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             M = SGData['SGOps'][Opr-1][0]
                             if cmx:
                                 opNum = G2spc.GetOpNum(item[2],SGData)
-                                atom[cmx:cmx+3] = np.inner(SGData['SGOps'],np.array(atom[cmx:cmx+3]))
+                                mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
+                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)
                             atom[cs-1] = str(item[2])+'+' \
                                 +str(item[3][0])+','+str(item[3][1])+','+str(item[3][2])
                             atom[cuij:cuij+6] = item[1]
@@ -4456,7 +4516,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                             atom[cx:cx+3] = item[0]
                             if cmx:
                                 opNum = G2spc.GetOpNum(item[1],SGData)
-                                atom[cmx:cmx+3] = np.inner(np.array(atom[cmx:cmx+3]),M)
+                                mom = np.inner(np.array(atom[cmx:cmx+3]),Bmat)
+                                atom[cmx:cmx+3] = np.inner(np.inner(mom,M),Amat)
                             atom[cs-1] = str(item[1])+'+' \
                                 +str(item[2][0])+','+str(item[2][1])+','+str(item[2][2])
                             Opp = G2spc.Opposite(item[0])

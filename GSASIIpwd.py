@@ -1757,7 +1757,7 @@ def calcIncident(Iparm,xdata):
             DYI[2] = -Icoef[1]*DYI[1]/x**2
             YI += (Icoef[1]*Eterm/x**5)
             if 'Exponential' in Itype:
-                for i in range(3,12,2):
+                for i in range(3,11,2):
                     Eterm = np.exp(-Icoef[i+1]*x**((i+1)/2))
                     YI += Icoef[i]*Eterm
                     DYI[i] *= Eterm

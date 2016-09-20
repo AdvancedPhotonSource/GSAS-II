@@ -239,6 +239,7 @@ class EXP_ReaderClass(G2IO.ImportPhase):
             Ptype = 'nuclear'
         elif NPhas[result] in ['2','3']:
             Ptype = 'magnetic'
+            MagDmin = 1.0
         elif NPhas[result] == '4':
             Ptype = 'macromolecular'
         elif NPhas[result] == '10':
@@ -260,7 +261,11 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                     self.warnings += '\nThe GSAS space group was not interpreted(!) and has been set to "P 1".'
                     self.warnings += "Change this in phase's General tab."                       
             elif 'SPNFLP' in key:
-                SpnFlp = [int(s) for s in EXPphase[key].split()]                
+                SpnFlp = [int(s) for s in EXPphase[key].split()] 
+                if SGData['SpGrp'][0] in ['A','B','C','I','R','F']:
+                    SpnFlp += [1,1,1,1]
+            elif 'MXDSTR' in key:
+                MagDmin = float(EXPphase[key][:10])               
             elif 'OD    ' in key:
                 SHdata = EXPphase[key].split() # may not have all 9 values
                 SHvals = 9*[0]
@@ -342,7 +347,8 @@ class EXP_ReaderClass(G2IO.ImportPhase):
             general['AtomPtrs'] = [6,4,10,12]
         elif general['Type'] =='magnetic':
             general['AtomPtrs'] = [3,1,10,12]
-            general['SGData']['SGSpin'] = SpnFlp    
+            general['SGData']['SGSpin'] = SpnFlp
+            general['MagDmin'] = MagDmin    
         else:   #nuclear
             general['AtomPtrs'] = [3,1,7,9]    
         general['SH Texture'] = textureData

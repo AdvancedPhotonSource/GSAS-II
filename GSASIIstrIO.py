@@ -808,6 +808,26 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
             print >>pFile,' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f' %  \
                 (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],ffdata['fc'])
                 
+    def PrintMFtable(MFtable):
+        print >>pFile,'\n <j0> Magnetic scattering factors:'
+        print >>pFile,'   Symbol     mfa                                    mfb                                     mfc'
+        print >>pFile,99*'-'
+        for Ename in MFtable:
+            mfdata = MFtable[Ename]
+            fa = mfdata['mfa']
+            fb = mfdata['mfb']
+            print >>pFile,' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f' %  \
+                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],mfdata['mfc'])
+        print >>pFile,'\n <j2> Magnetic scattering factors:'
+        print >>pFile,'   Symbol     nfa                                    nfb                                     nfc'
+        print >>pFile,99*'-'
+        for Ename in MFtable:
+            mfdata = MFtable[Ename]
+            fa = mfdata['nfa']
+            fb = mfdata['nfb']
+            print >>pFile,' %8s %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f %9.5f' %  \
+                (Ename.ljust(8),fa[0],fa[1],fa[2],fa[3],fb[0],fb[1],fb[2],fb[3],mfdata['nfc'])
+                
     def PrintBLtable(BLtable):
         print >>pFile,'\n Neutron scattering factors:'
         print >>pFile,'   Symbol   isotope       mass       b       resonant terms'
@@ -913,6 +933,19 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                     for j in range(6):
                         line += '%8.4f'%(at[cia+2+j])
                 print >>pFile,line
+                
+    def PrintMoments(General,Atoms):
+        cx,ct,cs,cia = General['AtomPtrs']
+        cmx = cx+4
+        print >>pFile,'\n Magnetic moments:'
+        line = '   name    type  refine?  Mx        My        Mz    '
+        print >>pFile,line
+        print >>pFile,135*'-'
+        for i,at in enumerate(Atoms):
+            line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cmx])+'%10.5f'%(at[cmx+1])+ \
+                '%10.5f'%(at[cmx+2])
+            print >>pFile,line
+        
                 
     def PrintWaves(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
@@ -1044,6 +1077,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
     phaseConstr = {}
     pawleyLookup = {}
     FFtables = {}                   #scattering factors - xrays
+    MFtables = {}                   #Mag. form factors
     BLtables = {}                   # neutrons
     Natoms = {}
     AtMults = {}
@@ -1060,6 +1094,9 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
         BLtable = G2el.GetBLtable(General)
         FFtables.update(FFtable)
         BLtables.update(BLtable)
+        if General['Type'] == 'magnetic':
+            MFtable = G2el.GetMFtable(General['AtomTypes'])
+            MFtables.update(MFtable)
         Atoms = PhaseData[name]['Atoms']
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']
@@ -1114,6 +1151,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 else:
                     phaseDict.update({pfx+'AU11:'+str(i):at[cia+2],pfx+'AU22:'+str(i):at[cia+3],pfx+'AU33:'+str(i):at[cia+4],
                         pfx+'AU12:'+str(i):at[cia+5],pfx+'AU13:'+str(i):at[cia+6],pfx+'AU23:'+str(i):at[cia+7]})
+                if General['Type'] == 'magnetic':
+                    phaseDict.update({pfx+'AMx:'+str(i):at[cx+4],pfx+'AMy:'+str(i):at[cx+5],pfx+'AMz:'+str(i):at[cx+6]})
                 if 'F' in at[ct+1]:
                     phaseVary.append(pfx+'Afrac:'+str(i))
                 if 'X' in at[ct+1]:
@@ -1162,6 +1201,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                                 for eqv in equiv[1:]:
                                     eqv[1] /= coef
                                 G2mv.StoreEquivalence(name,equiv[1:])
+                if 'M' in at[ct+1]:
+                    pass    #magnetic moment vary here
                 if General.get('Modulated',False):
                     AtomSS = at[-1]['SS1']
                     waveType = AtomSS['waveType']
@@ -1234,7 +1275,10 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                 print >>pFile,135*'-'
                 PrintFFtable(FFtable)
                 PrintBLtable(BLtable)
+                if General['Type'] == 'magnetic':
+                    PrintMFtable(MFtable)
                 print >>pFile,''
+                #how do we print magnetic symmetry table? TBD
                 if len(SSGtext):    #if superstructure
                     for line in SSGtext: print >>pFile,line
                     if len(SSGtable):
@@ -1253,6 +1297,8 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
                         print >>pFile,' ( 1)    %s'%(SGtable[0])
                 PrintRBObjects(resRBData,vecRBData)
                 PrintAtoms(General,Atoms)
+                if General['Type'] == 'magnetic':
+                    PrintMoments(General,Atoms)
                 if General.get('Modulated',False):
                     PrintWaves(General,Atoms)
                 print >>pFile,'\n Unit cell: a = %.5f'%(cell[1]),' b = %.5f'%(cell[2]),' c = %.5f'%(cell[3]), \
@@ -1529,9 +1575,7 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
     def PrintAtomsAndSig(General,Atoms,atomsSig):
         print >>pFile,'\n Atoms:'
         line = '   name      x         y         z      frac   Uiso     U11     U22     U33     U12     U13     U23'
-        if General['Type'] == 'magnetic':
-            line = line[:24]+'   Mx     My     Mz'+line[24:]
-        elif General['Type'] == 'macromolecular':
+        if General['Type'] == 'macromolecular':
             line = ' res no residue chain '+line
         cx,ct,cs,cia = General['AtomPtrs']
         print >>pFile,line
@@ -1574,6 +1618,30 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                         sigstr += fmt[ind]%(atomsSig[sigind])
                     else:
                         sigstr += 8*' '
+            print >>pFile,name
+            print >>pFile,valstr
+            print >>pFile,sigstr
+            
+    def PrintMomentsAndSig(General,Atoms,atomsSig):
+        print >>pFile,'\n Magnetic Moments:'    #add magnitude & angle, etc.? TBD
+        line = '   name      Mx        My        Mz'
+        cx,ct,cs,cia = General['AtomPtrs']
+        cmx = cx+4
+        print >>pFile,line
+        print >>pFile,135*'-'
+        fmt = {0:'%7s',ct:'%7s',cmx:'%10.5f',cmx+1:'%10.5f',cmx+2:'%10.5f'}
+        noFXsig = {cmx:[10*' ','%10s'],cmx+1:[10*' ','%10s'],cmx+2:[10*' ','%10s']}
+        for i,at in enumerate(Atoms):
+            name = fmt[0]%(at[ct-1])+fmt[1]%(at[ct])+':'
+            valstr = ' values:'
+            sigstr = ' sig   :'
+            for ind in range(cmx,cmx+3):
+                sigind = str(i)+':'+str(ind)
+                valstr += fmt[ind]%(at[ind])                    
+                if sigind in atomsSig:
+                    sigstr += fmt[ind]%(atomsSig[sigind])
+                else:
+                    sigstr += noFXsig[ind][1]%(noFXsig[ind][0])
             print >>pFile,name
             print >>pFile,valstr
             print >>pFile,sigstr
@@ -1945,6 +2013,8 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
                                     wavesSig[name] = sigDict[pfx+name]
                     
             PrintAtomsAndSig(General,Atoms,atomsSig)
+            if General['Type'] == 'magnetic':
+                PrintMomentsAndSig(General,Atoms,atomsSig)
             if General.get('Modulated',False):
                 PrintWavesAndSig(General,Atoms,wavesSig)
             
@@ -2110,6 +2180,8 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     dmin = wave/(2.0*sind(limits[1]/2.0))
                 elif 'T' in inst['Type'][0]:
                     dmin = limits[0]/inst['difC'][1]
+                if Phases[phase]['General']['Type'] == 'magnetic':
+                    dmin = max(dmin,Phases[phase]['General']['MagDmin'])
                 pfx = str(pId)+':'+str(hId)+':'
                 for item in ['Scale','Extinction']:
                     hapDict[pfx+item] = hapData[item][0]

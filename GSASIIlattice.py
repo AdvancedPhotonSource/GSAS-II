@@ -230,6 +230,7 @@ def TransformU6(U6,Trans):
     
 def TransformPhase(oldPhase,newPhase,Trans,Vec):
     '''Transform atoms from oldPhase to newPhase by Trans & Vec
+    NB: doesnt transform moments correctly - TBD
     
     :param oldPhase: dict G2 phase info for old phase
     :param newPhase: dict G2 phase info for new phase; with new cell & space group

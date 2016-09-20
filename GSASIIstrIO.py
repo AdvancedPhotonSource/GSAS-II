@@ -937,14 +937,16 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
     def PrintMoments(General,Atoms):
         cx,ct,cs,cia = General['AtomPtrs']
         cmx = cx+4
+        AtInfo = dict(zip(General['AtomTypes'],General['Lande g']))
         print >>pFile,'\n Magnetic moments:'
         line = '   name    type  refine?  Mx        My        Mz    '
         print >>pFile,line
         print >>pFile,135*'-'
         for i,at in enumerate(Atoms):
-            line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cmx])+'%10.5f'%(at[cmx+1])+ \
-                '%10.5f'%(at[cmx+2])
-            print >>pFile,line
+            if AtInfo[at[ct]]:
+                line = '%7s'%(at[ct-1])+'%7s'%(at[ct])+'%7s'%(at[ct+1])+'%10.5f'%(at[cmx])+'%10.5f'%(at[cmx+1])+ \
+                    '%10.5f'%(at[cmx+2])
+                print >>pFile,line
         
                 
     def PrintWaves(General,Atoms):
@@ -1627,24 +1629,26 @@ def SetPhaseData(parmDict,sigDict,Phases,RBIds,covData,RestraintDict=None,pFile=
         line = '   name      Mx        My        Mz'
         cx,ct,cs,cia = General['AtomPtrs']
         cmx = cx+4
+        AtInfo = dict(zip(General['AtomTypes'],General['Lande g']))
         print >>pFile,line
         print >>pFile,135*'-'
         fmt = {0:'%7s',ct:'%7s',cmx:'%10.5f',cmx+1:'%10.5f',cmx+2:'%10.5f'}
         noFXsig = {cmx:[10*' ','%10s'],cmx+1:[10*' ','%10s'],cmx+2:[10*' ','%10s']}
         for i,at in enumerate(Atoms):
-            name = fmt[0]%(at[ct-1])+fmt[1]%(at[ct])+':'
-            valstr = ' values:'
-            sigstr = ' sig   :'
-            for ind in range(cmx,cmx+3):
-                sigind = str(i)+':'+str(ind)
-                valstr += fmt[ind]%(at[ind])                    
-                if sigind in atomsSig:
-                    sigstr += fmt[ind]%(atomsSig[sigind])
-                else:
-                    sigstr += noFXsig[ind][1]%(noFXsig[ind][0])
-            print >>pFile,name
-            print >>pFile,valstr
-            print >>pFile,sigstr
+            if AtInfo[at[ct]]:
+                name = fmt[0]%(at[ct-1])+fmt[1]%(at[ct])+':'
+                valstr = ' values:'
+                sigstr = ' sig   :'
+                for ind in range(cmx,cmx+3):
+                    sigind = str(i)+':'+str(ind)
+                    valstr += fmt[ind]%(at[ind])                    
+                    if sigind in atomsSig:
+                        sigstr += fmt[ind]%(atomsSig[sigind])
+                    else:
+                        sigstr += noFXsig[ind][1]%(noFXsig[ind][0])
+                print >>pFile,name
+                print >>pFile,valstr
+                print >>pFile,sigstr
             
     def PrintWavesAndSig(General,Atoms,wavesSig):
         cx,ct,cs,cia = General['AtomPtrs']

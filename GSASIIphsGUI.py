@@ -247,10 +247,10 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         generalData['Color'] = []
         if generalData['Type'] == 'magnetic' and not 'Lande g' in generalData:
             generalData['MagDmin'] = 1.0
-            generalData['Lande g'] = []
+            generalData['Lande g'] = len(atomData)*[None,]
         generalData['Mydir'] = G2frame.dirname
         badList = {}
-        for atom in atomData:
+        for iat,atom in enumerate(atomData):
             atom[ct] = atom[ct].lower().capitalize()              #force to standard form
             if generalData['AtomTypes'].count(atom[ct]):
                 generalData['NoAtoms'][atom[ct]] += atom[cx+3]*float(atom[cs+1])
@@ -284,10 +284,11 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                 generalData['Color'].append(Info['Color'])
                 if generalData['Type'] == 'magnetic':
                     generalData['MagDmin'] = generalData.get('MagDmin',1.0)
-                    if atom[ct] in atmdata.MagFF:
+                    try:
+                        if atom[ct] in atmdata.MagFF and not generalData['Lande g'][iat]:
+                            generalData['Lande g'][iat] = 2.0
+                    except IndexError:
                         generalData['Lande g'].append(2.0)
-                    else:
-                        generalData['Lande g'].append(None)
         if badList:
             msg = 'Warning: element symbol(s) not found:'
             for key in badList:
@@ -1688,6 +1689,9 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             colM = 0
             if 'Mx' in colLabels:
                 colM = colLabels.index('Mx')
+                atTypes = generalData['AtomTypes']
+                Lande = generalData['Lande g']
+                AtInfo = dict(zip(atTypes,Lande))
             attr = wx.grid.GridCellAttr()
             attr.IncRef()               #fix from Jim Hester
             attr.SetEditor(G2G.GridFractionEditor(Atoms))
@@ -1737,7 +1741,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
                         ci = i+colM
                         Atoms.SetCellStyle(row,ci,VERY_LIGHT_GREY,True)
                         Atoms.SetCellTextColour(row,ci,VERY_LIGHT_GREY)
-                        if CSI and CSI[1][i]:
+                        if CSI and CSI[1][i] and AtInfo and AtInfo[atomData[row][colType]]:
                             Atoms.SetCellStyle(row,ci,WHITE,False)
                             Atoms.SetCellTextColour(row,ci,BLACK)
                             

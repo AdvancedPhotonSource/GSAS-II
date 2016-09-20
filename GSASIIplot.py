@@ -5472,7 +5472,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         glPopMatrix()
         
     def RenderMoment(x,y,z,Moment,color,slice=20):
-        Dx = Moment/2.
+        Dx = 0.5*Moment
         Z = np.sqrt(np.sum(Dx**2))
         if Z:
             glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
@@ -5767,6 +5767,7 @@ def PlotStructure(G2frame,data,firstCall=False):
                 color = (Wt-Bc)/255.
                 if SpnFlp[OpNum] < 0:
                     color = Rd/255.
+                    Moment *= -1.
                 RenderMoment(x,y,z,Moment,color)                    
 
             if atom[cs+1] == 'type':

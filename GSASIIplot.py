@@ -4775,7 +4775,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     SGData = generalData['SGData']
     if generalData['Modulated']:
         SSGData = generalData['SSGData']
-    SpnFlp = SGData.get('SpnFlp',[])
+    SpnFlp = SGData.get('SpnFlp',[1,])
     Mydir = generalData['Mydir']
     Super = generalData.get('Super',0)
     atomData = data['Atoms']
@@ -5767,7 +5767,6 @@ def PlotStructure(G2frame,data,firstCall=False):
                 color = (Wt-Bc)/255.
                 if SpnFlp[OpNum] < 0:
                     color = Rd/255.
-                    Moment *= -1.
                 RenderMoment(x,y,z,Moment,color)                    
 
             if atom[cs+1] == 'type':

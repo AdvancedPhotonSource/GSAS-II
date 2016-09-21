@@ -261,7 +261,8 @@ class EXP_ReaderClass(G2IO.ImportPhase):
                     self.warnings += '\nThe GSAS space group was not interpreted(!) and has been set to "P 1".'
                     self.warnings += "Change this in phase's General tab."                       
             elif 'SPNFLP' in key:
-                SpnFlp = [int(s) for s in EXPphase[key].split()] 
+                SpnFlp = np.array([int(float(s)) for s in EXPphase[key].split()])
+                SpnFlp = np.where(SpnFlp==0,1,SpnFlp)
                 if SGData['SpGrp'][0] in ['A','B','C','I','R','F']:
                     SpnFlp += [1,1,1,1]
             elif 'MXDSTR' in key:

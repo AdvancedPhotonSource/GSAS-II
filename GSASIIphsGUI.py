@@ -3811,7 +3811,7 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             'radiusFactor':0.85,'contourLevel':1.,'bondRadius':0.1,'ballScale':0.33,
             'vdwScale':0.67,'ellipseProb':50,'sizeH':0.50,'unitCellBox':True,
             'showABC':True,'selectedAtoms':[],'Atoms':[],'oldxy':[],
-            'bondList':{},'viewDir':[1,0,0]}
+            'bondList':{},'viewDir':[1,0,0],'Plane':[[0,0,1],False,False,0.0,[255,255,0]]}
         V0 = np.array([0,0,1])
         V = np.inner(Amat,V0)
         V /= np.sqrt(np.sum(V**2))
@@ -3834,6 +3834,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             drawingData['Quaternion'] = G2mth.AV2Q(2*np.pi,np.inner(Amat,[0,0,1]))
         if 'showRigidBodies' not in drawingData:
             drawingData['showRigidBodies'] = True
+        if 'Plane' not in drawingData:
+            drawingData['Plane'] = [[0,0,1],False,False,0.0,[255,255,0]]
         cx,ct,cs,ci = [0,0,0,0]
         if generalData['Type'] in ['nuclear','faulted',]:
             cx,ct,cs,ci = [2,1,6,17]         #x, type, style & index
@@ -3846,6 +3848,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             for atom in atomData:
                 DrawAtomAdd(drawingData,atom)
             data['Drawing'] = drawingData
+        if len(drawingData['Plane']) < 5:
+            drawingData['Plane'].append([255,255,0])
             
     def DrawAtomAdd(drawingData,atom):
         drawingData['Atoms'].append(MakeDrawAtom(atom))
@@ -4981,6 +4985,76 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
             radFactor.Bind(wx.EVT_KILL_FOCUS,OnRadFactor)
             radSizer.Add(radFactor,0,WACV)
             return radSizer
+            
+        def PlaneSizer():
+            
+            def OnPlane(event):
+                event.Skip()
+                vals = plane.GetValue().split()
+                try:
+                    hkl = [int(vals[i]) for i in range(3)]
+                    if not np.any(np.array(hkl)):       #can't be all zeros!
+                        raise ValueError
+                except (ValueError,IndexError):
+                    hkl = drawingData['Plane'][0]
+                drawingData['Plane'][0] = hkl
+                plane.SetValue('%3d %3d %3d'%(hkl[0],hkl[1],hkl[2]))
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnShowPlane(event):
+                drawingData['Plane'][1] = showPlane.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnShowStack(event):
+                drawingData['Plane'][2] = showStack.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+                
+            def OnPhase(event):
+                event.Skip()
+                try:
+                    val = float(phase.GetValue())
+                except ValueError:
+                    val = drawingData['Plane'][3]
+                drawingData['Plane'][3] = val
+                phase.SetValue('%.2f'%(val))
+                G2plt.PlotStructure(G2frame,data)
+            
+            def OnPlaneColor(event):
+                drawingData['Plane'][4] = event.GetValue()
+                G2plt.PlotStructure(G2frame,data)
+
+            planeSizer = wx.BoxSizer(wx.VERTICAL)
+            planeSizer1 = wx.BoxSizer(wx.HORIZONTAL)
+            planeSizer1.Add(wx.StaticText(drawOptions,label=' Plane: '),0,WACV)
+            H = drawingData['Plane'][0]
+            plane = wx.TextCtrl(drawOptions,value='%3d %3d %3d'%(H[0],H[1],H[2]),
+                style=wx.TE_PROCESS_ENTER)
+            plane.Bind(wx.EVT_TEXT_ENTER,OnPlane)
+            plane.Bind(wx.EVT_KILL_FOCUS,OnPlane)
+            planeSizer1.Add(plane,0,WACV)
+            showPlane = wx.CheckBox(drawOptions,label=' Show plane?')
+            showPlane.SetValue(drawingData['Plane'][1])
+            showPlane.Bind(wx.EVT_CHECKBOX, OnShowPlane)
+            planeSizer1.Add(showPlane,0,WACV)
+            showStack = wx.CheckBox(drawOptions,label=' As a stack?')
+            showStack.SetValue(drawingData['Plane'][2])
+            showStack.Bind(wx.EVT_CHECKBOX, OnShowStack)
+            planeSizer1.Add(showStack,0,WACV)
+            planeSizer2 = wx.BoxSizer(wx.HORIZONTAL)
+            planeSizer2.Add(wx.StaticText(drawOptions,label=' Phase shift (deg): '),0,WACV)
+            phase = wx.TextCtrl(drawOptions,value='%.2f'%(drawingData['Plane'][3]),
+                style=wx.TE_PROCESS_ENTER)
+            phase.Bind(wx.EVT_TEXT_ENTER,OnPhase)
+            phase.Bind(wx.EVT_KILL_FOCUS,OnPhase)
+            planeSizer2.Add(phase,0,WACV)
+            planeSizer2.Add(wx.StaticText(drawOptions,-1,' Plane color: '),0,WACV)
+            planeColor = wcs.ColourSelect(drawOptions, -1,colour=drawingData['Plane'][4],size=wx.Size(25,25))
+            planeColor.Bind(wcs.EVT_COLOURSELECT, OnPlaneColor)
+            planeSizer2.Add(planeColor,0,WACV)
+            planeSizer.Add(planeSizer1)
+            planeSizer.Add(planeSizer2)
+            return planeSizer
+            
 
         # UpdateDrawOptions exectable code starts here
         generalData = data['General']
@@ -5004,6 +5078,8 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         mainSizer.Add(ShowSizer(),0,)
         mainSizer.Add((5,5),0)
         mainSizer.Add(RadSizer(),0,)
+        mainSizer.Add((5,5),0)
+        mainSizer.Add(PlaneSizer(),0,)
         SetPhaseWindow(G2frame.dataFrame,drawOptions,mainSizer)
 
 ################################################################################

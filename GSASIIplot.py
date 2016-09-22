@@ -4748,7 +4748,8 @@ def PlotTRImage(G2frame,tax,tay,taz,newPlot=False):
             
 def PlotStructure(G2frame,data,firstCall=False):
     '''Crystal structure plotting package. Can show structures as balls, sticks, lines,
-    thermal motion ellipsoids and polyhedra
+    thermal motion ellipsoids and polyhedra. Magnetic moments shown as black/red 
+    arrows according to spin state
     '''
 
     def FindPeaksBonds(XYZ):
@@ -5210,9 +5211,10 @@ def PlotStructure(G2frame,data,firstCall=False):
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
-        glLightfv(GL_LIGHT0,GL_AMBIENT,[.5,.5,.5,1])
+        glLightfv(GL_LIGHT0,GL_AMBIENT,[.8,.8,.8,1])
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[.8,.8,.8,1])
-        glLightfv(GL_LIGHT0,GL_SPECULAR,[1,1,1,1])
+#        glLightfv(GL_LIGHT0,GL_SPECULAR,[1,1,1,1])
+#        glLightfv(GL_LIGHT0,GL_POSITION,[0,0,1,1])
         
     def GetRoll(newxy,rhoshape):
         Q = drawingData['Quaternion']
@@ -5403,6 +5405,24 @@ def PlotStructure(G2frame,data,firstCall=False):
         glPopMatrix()
         glColor4ubv([0,0,0,0])
         glDisable(GL_COLOR_MATERIAL)
+        
+    def RenderPlane(plane,color):
+        fade = list(color) + [.25,]
+        glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE,fade)
+        glShadeModel(GL_FLAT)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA)
+        glPushMatrix()
+        glShadeModel(GL_SMOOTH)
+        glPolygonMode(GL_FRONT_AND_BACK,GL_FILL)
+        glFrontFace(GL_CW)
+        glBegin(GL_TRIANGLE_FAN)
+        for vertex in plane:
+            glVertex3fv(vertex)
+        glEnd()
+        glPopMatrix()
+        glDisable(GL_BLEND)
+        glShadeModel(GL_SMOOTH)
                 
     def RenderSphere(x,y,z,radius,color):
         glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
@@ -5517,7 +5537,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         glShadeModel(GL_FLAT)
         glPushMatrix()
         glTranslate(x,y,z)
-        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
+        glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE,color)
         glShadeModel(GL_SMOOTH)
         glMultMatrixf(B4mat.T)
         for face,norm in Faces:
@@ -5598,7 +5618,7 @@ def PlotStructure(G2frame,data,firstCall=False):
     def Draw(caller='',Fade=[]):
 #useful debug?        
 #        if caller:
-#            print caller
+#            print caller,generalData['Name']
 # end of useful debug
         mapData = generalData['Map']
         D4mapData = generalData.get('4DmapData',{})
@@ -5665,8 +5685,6 @@ def PlotStructure(G2frame,data,firstCall=False):
         glMultMatrixf(matRot.T)
         glMultMatrixf(A4mat.T)
         glTranslate(-Tx,-Ty,-Tz)
-        if drawingData['unitCellBox']:
-            RenderBox()
         if drawingData['showABC']:
             x,y,z = drawingData['viewPoint'][0]
             RenderUnitVectors(x,y,z)
@@ -5819,6 +5837,13 @@ def PlotStructure(G2frame,data,firstCall=False):
             for chain in Backbones:
                 Backbone = Backbones[chain]
                 RenderBackbone(Backbone,BackboneColor,bondR)
+        if drawingData['unitCellBox']:
+            RenderBox()
+            if drawingData['Plane'][1]:
+                H,phase,stack,phase,color = drawingData['Plane']
+                Planes = G2lat.PlaneIntercepts(Amat,Bmat,H,phase,stack)
+                for plane in Planes:
+                    RenderPlane(plane,color)
 #        print time.time()-time0
         try:
             if Page.context: Page.canvas.SetCurrent(Page.context)

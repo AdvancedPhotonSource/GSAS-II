@@ -656,6 +656,43 @@ def calc_rDsqTSS(H,A,vec,Z,tof,difC):
     'needs doc string'
     rdsq = calc_rDsq(H[:3]+(H[3][:,np.newaxis]*vec).T,A)+Z/difC
     return rdsq
+    
+def PlaneIntercepts(Amat,Bmat,H,phase,stack):
+    ''' find unit cell intercepts for a stack of hkl planes
+    '''
+    Steps = range(-1,2,2)
+    if stack:
+        Steps = range(-10,10,1)
+    Stack = []
+    Ux = np.array([[0,0],[1,0],[1,1],[0,1]])
+    for step in Steps:
+        HX = []
+        for i in [0,1,2]:
+            if H[i]:
+               h,k,l = [(i+1)%3,(i+2)%3,(i+3)%3]
+               for j in [0,1,2,3]:
+                    hx = [0,0,0]
+                    intcpt = (phase/360.+step-H[h]*Ux[j,0]-H[k]*Ux[j,1])/H[l]
+                    if 0. <= intcpt <= 1.:                        
+                        hx[h] = Ux[j,0]
+                        hx[k] = Ux[j,1]
+                        hx[l] = intcpt
+                        HX.append(hx)
+        if len(HX)> 2:
+            HX = np.array(HX)
+            DX = np.inner(HX-HX[0],Amat)
+            D = np.sqrt(np.sum(DX**2,axis=1))
+            Dsort = np.argsort(D)
+            HX = HX[Dsort]
+            DX = DX[Dsort]
+            D = D[Dsort]
+            DX[1:,:] = DX[1:,:]/D[1:,nxs]
+            A = 2.*np.ones(HX.shape[0])
+            A[1:] = [np.dot(DX[1],dx) for dx in DX[1:]]
+            HX = HX[np.argsort(A)]
+#            GSASIIpath.IPyBreak()
+            Stack.append(HX)
+    return Stack
        
 def MaxIndex(dmin,A):
     'needs doc string'

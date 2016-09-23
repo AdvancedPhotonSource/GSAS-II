@@ -763,7 +763,7 @@ def UpdateImageControls(G2frame,data,masks,IntegrateOnly=False):
             G2plt.PlotExposedImage(G2frame,event=event)
             
         def OnFullIntegrate(event):
-            Lazm =int(G2frame.Lazim.GetValue())
+            Lazm = float(G2frame.Lazim.GetValue())
             if data['fullIntegrate']:
                 data['fullIntegrate'] = False
                 data['LRazimuth'] = [Lazm,Lazm+20.]

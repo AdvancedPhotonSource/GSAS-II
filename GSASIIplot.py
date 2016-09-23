@@ -1157,8 +1157,9 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
 #patch
     data = G2frame.PatternTree.GetItemPyData(G2frame.PatternId)
     if 'Offset' not in data[0] and plotType in ['PWDR','SASD']:     #plot offset data
-        data[0].update({'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,
-            'refDelt':0.01,})
+        Ymax = max(data[1][1])
+        data[0].update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,
+            'refDelt':0.1*Ymax,})
         G2frame.PatternTree.SetItemPyData(G2frame.PickId,data)
 #end patch
     def OnPlotKeyPress(event):
@@ -1200,14 +1201,15 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 dlg.Destroy()
             elif G2frame.SinglePlot:
                 G2frame.plotStyle['sqrtPlot'] = not G2frame.plotStyle['sqrtPlot']
+                Ymax = max(Pattern[1][1])
                 if G2frame.plotStyle['sqrtPlot']:
-                    Pattern[0]['delOffset'] = .002
-                    Pattern[0]['refOffset'] = -1.0
-                    Pattern[0]['refDelt'] = .001
+                    Pattern[0]['delOffset'] = .002*Ymax
+                    Pattern[0]['refOffset'] = -0.1*Ymax
+                    Pattern[0]['refDelt'] = .1*Ymax
                 else:
-                    Pattern[0]['delOffset'] = .02
-                    Pattern[0]['refOffset'] = -1.0
-                    Pattern[0]['refDelt'] = .01
+                    Pattern[0]['delOffset'] = .02*Ymax
+                    Pattern[0]['refOffset'] = -0.1*Ymax
+                    Pattern[0]['refDelt'] = .1*Ymax
             newPlot = True
         elif event.key == 'u' and (G2frame.Contour or not G2frame.SinglePlot):
             if G2frame.Contour:
@@ -1700,7 +1702,8 @@ def PlotPatterns(G2frame,newPlot=False,plotType='PWDR'):
                 if len(Pattern) < 3:                    # put name on end if needed
                     Pattern.append(G2frame.PatternTree.GetItemText(item))
                 if 'Offset' not in Pattern[0]:     #plot offset data
-                    Pattern[0].update({'Offset':[0.0,0.0],'delOffset':0.02,'refOffset':-1.0,'refDelt':0.01,})
+                    Ymax = max(Pattern[1][1])
+                    Pattern[0].update({'Offset':[0.0,0.0],'delOffset':0.02*Ymax,'refOffset':-0.1*Ymax,'refDelt':0.1*Ymax,})
                 PlotList.append(Pattern)
                 ParmList.append(G2frame.PatternTree.GetItemPyData(G2gd.GetPatternTreeItemId(G2frame,
                     item,'Instrument Parameters'))[0])

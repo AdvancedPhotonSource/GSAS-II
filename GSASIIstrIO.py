@@ -189,7 +189,8 @@ def ReadCheckConstraints(GPXfile):
     rigidbodyDict = GetRigidBodies(GPXfile)
     rbIds = rigidbodyDict.get('RBIds',{'Vector':[],'Residue':[]})
     rbVary,rbDict = GetRigidBodyModels(rigidbodyDict,Print=False)
-    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,maxSSwave = GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
+    Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave = \
+        GetPhaseData(Phases,RestraintDict=None,rbIds=rbIds,Print=False) # generates atom symmetry constraints
     hapVary,hapDict,controlDict = GetHistogramPhaseData(Phases,Histograms,Print=False)
     histVary,histDict,controlDict = GetHistogramData(Histograms,Print=False)
     varyList = rbVary+phaseVary+hapVary+histVary
@@ -1096,9 +1097,11 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
         BLtable = G2el.GetBLtable(General)
         FFtables.update(FFtable)
         BLtables.update(BLtable)
+        phaseDict[pfx+'isMag'] = False
         if General['Type'] == 'magnetic':
-            MFtable = G2el.GetMFtable(General['AtomTypes'])
+            MFtable = G2el.GetMFtable(General['AtomTypes'],General['Lande g'])
             MFtables.update(MFtable)
+            phaseDict[pfx+'isMag'] = True
         Atoms = PhaseData[name]['Atoms']
         if Atoms and not General.get('doPawley'):
             cx,ct,cs,cia = General['AtomPtrs']
@@ -1354,7 +1357,7 @@ def GetPhaseData(PhaseData,RestraintDict={},rbIds={},Print=True,pFile=None,seqRe
             GetPawleyConstr(SGData['SGLaue'],PawleyRef,im,pawleyVary)      #does G2mv.StoreEquivalence
             phaseVary += pawleyVary
                 
-    return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,maxSSwave
+    return Natoms,atomIndx,phaseVary,phaseDict,pawleyLookup,FFtables,BLtables,MFtables,maxSSwave
     
 def cellFill(pfx,SGData,parmDict,sigDict): 
     '''Returns the filled-out reciprocal cell (A) terms and their uncertainties
@@ -2275,6 +2278,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                     refList = []
                     Uniq = []
                     Phi = []
+                    useExt = 'magnetic' in Phases[phase]['General']['Type'] and 'N' in inst['Type'][0]
                     if Phases[phase]['General'].get('Modulated',False):
                         ifSuper = True
                         HKLd = np.array(G2lat.GenSSHLaue(dmin,SGData,SSGData,Vec,maxH,A))
@@ -2282,7 +2286,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         for h,k,l,m,d in HKLd:
                             ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
                             mul *= 2      # for powder overlap of Friedel pairs
-                            if m or not ext:
+                            if m or not ext or useExt:
                                 if 'C' in inst['Type'][0]:
                                     pos = G2lat.Dsp2pos(inst,d)
                                     if limits[0] < pos < limits[1]:
@@ -2305,7 +2309,7 @@ def GetHistogramPhaseData(Phases,Histograms,Print=True,pFile=None,resetRefList=T
                         for h,k,l,d in HKLd:
                             ext,mul,uniq,phi = G2spc.GenHKLf([h,k,l],SGData)
                             mul *= 2      # for powder overlap of Friedel pairs
-                            if ext:
+                            if ext and not useExt:
                                 continue
                             if 'C' in inst['Type'][0]:
                                 pos = G2lat.Dsp2pos(inst,d)

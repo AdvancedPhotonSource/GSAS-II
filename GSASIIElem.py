@@ -59,20 +59,22 @@ def GetFFtable(atomTypes):
                 FFtable[El] = item
     return FFtable
     
-def GetMFtable(atomTypes):
+def GetMFtable(atomTypes,Landeg):
     ''' returns a dictionary of magnetic form factor data for atom types found in atomTypes
 
     :param list atomTypes: list of atom types
+    :param list Landeg: Lande g factors for atomTypes
     :return: FFtable, dictionary of form factor data; key is atom type
 
     '''
-    FFtable = {}
-    for El in atomTypes:
-        FFs = GetMagFormFacCoeff(getElSym(El))
-        for item in FFs:
+    MFtable = {}
+    for El,gfac in zip(atomTypes,Landeg):
+        MFs = GetMagFormFacCoeff(getElSym(El))
+        for item in MFs:
             if item['Symbol'] == El.upper():
-                FFtable[El] = item
-    return FFtable
+                item['gfac'] = gfac
+                MFtable[El] = item
+    return MFtable
     
 def GetBLtable(General):
     ''' returns a dictionary of neutron scattering length data for atom types & isotopes found in General
@@ -121,6 +123,18 @@ def getBLvalues(BLtables,ifList=False):
                 BLvals[El] = BLtables[El][1]['SL'][0]
     return BLvals
         
+def getMFvalues(MFtables,SQ,ifList=False):
+    'Needs a doc string'
+    if ifList:
+        MFvals = []
+        for El in MFtables:
+            MFvals.append(MagScatFac(MFtables[El],SQ)[0])
+    else:
+        MFvals = {}
+        for El in MFtables:
+            MFvals[El] = MagScatFac(MFtables[El],SQ)[0]
+    return MFvals
+    
 def GetFFC5(ElSym):
     '''Get 5 term form factor and Compton scattering data
 
@@ -326,7 +340,7 @@ def ScatFac(El, SQ):
     t = -fb[:,np.newaxis]*SQ
     return np.sum(fa[:,np.newaxis]*np.exp(t)[:],axis=0)+El['fc']
         
-def MagScatFac(El, SQ,gfac):
+def MagScatFac(El, SQ):
     """compute value of form factor
 
     :param El: element dictionary defined in GetFormFactorCoeff 
@@ -342,7 +356,7 @@ def MagScatFac(El, SQ,gfac):
     nt = -nfb[:,np.newaxis]*SQ
     MMF = np.sum(mfa[:,np.newaxis]*np.exp(mt)[:],axis=0)+El['mfc']
     NMF = np.sum(nfa[:,np.newaxis]*np.exp(nt)[:],axis=0)+El['nfc']
-    return MMF+(2.0/gfac-1.0)*NMF
+    return MMF+(2.0/El['gfac']-1.0)*NMF
         
 def BlenResCW(Els,BLtables,wave):
     FP = np.zeros(len(Els))

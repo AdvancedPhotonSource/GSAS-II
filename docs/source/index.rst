@@ -35,6 +35,7 @@ Note that GSAS-II requires the Python extension packages
 * PyOpenGL (http://pyopengl.sourceforge.net/documentation)
 
 Two packages are used by some parts of the code, but are not required:
+
 * PIL (http://www.pythonware.com/products/pil/) or Pillow (https://pillow.readthedocs.org). This is used to save
   and read certain types of images.
 * h5py is the HDF5 support package. This is (not surprisingly) required

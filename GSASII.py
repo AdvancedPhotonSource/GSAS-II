@@ -245,8 +245,12 @@ class GSASII(wx.Frame):
             state = False
         item.Enable(state)
         self.SeqRefine.append(item) # save menu obj for use in self.EnableSeqRefineMenu
-        self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=item.GetId())
-        
+        if GSASIIpath.GetConfigValue('debug'): # allow exceptions for debugging
+            self.Bind(wx.EVT_MENU, self.OnSeqRefine, id=item.GetId())
+            item = parent.Append(help='', id=wx.ID_ANY, kind=wx.ITEM_NORMAL,
+                text='Debug graphics refresh')
+            self.Bind(wx.EVT_MENU, self.TestResetPlot, id=item.GetId())
+
     def _init_Imports(self):
         '''import all the G2phase*.py & G2sfact*.py & G2pwd*.py files that 
         are found in the path
@@ -3708,7 +3712,7 @@ class GSASII(wx.Frame):
     def OnRefine(self,event):
         '''Perform a refinement.
         Called from the Calculate/Refine menu.
-        '''        
+        '''
         Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
         if Id:
             dlg = wx.MessageDialog(
@@ -3742,15 +3746,7 @@ class GSASII(wx.Frame):
             dlg.SetSize((int(Size[0]*1.2),Size[1])) # increase size a bit along x
         dlg.CenterOnParent()
         Rw = 100.00
-        oldId =  self.PatternTree.GetSelection()        #retain current selection
-        oldPath = self.GetTreeItemsList(oldId)
-        parentName = ''
-        oldName = self.PatternTree.GetItemText(oldId)
-        parentId = self.PatternTree.GetItemParent(oldId)
-        if parentId:
-            parentName = self.PatternTree.GetItemText(parentId)     #find the current data tree name
-            if 'Phases' in parentName:
-                tabId = self.dataDisplay.GetSelection()
+        self.SaveTreeSetting()
         try:
             OK,Msg = G2stMn.Refine(self.GSASprojectfile,dlg)    #Msg is Rvals dict if Ok=True
         finally:
@@ -3768,24 +3764,82 @@ class GSASII(wx.Frame):
             dlg2 = wx.MessageDialog(self,text,'Refinement results, Rw =%.3f'%(Rw),wx.OK|wx.CANCEL)
             try:
                 if dlg2.ShowModal() == wx.ID_OK:
-                    Id = 0
                     self.PatternTree.DeleteChildren(self.root)
                     self.HKL = []
                     G2IO.ProjFileOpen(self,False)
-                    Id =  self.root
-                    txt = None
-                    for txt in oldPath:
-                        Id = G2gd.GetPatternTreeItemId(self, Id, txt)
-                    self.PickIdText = None  #force reload of page
-                    if Id:
-                        self.PickId = Id
-                        self.PatternTree.SelectItem(Id)
-                        G2gd.MovePatternTreeToGrid(self,Id) # reload current tree item, should update current plot
+                    self.ResetPlots()
             finally:
                 dlg2.Destroy()
         else:
             self.ErrorDialog('Refinement error',Msg)
-
+        
+    def SaveTreeSetting(self):
+        'Save the last tree setting'
+        oldId =  self.PatternTree.GetSelection()        #retain current selection
+        oldPath = self.GetTreeItemsList(oldId)
+        self.lastTreeSetting = oldPath
+        # note that for reasons unclear, it does not seem necessary to reload the Atoms tab
+        #parentName = ''
+        #tabId = None
+        # parentId = self.PatternTree.GetItemParent(oldId)
+        # if parentId:
+        #     parentName = self.PatternTree.GetItemText(parentId)     #find the current data tree name
+        #     if 'Phases' in parentName:
+        #         tabId = self.dataDisplay.GetSelection()
+        #self.lastTreeSetting = oldPath,tabId
+        #GSASIIpath.IPyBreak()
+        
+    def ReloadTreeSetting(self):
+        'Reload the last tree setting, triggering the routine to redraw the data window and possibly a plot'
+        #oldPath,tabId = self.lastTreeSetting
+        oldPath = self.lastTreeSetting
+        Id = self.root
+        for txt in oldPath:
+            Id = G2gd.GetPatternTreeItemId(self, Id, txt)
+        self.PickIdText = None  #force reload of page
+        if Id:
+            self.PickId = Id
+            self.PatternTree.SelectItem(Id)
+            G2gd.MovePatternTreeToGrid(self,Id) # reload current tree item
+            
+    def TestResetPlot(self,event):
+        '''Debug code to test cleaning up plots after a refinement'''
+        #for i in range(self.G2plotNB.nb.GetPageCount()):
+        #    [self.G2plotNB.nb.GetPageText(i)
+        # save current tree item and (if needed) atoms tab
+        self.SaveTreeSetting()
+        self.ResetPlots()
+        
+    def ResetPlots(self):
+        '''This reloads the current tree item, often drawing a plot. It refreshes any plots
+        that have registered a refresh routine (see G2plotNB.RegisterRedrawRoutine)
+        and deletes all plots that have not been refreshed and
+        require one (see G2plotNB.SetNoDelete).
+        '''
+        lastRaisedPlotTab = self.G2plotNB.lastRaisedPlotTab # save the last page saved
+        #print 'lastRaisedPlotTab=',lastRaisedPlotTab
+        self.G2plotNB.lastRaisedPlotTab = None
+        # mark displayed plots as invalid
+        for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
+            frame.plotInvalid = True
+        # reload current tree item
+        self.ReloadTreeSetting()
+        treeItemPlot = self.G2plotNB.lastRaisedPlotTab
+        # update other self-updating plots
+        for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
+            if frame.plotInvalid and frame.replotFunction:
+                frame.replotFunction(*frame.replotArgs,**frame.replotKWargs)
+        # delete any remaining plots that are still invalid and need a refresh
+        for lbl,frame in zip(self.G2plotNB.plotList,self.G2plotNB.panelList):
+            if frame.plotInvalid and frame.plotRequiresRedraw:
+                self.G2plotNB.Delete(lbl)
+            #     print('deleting '+lbl) # debug code
+            # elif not frame.plotInvalid: # debug code
+            #     print(lbl+ ' was redrawn') # debug code
+        # put the previously last-raised tab on top, if present. If not, use the one corresponding to
+        # the last tree item to be selected
+        wx.CallAfter(self.G2plotNB.RaiseLastPage,lastRaisedPlotTab,treeItemPlot)
+        
     def OnSeqRefine(self,event):
         '''Perform a sequential refinement.
         Called from the Calculate/Sequential refine menu.
@@ -3826,18 +3880,16 @@ class GSASII(wx.Frame):
             dlg = wx.MessageDialog(self,'Load new result?','Refinement results',wx.OK|wx.CANCEL)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    Id = 0
-#                    self.G2plotNB.setReplotFlags() # mark all plots as old - doesn't exist!
                     self.PickIdText = None  #force reload of PickId contents
                     self.PatternTree.DeleteChildren(self.root)
                     if len(self.HKL): self.HKL = []
                     if self.G2plotNB.plotList:
                         self.G2plotNB.clear()
                     G2IO.ProjFileOpen(self,False)
+                    self.ResetPlots()
                     Id = G2gd.GetPatternTreeItemId(self,self.root,'Sequential results')
                     self.PatternTree.SelectItem(Id)
                     G2gd.MovePatternTreeToGrid(self,Id) # reload current tree item, should update current plot
-#                    self.G2plotNB.replotAll() # refresh any plots not yet updated - doesn't exist!
             finally:
                 dlg.Destroy()
         else:

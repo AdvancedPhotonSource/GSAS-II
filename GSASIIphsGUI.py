@@ -1376,13 +1376,13 @@ def UpdatePhaseData(G2frame,Item,data,oldPage):
         dlg = G2gd.TransformDialog(G2frame,data)
         try:
             if dlg.ShowModal() == wx.ID_OK:
-                newPhase,Trans,Vec = dlg.GetSelection()
+                newPhase,Trans,Vec,ifMag = dlg.GetSelection()
             else:
                 return
         finally:
             dlg.Destroy()
         phaseName = newPhase['General']['Name']
-        newPhase = G2lat.TransformPhase(data,newPhase,Trans,Vec)
+        newPhase = G2lat.TransformPhase(data,newPhase,Trans,Vec,ifMag)
         newPhase['General']['Map'] = mapDefault.copy()
         sub = G2frame.PatternTree.AppendItem(parent=
             G2gd.GetPatternTreeItemId(G2frame,G2frame.root,'Phases'),text=phaseName)

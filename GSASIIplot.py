@@ -5116,7 +5116,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)
-        glLightfv(GL_LIGHT0,GL_AMBIENT,[.8,.8,.8,1])
+        glLightfv(GL_LIGHT0,GL_AMBIENT,[.1,.1,.1,1])
         glLightfv(GL_LIGHT0,GL_DIFFUSE,[.8,.8,.8,1])
 #        glLightfv(GL_LIGHT0,GL_SPECULAR,[1,1,1,1])
 #        glLightfv(GL_LIGHT0,GL_POSITION,[0,0,1,1])
@@ -5442,7 +5442,7 @@ def PlotStructure(G2frame,data,firstCall=False):
         glShadeModel(GL_FLAT)
         glPushMatrix()
         glTranslate(x,y,z)
-        glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE,color)
+        glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,color)
         glShadeModel(GL_SMOOTH)
         glMultMatrixf(B4mat.T)
         for face,norm in Faces:

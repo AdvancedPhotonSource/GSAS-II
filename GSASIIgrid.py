@@ -529,6 +529,7 @@ class TransformDialog(wx.Dialog):
         self.oldCell = phase['General']['Cell'][1:8]
         self.newCell = self.Phase['General']['Cell'][1:8]
         self.Common = 'abc'
+        self.ifMag = False
         self.Draw()
 
     def Draw(self):
@@ -615,6 +616,9 @@ class TransformDialog(wx.Dialog):
         def OnTest(event):
             self.newCell = G2lat.TransformCell(self.oldCell[:6],self.Trans)
             wx.CallAfter(self.Draw)
+            
+        def OnMag(event):
+            self.ifMag = mag.GetValue()
 
         self.panel.Destroy()
         self.panel = wx.Panel(self)
@@ -672,6 +676,10 @@ class TransformDialog(wx.Dialog):
         SGTxt.Bind(wx.EVT_KILL_FOCUS,OnSpaceGroup)
         sgSizer.Add(SGTxt,0,WACV)
         mainSizer.Add(sgSizer,0,WACV)
+        if 'magnetic' not in self.Phase['General']['Type']:
+            mag = wx.CheckBox(self.panel,label=' Make magnetic phase?')
+            mag.Bind(wx.EVT_CHECKBOX,OnMag)
+            mainSizer.Add(mag,0,WACV)
 
         TestBtn = wx.Button(self.panel,-1,"Test")
         TestBtn.Bind(wx.EVT_BUTTON, OnTest)
@@ -696,7 +704,7 @@ class TransformDialog(wx.Dialog):
     def GetSelection(self):
         self.Phase['General']['Name'] += ' %s'%(self.Common)
         self.Phase['General']['Cell'][1:] = G2lat.TransformCell(self.oldCell[:6],self.Trans)            
-        return self.Phase,self.Trans,self.Vec
+        return self.Phase,self.Trans,self.Vec,self.ifMag
 
     def OnOk(self,event):
         parent = self.GetParent()

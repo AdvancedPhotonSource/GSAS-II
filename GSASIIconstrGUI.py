@@ -1196,7 +1196,7 @@ def UpdateRigidBodies(G2frame,data):
             G2gd.SetDataMenuBar(G2frame,G2frame.dataFrame.RigidBodyMenu)
             G2frame.dataFrame.Bind(wx.EVT_MENU, AddResidueRB, id=G2gd.wxID_RIGIDBODYADD)
             G2frame.dataFrame.Bind(wx.EVT_MENU, OnImportRigidBody, id=G2gd.wxID_RIGIDBODYIMPORT)
-            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ)
+            G2frame.dataFrame.Bind(wx.EVT_MENU, OnDefineTorsSeq, id=G2gd.wxID_RESIDUETORSSEQ) #enable only if residue RBs exist?
             G2frame.Page = [page,'rrb']
             UpdateResidueRB()
             
@@ -1417,7 +1417,12 @@ def UpdateRigidBodies(G2frame,data):
         rbIds = dict(zip(rbNames,rbKeys))
         rbNames.sort()
         rbId = 0
-        if len(rbNames) > 1:
+        if len(rbNames) == 0:
+            print 'There are no rigid bodies defined'
+            G2frame.ErrorDialog('No rigid bodies','There are no rigid bodies defined',
+                                parent=G2frame.dataFrame)
+            return
+        elif len(rbNames) > 1:
             dlg = wx.SingleChoiceDialog(G2frame,'Select rigid body for torsion sequence','Torsion sequence',rbNames)
             if dlg.ShowModal() == wx.ID_OK:
                 sel = dlg.GetSelection()

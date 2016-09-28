@@ -228,7 +228,7 @@ def TransformU6(U6,Trans):
     Uij = np.inner(Trans,np.inner(U6toUij(U6),Trans))
     return UijtoU6(Uij)
     
-def TransformPhase(oldPhase,newPhase,Trans,Vec):
+def TransformPhase(oldPhase,newPhase,Trans,Vec,ifMag):
     '''Transform atoms from oldPhase to newPhase by Trans & Vec
     NB: doesnt transform moments correctly - TBD
     
@@ -237,6 +237,7 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec):
             atoms are from oldPhase & will be transformed
     :param Trans: array transformation matrix
     :param Vec: array transformation vector
+    :param ifMag: bool True if convert to magnetic phase
     '''
     
     cx,ct,cs,cia = oldPhase['General']['AtomPtrs']
@@ -251,6 +252,16 @@ def TransformPhase(oldPhase,newPhase,Trans,Vec):
                 for atom in moreAtoms:
                     atom[cx+i] += 1.
                 newAtoms += moreAtoms
+    if ifMag:
+        cia += 3
+        cs += 3
+        newPhase['General']['Type'] = 'magnetic'
+        newPhase['General']['AtomPtrs'] = [cx,ct,cs,cia]
+        magAtoms = []
+        for atom in newAtoms:
+            magAtoms.append(atom[:cx+4]+[0.,0.,0.]+atom[cx+4:])
+        newAtoms = magAtoms
+        newPhase['Draw Atoms'] = []
     for atom in newAtoms:
         atom[cx:cx+3] = TransformXYZ(atom[cx:cx+3],invTrans.T,Vec)%1.
         if atom[cia] == 'A':

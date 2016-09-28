@@ -37,6 +37,8 @@ class xye_ReaderClass(G2IO.ImportPowderData):
         begin = True
         self.GSAS = False
         for i,S in enumerate(filepointer):
+            if not S:
+                break
             if i > 1000: break
             if begin:
                 if gotCcomment and S.find('*/') > -1:
